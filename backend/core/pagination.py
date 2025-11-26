@@ -100,7 +100,7 @@ class LazyPaginator(PageNumberPagination):
             "required": ["page", "has_next", "results"],
         }
 
-    def get_paginated_response_serializer(self, serializer_class, name=None):
+    def get_paginated_response_serializer(self, serializer_class, name=None, many=True):
         """
         Returns an inline serializer for the paginated response.
 
@@ -109,7 +109,7 @@ class LazyPaginator(PageNumberPagination):
             name: Optional name for the inline serializer (auto-generated if not provided)
         """
         if name is None:
-            name = f"Paginated{serializer_class.__name__}Response"
+            name = f"LazyPaginated{serializer_class.__name__}Response"
 
         return inline_serializer(
             name=name,
@@ -118,6 +118,6 @@ class LazyPaginator(PageNumberPagination):
                 "has_next": serializers.BooleanField(
                     help_text="Whether there are more pages available"
                 ),
-                "results": serializer_class(many=True),
+                "results": serializer_class(many=many),
             },
         )

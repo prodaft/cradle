@@ -12,23 +12,27 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from management.settings import cradle_settings
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
 
 from ..authentication import APIKeyAuthentication
-from ..models import CradleUser
 from ..exceptions import (
-    RegistrationDisabledException,
-    UserAlreadyExistsException,
-    UserNotFoundException,
     DisallowedActionException,
-    IncorrectOldPasswordException,
-    UnknownActionException,
     EmailAlreadyConfirmedException,
+    IncorrectOldPasswordException,
+    RegistrationDisabledException,
+    UnknownActionException,
+    UserAlreadyExistsException,
     UserErrorCodes,
+    UserNotFoundException,
 )
+from ..models import CradleUser
 from ..serializers import (
     APIKeyRequestSerializer,
     APIKeyResponseSerializer,
@@ -44,6 +48,7 @@ from ..serializers import (
     UserCreateSerializerAdmin,
     UserManageResponseSerializer,
     UserRetrieveSerializer,
+    UserUpdateSerializer,
 )
 
 
@@ -89,9 +94,7 @@ class UserList(APIView):
 
     def post(self, request):
         if not cradle_settings.users.allow_registration:
-            raise RegistrationDisabledException(
-                detail="User registration is disabled."
-            )
+            raise RegistrationDisabledException(detail="User registration is disabled.")
 
         serializer = UserCreateSerializer(data=request.data)
 
@@ -101,9 +104,7 @@ class UserList(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        if CradleUser.objects.filter(
-            email=serializer.validated_data["email"]
-        ).exists():
+        if CradleUser.objects.filter(email=serializer.validated_data["email"]).exists():
             raise UserAlreadyExistsException(
                 detail="User with this email already exists."
             )
@@ -154,6 +155,7 @@ class UserList(APIView):
                 description="UUID of the user, or 'me' to update own details",
             )
         ],
+        request=UserUpdateSerializer,
         responses={
             200: UserRetrieveSerializer,
             **get_validation_error_response(),
@@ -165,7 +167,6 @@ class UserList(APIView):
 class UserDetail(APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = UserRetrieveSerializer
 
     def get(self, request, user_id):
         initiator = cast(CradleUser, request.user)
@@ -289,9 +290,7 @@ class ChangePasswordView(APIView):
 
         # Check if old_password is correct
         if not user.check_password(old_password):
-            raise IncorrectOldPasswordException(
-                detail="The old password is incorrect."
-            )
+            raise IncorrectOldPasswordException(detail="The old password is incorrect.")
 
         # Everything is valid, update the password
         user.set_password(new_password)
@@ -480,6 +479,7 @@ class EmailConfirm(APIView):
         if user.email_confirmation_token_expiry < timezone.now():
             user.send_email_confirmation()
             from core.exceptions import ValidationException
+
             raise ValidationException(
                 detail="Email confirmation token has expired a new one was sent."
             )
@@ -524,9 +524,8 @@ class PasswordReset(APIView):
 
         if not email and not username:
             from core.exceptions import ValidationException
-            raise ValidationException(
-                detail="Email or username must be provided"
-            )
+
+            raise ValidationException(detail="Email or username must be provided")
 
         user = None
         if email:
@@ -542,6 +541,7 @@ class PasswordReset(APIView):
 
     def put(self, request):
         from core.exceptions import ValidationException
+
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -553,9 +553,7 @@ class PasswordReset(APIView):
 
             # Check if token was expired
             if user.password_reset_token_expiry < timezone.now():
-                raise ValidationException(
-                    detail="Password reset token has expired."
-                )
+                raise ValidationException(detail="Password reset token has expired.")
 
             # Reset the token and set new password
             user.password_reset_token = ""

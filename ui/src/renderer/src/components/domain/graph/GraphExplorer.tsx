@@ -1,29 +1,11 @@
 import { useNotif } from '@/contexts/ui/NotificationContext';
+import { EdgeRelation } from '@/services/cradle';
 import InProgress from '@components/feedback/InProgress';
 import { ComponentType, useMemo, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import Graph from './Graph';
-import { filterGraph } from './graphFilterUtils';
+import { filterGraph, Node } from './graphFilterUtils';
 import GraphQuery from './GraphQuery';
-
-interface Node {
-    id: string;
-    type?: string;
-    color?: string;
-    [key: string]: any;
-}
-
-interface Edge {
-    id: string;
-    source: string;
-    target: string;
-    [key: string]: any;
-}
-
-interface Entry {
-    id: string;
-    [key: string]: any;
-}
 
 interface GraphConfig {
     nodeRadiusCoefficient: number;
@@ -35,7 +17,7 @@ interface GraphConfig {
 }
 
 interface SearchComponentProps {
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
 }
 
@@ -49,7 +31,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     }
 
     const [nodes, setNodes] = useState<Node[]>([]);
-    const [edges, setEdges] = useState<Edge[]>([]);
+    const [edges, setEdges] = useState<EdgeRelation[]>([]);
     const [disabledTypes, setDisabledTypes] = useState<Set<string>>(new Set());
     const [entryGraphColors, setEntryGraphColors] = useState<Record<string, string>>({});
     const [config, setConfig] = useState<GraphConfig>({
@@ -61,7 +43,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         simulationLinkDistance: 10,
     });
     const { notify } = useNotif();
-    const [selectedEntries, setSelectedEntries] = useState<Set<Entry>>(new Set());
+    const [selectedNodes, setSelectedNodes] = useState<Set<Node>>(new Set());
 
     // Maintain sets for tracking existing IDs
     const [nodeIds, setNodeIds] = useState<Set<string>>(new Set());
@@ -99,13 +81,13 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         }
     };
 
-    const addEdges = (newEdges: Edge[] | Edge) => {
+    const addEdges = (newEdges: EdgeRelation[] | EdgeRelation) => {
         let edgesToProcess = Array.isArray(newEdges) ? newEdges : [newEdges];
 
         const edgesToAdd = edgesToProcess.filter((edge) => {
-            if (!edge.id || !edge.source || !edge.target) {
+            if (!edge.id || !edge.src || !edge.dst) {
                 console.warn(
-                    'Edge missing required properties (id, source, target):',
+                    'Edge missing required properties (id, src, dst):',
                     edge,
                 );
                 return false;
@@ -123,7 +105,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
 
             setEdgeIds((prevIds) => {
                 const newIds = new Set(prevIds);
-                edgesToAdd.forEach((edge) => newIds.add(edge.id));
+                edgesToAdd.forEach((edge) => edge.id && newIds.add(edge.id));
                 return newIds;
             });
         }
@@ -139,8 +121,8 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             <PanelGroup direction='horizontal' className='h-full'>
                 <Panel defaultSize={30} minSize={20} maxSize={50}>
                     <GraphQuery
-                        selectedEntries={selectedEntries}
-                        setSelectedEntries={setSelectedEntries}
+                        selectedEntries={selectedNodes}
+                        setSelectedEntries={setSelectedNodes}
                         config={config}
                         setConfig={setConfig}
                         SearchComponent={GraphSearchComponent}
@@ -157,7 +139,8 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                 <Panel defaultSize={70} minSize={50}>
                     <div className='relative h-full'>
                         <Graph
-                            setSelectedEntries={setSelectedEntries}
+                            selectedNodes={selectedNodes}
+                            setSelectedNodes={setSelectedNodes}
                             onClearGraph={() => {
                                 setNodes([]);
                                 setEdges([]);

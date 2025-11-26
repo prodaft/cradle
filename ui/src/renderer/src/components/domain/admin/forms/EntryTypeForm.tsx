@@ -1,9 +1,9 @@
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { EntryClass, EntryClassRequest, EntryClassRequestTypeEnum } from '@/services/cradle/models';
 import { displayError } from '@/utils/api';
 import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { EntryClass, EntryClassRequest, EntryClassRequestTypeEnum } from '@services/cradle/models';
 import { useEffect, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
@@ -35,17 +35,17 @@ interface ChildOption {
 interface EntryTypeFormValues {
   type: EntryClassRequestTypeEnum;
   subtype: string;
-  description: string;
-  prefix: string;
-  typeFormat: string | null;
-  regex: string;
-  options: string;
-  generativeRegex: string;
+  description?: string;
+  prefix?: string;
+  typeFormat?: string | null;
+  regex?: string;
+  options?: string;
+  generativeRegex?: string;
   color: string;
-  children: ChildOption[];
+  children?: ChildOption[];
 }
 
-const entryTypeSchema = Yup.object().shape({
+const entryTypeSchema: Yup.ObjectSchema<EntryTypeFormValues> = Yup.object().shape({
   type: Yup.string()
     .oneOf(Object.values(EntryClassRequestTypeEnum))
     .required('Class Type is required') as Yup.Schema<EntryClassRequestTypeEnum>,
@@ -68,7 +68,7 @@ const entryTypeSchema = Yup.object().shape({
   generativeRegex: Yup.string().notRequired(),
   color: Yup.string().required('Color is required'),
   children: Yup.array().notRequired(),
-});
+}) as Yup.ObjectSchema<EntryTypeFormValues>;
 
 /**
  * EntryTypeForm component
@@ -188,7 +188,7 @@ export default function EntryTypeForm({
     try {
       const payload: EntryClassRequest = {
         generativeRegex: data.generativeRegex,
-        format: data.typeFormat === '' ? null : data.typeFormat,
+        format: data.typeFormat === '' ? null : (data.typeFormat ?? null),
         type: data.type,
         subtype: data.subtype,
         description: data.description,
@@ -196,7 +196,7 @@ export default function EntryTypeForm({
         color: data.color,
         regex: data.regex,
         options: data.options,
-        children: data.children.map((child) => child.value),
+        children: data.children?.map((child) => child.value) ?? [],
       };
 
       let result: EntryClass;
@@ -263,10 +263,10 @@ export default function EntryTypeForm({
                 <FormField
                   type="text"
                   id="subtype"
-                  labelText={isEdit ? 'Name' : 'Subtype'}
+                  label={isEdit ? 'Name' : 'Subtype'}
                   className="form-input input input-ghost-primary input-block focus:ring-0"
                   {...register('subtype')}
-                  error={errors.subtype?.message}
+                  error={errors.subtype}
                 />
 
                 <div className="mt-4" />
@@ -381,10 +381,10 @@ export default function EntryTypeForm({
                     <FormField
                       type="text"
                       id="prefix"
-                      labelText="Prefix"
+                      label="Prefix"
                       className="form-input input input-ghost-primary input-block focus:ring-0"
                       {...register('prefix')}
-                      error={errors.prefix?.message}
+                      error={errors.prefix}
                     />
                   </div>
                 )}
@@ -504,7 +504,7 @@ export default function EntryTypeForm({
                       name="children"
                       control={control}
                       render={({
-                        field: { onChange, value, ref },
+                        field: { onChange, value },
                       }) => (
                         <Selector
                           value={value}
@@ -512,7 +512,6 @@ export default function EntryTypeForm({
                           staticOptions={entryTypes}
                           isMulti={true}
                           placeholder="Select child entry types..."
-                          inputRef={ref}
                         />
                       )}
                     />
@@ -526,7 +525,7 @@ export default function EntryTypeForm({
               </Tab>
             </Tabs>
 
-            <AlertBox alert={alert} setAlert={setAlert} />
+            <AlertBox alert={alert} />
 
             <div className="flex gap-2 pt-4">
               <button

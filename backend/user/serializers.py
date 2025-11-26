@@ -131,6 +131,30 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
         return instance
 
 
+class UserUpdateSerializer(UserCreateSerializer):
+    email = serializers.EmailField(required=False)
+    username = serializers.CharField(required=False)
+    password = serializers.CharField(required=False)
+
+    class Meta:
+        model = CradleUser
+        fields = [
+            "username",
+            "email",
+            "password",
+            "catalyst_api_key",
+            "vim_mode",
+            "theme",
+            "role",
+            "email_confirmed",
+            "is_active",
+            "two_factor_enabled",
+        ]
+
+    def validate(self, data: Any) -> Any:
+        return super().validate(data, nocheck_pw=True)
+
+
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
@@ -233,7 +257,7 @@ class EmailConfirmSerializer(serializers.Serializer):
 
 
 class Enable2FASerializer(serializers.Serializer):
-    token = serializers.CharField(required=True)
+    config_url = serializers.URLField(required=True)
 
 
 class Verify2FASerializer(serializers.Serializer):

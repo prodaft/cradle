@@ -1,4 +1,4 @@
-export { default as AuthProvider } from './AuthProvider';
+export { AuthProvider } from './AuthProvider';
 export { default as ConfirmEmail } from './ConfirmEmail';
 export { default as ForgotPassword } from './ForgotPassword';
 export { default as Login } from './Login';

@@ -1,14 +1,14 @@
-import { NavArrowDown, NavArrowUp, Search } from 'iconoir-react';
-import type { DateValueType } from 'react-tailwindcss-datepicker';
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import Datepicker from 'react-tailwindcss-datepicker';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { useProfile } from '@/hooks/auth/useProfile';
-import type { BaseDigest, DigestSubclass } from '@/services/cradle/models';
-import type { Alert, StateSetter } from '@/types';
+import type { Alert } from '@/types';
+import type { BaseDigest, DigestSubclass } from '@services/cradle/models';
+import { NavArrowDown, NavArrowUp, Search } from 'iconoir-react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import type { DateValueType } from 'react-tailwindcss-datepicker';
+import Datepicker from 'react-tailwindcss-datepicker';
 import DigestList from './DigestList';
 import UploadForm from './UploadForm';
 
@@ -97,7 +97,7 @@ export default function UploadExternal() {
                     });
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
 
         // Initial fetch of digests with search params
         fetchDigests();

@@ -1,14 +1,14 @@
-import { useWindowSize } from '@uidotdev/usehooks';
-import { HalfMoon, Settings, SunLight, Undo } from 'iconoir-react';
-import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { strip } from '@/utils/links';
 import AlertBox from '@components/base/Alert/AlertBox';
-import FormField from '@components/forms/FormField';
 import Logo from '@components/base/Logo/Logo';
+import FormField from '@components/forms/FormField';
+import { useWindowSize } from '@uidotdev/usehooks';
+import { HalfMoon, Settings, SunLight, Undo } from 'iconoir-react';
+import { useEffect, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface Alert {
     show: boolean;
@@ -32,7 +32,7 @@ export default function Login() {
 
     const { isDarkMode, toggleTheme } = useTheme();
 
-    const { from } = location.state || { from: { pathname: '/' } };
+    const { from } = (location.state == "/#login" ? null : location.state) || { from: { pathname: '/' } };
 
     const auth = useAuth();
     const { basePath, setBasePath } = auth;
@@ -63,6 +63,7 @@ export default function Login() {
         );
 
         if (result.result === 'success') {
+            console.log('Login successful');
             navigate(from, { replace: true });
         } else if (result.result === 'requires_2fa') {
             setRequiresTwoFactor(true);
@@ -180,11 +181,11 @@ export default function Login() {
                                             <FormField
                                                 key='backendUrl'
                                                 name='backendUrl'
-                                                labelText='Backend URL'
+                                                label='Backend URL'
                                                 type='text'
                                                 value={backendUrl}
-                                                handleInput={auth.setBasePath}
-                                                autofocus={true}
+                                                onChange={(e) => setBackendUrl(e.target.value)}
+                                                autoFocus={true}
                                                 required={true}
                                             />
                                             <AlertBox alert={alert} />
@@ -283,20 +284,20 @@ export default function Login() {
                                                 <>
                                                     <FormField
                                                         name='username'
-                                                        labelText='Username'
+                                                        label='Username'
                                                         key='username'
                                                         type='text'
                                                         value={username}
-                                                        handleInput={setUsername}
-                                                        autofocus={true}
+                                                        onChange={(e) => setUsername(e.target.value)}
+                                                        autoFocus={true}
                                                     />
                                                     <FormField
                                                         name='password'
-                                                        labelText='Password'
+                                                        label='Password'
                                                         key='password'
                                                         type='password'
                                                         value={password}
-                                                        handleInput={setPassword}
+                                                        onChange={(e) => setPassword(e.target.value)}
                                                     />
                                                     <AlertBox alert={alert} />
                                                     <button

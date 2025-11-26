@@ -1,4 +1,5 @@
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { EdgeRelation } from '@/services/cradle';
 import NotesList from '@components/domain/notes/NotesList';
 import RelationsList from '@components/domain/relations/RelationsList';
 import { Tab, Tabs } from '@components/layout/Tabs/Tabs';
@@ -18,15 +19,8 @@ interface Node {
     [key: string]: any;
 }
 
-interface Edge {
-    id: string;
-    source: string;
-    target: string;
-    [key: string]: any;
-}
-
 interface SearchComponentProps {
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
 }
 
@@ -39,10 +33,10 @@ interface GraphQueryProps {
     config: any;
     setConfig: (config: any) => void;
     SearchComponent: ComponentType<SearchComponentProps>;
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
     nodes: Node[];
-    edges: Edge[];
+    edges: EdgeRelation[];
 }
 
 export default function GraphQuery({
@@ -78,7 +72,7 @@ export default function GraphQuery({
     const relationQuery = useMemo(() => {
         return (
             selectedEntries && {
-                relates: Array.from(selectedEntries).map((entry) => entry.id),
+                relates: Array.from(selectedEntries).map((entry) => Number(entry.id)),
             }
         );
     }, [selectedEntries]);
@@ -127,7 +121,6 @@ export default function GraphQuery({
                                     <NotesList
                                         query={graphQuery}
                                         hideActionBar={true}
-                                        forceCardView={true}
                                     />
                                 </>
                             ) : (

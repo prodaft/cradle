@@ -1,26 +1,26 @@
+import DeleteNote from '@components/domain/notes/DeleteNote';
+import NotesList from '@components/domain/notes/NotesList';
 import { Search } from 'iconoir-react';
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
-import DeleteNote from '@components/domain/notes/DeleteNote';
-import NotesList from '@components/domain/notes/NotesList';
 
 interface SearchFilters {
     content: string;
     author__username: string;
-    linked_to?: string;
+    linked_to?: number;  // Entry ID (BigAutoField)
     linked_to_exact_match?: boolean;
     timestamp_gte?: string;
     timestamp_lte?: string;
 }
 
 interface DateRange {
-    startDate: string | null;
-    endDate: string | null;
+    startDate: Date | null;
+    endDate: Date | null;
 }
 
 interface NotesProps {
     obj: {
-        id: string;
+        id?: number;
         type?: string;
         [key: string]: any;
     };

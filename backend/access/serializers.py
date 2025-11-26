@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
+from user.serializers import UserRetrieveSerializer
+
 from .enums import AccessType
 from .models import Access
-from user.serializers import UserRetrieveSerializer
 
 
 class AccessSerializer(serializers.ModelSerializer):
@@ -14,7 +15,7 @@ class AccessSerializer(serializers.ModelSerializer):
 
 
 class AccessEntitySerializer(serializers.Serializer):
-    id = serializers.CharField(max_length=200)
+    id = serializers.IntegerField(required=True)
     name = serializers.CharField(max_length=200)
     access_type = serializers.CharField(max_length=200, default=AccessType.NONE)
 

@@ -3,13 +3,14 @@ import { markdown, markdownLanguage } from '@codemirror/lang-markdown';
 import { yamlFrontmatter, yamlLanguage } from '@codemirror/lang-yaml';
 import { LanguageSupport, LRLanguage, syntaxTree } from '@codemirror/language';
 import { Diagnostic, linter } from '@codemirror/lint';
-import { basicSetup, EditorState, Extension } from '@uiw/react-codemirror';
+import { MarkdownExtension } from '@lezer/markdown';
+import { basicSetup, EditorState } from '@uiw/react-codemirror';
 import dayjs from 'dayjs';
-import jsyaml, { YAMLException } from 'js-yaml';
+import jsyaml from 'js-yaml';
 import type { LspApi } from '../../services/cradle/apis/LspApi';
 import type { NotesApi } from '../../services/cradle/apis/NotesApi';
-import { DynamicTrie } from './trie';
 import { Snippet } from '../../services/cradle/models/Snippet';
+import { DynamicTrie } from './trie';
 
 /*==============================================================================
   HELPER FUNCTIONS
@@ -665,6 +666,7 @@ export class CradleEditor {
         let ratchetValue = false;
 
         switch (node.name) {
+            // @ts-expect-error - intentional fallthrough in this case
             case 'CradleLink':
                 if (!node.lastChild || node.lastChild.name === 'CradleLinkType') {
                     to -= 2;
@@ -677,6 +679,8 @@ export class CradleEditor {
                     ratchetValue = true;
                 }
                 from = to;
+            // @ts-expect-error - intentional fallthrough
+            // falls through
             case 'CradleLinkType':
                 if (!ratchet) {
                     options = Object.keys(this.entryClasses).map((item) => ({
@@ -689,7 +693,8 @@ export class CradleEditor {
                     break;
                 }
                 ratchet = false;
-            // fall through
+            // @ts-expect-error - intentional fallthrough
+            // falls through
             case 'CradleLinkValue': {
                 if (!ratchetValue) {
                     if (!this.tries) return { from: context.pos, options: [] };
@@ -1146,7 +1151,7 @@ export class CradleEditor {
     MARKDOWN LANGUAGE INTEGRATION
   =============================================================================*/
 
-   extension(): Extension {
+    extension(): MarkdownExtension {
         const CradleLinkExtension = {
             defineNodes: [
                 {
@@ -1174,13 +1179,13 @@ export class CradleEditor {
                         // Check for optional "~" prefix before "[["
                         let hasPrefix = false;
                         let linkStart = pos;
-                        
+
                         if (next === 126) { // 126 is "~"
                             hasPrefix = true;
                             linkStart = pos + 1;
                             next = cx.char(linkStart);
                         }
-                        
+
                         // Check for opening "[["
                         if (next !== 91 || cx.char(linkStart + 1) !== 91) return -1;
                         const start = linkStart + 2;
@@ -1232,14 +1237,14 @@ export class CradleEditor {
 
                         // Create the base node and add prefix (if present), type, value, and alias
                         const node = cx.elt('CradleLink', pos, end + 2, []);
-                        
+
                         // Add prefix node if "~" was found
                         if (hasPrefix) {
                             node.children.push(
                                 cx.elt('CradleLinkPrefix', pos, pos + 1),
                             );
                         }
-                        
+
                         node.children.push(
                             cx.elt('CradleLinkType', start, start + linkType.length),
                         );

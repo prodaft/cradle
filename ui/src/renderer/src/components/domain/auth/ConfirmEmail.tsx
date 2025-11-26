@@ -32,7 +32,9 @@ export default function ConfirmEmail() {
         }
 
         try {
-            await usersApi.usersEmailConfirmCreate({ token });
+            await usersApi.usersEmailConfirmCreate({
+                emailConfirmRequest: { token }
+            });
             setAlert({
                 show: true,
                 message: 'Email confirmed successfully.',

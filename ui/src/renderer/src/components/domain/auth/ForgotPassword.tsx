@@ -41,8 +41,10 @@ export default function ForgotPassword() {
 
         try {
             await usersApi.usersResetPasswordCreate({
-                username: username || undefined,
-                email: email || undefined,
+                passwordResetRequestRequest: {
+                    username: username || undefined,
+                    email: email || undefined,
+                }
             });
             setAlert({
                 show: true,
@@ -89,11 +91,11 @@ export default function ForgotPassword() {
                                 <form className='space-y-5' onSubmit={handleSubmit}>
                                     <FormField
                                         name='username'
-                                        labelText='Username'
+                                        label='Username'
                                         type='text'
                                         value={username}
-                                        handleInput={setUsername}
-                                        autofocus={true}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        autoFocus={true}
                                         required={false}
                                     />
                                     <div className='cradle-separator-labeled my-4'>
@@ -101,10 +103,10 @@ export default function ForgotPassword() {
                                     </div>
                                     <FormField
                                         name='email'
-                                        labelText='Email'
+                                        label='Email'
                                         type='text'
                                         value={email}
-                                        handleInput={setEmail}
+                                        onChange={(e) => setEmail(e.target.value)}
                                         required={false}
                                     />
                                     <AlertBox alert={alert} />

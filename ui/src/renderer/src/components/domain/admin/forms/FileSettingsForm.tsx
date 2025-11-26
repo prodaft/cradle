@@ -1,7 +1,7 @@
 import useApi from '@/hooks/api/useApi';
-import { ManagementActionsCreateActionNameEnum } from '@/services/cradle/apis';
-import { EntryClass, EntryClassTypeEnum } from '@/services/cradle/models';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
+import { EntryClass, EntryClassTypeEnum } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -135,7 +135,7 @@ export default function FileSettingsForm() {
           )
             ? settings.files.mimetype_patterns.join('\n')
             : settings.files.mimetype_patterns ||
-              'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
+            'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
           reset({
             autoprocessFiles: settings.files.autoprocess_files ?? true,
@@ -207,7 +207,7 @@ export default function FileSettingsForm() {
                   <FormField
                     type="checkbox"
                     id="autoprocessFiles"
-                    labelText="Process Files Automatically"
+                    label="Process Files Automatically"
                     className="switch switch-ghost-primary"
                     {...register('autoprocessFiles')}
                     row={true}
@@ -346,7 +346,7 @@ export default function FileSettingsForm() {
               </form>
 
               <div className="mt-2" />
-              <AlertBox alert={alert} setAlert={setAlert} />
+              <AlertBox alert={alert} />
             </Tab>
             <Tab title="Actions">
               <div className="flex flex-col gap-2 pt-4">
@@ -358,7 +358,7 @@ export default function FileSettingsForm() {
                   Process All Files
                 </button>
 
-                <AlertBox alert={alert} setAlert={setAlert} />
+                <AlertBox alert={alert} />
               </div>
             </Tab>
           </Tabs>

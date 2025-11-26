@@ -1,3 +1,12 @@
+import { useNotif } from '@/contexts';
+import useApi from '@/hooks/api/useApi';
+import useAuth from '@/hooks/auth/useAuth';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { capitalizeString } from '@/utils/dashboard';
+import { formatDate } from '@/utils/dates';
+import { parseContent } from '@/utils/editor/textEditor';
+import { parseMarkdownInline } from '@/utils/parser';
+import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import {
     DesignNib,
     InfoCircleSolid,
@@ -8,18 +17,9 @@ import {
 } from 'iconoir-react';
 import React, { forwardRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
-import useApi from '@/hooks/api/useApi';
-import useAuth from '@/hooks/auth/useAuth';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { parseMarkdownInline } from '@/utils/parser';
-import { capitalizeString } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
-import { displayError } from '@/utils/api';
-import { parseContent } from '@/utils/editor/textEditor';
 import Preview from '../../base/Preview/Preview';
-import ReferenceTree from '../relations/ReferenceTree';
 import Tooltip from '../../base/Tooltip/Tooltip';
+import ReferenceTree from '../relations/ReferenceTree';
 
 interface Alert {
     show: boolean;
@@ -69,6 +69,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
     const [metadataExpanded, setMetadataExpanded] = useState(true);
+    const { notify } = useNotif();
 
     const getStatusIcon = (status?: NoteRetrieveStatusEnum) => {
         if (!status) return null;
@@ -108,7 +109,10 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
     useEffect(() => {
         parseContent(note.content, entriesApi, fileTransferApi, basePath, note.files)
             .then((result) => setParsedContent(result.html))
-            .catch(displayError(setAlert, navigate));
+            .catch((err) => notify({
+                text: "Cannot parse note!",
+                type: "error"
+            }))
     }, [note.content, note.files, entriesApi, fileTransferApi, basePath, setAlert, navigate]);
 
     const style = {
@@ -245,7 +249,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                 </div>
 
                 {note.entries && parsedContent && (
-                    <ReferenceTree note={note} setAlert={setAlert} />
+                    <ReferenceTree note={note} />
                 )}
             </div>
         </div>

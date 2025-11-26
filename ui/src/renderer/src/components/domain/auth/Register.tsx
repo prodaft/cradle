@@ -37,7 +37,9 @@ export default function Register() {
         }
 
         try {
-            await usersApi.usersCreate({ username, email, password });
+            await usersApi.usersCreate({
+                userCreateRequest: { username, email, password }
+            });
             navigate('/login', { state: location.state, replace: true });
         } catch (error) {
             displayError(setAlert)(error);
@@ -75,32 +77,32 @@ export default function Register() {
                                 <form className='space-y-5' onSubmit={handleSubmit}>
                                     <FormField
                                         name='username'
-                                        labelText='Username'
+                                        label='Username'
                                         type='text'
                                         value={username}
-                                        handleInput={setUsername}
-                                        autofocus={true}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        autoFocus={true}
                                     />
                                     <FormField
                                         name='email'
-                                        labelText='Email'
+                                        label='Email'
                                         type='email'
                                         value={email}
-                                        handleInput={setEmail}
+                                        onChange={(e) => setEmail(e.target.value)}
                                     />
                                     <FormField
                                         name='password'
-                                        labelText='Password'
+                                        label='Password'
                                         type='password'
                                         value={password}
-                                        handleInput={setPassword}
+                                        onChange={(e) => setPassword(e.target.value)}
                                     />
                                     <FormField
                                         name='password-check'
-                                        labelText='Confirm Password'
+                                        label='Confirm Password'
                                         type='password'
                                         value={passwordCheck}
-                                        handleInput={setPasswordCheck}
+                                        onChange={(e) => setPasswordCheck(e.target.value)}
                                     />
                                     <AlertBox alert={alert} />
                                     <button

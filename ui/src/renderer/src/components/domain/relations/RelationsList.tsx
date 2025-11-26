@@ -1,24 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/auth/useProfile';
-import AlertBox from '@components/base/Alert/AlertBox';
+import { Relation } from '@/services/cradle';
 import Pagination from '@components/base/Pagination/Pagination';
+import { useEffect, useState } from 'react';
 import RelationCard from './RelationCard';
 
 interface Entity {
     name: string;
     subtype: string;
     color?: string;
-}
-
-interface Relation {
-    id: string;
-    created_at: string;
-    last_seen: string;
-    reason?: string;
-    e1: Entity;
-    e2: Entity;
-    details: Record<string, any>;
 }
 
 interface Alert {
@@ -28,7 +18,7 @@ interface Alert {
 }
 
 interface Query {
-    [key: string]: any;
+    relates: Array<number>;
 }
 
 interface RelationsListProps {
@@ -41,9 +31,8 @@ export default function RelationsList({ query }: RelationsListProps) {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
-    const { profile } = useProfile();
     const { entriesApi } = useApi();
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
+    const { execute } = useAPICall();
 
     useEffect(() => {
         fetchRelations();
@@ -57,20 +46,14 @@ export default function RelationsList({ query }: RelationsListProps) {
     const fetchRelations = async () => {
         setLoading(true);
         try {
-            const response = await entriesApi.entriesRelationsList({
+            const response = await execute(() => entriesApi.entriesRelationsRetrieve({
                 page: page,
-                wildcard: true,
                 ...query,
+            }), {
+                errorMessage: 'Failed to fetch relations',
             });
             setRelations(response.results);
             setTotalPages(response.totalPages);
-        } catch (error) {
-            console.error('Failed to fetch relations:', error);
-            setAlert({
-                show: true,
-                message: 'Error fetching relations',
-                color: 'red',
-            });
         } finally {
             setLoading(false);
         }
@@ -82,7 +65,6 @@ export default function RelationsList({ query }: RelationsListProps) {
 
     return (
         <div className='p-4'>
-            <AlertBox alert={alert} />
             {loading ? (
                 <div className='flex items-center justify-center min-h-screen'>
                     <div className='spinner-dot-pulse'>
@@ -100,8 +82,7 @@ export default function RelationsList({ query }: RelationsListProps) {
                             <RelationCard
                                 key={relation.id}
                                 relation={relation}
-                                onDelete={() => handleDelete(relation.id)}
-                                setAlert={setAlert}
+                                onDelete={() => handleDelete(relation.id!)}
                             />
                         );
                     })}

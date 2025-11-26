@@ -3,7 +3,7 @@ import { ReactNode, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 import { useProfile } from '@contexts';
 import { useApi, useCradleNavigate } from '@hooks';
-import { handleAPIError } from '@utils/api';
+import { handleAPIError, parseAPIError } from '@utils/api';
 import { useNotif } from '@contexts/ui';
 import Logo from '@components/base/Logo/Logo';
 import NavbarButton from './NavbarButton';
@@ -47,7 +47,8 @@ export default function Navbar({
       });
       navigate(`/notes/${response.id}`);
     } catch (error) {
-      handleAPIError(error, notify);
+      const parsed = await parseAPIError(error);
+      handleAPIError(parsed, notify);
     }
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useTabContext, useIsBackgroundTab, useIsActivePane } from '../hooks/useTabContext/useTabContext';
+import { useTabContext, useIsBackgroundTab, useIsActivePane } from '../hooks/tabs/useTabContext';
 
 /**
  * Example component showing how to use tab-aware routing

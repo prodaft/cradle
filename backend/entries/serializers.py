@@ -1,6 +1,7 @@
 from django.db.models import Q
 from drf_spectacular.extensions import OpenApiSerializerExtension
-from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.plumbing import ResolvedComponent
+from drf_spectacular.utils import Direction, extend_schema_field
 from rest_framework import serializers
 
 from .enums import EntryType
@@ -45,30 +46,54 @@ class EntryCompressedTreeValueSerializer(serializers.Serializer):
 class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
     target_class = "entries.serializers.EntryListCompressedTreeSerializer"
 
-    def map_serializer(self, auto_schema, direction):
-        # Define inline schema but with explicit title to avoid auto-generation
-        item_schema = {
+    def map_serializer(self, auto_schema, direction: Direction):
+        # --- define the standalone component schema ---
+        entry_obj_schema = {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string"},
+                "id": {"type": "number"},
+            },
+            "additionalProperties": {
+                "oneOf": [
+                    {"type": "string"},
+                    {"type": "number"},
+                ]
+            },
+            "required": ["name", "id"],
+            "title": "EntryCompressedTreeObjectValue",
+            "description": "Entry object inside the compressed tree",
+        }
+
+        component = ResolvedComponent(
+            name="EntryCompressedTreeObject",
+            type=ResolvedComponent.SCHEMA,
+            object="EntryCompressedTreeObject",
+            schema=entry_obj_schema,
+        )
+        auto_schema.registry.register_on_missing(component)
+
+        entry_value_schema = {
             "oneOf": [
                 {
                     "type": "string",
                     "description": "Entry name (when using single field)",
                     "title": "EntryCompressedTreeStringValue",
                 },
-                {
-                    "type": "object",
-                    "additionalProperties": {
-                        "oneOf": [
-                            {"type": "string"},
-                            {"type": "number"},
-                            {"type": "array", "items": {"type": "number"}},
-                        ]
-                    },
-                    "description": "Entry object with multiple fields",
-                    "title": "EntryCompressedTreeObjectValue",
-                },
+                {"$ref": "#/components/schemas/EntryCompressedTreeObject"},
             ],
             "title": "EntryCompressedTreeValue",
         }
+
+        entry_value_component = ResolvedComponent(
+            name="EntryCompressedTreeValue",
+            type=ResolvedComponent.SCHEMA,
+            object="EntryCompressedTreeValue",
+            schema=entry_value_schema,
+        )
+        auto_schema.registry.register_on_missing(entry_value_component)
+
+        item_schema = {"$ref": "#/components/schemas/EntryCompressedTreeValue"}
 
         return {
             "type": "object",
@@ -85,8 +110,10 @@ class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
                 },
             },
             "required": ["entities", "artifacts"],
-            "description": "A compressed tree representation of entries, organized by type"
-            + "(entities/artifacts) and subtype.",
+            "description": (
+                "A compressed tree representation of entries, organized by type "
+                "(entities/artifacts) and subtype."
+            ),
             "title": "EntryListCompressedTree",
         }
 
@@ -119,6 +146,23 @@ class EntryTypesCompressedTreeSerializerExtension(OpenApiSerializerExtension):
                 "example": "name",
             }
         ]
+
+
+class EntrySerializerMinimalExtension(OpenApiSerializerExtension):
+    target_class = "entries.serializers.EntrySerializerMinimal"
+
+    def map_serializer(self, auto_schema, direction):
+        schema = super().map_serializer(auto_schema, direction)
+        schema["properties"]["type"] = {
+            "type": "string",
+        }
+        schema["properties"]["subtype"] = {
+            "type": "string",
+        }
+        schema["properties"]["color"] = {
+            "type": "string",
+        }
+        return schema
 
 
 class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
@@ -446,6 +490,7 @@ class EntitySerializer(serializers.ModelSerializer):
             "id",
             "name",
             "description",
+            "is_public",
             "entry_class",
             "aliases",
             "aliases_detail",
@@ -549,6 +594,33 @@ class EntitySerializer(serializers.ModelSerializer):
                 instance.reconnect_aliases()
 
         return instance
+
+
+class EntitySerializerExtension(OpenApiSerializerExtension):
+    target_class = "entries.serializers.EntitySerializer"
+    match_subclasses = True
+
+    def map_serializer(self, auto_schema, direction):
+        schema = super().map_serializer(auto_schema, direction)
+
+        properties = schema.get("properties", {})
+        properties.pop("entry_class", None)
+
+        properties["type"] = {
+            "type": "string",
+            "description": "Type of the entry (should be 'entity')",
+        }
+        properties["subtype"] = {
+            "type": "string",
+            "description": "Subtype for the entity",
+        }
+
+        required = set(schema.get("required", []))
+        required.add("subtype")
+        required.add("type")
+        schema["required"] = list(required)
+
+        return schema
 
 
 class ArtifactSerializer(serializers.ModelSerializer):

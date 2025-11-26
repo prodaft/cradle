@@ -28,7 +28,7 @@ export interface ThemeContextValue {
 // ============================================================================
 
 // Re-export the generated UserRetrieve type for domain data
-export type { UserRetrieve } from '@/services/cradle/models';
+export type { UserRetrieve } from '@services/cradle/models';
 
 /**
  * Extended profile with UI-specific properties.
@@ -51,7 +51,7 @@ export interface ProfileContextValue {
 }
 
 /**
- * @deprecated Use UserRetrieve from @/services/cradle/models instead
+ * @deprecated Use UserRetrieve from @services/cradle/models instead
  */
 export interface User {
   id: string;
@@ -219,11 +219,17 @@ export interface SimpleGraphNode {
   properties?: Record<string, any>;
 }
 
+/**
+ * Internal graph edge type for visualization.
+ * Note: Entry IDs are numbers (BigAutoField), not strings.
+ * Relation IDs are UUIDs (strings).
+ */
 export interface GraphEdge {
-  id: string;
-  source: string;
-  target: string;
-  type: string;
+  id?: string;  // Relation UUID (optional)
+  source: number;  // Entry ID (BigAutoField)
+  target: number;  // Entry ID (BigAutoField)
+  type?: string;
+  label?: string;
   properties?: Record<string, any>;
 }
 

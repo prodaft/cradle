@@ -2,9 +2,9 @@
  * Hook for common API call pattern with error handling
  */
 
-import { useCallback, useState } from 'react';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { handleAPIError, parseAPIError, ParsedAPIError } from '@/utils/api';
+import { useCallback, useState } from 'react';
 
 /**
  * Options for execute function
@@ -28,8 +28,7 @@ export interface UseAPICallReturn {
     options?: ExecuteOptions
   ) => (...args: any[]) => Promise<T>;
   loading: boolean;
-  error: ParsedAPIError | null;
-  clearError: () => void;
+  handleError: (err: unknown, options: ExecuteOptions) => Promise<ParsedAPIError>;
 }
 
 /**
@@ -95,23 +94,8 @@ export function useAPICall(): UseAPICallReturn {
 
         return result;
       } catch (err) {
-        const parsed = await parseAPIError(err);
-        setError(parsed);
-
-        // Only notify if not suppressed
-        if (!options.suppressNotification) {
-          handleAPIError(parsed, notify, {
-            message: options.errorMessage,
-            duration: options.duration,
-          });
-        }
-
-        // Optional error callback
-        if (options.onError) {
-          options.onError(parsed);
-        }
-
-        throw parsed; // Re-throw for caller to handle if needed
+        let parsed = await handleError(err, options);
+        throw parsed;
       } finally {
         setLoading(false);
       }
@@ -136,19 +120,36 @@ export function useAPICall(): UseAPICallReturn {
     [execute]
   );
 
-  /**
-   * Clear the error state
+  /** 
+   * Handle an error from an API call
+   * 
+   * @param error - The error to handle
+   * @returns The error
    */
-  const clearError = useCallback((): void => {
-    setError(null);
-  }, []);
+  const handleError = useCallback(async (err: unknown, options: ExecuteOptions) => {
+    const parsed = await parseAPIError(err);
+
+    // Only notify if not suppressed
+    if (!options.suppressNotification) {
+      handleAPIError(parsed, notify, {
+        message: options.errorMessage,
+        duration: options.duration,
+      });
+    }
+
+    // Optional error callback
+    if (options.onError) {
+      options.onError(parsed);
+    }
+
+    return parsed;
+  }, [notify]);
 
   return {
     execute,
     executor,
     loading,
-    error,
-    clearError,
+    handleError,
   };
 }
 

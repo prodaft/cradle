@@ -7,6 +7,7 @@ import {
 } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
+import type { EdgeRelation } from '@services/cradle/models';
 import { format, parseISO } from 'date-fns';
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 import { ChangeEvent, useEffect, useState } from 'react';
@@ -21,15 +22,6 @@ interface Node {
     [key: string]: any;
 }
 
-interface Edge {
-    id: string;
-    src: string;
-    dst: string;
-    source?: string;
-    target?: string;
-    [key: string]: any;
-}
-
 interface Alert {
     show: boolean;
     message: string;
@@ -37,7 +29,7 @@ interface Alert {
 }
 
 interface SelectorOption {
-    value: string;
+    value: number;
     label: string;
 }
 
@@ -57,7 +49,7 @@ interface QueryValues {
 interface PaginatedGraphFetchProps {
     queryValues: QueryValues;
     setQueryValues: (values: any) => void;
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
 }
 
@@ -136,7 +128,7 @@ export default function PaginatedGraphFetch({
 
             has_next = response.hasNext;
             const { entries, relations, colors } = response.results;
-            const hasEntries = entries && entries.length > 0;
+            const hasEntries = entries && Object.keys(entries).length > 0;
             const hasRelations = relations && relations.length > 0;
 
             setHasNextPage(has_next);
@@ -182,10 +174,6 @@ export default function PaginatedGraphFetch({
                         : truncateText(`${e.subtype}: ${e.name || e.id}`, 25),
                 color: colors[e.subtype] || '#4A90E2',
             }));
-            relations.forEach((r: Edge) => {
-                r.source = String(r.src);
-                r.target = String(r.dst);
-            });
             addNodes(nodes);
             addEdges(relations);
             setAlert({ show: false, message: '', color: 'red' });
@@ -326,7 +314,7 @@ export default function PaginatedGraphFetch({
                             isMulti={false}
                             placeholder='Select source'
                             className='text-sm'
-                            disabled={isGraphFetching}
+                            isDisabled={isGraphFetching}
                         />
                     </div>
                 </div>

@@ -1,27 +1,32 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from ..serializers import Enable2FASerializer, Verify2FASerializer
-from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_otp.plugins.otp_totp.models import TOTPDevice
+from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
+
 from ..exceptions import (
+    InvalidTwoFactorTokenException,
     TwoFactorAlreadyEnabledException,
     TwoFactorNotEnabledException,
-    InvalidTwoFactorTokenException,
     UserErrorCodes,
 )
+from ..serializers import Enable2FASerializer, Verify2FASerializer
 
 
 @extend_schema_view(
     post=extend_schema(
         summary="Enable 2FA",
         description="Initiates 2FA setup for the user and returns a QR code URL",
+        request=None,
         responses={
-            200: {"description": "Returns QR code URL for 2FA setup"},
+            200: Enable2FASerializer,
             **get_error_responses(UserErrorCodes.TWO_FACTOR_ALREADY_ENABLED),
             **get_common_error_responses(),
         },
@@ -30,24 +35,20 @@ from ..exceptions import (
 class Enable2FAView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = Enable2FASerializer
 
     def post(self, request):
         if request.user.two_factor_enabled:
-            raise TwoFactorAlreadyEnabledException(
-                detail="2FA is already enabled"
-            )
+            raise TwoFactorAlreadyEnabledException(detail="2FA is already enabled")
 
-        # The enable_2fa method now handles the transaction and potential race conditions
         config_url = request.user.enable_2fa()
-        return Response({"config_url": config_url})
+        return Response(Enable2FASerializer(data={"config_url": config_url}).data)
 
 
 @extend_schema_view(
     post=extend_schema(
         summary="Verify 2FA Setup",
         description="Verifies the 2FA token and completes the setup",
-        request=Enable2FASerializer,
+        request=Verify2FASerializer,
         responses={
             200: {"description": "2FA setup completed successfully"},
             **get_validation_error_response(),
@@ -63,15 +64,13 @@ class Verify2FASetupView(APIView):
     def post(self, request):
         from django.db import transaction
 
-        serializer = Enable2FASerializer(data=request.data)
+        serializer = Verify2FASerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         token = serializer.validated_data["token"]
 
         if not request.user.verify_2fa_token(token):
-            raise InvalidTwoFactorTokenException(
-                detail="Invalid token"
-            )
+            raise InvalidTwoFactorTokenException(detail="Invalid token")
 
         with transaction.atomic():
             confirmed_devices = TOTPDevice.objects.select_for_update().filter(
@@ -111,9 +110,7 @@ class Disable2FAView(APIView):
 
     def post(self, request):
         if not request.user.two_factor_enabled:
-            raise TwoFactorNotEnabledException(
-                detail="2FA is not enabled"
-            )
+            raise TwoFactorNotEnabledException(detail="2FA is not enabled")
 
         serializer = Verify2FASerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

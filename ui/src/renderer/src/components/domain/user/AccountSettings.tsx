@@ -1,9 +1,3 @@
-import { yupResolver } from '@hookform/resolvers/yup';
-import { Edit, Key, Lock, Settings, User } from 'iconoir-react';
-import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useId, useState, FormEvent } from 'react';
-import { useForm } from 'react-hook-form';
-import * as Yup from 'yup';
 import vimIcon from '@/assets/vim32x32.gif';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
@@ -11,13 +5,20 @@ import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { UserCreateRequestThemeEnum, UserRetrieve } from '@/services/cradle/models';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
+import SnippetList from '@components/base/SnippetList/SnippetList';
 import FormField from '@components/forms/FormField';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@components/modals/notes/MarkdownEditorModal';
-import SnippetList from '@components/base/SnippetList/SnippetList';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { Edit, Key, Lock, Settings, User } from 'iconoir-react';
+import { QRCodeSVG } from 'qrcode.react';
 import type { ComponentType } from 'react';
+import { FormEvent, useEffect, useId, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import * as Yup from 'yup';
 
 interface AccountFormData {
     id: string;
@@ -28,7 +29,7 @@ interface AccountFormData {
     role: string;
     vim_mode: boolean;
     vimMode?: boolean;
-    theme?: string;
+    theme?: UserCreateRequestThemeEnum;
     email_confirmed: boolean;
     is_active: boolean;
 }
@@ -51,7 +52,8 @@ interface Alert {
     color: string;
 }
 
-const accountSettingsSchema = Yup.object().shape({
+const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().shape({
+    id: Yup.string().notRequired(),
     username: Yup.string().required('Username is required'),
     email: Yup.string().email('Invalid email').required('Email is required'),
     password: Yup.string().when('$isEdit', {
@@ -68,7 +70,9 @@ const accountSettingsSchema = Yup.object().shape({
     email_confirmed: Yup.boolean(),
     is_active: Yup.boolean(),
     vim_mode: Yup.boolean(),
-});
+    vimMode: Yup.boolean().notRequired(),
+    theme: Yup.string().notRequired(),
+}) as Yup.ObjectSchema<AccountFormData>;
 
 export default function AccountSettings({ target = 'me', isEdit = true, onAdd }: AccountSettingsProps) {
     const { navigate, navigateLink } = useCradleNavigate();
@@ -86,8 +90,9 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
     const [passwordError, setPasswordError] = useState('');
     const [twoFactorCode, setTwoFactorCode] = useState('');
     const [qrCodeUrl, setQrCodeUrl] = useState('');
+    const [user, setUser] = useState<UserRetrieve | null>(null);
     const [activeSection, setActiveSection] = useState('account');
-    const isOwnAccount = isEdit ? target === 'me' || profile?.userId === target : false;
+    const isOwnAccount = isEdit ? target === 'me' || profile?.id === target : false;
     const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
     const { setModal } = useModal();
     const vimModeId = useId();
@@ -137,6 +142,7 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
             usersApi
                 .usersRetrieve({ userId: target })
                 .then((user) => {
+                    setUser(user);
                     reset({
                         id: user.id,
                         username: user.username,
@@ -153,6 +159,7 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                     setTwoFactorEnabled(user.twoFactorEnabled || false);
                 })
                 .catch(displayError(setAlert, navigate));
+
         } else {
             reset(defaultValues);
         }
@@ -179,7 +186,7 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
             try {
                 const updatedUser = await usersApi.usersUpdate({
                     userId: data.id,
-                    userRetrieveRequest: payload,
+                    userUpdateRequest: payload,
                 });
 
                 if (isOwnAccount) {
@@ -327,10 +334,12 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
         if (twoFactorEnabled) {
             if (isOwnAccount) {
                 setShow2FASetup(true);
-            } else {
+            } else if (user) {
                 usersApi.usersUpdate({
                     userId: target,
-                    userRetrieveRequest: {
+                    userUpdateRequest: {
+                        username: user.username,
+                        email: user.email,
                         twoFactorEnabled: false,
                     },
                 });
@@ -342,12 +351,9 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
             }
         } else {
             setShow2FASetup(true);
-            // Initiate 2FA setup
             try {
-                const response = await usersApi.users2faEnableCreate({
-                    enable2FARequest: {},
-                });
-                setQrCodeUrl(response.configUrl || '');
+                const response = await usersApi.users2faEnableCreate();
+                setQrCodeUrl(response.configUrl);
             } catch (err) {
                 displayError(setAlert)(err);
             }
@@ -368,7 +374,7 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                 });
             } else {
                 await usersApi.users2faVerifyCreate({
-                    enable2FARequest: { token: twoFactorCode },
+                    verify2FARequest: { token: twoFactorCode },
                 });
                 setTwoFactorEnabled(true);
                 notify({
@@ -426,22 +432,20 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                             </div>
 
                             <FormField
-                                name='username'
+                                label='Username'
                                 type='text'
-                                labelText='Username'
                                 placeholder='Username'
                                 {...register('username')}
-                                error={errors.username?.message}
+                                error={errors.username}
                                 disabled={!isAdminAndNotOwn && isEdit}
                             />
 
                             <FormField
-                                name='email'
+                                label='Email'
                                 type='text'
-                                labelText='Email'
                                 placeholder='Email'
                                 {...register('email')}
-                                error={errors.email?.message}
+                                error={errors.email}
                                 disabled={!isAdminAndNotOwn && isEdit}
                             />
 
@@ -465,22 +469,20 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                             {isEdit ? (
                                 isAdminAndNotOwn && (
                                     <FormField
-                                        name='password'
+                                        label='Password'
                                         type='password'
-                                        labelText='Password'
                                         placeholder='Password'
                                         {...register('password')}
-                                        error={errors.password?.message}
+                                        error={errors.password}
                                     />
                                 )
                             ) : (
                                 <FormField
-                                    name='password'
+                                    label='Password'
                                     type='password'
-                                    labelText='Password'
                                     placeholder='Password'
                                     {...register('password')}
-                                    error={errors.password?.message}
+                                    error={errors.password}
                                 />
                             )}
 
@@ -517,20 +519,18 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
 
                                     <FormField
                                         type='checkbox'
-                                        labelText='Email Confirmed'
+                                        label='Email Confirmed'
                                         className='switch switch-ghost-primary'
                                         {...register('email_confirmed')}
                                         row={true}
-                                        error={errors.email_confirmed?.message}
                                     />
 
                                     <FormField
                                         type='checkbox'
-                                        labelText='Account Active'
+                                        label='Account Active'
                                         className='switch switch-ghost-primary'
                                         {...register('is_active')}
                                         row={true}
-                                        error={errors.is_active?.message}
                                     />
                                 </>
                             )}
@@ -866,12 +866,10 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
 
                         <div className='space-y-4'>
                             <FormField
-                                name='catalystKey'
+                                label='Catalyst API Key'
                                 type='password'
-                                labelText='Catalyst API Key'
                                 placeholder='Catalyst API Key'
                                 {...register('catalystKey')}
-                                error={errors.catalystKey?.message}
                             />
                         </div>
 
@@ -926,7 +924,6 @@ export default function AccountSettings({ target = 'me', isEdit = true, onAdd }:
                                     <input
                                         id={vimModeId}
                                         data-testid='vim-toggle'
-                                        name='vim-toggle'
                                         type='checkbox'
                                         className='switch switch-ghost-primary'
                                         {...register('vimMode')}

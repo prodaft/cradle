@@ -1,34 +1,18 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { Entry, NoteRetrieve } from '@/types';
 import {
     createDashboardLink,
     SubtypeHierarchy,
     truncateText,
 } from '@/utils/dashboard';
-import { displayError } from '@/utils/api';
 import Collapsible from '@components/base/Collapsible/Collapsible';
-
-interface Entry {
-    name: string;
-    subtype: string;
-}
-
-interface Note {
-    id: string;
-    entry_classes?: Record<string, any>;
-}
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 interface ReferenceTreeProps {
-    note: Note;
-    setAlert: (alert: Alert) => void;
+    note: NoteRetrieve;
 }
 
 type NextPageStatus = number | 'loading' | 'end';
@@ -42,14 +26,15 @@ type NextPageStatus = number | 'loading' | 'end';
  * @param {Note} props.note               - The note object containing entry_classes
  * @returns {JSX.Element|null}
  */
-export default function ReferenceTree({ note, setAlert }: ReferenceTreeProps) {
+export default function ReferenceTree({ note }: ReferenceTreeProps) {
     const [references, setReferences] = useState<Record<string, Entry[]>>({});
     const [nextPageStatus, setNextPageStatus] = useState<Record<string, NextPageStatus>>({});
     const { queryApi } = useApi();
+    const { execute } = useAPICall();
     const { navigate, navigateLink } = useCradleNavigate();
 
     // If there's no entry_classes, there is nothing to display
-    if (!note || !note.entry_classes) {
+    if (!note || !note.entries) {
         return null;
     }
 
@@ -82,32 +67,32 @@ export default function ReferenceTree({ note, setAlert }: ReferenceTreeProps) {
             [path]: 'loading',
         }));
 
-        try {
-            const response = await queryApi.queryList({
-                subtype: [path],
-                referencedIn: note.id,
-                page,
-            });
+        const response = await execute(() => queryApi.queryList({
+            subtype: [path],
+            referencedIn: note.id,
+            page,
+        }),
+            {
+                errorMessage: 'Failed to fetch references',
+            }
+        );
 
-            setReferences((prev) => ({
-                ...prev,
-                [path]: [...(references[path] || []), ...response.results],
-            }));
+        setReferences((prev) => ({
+            ...prev,
+            [path]: [...(references[path] || []), ...response.results],
+        }));
 
-            setNextPageStatus((prev) => ({
-                ...prev,
-                [path]: response.page === response.totalPages ? 'end' : response.page + 1,
-            }));
-        } catch (error) {
-            displayError(setAlert, navigate)(error);
-        }
+        setNextPageStatus((prev) => ({
+            ...prev,
+            [path]: response.page === response.totalPages ? 'end' : response.page + 1,
+        }));
     };
 
     return (
         <div className='dark:text-zinc-300 text-xs w-full pt-1 pl-3'>
-            {note?.entry_classes && Object.keys(note.entry_classes).length > 0 && (
+            {note?.entries && note.entries.length > 0 && (
                 <Collapsible label='References' open={false}>
-                    {new SubtypeHierarchy(note.entry_classes).convert(
+                    {new SubtypeHierarchy(note.entries).convert(
                         // --- Render for internal nodes (categories that have child categories) ---
                         (value, children) => (
                             <div

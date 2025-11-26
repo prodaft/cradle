@@ -1,47 +1,23 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { Report } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import ActionsTable from '@components/domain/activity/ActionsTable';
-import ListView from '@components/base/ListView/ListView';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import TableCard from '@components/base/Card/TableCard';
-
-interface Report {
-    id: string;
-    title: string;
-    status: string;
-    strategy: string;
-    anonymized: boolean;
-    created_at: string;
-    report_url?: string;
-}
+import ListView, { DateRangeFilter, SortDirection } from '@components/base/ListView/ListView';
+import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
+import ActionsTable, { Action } from '@components/domain/activity/ActionsTable';
+import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 interface ColumnFilters {
+    [key: string]: string | DateRangeFilter | undefined;
     user: string;
-    createdAt: {
-        from: string;
-        to: string;
-    };
-}
-
-interface Action {
-    value: string;
-    label: string;
-    handler: (items: string[]) => void;
-}
-
-interface Column {
-    key: string;
-    label: string;
-    sortable?: boolean;
-    filterType?: string;
+    createdAt: DateRangeFilter;
 }
 
 interface SelectProps {
@@ -68,7 +44,7 @@ export default function Reports() {
     const [page, setPage] = useState(Number(searchParams.get('reports_page')) || 1);
     const [totalPages, setTotalPages] = useState(1);
     const [sortField, setSortField] = useState(searchParams.get('reports_sort_field') || 'created_at');
-    const [sortDirection, setSortDirection] = useState(searchParams.get('reports_sort_direction') || 'desc');
+    const [sortDirection, setSortDirection] = useState<SortDirection>(searchParams.get('reports_sort_direction') as SortDirection || 'desc');
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('reports_pagesize')) ||
         10
@@ -140,7 +116,7 @@ export default function Reports() {
         setSearchParams(newParams, { replace: true });
     };
 
-    const handleSort = (newSortField: string, newSortDirection: string) => {
+    const handleSort = (newSortField: string, newSortDirection: SortDirection) => {
         setSortField(newSortField);
         setSortDirection(newSortDirection);
         setPage(1);
@@ -181,7 +157,7 @@ export default function Reports() {
 
     const handleRetry = async (reportId: string) => {
         try {
-            await reportsApi.reportsRetryCreate({ id: reportId, reportRequest: {} });
+            await reportsApi.reportsRetryCreate({ id: reportId });
             notify({
                 type: 'success',
                 text: 'Retrying to build report!',
@@ -196,7 +172,7 @@ export default function Reports() {
         }
     };
 
-    const handleColumnFilterChange = (column: string, value: any) => {
+    const handleColumnFilterChange = (column: string, value: string | DateRangeFilter) => {
         setColumnFilters(prev => ({
             ...prev,
             [column]: value,
@@ -204,16 +180,16 @@ export default function Reports() {
         setPage(1); // Reset to first page when filters change
     };
 
-    const columns: Column[] = [
+    const columns: Array<{ key: string; label: string; sortable?: boolean; filterType?: 'text' | 'date' }> = [
         { key: 'status', label: 'Status', sortable: true },
         { key: 'title', label: 'Title', sortable: true },
         { key: 'strategy', label: 'Strategy', sortable: true },
         { key: 'anonymized', label: 'Anonymized', sortable: true },
-        { key: 'createdAt', label: 'Created At', sortable: true, filterType: 'date' },
+        { key: 'createdAt', label: 'Created At', sortable: true, filterType: 'date' as const },
     ];
 
     // Define filterable columns with their handlers
-    const filterableColumns: Record<string, (value: any) => void> = {
+    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> = {
         user: (value) => handleColumnFilterChange('user', value),
         createdAt: (value) => handleColumnFilterChange('createdAt', value),
     };
@@ -225,9 +201,9 @@ export default function Reports() {
             // Download each report
             for (const id of idsArray) {
                 const report = reports.find(r => r.id === id);
-                if (report && report.report_url) {
+                if (report && report.reportUrl) {
                     // Fetch the file content
-                    const response = await fetch(report.report_url);
+                    const response = await fetch(report.reportUrl);
                     if (!response.ok) {
                         throw new Error(`Failed to fetch report: ${response.statusText}`);
                     }
@@ -290,15 +266,15 @@ export default function Reports() {
         };
 
         const handleRowClick = () => {
-            if (report.report_url) {
-                window.open(report.report_url, '_blank');
+            if (report.reportUrl) {
+                window.open(report.reportUrl, '_blank');
             }
         };
 
         return (
             <tr
                 key={report.id}
-                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${report.report_url ? 'hover:cursor-pointer' : 'cursor-default'}`}
+                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${report.reportUrl ? 'hover:cursor-pointer' : 'cursor-default'}`}
                 onClick={handleRowClick}
             >
                 {enableMultiSelect && onSelect && (
@@ -313,14 +289,14 @@ export default function Reports() {
                         </div>
                     </td>
                 )}
-                <td className={statusColors[report.status] || 'cradle-text-secondary'}>
-                    {capitalizeString(report.status)}
+                <td className={report.status ? statusColors[report.status] : 'cradle-text-secondary'}>
+                    {capitalizeString(report.status || '')}
                 </td>
                 <td className='cradle-text-primary'>{truncateText(report.title, 50)}</td>
                 <td className='cradle-text-secondary'>{capitalizeString(report.strategy || 'N/A')}</td>
                 <td className='cradle-text-secondary'>{report.anonymized ? 'Yes' : 'No'}</td>
                 <td className='cradle-text-secondary'>
-                    {formatDate(new Date(report.created_at))}
+                    {formatDate(new Date(report.createdAt || ''))}
                 </td>
             </tr>
         );

@@ -39,12 +39,6 @@ export interface EnrichmentSettingsRequest {
     forEclasses?: Array<string>;
     /**
      * 
-     * @type {string}
-     * @memberof EnrichmentSettingsRequest
-     */
-    enricherType: string;
-    /**
-     * 
      * @type {any}
      * @memberof EnrichmentSettingsRequest
      */
@@ -55,7 +49,6 @@ export interface EnrichmentSettingsRequest {
  * Check if a given object implements the EnrichmentSettingsRequest interface.
  */
 export function instanceOfEnrichmentSettingsRequest(value: object): value is EnrichmentSettingsRequest {
-    if (!('enricherType' in value) || value['enricherType'] === undefined) return false;
     return true;
 }
 
@@ -72,7 +65,6 @@ export function EnrichmentSettingsRequestFromJSONTyped(json: any, ignoreDiscrimi
         'id': json['id'] == null ? undefined : json['id'],
         'enabled': json['enabled'] == null ? undefined : json['enabled'],
         'forEclasses': json['for_eclasses'] == null ? undefined : json['for_eclasses'],
-        'enricherType': json['enricher_type'],
         'settings': json['settings'] == null ? undefined : json['settings'],
     };
 }
@@ -91,7 +83,6 @@ export function EnrichmentSettingsRequestToJSONTyped(value?: EnrichmentSettingsR
         'id': value['id'],
         'enabled': value['enabled'],
         'for_eclasses': value['forEclasses'],
-        'enricher_type': value['enricherType'],
         'settings': value['settings'],
     };
 }

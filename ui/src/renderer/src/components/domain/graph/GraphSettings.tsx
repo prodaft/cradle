@@ -1,10 +1,7 @@
 import { ChangeEvent } from 'react';
+import type { GraphEdge } from '@/types/index';
 
 interface Node {
-    [key: string]: any;
-}
-
-interface Edge {
     [key: string]: any;
 }
 
@@ -21,7 +18,7 @@ interface GraphSettingsProps {
     config: GraphConfig;
     setConfig: (config: GraphConfig | ((prev: GraphConfig) => GraphConfig)) => void;
     nodes: Node[];
-    edges: Edge[];
+    edges: GraphEdge[];
 }
 
 export default function GraphSettings({ config, setConfig, nodes, edges }: GraphSettingsProps) {

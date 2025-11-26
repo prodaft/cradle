@@ -1,13 +1,15 @@
 import useApi from '@/hooks/api/useApi';
+import { EdgeRelation } from '@/services/cradle';
 import {
     LinkTreeFlattener,
     truncateText,
 } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 import { Search } from 'iconoir-react';
 import { FormEvent, useEffect, useState } from 'react';
+import { MultiValue } from 'react-select';
 import Datepicker from 'react-tailwindcss-datepicker';
 import * as Yup from 'yup';
 
@@ -20,15 +22,6 @@ interface Node {
     [key: string]: any;
 }
 
-interface Edge {
-    id: string;
-    src: string;
-    dst: string;
-    source?: string;
-    target?: string;
-    [key: string]: any;
-}
-
 interface Alert {
     show: boolean;
     message: string;
@@ -36,18 +29,18 @@ interface Alert {
 }
 
 interface SelectorOption {
-    value: string;
-    id: string;
+    value: number;
+    id: number;
     degree?: number;
     type?: string;
     label: string;
 }
 
 interface FormValues {
-    src: string | null;
-    dst: string[];
-    startDate: string;
-    endDate: string;
+    src: number | null;
+    dst: number[];
+    startDate: Date;
+    endDate: Date;
 }
 
 interface QueryValues {
@@ -61,7 +54,7 @@ interface QueryValues {
 interface PathFindSearchProps {
     queryValues: QueryValues;
     setQueryValues: (values: any) => void;
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
 }
 
@@ -83,8 +76,8 @@ export default function PathFindSearch({
     const [formValues, setFormValues] = useState<FormValues>({
         src: null,
         dst: [],
-        startDate: queryValues.startDate,
-        endDate: queryValues.endDate,
+        startDate: parseISO(queryValues.startDate),
+        endDate: parseISO(queryValues.endDate),
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -101,8 +94,8 @@ export default function PathFindSearch({
         setFormValues({
             src: queryValues.src?.value || null,
             dst: queryValues.dst?.map((d) => d.value) || [],
-            startDate: queryValues.startDate,
-            endDate: queryValues.endDate,
+            startDate: parseISO(queryValues.startDate),
+            endDate: parseISO(queryValues.endDate),
         });
         setStartEntry(queryValues.src || null);
         setDestinationSelectors(queryValues.dst || []);
@@ -114,10 +107,9 @@ export default function PathFindSearch({
                 query: Array.isArray(q) ? q : [q],
                 wildcard: true,
             });
-            return results.results.map((alias: any) => ({
-                value: alias.id,
-                id: String(alias.id),
-                degree: alias.degree,
+            return results.results.map((alias) => ({
+                value: alias.id!,
+                id: alias.id!,
                 type: alias.subtype,
                 label: `${alias.subtype}:${alias.name}`,
             }));
@@ -191,7 +183,7 @@ export default function PathFindSearch({
                     e.label = truncateText(`${e.subtype}: ${e.name || e.id}`, 25);
                     e.color = colors[e.subtype];
                 });
-                addNodes(flattenedEntries);
+                addNodes(flattenedEntries as unknown as Node[]);
                 addEdges(relations);
 
                 setAlert({ show: false, message: '', color: 'red' });
@@ -245,11 +237,12 @@ export default function PathFindSearch({
                         </label>
                         <Selector
                             value={destinationSelectors}
-                            onChange={(selected: SelectorOption[] | null) => {
-                                setDestinationSelectors(selected || []);
+                            onChange={(selected: MultiValue<SelectorOption>) => {
+                                const mutableArray = Array.from(selected);
+                                setDestinationSelectors(mutableArray);
                                 setFieldValue(
                                     'dst',
-                                    (selected || []).map((s) => s.value),
+                                    mutableArray.map((s) => s.value),
                                 );
                             }}
                             fetchOptions={fetchEntries}
@@ -265,18 +258,18 @@ export default function PathFindSearch({
                         <label className='text-xs text-gray-400 mb-1'>Date Range</label>
                         <Datepicker
                             value={{
-                                startDate: parseISO(formValues.startDate),
-                                endDate: parseISO(formValues.endDate),
+                                startDate: formValues.startDate,
+                                endDate: formValues.endDate,
                             }}
                             onChange={(value: any) => {
                                 if (value.startDate && value.endDate) {
                                     setFieldValue(
                                         'startDate',
-                                        format(value.startDate, "yyyy-MM-dd'T'HH:mm"),
+                                        value.startDate,
                                     );
                                     setFieldValue(
                                         'endDate',
-                                        format(value.endDate, "yyyy-MM-dd'T'HH:mm"),
+                                        value.endDate,
                                     );
                                 }
                             }}

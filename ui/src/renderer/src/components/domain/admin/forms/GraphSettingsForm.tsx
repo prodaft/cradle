@@ -1,6 +1,6 @@
 import useApi from '@/hooks/api/useApi';
-import { ManagementActionsCreateActionNameEnum } from '@/services/cradle/apis';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -304,43 +304,43 @@ export default function GraphSettingsForm() {
                         type="checkbox"
                         row={true}
                         id="dissuade_hubs"
-                        labelText="Dissuade Hubs"
+                        label="Dissuade Hubs"
                         className="form-input switch switch-ghost-primary"
                         {...register('dissuade_hubs')}
-                        error={errors.dissuade_hubs?.message}
+                        error={errors.dissuade_hubs}
                       />
                       <FormField
                         type="checkbox"
                         row={true}
                         id="lin_log_mode"
-                        labelText="LinLog Mode"
+                        label="LinLog Mode"
                         className="form-input switch switch-ghost-primary"
                         {...register('lin_log_mode')}
-                        error={errors.lin_log_mode?.message}
+                        error={errors.lin_log_mode}
                       />
                       <FormField
                         type="checkbox"
                         row={true}
                         id="adjust_sizes"
-                        labelText="Adjust Sizes (Prevent Overlap)"
+                        label="Adjust Sizes (Prevent Overlap)"
                         className="form-input switch switch-ghost-primary"
                         {...register('adjust_sizes')}
-                        error={errors.adjust_sizes?.message}
+                        error={errors.adjust_sizes}
                       />
                       <FormField
                         type="number"
                         step="0.01"
                         id="jitter_tolerance"
-                        labelText="Jitter Tolerance"
+                        label="Jitter Tolerance"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('jitter_tolerance')}
-                        error={errors.jitter_tolerance?.message}
+                        error={errors.jitter_tolerance}
                       />
                       <FormField
                         type="checkbox"
                         row={true}
                         id="barnes_hut_optimize"
-                        labelText="Barnes-Hut Optimize"
+                        label="Barnes-Hut Optimize"
                         className="form-input switch switch-ghost-primary"
                         {...register('barnes_hut_optimize')}
                         error={
@@ -351,25 +351,25 @@ export default function GraphSettingsForm() {
                         type="number"
                         step="0.01"
                         id="barnes_hut_theta"
-                        labelText="Barnes-Hut Theta"
+                        label="Barnes-Hut Theta"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('barnes_hut_theta')}
-                        error={errors.barnes_hut_theta?.message}
+                        error={errors.barnes_hut_theta}
                       />
                       <FormField
                         type="number"
                         step="0.01"
                         id="scaling_ratio"
-                        labelText="Scaling Ratio"
+                        label="Scaling Ratio"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('scaling_ratio')}
-                        error={errors.scaling_ratio?.message}
+                        error={errors.scaling_ratio}
                       />
                       <FormField
                         type="checkbox"
                         row={true}
                         id="strong_gravity_mode"
-                        labelText="Strong Gravity Mode"
+                        label="Strong Gravity Mode"
                         className="form-input switch switch-ghost-primary"
                         {...register('strong_gravity_mode')}
                         error={
@@ -380,16 +380,16 @@ export default function GraphSettingsForm() {
                         type="number"
                         step="0.01"
                         id="gravity"
-                        labelText="Gravity Coefficient"
+                        label="Gravity Coefficient"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('gravity')}
-                        error={errors.gravity?.message}
+                        error={errors.gravity}
                       />
                       <FormField
                         type="number"
                         step="10"
                         id="max_iter_fa2"
-                        labelText="Max Iterations"
+                        label="Max Iterations"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('max_iter_fa2')}
                         error={errors.max_iter_fa2?.message}
@@ -402,60 +402,60 @@ export default function GraphSettingsForm() {
                       <FormField
                         type="number"
                         id="K"
-                        labelText="Edge Length Constant (K)"
+                        label="Edge Length Constant (K)"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('K')}
-                        error={errors.K?.message}
+                        error={errors.K}
                       />
                       <FormField
                         type="number"
                         id="p"
-                        labelText="Repulsive Force Strength (p)"
+                        label="Repulsive Force Strength (p)"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('p')}
-                        error={errors.p?.message}
+                        error={errors.p}
                       />
                       <FormField
                         type="number"
                         step="0.01"
                         id="theta"
-                        labelText="Tradeoff Between Speed and Precision (theta)"
+                        label="Tradeoff Between Speed and Precision (theta)"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('theta')}
-                        error={errors.theta?.message}
+                        error={errors.theta}
                       />
                       <FormField
                         type="number"
                         id="max_level"
-                        labelText="Max Level (for Multilevel Optimization)"
+                        label="Max Level (for Multilevel Optimization)"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('max_level')}
-                        error={errors.max_level?.message}
+                        error={errors.max_level}
                       />
                       <FormField
                         type="number"
                         id="r"
-                        labelText="r (Attractive Force Between Connected Components)"
+                        label="r (Attractive Force Between Connected Components)"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('r')}
-                        error={errors.r?.message}
+                        error={errors.r}
                       />
                       <FormField
                         type="number"
                         step="0.001"
                         id="epsilon"
-                        labelText="Convergence Precision (epsilon)"
+                        label="Convergence Precision (epsilon)"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('epsilon')}
-                        error={errors.epsilon?.message}
+                        error={errors.epsilon}
                       />
                       <FormField
                         type="number"
                         id="max_iter_gt"
-                        labelText="Maximum Iterations (max_iter)"
+                        label="Maximum Iterations (max_iter)"
                         className="form-input input input-ghost-primary input-block focus:ring-0"
                         {...register('max_iter_gt')}
-                        error={errors.max_iter_gt?.message}
+                        error={errors.max_iter_gt}
                       />
                     </>
                   )}
@@ -489,7 +489,7 @@ export default function GraphSettingsForm() {
               </Tab>
             </Tabs>
           </form>
-          <AlertBox alert={alert} setAlert={setAlert} />
+          <AlertBox alert={alert} />
         </div>
       </div>
     </div>

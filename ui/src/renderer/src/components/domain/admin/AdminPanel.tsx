@@ -1,16 +1,16 @@
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
+import { createDashboardLink } from '@/utils/dashboard';
 import {
   EnrichmentSubclass,
   Entity,
   EntryClass,
   MappingSubclass,
   UserRetrieve
-} from '@/services/cradle/models';
-import { createDashboardLink } from '@/utils/dashboard';
+} from '@services/cradle/models';
 import { uniqueId } from 'lodash';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactElement, ReactNode, useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation } from 'react-router-dom';
 import { Tab, Tabs } from '../../layout/Tabs/Tabs';
@@ -41,50 +41,49 @@ import UserSettingsForm from './forms/UserSettingsForm';
  * the logic for deletion, editing, and activity navigation.
  */
 export default function AdminPanel() {
-  const [entities, setEntities] = useState<ReactNode[] | null>(null);
-  const [mappingTypes, setMappingTypes] = useState<ReactNode[] | null>(null);
-  const [enrichmentTypes, setEnrichmentTypes] = useState<ReactNode[] | null>(null);
-  const [users, setUsers] = useState<ReactNode[] | null>(null);
+  const [entities, setEntities] = useState<ReactElement[] | null>(null);
+  const [mappingTypes, setMappingTypes] = useState<ReactElement[] | null>(null);
+  const [enrichmentTypes, setEnrichmentTypes] = useState<ReactElement[] | null>(null);
+  const [users, setUsers] = useState<ReactElement[] | null>(null);
   const { isAdmin } = useProfile();
-  const [entryTypes, setEntryTypes] = useState<ReactNode[] | null>(null);
+  const [entryTypes, setEntryTypes] = useState<ReactElement[] | null>(null);
   const [rightPane, setRightPane] = useState<ReactNode | null>(null);
   const location = useLocation();
   const { entriesApi, usersApi, queryApi, intelioApi } = useApi();
   const { execute } = useAPICall();
 
   const displayEntities = async () => {
-    execute(() => queryApi.queryList({ type: ['entity'] }))
+    execute(() => queryApi.queryList({ type: 'entity' }))
       .then((response) => {
-        const fetchedEntities = response.results as Entity[];
+        const fetchedEntities = response.results;
         setEntities(
           fetchedEntities.map((c) => {
+            const subtype = c.subtype || 'unknown';
             return (
               <AdminPanelCardEntity
-                id={c.id}
-                key={`${c.subtype}:${c.name}`}
+                id={c.id?.toString() || ''}
+                key={`${subtype}:${c.name}`}
                 name={c.name}
-                searchKey={`${c.subtype}:${c.name} ${c.description}`}
                 onDelete={displayEntities}
                 link={createDashboardLink(c)}
-                typename={c.subtype}
+                typename={subtype}
                 setRightPane={setRightPane}
               />
             );
           })
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const displayEntryTypes = async () => {
     execute(() =>
-      entriesApi.entryClassesList({ includeCount: true, includeAliases: true })
+      entriesApi.entryClassesList({ showCount: true })
     )
       .then((fetchedEntryTypes) => {
         setEntryTypes(
-          (fetchedEntryTypes as any[]).map((c) => ( // TODO: Fix type when available in API, includeCount might return a different type or it's EntryClass[]
-             <AdminPanelCardEntryType
-              searchKey={c.subtype}
+          (fetchedEntryTypes as any[]).map((c) => ( // TODO: Fix type when available in API, showCount might return a different type or it's EntryClass[]
+            <AdminPanelCardEntryType
               id={c.subtype}
               key={c.subtype}
               name={c.subtype}
@@ -95,7 +94,7 @@ export default function AdminPanel() {
           ))
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const displayUsers = async () => {
@@ -104,8 +103,7 @@ export default function AdminPanel() {
         setUsers(
           fetchedUsers.map((user: UserRetrieve) => (
             <AdminPanelCardUser
-              id={user.id}
-              searchKey={user.username}
+              id={user.id?.toString() || user.username}
               key={user.username}
               name={user.username}
               onDelete={displayUsers}
@@ -114,7 +112,7 @@ export default function AdminPanel() {
           ))
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const displayMappingTypes = async () => {
@@ -127,7 +125,6 @@ export default function AdminPanel() {
                 <AdminPanelCardTypeMapping
                   id={x.className}
                   key={x.className}
-                  searchKey={x.name}
                   name={x.name}
                   setRightPane={setRightPane}
                 />
@@ -136,7 +133,7 @@ export default function AdminPanel() {
           );
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const displayEnrichmentTypes = async () => {
@@ -157,7 +154,7 @@ export default function AdminPanel() {
           );
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   useEffect(() => {
@@ -180,6 +177,7 @@ export default function AdminPanel() {
               <Tabs defaultTab={0} queryParam={'tab'}>
                 <Tab title="Entities">
                   <AdminPanelSection
+                    title="Entities"
                     addEnabled={isAdmin()}
                     addTooltipText="Add Entity"
                     handleAdd={(onAdd) =>
@@ -188,15 +186,16 @@ export default function AdminPanel() {
                           isEdit={false}
                           key={uniqueId('entity-form-')}
                           onAdd={(c: Entity) => {
+                            const entity = c;
+                            const subtype = entity.subtype || 'unknown';
                             onAdd(
                               <AdminPanelCardEntity
-                                id={c.id}
-                                key={`${c.subtype}:${c.name}`}
-                                name={c.name}
-                                searchKey={`${c.subtype}:${c.name} ${c.description}`}
+                                id={entity.id?.toString() || ''}
+                                key={`${subtype}:${entity.name}`}
+                                name={entity.name}
                                 onDelete={displayEntities}
-                                link={createDashboardLink(c)}
-                                typename={c.subtype}
+                                link={createDashboardLink({ name: entity.name, subtype, type: entity.type })}
+                                typename={subtype}
                                 setRightPane={setRightPane}
                               />
                             );
@@ -211,6 +210,7 @@ export default function AdminPanel() {
                 </Tab>
                 <Tab title="Entry Types">
                   <AdminPanelSection
+                    title="Entry Types"
                     addEnabled={isAdmin()}
                     addTooltipText="Add Entry Class"
                     handleAdd={(onAdd) =>
@@ -221,12 +221,11 @@ export default function AdminPanel() {
                           onAdd={(c: EntryClass) =>
                             onAdd(
                               <AdminPanelCardEntryType
-                                searchKey={c.subtype}
                                 id={c.subtype}
                                 key={c.subtype}
                                 name={c.subtype}
                                 // @ts-ignore - count might not be in EntryClass but in a subclass or extended type from list response
-                                count={c.count} 
+                                count={c.count}
                                 onDelete={displayEntryTypes}
                                 setRightPane={setRightPane}
                               />
@@ -242,7 +241,10 @@ export default function AdminPanel() {
                 </Tab>
                 <Tab title="Type Mappings">
                   <AdminPanelSection
+                    title="Type Mappings"
                     addEnabled={false}
+                    addTooltipText=""
+                    handleAdd={() => { }}
                     isLoading={mappingTypes === null}
                   >
                     {mappingTypes}
@@ -251,6 +253,7 @@ export default function AdminPanel() {
                 {isAdmin() && (
                   <Tab title="Users">
                     <AdminPanelSection
+                      title="Users"
                       addEnabled={true}
                       addTooltipText="Add User"
                       handleAdd={(onAdd) =>
@@ -261,8 +264,7 @@ export default function AdminPanel() {
                             onAdd={(user: UserRetrieve) =>
                               onAdd(
                                 <AdminPanelCardUser
-                                  id={user.id}
-                                  searchKey={user.username}
+                                  id={user.id?.toString() || user.username}
                                   key={user.username}
                                   name={user.username}
                                   onDelete={displayUsers}
@@ -282,7 +284,10 @@ export default function AdminPanel() {
                 {isAdmin() && (
                   <Tab title="Enrichment">
                     <AdminPanelSection
+                      title="Enrichment"
                       addEnabled={false}
+                      addTooltipText=""
+                      handleAdd={() => { }}
                       isLoading={enrichmentTypes === null}
                     >
                       {enrichmentTypes}
@@ -292,12 +297,14 @@ export default function AdminPanel() {
                 {isAdmin() && (
                   <Tab title="Management">
                     <AdminPanelSection
+                      title="Management"
                       addEnabled={false}
+                      addTooltipText=""
+                      handleAdd={() => { }}
                       isLoading={false}
                     >
                       {[
                         <AdminPanelCardManagement
-                          id="note"
                           key="note"
                           setRightPane={setRightPane}
                           name="Note Settings"
@@ -305,28 +312,24 @@ export default function AdminPanel() {
                         />,
 
                         <AdminPanelCardManagement
-                          id="files"
                           key="files"
                           setRightPane={setRightPane}
                           name="File Settings"
                           SettingComponent={FileSettingsForm}
                         />,
                         <AdminPanelCardManagement
-                          id="graph"
                           key="graph"
                           setRightPane={setRightPane}
                           name="Graph Settings"
                           SettingComponent={GraphSettingsForm}
                         />,
                         <AdminPanelCardManagement
-                          id="entries"
                           key="entries"
                           setRightPane={setRightPane}
                           name="Entry Settings"
                           SettingComponent={EntriesSettingsForm}
                         />,
                         <AdminPanelCardManagement
-                          id="users"
                           key="users"
                           setRightPane={setRightPane}
                           name="New User Settings"

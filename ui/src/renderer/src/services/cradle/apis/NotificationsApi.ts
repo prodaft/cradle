@@ -15,10 +15,13 @@
 
 import * as runtime from '../runtime';
 import type {
+  Notification,
   UnreadNotifications,
   UpdateNotificationRequest,
 } from '../models/index';
 import {
+    NotificationFromJSON,
+    NotificationToJSON,
     UnreadNotificationsFromJSON,
     UnreadNotificationsToJSON,
     UpdateNotificationRequestFromJSON,
@@ -36,10 +39,10 @@ export interface NotificationsUpdateRequest {
 export class NotificationsApi extends runtime.BaseAPI {
 
     /**
-     * Returns the count of unread notifications for the authenticated user.
-     * Get unread notifications count
+     * Retrieve all notifications for the authenticated user, sorted from newest to oldest.
+     * Fetch Notifications
      */
-    async notificationsRetrieveRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnreadNotifications>> {
+    async notificationsListRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Notification>>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -62,15 +65,15 @@ export class NotificationsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => UnreadNotificationsFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(NotificationFromJSON));
     }
 
     /**
-     * Returns the count of unread notifications for the authenticated user.
-     * Get unread notifications count
+     * Retrieve all notifications for the authenticated user, sorted from newest to oldest.
+     * Fetch Notifications
      */
-    async notificationsRetrieve(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UnreadNotifications> {
-        const response = await this.notificationsRetrieveRaw(initOverrides);
+    async notificationsList(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Notification>> {
+        const response = await this.notificationsListRaw(initOverrides);
         return await response.value();
     }
 

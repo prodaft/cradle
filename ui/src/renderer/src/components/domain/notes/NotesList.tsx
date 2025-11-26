@@ -1,3 +1,13 @@
+import { useModal } from '@/contexts/ui/ModalContext';
+import useApi from '@/hooks/api/useApi';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import {
+    capitalizeString,
+    truncateText,
+} from '@/utils/dashboard';
+import { formatDate } from '@/utils/dates';
+import { parseMarkdownInline } from '@/utils/parser';
+import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import {
     DesignNib,
     InfoCircleSolid,
@@ -8,25 +18,13 @@ import {
 } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
-import { useModal } from '@/contexts/ui/ModalContext';
-import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { parseMarkdownInline } from '@/utils/parser';
-import {
-    capitalizeString,
-    truncateText,
-} from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
-import ActionsTable from '../activity/ActionsTable';
-import AlertBox from '../../base/Alert/AlertBox';
-import ListView from '../../base/ListView/ListView';
-import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
-import Note from './Note';
+import TableCard from '../../base/Card/TableCard';
+import ListView, { DateRangeFilter, SortDirection } from '../../base/ListView/ListView';
 import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
-import TableCard from '../../base/Card/TableCard';
 import Tooltip from '../../base/Tooltip/Tooltip';
+import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
+import ActionsTable from '../activity/ActionsTable';
 import { NotePreviewContent } from './NotePreviewContent';
 
 interface Alert {
@@ -40,7 +38,7 @@ interface Query {
     author__username?: string;
     editor__username?: string;
     date?: string;
-    references?: string;
+    references?: string[];
     created_date_from?: string;
     created_date_to?: string;
     updated_date_from?: string;
@@ -50,16 +48,12 @@ interface Query {
     truncate?: number;
 }
 
-interface DateRange {
-    from: string;
-    to: string;
-}
-
 interface ColumnFilters {
+    [key: string]: string | DateRangeFilter | undefined;
     author: string;
     editor: string;
-    createdAt: DateRange;
-    lastChanged: DateRange;
+    createdAt: DateRangeFilter;
+    lastChanged: DateRangeFilter;
 }
 
 interface ContentSearch {
@@ -74,7 +68,7 @@ interface NotesListProps {
     noteActions?: unknown[];
     hideActionBar?: boolean;
     references?: unknown;
-    onFilterChange?: ((column: string, value: string | DateRange) => void) | null;
+    onFilterChange?: ((column: string, value: string | DateRangeFilter) => void) | null;
     contentSearch?: ContentSearch | null;
 }
 
@@ -94,7 +88,7 @@ export default function NotesList({
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(Number(searchParams.get('notes_page')) || 1);
     const [sortField, setSortField] = useState(searchParams.get('notes_sort_field') || 'timestamp');
-    const [sortDirection, setSortDirection] = useState(searchParams.get('notes_sort_direction') || 'desc');
+    const [sortDirection, setSortDirection] = useState<SortDirection>(searchParams.get('notes_sort_direction') as SortDirection || 'desc');
     const { navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
     const { fleetingNotesApi, notesApi } = useApi();
@@ -162,7 +156,7 @@ export default function NotesList({
         }
     };
 
-    const handleSort = (field: string, direction: string) => {
+    const handleSort = (field: string, direction: SortDirection) => {
         setSortField(field);
         setSortDirection(direction);
 
@@ -174,7 +168,7 @@ export default function NotesList({
         setSearchParams(newParams, { replace: true });
     };
 
-    const handleColumnFilter = (column: string, value: string | DateRange) => {
+    const handleColumnFilter = (column: string, value: string | DateRangeFilter) => {
         setColumnFilters(prev => ({
             ...prev,
             [column]: value,
@@ -185,7 +179,7 @@ export default function NotesList({
         }
     };
 
-    const filterableColumns: Record<string, (value: string | DateRange) => void> = {
+    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> = {
         author: (value) => handleColumnFilter('author', value),
         editor: (value) => handleColumnFilter('editor', value),
         createdAt: (value) => handleColumnFilter('createdAt', value),
@@ -319,13 +313,13 @@ export default function NotesList({
         },
     ];
 
-    const columns = [
+    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> = [
         { key: 'title', label: 'Title' },
         { key: 'description', label: 'Description' },
-        { key: 'author', label: 'Author', filterType: 'text' },
-        { key: 'editor', label: 'Editor', filterType: 'text' },
-        { key: 'createdAt', label: 'Created At', filterType: 'date' },
-        { key: 'lastChanged', label: 'Updated At', filterType: 'date' },
+        { key: 'author', label: 'Author', filterType: 'text' as const },
+        { key: 'editor', label: 'Editor', filterType: 'text' as const },
+        { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
+        { key: 'lastChanged', label: 'Updated At', filterType: 'date' as const },
     ];
 
     const renderNotePreview = (note: NoteRetrieve) => {
@@ -345,7 +339,6 @@ export default function NotesList({
                 side="top"
                 align="start"
                 sideOffset={32}
-                color="primary"
                 size="lg"
                 key={note.id}
             >
@@ -423,8 +416,6 @@ export default function NotesList({
     return (
         <PreviewTipProvider delayDuration={800}>
             <div className='flex flex-col space-y-4'>
-                <AlertBox alert={alert} setAlert={setAlert} />
-
                 {!loading && (
                     <TableCard>
                         <div className='flex flex-wrap items-center justify-between gap-4'>

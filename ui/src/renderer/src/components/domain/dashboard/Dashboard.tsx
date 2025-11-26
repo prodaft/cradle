@@ -4,7 +4,7 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { useTabContext } from '@/hooks/tabs/useTabContext';
-import { EntryResponse } from '@/services/cradle/models';
+import { EntryResponse } from '@services/cradle/models';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import NotFound from '../../feedback/NotFound';
@@ -49,10 +49,10 @@ export default function Dashboard() {
   useEffect(() => {
     setEntryMissing(false);
     setContentObject(null);
-    
+
     if (!subtype || !name) {
-        setEntryMissing(true);
-        return;
+      setEntryMissing(true);
+      return;
     }
 
     queryApi
@@ -65,7 +65,7 @@ export default function Dashboard() {
         const obj = response.results[0];
 
         if (dashboard.current) {
-            dashboard.current.scrollTo(0, 0);
+          dashboard.current.scrollTo(0, 0);
         }
         setContentObject(obj);
       });
@@ -84,13 +84,13 @@ export default function Dashboard() {
     }
 
     execute(
-      () => entriesApi.entitiesDestroy({ entityId: contentObject.id }),
+      () => entriesApi.entitiesDestroy({ entityId: contentObject.id! }),
       { successMessage: 'Entity deleted successfully.' }
     )
       .then(() => {
         navigate('/');
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   if (entryMissing) {

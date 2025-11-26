@@ -1,3 +1,4 @@
+from drf_spectacular.extensions import OpenApiSerializerExtension
 from rest_framework import serializers
 
 from access.enums import AccessType
@@ -109,6 +110,20 @@ class SubGraphSerializer(serializers.Serializer):
         )
 
         return serializer
+
+
+class EntryWithDepthSerializerExtension(OpenApiSerializerExtension):
+    target_class = "knowledge_graph.serializers.EntryWithDepthSerializer"
+
+    def map_serializer(self, auto_schema, direction):
+        schema = super().map_serializer(auto_schema, direction)
+        properties = schema.get("properties", {})
+        properties["depth"] = {
+            "type": "integer",
+            "description": "Depth of the entry in the graph traversal",
+            "readOnly": True,
+        }
+        return schema
 
 
 class EntryWithDepthSerializer(EntrySerializer):

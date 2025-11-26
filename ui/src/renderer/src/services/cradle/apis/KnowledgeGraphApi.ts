@@ -16,15 +16,18 @@
 import * as runtime from '../runtime';
 import type {
   GraphInaccessibleResponse,
-  PaginatedEntryWithDepthSerializerResponse,
+  LazyPaginatedEntryWithDepthSerializerResponse,
+  LazyPaginatedSubGraphSerializerResponse,
   PathfindQueryRequest,
   SubGraph,
 } from '../models/index';
 import {
     GraphInaccessibleResponseFromJSON,
     GraphInaccessibleResponseToJSON,
-    PaginatedEntryWithDepthSerializerResponseFromJSON,
-    PaginatedEntryWithDepthSerializerResponseToJSON,
+    LazyPaginatedEntryWithDepthSerializerResponseFromJSON,
+    LazyPaginatedEntryWithDepthSerializerResponseToJSON,
+    LazyPaginatedSubGraphSerializerResponseFromJSON,
+    LazyPaginatedSubGraphSerializerResponseToJSON,
     PathfindQueryRequestFromJSON,
     PathfindQueryRequestToJSON,
     SubGraphFromJSON,
@@ -63,7 +66,7 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
      * Fetch graph data with entries and edges for visualization.
      * Fetch knowledge graph data
      */
-    async knowledgeGraphFetchRetrieveRaw(requestParameters: KnowledgeGraphFetchRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubGraph>> {
+    async knowledgeGraphFetchRetrieveRaw(requestParameters: KnowledgeGraphFetchRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LazyPaginatedSubGraphSerializerResponse>> {
         if (requestParameters['src'] == null) {
             throw new runtime.RequiredError(
                 'src',
@@ -105,14 +108,14 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SubGraphFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => LazyPaginatedSubGraphSerializerResponseFromJSON(jsonValue));
     }
 
     /**
      * Fetch graph data with entries and edges for visualization.
      * Fetch knowledge graph data
      */
-    async knowledgeGraphFetchRetrieve(requestParameters: KnowledgeGraphFetchRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SubGraph> {
+    async knowledgeGraphFetchRetrieve(requestParameters: KnowledgeGraphFetchRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LazyPaginatedSubGraphSerializerResponse> {
         const response = await this.knowledgeGraphFetchRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -175,7 +178,7 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
      * Get neighboring entries in the knowledge graph for a given source entry.
      * Get graph neighbors
      */
-    async knowledgeGraphNeighborsRetrieveRaw(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedEntryWithDepthSerializerResponse>> {
+    async knowledgeGraphNeighborsRetrieveRaw(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LazyPaginatedEntryWithDepthSerializerResponse>> {
         if (requestParameters['src'] == null) {
             throw new runtime.RequiredError(
                 'src',
@@ -225,14 +228,14 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedEntryWithDepthSerializerResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => LazyPaginatedEntryWithDepthSerializerResponseFromJSON(jsonValue));
     }
 
     /**
      * Get neighboring entries in the knowledge graph for a given source entry.
      * Get graph neighbors
      */
-    async knowledgeGraphNeighborsRetrieve(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedEntryWithDepthSerializerResponse> {
+    async knowledgeGraphNeighborsRetrieve(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LazyPaginatedEntryWithDepthSerializerResponse> {
         const response = await this.knowledgeGraphNeighborsRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }

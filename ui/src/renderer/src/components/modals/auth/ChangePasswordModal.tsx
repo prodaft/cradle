@@ -3,7 +3,7 @@ import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import { displayError } from '@/utils/api';
 import AlertBox from '@/components/base/Alert/AlertBox';
-import FormField from '@/components/forms/FormField/FormField';
+import FormField from '@/components/forms/FormField';
 
 /**
  * Form data structure for password change
@@ -86,10 +86,10 @@ export default function ChangePasswordModal({ closeModal }: ChangePasswordModalP
         }
     };
 
-    const handleInputChange = (field: keyof PasswordFormData) => (value: string) => {
+    const handleInputChange = (field: keyof PasswordFormData) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData((prev) => ({
             ...prev,
-            [field]: value,
+            [field]: e.target.value,
         }));
     };
 
@@ -129,10 +129,10 @@ export default function ChangePasswordModal({ closeModal }: ChangePasswordModalP
                     <FormField
                         name='oldPassword'
                         type='password'
-                        labelText='Current Password'
+                        label='Current Password'
                         placeholder='Enter current password'
                         value={formData.oldPassword}
-                        handleInput={handleInputChange('oldPassword')}
+                        onChange={handleInputChange('oldPassword')}
                     />
                 </div>
 
@@ -146,19 +146,19 @@ export default function ChangePasswordModal({ closeModal }: ChangePasswordModalP
                         <FormField
                             name='newPassword'
                             type='password'
-                            labelText='New Password'
+                            label='New Password'
                             placeholder='Enter new password'
                             value={formData.newPassword}
-                            handleInput={handleInputChange('newPassword')}
+                            onChange={handleInputChange('newPassword')}
                         />
 
                         <FormField
                             name='confirmNewPassword'
                             type='password'
-                            labelText='Confirm New Password'
+                            label='Confirm New Password'
                             placeholder='Re-enter new password'
                             value={formData.confirmNewPassword}
-                            handleInput={handleInputChange('confirmNewPassword')}
+                            onChange={handleInputChange('confirmNewPassword')}
                         />
                     </div>
                 </div>

@@ -13,13 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { EntryClassSerializerNoChildren } from './EntryClassSerializerNoChildren';
-import {
-    EntryClassSerializerNoChildrenFromJSON,
-    EntryClassSerializerNoChildrenFromJSONTyped,
-    EntryClassSerializerNoChildrenToJSON,
-    EntryClassSerializerNoChildrenToJSONTyped,
-} from './EntryClassSerializerNoChildren';
 import type { Entry } from './Entry';
 import {
     EntryFromJSON,
@@ -54,16 +47,28 @@ export interface Entity {
     description?: string | null;
     /**
      * 
-     * @type {EntryClassSerializerNoChildren}
+     * @type {boolean}
      * @memberof Entity
      */
-    readonly entryClass?: EntryClassSerializerNoChildren;
+    isPublic?: boolean;
     /**
      * 
      * @type {Array<Entry>}
      * @memberof Entity
      */
     readonly aliasesDetail?: Array<Entry>;
+    /**
+     * Type of the entry (should be 'entity')
+     * @type {string}
+     * @memberof Entity
+     */
+    type: string;
+    /**
+     * Subtype for the entity
+     * @type {string}
+     * @memberof Entity
+     */
+    subtype: string;
 }
 
 /**
@@ -71,6 +76,8 @@ export interface Entity {
  */
 export function instanceOfEntity(value: object): value is Entity {
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('subtype' in value) || value['subtype'] === undefined) return false;
     return true;
 }
 
@@ -87,8 +94,10 @@ export function EntityFromJSONTyped(json: any, ignoreDiscriminator: boolean): En
         'id': json['id'] == null ? undefined : json['id'],
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
-        'entryClass': json['entry_class'] == null ? undefined : EntryClassSerializerNoChildrenFromJSON(json['entry_class']),
+        'isPublic': json['is_public'] == null ? undefined : json['is_public'],
         'aliasesDetail': json['aliases_detail'] == null ? undefined : ((json['aliases_detail'] as Array<any>).map(EntryFromJSON)),
+        'type': json['type'],
+        'subtype': json['subtype'],
     };
 }
 
@@ -96,7 +105,7 @@ export function EntityToJSON(json: any): Entity {
     return EntityToJSONTyped(json, false);
 }
 
-export function EntityToJSONTyped(value?: Omit<Entity, 'id'|'entry_class'|'aliases_detail'> | null, ignoreDiscriminator: boolean = false): any {
+export function EntityToJSONTyped(value?: Omit<Entity, 'id'|'aliases_detail'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -105,6 +114,9 @@ export function EntityToJSONTyped(value?: Omit<Entity, 'id'|'entry_class'|'alias
         
         'name': value['name'],
         'description': value['description'],
+        'is_public': value['isPublic'],
+        'type': value['type'],
+        'subtype': value['subtype'],
     };
 }
 

@@ -2,7 +2,6 @@
  * Hook for accessing API client instances
  */
 
-import { Context, useContext } from 'react';
 import { ApiContext } from '@/contexts/api/ApiProvider';
 import type {
   AccessApi,
@@ -20,7 +19,8 @@ import type {
   ReportsApi,
   StatisticsApi,
   UsersApi,
-} from '@/services/cradle/apis';
+} from '@services/cradle/apis';
+import { useContext } from 'react';
 
 /**
  * API context value containing all API instances

@@ -411,7 +411,7 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
 
     // TODO: Eventually enable this again
     return (<>
-        {false && ( <div
+        {false && (<div
             ref={(el) => {
                 tabBarRef.current = el;
                 if (onRootRef) onRootRef(el);
@@ -517,7 +517,9 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                         role="menuitem"
                         className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                         onClick={() => {
-                            closeTab(paneId, contextMenuTab);
+                            if (contextMenuTab !== null) {
+                                closeTab(paneId, contextMenuTab);
+                            }
                             handleCloseContextMenu();
                         }}
                     >
@@ -529,7 +531,9 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                             role="menuitem"
                             className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                             onClick={() => {
-                                closeOtherTabs(paneId, contextMenuTab);
+                                if (contextMenuTab !== null) {
+                                    closeOtherTabs(paneId, contextMenuTab);
+                                }
                                 handleCloseContextMenu();
                             }}
                         >
@@ -537,12 +541,14 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                             Close Others
                         </button>
                     )}
-                    {contextMenuTab < tabs.length - 1 && (
+                    {contextMenuTab !== null && contextMenuTab! < tabs.length - 1 && (
                         <button
                             role="menuitem"
                             className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                             onClick={() => {
-                                closeTabsToRight(paneId, contextMenuTab);
+                                if (contextMenuTab !== null) {
+                                    closeTabsToRight(paneId, contextMenuTab);
+                                }
                                 handleCloseContextMenu();
                             }}
                         >

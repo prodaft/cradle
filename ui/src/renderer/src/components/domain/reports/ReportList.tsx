@@ -1,3 +1,21 @@
+import { useModal } from '@/contexts/ui/ModalContext';
+import { useNotif } from '@/contexts/ui/NotificationContext';
+import { useProfile } from '@/contexts/user/ProfileContext';
+import { useAPICall } from '@/hooks';
+import useApi from '@/hooks/api/useApi';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
+import { Report } from '@/services/cradle';
+import {
+    capitalizeString,
+    truncateText
+} from '@/utils/dashboard';
+import { formatDate } from '@/utils/dates';
+import TableCard from '@components/base/Card/TableCard';
+import ListView, { SortDirection } from '@components/base/ListView/ListView';
+import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
+import ActionsTable, { Action } from '@components/domain/activity/ActionsTable';
+import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import {
     Edit,
     Eye,
@@ -7,38 +25,6 @@ import {
 } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
-import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
-import { useProfile } from '@/contexts/user/ProfileContext';
-import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import {
-    truncateText
-} from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
-import ActionsTable from '@components/domain/activity/ActionsTable';
-import ListView from '@components/base/ListView/ListView';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
-import TableCard from '@components/base/Card/TableCard';
-
-interface Report {
-    id: string;
-    title: string;
-    status: string;
-    strategy: string;
-    strategy_label: string;
-    anonymized: boolean;
-    created_at: string;
-    report_url?: string;
-}
-
-interface Action {
-    value: string;
-    label: string;
-    handler: (selectedIds: string[]) => void;
-}
 
 interface Column {
     key: string;
@@ -62,7 +48,7 @@ export default function ReportList() {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [sortField, setSortField] = useState(searchParams.get('reports_sort_field') || 'created_at');
-    const [sortDirection, setSortDirection] = useState(searchParams.get('reports_sort_direction') || 'desc');
+    const [sortDirection, setSortDirection] = useState<SortDirection>(searchParams.get('reports_sort_direction') as SortDirection || 'desc');
     const { reportsApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
@@ -72,6 +58,7 @@ export default function ReportList() {
         Number(searchParams.get('reports_pagesize')) ||
         10
     );
+    const { execute } = useAPICall();
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -81,7 +68,7 @@ export default function ReportList() {
         createdAt: 'created_at',
     };
 
-    const handleSort = (field: string, direction: string) => {
+    const handleSort = (field: string, direction: SortDirection) => {
         setSortField(field);
         setSortDirection(direction);
         // Reset to first page when sorting changes
@@ -100,7 +87,7 @@ export default function ReportList() {
         setLoading(true);
         try {
             if (report_id) {
-                const report = await reportsApi.reportsRetrieve({ id: report_id });
+                const report = await execute(() => reportsApi.reportsRetrieve({ id: report_id }));
                 setReports([report]);
             } else {
                 const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
@@ -113,7 +100,6 @@ export default function ReportList() {
                 setTotalPages(response.totalPages);
             }
         } catch (error) {
-            console.error('Failed to fetch reports', error);
             setReports([]);
         } finally {
             setLoading(false);
@@ -211,76 +197,71 @@ export default function ReportList() {
                                 : 'bg-yellow-500'
                             }`}
                     >
-                        {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                        {capitalizeString(report.status || '')}
                     </span>
                 </td>
                 <td className='truncate max-w-xs font-medium' title={report.title}>
                     {report.title}
                 </td>
-                <td className='truncate w-24' title={report.strategy_label}>
-                    {truncateText(report.strategy_label, 24)}
+                <td className='truncate w-24' title={report?.strategyLabel}>
+                    {truncateText(report?.strategyLabel, 24)}
                 </td>
-                <td className='w-36'>{formatDate(new Date(report.created_at))}</td>
-                <td className='w-24'>{report.anonymized ? 'Yes' : 'No'}</td>
+                <td className='w-36'>{formatDate(new Date(report.createdAt || ''))}</td>
+                <td className='w-24'>{report?.anonymized ? 'Yes' : 'No'}</td>
                 <td className='w-32'>
                     <div className='flex space-x-1'>
-                        {report.strategy !== 'import' && (
-                            <>
-                                {report.status === 'done' && (
-                                    <button
-                                        onClick={() => {
-                                            if (report.report_url) {
-                                                window.open(report.report_url, '_blank');
-                                            } else {
-                                                notify({
-                                                    type: 'error',
-                                                    text: 'No report location available',
-                                                });
-                                            }
-                                        }}
-                                        className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
-                                        title='View Report'
-                                    >
-                                        <Eye className='w-4 h-4' />
-                                    </button>
-                                )}
-                                {report.status !== 'working' && (
-                                    <button
-                                        onClick={() => navigate(`/publish?report=${report.id}`)}
-                                        className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
-                                        title='Edit Report'
-                                    >
-                                        <Edit className='w-4 h-4' />
-                                    </button>
-                                )}
-                                {report.status === 'error' && (
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                await reportsApi.reportsRetryCreate({
-                                                    id: report.id,
-                                                    reportRequest: {},
-                                                });
-                                                fetchReports();
-                                                notify({
-                                                    type: 'success',
-                                                    text: 'Retrying to build report!',
-                                                });
-                                            } catch (error) {
-                                                console.error('Retry report failed:', error);
-                                                notify({
-                                                    type: 'error',
-                                                    text: 'Failed to retry report',
-                                                });
-                                            }
-                                        }}
-                                        className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
-                                        title='Retry Report'
-                                    >
-                                        <RefreshCircle className='w-4 h-4' />
-                                    </button>
-                                )}
-                            </>
+                        {report.status === 'done' && (
+                            <button
+                                onClick={() => {
+                                    if (report?.reportUrl) {
+                                        window.open(report?.reportUrl, '_blank');
+                                    } else {
+                                        notify({
+                                            type: 'error',
+                                            text: 'No report location available',
+                                        });
+                                    }
+                                }}
+                                className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
+                                title='View Report'
+                            >
+                                <Eye className='w-4 h-4' />
+                            </button>
+                        )}
+                        {report.status !== 'working' && (
+                            <button
+                                onClick={() => navigate(`/publish?report=${report.id}`)}
+                                className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
+                                title='Edit Report'
+                            >
+                                <Edit className='w-4 h-4' />
+                            </button>
+                        )}
+                        {report.status === 'error' && (
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        await reportsApi.reportsRetryCreate({
+                                            id: report.id!,
+                                        });
+                                        fetchReports();
+                                        notify({
+                                            type: 'success',
+                                            text: 'Retrying to build report!',
+                                        });
+                                    } catch (error) {
+                                        console.error('Retry report failed:', error);
+                                        notify({
+                                            type: 'error',
+                                            text: 'Failed to retry report',
+                                        });
+                                    }
+                                }}
+                                className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
+                                title='Retry Report'
+                            >
+                                <RefreshCircle className='w-4 h-4' />
+                            </button>
                         )}
                         <button
                             onClick={() =>
@@ -288,7 +269,7 @@ export default function ReportList() {
                                     text: `Are you sure you want to delete this report?`,
                                     onConfirm: async () => {
                                         try {
-                                            await reportsApi.reportsDestroy({ id: report.id });
+                                            await reportsApi.reportsDestroy({ id: report.id! });
                                             fetchReports();
                                             notify({
                                                 type: 'success',

@@ -6,7 +6,7 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import FilesList from '@components/domain/files/FilesList';
 
 interface SearchFilters {
-    linked_to: string;
+    linked_to: number | string;  // Entry ID (number) or empty string
     entity_type: string;
     keyword: string;
     mimetype: string;
@@ -14,7 +14,7 @@ interface SearchFilters {
 
 interface FilesProps {
     obj: {
-        id?: string;
+        id?: number;  // Entry ID (BigAutoField)
         type?: string;
         [key: string]: any;
     };
@@ -119,7 +119,7 @@ export default function Files({ obj }: FilesProps) {
                         <div className='cradle-separator'></div>
 
                         <button type='submit' className='cradle-btn cradle-btn-primary w-full md:w-auto px-8'>
-                            <Search className='inline-block mr-2' size={16} /> Search Files
+                            <Search className='inline-block mr-2' width={16} height={16} /> Search Files
                         </button>
                     </form>
                 </div>

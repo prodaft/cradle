@@ -22,7 +22,7 @@ import type {
   DefaultNoteTemplateRequest,
   DefaultNoteTemplateResponse,
   EmailConfirmRequest,
-  Enable2FARequest,
+  Enable2FA,
   PasswordResetConfirmRequest,
   PasswordResetRequestRequest,
   TokenObtainRequest,
@@ -32,7 +32,7 @@ import type {
   UserCreateRequest,
   UserManageResponse,
   UserRetrieve,
-  UserRetrieveRequest,
+  UserUpdateRequest,
   Verify2FARequest,
 } from '../models/index';
 import {
@@ -50,8 +50,8 @@ import {
     DefaultNoteTemplateResponseToJSON,
     EmailConfirmRequestFromJSON,
     EmailConfirmRequestToJSON,
-    Enable2FARequestFromJSON,
-    Enable2FARequestToJSON,
+    Enable2FAFromJSON,
+    Enable2FAToJSON,
     PasswordResetConfirmRequestFromJSON,
     PasswordResetConfirmRequestToJSON,
     PasswordResetRequestRequestFromJSON,
@@ -70,8 +70,8 @@ import {
     UserManageResponseToJSON,
     UserRetrieveFromJSON,
     UserRetrieveToJSON,
-    UserRetrieveRequestFromJSON,
-    UserRetrieveRequestToJSON,
+    UserUpdateRequestFromJSON,
+    UserUpdateRequestToJSON,
     Verify2FARequestFromJSON,
     Verify2FARequestToJSON,
 } from '../models/index';
@@ -80,12 +80,8 @@ export interface Users2faDisableCreateRequest {
     verify2FARequest: Verify2FARequest;
 }
 
-export interface Users2faEnableCreateRequest {
-    enable2FARequest: Enable2FARequest;
-}
-
 export interface Users2faVerifyCreateRequest {
-    enable2FARequest: Enable2FARequest;
+    verify2FARequest: Verify2FARequest;
 }
 
 export interface UsersApikeyCreateRequest {
@@ -144,7 +140,7 @@ export interface UsersRetrieveRequest {
 
 export interface UsersUpdateRequest {
     userId: string;
-    userRetrieveRequest: UserRetrieveRequest;
+    userUpdateRequest?: UserUpdateRequest;
 }
 
 /**
@@ -209,19 +205,10 @@ export class UsersApi extends runtime.BaseAPI {
      * Initiates 2FA setup for the user and returns a QR code URL
      * Enable 2FA
      */
-    async users2faEnableCreateRaw(requestParameters: Users2faEnableCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['enable2FARequest'] == null) {
-            throw new runtime.RequiredError(
-                'enable2FARequest',
-                'Required parameter "enable2FARequest" was null or undefined when calling users2faEnableCreate().'
-            );
-        }
-
+    async users2faEnableCreateRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Enable2FA>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
 
         if (this.configuration && this.configuration.accessToken) {
             const token = this.configuration.accessToken;
@@ -239,22 +226,17 @@ export class UsersApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: Enable2FARequestToJSON(requestParameters['enable2FARequest']),
         }, initOverrides);
 
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
+        return new runtime.JSONApiResponse(response, (jsonValue) => Enable2FAFromJSON(jsonValue));
     }
 
     /**
      * Initiates 2FA setup for the user and returns a QR code URL
      * Enable 2FA
      */
-    async users2faEnableCreate(requestParameters: Users2faEnableCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.users2faEnableCreateRaw(requestParameters, initOverrides);
+    async users2faEnableCreate(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Enable2FA> {
+        const response = await this.users2faEnableCreateRaw(initOverrides);
         return await response.value();
     }
 
@@ -263,10 +245,10 @@ export class UsersApi extends runtime.BaseAPI {
      * Verify 2FA Setup
      */
     async users2faVerifyCreateRaw(requestParameters: Users2faVerifyCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['enable2FARequest'] == null) {
+        if (requestParameters['verify2FARequest'] == null) {
             throw new runtime.RequiredError(
-                'enable2FARequest',
-                'Required parameter "enable2FARequest" was null or undefined when calling users2faVerifyCreate().'
+                'verify2FARequest',
+                'Required parameter "verify2FARequest" was null or undefined when calling users2faVerifyCreate().'
             );
         }
 
@@ -292,7 +274,7 @@ export class UsersApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: Enable2FARequestToJSON(requestParameters['enable2FARequest']),
+            body: Verify2FARequestToJSON(requestParameters['verify2FARequest']),
         }, initOverrides);
 
         if (this.isJsonMime(response.headers.get('content-type'))) {
@@ -973,13 +955,6 @@ export class UsersApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['userRetrieveRequest'] == null) {
-            throw new runtime.RequiredError(
-                'userRetrieveRequest',
-                'Required parameter "userRetrieveRequest" was null or undefined when calling usersUpdate().'
-            );
-        }
-
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1007,7 +982,7 @@ export class UsersApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: UserRetrieveRequestToJSON(requestParameters['userRetrieveRequest']),
+            body: UserUpdateRequestToJSON(requestParameters['userUpdateRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => UserRetrieveFromJSON(jsonValue));

@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { capitalizeString } from '@/utils/dashboard';
+import { EntryClass } from '@services/cradle/models';
+import { useEffect, useState } from 'react';
 import Selector from '../../forms/Selector';
-import { EntryClass } from '@/services/cradle/models';
 
 interface Option {
   value: string;
@@ -39,9 +39,10 @@ interface ValidationErrors {
 
 interface TypeMappingsEditorProps {
   id: string;
+  onSave?: () => void;
 }
 
-const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
+const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
   const [columnDefinitions, setColumnDefinitions] = useState<ColumnDefinitions | null>(null);
   const [rows, setRows] = useState<RowData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,11 +53,11 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
 
   const allColumns = columnDefinitions
     ? [
-        'internal_class',
-        ...Object.keys(columnDefinitions).filter(
-          (col) => col !== 'internal_class'
-        ),
-      ]
+      'internal_class',
+      ...Object.keys(columnDefinitions).filter(
+        (col) => col !== 'internal_class'
+      ),
+    ]
     : [];
 
   // Create a new empty row using defaults if provided; note id is null by default.
@@ -82,7 +83,7 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
         const mappingKeys = (await intelioApi.mappingsKeysSchema({
           className: id,
         })) as unknown as ColumnDefinitions;
-        
+
         const entryClasses = await entriesApi.entryClassesList({});
         const mappings = (await intelioApi.mappingsSchemaList({
           className: id,
@@ -110,29 +111,29 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
           id: mapping.id,
           edited: false,
         }));
-        
+
         let initialRows = mappedRows.length > 0 ? mappedRows : [];
         // We can't append createEmptyRow directly here because we need columnDefinitions state set first?
         // Actually, we have 'cols' available here, so we can use it.
-        
+
         // Helper to create empty row with local cols
         const createLocalEmptyRow = (definitions: ColumnDefinitions) => {
-            const emptyRow: RowData = { id: null, edited: false };
-            const columns = [
-                'internal_class',
-                ...Object.keys(definitions).filter((col) => col !== 'internal_class')
-            ];
-            
-            columns.forEach((col) => {
-                const colDef = definitions[col];
-                const colType = colDef?.type;
-                if (colDef?.default !== undefined) {
-                    emptyRow[col] = colDef.default;
-                } else {
-                    emptyRow[col] = colType === 'options' ? null : '';
-                }
-            });
-            return emptyRow;
+          const emptyRow: RowData = { id: null, edited: false };
+          const columns = [
+            'internal_class',
+            ...Object.keys(definitions).filter((col) => col !== 'internal_class')
+          ];
+
+          columns.forEach((col) => {
+            const colDef = definitions[col];
+            const colType = colDef?.type;
+            if (colDef?.default !== undefined) {
+              emptyRow[col] = colDef.default;
+            } else {
+              emptyRow[col] = colType === 'options' ? null : '';
+            }
+          });
+          return emptyRow;
         };
 
         initialRows = [...initialRows, createLocalEmptyRow(cols)];
@@ -195,15 +196,15 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
       case 'text':
       default:
         if (typeof value === 'string') {
-            if (colDef.minLength !== undefined && value.length < colDef.minLength) {
+          if (colDef.minLength !== undefined && value.length < colDef.minLength) {
             return `${capitalizeString(column)} must be at least ${colDef.minLength} characters`;
-            }
-            if (colDef.maxLength !== undefined && value.length > colDef.maxLength) {
+          }
+          if (colDef.maxLength !== undefined && value.length > colDef.maxLength) {
             return `${capitalizeString(column)} must be at most ${colDef.maxLength} characters`;
-            }
-            if (colDef.pattern && !new RegExp(colDef.pattern).test(value)) {
+          }
+          if (colDef.pattern && !new RegExp(colDef.pattern).test(value)) {
             return `${capitalizeString(column)} has an invalid format`;
-            }
+          }
         }
         break;
     }
@@ -273,10 +274,10 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
         () =>
           intelioApi.mappingsSchemaDestroy({
             className: id,
-            mappingId: row.id,
+            mappingId: row.id ?? undefined,
           }),
         { successMessage: 'Mapping deleted successfully' }
-      ).catch(() => {});
+      ).catch(() => { });
     }
   };
 
@@ -347,12 +348,12 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
           )
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const handleSaveAll = () => {
     if (!columnDefinitions) return;
-    
+
     // First, validate all edited rows and update the validation errors state
     const allErrors: ValidationErrors = {};
     let hasErrors = false;
@@ -423,7 +424,7 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
           prevRows.map((r) => (r.edited ? { ...r, edited: false } : r))
         );
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   // Get used internal_class values to filter options
@@ -451,10 +452,9 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
           <button
             onClick={handleSaveAll}
             disabled={!rows.some((row) => row.edited)}
-            className={`btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ${
-              !rows.some((row) => row.edited) &&
+            className={`btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ${!rows.some((row) => row.edited) &&
               'opacity-50 cursor-not-allowed'
-            }`}
+              }`}
           >
             Save All
           </button>
@@ -535,7 +535,7 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
                             }
                             isClearable={!colDef.required}
                             classNames={{
-                              control: hasError ? 'border-red-500' : '',
+                              control: () => hasError ? 'border-red-500' : '',
                             }}
                             menuPosition="fixed"
                           />
@@ -554,11 +554,10 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
                                 e.target.value
                               )
                             }
-                            className={`form-input input input-block ${
-                              hasError
+                            className={`form-input input input-block ${hasError
                                 ? 'border-red-500'
                                 : 'input-ghost-primary'
-                            } focus:ring-0 w-full`}
+                              } focus:ring-0 w-full`}
                             min={colDef.min}
                             max={colDef.max}
                             placeholder={colDef.required ? 'Required' : ''}
@@ -578,11 +577,10 @@ const TypeMappingsEditor = ({ id }: TypeMappingsEditorProps) => {
                                 e.target.value
                               )
                             }
-                            className={`form-input input input-block ${
-                              hasError
+                            className={`form-input input input-block ${hasError
                                 ? 'border-red-500'
                                 : 'input-ghost-primary'
-                            } focus:ring-0 w-full`}
+                              } focus:ring-0 w-full`}
                             minLength={colDef.minLength}
                             maxLength={colDef.maxLength}
                             pattern={colDef.pattern}

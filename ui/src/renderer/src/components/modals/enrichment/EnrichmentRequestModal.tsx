@@ -2,6 +2,7 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import Selector from '@components/forms/Selector';
 import { useEffect, useState } from 'react';
+import { MultiValue } from 'react-select';
 
 /**
  * Enricher type option for selector
@@ -100,8 +101,8 @@ export default function EnrichmentRequestModal({
         }));
     };
 
-    const handleEnricherChange = (selectedOptions: EnricherOption[] | null) => {
-        const enricherNames = selectedOptions ? selectedOptions.map(opt => opt.value) : [];
+    const handleEnricherChange = (selectedOptions: MultiValue<EnricherOption>) => {
+        const enricherNames = Array.from(selectedOptions).map(opt => opt.value);
         setFormData(prev => ({
             ...prev,
             enricherNames,
@@ -243,7 +244,7 @@ export default function EnrichmentRequestModal({
                         staticOptions={enricherTypes}
                         placeholder='Select enrichment techniques...'
                         usePortal={false}
-                        menuPosition='auto'
+                        menuPosition='absolute'
                         onChange={handleEnricherChange}
                     />
                     <p className='text-xs cradle-text-tertiary mt-1'>
@@ -264,7 +265,7 @@ export default function EnrichmentRequestModal({
                         fetchOptions={fetchEntities}
                         placeholder='Select entities to enrich...'
                         usePortal={false}
-                        menuPosition='auto'
+                        menuPosition='absolute'
                         onChange={handleEntityChange}
                     />
                 </div>

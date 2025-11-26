@@ -1,30 +1,33 @@
-from drf_spectacular.utils import extend_schema
-from rest_framework.response import Response
+from typing import cast
+
+from django.db.models import Q
+from drf_spectacular.utils import (
+    PolymorphicProxySerializer,
+    extend_schema,
+    extend_schema_view,
+)
+from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from django.db.models import Q
-from ..models import MessageNotification
-from ..serializers import NotificationSerializer
+
 from user.models import CradleUser
-from typing import cast
-from rest_framework import status
-from ..serializers import UpdateNotificationSerializer, UnreadNotificationsSerializer
 
-from drf_spectacular.utils import extend_schema_view
-
-
-@extend_schema_view(
-    get=extend_schema(
-        summary="Get unread notifications count",
-        description="Returns the count of unread notifications for the authenticated user.",  # noqa: E501
-        responses={
-            200: UnreadNotificationsSerializer,
-            401: {"description": "User is not authenticated"},
-        },
-    )
+from ..models import MessageNotification
+from ..serializers import (
+    AccessRequestNotificationSerializer,
+    MessageNotificationSerializer,
+    NewUserNotificationSerializer,
+    NotificationSerializer,
+    ReportProcessingErrorNotificationSerializer,
+    ReportRenderNotificationSerializer,
+    UnreadNotificationsSerializer,
+    UpdateNotificationSerializer,
 )
+
+
 class NotificationList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -32,7 +35,21 @@ class NotificationList(APIView):
     @extend_schema(
         summary="Fetch Notifications",
         description="Retrieve all notifications for the authenticated user, sorted from newest to oldest.",  # noqa: E501
-        responses={200: NotificationSerializer(many=True), 401: "Unauthorized"},
+        responses={
+            200: PolymorphicProxySerializer(
+                component_name="Notification",
+                serializers=[
+                    MessageNotificationSerializer,
+                    NewUserNotificationSerializer,
+                    AccessRequestNotificationSerializer,
+                    ReportRenderNotificationSerializer,
+                    ReportProcessingErrorNotificationSerializer,
+                ],
+                resource_type_field_name="notification_type",
+                many=True,
+            ),
+            401: "Unauthorized",
+        },
     )
     def get(self, request: Request) -> Response:
         notifications = (
@@ -46,14 +63,6 @@ class NotificationList(APIView):
         return Response(serializer.data)
 
 
-@extend_schema(
-    summary="Get notifications",
-    description="Returns all notifications belonging to the authenticated user, ordered by timestamp in descending order. Marks all notifications as read.",  # noqa: E501
-    responses={
-        200: NotificationSerializer(many=True),
-        401: {"description": "User is not authenticated"},
-    },
-)
 class NotificationDetail(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]

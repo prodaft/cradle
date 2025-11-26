@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import type { Profile } from '@/types';
+import { type Profile } from '@/types/index';
 
 /**
  * Return type for useProfile hook

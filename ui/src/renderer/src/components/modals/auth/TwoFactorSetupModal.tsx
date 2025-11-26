@@ -1,19 +1,19 @@
-import { QRCodeSVG } from 'qrcode.react';
-import { useEffect, useState } from 'react';
+import AlertBox from '@/components/base/Alert/AlertBox';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
-import AlertBox from '@/components/base/Alert/AlertBox';
+import { QRCodeSVG } from 'qrcode.react';
+import { useEffect, useState } from 'react';
 
 /**
  * TwoFactorSetupModal component props
  */
 export interface TwoFactorSetupModalProps {
-  /** Function to close the modal */
-  closeModal: () => void;
-  /** Optional callback to execute on successful setup/disable */
-  onSuccess?: () => void;
-  /** If true, disables 2FA instead of enabling it */
-  isDisabling?: boolean;
+    /** Function to close the modal */
+    closeModal: () => void;
+    /** Optional callback to execute on successful setup/disable */
+    onSuccess?: () => void;
+    /** If true, disables 2FA instead of enabling it */
+    isDisabling?: boolean;
 }
 
 /**
@@ -52,9 +52,7 @@ export default function TwoFactorSetupModal({
         if (!isDisabling) {
             const setup2FA = async () => {
                 try {
-                    const response = await usersApi.users2faEnableCreate({
-                        enable2FARequest: {},
-                    });
+                    const response = await usersApi.users2faEnableCreate({});
                     setOtpAuthUrl(response.configUrl);
                     const secret = new URL(response.configUrl).searchParams.get('secret');
                     setSecret(secret || '');
@@ -81,7 +79,7 @@ export default function TwoFactorSetupModal({
                 });
             } else {
                 await usersApi.users2faVerifyCreate({
-                    enable2FARequest: { token: verificationCode },
+                    verify2FARequest: { token: verificationCode },
                 });
             }
             onSuccess?.();

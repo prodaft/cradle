@@ -13,15 +13,28 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from entries.enums import EntryType
 from entries.models import Entry
 from file_transfer.models import FileReference
 from knowledge_graph.serializers import SubGraphSerializer
 from user.models import CradleUser
 
+from ..exceptions import (
+    CannotEditNoteException,
+    EntryNotFoundException,
+    InvalidPageSizeException,
+    InvalidReferencesAtLeastException,
+    NoAccessToEntriesException,
+    NoteDoesNotExistException,
+    NotesErrorCodes,
+)
 from ..filters import NoteFilter
 from ..models import Note
 from ..serializers import (
@@ -31,15 +44,6 @@ from ..serializers import (
     NoteEditSerializer,
     NoteListSerializer,
     NoteRetrieveSerializer,
-)
-from ..exceptions import (
-    InvalidPageSizeException,
-    InvalidReferencesAtLeastException,
-    EntryNotFoundException,
-    NoteDoesNotExistException,
-    CannotEditNoteException,
-    NoAccessToEntriesException,
-    NotesErrorCodes,
 )
 
 
@@ -160,10 +164,14 @@ class NoteList(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
+            raise InvalidPageSizeException(
+                detail="Invalid page_size value. Must be an integer."
+            )
 
         if page_size > 200:
-            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
+            raise InvalidPageSizeException(
+                detail="page_size cannot be greater than 200."
+            )
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -172,7 +180,9 @@ class NoteList(APIView):
                     request.query_params.get("references_at_least", len(entrylist))
                 )
             except ValueError:
-                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
+                raise InvalidReferencesAtLeastException(
+                    detail="Invalid references_at_least value."
+                )
 
             queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
@@ -280,6 +290,7 @@ class NoteList(APIView):
             )
         else:
             from ..exceptions import InvalidRequestException
+
             raise InvalidRequestException(detail=str(filterset.errors))
 
     def post(self, request: Request) -> Response:
@@ -444,7 +455,9 @@ class NoteDetail(APIView):
         ):
             raise NoAccessToEntriesException(
                 detail="User does not have Read-Write access to all referenced entities",
-                links=list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY))
+                links=list(
+                    note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)
+                ),
             )
         note_to_delete.delete()
 
@@ -557,10 +570,14 @@ class NoteFiles(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
+            raise InvalidPageSizeException(
+                detail="Invalid page_size value. Must be an integer."
+            )
 
         if page_size > 200:
-            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
+            raise InvalidPageSizeException(
+                detail="page_size cannot be greater than 200."
+            )
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
@@ -569,7 +586,9 @@ class NoteFiles(APIView):
                     request.query_params.get("references_at_least", len(entrylist))
                 )
             except ValueError:
-                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
+                raise InvalidReferencesAtLeastException(
+                    detail="Invalid references_at_least value."
+                )
             queryset = queryset.annotate(
                 matching_entries=Count("entries", filter=Q(entries__in=entrylist))
             ).filter(matching_entries=references_at_least)
@@ -702,10 +721,14 @@ class NoteGraph(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 250))
         except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
+            raise InvalidPageSizeException(
+                detail="Invalid page_size value. Must be an integer."
+            )
 
         if page_size > 1000:
-            raise InvalidPageSizeException(detail="page_size cannot be greater than 1000.")
+            raise InvalidPageSizeException(
+                detail="page_size cannot be greater than 1000."
+            )
 
         try:
             note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)

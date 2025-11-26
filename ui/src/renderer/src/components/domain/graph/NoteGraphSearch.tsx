@@ -10,24 +10,8 @@ import {
     truncateText,
 } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
-
-interface Node {
-    id: string;
-    degree?: number;
-    type?: string;
-    label?: string;
-    color?: string;
-    [key: string]: any;
-}
-
-interface Edge {
-    id: string;
-    src: string;
-    dst: string;
-    source?: string;
-    target?: string;
-    [key: string]: any;
-}
+import type { EdgeRelation } from '@services/cradle/models';
+import { Node } from './graphFilterUtils';
 
 interface Alert {
     show: boolean;
@@ -36,16 +20,12 @@ interface Alert {
 }
 
 interface NoteGraphSearchProps {
-    queryValues: any;
-    setQueryValues: (values: any) => void;
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
 }
 
 export default function NoteGraphSearch(noteId: string): ComponentType<NoteGraphSearchProps> {
     return function NoteGraphSearchComponent({
-        queryValues,
-        setQueryValues,
         addEdges,
         addNodes,
     }: NoteGraphSearchProps) {
@@ -73,7 +53,7 @@ export default function NoteGraphSearch(noteId: string): ComponentType<NoteGraph
                     setTotalPages(response.totalPages);
                 }
                 const { entries, relations, colors } = response.results;
-                const hasEntries = entries && entries.length > 0;
+                const hasEntries = entries && Object.keys(entries).length > 0;
                 const hasRelations = relations && relations.length > 0;
 
                 // If no data was returned
@@ -100,10 +80,6 @@ export default function NoteGraphSearch(noteId: string): ComponentType<NoteGraph
                             : truncateText(`${e.subtype}: ${e.name || e.id}`, 25),
                     color: colors[e.subtype] || '#4A90E2',
                 }));
-                relations.forEach((r: Edge) => {
-                    r.source = String(r.src);
-                    r.target = String(r.dst);
-                });
                 addNodes(nodes);
                 addEdges(relations);
                 setAlert({ show: false, message: '', color: 'red' });

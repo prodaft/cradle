@@ -1,9 +1,8 @@
+import { useNotif } from '@/contexts';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { FileReferenceWithNote } from '@/services/cradle/models';
-import { displayError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import { createCradleTheme } from '@/utils/editor/theme';
@@ -12,7 +11,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { markdown } from '@codemirror/lang-markdown';
 import { defaultHighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
-import { EditorState, StateEffect } from '@codemirror/state';
+import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
 import { drawSelection, EditorView, highlightActiveLine, keymap, lineNumbers, rectangularSelection } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import {
@@ -22,6 +21,7 @@ import {
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { vim, Vim } from '@replit/codemirror-vim';
+import { FileReference } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
@@ -31,13 +31,13 @@ interface RichEditorProps {
     noteid: string;
     markdownContent: string;
     setMarkdownContent: (content: string) => void;
-    fileData: FileReferenceWithNote[];
-    setFileData: (data: FileReferenceWithNote[]) => void;
-    setAlert: (alert: any) => void;
+    fileData: FileReference[];
+    setFileData: (data: FileReference[]) => void;
     saveNote: (autoSave?: boolean) => void;
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
     source?: boolean;
+    editorUtils: CradleEditor;
 }
 
 export interface RichEditorRef {
@@ -54,11 +54,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     setMarkdownContent,
     fileData,
     setFileData,
-    setAlert,
     saveNote,
     additionalExtensions = [],
     enableEditing = true,
     source = false,
+    editorUtils,
 }, ref) {
     const [showFileList, setShowFileList] = useState(false);
     const { profile } = useProfile();
@@ -71,6 +71,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const editorViewRef = useRef<EditorView | null>(null);
     const markdownContentRef = useRef(markdownContent);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
+    const { notify } = useNotif();
 
     useEffect(() => {
         const fetchEntryColors = async () => {
@@ -101,11 +102,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     useEffect(() => {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
-
-    const editorUtils = useMemo(() => {
-        CradleEditor.clearCache();
-        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, displayError(setAlert));
-    }, [setAlert, notesApi, lspApi]);
 
     const handleCodeBlockCopy = useCallback((lang, code, event) => {
         if (event && event.target) {
@@ -280,13 +276,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 editorViewRef.current = view;
             } catch (error) {
                 console.error('Failed to initialize RichEditor:', error);
-                setAlert({
+                notify({
                     type: 'error',
-                    message: 'Failed to initialize editor. Please refresh the page.'
+                    text: 'Failed to initialize editor. Please refresh the page.'
                 });
             }
         }
-    }, [extensions, setMarkdownContent, setAlert, markdownContent]);
+    }, [extensions, setMarkdownContent, notify, markdownContent]);
 
     useEffect(() => {
         if (editorViewRef.current && markdownContent !== editorViewRef.current.state.doc.toString()) {
@@ -294,9 +290,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             // But here we just blindly update which might cause cursor jumps if typing fast and prop updates lag
             // However, markdownContentRef check in dispatch prevents local loops.
             // This effect handles external updates.
-            
+
             // Simple check to avoid overwriting if the content is effectively the same (CodeMirror handles this efficiently usually)
-             editorViewRef.current.dispatch({
+            editorViewRef.current.dispatch({
                 changes: {
                     from: 0,
                     to: editorViewRef.current.state.doc.length,
@@ -325,7 +321,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 <div className='flex h-full overflow-y-hidden'>
                     <div
                         ref={editorRef}
-                        className='w-full overflow-y-auto rounded-lg'
+                        className='w-full overflow-y-auto rounded-lg rich-editor'
                         role="textbox"
                         aria-label="Rich text editor"
                         aria-multiline="true"

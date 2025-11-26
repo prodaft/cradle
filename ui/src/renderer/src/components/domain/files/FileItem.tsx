@@ -1,12 +1,13 @@
-import { Download } from 'iconoir-react';
-import { forwardRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useNotif } from '@/contexts';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import type { FileReferenceWithNote } from '@/services/cradle/models';
+import type { Alert, StateSetter } from '@/types';
 import { createDashboardLink } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import type { Alert, StateSetter } from '@/types';
+import type { FileReferenceWithNote } from '@services/cradle/models';
+import { Download } from 'iconoir-react';
+import { forwardRef, useState } from 'react';
 
 /**
  * FileItem component - This component is used to display a file in a list.
@@ -19,57 +20,50 @@ import type { Alert, StateSetter } from '@/types';
 interface FileItemProps {
     id: string;
     file: FileReferenceWithNote;
-    setAlert: StateSetter<Alert>;
 }
 
-const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem({ id, file, setAlert, ...props }, ref) {
-    const { navigate, navigateLink } = useCradleNavigate();
+const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem({ id, file, ...props }, ref) {
+    const { navigateLink } = useCradleNavigate();
     const { fileTransferApi } = useApi();
     const [hidden, setHidden] = useState(false);
-    const location = useLocation();
+    const { execute } = useAPICall();
+    const { notify } = useNotif();
 
-    const downloadFile = () => {
+    const downloadFile = async () => {
         if (file.bucketName && file.minioFileName) {
-            fileTransferApi
-                .fileTransferDownloadRetrieve({
-                    bucketName: file.bucketName,
-                    minioFileName: file.minioFileName,
-                })
-                .then((response) => {
-                    const { presigned } = response;
-                    const link = document.createElement('a');
-                    link.href = presigned;
+            let response = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
+                bucketName: file.bucketName,
+                minioFileName: file.minioFileName,
+            }));
 
-                    const fileName =
-                        file.minioFileName.split('/').pop() || file.minioFileName;
-                    link.download = fileName;
-                    document.body.appendChild(link);
+            const { presigned } = response;
+            const link = document.createElement('a');
+            link.href = presigned;
 
-                    link.click();
+            const fileName =
+                file.minioFileName.split('/').pop() || file.minioFileName;
+            link.download = fileName;
+            document.body.appendChild(link);
 
-                    document.body.removeChild(link);
-                })
-                .catch((error) => {
-                    setAlert({
-                        show: true,
-                        message: 'Failed to download file. Please try again.',
-                        color: 'red',
-                    });
-                });
+            link.click();
+
+            document.body.removeChild(link);
         }
     };
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard
             .writeText(text)
-            .catch((error) => {
-                console.error('Failed to copy text: ', error);
-            })
             .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'Copied to clipboard',
-                    color: 'green',
+                notify({
+                    text: 'Copied to clipboard',
+                    type: 'success',
+                });
+            })
+            .catch((error) => {
+                notify({
+                    text: 'Failed to copy to clipboard',
+                    type: 'error',
                 });
             });
     };

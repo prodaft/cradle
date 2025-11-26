@@ -1,3 +1,4 @@
+import { EdgeRelation } from '@/services/cradle';
 import { ComponentType } from 'react';
 import GraphLegend from './GraphLegend';
 import GraphSettings from './GraphSettings';
@@ -7,15 +8,8 @@ interface Node {
     [key: string]: any;
 }
 
-interface Edge {
-    id: string;
-    source: string;
-    target: string;
-    [key: string]: any;
-}
-
 interface SearchComponentProps {
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
 }
 
@@ -26,9 +20,9 @@ interface GraphControlProps {
     disabledTypes: Set<string>;
     setDisabledTypes: (types: Set<string> | ((prev: Set<string>) => Set<string>)) => void;
     addNodes: (nodes: Node[]) => void;
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
     nodes: Node[];
-    edges: Edge[];
+    edges: EdgeRelation[];
 }
 
 export default function GraphControl({

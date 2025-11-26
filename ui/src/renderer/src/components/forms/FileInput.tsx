@@ -1,10 +1,10 @@
-import { CloudUpload } from 'iconoir-react';
-import { ChangeEvent, ClipboardEvent, Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 import { useNotif } from '@contexts/ui';
 import { useApi, useCradleNavigate } from '@hooks';
-import { uploadFile } from '@utils/files';
+import type { FileReference } from '@services/cradle/models';
 import { handleAPIError } from '@utils/api';
-import type { FileReference } from '@/services/cradle/models';
+import { uploadFile } from '@utils/files';
+import { CloudUpload } from 'iconoir-react';
+import { ChangeEvent, ClipboardEvent, Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from 'react';
 
 /**
  * FileInput component props

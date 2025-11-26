@@ -2,7 +2,7 @@
  * Link utilities for handling URLs and redirects
  */
 
-import { FileReference } from "@/services/cradle/models";
+import { FileReference } from "@services/cradle/models";
 import QueryString from "qs";
 
 /**

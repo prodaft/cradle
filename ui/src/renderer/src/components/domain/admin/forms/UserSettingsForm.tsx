@@ -19,9 +19,9 @@ interface UserSettingsFormProps {
 }
 
 interface FormData {
-    allowRegistration: boolean;
-    requireEmailActivation: boolean;
-    requireAdminConfirmation: boolean;
+    allowRegistration?: boolean;
+    requireEmailActivation?: boolean;
+    requireAdminConfirmation?: boolean;
 }
 
 const accountSettingsSchema = Yup.object().shape({
@@ -132,30 +132,27 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                 <div className='space-y-4'>
                                     <FormField
                                         type='checkbox'
-                                        name='allowRegistration'
-                                        labelText='Allow Registration'
+                                        label='Allow Registration'
                                         className='switch switch-ghost-primary'
                                         row={true}
                                         {...register('allowRegistration')}
-                                        error={errors.allowRegistration?.message}
+                                        error={errors.allowRegistration}
                                     />
                                     <FormField
                                         type='checkbox'
-                                        name='requireEmailActivation'
-                                        labelText='Require Email Activation'
+                                        label='Require Email Activation'
                                         className='switch switch-ghost-primary'
                                         row={true}
                                         {...register('requireEmailActivation')}
-                                        error={errors.requireEmailActivation?.message}
+                                        error={errors.requireEmailActivation}
                                     />
                                     <FormField
                                         type='checkbox'
-                                        name='requireAdminConfirmation'
-                                        labelText='Require Admin Confirmation of New Accounts'
+                                        label='Require Admin Confirmation of New Accounts'
                                         className='switch switch-ghost-primary'
                                         row={true}
                                         {...register('requireAdminConfirmation')}
-                                        error={errors.requireAdminConfirmation?.message}
+                                        error={errors.requireAdminConfirmation}
                                     />
                                     <button
                                         type='submit'

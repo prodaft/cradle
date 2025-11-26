@@ -1,3 +1,4 @@
+import { EdgeRelation } from '@/services/cradle';
 import { Tab, Tabs } from '@components/layout/Tabs/Tabs';
 import { TabClasses } from '@components/layout/Tabs/types';
 import { addDays, format } from 'date-fns';
@@ -8,13 +9,6 @@ import PathFindSearch from './PathFindSearch';
 
 interface Node {
     id: string;
-    [key: string]: any;
-}
-
-interface Edge {
-    id: string;
-    source: string;
-    target: string;
     [key: string]: any;
 }
 
@@ -40,7 +34,7 @@ interface QueryValues {
 
 interface GraphSearchProps {
     addNodes: (nodes: Node[]) => void;
-    addEdges: (edges: Edge[]) => void;
+    addEdges: (edges: EdgeRelation[]) => void;
 }
 
 export default function GraphSearch({ addNodes, addEdges }: GraphSearchProps) {

@@ -1,4 +1,6 @@
 /* tslint:disable */
+import { EntryCompressedTreeObject, EntryCompressedTreeObjectFromJSONTyped, EntryCompressedTreeObjectToJSONTyped } from "./EntryCompressedTreeObject";
+
 /* eslint-disable */
 /**
  * CRADLE
@@ -17,18 +19,16 @@
  * 
  * @export
  */
-export type EntryCompressedTreeValue = string | { [key: string]: EntryCompressedTreeObjectValueValue; };
+export type EntryCompressedTreeValue = EntryCompressedTreeObject | string;
 
 export function EntryCompressedTreeValueFromJSON(json: any): EntryCompressedTreeValue {
     return EntryCompressedTreeValueFromJSONTyped(json, false);
 }
 
 export function EntryCompressedTreeValueFromJSONTyped(json: any, ignoreDiscriminator: boolean): EntryCompressedTreeValue {
-    if (json == null) {
-        return json;
-    }
-
-    return {} as any;
+    if (json == null) return json;
+    if (typeof json === "string") return json;
+    return EntryCompressedTreeObjectFromJSONTyped(json, ignoreDiscriminator);
 }
 
 export function EntryCompressedTreeValueToJSON(json: any): any {
@@ -36,10 +36,8 @@ export function EntryCompressedTreeValueToJSON(json: any): any {
 }
 
 export function EntryCompressedTreeValueToJSONTyped(value?: EntryCompressedTreeValue | null, ignoreDiscriminator: boolean = false): any {
-    if (value == null) {
-        return value;
-    }
-
-    return {};
+    if (value == null) return value;
+    if (typeof value === "string") return value;
+    return EntryCompressedTreeObjectToJSONTyped(value, ignoreDiscriminator);
 }
 

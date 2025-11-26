@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
-import type { BaseDigest } from '@/services/cradle/models';
+import type { Alert } from '@/types';
 import DigestList from '@components/domain/files/DigestList';
+import type { BaseDigest } from '@services/cradle/models';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 interface SearchFilters {
     title: string;
@@ -75,6 +76,13 @@ export default function DigestData() {
             from: searchParams.get('created_at_gte') ? new Date(searchParams.get('created_at_gte')!).toISOString().split('T')[0] : '',
             to: searchParams.get('created_at_lte') ? new Date(searchParams.get('created_at_lte')!).toISOString().split('T')[0] : ''
         },
+    });
+
+    // Alert state for DigestList
+    const [alert, setAlert] = useState<Alert>({
+        show: false,
+        message: '',
+        color: 'info',
     });
 
     useEffect(() => {
@@ -237,7 +245,7 @@ export default function DigestData() {
         setPage(newPage);
     };
 
-    const handleSort = (newSortField: string, newSortDirection: string) => {
+    const handleSort = (newSortField: string, newSortDirection: 'asc' | 'desc') => {
         setSortField(newSortField);
         setSortDirection(newSortDirection);
         setPage(1);
@@ -288,6 +296,7 @@ export default function DigestData() {
                     page={page}
                     totalPages={totalPages}
                     handlePageChange={handlePageChange}
+                    setAlert={setAlert}
                     onDigestDelete={fetchDigests}
                     sortField={sortField}
                     sortDirection={sortDirection}
@@ -296,7 +305,7 @@ export default function DigestData() {
                     setPageSize={handlePageSizeChange}
                     onColumnFilterChange={handleColumnFilterChange}
                     columnFilters={columnFilters}
-                    searchFilters={searchFilters as Record<string, string>}
+                    searchFilters={{ title: searchFilters.title, author: searchFilters.author }}
                     onSearchChange={handleSearchChange}
                     onSearchSubmit={handleSearchSubmit}
                 />

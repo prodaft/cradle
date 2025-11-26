@@ -1,29 +1,11 @@
+import { useTheme } from '@/contexts/ui/ThemeContext';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { EdgeRelation } from '@/services/cradle';
+import { CosmosInputLink } from '@cosmograph/cosmos';
 import { Cosmograph, CosmographProvider, CosmographSearch } from '@cosmograph/react';
 import { Erase, PauseSolid, PlaySolid, RefreshDouble } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
-import { useTheme } from '@/contexts/ui/ThemeContext';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-
-interface Node {
-    id: string;
-    label?: string;
-    color?: string;
-    degree?: number;
-    type?: string;
-    [key: string]: any;
-}
-
-interface Edge {
-    id: string;
-    source: string;
-    target: string;
-    [key: string]: any;
-}
-
-interface Entry {
-    id: string;
-    [key: string]: any;
-}
+import { Node } from './graphFilterUtils';
 
 interface GraphConfig {
     nodeRadiusCoefficient?: number;
@@ -35,10 +17,11 @@ interface GraphConfig {
 }
 
 interface GraphViewerProps {
-    setSelectedEntries: (entries: Set<Entry>) => void;
+    selectedNodes: Set<Node>;
+    setSelectedNodes: (nodes: Set<Node>) => void;
     config?: GraphConfig;
     nodes?: Node[];
-    edges?: Edge[];
+    edges?: EdgeRelation[];
     onClearGraph?: () => void;
 }
 
@@ -54,38 +37,36 @@ function normalize(x: number, inputMin: number, inputMax: number): number {
     return outputMin + normalized * (outputMax - outputMin);
 }
 
-export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [], edges = [], onClearGraph }: GraphViewerProps) {
-    const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
+export default function GraphViewer({ selectedNodes, setSelectedNodes, config = {}, nodes = [], edges = [], onClearGraph }: GraphViewerProps) {
     const { isDarkMode } = useTheme();
     const cosmographRef = useRef<any>(null);
     const { navigate, navigateLink } = useCradleNavigate();
     const [disableSimulation, setDisableSimulation] = useState(false);
     const [graphInstanceKey, setGraphInstanceKey] = useState(0);
 
-    const onClick = (node: Node | null, index: number, nodePosition: any, event: any) => {
+    const onClick = (node?: Node, index?: number, nodePosition?: [number, number], event?: MouseEvent) => {
         if (!node) {
-            setSelectedNodes([]);
+            setSelectedNodes(new Set());
             cosmographRef.current?.focusNode(null);
             return;
         }
 
         let clickedNodes = [node];
         if (
-            cosmographRef.current != null &&
-            selectedNodes.filter((n) => n.id === node.id).length === 1
+            cosmographRef.current != null && selectedNodes.has(node)
         ) {
             clickedNodes =
                 cosmographRef.current.getAdjacentNodes(node.id) || clickedNodes;
         }
 
-        let newNodes = [node];
-        if (event.ctrlKey || event.metaKey) {
-            newNodes = [...selectedNodes];
+        let newNodes = new Set([node]);
+        if (event && (event.ctrlKey || event.metaKey)) {
+            newNodes = new Set([...selectedNodes]);
         }
 
         for (let n of clickedNodes) {
-            if (newNodes.filter((sn) => sn.id === n.id).length === 0) {
-                newNodes.push(n);
+            if (!newNodes.has(n)) {
+                newNodes.add(n);
             }
         }
         cosmographRef.current?.focusNode(node);
@@ -102,14 +83,13 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
     }, [disableSimulation]);
 
     useEffect(() => {
-        setSelectedEntries(new Set(selectedNodes as Entry[]));
         if (!cosmographRef.current) return;
-        if (selectedNodes.length === 0) {
+        if (selectedNodes.size === 0) {
             cosmographRef.current.unselectNodes();
         } else {
             cosmographRef.current.selectNodes(selectedNodes);
         }
-    }, [selectedNodes, setSelectedEntries]);
+    }, [selectedNodes, cosmographRef]);
 
     return (
         <div
@@ -127,14 +107,14 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                         accessors={[
                             {
                                 label: 'label',
-                                accessor: (node: Node) => node.label,
+                                accessor: (node: Node) => node.label ?? node.id,
                             },
                         ]}
-                        onSelectResult={(node: Node | null) => {
+                        onSelectResult={(node?: Node) => {
                             if (node == null || cosmographRef.current == null) return;
                             cosmographRef.current.focusNode(node);
                             cosmographRef.current.zoomToNode(node);
-                            setSelectedNodes([node]);
+                            setSelectedNodes(new Set([node]));
 
                         }}
                     />
@@ -166,7 +146,7 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                 <Cosmograph
                     key={graphInstanceKey}
                     nodes={nodes}
-                    links={edges}
+                    links={edges as unknown as CosmosInputLink[]}
                     ref={cosmographRef}
                     onClick={onClick}
                     backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}
@@ -178,7 +158,6 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                         : 1)}
                     nodeSize={(node: Node) => normalize(node.degree || 1, 1, 60)}
                     showDynamicLabels={true}
-                    nodeLabel={(node: Node) => node.label || node.id}
                     disableSimulation={false}
                     linkColor='#999999'
                     focusedNodeRingColor="#f68d2e"
@@ -207,8 +186,6 @@ export default function GraphViewer({ setSelectedEntries, config = {}, nodes = [
                             : 10
                     } /* 0 - 20 */
                     curvedLinks={false}
-                    arrows={false}
-                    arrowSizeScale={0}
                 />
             </CosmographProvider>
         </div>

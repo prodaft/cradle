@@ -45,6 +45,24 @@ export interface EntrySerializerMinimal {
      * @memberof EntrySerializerMinimal
      */
     readonly entryClass?: EntryClassSerializerMinimal;
+    /**
+     * 
+     * @type {string}
+     * @memberof EntrySerializerMinimal
+     */
+    type?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof EntrySerializerMinimal
+     */
+    subtype?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof EntrySerializerMinimal
+     */
+    color?: string;
 }
 
 /**
@@ -68,6 +86,9 @@ export function EntrySerializerMinimalFromJSONTyped(json: any, ignoreDiscriminat
         'id': json['id'] == null ? undefined : json['id'],
         'name': json['name'],
         'entryClass': json['entry_class'] == null ? undefined : EntryClassSerializerMinimalFromJSON(json['entry_class']),
+        'type': json['type'] == null ? undefined : json['type'],
+        'subtype': json['subtype'] == null ? undefined : json['subtype'],
+        'color': json['color'] == null ? undefined : json['color'],
     };
 }
 
@@ -83,6 +104,9 @@ export function EntrySerializerMinimalToJSONTyped(value?: Omit<EntrySerializerMi
     return {
         
         'name': value['name'],
+        'type': value['type'],
+        'subtype': value['subtype'],
+        'color': value['color'],
     };
 }
 

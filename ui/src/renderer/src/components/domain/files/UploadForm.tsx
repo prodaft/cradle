@@ -1,6 +1,7 @@
 import { Upload } from 'iconoir-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { MultiValue } from 'react-select';
 import * as Yup from 'yup';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
@@ -14,7 +15,7 @@ interface DataTypeOption {
 }
 
 interface AssociatedEntryOption {
-    value: string;
+    value: number;  // Entry ID (BigAutoField)
     label: string;
 }
 
@@ -166,8 +167,8 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
         markFieldTouched('dataType');
     };
 
-    const handleAssociatedEntriesChange = (value: AssociatedEntryOption | AssociatedEntryOption[]) => {
-        updateFormValue('associatedEntry', value);
+    const handleAssociatedEntriesChange = (value: MultiValue<AssociatedEntryOption>) => {
+        updateFormValue('associatedEntry', Array.from(value));
         markFieldTouched('associatedEntry');
     };
 
@@ -218,7 +219,7 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                 : values.associatedEntry;
 
             if (associatedEntry?.value) {
-                requestParams.entity = parseInt(associatedEntry.value, 10);
+                requestParams.entity = associatedEntry.value;
             }
 
             await intelioApi.intelioDigestCreate(requestParams);

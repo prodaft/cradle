@@ -1,5 +1,5 @@
 import AlertBox from '@/components/base/Alert/AlertBox';
-import FormField from '@/components/forms/FormField';
+import FormFieldComponent from '@/components/forms/FormField';
 import Selector from '@/components/forms/Selector';
 import { Tab, Tabs } from '@/components/layout/Tabs/Tabs';
 import { TabClasses } from '@/components/layout/Tabs/types';
@@ -38,19 +38,18 @@ interface FormFields {
 }
 
 interface FormData {
-    strategy: string;
-    periodicity: string;
-    for_eclasses: EclassOption[];
+    for_eclasses?: EclassOption[];
     enabled?: boolean;
-    settings: Record<string, string | number>;
-    id?: string | number;
+    settings: Record<string, any>;
+    id?: string;
 }
 
 // Dynamic schema generation based on form_fields
-const createEnrichmentSchema = (form_fields: FormFields) => {
-    const schemaFields: Record<string, Yup.AnySchema> = {
-        strategy: Yup.string().required('Strategy is required'),
-        for_eclasses: Yup.array().notRequired(),
+const createEnrichmentSchema = (form_fields: FormFields): Yup.ObjectSchema<FormData> => {
+    const schemaFields = {
+        for_eclasses: Yup.array(),
+        enabled: Yup.boolean(),
+        id: Yup.string(),
         settings: Yup.object().shape(
             Object.entries(form_fields || {}).reduce((acc, [key, field]) => {
                 let validator: Yup.AnySchema = Yup.string();
@@ -71,15 +70,9 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
         ),
     };
 
-    // Add periodicity validation if it exists
-    schemaFields.periodicity = Yup.string().when('strategy', {
-        is: (val: string) => val === 'periodicity',
-        then: () => Yup.string().required('Interval is required'),
-        otherwise: () => Yup.string().notRequired(),
-    });
-
     return Yup.object().shape(schemaFields);
 };
+
 
 /**
  * EnrichmentSettingsForm component
@@ -105,21 +98,17 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
         register,
         handleSubmit,
         control,
-        watch,
         reset,
         setValue,
         formState: { errors },
     } = useForm<FormData>({
         resolver: yupResolver(validationSchema),
         defaultValues: {
-            strategy: 'manual',
-            periodicity: '24:00:00',
             for_eclasses: [],
+            enabled: false,
             settings: {},
         },
     });
-
-    const watchStrategy = watch('strategy');
 
     // Fetch all entry classes for the for_eclasses selector
     const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
@@ -174,8 +163,6 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
 
                         // Set form values
                         reset({
-                            strategy: settings.strategy || 'manual',
-                            periodicity: settings.periodicity || '24:00:00',
                             for_eclasses: formattedEclasses,
                             enabled: settings.enabled || false,
                             settings: initialSettings,
@@ -195,7 +182,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
         try {
             const formatted_data = {
                 ...data,
-                forEclasses: data.for_eclasses.map((item) => item.value),
+                forEclasses: data.for_eclasses?.map((item) => item.value),
             };
 
             await intelioApi.enrichmentSettingsUpdate({
@@ -237,7 +224,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                             </select>
                             {errors.settings?.[key] && (
                                 <p className='text-red-600 text-sm'>
-                                    {errors.settings[key]?.message}
+                                    {errors.settings[key]?.message?.toString() || ''}
                                 </p>
                             )}
                         </div>
@@ -247,14 +234,13 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                 return (
                     <>
                         <div className='mt-4' key={`${key}-spacer`} />
-                        <FormField
+                        <FormFieldComponent
                             key={key}
                             type='number'
-                            name={`settings.${key}`}
-                            labelText={capitalizeString(key)}
+                            label={capitalizeString(key)}
                             className='form-input input input-ghost-primary input-block focus:ring-0'
                             {...register(`settings.${key}`)}
-                            error={errors.settings?.[key]?.message}
+                            error={errors.settings?.[key]?.message?.toString() || ''}
                         />
                     </>
                 );
@@ -263,14 +249,13 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                 return (
                     <>
                         <div className='mt-4' key={`${key}-spacer`} />
-                        <FormField
+                        <FormFieldComponent
                             key={key}
                             type='text'
-                            name={`settings.${key}`}
-                            labelText={capitalizeString(key)}
+                            label={capitalizeString(key)}
                             className='form-input input input-ghost-primary input-block focus:ring-0'
                             {...register(`settings.${key}`)}
-                            error={errors.settings?.[key]?.message}
+                            error={errors.settings?.[key]?.message?.toString() || ''}
                         />
                     </>
                 );
@@ -300,13 +285,13 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                             <Tab title='General' classes='space-y-4'>
                                 <div className='mt-4' />
 
-                                <FormField
+                                <FormFieldComponent
                                     type='checkbox'
-                                    labelText='Enabled'
+                                    label='Enabled'
                                     className='switch switch-ghost-primary'
                                     {...register('enabled')}
                                     row={true}
-                                    error={errors.enabled?.message}
+                                    error={errors.enabled}
                                 />
 
                                 <div className='w-full mt-4'>
@@ -321,7 +306,7 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                                             name='for_eclasses'
                                             control={control}
                                             render={({
-                                                field: { onChange, value, ref },
+                                                field: { onChange, value },
                                             }) => (
                                                 <Selector
                                                     value={value}
@@ -329,7 +314,6 @@ export default function EnrichmentSettingsForm({ enrichment_class }: EnrichmentS
                                                     fetchOptions={fetchEntryClasses}
                                                     isMulti={true}
                                                     placeholder='Select entry classes...'
-                                                    inputRef={ref}
                                                 />
                                             )}
                                         />

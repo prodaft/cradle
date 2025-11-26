@@ -1,11 +1,9 @@
+import { FileDownload, FileReference } from '@services/cradle';
+import { FileTransferApi } from '@services/cradle/apis';
 import matter from 'gray-matter';
 import jsYaml from 'js-yaml';
 import type MarkdownIt from 'markdown-it';
 import type { Token } from 'markdown-it/index.js';
-import QueryString from 'qs';
-import { FileTransferApi } from '@/services/cradle/apis';
-import { strip } from '../links';
-import { FileDownload, FileReference } from '@/services/cradle';
 import { prependLinks } from '../links';
 
 // Override block-level renderer rules to render nothing
@@ -110,9 +108,8 @@ export function renderCradleLink(
         displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
 
-    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
-        date ? `data-timestamp="${date}"` : ''
-    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
+    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${date ? `data-timestamp="${date}"` : ''
+        } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
 // Match ![....][....] or [....][....]
@@ -129,6 +126,23 @@ export function footnoteRefRule(state: any, silent: boolean): boolean {
 
     state.pos += match[0].length;
     return true;
+}
+
+/**
+ * Render a footnote reference as HTML
+ * Formats markdown footnote syntax [text][ref] into a link
+ */
+export function renderFootnoteRef(token: Token): string {
+    const content = token.content || '';
+    const footnoteRef = (token as any).footnote_ref || '';
+
+    // If there's a reference, create an anchor link to the footnote
+    if (footnoteRef) {
+        return `<a href="#fn-${footnoteRef}" class="footnote-ref" id="fnref-${footnoteRef}">${content}</a>`;
+    }
+
+    // Otherwise, just return the content
+    return content;
 }
 
 let DownloadLinkPromiseCache: Record<

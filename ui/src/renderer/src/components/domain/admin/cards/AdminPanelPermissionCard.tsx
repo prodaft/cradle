@@ -1,15 +1,15 @@
-import { NavArrowDown } from 'iconoir-react';
-import { useState } from 'react';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { NavArrowDown } from 'iconoir-react';
+import { useState } from 'react';
 
 type AccessLevel = 'none' | 'read' | 'read-write';
 
 interface AdminPanelPermissionCardProps {
-    userId: number | string;
+    userId: string;
     text: string;
-    entityId: number | string;
+    entityId: number;
     accessLevel: AccessLevel;
     searchKey: string;
 }
@@ -33,8 +33,8 @@ export default function AdminPanelPermissionCard({
         if (currentAccess !== newAccess) {
             execute(
                 () => accessApi.accessUserUpdate({
-                    userId: Number(userId),
-                    entityId: Number(entityId),
+                    userId: userId,
+                    entityId: entityId,
                     accessRequest: { accessType: newAccess },
                 }),
                 { successMessage: 'Access updated successfully' }

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from access.enums import AccessType
+from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -9,21 +9,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from django.db.models import Q
-
-from core.openapi import get_error_responses, get_common_error_responses
+from access.enums import AccessType
+from core.openapi import get_common_error_responses, get_error_responses
+from entries.enums import EntryType
+from entries.models import Entry
 from user.models import CradleUser, UserRoles
 from user.permissions import HasAdminRole
 
+from ..exceptions import (
+    AccessErrorCodes,
+    EntityNotFoundException,
+    UserNotFoundException,
+)
 from ..models import Access
 from ..serializers import AccessEntitySerializer, AccessUserSerializer
-from ..exceptions import (
-    UserNotFoundException,
-    EntityNotFoundException,
-    AccessErrorCodes,
-)
-from entries.models import Entry
-from entries.enums import EntryType
 
 
 @extend_schema_view(
@@ -92,9 +91,9 @@ class UserAccessList(APIView):
         parameters=[
             OpenApiParameter(
                 name="entity_id",
-                type=str,
+                type=int,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity to get access privileges for",
+                description="Id of the entity to get access privileges for",
             )
         ],
         responses={

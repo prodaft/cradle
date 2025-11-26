@@ -54,15 +54,15 @@ export interface EntitiesCreateRequest {
 }
 
 export interface EntitiesDestroyRequest {
-    entityId: string;
+    entityId: number;
 }
 
 export interface EntitiesRetrieveRequest {
-    entityId: string;
+    entityId: number;
 }
 
 export interface EntitiesUpdateRequest {
-    entityId: string;
+    entityId: number;
     entityRequest: EntityRequest;
 }
 
@@ -84,6 +84,8 @@ export interface EntriesRelationsDestroyRequest {
 
 export interface EntriesRelationsRetrieveRequest {
     relates: Array<number>;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface EntryClassesCreateRequest {
@@ -570,6 +572,14 @@ export class EntriesApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
+        }
 
         if (requestParameters['relates'] != null) {
             queryParameters['relates'] = requestParameters['relates'];

@@ -1,29 +1,32 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework_simplejwt.authentication import JWTAuthentication
+from typing import cast
+from uuid import UUID
+
+from django.db import transaction
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
-from user.models import CradleUser
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from entries.models import Entry
-from ..models import Access
-from ..serializers import AccessSerializer
+from notifications.models import AccessGrantedNotification
+from user.models import CradleUser
+
+from ..enums import AccessType
 from ..exceptions import (
-    UserNotFoundException,
+    AccessErrorCodes,
     EntityNotFoundException,
     UpdateNotAllowedException,
-    InvalidRequestException,
-    AccessErrorCodes,
+    UserNotFoundException,
 )
-from typing import cast
-from ..enums import AccessType
-from notifications.models import AccessGrantedNotification
-from django.db import transaction
-
-from uuid import UUID
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from ..models import Access
+from ..serializers import AccessSerializer
 
 
 @extend_schema_view(
@@ -39,9 +42,9 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
             ),
             OpenApiParameter(
                 name="entity_id",
-                type=str,
+                type=int,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity to update access for",
+                description="Id of the entity to update access for",
             ),
         ],
         request=AccessSerializer,
@@ -51,7 +54,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiPara
                 AccessErrorCodes.USER_NOT_FOUND,
                 AccessErrorCodes.ENTITY_NOT_FOUND,
                 AccessErrorCodes.UPDATE_NOT_ALLOWED,
-                AccessErrorCodes.INVALID_REQUEST
+                AccessErrorCodes.INVALID_REQUEST,
             ),
             **get_validation_error_response(),
             **get_common_error_responses(),

@@ -19,7 +19,7 @@ interface FormData {
     minEntries: number;
     minEntities: number;
     maxCliqueSize: number;
-    allowDynamicEntryClassCreation: boolean;
+    allowDynamicEntryClassCreation?: boolean;
 }
 
 const noteSettingsSchema = Yup.object().shape({
@@ -144,32 +144,28 @@ export default function NoteSettingsForm() {
                                 <div className='flex flex-col gap-3 pt-2'>
                                     <FormField
                                         type='number'
-                                        name='minEntries'
-                                        labelText='Minimum Number of Entries in a Note'
+                                        label='Minimum Number of Entries in a Note'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
                                         {...register('minEntries')}
-                                        error={errors.minEntries?.message}
+                                        error={errors.minEntries}
                                     />
                                     <FormField
                                         type='number'
-                                        name='minEntities'
-                                        labelText='Minimum Number of Entities in a Note'
+                                        label='Minimum Number of Entities in a Note'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
                                         {...register('minEntities')}
-                                        error={errors.minEntities?.message}
+                                        error={errors.minEntities}
                                     />
                                     <FormField
                                         type='number'
-                                        name='maxCliqueSize'
-                                        labelText='Maximum Clique Size'
+                                        label='Maximum Clique Size'
                                         className='form-input input input-ghost-primary input-block focus:ring-0'
                                         {...register('maxCliqueSize')}
-                                        error={errors.maxCliqueSize?.message}
+                                        error={errors.maxCliqueSize}
                                     />
                                     <FormField
                                         type='checkbox'
-                                        name='allowDynamicEntryClassCreation'
-                                        labelText='Allow Dynamic Entry Class Creation'
+                                        label='Allow Dynamic Entry Class Creation'
                                         className='switch switch-ghost-primary'
                                         row={true}
                                         {...register('allowDynamicEntryClassCreation')}

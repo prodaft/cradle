@@ -50,7 +50,7 @@ export interface EnrichmentSettings {
      * @type {string}
      * @memberof EnrichmentSettings
      */
-    enricherType: string;
+    readonly enricherType?: string;
     /**
      * 
      * @type {any}
@@ -75,7 +75,6 @@ export interface EnrichmentSettings {
  * Check if a given object implements the EnrichmentSettings interface.
  */
 export function instanceOfEnrichmentSettings(value: object): value is EnrichmentSettings {
-    if (!('enricherType' in value) || value['enricherType'] === undefined) return false;
     return true;
 }
 
@@ -92,7 +91,7 @@ export function EnrichmentSettingsFromJSONTyped(json: any, ignoreDiscriminator: 
         'id': json['id'] == null ? undefined : json['id'],
         'enabled': json['enabled'] == null ? undefined : json['enabled'],
         'forEclassesDetail': json['for_eclasses_detail'] == null ? undefined : ((json['for_eclasses_detail'] as Array<any>).map(EntryClassFromJSON)),
-        'enricherType': json['enricher_type'],
+        'enricherType': json['enricher_type'] == null ? undefined : json['enricher_type'],
         'settings': json['settings'] == null ? undefined : json['settings'],
         'displayName': json['display_name'] == null ? undefined : json['display_name'],
         'formFields': json['form_fields'] == null ? undefined : json['form_fields'],
@@ -103,7 +102,7 @@ export function EnrichmentSettingsToJSON(json: any): EnrichmentSettings {
     return EnrichmentSettingsToJSONTyped(json, false);
 }
 
-export function EnrichmentSettingsToJSONTyped(value?: Omit<EnrichmentSettings, 'for_eclasses_detail'|'display_name'|'form_fields'> | null, ignoreDiscriminator: boolean = false): any {
+export function EnrichmentSettingsToJSONTyped(value?: Omit<EnrichmentSettings, 'for_eclasses_detail'|'enricher_type'|'display_name'|'form_fields'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -112,7 +111,6 @@ export function EnrichmentSettingsToJSONTyped(value?: Omit<EnrichmentSettings, '
         
         'id': value['id'],
         'enabled': value['enabled'],
-        'enricher_type': value['enricherType'],
         'settings': value['settings'],
     };
 }

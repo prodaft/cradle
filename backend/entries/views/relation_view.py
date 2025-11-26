@@ -1,22 +1,25 @@
-from rest_framework.permissions import IsAdminUser, IsAuthenticated
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import status
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 
+from core.openapi import get_common_error_responses, get_error_responses
 from core.pagination import TotalPagesPagination
-from core.openapi import get_error_responses, get_common_error_responses
 from entries.enums import RelationReason
+
+from ..exceptions import (
+    EntriesErrorCodes,
+    InvalidPageSizeException,
+    InvalidRelatesParameterException,
+    PageSizeTooLargeException,
+    RelatesParameterRequiredException,
+)
 from ..models import Relation
 from ..serializers import RelationSerializer
-from ..exceptions import (
-    RelatesParameterRequiredException,
-    InvalidRelatesParameterException,
-    EntriesErrorCodes,
-)
 
 
 @extend_schema(
@@ -30,7 +33,21 @@ from ..exceptions import (
             description="List of entry IDs to find relations between",
             required=True,
             type={"type": "array", "items": {"type": "integer"}},
-        )
+        ),
+        OpenApiParameter(
+            name="page",
+            location=OpenApiParameter.QUERY,
+            description="Page number for pagination",
+            required=False,
+            type=int,
+        ),
+        OpenApiParameter(
+            name="page_size",
+            location=OpenApiParameter.QUERY,
+            description="Number of relations to return per page",
+            required=False,
+            type=int,
+        ),
     ],
     responses={
         200: TotalPagesPagination().get_paginated_response_serializer(
@@ -39,6 +56,8 @@ from ..exceptions import (
         **get_error_responses(
             EntriesErrorCodes.RELATES_PARAMETER_REQUIRED,
             EntriesErrorCodes.INVALID_RELATES_PARAMETER,
+            EntriesErrorCodes.INVALID_PAGE_SIZE,
+            EntriesErrorCodes.PAGE_SIZE_TOO_LARGE,
         ),
         **get_common_error_responses(),
     },
@@ -48,6 +67,18 @@ class RelationListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        page_size = request.query_params.get("page_size", 10)
+        if not page_size.isdigit() or int(page_size) <= 0:
+            raise InvalidPageSizeException(
+                detail="Invalid page_size parameter. Must be a positive integer."
+            )
+        page_size = int(page_size)
+
+        if page_size > 200:
+            raise PageSizeTooLargeException(
+                detail="page_size cannot be greater than 200."
+            )
+
         raw_ids = request.query_params.getlist("relates")
         if not raw_ids:
             raise RelatesParameterRequiredException(
@@ -66,7 +97,7 @@ class RelationListView(APIView):
             ~Q(reason=RelationReason.NOTE) & Q(e1__in=entry_ids) & Q(e2__in=entry_ids)
         )
 
-        paginator = TotalPagesPagination()
+        paginator = TotalPagesPagination(page_size=page_size)
         paginated_entries = paginator.paginate_queryset(relations, request)
 
         # Serialize and return the response

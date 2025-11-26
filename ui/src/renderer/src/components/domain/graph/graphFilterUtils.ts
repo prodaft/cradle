@@ -1,13 +1,12 @@
-interface Node {
-    id: string;
-    type?: string;
-    [key: string]: unknown;
-}
+import { EdgeRelation } from '@/services/cradle';
 
-interface Edge {
-    source: string;
-    target: string;
-    [key: string]: unknown;
+export interface Node {
+    id: string;
+    label?: string;
+    color?: string;
+    degree?: number;
+    type?: string;
+    [key: string]: any;
 }
 
 /**
@@ -22,8 +21,8 @@ export function filterNodes<T extends Node>(nodes: T[], disabledTypes: Set<strin
     }
 
     return nodes.filter((node) => {
-        if (!node.type) return true;
-        return !disabledTypes.has(node.type);
+        if (!node.subtype) return true;
+        return !disabledTypes.has(node.subtype);
     });
 }
 
@@ -33,7 +32,7 @@ export function filterNodes<T extends Node>(nodes: T[], disabledTypes: Set<strin
  * @param filteredNodes - Filtered nodes array
  * @returns Filtered edges
  */
-export function filterEdges<T extends Node, E extends Edge>(edges: E[], filteredNodes: T[]): E[] {
+export function filterEdges<T extends Node, E extends EdgeRelation>(edges: E[], filteredNodes: T[]): E[] {
     if (!filteredNodes || filteredNodes.length === 0) {
         return [];
     }
@@ -43,7 +42,7 @@ export function filterEdges<T extends Node, E extends Edge>(edges: E[], filtered
 
     // Only keep edges where both source and target nodes are visible
     return edges.filter((edge) => {
-        return visibleNodeIds.has(edge.source) && visibleNodeIds.has(edge.target);
+        return visibleNodeIds.has(String(edge.src)) && visibleNodeIds.has(String(edge.dst));
     });
 }
 
@@ -54,7 +53,7 @@ export function filterEdges<T extends Node, E extends Edge>(edges: E[], filtered
  * @param disabledTypes - Set of disabled node types
  * @returns Object containing filtered nodes and edges
  */
-export function filterGraph<T extends Node, E extends Edge>(
+export function filterGraph<T extends Node, E extends EdgeRelation>(
     nodes: T[],
     edges: E[],
     disabledTypes: Set<string>

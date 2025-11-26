@@ -33,10 +33,28 @@ export interface EntityRequest {
     description?: string | null;
     /**
      * 
+     * @type {boolean}
+     * @memberof EntityRequest
+     */
+    isPublic?: boolean;
+    /**
+     * 
      * @type {Array<number>}
      * @memberof EntityRequest
      */
     aliases?: Array<number>;
+    /**
+     * Type of the entry (should be 'entity')
+     * @type {string}
+     * @memberof EntityRequest
+     */
+    type: string;
+    /**
+     * Subtype for the entity
+     * @type {string}
+     * @memberof EntityRequest
+     */
+    subtype: string;
 }
 
 /**
@@ -44,6 +62,8 @@ export interface EntityRequest {
  */
 export function instanceOfEntityRequest(value: object): value is EntityRequest {
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('subtype' in value) || value['subtype'] === undefined) return false;
     return true;
 }
 
@@ -59,7 +79,10 @@ export function EntityRequestFromJSONTyped(json: any, ignoreDiscriminator: boole
         
         'name': json['name'],
         'description': json['description'] == null ? undefined : json['description'],
+        'isPublic': json['is_public'] == null ? undefined : json['is_public'],
         'aliases': json['aliases'] == null ? undefined : json['aliases'],
+        'type': json['type'],
+        'subtype': json['subtype'],
     };
 }
 
@@ -76,7 +99,10 @@ export function EntityRequestToJSONTyped(value?: EntityRequest | null, ignoreDis
         
         'name': value['name'],
         'description': value['description'],
+        'is_public': value['isPublic'],
         'aliases': value['aliases'],
+        'type': value['type'],
+        'subtype': value['subtype'],
     };
 }
 

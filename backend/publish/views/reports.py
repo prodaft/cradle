@@ -6,30 +6,33 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
 from notes.models import Note
 from publish.strategies import PUBLISH_STRATEGIES
 
+from ..exceptions import (
+    InvalidPageSizeException,
+    NotesNotFoundException,
+    PageSizeTooLargeException,
+    PublishErrorCodes,
+    ReportAlreadyCompletedException,
+    ReportAlreadyGeneratingException,
+    ReportDeleteErrorException,
+    ReportIdRequiredException,
+    ReportNotFoundException,
+)
 from ..models import PublishedReport, ReportStatus
 from ..serializers import (
     EditReportSerializer,
-    ReportRetryErrorResponseSerializer,
     ReportSerializer,
 )
 from ..tasks import edit_report, generate_report
-from ..exceptions import (
-    ReportNotFoundException,
-    ReportAlreadyGeneratingException,
-    ReportAlreadyCompletedException,
-    InvalidPageSizeException,
-    PageSizeTooLargeException,
-    ReportIdRequiredException,
-    ReportDeleteErrorException,
-    NotesNotFoundException,
-    PublishErrorCodes,
-)
 
 
 @extend_schema_view(
@@ -69,7 +72,7 @@ from ..exceptions import (
             200: ReportSerializer,
             **get_error_responses(
                 PublishErrorCodes.INVALID_PAGE_SIZE,
-                PublishErrorCodes.PAGE_SIZE_TOO_LARGE
+                PublishErrorCodes.PAGE_SIZE_TOO_LARGE,
             ),
             **get_common_error_responses(),
         },
@@ -98,10 +101,14 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
+            raise InvalidPageSizeException(
+                detail="Invalid page_size value. Must be an integer."
+            )
 
         if page_size > 200:
-            raise PageSizeTooLargeException(detail="page_size cannot be greater than 200.")
+            raise PageSizeTooLargeException(
+                detail="page_size cannot be greater than 200."
+            )
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -144,7 +151,7 @@ class ReportListDeleteAPIView(generics.ListAPIView):
             **get_error_responses(
                 PublishErrorCodes.REPORT_NOT_FOUND,
                 PublishErrorCodes.REPORT_ALREADY_GENERATING,
-                PublishErrorCodes.REPORT_ALREADY_COMPLETED
+                PublishErrorCodes.REPORT_ALREADY_COMPLETED,
             ),
             **get_common_error_responses(),
         },
@@ -153,7 +160,6 @@ class ReportListDeleteAPIView(generics.ListAPIView):
 class ReportRetryAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = ReportSerializer
 
     def post(self, request, pk):
         """
@@ -166,10 +172,14 @@ class ReportRetryAPIView(APIView):
             raise ReportNotFoundException(detail="Report not found.")
 
         if report.status == ReportStatus.WORKING:
-            raise ReportAlreadyGeneratingException(detail="Report is already being generated.")
+            raise ReportAlreadyGeneratingException(
+                detail="Report is already being generated."
+            )
 
         if report.status == ReportStatus.DONE:
-            raise ReportAlreadyCompletedException(detail="Report already generated successfully.")
+            raise ReportAlreadyCompletedException(
+                detail="Report already generated successfully."
+            )
 
         report.status = ReportStatus.WORKING
         report.error_message = ""
@@ -200,7 +210,7 @@ class ReportRetryAPIView(APIView):
             **get_error_responses(
                 PublishErrorCodes.REPORT_NOT_FOUND,
                 PublishErrorCodes.NOTES_NOT_FOUND,
-                PublishErrorCodes.REPORT_ALREADY_GENERATING
+                PublishErrorCodes.REPORT_ALREADY_GENERATING,
             ),
             **get_validation_error_response(),
             **get_common_error_responses(),
@@ -214,7 +224,7 @@ class ReportRetryAPIView(APIView):
             **get_error_responses(
                 PublishErrorCodes.REPORT_NOT_FOUND,
                 PublishErrorCodes.REPORT_ID_REQUIRED,
-                PublishErrorCodes.REPORT_DELETE_ERROR
+                PublishErrorCodes.REPORT_DELETE_ERROR,
             ),
             **get_common_error_responses(),
         },
@@ -252,7 +262,9 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
             raise NotesNotFoundException(detail="One or more notes not found.")
 
         if report.status == ReportStatus.WORKING:
-            raise ReportAlreadyGeneratingException(detail="Report is already being generated.")
+            raise ReportAlreadyGeneratingException(
+                detail="Report is already being generated."
+            )
 
         report.status = ReportStatus.WORKING
         report.title = title

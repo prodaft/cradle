@@ -1,4 +1,3 @@
-import { createContext, useMemo, ReactNode } from 'react';
 import useAuth from '@/hooks/auth/useAuth';
 import {
     AccessApi,
@@ -16,8 +15,9 @@ import {
     ReportsApi,
     StatisticsApi,
     UsersApi,
-} from '@/services/cradle/apis';
-import { Configuration } from '@/services/cradle/runtime';
+} from '@services/cradle/apis';
+import { Configuration } from '@services/cradle/runtime';
+import { createContext, ReactNode, useMemo } from 'react';
 
 interface ApiContextValue {
     accessApi: AccessApi;
@@ -61,14 +61,14 @@ export function ApiProvider({ children }: ApiProviderProps) {
             basePath: basePath,
             accessToken: isLoggedIn()
                 ? async () => {
-                      try {
-                          const token = await getAccessToken();
-                          return token;
-                      } catch (error) {
-                          console.error('Failed to get access token:', error);
-                          return undefined;
-                      }
-                  }
+                    try {
+                        const token = await getAccessToken();
+                        return token || '';
+                    } catch (error) {
+                        console.error('Failed to get access token:', error);
+                        return '';
+                    }
+                }
                 : undefined,
             headers: {
                 'Content-Type': 'application/json',

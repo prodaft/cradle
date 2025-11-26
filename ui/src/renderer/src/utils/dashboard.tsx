@@ -2,16 +2,18 @@
  * Dashboard utilities for organizing and rendering dashboard content
  */
 
-import { ReactElement } from 'react';
+import { EntryListCompressedTree } from '@/services/cradle';
 import DashboardCard from '@components/domain/dashboard/DashboardCard';
 import DashboardHorizontalSection from '@components/domain/dashboard/DashboardHorizontalSection';
+import { ReactElement } from 'react';
 
 /**
  * Dashboard entry structure
+ * Matches OptimizedEntryResponse fields used for navigation
  */
 export interface DashboardEntry {
   name: string;
-  subtype: string;
+  subtype?: string;  // Optional to match API response
   type?: string;
 }
 
@@ -132,11 +134,6 @@ interface LinkTreeItem {
 }
 
 /**
- * 3-level link tree structure
- */
-type LinkTree = Record<string, Record<string, (string | Record<string, any>)[]>>;
-
-/**
  * Utility class for flattening 3-level link trees
  */
 export class LinkTreeFlattener {
@@ -146,10 +143,11 @@ export class LinkTreeFlattener {
    * @param tree - The 3-level link tree to flatten
    * @returns A list of flattened objects, each with at least { type, subtype, name }
    */
-  static flatten(tree: LinkTree): LinkTreeItem[] {
+  static flatten(tree: EntryListCompressedTree): LinkTreeItem[] {
     const result: LinkTreeItem[] = [];
-    for (const [type, subtypes] of Object.entries(tree)) {
-      for (const [subtype, items] of Object.entries(subtypes)) {
+    for (const type of Object.keys(tree)) {
+      for (const subtype of Object.keys(tree[type])) {
+        const items = tree[type][subtype];
         for (const item of items) {
           if (typeof item === 'string') {
             result.push({
@@ -161,6 +159,7 @@ export class LinkTreeFlattener {
             result.push({
               type,
               subtype,
+              name: item.name || '',
               ...item,
             });
           }
@@ -208,6 +207,9 @@ export const groupSubtypes = <T,>(
 
   for (const i in entries) {
     const entry = entries[i];
+    // Skip entries without subtype
+    if (!entry.subtype) continue;
+
     if (sublistIndices[entry.subtype] === undefined) {
       if (entry.type === 'entity') {
         for (const j in sublistIndices) {
@@ -247,12 +249,12 @@ export const renderDashboardSection = (
       {groupSubtypes(entries, (e) => (
         <DashboardCard
           key={`${e.subtype}:${e.name}`}
-          subtype={e.subtype}
+          type={e.subtype}
           name={e.name}
           link={createDashboardLink(e)}
         />
       )).map((l) => (
-        <DashboardHorizontalSection title={l[0].props.subtype} key={l[0].props.subtype}>
+        <DashboardHorizontalSection title={l[0].props.type} key={l[0].props.type}>
           {l}
         </DashboardHorizontalSection>
       ))}
@@ -286,21 +288,21 @@ export const renderDashboardSectionWithInaccessibleEntries = (
   const inaccessibleEntriesDiv =
     inaccessibleEntries && inaccessibleEntries.length > 0
       ? [
-          <div
-            key="inaccessible-entries"
-            className="w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400"
-          >
-            <p>
-              {inaccessibleEntriesMessage}
-              <span
-                className="underline cursor-pointer"
-                onClick={() => handleRequestEntryAccess(inaccessibleEntries)}
-              >
-                {requestAccessMessage}
-              </span>
-            </p>
-          </div>,
-        ]
+        <div
+          key="inaccessible-entries"
+          className="w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400"
+        >
+          <p>
+            {inaccessibleEntriesMessage}
+            <span
+              className="underline cursor-pointer"
+              onClick={() => handleRequestEntryAccess(inaccessibleEntries)}
+            >
+              {requestAccessMessage}
+            </span>
+          </p>
+        </div>,
+      ]
       : [];
 
   return (
@@ -309,12 +311,12 @@ export const renderDashboardSectionWithInaccessibleEntries = (
         ...groupSubtypes(entries, (e) => (
           <DashboardCard
             key={`${e.subtype}:${e.name}`}
-            subtype={e.subtype}
+            type={e.subtype}
             name={e.name}
             link={createDashboardLink(e)}
           />
         )).map((l) => (
-          <DashboardHorizontalSection title={l[0].props.subtype} key={l[0].props.subtype}>
+          <DashboardHorizontalSection title={l[0].props.type} key={l[0].props.type}>
             {l}
           </DashboardHorizontalSection>
         )),

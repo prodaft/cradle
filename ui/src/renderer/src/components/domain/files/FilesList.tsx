@@ -1,21 +1,21 @@
-import { useDroppable } from '@dnd-kit/core';
-import { Download } from 'iconoir-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import useApi from '@/hooks/api/useApi';
-import type { FileReferenceWithNote } from '@/services/cradle/models';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import AlertBox from '@components/base/Alert/AlertBox';
+import TableCard from '@components/base/Card/TableCard';
 import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
-import TableCard from '@components/base/Card/TableCard';
+import { useDroppable } from '@dnd-kit/core';
+import type { FileReferenceWithNote } from '@services/cradle/models';
+import { Download } from 'iconoir-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 interface FilesListQuery {
     date?: string;
     keyword?: string;
-    linked_to?: string;
+    linked_to?: number | string;  // Entry ID (number) or string query parameter
     linked_to_exact_match?: boolean;
     mimetype?: string;
     references?: string;
@@ -407,7 +407,7 @@ export default function FilesList({
                         emptyMessage="No files found!"
                         tableClassName="table"
                         enableMultiSelect={true}
-                        setSelected={setSelectedFiles}
+                        setSelected={(ids) => setSelectedFiles(ids.filter((id): id is string => typeof id === 'string'))}
                     />
                 </div>
             </div>

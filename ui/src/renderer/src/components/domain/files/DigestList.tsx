@@ -1,18 +1,18 @@
-import { Bin } from 'iconoir-react';
-import React from 'react';
 import { useModal } from '@/contexts/ui/ModalContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
-import type { BaseDigest } from '@/services/cradle/models';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import ActionsTable from '../activity/ActionsTable';
-import ListView from '@components/base/ListView/ListView';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import TableCard from '@components/base/Card/TableCard';
+import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
+import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import Tooltip from '@components/base/Tooltip/Tooltip';
+import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
+import type { BaseDigest } from '@services/cradle/models';
+import { Bin } from 'iconoir-react';
+import React from 'react';
+import ActionsTable from '../activity/ActionsTable';
 
 interface DigestListProps {
     digests: BaseDigest[];
@@ -29,7 +29,7 @@ interface DigestListProps {
     setSelectedDigests?: StateSetter<string[]>;
     pageSize?: number;
     setPageSize?: (size: number) => void;
-    onColumnFilterChange?: ((column: string, value: string | { from: string; to: string }) => void) | null;
+    onColumnFilterChange?: ((column: string, value: string | DateRangeFilter) => void) | null;
     columnFilters?: Record<string, any>;
     searchFilters?: Record<string, string>;
     onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -87,21 +87,29 @@ function DigestList({
         }
     );
 
-    const columns = [
+    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> = [
         { key: 'type', label: 'Type' },
         { key: 'status', label: 'Status' },
         { key: 'title', label: 'Title' },
-        { key: 'user', label: 'User', filterType: 'text' },
+        { key: 'user', label: 'User', filterType: 'text' as const },
         { key: 'warnings', label: 'Warnings' },
         { key: 'errors', label: 'Errors' },
-        { key: 'createdAt', label: 'Created At', filterType: 'date' },
+        { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
         { key: 'actions', label: 'Actions' },
     ];
 
     // Define filterable columns with their handlers
-    const filterableColumns = onColumnFilterChange ? {
-        user: (value: string) => onColumnFilterChange('user', value),
-        createdAt: (value: { from: string; to: string }) => onColumnFilterChange('createdAt', value),
+    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> = onColumnFilterChange ? {
+        user: (value) => {
+            if (typeof value === 'string') {
+                onColumnFilterChange('user', value);
+            }
+        },
+        createdAt: (value) => {
+            if (typeof value !== 'string') {
+                onColumnFilterChange('createdAt', value);
+            }
+        },
     } : {};
 
     interface SelectProps {
@@ -131,6 +139,7 @@ function DigestList({
                     {truncateText(digest.displayName || '', 24)}
                 </td>
                 <td className='w-16'>
+                    {/* Border color same as badge color */}
                     <span
                         className={`badge ${digest.status === 'done'
                             ? 'badge-success'
@@ -138,6 +147,11 @@ function DigestList({
                                 ? 'badge-error'
                                 : 'badge-secondary'
                             }`}
+                        style={
+                            {
+                                border: 0,
+                            }
+                        }
                     >
                         {digest.status ? digest.status.charAt(0).toUpperCase() + digest.status.slice(1) : ''}
                     </span>
@@ -150,14 +164,27 @@ function DigestList({
                 </td>
                 <td className='w-8'>
                     <Tooltip content={digest.warnings?.length > 0 ? digest.warnings.slice(0, 10).join('\n') + (digest.warnings.length > 10 ? '...' : '') : undefined} side='left' color='warning'>
-                        <span className={`badge badge-warning`}>
+                        <span
+                            className={`badge badge-warning`}
+                            style={
+                                {
+                                    border: 0,
+                                }
+                            }
+                        >
                             {digest.warnings?.length || 0}
                         </span>
                     </Tooltip>
                 </td>
                 <td className='w-8'>
                     <Tooltip content={digest.errors?.length > 0 ? digest.errors.slice(0, 10).join('\n') + (digest.errors.length > 10 ? '\n...' : '') : undefined} side='left' color='error'>
-                        <span className={`badge badge-error`}>
+                        <span
+                            className={`badge badge-error`}
+                            style={
+                                {
+                                    border: 0,
+                                }
+                            }>
                             {digest.errors?.length || 0}
                         </span>
                     </Tooltip>
@@ -330,7 +357,7 @@ function DigestList({
                 emptyMessage="No digests found!"
                 tableClassName="table table-zebra"
                 enableMultiSelect={true}
-                setSelected={setSelectedDigests}
+                setSelected={(ids) => setSelectedDigests(ids.filter((id): id is string => typeof id === 'string'))}
                 filterableColumns={filterableColumns}
                 filterValues={columnFilters}
             />

@@ -76,7 +76,7 @@ export default function EntriesManagement() {
                             Delete Hanging Artifacts
                         </button>
                     </div>
-                    <AlertBox alert={alert} setAlert={setAlert} />
+                    <AlertBox alert={alert} />
                 </div>
             </div>
         </div>

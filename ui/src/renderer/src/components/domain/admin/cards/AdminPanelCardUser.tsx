@@ -33,7 +33,7 @@ export default function AdminPanelCardUser({
     // Pre-configured delete function with automatic error handling
     const handleDelete = executor(
         async () => {
-            await usersApi.usersDestroy({ userId: Number(id) });
+            await usersApi.usersDestroy({ userId: String(id) });
             onDelete();
         },
         { successMessage: 'User deleted successfully' }

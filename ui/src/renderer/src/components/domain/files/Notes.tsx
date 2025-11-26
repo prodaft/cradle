@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { DateRangeFilter } from '@components/base/ListView/ListView';
 import DeleteNote from '@components/domain/notes/DeleteNote';
 import NotesList from '@components/domain/notes/NotesList';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 interface SearchFilters {
     content: string;
@@ -93,7 +94,7 @@ export default function Notes() {
             .then((response) => {
                 navigate(`/notes/${response.id}`);
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     // Auto-update search when filters change
@@ -101,7 +102,7 @@ export default function Notes() {
         updateSearchParams(searchFilters);
     }, []);
 
-    const handleColumnFilterChange = (column: string, value: string | { from: string; to: string }) => {
+    const handleColumnFilterChange = (column: string, value: string | DateRangeFilter) => {
         let updatedFilters = { ...searchFilters };
 
         // Handle date range columns differently

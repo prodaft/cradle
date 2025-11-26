@@ -2,6 +2,7 @@ import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { displayError } from '@/utils/api';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { AccessUser, Entity, EntryClass } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -21,11 +22,11 @@ interface Alert {
 interface EntityFormProps {
     id?: number | string | null;
     isEdit?: boolean;
-    onAdd?: (result: unknown) => void;
+    onAdd?: (result: Entity) => void;
 }
 
 interface AliasOption {
-    value: number | string;
+    value: number;
     label: string;
 }
 
@@ -33,49 +34,24 @@ interface FormData {
     name: string;
     subtype: string;
     description: string;
-    is_public: boolean;
+    isPublic: boolean;
     aliases: AliasOption[];
 }
 
-interface EntityClass {
-    type: string;
-    subtype: string;
-}
-
-interface Entity {
-    id: number | string;
-    name: string;
-    subtype: string;
-    description: string;
-    is_public: boolean;
-    aliasesDetail: Array<{
-        id: number | string;
-        name: string;
-        subtype: string;
-    }>;
-}
-
-interface Access {
-    user: {
-        id: number | string;
-        username: string;
-    };
-    accessType: 'none' | 'read' | 'read-write';
-}
-
-const entitySchema = Yup.object().shape({
+const entitySchema: Yup.ObjectSchema<FormData> = Yup.object().shape({
     name: Yup.string().required('Name is required'),
     subtype: Yup.string().required('Subtype is required'),
     description: Yup.string().notRequired(),
+    isPublic: Yup.boolean().notRequired(),
     aliases: Yup.array().notRequired(),
-});
+}) as Yup.ObjectSchema<FormData>;
 
 export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityFormProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { accessApi, entriesApi, queryApi } = useApi();
-    const [accesses, setAccessUsers] = useState<Access[]>([]);
+    const [accesses, setAccessUsers] = useState<AccessUser[]>([]);
     const [entity, setEntity] = useState<Entity | null>(null);
-    const [subclasses, setSubclasses] = useState<EntityClass[]>([]);
+    const [subclasses, setSubclasses] = useState<EntryClass[]>([]);
     const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
 
     const fetchAliases = async (q: string | string[]): Promise<AliasOption[]> => {
@@ -86,7 +62,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
             });
 
             const a = results.results.map((alias) => ({
-                value: alias.id,
+                value: alias.id!,
                 label: `${alias.subtype}:${alias.name}`,
             }));
             return a;
@@ -109,7 +85,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
             name: '',
             subtype: '',
             description: '',
-            is_public: false,
+            isPublic: false,
             aliases: [],
         },
     });
@@ -146,12 +122,12 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                     reset({
                         name: entity.name,
                         subtype: entity.subtype,
-                        description: entity.description,
-                        is_public: entity.is_public,
-                        aliases: entity.aliasesDetail.map((alias) => ({
+                        description: entity.description || '',
+                        isPublic: entity.isPublic || false,
+                        aliases: entity.aliasesDetail?.map((alias) => ({
                             value: alias.id,
                             label: `${alias.subtype}:${alias.name}`,
-                        })),
+                        })) ?? [],
                     });
 
                     setAccessUsers(accesses);
@@ -165,7 +141,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                     name: '',
                     subtype: '',
                     description: '',
-                    is_public: false,
+                    isPublic: false,
                     aliases: [],
                 });
             }
@@ -179,20 +155,20 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
             name: data.name,
             description: data.description,
             subtype: data.subtype,
-            is_public: data.is_public,
+            is_public: data.isPublic,
             aliases: data.aliases.map((alias) => alias.value),
         };
+        console.log('Payload:', payload);
 
         try {
-            let result = null;
             if (isEdit) {
                 await entriesApi.entitiesUpdate({
                     entityId: Number(id),
-                    entityUpdate: payload,
+                    entityRequest: payload,
                 });
             } else {
-                result = await entriesApi.entitiesCreate({
-                    entity: payload,
+                let result = await entriesApi.entitiesCreate({
+                    entityRequest: payload,
                 });
                 if (onAdd) onAdd(result);
             }
@@ -214,7 +190,7 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
             entriesApi
                 .entriesNextNameRetrieve({ classSubtype: watchSubtype })
                 .then((response) => {
-                    reset((prev) => ({ ...prev, name: response.nextName }));
+                    reset((prev) => ({ ...prev, name: response.name || '' }));
                 })
                 .catch((err) => displayError(setAlert, navigate)(err));
         }
@@ -235,10 +211,10 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                             <form onSubmit={handleSubmit(onSubmit)} className='space-y-2'>
                                 <FormField
                                     type='text'
-                                    labelText='Name'
+                                    label='Name'
                                     className='form-input input input-block focus:ring-0'
                                     {...register('name')}
-                                    error={errors.name?.message}
+                                    error={errors.name}
                                     disabled={isEdit}
                                 />
                                 <div className='w-full'>
@@ -268,12 +244,12 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                                     </div>
                                 </div>
                                 <FormField
-                                    type='checkbox'
-                                    labelText='Publicly Available'
-                                    className='switch switch-ghost-primary'
-                                    {...register('is_public')}
+                                    type='switch'
+                                    label='Publicly Available'
+                                    className='switch-ghost-primary'
+                                    {...register('isPublic')}
                                     row={true}
-                                    error={errors.is_public?.message}
+                                    error={errors.isPublic}
                                 />
                                 <div className='w-full'>
                                     <label
@@ -302,14 +278,13 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                                         <Controller
                                             name='aliases'
                                             control={control}
-                                            render={({ field: { onChange, value, ref } }) => (
+                                            render={({ field: { onChange, value } }) => (
                                                 <Selector
                                                     value={value}
                                                     onChange={onChange}
                                                     fetchOptions={fetchAliases}
                                                     isMulti={true}
                                                     placeholder='Select aliases...'
-                                                    inputRef={ref}
                                                 />
                                             )}
                                         />
@@ -337,9 +312,9 @@ export default function EntityForm({ id = null, isEdit = false, onAdd }: EntityF
                                 return (
                                     <AdminPanelPermissionCard
                                         key={user.id}
-                                        userId={user.id}
+                                        userId={user.id!}
                                         text={user.username}
-                                        entityId={entity.id}
+                                        entityId={entity.id!}
                                         accessLevel={access.accessType}
                                         searchKey={user.username}
                                     />

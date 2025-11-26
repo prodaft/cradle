@@ -1,7 +1,7 @@
+import { EntriesApi, FileTransferApi } from '@services/cradle/apis';
 import MarkdownIt from 'markdown-it';
 import { default as anchor, default as markdownItAnchor } from "markdown-it-anchor";
 import Prism from 'prismjs';
-import { EntriesApi, FileTransferApi } from '@/services/cradle/apis';
 import { parseWithExtensions, parseWithExtensionsInline } from './extensions';
 
 const LINK_SVG = `
@@ -14,7 +14,7 @@ const customPermalink = anchor.permalink.linkInsideHeader({
     placement: 'after',
     renderHref: (slug: string) => {
 
-        const currentHash = window.location.hash.substring(1).split('?')[0] || ''; 
+        const currentHash = window.location.hash.substring(1).split('?')[0] || '';
         const newUrl = window.location.pathname + window.location.search + '#' + currentHash + (currentHash ? '?' : '') + 'heading=' + `${slug}`;
         console.log(window.location.origin + newUrl);
         return window.location.origin + newUrl;
@@ -42,7 +42,7 @@ export async function parseMarkdown(
                 if (lang && Prism.languages[lang]) {
                     try {
                         return Prism.highlight(code, Prism.languages[lang], lang);
-                    } catch {}
+                    } catch { }
                 }
                 return '';
             },

@@ -1,6 +1,6 @@
-import { Sort, SortDown, SortUp } from 'iconoir-react/regular';
-import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useProfile } from '@contexts/user/ProfileContext';
+import { Sort, SortDown, SortUp } from 'iconoir-react/regular';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
 interface Column {
     key: string;
@@ -9,41 +9,44 @@ interface Column {
     filterType?: 'text' | 'date';
 }
 
-interface DateRangeFilter {
+export interface DateRangeFilter {
     from?: string;
     to?: string;
 }
 
-interface RenderRowOptions {
+interface RenderRowOptions<T> {
     enableMultiSelect: boolean;
     isSelected: boolean;
     onSelect: () => void;
 }
 
-interface ListViewProps<T = any> {
+export type SortDirection = 'asc' | 'desc';
+
+interface ListViewProps<T extends { id?: string | number }> {
     data?: T[];
     columns?: Column[];
     loading?: boolean;
     sortField?: string;
-    sortDirection?: 'asc' | 'desc';
-    onSort?: ((field: string, direction: 'asc' | 'desc') => void) | null;
+    sortDirection?: SortDirection;
+    onSort?: ((field: string, direction: SortDirection) => void) | null;
     sortFieldMapping?: Record<string, string>;
     emptyMessage?: string;
-    renderRow?: ((item: T, index: number, options: RenderRowOptions) => ReactNode) | null;
+    renderRow?: ((item: T, index: number, options: RenderRowOptions<T>) => ReactNode) | null;
     tableClassName?: string;
     enableMultiSelect?: boolean;
-    setSelected?: (ids: string[]) => void;
+    setSelected?: (ids: NonNullable<T['id']>[]) => void;
     filterableColumns?: Record<string, (value: string | DateRangeFilter) => void>;
-    filterValues?: Record<string, string | DateRangeFilter>;
+    filterValues?: Record<string, string | DateRangeFilter | undefined>;
 }
 
 /**
  * ListView component - A reusable component for displaying data in table view
- * 
- * NOTE: The data items must have an id property, but it is optional to allow
- * for compatibility with the auto-generated API responses.
+ *
+ * NOTE: The data items must have an id property (string or number), but it is optional
+ * to allow for compatibility with the auto-generated API responses.
+ * Supports both string IDs (UUIDs for Notes, Users, Relations) and number IDs (Entry BigAutoField).
  */
-export default function ListView<T extends { id?: string }>({
+export default function ListView<T extends { id?: string | number }>({
     data = [],
     columns = [],
     loading = false,
@@ -55,18 +58,18 @@ export default function ListView<T extends { id?: string }>({
     renderRow = null,
     tableClassName = 'table table-hover',
     enableMultiSelect = false,
-    setSelected = () => {},
+    setSelected = () => { },
     filterableColumns = {},
     filterValues = {},
 }: ListViewProps<T>) {
     const { profile } = useProfile();
-    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+    const [selectedIds, setSelectedIds] = useState<NonNullable<T['id']>[]>([]);
     const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
     const filterInputRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
-            const allIds = data.map((item) => item.id!);
+            const allIds = data.map((item) => item.id!) as NonNullable<T['id']>[];
             setSelectedIds(allIds);
             setSelected(allIds);
         } else {
@@ -75,7 +78,7 @@ export default function ListView<T extends { id?: string }>({
         }
     };
 
-    const handleSelectRow = (id: string) => {
+    const handleSelectRow = (id: NonNullable<T['id']>) => {
         const newSelectedIds = selectedIds.includes(id)
             ? selectedIds.filter((selectedId) => selectedId !== id)
             : [...selectedIds, id];
@@ -95,10 +98,10 @@ export default function ListView<T extends { id?: string }>({
         } else {
             // New field, default to descending for timestamp fields, ascending for others
             const newDirection = newSortField.includes('timestamp') ||
-                                newSortField.includes('created_at') ||
-                                newSortField.includes('edit_timestamp')
-                                ? 'desc'
-                                : 'asc';
+                newSortField.includes('created_at') ||
+                newSortField.includes('edit_timestamp')
+                ? 'desc'
+                : 'asc';
             onSort(newSortField, newDirection);
         }
     };
@@ -228,9 +231,9 @@ export default function ListView<T extends { id?: string }>({
                         >
                             {children}
                             {(!!filterValues[column] &&
-                              (typeof filterValues[column] === 'string' ? !!filterValues[column] : hasDateRangeFilter)) && (
-                                <span className='ml-1 text-xs text-orange-600 dark:text-orange-400'>●</span>
-                            )}
+                                (typeof filterValues[column] === 'string' ? !!filterValues[column] : hasDateRangeFilter)) && (
+                                    <span className='ml-1 text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                )}
                         </span>
                         {isSortable && (
                             <button

@@ -1,17 +1,27 @@
-import { format, parseISO } from 'date-fns';
+import { useNotif } from '@/contexts/ui/NotificationContext';
+import useApi from '@/hooks/api/useApi';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
+import Pagination from '@components/base/Pagination/Pagination';
+import type { EventLog } from '@services/cradle/models';
+import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
-import useApi from '@/hooks/api/useApi';
-import type { EventLog } from '@/services/cradle/models';
 import Activity from './Activity';
-import Pagination from '@components/base/Pagination/Pagination';
 
-// Use EventLog from generated models as ActivityLog
-type ActivityLog = EventLog;
+// Local ActivityLog interface to match Activity component expectations
+interface ActivityLog {
+    timestamp: string;
+    type: string;
+    user: {
+        username: string;
+    };
+    objectRepr: string;
+    details?: string;
+    srcLog?: ActivityLog;
+    src_log?: ActivityLog;
+}
 
 interface SearchFilters {
     username: string;
@@ -51,6 +61,21 @@ export default function ActivityList({ name, objectId, content_type, username }:
     const [totalPages, setTotalPages] = useState(1);
     const { notify } = useNotif();
 
+    // Convert EventLog to ActivityLog format
+    const convertEventLogToActivityLog = (eventLog: EventLog): ActivityLog => {
+        return {
+            timestamp: eventLog.timestamp?.toISOString() || new Date().toISOString(),
+            type: eventLog.type,
+            user: {
+                username: eventLog.user.username || 'unknown',
+            },
+            objectRepr: eventLog.objectRepr || '',
+            details: eventLog.details || undefined,
+            srcLog: eventLog.srcLog ? convertEventLogToActivityLog(eventLog.srcLog as any) : undefined,
+            src_log: eventLog.srcLog ? convertEventLogToActivityLog(eventLog.srcLog as any) : undefined,
+        };
+    };
+
     const fetchEvents = useCallback(() => {
         setLoading(true);
         logsApi.logsList({
@@ -63,7 +88,8 @@ export default function ActivityList({ name, objectId, content_type, username }:
             objectId: submittedFilters.object_id || undefined,
         })
             .then((response) => {
-                setEvents(response.results);
+                const convertedEvents = response.results.map(convertEventLogToActivityLog);
+                setEvents(convertedEvents);
                 setTotalPages(response.totalPages);
                 setLoading(false);
             })
@@ -124,8 +150,8 @@ export default function ActivityList({ name, objectId, content_type, username }:
                     <div className='flex-1 min-w-[260px]'>
                         <Datepicker
                             value={{
-                                startDate: searchFilters.start_date || null,
-                                endDate: searchFilters.end_date || null,
+                                startDate: searchFilters.start_date ? new Date(searchFilters.start_date) : null,
+                                endDate: searchFilters.end_date ? new Date(searchFilters.end_date) : null,
                             }}
                             onChange={(value) => {
                                 if (value?.startDate && value?.endDate) {

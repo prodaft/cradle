@@ -50,7 +50,9 @@ export default function ResetPassword() {
         }
 
         try {
-            await usersApi.usersResetPasswordUpdate({ token: token || '', password });
+            await usersApi.usersResetPasswordUpdate({
+                passwordResetConfirmRequest: { token: token || '', password }
+            });
             navigate('/login', { replace: true });
         } catch (error) {
             displayError(setAlert)(error);
@@ -72,18 +74,18 @@ export default function ResetPassword() {
                         <form className='space-y-6' onSubmit={handleSubmit}>
                             <FormField
                                 name='password'
-                                labelText='Password'
+                                label='Password'
                                 type='password'
-                                autofocus={true}
+                                autoFocus={true}
                                 value={password}
-                                handleInput={setPassword}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
                             <FormField
                                 name='confirm-password'
-                                labelText='Confirm Password'
+                                label='Confirm Password'
                                 type='password'
                                 value={confirmPassword}
-                                handleInput={setConfirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
                             />
                             <AlertBox alert={alert} />
                             <button

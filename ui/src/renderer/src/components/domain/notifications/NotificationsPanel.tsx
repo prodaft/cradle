@@ -1,24 +1,9 @@
-import { Xmark } from 'iconoir-react';
-import { useEffect, useState } from 'react';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { Notification } from '@/services/cradle';
+import { Xmark } from 'iconoir-react';
+import { useEffect, useState } from 'react';
 import NotificationCard from './NotificationCard';
-
-interface Notification {
-    id: string;
-    message: string;
-    timestamp: string;
-    is_marked_unread: boolean;
-    notification_type: string;
-    entity_id?: string;
-    requesting_user_id?: string;
-    published_report_id?: string;
-    new_user?: {
-        id: string;
-        username: string;
-    };
-}
 
 interface NotificationsPanelProps {
     handleCloseNotifications: () => void;
@@ -53,19 +38,18 @@ export default function NotificationsPanel({
     const { notify } = useNotif();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
-    const { navigate, navigateLink } = useCradleNavigate();
 
-    const updateFlaggedNotificationsCount = (update: number) => {
-        setFlaggedNotificationsCount(update);
-        setUnreadNotificationsCount(update);
+    const updateFlaggedNotificationsCount = (updater: number | ((prevCount: number) => number)) => {
+        setFlaggedNotificationsCount(updater);
+        setUnreadNotificationsCount(updater);
     };
 
     function fetchNotificationsAndUpdateCounts() {
-        notificationsApi.notificationsRetrieve()
+        notificationsApi.notificationsList()
             .then((response) => {
-                setNotifications(response.notifications || []);
-                const auxFlaggedNotificationsCount = (response.notifications || []).filter(
-                    (notification: Notification) => notification.is_marked_unread,
+                setNotifications(response || []);
+                const auxFlaggedNotificationsCount = (response || []).filter(
+                    (notification: Notification) => notification.isMarkedUnread,
                 ).length;
                 updateFlaggedNotificationsCount(auxFlaggedNotificationsCount);
             })

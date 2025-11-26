@@ -8,21 +8,25 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import get_error_responses, get_validation_error_response, get_common_error_responses
 from access.enums import AccessType
 from access.models import Access
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from entries.tasks import refresh_edges_materialized_view
 from user.permissions import HasEntryManagerRole
 
-from ..models import Entry
-from ..serializers import EntitySerializer, EntryResponseSerializer
 from ..exceptions import (
-    DuplicateEntityException,
-    EntityNotFoundException,
     AdminOnlyEntityDeleteException,
     AdminOnlyEntityPublicStatusException,
+    DuplicateEntityException,
+    EntityNotFoundException,
     EntriesErrorCodes,
 )
+from ..models import Entry
+from ..serializers import EntitySerializer, EntryResponseSerializer
 
 
 @extend_schema_view(
@@ -94,9 +98,9 @@ class EntityList(APIView):
         parameters=[
             OpenApiParameter(
                 name="entity_id",
-                type=UUID,
+                type=int,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity",
+                description="Id of the entity",
             )
         ],
         responses={
@@ -114,9 +118,9 @@ class EntityList(APIView):
         parameters=[
             OpenApiParameter(
                 name="entity_id",
-                type=UUID,
+                type=int,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity to delete",
+                description="Id of the entity to delete",
             )
         ],
         responses={
@@ -136,9 +140,9 @@ class EntityList(APIView):
         parameters=[
             OpenApiParameter(
                 name="entity_id",
-                type=UUID,
+                type=int,
                 location=OpenApiParameter.PATH,
-                description="UUID of the entity to update",
+                description="Id of the entity to update",
             )
         ],
         responses={

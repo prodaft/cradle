@@ -1,36 +1,24 @@
-import React, { ChangeEvent, FormEvent, MouseEvent } from 'react';
-import { Eye } from 'iconoir-react';
-import { useNavigate } from 'react-router-dom';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import ListView from '@components/base/ListView/ListView';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import TableCard from '@components/base/Card/TableCard';
+import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
+import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import Tooltip from '@components/base/Tooltip/Tooltip';
+import { EnrichmentRequestList } from '@services/cradle/models';
+import { Eye } from 'iconoir-react';
+import { ChangeEvent, FormEvent, MouseEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-interface EnrichmentRequest {
-    id: string;
-    title: string;
-    status: string;
-    user?: {
-        username: string;
-    };
-    createdAt: string;
-}
+type EnrichmentRequest = EnrichmentRequestList;
 
 interface ColumnFilter {
+    [key: string]: string | DateRangeFilter | undefined;
     user: string;
 }
 
 interface SearchFilters {
     title?: string;
     user?: string;
-}
-
-interface Column {
-    key: string;
-    label: string;
-    filterType?: string;
 }
 
 interface SelectProps {
@@ -52,7 +40,7 @@ interface EnrichmentRequestsListProps {
     onSort?: (field: string, direction: 'asc' | 'desc') => void;
     pageSize?: number;
     setPageSize?: (size: number) => void;
-    onColumnFilterChange?: ((column: string, value: string) => void) | null;
+    onColumnFilterChange?: ((column: keyof ColumnFilter, value: string) => void) | null;
     columnFilters?: ColumnFilter;
     searchFilters?: SearchFilters;
     onSearchChange?: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -88,17 +76,20 @@ function EnrichmentRequestsList({
         user: 'user__username',
     };
 
-    const columns: Column[] = [
+    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> = [
         { key: 'title', label: 'Title' },
         { key: 'status', label: 'Status' },
-        { key: 'user', label: 'User', filterType: 'text' },
+        { key: 'user', label: 'User', filterType: 'text' as const },
         { key: 'createdAt', label: 'Created At' },
         { key: 'actions', label: 'Actions' },
     ];
 
-    // Define filterable columns with their handlers
-    const filterableColumns = onColumnFilterChange ? {
-        user: (value: string) => onColumnFilterChange('user', value),
+    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> = onColumnFilterChange ? {
+        user: (value: string | DateRangeFilter) => {
+            if (typeof value === 'string') {
+                onColumnFilterChange('user', value);
+            }
+        },
     } : {};
 
     const renderRow = (request: EnrichmentRequest, index: number, selectProps: SelectProps = {}) => {
@@ -121,26 +112,25 @@ function EnrichmentRequestsList({
                 </td>
                 <td className='w-32'>
                     <span
-                        className={`badge ${
-                            request.status === 'done'
-                                ? 'badge-success'
-                                : request.status === 'failed'
+                        className={`badge ${request.status === 'done'
+                            ? 'badge-success'
+                            : request.status === 'error'
                                 ? 'badge-error'
-                                : request.status === 'pending'
-                                ? 'badge-warning'
-                                : 'badge-info'
-                        }`}
+                                : request.status === 'waiting'
+                                    ? 'badge-warning'
+                                    : 'badge-info'
+                            }`}
                     >
                         {request.status}
                     </span>
                 </td>
-                <td className='w-32'>{request.user?.username || 'N/A'}</td>
+                <td className='w-32'>{request.userDetail?.username || 'N/A'}</td>
                 <td className='w-40'>
                     {request.createdAt ? formatDate(new Date(request.createdAt)) : 'N/A'}
                 </td>
                 <td className='w-20'>
                     <div className='flex gap-2'>
-                        <Tooltip content='View Details' placement='top'>
+                        <Tooltip content='View Details' side='top'>
                             <button
                                 className='btn btn-ghost btn-sm'
                                 onClick={() => navigate(`/enrichment/${request.id}`)}

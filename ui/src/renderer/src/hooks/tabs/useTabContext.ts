@@ -85,5 +85,5 @@ export const useIsBackgroundTab = (): boolean => {
  */
 export const useIsActivePane = (): boolean => {
     const tabContext = useContext(TabContext);
-    return tabContext ? tabContext.isPaneActive : true;
+    return tabContext ? (tabContext.isPaneActive ?? true) : true;
 };

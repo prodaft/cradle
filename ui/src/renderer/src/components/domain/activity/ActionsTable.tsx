@@ -1,7 +1,7 @@
 import React from 'react';
 import ActionBar from './ActionBar';
 
-interface Action {
+export interface Action {
     value: string;
     label: string;
     handler: (selectedItems: string[]) => Promise<void>;

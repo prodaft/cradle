@@ -1,11 +1,12 @@
-from django.db.models import Q, F
+from django.db.models import F, Q
+from django.utils.dateparse import parse_datetime
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated
-from drf_spectacular.utils import extend_schema, OpenApiParameter
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
@@ -21,13 +22,13 @@ from knowledge_graph.utils import (
 )
 from query.filters import EntryFilter
 from query.utils import parse_query
+
 from .serializers import (
+    EntryWithDepthSerializer,
+    GraphInaccessibleResponseSerializer,
     PathfindQuery,
     SubGraphSerializer,
-    GraphInaccessibleResponseSerializer,
-    EntryWithDepthSerializer,
 )
-from django.utils.dateparse import parse_datetime
 
 
 @extend_schema(
@@ -340,7 +341,9 @@ class GraphInaccessibleView(APIView):
         ),
     ],
     responses={
-        200: SubGraphSerializer,
+        200: LazyPaginator().get_paginated_response_serializer(
+            SubGraphSerializer, many=False
+        ),
         400: {"description": "Invalid parameters"},
         401: {"description": "User is not authenticated"},
         404: {"description": "Source entry not found"},
@@ -349,7 +352,6 @@ class GraphInaccessibleView(APIView):
 class FetchGraphView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = SubGraphSerializer
 
     def get(self, request: Request) -> Response:
         try:

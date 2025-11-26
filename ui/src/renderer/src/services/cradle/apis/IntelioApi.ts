@@ -91,7 +91,7 @@ export interface EnrichmentSettingsRetrieveRequest {
 
 export interface EnrichmentSettingsUpdateRequest {
     enricherType: string;
-    enrichmentSettingsRequest: EnrichmentSettingsRequest;
+    enrichmentSettingsRequest?: EnrichmentSettingsRequest;
 }
 
 export interface IntelioDigestCreateRequest {
@@ -429,13 +429,6 @@ export class IntelioApi extends runtime.BaseAPI {
             throw new runtime.RequiredError(
                 'enricherType',
                 'Required parameter "enricherType" was null or undefined when calling enrichmentSettingsUpdate().'
-            );
-        }
-
-        if (requestParameters['enrichmentSettingsRequest'] == null) {
-            throw new runtime.RequiredError(
-                'enrichmentSettingsRequest',
-                'Required parameter "enrichmentSettingsRequest" was null or undefined when calling enrichmentSettingsUpdate().'
             );
         }
 

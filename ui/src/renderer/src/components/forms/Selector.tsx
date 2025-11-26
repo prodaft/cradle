@@ -1,11 +1,11 @@
-import Select, { Props as SelectProps, GroupBase } from 'react-select';
+import Select, { GroupBase, Props as SelectProps } from 'react-select';
 import AsyncSelect, { AsyncProps } from 'react-select/async';
 
 /**
  * Option type for react-select
  */
-export interface SelectOption {
-  value: string | number;
+export interface SelectOption<T = string | number> {
+  value: T;
   label: string;
   [key: string]: any;
 }
@@ -26,10 +26,6 @@ export interface SelectorProps<
   staticOptions?: Option[];
   /** Placeholder text */
   placeholder?: string;
-  /** Selected value */
-  value?: IsMulti extends true ? Option[] : Option | null;
-  /** Change handler */
-  onChange?: (value: IsMulti extends true ? Option[] : Option | null) => void;
   /** Custom class names */
   classNames?: Partial<SelectProps<Option, IsMulti, Group>['classNames']>;
   /** Menu position strategy */
@@ -86,7 +82,7 @@ export default function Selector<
 }: SelectorProps<Option, IsMulti, Group>): JSX.Element {
   const customSelectClassNames = {
     control: (state: any) =>
-      `input input-block min-h-[2.5rem] !p-0 ${state.isFocused ? 'ring-2 ring-cradle2' : ''}`,
+      `input input-block min-h-[2.5rem] !p-0 ${state.isFocused ? 'ring-1 ring-cradle2' : ''}`,
     valueContainer: () => 'px-4 gap-1 flex items-center',
     placeholder: () => 'text-gray-500 dark:text-gray-400',
     input: () => 'text-inherit m-0 p-0',

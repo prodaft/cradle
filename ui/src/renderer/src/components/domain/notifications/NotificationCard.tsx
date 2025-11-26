@@ -1,53 +1,17 @@
-import { Mail, MailOpen } from 'iconoir-react';
-import { useState } from 'react';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { AccessRequestAccessTypeEnum, AccessRequestNotification, instanceOfAccessRequestNotification, instanceOfNewUserNotification, instanceOfReportProcessingErrorNotification, instanceOfReportRenderNotification, NewUserNotification, Notification, ReportProcessingErrorNotification, ReportRenderNotification } from '@/services/cradle';
 import { formatDate } from '@/utils/dates';
-import { displayError } from '@/utils/api';
-import { useNotif } from '@/contexts/ui/NotificationContext';
-
-interface NotificationUser {
-    id: string;
-    username: string;
-}
-
-interface Notification {
-    id: string;
-    message: string;
-    timestamp: string;
-    is_marked_unread: boolean;
-    published_report_id?: string;
-    notification_type: string;
-    new_user?: NotificationUser;
-    entity_id?: string;
-    requesting_user_id?: string;
-}
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
+import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Mail, MailOpen } from 'iconoir-react';
+import { useState } from 'react';
 
 interface NotificationCardProps {
     notification: Notification;
     updateFlaggedNotificationsCount: (updater: (prevCount: number) => number) => void;
 }
 
-/**
- * NotificationCard is a functional component in React that displays a notification card.
- * It takes a prop, 'notification', which is an object containing the details of the notification.
- * The component deconstructs the 'notification' object into its properties and displays them in a card format.
- * If the notification type is 'request_access_notification', additional options for granting access are displayed.
- * The options include 'Read' and 'Read/Write' access levels, when clicked, the access level is changed for the user requesting access.
- * The component also provides a button to mark the notification as read or unread.
- *
- * @function NotificationCard
- * @param {NotificationCardProps} props - The props of the component.
- * @returns {NotificationCard} A card displaying the details of the notification.
- * @constructor
- */
 export default function NotificationCard({
     notification,
     updateFlaggedNotificationsCount,
@@ -56,14 +20,9 @@ export default function NotificationCard({
         id,
         message,
         timestamp,
-        is_marked_unread,
-        published_report_id,
-        notification_type,
-        new_user,
-        entity_id,
-        requesting_user_id,
+        isMarkedUnread,
     } = notification;
-    const [isMarkedUnread, setIsMarkedUnread] = useState(is_marked_unread);
+    const [unreadStatus, setUnreadStatus] = useState(isMarkedUnread);
     const { reportsApi, notificationsApi, accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { notify } = useNotif();
@@ -72,16 +31,16 @@ export default function NotificationCard({
         notificationsApi.notificationsUpdate({
             notificationId: id,
             updateNotificationRequest: {
-                isMarkedUnread: !isMarkedUnread
+                isMarkedUnread: !unreadStatus
             }
         })
             .then(() => {
-                if (isMarkedUnread) {
+                if (unreadStatus) {
                     updateFlaggedNotificationsCount((prevCount) => prevCount - 1);
                 } else {
                     updateFlaggedNotificationsCount((prevCount) => prevCount + 1);
                 }
-                setIsMarkedUnread(!isMarkedUnread);
+                setUnreadStatus(!unreadStatus);
             })
             .catch((error: any) => {
                 notify({
@@ -91,12 +50,13 @@ export default function NotificationCard({
             });
     };
 
-    const handleChangeAccess = (newAccess: string) => () => {
-        if (!requesting_user_id || !entity_id) return;
+    const handleChangeAccess = (newAccess: AccessRequestAccessTypeEnum) => () => {
+        const notif = notification as AccessRequestNotification;
+        if (!notif.requestingUserId || !notif.entityId) return;
 
         accessApi.accessUserUpdate({
-            userId: requesting_user_id,
-            entityId: entity_id,
+            userId: notif.requestingUserId,
+            entityId: notif.entityId!,
             accessRequest: {
                 accessType: newAccess
             }
@@ -116,12 +76,13 @@ export default function NotificationCard({
     };
 
     const handleActivateUser = () => {
-        if (!new_user) return;
+        const notif = notification as NewUserNotification;
+        if (!notif.newUser) return;
 
         usersApi.usersUpdate({
-            userId: new_user.id,
-            userRetrieveRequest: {
-                isActive: true
+            userId: notif.newUser.id!,
+            userUpdateRequest: {
+                isActive: true,
             }
         })
             .then(() => {
@@ -139,12 +100,20 @@ export default function NotificationCard({
     };
 
     const handleViewReport = () => {
-        if (!published_report_id) return;
+        const notif = notification as ReportRenderNotification;
+        if (!notif.publishedReportId) return;
 
         reportsApi
-            .reportsRetrieve({ id: published_report_id })
+            .reportsRetrieve({ id: notif.publishedReportId })
             .then((report) => {
-                window.open(report.reportUrl, '_blank');
+                if (report.reportUrl) {
+                    window.open(report.reportUrl, '_blank');
+                } else {
+                    notify({
+                        type: 'error',
+                        text: 'Report URL not found',
+                    });
+                }
             })
             .catch((error: any) => {
                 notify({
@@ -158,17 +127,17 @@ export default function NotificationCard({
         <div className='bg-cradle3 bg-opacity-20 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md flex flex-col space-y-1'>
             <div className='flex flex-row justify-between'>
                 <div className='text-zinc-500 text-xs w-full'>
-                    {formatDate(new Date(timestamp))}
+                    {formatDate(timestamp)}
                 </div>
-                <Tooltip content={isMarkedUnread ? 'Mark as read' : 'Mark as unread'}>
+                <Tooltip content={unreadStatus ? 'Mark as read' : 'Mark as unread'}>
                     <span className='pb-1 space-x-1 flex flex-row'>
-                        {isMarkedUnread ? (
+                        {unreadStatus ? (
                             <Mail
                                 width='1.2em'
                                 height='1.2em'
                                 className='text-cradle2 cursor-pointer'
                                 data-testid='mark-read'
-                                onClick={() => handleMarkUnread(id)}
+                                onClick={() => handleMarkUnread(id!)}
                             />
                         ) : (
                             <MailOpen
@@ -176,14 +145,14 @@ export default function NotificationCard({
                                 height='1.2em'
                                 className='text-zinc-500 cursor-pointer'
                                 data-testid='mark-unread'
-                                onClick={() => handleMarkUnread(id)}
+                                onClick={() => handleMarkUnread(id!)}
                             />
                         )}
                     </span>
                 </Tooltip>
             </div>
             <p>{message}</p>
-            {notification_type === 'request_access_notification' && (
+            {instanceOfAccessRequestNotification(notification) && (
                 <div className='flex flex-row justify-between items-center flex-wrap'>
                     <div className='text-sm text-zinc-400'>Give access:</div>
                     <div className='flex flex-row justify-end items-center space-x-2'>
@@ -202,7 +171,7 @@ export default function NotificationCard({
                     </div>
                 </div>
             )}
-            {notification_type === 'new_user_notification' && (
+            {instanceOfNewUserNotification(notification) && (
                 <div className='flex flex-row justify-end items-center flex-wrap'>
                     <button
                         className='btn btn-solid-success btn-sm'
@@ -212,7 +181,7 @@ export default function NotificationCard({
                     </button>
                 </div>
             )}
-            {notification_type === 'report_render_notification' && (
+            {instanceOfReportRenderNotification(notification) && (
                 <div className='flex flex-row justify-end items-center flex-wrap'>
                     <button
                         className='btn btn-solid-secondary btn-sm'
@@ -222,11 +191,14 @@ export default function NotificationCard({
                     </button>
                 </div>
             )}
-            {notification_type === 'report_processing_error_notification' && (
+            {instanceOfReportProcessingErrorNotification(notification) && (
                 <div className='flex flex-row justify-end items-center flex-wrap'>
                     <button
                         className='btn btn-solid-secondary btn-sm'
-                        onClick={navigateLink(`/reports/${published_report_id}`)}
+                        onClick={(e) => {
+                            const notif = notification as ReportProcessingErrorNotification;
+                            navigateLink(`/reports/${notif.publishedReportId}`)(e);
+                        }}
                     >
                         View Details
                     </button>

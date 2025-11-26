@@ -22,7 +22,7 @@ import {
 } from './EntryCompressedTreeValue';
 
 /**
- * A compressed tree representation of entries, organized by type(entities/artifacts) and subtype.
+ * A compressed tree representation of entries, organized by type (entities/artifacts) and subtype.
  * @export
  * @interface EntryListCompressedTree
  */

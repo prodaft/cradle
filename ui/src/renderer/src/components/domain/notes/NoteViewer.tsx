@@ -1,46 +1,38 @@
-import { debounce } from 'lodash';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useLocation } from 'react-router-dom';
-import type { NoteRetrieve, FileReferenceWithNote } from '@services/cradle/models';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
+import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
 import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
-import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { handleAPIError } from '@/utils/api';
+import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { CradleEditor } from '@/utils/editor/enhancements';
-import extractHeaderHierarchy from '@/utils/editor/outline';
-import ActivityList from '../activity/ActivityList';
-import AlertBox from '../../base/Alert/AlertBox';
+import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
+import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
+import { debounce } from 'lodash';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { useLocation } from 'react-router-dom';
 import FileInput from '../../forms/FileInput';
-import GraphExplorer from '../graph/GraphExplorer';
-import NoteGraphSearch from '../graph/NoteGraphSearch';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
-import NoteOutline from './NoteOutline';
+import ActivityList from '../activity/ActivityList';
+import GraphExplorer from '../graph/GraphExplorer';
+import NoteGraphSearch from '../graph/NoteGraphSearch';
 import ReferenceTree from '../relations/ReferenceTree';
-import RichEditor from './RichEditor';
 import ActionsDropdown from './ActionsDropdown';
 import { ViewMode } from './constants';
 import FilesView from './FilesView';
 import NoteMetadata from './NoteMetadata';
+import NoteOutline from './NoteOutline';
+import RichEditor from './RichEditor';
 import StatusIndicators from './StatusIndicators';
 import ViewsDropdown from './ViewsDropdown';
 
 import { EditPencil, Eye } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
 
 interface LocationState {
     from?: { pathname: string };
@@ -62,7 +54,6 @@ export default function NoteViewer() {
     const { isAdmin, profile } = useProfile();
     const { from, state } = locationState;
     const [note, setNote] = useState<NoteRetrieve | null>(null);
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: 'red' });
     const [richEditor, setRichEditor] = useState(
         localStorage.getItem('richEditor') ? localStorage.getItem('richEditor') === 'true' : true
     );
@@ -88,22 +79,19 @@ export default function NoteViewer() {
         const saved = localStorage.getItem('showOutline');
         return saved === 'true';
     });
-    const [noteOutline, setNoteOutline] = useState<unknown[]>([]);
+    const [noteOutline, setNoteOutline] = useState<HeaderNode[]>([]);
     const [lspLoaded, setLspLoaded] = useState(false);
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
     const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
-    const { execute } = useAPICall();
+    const { execute, handleError } = useAPICall();
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
         CradleEditor.clearCache();
-        const handleError = (error: unknown) => {
-            handleAPIError(error, notify);
-        };
-        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, handleError);
+        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, (error) => handleError(error, { suppressNotification: false }));
     }, [notify, notesApi, lspApi]);
 
     const copyToClipboard = (text: string) => {
@@ -192,7 +180,7 @@ export default function NoteViewer() {
 
             try {
                 // First try to load as a regular note
-                const responseNote = await notesApi.notesRetrieve({ noteId: id, footnotes: false });
+                const responseNote = await execute(() => notesApi.notesRetrieve({ noteId: id, footnotes: false }));
 
                 // Check if this is a fleeting note using the fleeting field
                 const isFleetingNote = responseNote.fleeting === true;
@@ -213,10 +201,10 @@ export default function NoteViewer() {
                 // If regular note fails, try as fleeting note
                 console.error('NoteViewer - Regular note failed, trying fleeting note. Error:', error);
                 console.log('NoteViewer - Attempting fleeting note with ID:', id);
-                const responseNote = await fleetingNotesApi.fleetingNotesRetrieve({ id });
+                const responseNote = await execute(() => fleetingNotesApi.fleetingNotesRetrieve({ id }), { errorMessage: 'Note not found!' });
                 setIsFleeting(true);
                 console.log('NoteViewer - Fleeting note loaded successfully');
-                return responseNote;
+                return responseNote as NoteRetrieve;
             }
         };
 
@@ -239,10 +227,6 @@ export default function NoteViewer() {
                 setIsLoading(false);
             });
     }, [id, navigate, execute, updateCurrentTabTitle, activePaneId, profile, notesApi, fleetingNotesApi]);
-
-    const toggleView = useCallback(() => {
-        setRichEditor((prevRichEditor) => !prevRichEditor);
-    }, []);
 
     const handleDelete = useCallback(async () => {
         if (!note || !id) return;
@@ -442,7 +426,6 @@ export default function NoteViewer() {
     return (
         <>
             <div className='w-[100%] h-full flex flex-col'>
-                <AlertBox alert={alert} setAlert={setAlert} />
                 <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
                         {!id?.startsWith('guide_') && note && (
@@ -482,22 +465,19 @@ export default function NoteViewer() {
                                     setActiveView={setActiveView}
                                     setRichEditor={setRichEditor}
                                     isAdmin={isAdmin()}
-                                    hasFiles={note && note.files && note.files.length > 0}
+                                    hasFiles={note && note.files && note.files.length > 0 || false}
                                 />
                                 <ActionsDropdown
                                     activeView={activeView}
                                     showActionsMenu={showActionsMenu}
                                     setShowActionsMenu={setShowActionsMenu}
                                     enableEditing={enableEditing}
-                                    setEnableEditing={setEnableEditing}
                                     showOutline={showOutline}
                                     toggleOutline={toggleOutline}
                                     lspLoaded={lspLoaded}
                                     smartLink={smartLink}
                                     isAdmin={isAdmin()}
                                     handleRelinkNote={handleRelinkNote}
-                                    setShowFileUpload={setShowFileUpload}
-                                    showFileUpload={showFileUpload}
                                     isFleeting={isFleeting}
                                     handleSaveAsFinal={handleSaveAsFinal}
                                     saving={saving}
@@ -546,6 +526,7 @@ export default function NoteViewer() {
                                                 {/* Embedded Rich Editor */}
                                                 <div className='flex-1 min-h-0'>
                                                     <RichEditor
+                                                        editorUtils={editorUtils}
                                                         key={richEditor ? 'rich' : 'source'}
                                                         ref={editorRef}
                                                         noteid={id}
@@ -585,6 +566,7 @@ export default function NoteViewer() {
                                                 source={!richEditor}
                                                 saveNote={handleSaveNote}
                                                 enableEditing={enableEditing}
+                                                editorUtils={editorUtils}
                                             />
                                         </div>
 
@@ -610,7 +592,6 @@ export default function NoteViewer() {
                     {activeView === ViewMode.FILES && note && (
                         <FilesView
                             files={note.files || []}
-                            setAlert={setAlert}
                             copyToClipboard={copyToClipboard}
                         />
                     )}

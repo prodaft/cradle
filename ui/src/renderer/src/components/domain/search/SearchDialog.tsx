@@ -1,21 +1,22 @@
-import { Search } from 'iconoir-react';
-import { useEffect, useRef, useState, KeyboardEvent, ChangeEvent } from 'react';
-import { createPortal } from 'react-dom';
-import { useApi, useCradleNavigate } from '@hooks';
-import { createDashboardLink } from '@utils/dashboard';
-import { handleAPIError } from '@utils/api';
-import { useNotif } from '@contexts/ui';
+import type { Alert } from '@/types';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Pagination from '@components/base/Pagination/Pagination';
 import SearchResult from '@components/base/SearchResult/SearchResult';
-import type { Alert } from '@/types';
+import { useNotif } from '@contexts/ui';
+import { useApi, useAPICall, useCradleNavigate } from '@hooks';
+import { handleAPIError } from '@utils/api';
+import { createDashboardLink } from '@utils/dashboard';
+import { Search } from 'iconoir-react';
+import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';
 
 /**
  * Search result from API
+ * Note: Entry IDs are numbers (BigAutoField in backend)
  */
 interface SearchResultData {
-  id: string;
+  id: number;
   name: string;
   type: string;
   subtype: string;
@@ -67,6 +68,7 @@ export default function SearchDialog({ isOpen, onClose }: SearchDialogProps): JS
   const { queryApi, entriesApi } = useApi();
   const { notify } = useNotif();
   const [isLoading, setIsLoading] = useState(false);
+  const { execute } = useAPICall()
 
   const autoResize = (el: HTMLTextAreaElement | null) => {
     if (!el) return;
@@ -120,32 +122,28 @@ export default function SearchDialog({ isOpen, onClose }: SearchDialogProps): JS
 
     if (entrySubtypeFilters.length === 0) {
       try {
-        let response = await queryApi.queryAdvancedRetrieve({
+        let response = await execute(() => queryApi.queryAdvancedRetrieve({
           page: page,
           pageSize: 10,
           query: searchQueries,
           wildcard: true,
-        });
+        }));
         setTotalPages(response.totalPages);
         setResults(response.results as SearchResultData[]);
-      } catch (error) {
-        handleAPIError(error, notify, { setAlert });
       } finally {
         setIsLoading(false);
       }
     } else {
       try {
-        let response = await queryApi.queryList({
+        let response = await execute(() => queryApi.queryList({
           page: page,
           pageSize: 10,
           name: searchQueries,
           subtype: entrySubtypeFilters,
-        });
+        }));
 
         setTotalPages(response.totalPages);
         setResults(response.results as SearchResultData[]);
-      } catch (error) {
-        handleAPIError(error, notify, { setAlert });
       } finally {
         setIsLoading(false);
       }

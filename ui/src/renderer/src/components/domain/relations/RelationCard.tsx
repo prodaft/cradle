@@ -1,74 +1,40 @@
-import { Trash } from 'iconoir-react';
-import { ReactNode, useEffect, useState } from 'react';
 import { useProfile } from '@/contexts/user/ProfileContext';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { Relation } from '@/services/cradle';
 import {
     capitalizeString,
     createDashboardLink,
 } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
+import { Trash } from 'iconoir-react';
+import { ReactNode, useEffect, useState } from 'react';
 import Card from '../../base/Card/Card';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
-
-interface RelationEntity {
-    name: string;
-    subtype: string;
-    color?: string;
-}
-
-interface Relation {
-    id: number | string;
-    created_at: string;
-    last_seen: string;
-    reason?: string;
-    details: Record<string, unknown>;
-    e1: RelationEntity;
-    e2: RelationEntity;
-}
 
 interface RelationCardProps {
     relation: Relation;
     onDelete?: () => void;
-    setAlert: (alert: Alert) => void;
 }
 
-export default function RelationCard({ relation, onDelete, setAlert }: RelationCardProps) {
+export default function RelationCard({ relation, onDelete }: RelationCardProps) {
     const [formattedCreated, setFormattedCreated] = useState('');
     const [formattedSeen, setFormattedSeen] = useState('');
     const [visible, setVisible] = useState(true);
     const { isAdmin } = useProfile();
     const { entriesApi } = useApi();
     const { navigate } = useCradleNavigate();
+    const { execute } = useAPICall()
 
     useEffect(() => {
-        setFormattedCreated(formatDate(new Date(relation.created_at)));
-        setFormattedSeen(formatDate(new Date(relation.last_seen)));
-    }, [relation.created_at, relation.last_seen]);
+        setFormattedCreated(formatDate(new Date(relation.createdAt || '')));
+        setFormattedSeen(formatDate(new Date(relation.lastSeen || '')));
+    }, [relation.createdAt, relation.lastSeen]);
 
     const handleDelete = async () => {
-        try {
-            await entriesApi.entriesRelationsDestroy({ id: Number(relation.id) });
-            setVisible(false);
-            setAlert({
-                show: true,
-                message: 'Relation deleted successfully',
-                color: 'green',
-            });
-            if (onDelete) onDelete();
-        } catch (error) {
-            console.error('Delete relation failed:', error);
-            setAlert({
-                show: true,
-                message: 'Failed to delete relation',
-                color: 'red',
-            });
-        }
+        await entriesApi.entriesRelationsDestroy({ relationId: relation.id! });
+        setVisible(false);
+        if (onDelete) onDelete();
     };
 
     const handleEntryClick = (name: string, subtype: string) => (e: React.MouseEvent) => {
@@ -109,22 +75,22 @@ export default function RelationCard({ relation, onDelete, setAlert }: RelationC
                 <InfoRow label='Entity 1'>
                     <span
                         className='underline cursor-pointer'
-                        style={{ color: relation.e1.color || '#2563eb' }}
+                        style={{ color: relation.e1?.color || '#2563eb' }}
                         onClick={handleEntryClick(
-                            relation.e1.name,
-                            relation.e1.subtype,
+                            relation.e1?.name || '',
+                            relation.e1?.subtype || '',
                         )}
                     >
-                        [{relation.e1.subtype}] {relation.e1.name}
+                        [{relation.e1?.subtype}] {relation.e1?.name}
                     </span>
                 </InfoRow>
                 <InfoRow label='Entity 2'>
                     <span
                         className='underline cursor-pointer'
-                        style={{ color: relation.e2.color || '#2563eb' }}
-                        onClick={handleEntryClick(relation.e2.name, relation.e2.subtype)}
+                        style={{ color: relation.e2?.color || '#2563eb' }}
+                        onClick={handleEntryClick(relation.e2?.name || '', relation.e2?.subtype || '')}
                     >
-                        [{relation.e2.subtype}] {relation.e2.name}
+                        [{relation.e2?.subtype}] {relation.e2?.name}
                     </span>
                 </InfoRow>
             </div>

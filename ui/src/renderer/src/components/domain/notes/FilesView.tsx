@@ -1,9 +1,9 @@
-import { Download } from 'iconoir-react';
-import type { FileReferenceWithNote } from '@services/cradle/models';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import FileItem from '../files/FileItem';
+import type { FileReferenceWithNote } from '@services/cradle/models';
+import { Download } from 'iconoir-react';
 import ListView from '../../base/ListView/ListView';
 
 interface Alert {
@@ -14,43 +14,33 @@ interface Alert {
 
 interface FilesViewProps {
     files: FileReferenceWithNote[];
-    setAlert: React.Dispatch<React.SetStateAction<Alert>>;
     copyToClipboard: (text: string) => void;
 }
 
 /**
  * Displays files attached to a note in a table/card view
  */
-export default function FilesView({ files, setAlert, copyToClipboard }: FilesViewProps) {
+export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const { fileTransferApi } = useApi();
+    const { execute } = useAPICall();
 
     if (!files || files.length === 0) {
         return null;
     }
 
-    const handleDownload = (file: FileReferenceWithNote) => {
-        fileTransferApi
-            .fileTransferDownloadRetrieve({
-                bucketName: file.bucketName,
-                minioFileName: file.minioFileName,
-            })
-            .then((response) => {
-                const { presigned } = response;
-                const link = document.createElement('a');
-                link.href = presigned;
-                const fileName = file.minioFileName.split('/').pop() || file.minioFileName;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            })
-            .catch(() => {
-                setAlert({
-                    show: true,
-                    message: 'Failed to download file. Please try again.',
-                    color: 'red',
-                });
-            });
+    const handleDownload = async (file: FileReferenceWithNote) => {
+        let response = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
+            bucketName: file.bucketName,
+            minioFileName: file.minioFileName,
+        }));
+        const { presigned } = response;
+        const link = document.createElement('a');
+        link.href = presigned;
+        const fileName = file.minioFileName.split('/').pop() || file.minioFileName;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     return (
@@ -110,7 +100,7 @@ export default function FilesView({ files, setAlert, copyToClipboard }: FilesVie
                                     <div className='flex space-x-1'>
                                         {file.bucketName && file.minioFileName && (
                                             <button
-                                                onClick={() => handleDownload(file)}
+                                                onClick={async () => await handleDownload(file)}
                                                 className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
                                                 title='Download'
                                             >
@@ -121,15 +111,7 @@ export default function FilesView({ files, setAlert, copyToClipboard }: FilesVie
                                 </td>
                             </tr>
                         )}
-                        renderCard={(file: FileReferenceWithNote) => (
-                            <FileItem
-                                key={file.id}
-                                file={file}
-                                setAlert={setAlert}
-                            />
-                        )}
                         loading={false}
-                        forceCardView={false}
                         emptyMessage="No files found!"
                         tableClassName="table"
                     />

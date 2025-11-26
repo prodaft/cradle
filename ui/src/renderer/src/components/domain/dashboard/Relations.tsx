@@ -22,7 +22,7 @@ interface Alert {
 }
 
 interface Result {
-    id: string;
+    id?: number;
     name: string;
     subtype: string;
     depth: number;
@@ -31,7 +31,7 @@ interface Result {
 
 interface RelationsProps {
     obj: {
-        id: string;
+        id?: number;
         type?: string;
         [key: string]: any;
     };
@@ -99,8 +99,10 @@ export default function Relations({ obj }: RelationsProps) {
                 })
                 .then((response) => {
                     setHasNextPage(response.hasNext);
-                    response.results.sort((a, b) => a.depth - b.depth);
-                    setResults(response.results);
+                    // Cast results to include depth field (missing from generated types but present in API response)
+                    const resultsWithDepth = response.results as unknown as Result[];
+                    resultsWithDepth.sort((a, b) => a.depth - b.depth);
+                    setResults(resultsWithDepth);
                 })
                 .catch(handleError)
                 .finally(() => {
@@ -117,13 +119,15 @@ export default function Relations({ obj }: RelationsProps) {
                 })
                 .then((response) => {
                     setHasNextPage(response.hasNext);
+                    // Cast results to include depth field (missing from generated types but present in API response)
+                    const resultsWithDepth = response.results as unknown as Result[];
                     // Filter results client-side if needed
                     const filteredResults =
                         entrySubtypeFilters.length > 0
-                            ? response.results.filter((r) =>
+                            ? resultsWithDepth.filter((r) =>
                                 entrySubtypeFilters.includes(r.subtype),
                             )
-                            : response.results;
+                            : resultsWithDepth;
                     setResults(filteredResults);
                 })
                 .catch(handleError)

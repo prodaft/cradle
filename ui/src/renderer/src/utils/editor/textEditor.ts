@@ -2,13 +2,12 @@
  * Text editor utilities for markdown parsing and link handling
  */
 
-import { EditorState } from '@codemirror/state';
 import { syntaxTree } from '@codemirror/language';
+import { EditorState } from '@codemirror/state';
 import { SyntaxNode } from '@lezer/common';
+import type { FileReference } from '@services/cradle/models';
 import DOMPurify from 'dompurify';
-import QueryString from 'qs';
 import parseMarkdown from '../parser/parse';
-import type { FileReference } from '@/services/cradle/models';
 
 /**
  * Parse result from markdown parser

@@ -10,9 +10,11 @@
         font-family: 'Roboto', sans-serif;
         @apply cradle-bg-primary cradle-text-primary;
     }
-    
+
     /* Apply mono font to specific elements */
-    code, pre, .mono {
+    code,
+    pre,
+    .mono {
         @apply cradle-mono;
     }
 }
@@ -25,23 +27,18 @@
 /* Remove active line background highlighting for Rich Editor only  */
 .rich-editor .cm-editor .cm-activeLine,
 .rich-editor .cm-editor .cm-activeLineGutter {
-    background-color: transparent !important;
+    background-color: var(--cradle-bg-secondary) !important;
 }
 
 /* Ensure consistent background for all lines for Rich Editor only  */
-.rich-editor .cm-content .cm-line {
-    background-color: transparent !important;
-}
-
-/* Add padding on left, top, and bottom for Rich Editor only */
-.rich-editor .cm-scroller {
-    padding: 16px 0 16px 16px !important;
+.rich-editor .cm-content .cm-line:not(.cm-activeLine) {
+    background-color: var(--cradle-bg-primary) !important;
 }
 
 /* Make cursor white in editor */
 .cm-editor .cm-cursor,
 .cm-editor .cm-cursor-primary {
-    border-left-color: #FFFFFF !important;
+    border-left-color: #ffffff !important;
 }
 
 /* Make cursor black in light mode */
@@ -121,17 +118,17 @@ h6:hover .header-anchor-icon {
 /* Input Components */
 .input,
 .form-input,
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+input[type='text'],
+input[type='email'],
+input[type='password'] {
     @apply cradle-input;
 }
 
-input[type="search"] {
+input[type='search'] {
     @apply cradle-search;
 }
 
-input[type="number"] {
+input[type='number'] {
     @apply cradle-input;
     width: auto;
 }
@@ -214,7 +211,7 @@ ul.menu {
    ============================================ */
 
 /* Remove rounded corners from all elements except sidebar */
-*:not(.sidebar):not(.sidebar *):not(.menu *):not(.menu-item *):not([class*="rounded"]) {
+*:not(.sidebar):not(.sidebar *):not(.menu *):not(.menu-item *):not([class*='rounded']) {
     border-radius: 0 !important;
 }
 
@@ -263,15 +260,16 @@ select:not(.sidebar *) {
 }
 
 /* Ensure switches have square toggle elements - override ripple-ui styles */
+
 .switch:not(.sidebar *)::before,
 .switch:not(.sidebar *)::after,
 input.switch:not(.sidebar *)::before,
 input.switch:not(.sidebar *)::after,
-input[type="checkbox"].switch:not(.sidebar *)::before,
-input[type="checkbox"].switch:not(.sidebar *)::after {
-    position: absolute;      /* needed for centering */
-    top: 50%;
-    transform: translateY(-50%);
+input[type='checkbox'].switch:not(.sidebar *)::before,
+input[type='checkbox'].switch:not(.sidebar *)::after {
+    position: absolute;
+    top: 14%;
+    left: 10%;
 
     height: 14px !important;
     width: 14px !important;
@@ -323,4 +321,111 @@ button:hover svg {
 #preview-pane th {
     word-break: break-word;
     overflow-wrap: break-word;
+}
+
+/* ProseMD CSS variables */
+/* === HEADINGS === */
+.prosemd h1 {
+    font-size: 1.802em;
+    font-weight: 600;
+    color: var(--cradle-text-primary);
+}
+.prosemd h2 {
+    font-size: 1.602em;
+    font-weight: 600;
+    color: var(--cradle-text-primary);
+}
+.prosemd h3 {
+    font-size: 1.424em;
+    font-weight: 600;
+    color: var(--cradle-text-primary);
+}
+.prosemd h4 {
+    font-size: 1.266em;
+    font-weight: 500;
+    color: var(--cradle-text-primary);
+}
+.prosemd h5 {
+    font-size: 1.125em;
+    font-weight: 500;
+    color: var(--cradle-text-primary);
+}
+.prosemd h6 {
+    font-size: 1em;
+    font-weight: 500;
+    color: var(--cradle-text-primary);
+}
+
+/* Faded heading markers */
+.prosemd .pm-format-h {
+    color: var(--cradle-text-tertiary);
+    opacity: 0.7;
+}
+
+/* === LINKS === */
+.prosemd a {
+    color: var(--cradle-accent-primary);
+}
+.prosemd a[href^='http']::after {
+    color: var(--cradle-accent-secondary);
+} /* URL preview title */
+
+/* Faded link formatting marks */
+.prosemd .pm-format-link {
+    color: var(--cradle-accent-primary);
+    opacity: 0.8;
+}
+
+/* === INLINE CODE === */
+.prosemd code {
+    background: var(--cradle-bg-tertiary);
+    color: var(--cradle-text-primary);
+}
+
+/* Formatting markers for code */
+.prosemd .pm-format-code {
+    color: var(--cradle-text-tertiary);
+    opacity: 0.7;
+}
+
+/* === CODE BLOCKS === */
+.prosemd pre {
+    background: var(--cradle-bg-secondary);
+    border-radius: 0px;
+}
+
+/* Info bar hover */
+.prosemd .pm-code-info:hover {
+    background: rgba(255, 140, 0, 0.1);
+}
+
+/* === BLOCKQUOTE === */
+.prosemd blockquote {
+    border-left: 2px solid var(--cradle-accent-primary);
+}
+.prosemd .pm-format-blockquote {
+    color: var(--cradle-accent-primary);
+    opacity: 0.8;
+}
+
+/* === LISTS === */
+.prosemd ul .pm-format,
+.prosemd ol .pm-format {
+    color: var(--cradle-text-tertiary);
+    opacity: 0.8;
+}
+.prosemd ul > li::marker {
+    color: var(--cradle-accent-primary);
+}
+
+/* === CHECKBOXES === */
+.prosemd input[type='checkbox'] {
+    height: 1rem;
+    width: 1rem;
+    border: 2px solid var(--cradle-border-accent);
+    background: var(--cradle-bg-elevated);
+}
+.prosemd input[type='checkbox']:checked {
+    background: var(--cradle-accent-primary);
+    border-color: var(--cradle-accent-primary);
 }

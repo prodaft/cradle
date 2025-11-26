@@ -1,8 +1,9 @@
-import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
 import { useAPICall } from '@/hooks/api/useAPICall';
+import useAuth from '@/hooks/auth/useAuth';
 import type { FileReference, StateSetter } from '@/types';
 import { createDownloadPath } from '@/utils/links';
 import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
 
 /**
  * This component is used to display a table of fileData.
@@ -21,12 +22,13 @@ import Tooltip from '@components/base/Tooltip/Tooltip';
  */
 interface FileTableProps {
     fileData: FileReference[];
-    setFileData: StateSetter<FileReference[]>;
+    setFileData: (data: FileReference[]) => void;
     insertTextCallback: (text: string) => void;
 }
 
 export default function FileTable({ fileData, setFileData, insertTextCallback }: FileTableProps) {
     const { executor } = useAPICall();
+    const { basePath } = useAuth();
 
     // Pre-configured clipboard copy with automatic error/success handling
     const copyToClipboard = executor(
@@ -41,14 +43,14 @@ export default function FileTable({ fileData, setFileData, insertTextCallback }:
         setFileData(fileData.filter((d) => d.minioFileName !== data.minioFileName));
         const minioCache = JSON.parse(localStorage.getItem('minio-cache') || '{}');
         if (minioCache) {
-            delete minioCache[createDownloadPath(data)];
+            delete minioCache[createDownloadPath(data, basePath)];
             localStorage.setItem('minio-cache', JSON.stringify(minioCache));
         }
     };
 
     // Downloads a file
     const handleDownload = (data: FileReference) => {
-        const url = createDownloadPath(data);
+        const url = createDownloadPath(data, basePath);
         const link = document.createElement('a');
         link.href = url;
         link.download = data.fileName;

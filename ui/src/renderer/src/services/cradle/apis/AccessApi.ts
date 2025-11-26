@@ -35,7 +35,7 @@ import {
 } from '../models/index';
 
 export interface AccessEntityListRequest {
-    entityId: string;
+    entityId: number;
 }
 
 export interface AccessRequestCreateRequest {
@@ -49,7 +49,7 @@ export interface AccessUserListRequest {
 }
 
 export interface AccessUserUpdateRequest {
-    entityId: string;
+    entityId: number;
     userId: string;
     accessRequest: AccessRequest;
 }

@@ -21,10 +21,10 @@ import { mapValues } from '../runtime';
 export interface AccessEntity {
     /**
      * 
-     * @type {string}
+     * @type {number}
      * @memberof AccessEntity
      */
-    id: string;
+    id: number;
     /**
      * 
      * @type {string}

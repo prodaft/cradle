@@ -5,19 +5,16 @@
 // ============================================================================
 
 declare module 'markdown-it-inject-linenumbers' {
-  import MarkdownIt from 'markdown-it';
   const plugin: MarkdownIt.PluginSimple;
   export default plugin;
 }
 
 declare module 'markdown-it-source-map' {
-  import MarkdownIt from 'markdown-it';
   const plugin: MarkdownIt.PluginSimple;
   export default plugin;
 }
 
 declare module 'markdown-it-task-lists' {
-  import MarkdownIt from 'markdown-it';
   const plugin: MarkdownIt.PluginSimple;
   export default plugin;
 }
@@ -131,6 +128,31 @@ declare module 'iconoir-react' {
   export const Eye: ComponentType<SVGProps<SVGSVGElement>>;
   export const PlusCircle: ComponentType<SVGProps<SVGSVGElement>>;
   export const RefreshCircle: ComponentType<SVGProps<SVGSVGElement>>;
+
+  // Missing icons - add declarations
+  export const Check: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Clock: ComponentType<SVGProps<SVGSVGElement>>;
+  export const ClockRotateRight: ComponentType<SVGProps<SVGSVGElement>>;
+  export const DesignNib: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Erase: ComponentType<SVGProps<SVGSVGElement>>;
+  export const InfoCircle: ComponentType<SVGProps<SVGSVGElement>>;
+  export const InfoCircleSolid: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Key: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Link: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Lock: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Mail: ComponentType<SVGProps<SVGSVGElement>>;
+  export const MailOpen: ComponentType<SVGProps<SVGSVGElement>>;
+  export const MinusCircle: ComponentType<SVGProps<SVGSVGElement>>;
+  export const MoreVert: ComponentType<SVGProps<SVGSVGElement>>;
+  export const PauseSolid: ComponentType<SVGProps<SVGSVGElement>>;
+  export const PlaySolid: ComponentType<SVGProps<SVGSVGElement>>;
+  export const ProfileCircle: ComponentType<SVGProps<SVGSVGElement>>;
+  export const Refresh: ComponentType<SVGProps<SVGSVGElement>>;
+  export const RefreshDouble: ComponentType<SVGProps<SVGSVGElement>>;
+  export const User: ComponentType<SVGProps<SVGSVGElement>>;
+  export const WarningTriangle: ComponentType<SVGProps<SVGSVGElement>>;
+  export const WarningTriangleSolid: ComponentType<SVGProps<SVGSVGElement>>;
+  export const WarningCircleSolid: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
 // ============================================================================
@@ -139,7 +161,7 @@ declare module 'iconoir-react' {
 
 interface ImportMetaEnv {
   readonly VITE_API_BASE_URL: string;
-  // Add other env variables as needed
+  readonly VITE_ENV?: string;
 }
 
 interface ImportMeta {

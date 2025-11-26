@@ -24,44 +24,44 @@ import {
 /**
  * 
  * @export
- * @interface PaginatedEntryWithDepthSerializerResponse
+ * @interface LazyPaginatedEntryWithDepthSerializerResponse
  */
-export interface PaginatedEntryWithDepthSerializerResponse {
+export interface LazyPaginatedEntryWithDepthSerializerResponse {
     /**
      * Current page number
      * @type {number}
-     * @memberof PaginatedEntryWithDepthSerializerResponse
+     * @memberof LazyPaginatedEntryWithDepthSerializerResponse
      */
     page: number;
     /**
      * Whether there are more pages available
      * @type {boolean}
-     * @memberof PaginatedEntryWithDepthSerializerResponse
+     * @memberof LazyPaginatedEntryWithDepthSerializerResponse
      */
     hasNext: boolean;
     /**
      * 
      * @type {Array<EntryWithDepth>}
-     * @memberof PaginatedEntryWithDepthSerializerResponse
+     * @memberof LazyPaginatedEntryWithDepthSerializerResponse
      */
     results: Array<EntryWithDepth>;
 }
 
 /**
- * Check if a given object implements the PaginatedEntryWithDepthSerializerResponse interface.
+ * Check if a given object implements the LazyPaginatedEntryWithDepthSerializerResponse interface.
  */
-export function instanceOfPaginatedEntryWithDepthSerializerResponse(value: object): value is PaginatedEntryWithDepthSerializerResponse {
+export function instanceOfLazyPaginatedEntryWithDepthSerializerResponse(value: object): value is LazyPaginatedEntryWithDepthSerializerResponse {
     if (!('page' in value) || value['page'] === undefined) return false;
     if (!('hasNext' in value) || value['hasNext'] === undefined) return false;
     if (!('results' in value) || value['results'] === undefined) return false;
     return true;
 }
 
-export function PaginatedEntryWithDepthSerializerResponseFromJSON(json: any): PaginatedEntryWithDepthSerializerResponse {
-    return PaginatedEntryWithDepthSerializerResponseFromJSONTyped(json, false);
+export function LazyPaginatedEntryWithDepthSerializerResponseFromJSON(json: any): LazyPaginatedEntryWithDepthSerializerResponse {
+    return LazyPaginatedEntryWithDepthSerializerResponseFromJSONTyped(json, false);
 }
 
-export function PaginatedEntryWithDepthSerializerResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedEntryWithDepthSerializerResponse {
+export function LazyPaginatedEntryWithDepthSerializerResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): LazyPaginatedEntryWithDepthSerializerResponse {
     if (json == null) {
         return json;
     }
@@ -73,11 +73,11 @@ export function PaginatedEntryWithDepthSerializerResponseFromJSONTyped(json: any
     };
 }
 
-export function PaginatedEntryWithDepthSerializerResponseToJSON(json: any): PaginatedEntryWithDepthSerializerResponse {
-    return PaginatedEntryWithDepthSerializerResponseToJSONTyped(json, false);
+export function LazyPaginatedEntryWithDepthSerializerResponseToJSON(json: any): LazyPaginatedEntryWithDepthSerializerResponse {
+    return LazyPaginatedEntryWithDepthSerializerResponseToJSONTyped(json, false);
 }
 
-export function PaginatedEntryWithDepthSerializerResponseToJSONTyped(value?: PaginatedEntryWithDepthSerializerResponse | null, ignoreDiscriminator: boolean = false): any {
+export function LazyPaginatedEntryWithDepthSerializerResponseToJSONTyped(value?: LazyPaginatedEntryWithDepthSerializerResponse | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

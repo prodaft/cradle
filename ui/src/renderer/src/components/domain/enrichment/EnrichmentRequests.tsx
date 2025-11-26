@@ -1,11 +1,12 @@
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
-import { EnrichmentRequestList } from '@/services/cradle';
 import InProgress from '@components/feedback/InProgress';
 import EnrichmentRequestModal from '@components/modals/enrichment/EnrichmentRequestModal';
+import { EnrichmentRequestList } from '@services/cradle';
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { DateRangeFilter } from '../../base/ListView/ListView';
 import EnrichmentRequestsList from './EnrichmentRequestsList';
 
 interface SearchFilters {
@@ -14,6 +15,7 @@ interface SearchFilters {
 }
 
 interface ColumnFilters {
+    [key: string]: string | DateRangeFilter | undefined;
     user: string;
 }
 
@@ -179,7 +181,8 @@ export default function EnrichmentRequests() {
         setSearchParams(newParams, { replace: true });
     };
 
-    const handleColumnFilterChange = (column: keyof ColumnFilters, value: string) => {
+    const handleColumnFilterChange = (column: keyof ColumnFilters, value: string | DateRangeFilter) => {
+        if (typeof value !== 'string') return;
         setColumnFilters(prev => ({
             ...prev,
             [column]: value,

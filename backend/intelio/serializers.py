@@ -97,6 +97,7 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
     for_eclasses_detail = EntryClassSerializer(
         source="for_eclasses", many=True, read_only=True
     )
+    enricher_type = serializers.CharField(read_only=True)
 
     form_fields = SerializerMethodField()
 
