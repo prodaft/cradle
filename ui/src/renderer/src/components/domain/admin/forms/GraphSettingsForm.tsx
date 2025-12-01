@@ -3,11 +3,7 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
-import {
-    FormAlert,
-    FormAlertState,
-    SelectOption
-} from '../../../forms';
+import { FormAlert, FormAlertState, SelectOption } from '../../../forms';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 import { TabClasses } from '../../../layout/Tabs/types';
 
@@ -94,7 +90,10 @@ export default function GraphSettingsForm() {
     const { execute } = useAPICall();
 
     const [isLoading, setIsLoading] = useState(true);
-    const [actionAlert, setActionAlert] = useState<FormAlertState>({ type: null, message: '' });
+    const [actionAlert, setActionAlert] = useState<FormAlertState>({
+        type: null,
+        message: '',
+    });
     const [initialData, setInitialData] = useState<GraphSettingsFormValues>({
         simulate_method: simulateMethodOptions[0],
         dissuade_hubs: false,
@@ -134,7 +133,8 @@ export default function GraphSettingsForm() {
                         barnes_hut_optimize: settings.graph.barnes_hut_optimize ?? true,
                         barnes_hut_theta: settings.graph.barnes_hut_theta ?? 1.2,
                         scaling_ratio: settings.graph.scaling_ratio ?? 2.0,
-                        strong_gravity_mode: settings.graph.strong_gravity_mode ?? false,
+                        strong_gravity_mode:
+                            settings.graph.strong_gravity_mode ?? false,
                         gravity: settings.graph.gravity ?? 1.0,
                         max_iter_fa2: settings.graph.max_iter_fa2 ?? 1000,
                         K: settings.graph.K ?? 300,
@@ -187,7 +187,8 @@ export default function GraphSettingsForm() {
             await execute(
                 () =>
                     managementApi.managementActionsCreate({
-                        actionName: ManagementActionsCreateActionNameEnum.RefreshMaterializedGraph,
+                        actionName:
+                            ManagementActionsCreateActionNameEnum.RefreshMaterializedGraph,
                     }),
                 { suppressNotification: true },
             );
@@ -196,7 +197,10 @@ export default function GraphSettingsForm() {
                 message: 'Refresh Materialized Graph action triggered!',
             });
         } catch {
-            setActionAlert({ type: 'error', message: 'Failed to refresh materialized graph' });
+            setActionAlert({
+                type: 'error',
+                message: 'Failed to refresh materialized graph',
+            });
         }
     };
 
@@ -214,42 +218,47 @@ export default function GraphSettingsForm() {
                 message: 'Re-calculate Node Positions action triggered!',
             });
         } catch {
-            setActionAlert({ type: 'error', message: 'Failed to re-calculate node positions' });
+            setActionAlert({
+                type: 'error',
+                message: 'Failed to re-calculate node positions',
+            });
         }
     };
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-2xl px-4">
-                <h1 className="text-center text-xl font-bold text-primary mb-4">
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-2xl px-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     Graph Simulation Settings
                 </h1>
-                <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
+                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <Tabs tabClass={TabClasses.PILL}>
-                        <Tab title="Actions">
-                            <div className="flex flex-col gap-4 pt-4">
+                        <Tab title='Actions'>
+                            <div className='flex flex-col gap-4 pt-4'>
                                 <FormAlert
                                     alert={actionAlert}
-                                    onDismiss={() => setActionAlert({ type: null, message: '' })}
+                                    onDismiss={() =>
+                                        setActionAlert({ type: null, message: '' })
+                                    }
                                 />
                                 <button
-                                    type="button"
-                                    className="btn btn-outline"
+                                    type='button'
+                                    className='btn btn-outline'
                                     onClick={handleRefreshMaterializedGraph}
                                 >
                                     Refresh Materialized Graph
                                 </button>
                                 <button
-                                    type="button"
-                                    className="btn btn-outline"
+                                    type='button'
+                                    className='btn btn-outline'
                                     onClick={handleRecalculateNodePositions}
                                 >
                                     Re-calculate Node Positions

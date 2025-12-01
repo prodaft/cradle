@@ -50,7 +50,16 @@ export const useFrontendSearch = (
         } else {
             const filtered = children.filter((child) => {
                 console.log(child.props);
-                return (child.props.searchKey || child.props.name || child.props.key || child.props.id || '').toString().toLowerCase().includes(searchVal.toLowerCase());
+                return (
+                    child.props.searchKey ||
+                    child.props.name ||
+                    child.props.key ||
+                    child.props.id ||
+                    ''
+                )
+                    .toString()
+                    .toLowerCase()
+                    .includes(searchVal.toLowerCase());
             });
             setFilteredChildren(filtered);
         }

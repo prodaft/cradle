@@ -34,7 +34,10 @@ export default function NoteSettingsForm() {
     const { managementApi } = useApi();
     const { execute } = useAPICall();
     const [isLoading, setIsLoading] = useState(true);
-    const [actionAlert, setActionAlert] = useState<FormAlertState>({ type: null, message: '' });
+    const [actionAlert, setActionAlert] = useState<FormAlertState>({
+        type: null,
+        message: '',
+    });
     const [initialData, setInitialData] = useState<FormData>({
         minEntries: 1,
         minEntities: 1,
@@ -71,7 +74,8 @@ export default function NoteSettingsForm() {
                     min_entries: data.minEntries,
                     min_entities: data.minEntities,
                     max_clique_size: data.maxCliqueSize,
-                    allow_dynamic_entry_class_creation: data.allowDynamicEntryClassCreation,
+                    allow_dynamic_entry_class_creation:
+                        data.allowDynamicEntryClassCreation,
                 },
             },
         });
@@ -80,10 +84,16 @@ export default function NoteSettingsForm() {
     const handleReLinkNotes = async () => {
         try {
             await execute(
-                () => managementApi.managementActionsCreate({ actionName: 'relinkNotes' }),
+                () =>
+                    managementApi.managementActionsCreate({
+                        actionName: 'relinkNotes',
+                    }),
                 { suppressNotification: true },
             );
-            setActionAlert({ type: 'success', message: 'Re-Link all Notes action triggered!' });
+            setActionAlert({
+                type: 'success',
+                message: 'Re-Link all Notes action triggered!',
+            });
         } catch {
             setActionAlert({ type: 'error', message: 'Failed to re-link notes' });
         }
@@ -91,66 +101,71 @@ export default function NoteSettingsForm() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-2xl px-4">
-                <h1 className="text-center text-xl font-bold text-primary mb-4">
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-2xl px-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     Note Settings
                 </h1>
-                <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
+                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <Tabs tabClass={TabClasses.PILL}>
-                        <Tab title="Settings">
+                        <Tab title='Settings'>
                             <Form<FormData>
                                 schema={noteSettingsSchema}
                                 defaultValues={initialData}
                                 onSubmit={handleSubmit}
-                                successMessage="Settings updated successfully!"
-                                className="flex flex-col gap-4 pt-2"
+                                successMessage='Settings updated successfully!'
+                                className='flex flex-col gap-4 pt-2'
                             >
                                 <FormInput<FormData>
-                                    name="minEntries"
-                                    label="Minimum Number of Entries in a Note"
-                                    type="number"
+                                    name='minEntries'
+                                    label='Minimum Number of Entries in a Note'
+                                    type='number'
                                 />
                                 <FormInput<FormData>
-                                    name="minEntities"
-                                    label="Minimum Number of Entities in a Note"
-                                    type="number"
+                                    name='minEntities'
+                                    label='Minimum Number of Entities in a Note'
+                                    type='number'
                                 />
                                 <FormInput<FormData>
-                                    name="maxCliqueSize"
-                                    label="Maximum Clique Size"
-                                    type="number"
+                                    name='maxCliqueSize'
+                                    label='Maximum Clique Size'
+                                    type='number'
                                 />
                                 <FormSwitch<FormData>
-                                    name="allowDynamicEntryClassCreation"
-                                    label="Allow Dynamic Entry Class Creation"
+                                    name='allowDynamicEntryClassCreation'
+                                    label='Allow Dynamic Entry Class Creation'
                                 />
-                                <button type="submit" className="btn btn-primary btn-block mt-2">
+                                <button
+                                    type='submit'
+                                    className='btn btn-primary btn-block mt-2'
+                                >
                                     Save Settings
                                 </button>
                             </Form>
                         </Tab>
-                        <Tab title="Snippets">
-                            <div className="flex flex-col gap-3 pt-2">
-                                <SnippetList userId="null" />
+                        <Tab title='Snippets'>
+                            <div className='flex flex-col gap-3 pt-2'>
+                                <SnippetList userId='null' />
                             </div>
                         </Tab>
-                        <Tab title="Actions">
-                            <div className="flex flex-col gap-2 pt-4">
+                        <Tab title='Actions'>
+                            <div className='flex flex-col gap-2 pt-4'>
                                 <FormAlert
                                     alert={actionAlert}
-                                    onDismiss={() => setActionAlert({ type: null, message: '' })}
+                                    onDismiss={() =>
+                                        setActionAlert({ type: null, message: '' })
+                                    }
                                 />
                                 <button
-                                    type="button"
-                                    className="btn btn-outline"
+                                    type='button'
+                                    className='btn btn-outline'
                                     onClick={handleReLinkNotes}
                                 >
                                     Re-Link all Notes

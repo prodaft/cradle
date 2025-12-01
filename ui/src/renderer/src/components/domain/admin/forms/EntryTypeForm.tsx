@@ -59,21 +59,29 @@ const typeOptions: TypeOption[] = [
 ];
 
 const formatOptions: FormatOption[] = [
-    { value: '', label: 'Any Format' },
+    { value: 'any', label: 'Any Format' },
     { value: 'options', label: 'Enumerator' },
     { value: 'regex', label: 'Regex' },
 ];
 
-const entryTypeSchema = Yup.object().shape({
+const entryTypeSchema: Yup.ObjectSchema<EntryTypeFormValues> = Yup.object().shape({
     type: Yup.object()
-        .shape({ value: Yup.string().required(), label: Yup.string().required() })
+        .shape({
+            value: Yup.string()
+                .required()
+                .oneOf([
+                    EntryClassRequestTypeEnum.Artifact,
+                    EntryClassRequestTypeEnum.Entity,
+                ]),
+            label: Yup.string().required(),
+        })
         .nullable()
         .required('Class Type is required'),
     subtype: Yup.string().required('Subtype is required'),
     description: Yup.string().default(''),
     prefix: Yup.string().default(''),
     typeFormat: Yup.object()
-        .shape({ value: Yup.string(), label: Yup.string() })
+        .shape({ value: Yup.string().required(), label: Yup.string().required() })
         .nullable()
         .default(null),
     regex: Yup.string().default(''),
@@ -95,56 +103,65 @@ function ColorPickerField() {
     };
 
     return (
-        <div className="w-full">
-            <label htmlFor="color" className="block text-sm font-medium cradle-text-tertiary">
+        <div className='w-full'>
+            <label
+                htmlFor='color'
+                className='block text-sm font-medium cradle-text-tertiary'
+            >
                 Color
             </label>
-            <div className="mt-1 flex items-center space-x-2">
+            <div className='mt-1 flex items-center space-x-2'>
                 <Controller
-                    name="color"
+                    name='color'
                     control={control}
                     render={({ field }) => (
                         <input
-                            type="text"
-                            className="cradle-search w-full"
+                            type='text'
+                            className='cradle-search w-full'
                             {...field}
                         />
                     )}
                 />
                 <div
-                    className="h-8 w-12 rounded cursor-pointer border border-gray-300"
+                    className='h-8 w-12 rounded cursor-pointer border border-gray-300'
                     style={{ backgroundColor: watchColor }}
                     onClick={() => setShowColorPicker(!showColorPicker)}
                 />
                 <button
-                    type="button"
-                    className="btn btn-sm btn-outline"
+                    type='button'
+                    className='btn btn-sm btn-outline'
                     onClick={generateRandomColor}
                 >
                     <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        xmlns='http://www.w3.org/2000/svg'
+                        className='h-4 w-4'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
                     >
                         <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
                             strokeWidth={2}
-                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
                         />
                     </svg>
                 </button>
             </div>
             {showColorPicker && (
-                <div className="absolute z-10 mt-2">
-                    <div className="fixed inset-0" onClick={() => setShowColorPicker(false)} />
+                <div className='absolute z-10 mt-2'>
+                    <div
+                        className='fixed inset-0'
+                        onClick={() => setShowColorPicker(false)}
+                    />
                     <Controller
-                        name="color"
+                        name='color'
                         control={control}
                         render={({ field }) => (
-                            <HexColorPicker color={field.value} onChange={field.onChange} />
+                            <HexColorPicker
+                                color={field.value}
+                                onChange={field.onChange}
+                            />
                         )}
                     />
                 </div>
@@ -153,7 +170,11 @@ function ColorPickerField() {
     );
 }
 
-export default function EntryTypeForm({ id = null, isEdit = false, onAdd }: EntryTypeFormProps) {
+export default function EntryTypeForm({
+    id = null,
+    isEdit = false,
+    onAdd,
+}: EntryTypeFormProps) {
     const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
@@ -193,15 +214,21 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }: Entr
 
             if (isEdit && id) {
                 try {
-                    const entrytype = await entriesApi.entryClassesRetrieve({ classSubtype: id });
+                    const entrytype = await entriesApi.entryClassesRetrieve({
+                        classSubtype: id,
+                    });
                     setInitialData({
-                        type: typeOptions.find((o) => o.value === entrytype.type) || typeOptions[0],
+                        type:
+                            typeOptions.find((o) => o.value === entrytype.type) ||
+                            typeOptions[0],
                         subtype: entrytype.subtype,
                         description: entrytype.description || '',
                         prefix: entrytype.prefix || '',
                         color: entrytype.color || colorGenerator.nextHexColor(),
                         generativeRegex: entrytype.generativeRegex || '',
-                        typeFormat: formatOptions.find((o) => o.value === entrytype.format) || null,
+                        typeFormat:
+                            formatOptions.find((o) => o.value === entrytype.format) ||
+                            formatOptions[0],
                         regex: entrytype.regex || '',
                         options: entrytype.options || '',
                         children:
@@ -223,7 +250,10 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }: Entr
     const handleSubmit = async (data: EntryTypeFormValues) => {
         const payload: EntryClassRequest = {
             generativeRegex: data.generativeRegex,
-            format: data.typeFormat?.value === '' ? null : data.typeFormat?.value ?? null,
+            format:
+                data.typeFormat?.value === 'any'
+                    ? null
+                    : data.typeFormat?.value ?? null,
             type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
             subtype: data.subtype,
             description: data.description,
@@ -251,25 +281,25 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }: Entr
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-2xl px-4">
-                <h1 className="text-center text-xl font-bold text-primary mb-4">
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-2xl px-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {isEdit ? 'Edit Entry Type' : 'Add New Entry Type'}
                 </h1>
-                <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
+                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <Form<EntryTypeFormValues>
                         schema={entryTypeSchema}
                         defaultValues={initialData}
                         onSubmit={handleSubmit}
-                        successMessage="Entry Type saved successfully!"
-                        className="space-y-4"
+                        successMessage='Entry Type saved successfully!'
+                        className='space-y-4'
                     >
                         {({ watch }) => {
                             const watchType = watch('type');
@@ -282,84 +312,94 @@ export default function EntryTypeForm({ id = null, isEdit = false, onAdd }: Entr
                             return (
                                 <>
                                     <Tabs tabClass={TabClasses.PILL}>
-                                        <Tab title="Basic" classes="space-y-4 pt-4">
+                                        <Tab title='Basic' classes='space-y-4 pt-4'>
                                             <FormSelect<EntryTypeFormValues, TypeOption>
-                                                name="type"
-                                                label="Class Type"
+                                                name='type'
+                                                label='Class Type'
                                                 options={typeOptions}
                                                 required
                                             />
 
                                             <FormInput<EntryTypeFormValues>
-                                                name="subtype"
+                                                name='subtype'
                                                 label={isEdit ? 'Name' : 'Subtype'}
                                                 required
                                             />
 
                                             <FormTextArea<EntryTypeFormValues>
-                                                name="description"
-                                                label="Description"
-                                                placeholder="Description"
+                                                name='description'
+                                                label='Description'
+                                                placeholder='Description'
                                             />
 
                                             <ColorPickerField />
                                         </Tab>
 
-                                        <Tab title="Advanced" classes="space-y-4 pt-4">
+                                        <Tab title='Advanced' classes='space-y-4 pt-4'>
                                             {isEntity && (
                                                 <FormInput<EntryTypeFormValues>
-                                                    name="prefix"
-                                                    label="Prefix"
+                                                    name='prefix'
+                                                    label='Prefix'
                                                 />
                                             )}
 
                                             {isArtifact && (
                                                 <>
-                                                    <FormSelect<EntryTypeFormValues, FormatOption>
-                                                        name="typeFormat"
-                                                        label="Format"
+                                                    <FormSelect<
+                                                        EntryTypeFormValues,
+                                                        FormatOption
+                                                    >
+                                                        name='typeFormat'
+                                                        label='Format'
                                                         options={formatOptions}
                                                         isClearable
                                                     />
 
                                                     {isOptions && (
                                                         <FormTextArea<EntryTypeFormValues>
-                                                            name="options"
-                                                            label="Options"
-                                                            placeholder="Enter possible values separated by newlines."
+                                                            name='options'
+                                                            label='Options'
+                                                            placeholder='Enter possible values separated by newlines.'
                                                         />
                                                     )}
 
                                                     {isRegex && (
                                                         <FormTextArea<EntryTypeFormValues>
-                                                            name="regex"
-                                                            label="Regex"
-                                                            placeholder="Enter the regex for the type."
+                                                            name='regex'
+                                                            label='Regex'
+                                                            placeholder='Enter the regex for the type.'
                                                         />
                                                     )}
 
                                                     {!isOptions && (
                                                         <FormTextArea<EntryTypeFormValues>
-                                                            name="generativeRegex"
-                                                            label="Generative Regex"
-                                                            placeholder="Regex used to generate random values."
+                                                            name='generativeRegex'
+                                                            label='Generative Regex'
+                                                            placeholder='Regex used to generate random values.'
                                                         />
                                                     )}
                                                 </>
                                             )}
 
-                                            <FormSelect<EntryTypeFormValues, ChildOption, true>
-                                                name="children"
-                                                label="Children"
+                                            <FormSelect<
+                                                EntryTypeFormValues,
+                                                ChildOption,
+                                                true
+                                            >
+                                                name='children'
+                                                label='Children'
                                                 options={entryTypes}
                                                 isMulti
-                                                placeholder="Select child entry types..."
+                                                placeholder='Select child entry types...'
                                             />
                                         </Tab>
                                     </Tabs>
 
-                                    <div className="flex gap-2 pt-4">
-                                        <button type="submit" className="btn btn-primary btn-block">
+                                    <div className='flex gap-2 pt-4'>
+                                        <button
+                                            type='submit'
+                                            className='btn btn-primary btn-block'
+                                        >
                                             {isEdit ? 'Edit' : 'Add'}
                                         </button>
                                     </div>

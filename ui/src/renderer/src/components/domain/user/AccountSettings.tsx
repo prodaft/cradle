@@ -96,27 +96,27 @@ export default function AccountSettings({
 
     const defaultValues: AccountFormData = isEdit
         ? {
-            id: '',
-            username: '',
-            email: '',
-            password: 'password',
-            catalystKey: 'apikey',
-            role: 'user',
-            vim_mode: false,
-            email_confirmed: false,
-            is_active: false,
-        }
+              id: '',
+              username: '',
+              email: '',
+              password: 'password',
+              catalystKey: 'apikey',
+              role: 'user',
+              vim_mode: false,
+              email_confirmed: false,
+              is_active: false,
+          }
         : {
-            id: '',
-            username: '',
-            email: '',
-            password: '',
-            catalystKey: '',
-            role: 'user',
-            vim_mode: false,
-            email_confirmed: false,
-            is_active: false,
-        };
+              id: '',
+              username: '',
+              email: '',
+              password: '',
+              catalystKey: '',
+              role: 'user',
+              vim_mode: false,
+              email_confirmed: false,
+              is_active: false,
+          };
 
     const {
         register,
@@ -817,10 +817,11 @@ export default function AccountSettings({
                                                 onClick={() =>
                                                     setActiveSection(item.id)
                                                 }
-                                                className={`cradle-btn w-full flex items-center gap-3 ${activeSection === item.id
-                                                    ? 'cradle-btn-primary'
-                                                    : 'cradle-btn-ghost'
-                                                    }`}
+                                                className={`cradle-btn w-full flex items-center gap-3 ${
+                                                    activeSection === item.id
+                                                        ? 'cradle-btn-primary'
+                                                        : 'cradle-btn-ghost'
+                                                }`}
                                             >
                                                 <Icon className='w-5 h-5 flex-shrink-0' />
                                                 <span className='text-left flex-1'>

@@ -114,7 +114,7 @@ const Tabs = ({
 
                             return (
                                 <button
-                                    type="button"
+                                    type='button'
                                     key={tabId}
                                     onClick={() => handleTabChange(index)}
                                     className={`${tabClassStyles.button} ${perTabClass} ${isActive ? tabClassStyles.active : tabClassStyles.inactive}`}

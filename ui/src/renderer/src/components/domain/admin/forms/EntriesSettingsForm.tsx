@@ -51,27 +51,27 @@ export default function EntriesManagement() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-xl px-4">
-                <h1 className="text-center text-xl font-bold text-primary mb-4">
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-xl px-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     Entry Settings
                 </h1>
-                <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
+                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <FormAlert
                         alert={alert}
                         onDismiss={() => setAlert({ type: null, message: '' })}
                     />
-                    <div className="flex flex-col gap-4">
+                    <div className='flex flex-col gap-4'>
                         <button
-                            type="button"
-                            className="btn btn-outline"
+                            type='button'
+                            className='btn btn-outline'
                             onClick={handlePropagateAccessVectors}
                         >
                             Propagate Access Vectors
                         </button>
                         <button
-                            type="button"
-                            className="btn btn-outline"
+                            type='button'
+                            className='btn btn-outline'
                             onClick={handleDeleteHangingArtifacts}
                         >
                             Delete Hanging Artifacts

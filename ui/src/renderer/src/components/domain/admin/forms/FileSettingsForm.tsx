@@ -62,7 +62,10 @@ export default function FileSettingsForm() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [subtypes, setSubtypes] = useState<SubtypeOption[]>([]);
-    const [actionAlert, setActionAlert] = useState<FormAlertState>({ type: null, message: '' });
+    const [actionAlert, setActionAlert] = useState<FormAlertState>({
+        type: null,
+        message: '',
+    });
     const [initialData, setInitialData] = useState<FileSettingsFormValues>({
         autoprocessFiles: true,
         md5Subtype: null,
@@ -77,12 +80,16 @@ export default function FileSettingsForm() {
             await execute(
                 () =>
                     managementApi.managementActionsCreate({
-                        actionName: ManagementActionsCreateActionNameEnum.ReprocessAllFiles,
+                        actionName:
+                            ManagementActionsCreateActionNameEnum.ReprocessAllFiles,
                         requestBody: { action: 'reprocessAllFiles' },
                     }),
                 { suppressNotification: true },
             );
-            setActionAlert({ type: 'success', message: 'Files are being re-processed' });
+            setActionAlert({
+                type: 'success',
+                message: 'Files are being re-processed',
+            });
         } catch {
             setActionAlert({ type: 'error', message: 'Failed to re-process files' });
         }
@@ -94,7 +101,10 @@ export default function FileSettingsForm() {
             try {
                 const entryClasses = await entriesApi.entryClassesList({});
                 const artifactSubtypes = entryClasses
-                    .filter((entry: EntryClass) => entry.type === EntryClassTypeEnum.Artifact)
+                    .filter(
+                        (entry: EntryClass) =>
+                            entry.type === EntryClassTypeEnum.Artifact,
+                    )
                     .map((entry: EntryClass) => ({
                         value: entry.subtype,
                         label: entry.subtype,
@@ -113,7 +123,9 @@ export default function FileSettingsForm() {
                 const settings =
                     (await managementApi.managementSettingsRetrieve()) as FileSettingsResponse;
                 if (settings.files) {
-                    const mimetypePatternsString = Array.isArray(settings.files.mimetype_patterns)
+                    const mimetypePatternsString = Array.isArray(
+                        settings.files.mimetype_patterns,
+                    )
                         ? settings.files.mimetype_patterns.join('\n')
                         : settings.files.mimetype_patterns ||
                           'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -121,13 +133,22 @@ export default function FileSettingsForm() {
                     setInitialData({
                         autoprocessFiles: settings.files.autoprocess_files ?? true,
                         md5Subtype: settings.files.md5_subtype
-                            ? { value: settings.files.md5_subtype, label: settings.files.md5_subtype }
+                            ? {
+                                  value: settings.files.md5_subtype,
+                                  label: settings.files.md5_subtype,
+                              }
                             : null,
                         sha1Subtype: settings.files.sha1_subtype
-                            ? { value: settings.files.sha1_subtype, label: settings.files.sha1_subtype }
+                            ? {
+                                  value: settings.files.sha1_subtype,
+                                  label: settings.files.sha1_subtype,
+                              }
                             : null,
                         sha256Subtype: settings.files.sha256_subtype
-                            ? { value: settings.files.sha256_subtype, label: settings.files.sha256_subtype }
+                            ? {
+                                  value: settings.files.sha256_subtype,
+                                  label: settings.files.sha256_subtype,
+                              }
                             : null,
                         mimetypePatterns: mimetypePatternsString,
                     });
@@ -161,79 +182,84 @@ export default function FileSettingsForm() {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-2xl px-4">
-                <h1 className="text-center text-xl font-bold text-primary mb-4">
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-2xl px-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     File Processing Settings
                 </h1>
-                <div className="p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20">
+                <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
                     <Tabs tabClass={TabClasses.PILL}>
-                        <Tab title="Settings">
+                        <Tab title='Settings'>
                             <Form<FileSettingsFormValues>
                                 schema={fileSettingsSchema}
                                 defaultValues={initialData}
                                 onSubmit={handleSubmit}
-                                successMessage="File settings updated successfully!"
-                                className="space-y-4"
+                                successMessage='File settings updated successfully!'
+                                className='space-y-4'
                             >
                                 <FormSwitch<FileSettingsFormValues>
-                                    name="autoprocessFiles"
-                                    label="Process Files Automatically"
+                                    name='autoprocessFiles'
+                                    label='Process Files Automatically'
                                 />
 
                                 <FormSelect<FileSettingsFormValues, SubtypeOption>
-                                    name="md5Subtype"
-                                    label="MD5 Subtype"
+                                    name='md5Subtype'
+                                    label='MD5 Subtype'
                                     options={subtypes}
-                                    placeholder="Select MD5 subtype"
+                                    placeholder='Select MD5 subtype'
                                     required
                                 />
 
                                 <FormSelect<FileSettingsFormValues, SubtypeOption>
-                                    name="sha1Subtype"
-                                    label="SHA1 Subtype"
+                                    name='sha1Subtype'
+                                    label='SHA1 Subtype'
                                     options={subtypes}
-                                    placeholder="Select SHA1 subtype"
+                                    placeholder='Select SHA1 subtype'
                                     required
                                 />
 
                                 <FormSelect<FileSettingsFormValues, SubtypeOption>
-                                    name="sha256Subtype"
-                                    label="SHA256 Subtype"
+                                    name='sha256Subtype'
+                                    label='SHA256 Subtype'
                                     options={subtypes}
-                                    placeholder="Select SHA256 subtype"
+                                    placeholder='Select SHA256 subtype'
                                     required
                                 />
 
                                 <FormTextArea<FileSettingsFormValues>
-                                    name="mimetypePatterns"
-                                    label="MIME Type Patterns to be Hashed"
+                                    name='mimetypePatterns'
+                                    label='MIME Type Patterns to be Hashed'
                                     rows={6}
-                                    placeholder="image/*&#10;application/pdf&#10;application/msword"
+                                    placeholder='image/*&#10;application/pdf&#10;application/msword'
                                     required
                                 />
 
-                                <button type="submit" className="btn btn-primary btn-block">
+                                <button
+                                    type='submit'
+                                    className='btn btn-primary btn-block'
+                                >
                                     Save Settings
                                 </button>
                             </Form>
                         </Tab>
-                        <Tab title="Actions">
-                            <div className="flex flex-col gap-4 pt-4">
+                        <Tab title='Actions'>
+                            <div className='flex flex-col gap-4 pt-4'>
                                 <FormAlert
                                     alert={actionAlert}
-                                    onDismiss={() => setActionAlert({ type: null, message: '' })}
+                                    onDismiss={() =>
+                                        setActionAlert({ type: null, message: '' })
+                                    }
                                 />
                                 <button
-                                    type="button"
-                                    className="btn btn-outline"
+                                    type='button'
+                                    className='btn btn-outline'
                                     onClick={handleReProcessAllFiles}
                                 >
                                     Process All Files

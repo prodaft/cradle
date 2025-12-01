@@ -160,4 +160,3 @@ export function getErrorMessage(error: FieldError | undefined): string | undefin
  * Helper type for nested error paths (for arrays and objects)
  */
 export type NestedError = FieldError | { [key: string]: NestedError } | undefined;
-

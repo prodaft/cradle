@@ -4,16 +4,9 @@ import useApi from '@/hooks/api/useApi';
 import { capitalizeString } from '@/utils/dashboard';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
-import { Controller, useForm, FormProvider } from 'react-hook-form';
+import { Controller, FormProvider, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import {
-    FormAlert,
-    FormAlertState,
-    FormInput,
-    FormSelect,
-    FormSwitch,
-    SelectOption,
-} from '../../../forms';
+import { FormAlert, FormAlertState, SelectOption } from '../../../forms';
 import Selector from '../../../forms/Selector';
 
 interface EnrichmentSettingsFormProps {
@@ -80,7 +73,9 @@ export default function EnrichmentSettingsForm({
     const [alert, setAlert] = useState<FormAlertState>({ type: null, message: '' });
     const [formFields, setFormFields] = useState<FormFields>({});
     const [loading, setLoading] = useState(true);
-    const [validationSchema, setValidationSchema] = useState(createEnrichmentSchema({}));
+    const [validationSchema, setValidationSchema] = useState(
+        createEnrichmentSchema({}),
+    );
 
     const methods = useForm<FormData>({
         resolver: yupResolver(validationSchema) as any,
@@ -129,7 +124,9 @@ export default function EnrichmentSettingsForm({
                     if (settings) {
                         setDisplayName(settings.displayName || '');
                         setFormFields(settings.formFields || {});
-                        setValidationSchema(createEnrichmentSchema(settings.formFields || {}));
+                        setValidationSchema(
+                            createEnrichmentSchema(settings.formFields || {}),
+                        );
 
                         // Initialize settings object with defaults
                         const initialSettings: Record<string, string | number> = {};
@@ -156,7 +153,10 @@ export default function EnrichmentSettingsForm({
                 })
                 .catch((err) => {
                     console.error('Failed to fetch enrichment settings:', err);
-                    setAlert({ type: 'error', message: 'Failed to load enrichment settings' });
+                    setAlert({
+                        type: 'error',
+                        message: 'Failed to load enrichment settings',
+                    });
                     setLoading(false);
                 });
         }
@@ -173,7 +173,10 @@ export default function EnrichmentSettingsForm({
                 enricherType: enrichment_class,
                 enrichmentSettingsRequest: formatted_data,
             });
-            setAlert({ type: 'success', message: 'Enrichment settings saved successfully!' });
+            setAlert({
+                type: 'success',
+                message: 'Enrichment settings saved successfully!',
+            });
         } catch (err) {
             console.error('Failed to save enrichment settings:', err);
             setAlert({ type: 'error', message: 'Failed to save enrichment settings' });
@@ -185,16 +188,18 @@ export default function EnrichmentSettingsForm({
         return Object.entries(formFields).map(([key, field]) => {
             if (field.type === 'choice') {
                 return (
-                    <div className="w-full" key={key}>
+                    <div className='w-full' key={key}>
                         <label
                             htmlFor={`settings.${key}`}
-                            className="block text-sm font-medium cradle-text-tertiary mb-1"
+                            className='block text-sm font-medium cradle-text-tertiary mb-1'
                         >
                             {capitalizeString(key)}
-                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                            {field.required && (
+                                <span className='text-red-500 ml-1'>*</span>
+                            )}
                         </label>
                         <select
-                            className="form-select select select-ghost-primary select-block focus:ring-0"
+                            className='form-select select select-ghost-primary select-block focus:ring-0'
                             {...register(`settings.${key}`)}
                         >
                             {field.options?.map((option) => (
@@ -204,7 +209,7 @@ export default function EnrichmentSettingsForm({
                             ))}
                         </select>
                         {errors.settings?.[key] && (
-                            <p className="text-red-600 text-sm mt-1">
+                            <p className='text-red-600 text-sm mt-1'>
                                 {errors.settings[key]?.message?.toString() || ''}
                             </p>
                         )}
@@ -212,21 +217,23 @@ export default function EnrichmentSettingsForm({
                 );
             } else if (field.type === 'number') {
                 return (
-                    <div className="w-full" key={key}>
+                    <div className='w-full' key={key}>
                         <label
                             htmlFor={`settings.${key}`}
-                            className="block text-sm font-medium cradle-text-tertiary mb-1"
+                            className='block text-sm font-medium cradle-text-tertiary mb-1'
                         >
                             {capitalizeString(key)}
-                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                            {field.required && (
+                                <span className='text-red-500 ml-1'>*</span>
+                            )}
                         </label>
                         <input
-                            type="number"
-                            className="cradle-search w-full"
+                            type='number'
+                            className='cradle-search w-full'
                             {...register(`settings.${key}`)}
                         />
                         {errors.settings?.[key] && (
-                            <p className="text-red-600 text-sm mt-1">
+                            <p className='text-red-600 text-sm mt-1'>
                                 {errors.settings[key]?.message?.toString() || ''}
                             </p>
                         )}
@@ -235,21 +242,23 @@ export default function EnrichmentSettingsForm({
             } else {
                 // Default to string input
                 return (
-                    <div className="w-full" key={key}>
+                    <div className='w-full' key={key}>
                         <label
                             htmlFor={`settings.${key}`}
-                            className="block text-sm font-medium cradle-text-tertiary mb-1"
+                            className='block text-sm font-medium cradle-text-tertiary mb-1'
                         >
                             {capitalizeString(key)}
-                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                            {field.required && (
+                                <span className='text-red-500 ml-1'>*</span>
+                            )}
                         </label>
                         <input
-                            type="text"
-                            className="cradle-search w-full"
+                            type='text'
+                            className='cradle-search w-full'
                             {...register(`settings.${key}`)}
                         />
                         {errors.settings?.[key] && (
-                            <p className="text-red-600 text-sm mt-1">
+                            <p className='text-red-600 text-sm mt-1'>
                                 {errors.settings[key]?.message?.toString() || ''}
                             </p>
                         )}
@@ -261,8 +270,8 @@ export default function EnrichmentSettingsForm({
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="animate-pulse cradle-text-secondary">
+            <div className='flex justify-center items-center min-h-screen'>
+                <div className='animate-pulse cradle-text-secondary'>
                     Loading enrichment settings...
                 </div>
             </div>
@@ -270,53 +279,55 @@ export default function EnrichmentSettingsForm({
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-2xl px-4">
-                <h1 className="text-center text-xl font-bold text-primary mb-4">
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-2xl px-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {displayName} Settings
                 </h1>
-                <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
+                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
                     <FormProvider {...methods}>
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                             <FormAlert
                                 alert={alert}
                                 onDismiss={() => setAlert({ type: null, message: '' })}
                             />
 
                             <Tabs tabClass={TabClasses.PILL}>
-                                <Tab title="General" classes="space-y-4 pt-4">
-                                    <div className="w-full">
-                                        <label className="flex items-center justify-between gap-4 cursor-pointer">
-                                            <span className="cradle-label cradle-text-tertiary">
+                                <Tab title='General' classes='space-y-4 pt-4'>
+                                    <div className='w-full'>
+                                        <label className='flex items-center justify-between gap-4 cursor-pointer'>
+                                            <span className='cradle-label cradle-text-tertiary'>
                                                 Enabled
                                             </span>
                                             <input
-                                                type="checkbox"
-                                                className="switch switch-ghost-primary"
+                                                type='checkbox'
+                                                className='switch switch-ghost-primary'
                                                 {...register('enabled')}
                                             />
                                         </label>
                                     </div>
 
-                                    <div className="w-full">
-                                        <label className="block text-sm font-medium cradle-text-tertiary mb-1">
+                                    <div className='w-full'>
+                                        <label className='block text-sm font-medium cradle-text-tertiary mb-1'>
                                             Entry Classes
                                         </label>
                                         <Controller
-                                            name="for_eclasses"
+                                            name='for_eclasses'
                                             control={control}
-                                            render={({ field: { onChange, value } }) => (
+                                            render={({
+                                                field: { onChange, value },
+                                            }) => (
                                                 <Selector
                                                     value={value}
                                                     onChange={onChange}
                                                     fetchOptions={fetchEntryClasses}
                                                     isMulti={true}
-                                                    placeholder="Select entry classes..."
+                                                    placeholder='Select entry classes...'
                                                 />
                                             )}
                                         />
                                         {errors.for_eclasses && (
-                                            <p className="text-red-600 text-sm mt-1">
+                                            <p className='text-red-600 text-sm mt-1'>
                                                 {errors.for_eclasses.message}
                                             </p>
                                         )}
@@ -324,14 +335,17 @@ export default function EnrichmentSettingsForm({
                                 </Tab>
 
                                 {Object.keys(formFields).length > 0 && (
-                                    <Tab title="Settings" classes="space-y-4 pt-4">
+                                    <Tab title='Settings' classes='space-y-4 pt-4'>
                                         {renderSettingsFields()}
                                     </Tab>
                                 )}
                             </Tabs>
 
-                            <div className="flex gap-2 pt-4">
-                                <button type="submit" className="btn btn-primary btn-block">
+                            <div className='flex gap-2 pt-4'>
+                                <button
+                                    type='submit'
+                                    className='btn btn-primary btn-block'
+                                >
                                     Save
                                 </button>
                             </div>

@@ -2,7 +2,7 @@
  * FormTextArea - Multi-line text input component for react-hook-form
  */
 
-import { useFormContext, FieldValues, Path } from 'react-hook-form';
+import { FieldValues, Path, useFormContext } from 'react-hook-form';
 import FormFieldWrapper from './shared/FormFieldWrapper';
 import { TextAreaFieldProps } from './shared/types';
 
@@ -68,4 +68,3 @@ export default function FormTextArea<TFieldValues extends FieldValues = FieldVal
         </FormFieldWrapper>
     );
 }
-

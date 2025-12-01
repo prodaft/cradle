@@ -82,50 +82,49 @@ export default function MarkdownEditorModal({
     };
 
     return (
-        <div className="w-full min-w-[28rem]">
+        <div className='w-full min-w-[28rem]'>
             {/* Header */}
             {titleEditable ? (
                 <input
-                    type="text"
+                    type='text'
                     value={noteTitle}
                     onChange={handleTitleChange}
-                    placeholder="Enter title"
-                    className="font-semibold mb-3 mt-3 cradle-text-primary cradle-mono mb-2 w-full bg-transparent border-none outline-none focus:ring-0 p-0"
+                    placeholder='Enter title'
+                    className='font-semibold mb-3 mt-3 cradle-text-primary cradle-mono mb-2 w-full bg-transparent border-none outline-none focus:ring-0 p-0'
                 />
             ) : (
-                <h2 className="text-xl font-semibold cradle-text-primary cradle-mono mb-3">
+                <h2 className='text-xl font-semibold cradle-text-primary cradle-mono mb-3'>
                     {noteTitle}
                 </h2>
             )}
 
             {/* Editor Section */}
-            <div className="mb-6">
+            <div className='mb-6'>
                 <label
-                    htmlFor="markdown-content"
-                    className="block text-sm font-medium cradle-text-secondary cradle-mono mb-2"
+                    htmlFor='markdown-content'
+                    className='block text-sm font-medium cradle-text-secondary cradle-mono mb-2'
                 >
                     Content
                 </label>
-                <div className="cradle-border rounded overflow-hidden">
+                <div className='cradle-border rounded overflow-hidden'>
                     <CodeMirror
                         value={userInput}
                         onChange={handleContentChange}
                         theme={isDarkMode ? 'dark' : eclipse}
-                        height="300px"
+                        height='300px'
                         extensions={extensions}
-                        placeholder="Write your markdown content here..."
-                        className="w-full CodeMirror"
+                        placeholder='Write your markdown content here...'
+                        className='w-full CodeMirror'
                     />
                 </div>
             </div>
 
-
             {/* Help Text Section */}
             {helpText && (
-                <div className="mb-6 p-4 cradle-border cradle-bg-secondary rounded">
-                    <div className="flex items-start gap-3">
-                        <div className="cradle-status-light cradle-status-info mt-1 flex-shrink-0"></div>
-                        <div className="text-xs cradle-text-tertiary cradle-mono leading-relaxed">
+                <div className='mb-6 p-4 cradle-border cradle-bg-secondary rounded'>
+                    <div className='flex items-start gap-3'>
+                        <div className='cradle-status-light cradle-status-info mt-1 flex-shrink-0'></div>
+                        <div className='text-xs cradle-text-tertiary cradle-mono leading-relaxed'>
                             {helpText}
                         </div>
                     </div>
@@ -133,18 +132,18 @@ export default function MarkdownEditorModal({
             )}
 
             {/* Actions */}
-            <div className="cradle-border-t pt-5 mt-5">
-                <div className="flex gap-3">
+            <div className='cradle-border-t pt-5 mt-5'>
+                <div className='flex gap-3'>
                     <button
-                        type="button"
-                        className="cradle-btn cradle-btn-ghost flex-1"
+                        type='button'
+                        className='cradle-btn cradle-btn-ghost flex-1'
                         onClick={closeModal}
                     >
                         Cancel
                     </button>
                     <button
-                        type="button"
-                        className="cradle-btn cradle-btn-primary flex-1"
+                        type='button'
+                        className='cradle-btn cradle-btn-primary flex-1'
                         onClick={handleConfirm}
                     >
                         Save

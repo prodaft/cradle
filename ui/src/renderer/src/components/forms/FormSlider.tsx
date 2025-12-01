@@ -2,7 +2,7 @@
  * FormSlider - Range slider component for react-hook-form
  */
 
-import { useFormContext, Controller, FieldValues, Path } from 'react-hook-form';
+import { Controller, FieldValues, Path, useFormContext } from 'react-hook-form';
 import FormFieldWrapper from './shared/FormFieldWrapper';
 import { SliderFieldProps } from './shared/types';
 
@@ -60,10 +60,10 @@ export default function FormSlider<TFieldValues extends FieldValues = FieldValue
                 name={name as Path<TFieldValues>}
                 control={control}
                 render={({ field }) => (
-                    <div className="flex items-center gap-4">
+                    <div className='flex items-center gap-4'>
                         <input
                             id={name}
-                            type="range"
+                            type='range'
                             min={min}
                             max={max}
                             step={step}
@@ -72,7 +72,9 @@ export default function FormSlider<TFieldValues extends FieldValues = FieldValue
                                 errorMessage ? 'accent-red-500' : ''
                             }`}
                             aria-invalid={Boolean(errorMessage)}
-                            aria-describedby={errorMessage ? `${name}-error` : undefined}
+                            aria-describedby={
+                                errorMessage ? `${name}-error` : undefined
+                            }
                             aria-valuemin={min}
                             aria-valuemax={max}
                             aria-valuenow={field.value ?? min}
@@ -81,7 +83,7 @@ export default function FormSlider<TFieldValues extends FieldValues = FieldValue
                             onChange={(e) => field.onChange(Number(e.target.value))}
                         />
                         {showValue && (
-                            <span className="cradle-text-secondary text-sm min-w-[3rem] text-right">
+                            <span className='cradle-text-secondary text-sm min-w-[3rem] text-right'>
                                 {formatValue(field.value ?? min)}
                             </span>
                         )}
@@ -91,4 +93,3 @@ export default function FormSlider<TFieldValues extends FieldValues = FieldValue
         </FormFieldWrapper>
     );
 }
-

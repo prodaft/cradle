@@ -64,16 +64,20 @@ export default function ReportGenerationModal({
 
         setIsGenerating(true);
         try {
-            await execute(() => reportsApi.reportsPublishCreate({
-                publishReportRequest: {
-                    strategy: format,
-                    noteIds: [noteId],
-                    title: title.trim(),
-                    anonymized: mode === 'anonymized',
+            await execute(
+                () =>
+                    reportsApi.reportsPublishCreate({
+                        publishReportRequest: {
+                            strategy: format,
+                            noteIds: [noteId],
+                            title: title.trim(),
+                            anonymized: mode === 'anonymized',
+                        },
+                    }),
+                {
+                    successMessage: 'Report generated successfully!',
                 },
-            }), {
-                successMessage: 'Report generated successfully!',
-            });
+            );
 
             closeModal();
         } finally {
@@ -108,10 +112,11 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('html')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'html'
-                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                            } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                            format === 'html'
+                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                        } disabled:opacity-50`}
                     >
                         <Page width='20' height='20' />
                         <span className='text-sm font-medium'>HTML</span>
@@ -120,10 +125,11 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('json')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'json'
-                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                            } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                            format === 'json'
+                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                        } disabled:opacity-50`}
                     >
                         <Code width='20' height='20' />
                         <span className='text-sm font-medium'>JSON</span>
@@ -132,10 +138,11 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('plain')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${format === 'plain'
-                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                            } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                            format === 'plain'
+                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                        } disabled:opacity-50`}
                     >
                         <Download width='20' height='20' />
                         <span className='text-sm font-medium'>Plain Text</span>
@@ -153,10 +160,11 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('anonymized')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${mode === 'anonymized'
-                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                            } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                            mode === 'anonymized'
+                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                        } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Anonymized</span>
                     </button>
@@ -164,10 +172,11 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('transparent')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${mode === 'transparent'
-                            ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
-                            } disabled:opacity-50`}
+                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                            mode === 'transparent'
+                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                        } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Transparent</span>
                     </button>

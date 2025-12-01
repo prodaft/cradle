@@ -64,7 +64,9 @@ export interface User {
 // Modal Types
 // ============================================================================
 
-export interface ModalData<TProps extends Record<string, unknown> = Record<string, unknown>> {
+export interface ModalData<
+    TProps extends Record<string, unknown> = Record<string, unknown>,
+> {
     Component: ComponentType<TProps & { closeModal: () => void }> | null;
     props: TProps;
 }
@@ -76,7 +78,7 @@ export interface ModalData<TProps extends Record<string, unknown> = Record<strin
 export interface ModalContextValue {
     setModal: <TProps extends { closeModal: () => void }>(
         Component: ComponentType<TProps>,
-        props?: Omit<TProps, 'closeModal'>
+        props?: Omit<TProps, 'closeModal'>,
     ) => void;
     closeModal: () => void;
 }

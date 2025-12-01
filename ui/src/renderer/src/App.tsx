@@ -173,7 +173,8 @@ function App() {
                                                                             element={
                                                                                 <ReportList />
                                                                             }
-                                                                        />,
+                                                                        />
+                                                                        ,
                                                                         <Route
                                                                             path='/settings'
                                                                             element={

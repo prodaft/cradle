@@ -72,7 +72,9 @@ export default function PathFindSearch({
     const [formValues, setFormValues] = useState<FormValues>({
         src: null,
         dst: [],
-        startDate: queryValues.startDate ? new Date(queryValues.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        startDate: queryValues.startDate
+            ? new Date(queryValues.startDate)
+            : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
         endDate: queryValues.endDate ? new Date(queryValues.endDate) : new Date(),
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -96,7 +98,9 @@ export default function PathFindSearch({
         setFormValues({
             src: queryValues.src?.value || null,
             dst: queryValues.dst?.map((d) => d.value) || [],
-            startDate: queryValues.startDate ? new Date(queryValues.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            startDate: queryValues.startDate
+                ? new Date(queryValues.startDate)
+                : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
             endDate: queryValues.endDate ? new Date(queryValues.endDate) : new Date(),
         });
         setStartEntry(queryValues.src || null);

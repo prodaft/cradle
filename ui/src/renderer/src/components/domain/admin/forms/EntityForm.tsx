@@ -207,22 +207,22 @@ export default function EntityForm({
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen">
-            <div className="w-full max-w-2xl px-4">
-                <h1 className="text-center text-xl font-bold text-primary mb-4">
+        <div className='flex items-center justify-center min-h-screen'>
+            <div className='w-full max-w-2xl px-4'>
+                <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {isEdit ? 'Edit Entity' : 'Add New Entity'}
                 </h1>
 
                 <Tabs tabClass={TabClasses.PILL}>
-                    <Tab title="Settings" classes="space-y-4">
-                        <div className="p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20">
+                    <Tab title='Settings' classes='space-y-4'>
+                        <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
                             <Form<FormData>
                                 schema={entitySchema}
                                 defaultValues={initialData}
@@ -232,7 +232,7 @@ export default function EntityForm({
                                         ? 'Entity updated successfully!'
                                         : 'Entity created successfully!'
                                 }
-                                className="space-y-4"
+                                className='space-y-4'
                             >
                                 {({ watch, reset, getValues }) => {
                                     const watchedSubtype = watch('subtype');
@@ -240,15 +240,15 @@ export default function EntityForm({
                                     return (
                                         <>
                                             <FormInput<FormData>
-                                                name="name"
-                                                label="Name"
+                                                name='name'
+                                                label='Name'
                                                 disabled={isEdit}
                                                 required
                                             />
 
                                             <FormSelect<FormData, SubtypeOption>
-                                                name="subtype"
-                                                label="Subtype"
+                                                name='subtype'
+                                                label='Subtype'
                                                 options={subtypeOptions}
                                                 isDisabled={isEdit}
                                                 required
@@ -262,28 +262,28 @@ export default function EntityForm({
                                             />
 
                                             <FormSwitch<FormData>
-                                                name="isPublic"
-                                                label="Publicly Available"
+                                                name='isPublic'
+                                                label='Publicly Available'
                                             />
 
                                             <FormTextArea<FormData>
-                                                name="description"
-                                                label="Description"
-                                                placeholder="Description"
+                                                name='description'
+                                                label='Description'
+                                                placeholder='Description'
                                                 rows={4}
                                             />
 
                                             <FormSelect<FormData, AliasOption, true>
-                                                name="aliases"
-                                                label="Aliases"
+                                                name='aliases'
+                                                label='Aliases'
                                                 fetchOptions={fetchAliases}
                                                 isMulti
-                                                placeholder="Select aliases..."
+                                                placeholder='Select aliases...'
                                             />
 
                                             <button
-                                                type="submit"
-                                                className="btn btn-primary btn-block"
+                                                type='submit'
+                                                className='btn btn-primary btn-block'
                                             >
                                                 {isEdit ? 'Edit' : 'Add'}
                                             </button>
@@ -295,7 +295,7 @@ export default function EntityForm({
                     </Tab>
 
                     {isEdit && entity && accesses.length > 0 && (
-                        <Tab title="Access" classes="space-y-4">
+                        <Tab title='Access' classes='space-y-4'>
                             {accesses.map((access) => {
                                 const user = access.user;
                                 return (

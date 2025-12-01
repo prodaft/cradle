@@ -42,33 +42,34 @@ export default function Register() {
     };
 
     return (
-        <div className="min-h-screen overflow-y-auto cradle-bg-primary">
-            <div className="flex min-h-screen">
+        <div className='min-h-screen overflow-y-auto cradle-bg-primary'>
+            <div className='flex min-h-screen'>
                 {/* Left Side - Branding */}
-                <div className="hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden">
-                    <div className="absolute inset-0 cradle-grid-bg opacity-30"></div>
+                <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
+                    <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
 
-                    <div className="relative z-10 flex flex-col justify-center items-start px-16 py-12">
-                        <h1 className="text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight">
+                    <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
+                        <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
                             Join Cradle
                         </h1>
-                        <p className="text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md">
-                            Create an account to start building your knowledge repository.
+                        <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
+                            Create an account to start building your knowledge
+                            repository.
                         </p>
                     </div>
                 </div>
 
                 {/* Right Side - Registration Form */}
-                <div className="flex-1 flex items-center justify-center px-4 py-12">
-                    <div className="w-full max-w-md">
-                        <div className="cradle-border cradle-bg-elevated">
-                            <div className="cradle-card-header cradle-border-b">
-                                <span className="cradle-mono text-xs tracking-widest">
+                <div className='flex-1 flex items-center justify-center px-4 py-12'>
+                    <div className='w-full max-w-md'>
+                        <div className='cradle-border cradle-bg-elevated'>
+                            <div className='cradle-card-header cradle-border-b'>
+                                <span className='cradle-mono text-xs tracking-widest'>
                                     USER REGISTRATION
                                 </span>
                             </div>
 
-                            <div className="p-8">
+                            <div className='p-8'>
                                 <Form<FormData>
                                     schema={registerSchema}
                                     defaultValues={{
@@ -84,45 +85,45 @@ export default function Register() {
                                             replace: true,
                                         })
                                     }
-                                    className="space-y-5"
+                                    className='space-y-5'
                                 >
                                     <FormInput<FormData>
-                                        name="username"
-                                        label="Username"
+                                        name='username'
+                                        label='Username'
                                     />
                                     <FormInput<FormData>
-                                        name="email"
-                                        label="Email"
-                                        type="email"
+                                        name='email'
+                                        label='Email'
+                                        type='email'
                                     />
                                     <FormInput<FormData>
-                                        name="password"
-                                        label="Password"
-                                        type="password"
+                                        name='password'
+                                        label='Password'
+                                        type='password'
                                     />
                                     <FormInput<FormData>
-                                        name="passwordCheck"
-                                        label="Confirm Password"
-                                        type="password"
+                                        name='passwordCheck'
+                                        label='Confirm Password'
+                                        type='password'
                                     />
                                     <button
-                                        type="submit"
-                                        data-testid="login-register-button"
-                                        className="cradle-btn cradle-btn-primary w-full"
+                                        type='submit'
+                                        data-testid='login-register-button'
+                                        className='cradle-btn cradle-btn-primary w-full'
                                     >
                                         Create Account
                                     </button>
                                 </Form>
 
                                 {/* Footer Link */}
-                                <div className="cradle-separator mt-8"></div>
-                                <div className="text-center text-xs cradle-mono mt-6">
-                                    <span className="cradle-text-tertiary">
+                                <div className='cradle-separator mt-8'></div>
+                                <div className='text-center text-xs cradle-mono mt-6'>
+                                    <span className='cradle-text-tertiary'>
                                         Already have an account?{' '}
                                     </span>
                                     <Link
-                                        to="/login"
-                                        className="cradle-text-tertiary hover:text-cradle2 uppercase tracking-wider"
+                                        to='/login'
+                                        className='cradle-text-tertiary hover:text-cradle2 uppercase tracking-wider'
                                         state={location.state}
                                         replace={true}
                                     >
@@ -132,8 +133,8 @@ export default function Register() {
                             </div>
                         </div>
 
-                        <div className="mt-6 text-center">
-                            <span className="text-xs cradle-text-muted cradle-mono tracking-wider">
+                        <div className='mt-6 text-center'>
+                            <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
                                 v2.10.2-beta.a070af1b
                             </span>
                         </div>

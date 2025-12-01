@@ -62,16 +62,16 @@ function EnrichmentRequestsList({
     sortDirection = 'desc',
     onSort,
     pageSize = 10,
-    setPageSize = () => { },
+    setPageSize = () => {},
     onColumnFilterChange = null,
     columnFilters = { user: '' },
     searchFilters = {},
-    onSearchChange = () => { },
-    onSearchSubmit = () => { },
+    onSearchChange = () => {},
+    onSearchSubmit = () => {},
     selectedRequests = [],
-    setSelectedRequests = () => { },
-    onDeleteSelected = () => { },
-    onRetrySelected = () => { },
+    setSelectedRequests = () => {},
+    onDeleteSelected = () => {},
+    onRetrySelected = () => {},
 }: EnrichmentRequestsListProps) {
     const { navigateLink } = useCradleNavigate();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -113,12 +113,12 @@ function EnrichmentRequestsList({
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
         onColumnFilterChange
             ? {
-                user: (value: string | DateRangeFilter) => {
-                    if (typeof value === 'string') {
-                        onColumnFilterChange('user', value);
-                    }
-                },
-            }
+                  user: (value: string | DateRangeFilter) => {
+                      if (typeof value === 'string') {
+                          onColumnFilterChange('user', value);
+                      }
+                  },
+              }
             : {};
 
     const renderRow = (
@@ -129,7 +129,11 @@ function EnrichmentRequestsList({
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
-            <tr key={request.id} onClick={navigateLink(`/enrichment/${request.id}`)} className='cursor-pointer'>
+            <tr
+                key={request.id}
+                onClick={navigateLink(`/enrichment/${request.id}`)}
+                className='cursor-pointer'
+            >
                 {enableMultiSelect && (
                     <td
                         className='w-12'
@@ -148,14 +152,15 @@ function EnrichmentRequestsList({
                 </td>
                 <td className='w-32'>
                     <span
-                        className={`badge ${request.status === 'done'
-                            ? 'badge-success'
-                            : request.status === 'error'
-                                ? 'badge-error'
-                                : request.status === 'waiting'
+                        className={`badge ${
+                            request.status === 'done'
+                                ? 'badge-success'
+                                : request.status === 'error'
+                                  ? 'badge-error'
+                                  : request.status === 'waiting'
                                     ? 'badge-warning'
                                     : 'badge-info'
-                            }`}
+                        }`}
                         style={{
                             border: 0,
                         }}
@@ -194,7 +199,9 @@ function EnrichmentRequestsList({
                                                 ? `${selectedRequests.length} request(s) selected`
                                                 : 'Select requests to perform actions'
                                         }
-                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        onClick={() =>
+                                            setIsDropdownOpen(!isDropdownOpen)
+                                        }
                                     >
                                         <span className='truncate'>
                                             {selectedRequests.length > 0
@@ -274,11 +281,7 @@ function EnrichmentRequestsList({
                     filterValues={columnFilters}
                     emptyMessage='No enrichment requests found'
                     enableMultiSelect={true}
-                    setSelected={(ids) =>
-                        setSelectedRequests(
-                            ids
-                        )
-                    }
+                    setSelected={(ids) => setSelectedRequests(ids)}
                 />
             </TableCard>
         </div>

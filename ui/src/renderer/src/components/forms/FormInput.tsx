@@ -2,7 +2,7 @@
  * FormInput - Text input component for react-hook-form
  */
 
-import { useFormContext, FieldValues, Path } from 'react-hook-form';
+import { FieldValues, Path, useFormContext } from 'react-hook-form';
 import FormFieldWrapper from './shared/FormFieldWrapper';
 import { TextFieldProps } from './shared/types';
 
@@ -74,4 +74,3 @@ export default function FormInput<TFieldValues extends FieldValues = FieldValues
         </FormFieldWrapper>
     );
 }
-

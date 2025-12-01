@@ -2,7 +2,7 @@
  * FormRadioGroup - Radio button group component for react-hook-form
  */
 
-import { useFormContext, FieldValues, Path } from 'react-hook-form';
+import { FieldValues, Path, useFormContext } from 'react-hook-form';
 import { RadioGroupFieldProps } from './shared/types';
 
 /**
@@ -47,11 +47,18 @@ export default function FormRadioGroup<
     const hasError = Boolean(errorMessage);
 
     return (
-        <div className={`w-full ${className}`} role="radiogroup" aria-labelledby={`${name}-label`}>
+        <div
+            className={`w-full ${className}`}
+            role='radiogroup'
+            aria-labelledby={`${name}-label`}
+        >
             {label && (
-                <div id={`${name}-label`} className="cradle-label cradle-text-tertiary mb-2">
+                <div
+                    id={`${name}-label`}
+                    className='cradle-label cradle-text-tertiary mb-2'
+                >
                     {label}
-                    {required && <span className="text-red-500 ml-1">*</span>}
+                    {required && <span className='text-red-500 ml-1'>*</span>}
                 </div>
             )}
             <div
@@ -67,19 +74,19 @@ export default function FormRadioGroup<
                         }`}
                     >
                         <input
-                            type="radio"
+                            type='radio'
                             value={String(option.value)}
                             disabled={disabled || option.disabled}
                             className={`mt-0.5 ${hasError ? 'border-red-500' : ''}`}
                             aria-describedby={hasError ? `${name}-error` : undefined}
                             {...register(name as Path<TFieldValues>)}
                         />
-                        <div className="flex flex-col">
-                            <span className="cradle-text-secondary text-sm">
+                        <div className='flex flex-col'>
+                            <span className='cradle-text-secondary text-sm'>
                                 {option.label}
                             </span>
                             {option.description && (
-                                <span className="text-xs cradle-text-muted mt-0.5">
+                                <span className='text-xs cradle-text-muted mt-0.5'>
                                     {option.description}
                                 </span>
                             )}
@@ -88,13 +95,13 @@ export default function FormRadioGroup<
                 ))}
             </div>
             {helperText && !hasError && (
-                <p className="text-xs cradle-text-muted mt-2">{helperText}</p>
+                <p className='text-xs cradle-text-muted mt-2'>{helperText}</p>
             )}
             {hasError && (
                 <p
                     id={`${name}-error`}
-                    className="text-xs text-red-500 mt-2"
-                    role="alert"
+                    className='text-xs text-red-500 mt-2'
+                    role='alert'
                 >
                     {errorMessage}
                 </p>
@@ -102,4 +109,3 @@ export default function FormRadioGroup<
         </div>
     );
 }
-

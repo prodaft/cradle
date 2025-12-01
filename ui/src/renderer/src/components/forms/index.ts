@@ -9,13 +9,13 @@ export { default as Form, useFormContext } from './Form';
 export type { FormProps } from './Form';
 
 // Form field components
-export { default as FormInput } from './FormInput';
-export { default as FormTextArea } from './FormTextArea';
 export { default as FormCheckbox } from './FormCheckbox';
-export { default as FormSwitch } from './FormSwitch';
+export { default as FormInput } from './FormInput';
 export { default as FormRadioGroup } from './FormRadioGroup';
-export { default as FormSlider } from './FormSlider';
 export { default as FormSelect } from './FormSelect';
+export { default as FormSlider } from './FormSlider';
+export { default as FormSwitch } from './FormSwitch';
+export { default as FormTextArea } from './FormTextArea';
 
 // Form alert
 export { default as FormAlert } from './FormAlert';
@@ -24,15 +24,15 @@ export type { FormAlertProps, FormAlertState } from './FormAlert';
 // Shared types
 export type {
     BaseFieldProps,
-    TextFieldProps,
-    TextAreaFieldProps,
     CheckboxFieldProps,
-    SwitchFieldProps,
-    RadioOption,
     RadioGroupFieldProps,
-    SliderFieldProps,
-    SelectOption,
+    RadioOption,
     SelectFieldProps,
+    SelectOption,
+    SliderFieldProps,
+    SwitchFieldProps,
+    TextAreaFieldProps,
+    TextFieldProps,
 } from './shared/types';
 
 // Shared components

@@ -2,7 +2,7 @@
  * FormSwitch - Toggle switch component for react-hook-form
  */
 
-import { useFormContext, FieldValues, Path } from 'react-hook-form';
+import { FieldValues, Path, useFormContext } from 'react-hook-form';
 import { SwitchFieldProps } from './shared/types';
 
 /**
@@ -38,21 +38,21 @@ export default function FormSwitch<TFieldValues extends FieldValues = FieldValue
 
     return (
         <div className={`w-full ${className}`}>
-            <label className="flex items-center justify-between gap-4 cursor-pointer">
-                <div className="flex flex-col">
-                    <span className="cradle-label cradle-text-tertiary">
+            <label className='flex items-center justify-between gap-4 cursor-pointer'>
+                <div className='flex flex-col'>
+                    <span className='cradle-label cradle-text-tertiary'>
                         {label}
-                        {required && <span className="text-red-500 ml-1">*</span>}
+                        {required && <span className='text-red-500 ml-1'>*</span>}
                     </span>
                     {description && (
-                        <span className="text-xs cradle-text-muted mt-0.5">
+                        <span className='text-xs cradle-text-muted mt-0.5'>
                             {description}
                         </span>
                     )}
                 </div>
                 <input
                     id={name}
-                    type="checkbox"
+                    type='checkbox'
                     disabled={disabled}
                     className={`switch switch-ghost-primary ${hasError ? 'border-red-500' : ''}`}
                     aria-invalid={hasError}
@@ -61,13 +61,13 @@ export default function FormSwitch<TFieldValues extends FieldValues = FieldValue
                 />
             </label>
             {helperText && !hasError && (
-                <p className="text-xs cradle-text-muted mt-1">{helperText}</p>
+                <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
             )}
             {hasError && (
                 <p
                     id={`${name}-error`}
-                    className="text-xs text-red-500 mt-1"
-                    role="alert"
+                    className='text-xs text-red-500 mt-1'
+                    role='alert'
                 >
                     {errorMessage}
                 </p>
@@ -75,4 +75,3 @@ export default function FormSwitch<TFieldValues extends FieldValues = FieldValue
         </div>
     );
 }
-

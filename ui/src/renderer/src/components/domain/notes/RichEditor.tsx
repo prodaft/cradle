@@ -19,9 +19,7 @@ import {
     indentWithTab,
 } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
-import {
-    indentOnInput
-} from '@codemirror/language';
+import { indentOnInput } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
 import {

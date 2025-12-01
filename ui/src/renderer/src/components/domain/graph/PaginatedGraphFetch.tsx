@@ -85,9 +85,12 @@ export default function PaginatedGraphFetch({
         if (queryValues) {
             setSourceNode(queryValues.src || null);
             setDateRange({
-                startDate:
-                    queryValues.startDate ? new Date(queryValues.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-                endDate: queryValues.endDate ? new Date(queryValues.endDate) : new Date(),
+                startDate: queryValues.startDate
+                    ? new Date(queryValues.startDate)
+                    : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                endDate: queryValues.endDate
+                    ? new Date(queryValues.endDate)
+                    : new Date(),
             });
             setPageSize(queryValues.pageSize || 250);
             // Ensure depth never exceeds MAX_DEPTH

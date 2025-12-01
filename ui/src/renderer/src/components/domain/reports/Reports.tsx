@@ -195,24 +195,24 @@ export default function Reports() {
         sortable?: boolean;
         filterType?: 'text' | 'date';
     }> = [
-            { key: 'status', label: 'Status', sortable: true },
-            { key: 'title', label: 'Title', sortable: true },
-            { key: 'strategy', label: 'Strategy', sortable: true },
-            { key: 'anonymized', label: 'Anonymized', sortable: true },
-            {
-                key: 'createdAt',
-                label: 'Created At',
-                sortable: true,
-                filterType: 'date' as const,
-            },
-        ];
+        { key: 'status', label: 'Status', sortable: true },
+        { key: 'title', label: 'Title', sortable: true },
+        { key: 'strategy', label: 'Strategy', sortable: true },
+        { key: 'anonymized', label: 'Anonymized', sortable: true },
+        {
+            key: 'createdAt',
+            label: 'Created At',
+            sortable: true,
+            filterType: 'date' as const,
+        },
+    ];
 
     // Define filterable columns with their handlers
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-    {
-        user: (value) => handleColumnFilterChange('user', value),
-        createdAt: (value) => handleColumnFilterChange('createdAt', value),
-    };
+        {
+            user: (value) => handleColumnFilterChange('user', value),
+            createdAt: (value) => handleColumnFilterChange('createdAt', value),
+        };
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
@@ -243,8 +243,8 @@ export default function Reports() {
                         report.strategy === 'json'
                             ? 'json'
                             : report.strategy === 'plain'
-                                ? 'txt'
-                                : 'html';
+                              ? 'txt'
+                              : 'html';
                     link.download = `${report.title || 'report'}.${extension}`;
 
                     // Trigger download

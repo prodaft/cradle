@@ -39,7 +39,8 @@ export default function EnrichmentRequests() {
     const [sortField, setSortField] = useState(
         searchParams.get('sort_field') || 'created_at',
     );
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>((searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc',
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
+        (searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc',
     );
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('pagesize')) || 25,
@@ -233,8 +234,8 @@ export default function EnrichmentRequests() {
             // Delete all selected requests
             await Promise.all(
                 selectedRequests.map((id) =>
-                    intelioApi.enrichmentDetailDelete({ id: id })
-                )
+                    intelioApi.enrichmentDetailDelete({ id: id }),
+                ),
             );
 
             notify({
@@ -257,9 +258,7 @@ export default function EnrichmentRequests() {
         try {
             // Retry all selected requests
             await Promise.all(
-                selectedRequests.map((id) =>
-                    intelioApi.enrichmentRestart({ id: id })
-                )
+                selectedRequests.map((id) => intelioApi.enrichmentRestart({ id: id })),
             );
 
             notify({

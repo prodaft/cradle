@@ -133,7 +133,6 @@ declare module 'iconoir-react' {
     export const RefreshCircle: ComponentType<SVGProps<SVGSVGElement>>;
     export const Copy: ComponentType<SVGProps<SVGSVGElement>>;
 
-
     // Missing icons - add declarations
     export const Check: ComponentType<SVGProps<SVGSVGElement>>;
     export const Calendar: ComponentType<SVGProps<SVGSVGElement>>;

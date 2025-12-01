@@ -30,7 +30,10 @@ export interface UseAPICallReturn {
         options?: ExecuteOptions<T>,
     ) => (...args: any[]) => Promise<T>;
     loading: boolean;
-    handleError: <T = unknown>(err: unknown, options: ExecuteOptions<T>) => Promise<ParsedAPIError>;
+    handleError: <T = unknown>(
+        err: unknown,
+        options: ExecuteOptions<T>,
+    ) => Promise<ParsedAPIError>;
 }
 
 /**
@@ -157,7 +160,10 @@ export function useAPICall(): UseAPICallReturn {
      * @returns Pre-configured async function
      */
     const executor = useCallback(
-        <T>(apiCall: (...args: any[]) => Promise<T>, options: ExecuteOptions<T> = {}) => {
+        <T>(
+            apiCall: (...args: any[]) => Promise<T>,
+            options: ExecuteOptions<T> = {},
+        ) => {
             return async (...args: any[]): Promise<T> => {
                 return execute(() => apiCall(...args), options);
             };

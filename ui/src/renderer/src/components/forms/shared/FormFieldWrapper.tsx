@@ -45,13 +45,13 @@ export default function FormFieldWrapper({
             <div className={`w-full ${className}`}>
                 {children}
                 {helperText && !hasError && (
-                    <p className="text-xs cradle-text-muted mt-1">{helperText}</p>
+                    <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
                 )}
                 {hasError && (
                     <p
                         id={`${name}-error`}
-                        className="text-xs text-red-500 mt-1"
-                        role="alert"
+                        className='text-xs text-red-500 mt-1'
+                        role='alert'
                     >
                         {error}
                     </p>
@@ -64,26 +64,24 @@ export default function FormFieldWrapper({
     if (row) {
         return (
             <div className={`w-full ${className}`}>
-                <div className="flex flex-row items-center justify-between w-full gap-4">
+                <div className='flex flex-row items-center justify-between w-full gap-4'>
                     <label
                         htmlFor={name}
-                        className="cradle-label cradle-text-tertiary whitespace-nowrap"
+                        className='cradle-label cradle-text-tertiary whitespace-nowrap'
                     >
                         {label}
-                        {required && <span className="text-red-500 ml-1">*</span>}
+                        {required && <span className='text-red-500 ml-1'>*</span>}
                     </label>
-                    <div className="flex-1">
-                        {children}
-                    </div>
+                    <div className='flex-1'>{children}</div>
                 </div>
                 {helperText && !hasError && (
-                    <p className="text-xs cradle-text-muted mt-1">{helperText}</p>
+                    <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
                 )}
                 {hasError && (
                     <p
                         id={`${name}-error`}
-                        className="text-xs text-red-500 mt-1"
-                        role="alert"
+                        className='text-xs text-red-500 mt-1'
+                        role='alert'
                     >
                         {error}
                     </p>
@@ -95,21 +93,21 @@ export default function FormFieldWrapper({
     // Standard column layout
     return (
         <div className={`w-full ${className}`}>
-            <label htmlFor={name} className="flex flex-col w-full gap-2">
-                <span className="cradle-label cradle-text-tertiary">
+            <label htmlFor={name} className='flex flex-col w-full gap-2'>
+                <span className='cradle-label cradle-text-tertiary'>
                     {label}
-                    {required && <span className="text-red-500 ml-1">*</span>}
+                    {required && <span className='text-red-500 ml-1'>*</span>}
                 </span>
                 {children}
             </label>
             {helperText && !hasError && (
-                <p className="text-xs cradle-text-muted mt-1">{helperText}</p>
+                <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
             )}
             {hasError && (
                 <p
                     id={`${name}-error`}
-                    className="text-xs text-red-500 mt-1"
-                    role="alert"
+                    className='text-xs text-red-500 mt-1'
+                    role='alert'
                 >
                     {error}
                 </p>
@@ -117,4 +115,3 @@ export default function FormFieldWrapper({
         </div>
     );
 }
-

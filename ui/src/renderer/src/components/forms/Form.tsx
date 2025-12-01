@@ -165,18 +165,15 @@ export default function Form<TFieldValues extends FieldValues = FieldValues>({
             clearAlert();
 
             try {
-                const result = await execute(
-                    () => onSubmit(data),
-                    {
-                        suppressNotification: true, // We handle alerts ourselves
-                        onError: (error) => {
-                            // Apply field errors from API response
-                            if (error.isValidationError && error.fieldErrors) {
-                                applyFieldErrors(error.fieldErrors);
-                            }
-                        },
+                const result = await execute(() => onSubmit(data), {
+                    suppressNotification: true, // We handle alerts ourselves
+                    onError: (error) => {
+                        // Apply field errors from API response
+                        if (error.isValidationError && error.fieldErrors) {
+                            applyFieldErrors(error.fieldErrors);
+                        }
                     },
-                );
+                });
 
                 // Show success alert
                 if (successMessage) {

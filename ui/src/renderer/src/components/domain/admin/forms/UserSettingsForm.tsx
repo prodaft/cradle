@@ -67,27 +67,27 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
 
     if (isLoading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen cradle-bg-primary">
+        <div className='min-h-screen cradle-bg-primary'>
             {/* Page Header - Full Width */}
-            <div className="cradle-border-b cradle-bg-elevated">
-                <div className="max-w-6xl mx-auto px-6 py-6">
-                    <div className="flex items-center justify-between">
+            <div className='cradle-border-b cradle-bg-elevated'>
+                <div className='max-w-6xl mx-auto px-6 py-6'>
+                    <div className='flex items-center justify-between'>
                         <div>
-                            <h1 className="text-2xl font-bold cradle-text-primary cradle-mono tracking-tight">
+                            <h1 className='text-2xl font-bold cradle-text-primary cradle-mono tracking-tight'>
                                 System Settings
                             </h1>
-                            <p className="text-sm cradle-text-tertiary cradle-mono mt-1">
+                            <p className='text-sm cradle-text-tertiary cradle-mono mt-1'>
                                 Configure system-wide preferences and policies
                             </p>
                         </div>
-                        <div className="text-xs cradle-text-muted cradle-mono tracking-wider">
+                        <div className='text-xs cradle-text-muted cradle-mono tracking-wider'>
                             SYSTEM SETTINGS
                         </div>
                     </div>
@@ -95,32 +95,32 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             </div>
 
             {/* Content Area */}
-            <div className="max-w-6xl mx-auto px-6 py-8">
+            <div className='max-w-6xl mx-auto px-6 py-8'>
                 <Tabs tabClass={TabClasses.PILL}>
-                    <Tab title="User Management">
-                        <div className="cradle-border cradle-bg-elevated p-6 mt-6">
+                    <Tab title='User Management'>
+                        <div className='cradle-border cradle-bg-elevated p-6 mt-6'>
                             <Form<FormData>
                                 schema={accountSettingsSchema}
                                 defaultValues={initialData}
                                 onSubmit={handleSubmit}
-                                successMessage="Account settings updated successfully!"
-                                className="space-y-4"
+                                successMessage='Account settings updated successfully!'
+                                className='space-y-4'
                             >
                                 <FormSwitch<FormData>
-                                    name="allowRegistration"
-                                    label="Allow Registration"
+                                    name='allowRegistration'
+                                    label='Allow Registration'
                                 />
                                 <FormSwitch<FormData>
-                                    name="requireEmailActivation"
-                                    label="Require Email Activation"
+                                    name='requireEmailActivation'
+                                    label='Require Email Activation'
                                 />
                                 <FormSwitch<FormData>
-                                    name="requireAdminConfirmation"
-                                    label="Require Admin Confirmation of New Accounts"
+                                    name='requireAdminConfirmation'
+                                    label='Require Admin Confirmation of New Accounts'
                                 />
                                 <button
-                                    type="submit"
-                                    className="cradle-btn cradle-btn-primary w-full mt-6"
+                                    type='submit'
+                                    className='cradle-btn cradle-btn-primary w-full mt-6'
                                 >
                                     Save Settings
                                 </button>

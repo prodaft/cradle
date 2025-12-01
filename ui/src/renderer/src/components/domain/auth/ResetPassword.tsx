@@ -1,8 +1,8 @@
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import * as Yup from 'yup';
 import { Form, FormInput } from '@components/forms';
 import { Link, useSearchParams } from 'react-router-dom';
+import * as Yup from 'yup';
 
 interface FormData {
     password: string;
@@ -27,50 +27,52 @@ export default function ResetPassword() {
 
     const handleSubmit = async (data: FormData) => {
         await usersApi.usersResetPasswordUpdate({
-            passwordResetConfirmRequest: { token: token || '', password: data.password },
+            passwordResetConfirmRequest: {
+                token: token || '',
+                password: data.password,
+            },
         });
     };
 
     return (
-        <div className="flex flex-row items-center justify-center h-screen overflow-y-auto">
-            <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3">
-                <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500">
-                    <div className="sm:mx-auto sm:w-full sm:max-w-sm">
-                        <h3 className="mt-10 text-center text-2xl font-bold leading-9 tracking-tight">
+        <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
+            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
+                <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500'>
+                    <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
+                        <h3 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight'>
                             Change Password
                         </h3>
                     </div>
-                    <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
+                    <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
                         <Form<FormData>
                             schema={resetPasswordSchema}
                             defaultValues={{ password: '', confirmPassword: '' }}
                             onSubmit={handleSubmit}
                             onSuccess={() => navigate('/login', { replace: true })}
-                            className="space-y-6"
+                            className='space-y-6'
                         >
                             <FormInput<FormData>
-                                name="password"
-                                label="Password"
-                                type="password"
-                                autoFocus
+                                name='password'
+                                label='Password'
+                                type='password'
                             />
                             <FormInput<FormData>
-                                name="confirmPassword"
-                                label="Confirm Password"
-                                type="password"
+                                name='confirmPassword'
+                                label='Confirm Password'
+                                type='password'
                             />
                             <button
-                                type="submit"
-                                data-testid="login-register-button"
-                                className="btn btn-primary btn-block"
+                                type='submit'
+                                data-testid='login-register-button'
+                                className='btn btn-primary btn-block'
                             >
                                 Change Password
                             </button>
                         </Form>
-                        <p className="mt-10 text-center text-sm text-gray-500">
+                        <p className='mt-10 text-center text-sm text-gray-500'>
                             <Link
-                                to="/login"
-                                className="font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400"
+                                to='/login'
+                                className='font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
                                 replace={true}
                             >
                                 Go back to login

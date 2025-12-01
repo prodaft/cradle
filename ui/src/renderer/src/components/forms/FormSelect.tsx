@@ -3,11 +3,11 @@
  * Wraps the existing Selector component with Controller
  */
 
-import { useFormContext, Controller, FieldValues, Path } from 'react-hook-form';
+import { Controller, FieldValues, Path, useFormContext } from 'react-hook-form';
 import { GroupBase } from 'react-select';
+import Selector from './Selector';
 import FormFieldWrapper from './shared/FormFieldWrapper';
 import { SelectFieldProps, SelectOption } from './shared/types';
-import Selector from './Selector';
 
 /**
  * Select dropdown component that integrates with react-hook-form via Controller.
@@ -106,7 +106,11 @@ export default function FormSelect<
                             field.onChange(newValue);
                             // Call custom onChange if provided
                             if (onChangeProp) {
-                                onChangeProp(newValue as IsMulti extends true ? TOption[] : TOption | null);
+                                onChangeProp(
+                                    newValue as IsMulti extends true
+                                        ? TOption[]
+                                        : TOption | null,
+                                );
                             }
                         }}
                         onBlur={field.onBlur}

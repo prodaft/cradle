@@ -43,10 +43,18 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
         setModal(MarkdownEditorModal, {
             titleEditable: true,
             initialContent: '',
-            helpText:
+            helpText: (
                 <div>
-                    You can use CodeMirror snippet format: <a href="https://codemirror.net/docs/ref/#autocomplete.snippet" target="_blank" rel="noopener noreferrer">https://codemirror.net/docs/ref/#autocomplete.snippet</a>
-                </div>,
+                    You can use CodeMirror snippet format:{' '}
+                    <a
+                        href='https://codemirror.net/docs/ref/#autocomplete.snippet'
+                        target='_blank'
+                        rel='noopener noreferrer'
+                    >
+                        https://codemirror.net/docs/ref/#autocomplete.snippet
+                    </a>
+                </div>
+            ),
             onConfirm: async (content: string, title: string) => {
                 if (title.trim() && content.trim()) {
                     try {
