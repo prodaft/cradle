@@ -69,12 +69,10 @@ export interface EnrichmentDetailRetrieveRequest {
 export interface EnrichmentRelationsRetrieveRequest {
     enricherType: string;
     id: number;
-    fromEntry?: string;
-    orderBy?: string;
+    details?: string;
     page?: number;
     pageSize?: number;
-    reason?: string;
-    toEntry?: string;
+    query?: string;
 }
 
 export interface EnrichmentRequestCreateRequest {
@@ -261,12 +259,8 @@ export class IntelioApi extends runtime.BaseAPI {
 
         const queryParameters: any = {};
 
-        if (requestParameters['fromEntry'] != null) {
-            queryParameters['from_entry'] = requestParameters['fromEntry'];
-        }
-
-        if (requestParameters['orderBy'] != null) {
-            queryParameters['order_by'] = requestParameters['orderBy'];
+        if (requestParameters['details'] != null) {
+            queryParameters['details'] = requestParameters['details'];
         }
 
         if (requestParameters['page'] != null) {
@@ -277,12 +271,8 @@ export class IntelioApi extends runtime.BaseAPI {
             queryParameters['page_size'] = requestParameters['pageSize'];
         }
 
-        if (requestParameters['reason'] != null) {
-            queryParameters['reason'] = requestParameters['reason'];
-        }
-
-        if (requestParameters['toEntry'] != null) {
-            queryParameters['to_entry'] = requestParameters['toEntry'];
+        if (requestParameters['query'] != null) {
+            queryParameters['query'] = requestParameters['query'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

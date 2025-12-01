@@ -5,7 +5,6 @@ import { LinkTreeFlattener, truncateText } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
 import type { EdgeRelation } from '@services/cradle/models';
-import { parseISO } from 'date-fns';
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 import { ChangeEvent, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
@@ -289,8 +288,8 @@ export default function PaginatedGraphFetch({
                         <label className='text-xs text-gray-400 mb-1'>Date Range</label>
                         <Datepicker
                             value={{
-                                startDate: parseISO(String(dateRange.startDate)),
-                                endDate: parseISO(String(dateRange.endDate)),
+                                startDate: dateRange.startDate,
+                                endDate: dateRange.endDate,
                             }}
                             onChange={handleDateRangeChange}
                             inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'

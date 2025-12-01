@@ -112,7 +112,15 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
 
     // Filter nodes and edges based on disabled types
     const { nodes: filteredNodes, edges: filteredEdges } = useMemo(() => {
-        return filterGraph(nodes, edges, disabledTypes);
+        const { nodes: filteredNodes, edges: filteredEdges } = filterGraph(nodes, edges, disabledTypes);
+        return {
+            nodes: filteredNodes,
+            edges: filteredEdges.map((edge) => ({
+                ...edge,
+                source: edge.src.toString(),
+                target: edge.dst.toString(),
+            })),
+        }
     }, [nodes, edges, disabledTypes]);
 
     return (

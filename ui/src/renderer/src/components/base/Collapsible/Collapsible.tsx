@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight } from 'iconoir-react';
+import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { ReactNode, useState } from 'react';
 
 /**
@@ -58,7 +58,7 @@ export default function Collapsible({
                     onClick={toggle}
                 >
                     {/* Arrow rotation */}
-                    {isOpen ? <ArrowDown /> : <ArrowRight />}
+                    {isOpen ? <NavArrowDown /> : <NavArrowRight />}
                     {label}
                 </button>
                 {/* Extra button rendered only if both text and callback are provided */}

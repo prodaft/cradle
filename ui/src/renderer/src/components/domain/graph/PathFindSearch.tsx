@@ -3,7 +3,6 @@ import { EdgeRelation } from '@/services/cradle';
 import { LinkTreeFlattener, truncateText } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
-import { parseISO } from 'date-fns';
 import { Search } from 'iconoir-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { MultiValue } from 'react-select';
@@ -73,8 +72,8 @@ export default function PathFindSearch({
     const [formValues, setFormValues] = useState<FormValues>({
         src: null,
         dst: [],
-        startDate: parseISO(queryValues.startDate),
-        endDate: parseISO(queryValues.endDate),
+        startDate: queryValues.startDate ? new Date(queryValues.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        endDate: queryValues.endDate ? new Date(queryValues.endDate) : new Date(),
     });
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -97,8 +96,8 @@ export default function PathFindSearch({
         setFormValues({
             src: queryValues.src?.value || null,
             dst: queryValues.dst?.map((d) => d.value) || [],
-            startDate: parseISO(queryValues.startDate),
-            endDate: parseISO(queryValues.endDate),
+            startDate: queryValues.startDate ? new Date(queryValues.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+            endDate: queryValues.endDate ? new Date(queryValues.endDate) : new Date(),
         });
         setStartEntry(queryValues.src || null);
         setDestinationSelectors(queryValues.dst || []);

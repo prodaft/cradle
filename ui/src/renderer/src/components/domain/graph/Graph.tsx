@@ -1,11 +1,9 @@
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { EdgeRelation } from '@/services/cradle';
-import { CosmosInputLink } from '@cosmograph/cosmos';
 import { Cosmograph, CosmographProvider, CosmographSearch } from '@cosmograph/react';
 import { Erase, PauseSolid, PlaySolid, RefreshDouble } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
-import { Node } from './graphFilterUtils';
+import { Edge, Node } from './graphFilterUtils';
 
 interface GraphConfig {
     nodeRadiusCoefficient?: number;
@@ -21,7 +19,7 @@ interface GraphViewerProps {
     setSelectedNodes: (nodes: Set<Node>) => void;
     config?: GraphConfig;
     nodes?: Node[];
-    edges?: EdgeRelation[];
+    edges?: Edge[];
     onClearGraph?: () => void;
 }
 
@@ -156,7 +154,7 @@ export default function GraphViewer({
                 <Cosmograph
                     key={graphInstanceKey}
                     nodes={nodes}
-                    links={edges as unknown as CosmosInputLink[]}
+                    links={edges}
                     ref={cosmographRef}
                     onClick={onClick}
                     backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}

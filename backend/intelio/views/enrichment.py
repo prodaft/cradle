@@ -13,6 +13,9 @@ from core.openapi import (
     get_validation_error_response,
 )
 from core.pagination import TotalPagesPagination
+from entries.models import Entry
+from query.exceptions import InvalidQuerySyntaxException
+from query.utils import parse_query
 from user.permissions import HasAdminRole
 
 from ..enums import EnrichmentStatus
@@ -465,18 +468,17 @@ class EnrichmentRestartAPIView(APIView):
                 description="Page number for pagination",
             ),
             OpenApiParameter(
-                name="order_by",
+                name="query",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Order relations by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: created_at, last_seen, reason. Default: -created_at",
+                description="Filter by entry name or subclass, supports wildcard queries",
                 required=False,
-                default="-created_at",
             ),
             OpenApiParameter(
-                name="entry",
+                name="details",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by entry ID",
+                description="Filter by details, matched with a simple contains search",
                 required=False,
             ),
         ],
@@ -516,7 +518,6 @@ class EnrichmentRelationsAPIView(APIView):
 
     def get(self, request, pk, enricher_type):
         """Retrieve relations created by an enrichment request filtered by enricher type"""
-        from core.utils import validate_order_by
 
         enrichment_request = self.get_object(pk)
 
@@ -557,28 +558,23 @@ class EnrichmentRelationsAPIView(APIView):
                 detail="page_size cannot be greater than 100."
             )
 
-        entry = request.query_params.get("entry")
-        if entry:
-            relations = relations.filter(Q(e1__id=entry) | Q(e2__id=entry))
+        query_str = request.query_params.get("query")
+        if query_str:
+            try:
+                query_filter = parse_query(query_str)
+            except Exception as e:
+                raise InvalidQuerySyntaxException(
+                    detail=f"Invalid query syntax: {str(e)}"
+                )
 
-        # Handle ordering
-        order_by = request.query_params.get("order_by", "-created_at")
-        valid_order_fields = [
-            "created_at",
-            "last_seen",
-            "reason",
-        ]
+            entries_qs = Entry.objects.filter(query_filter)
+            relations = relations.filter(Q(e1__in=entries_qs) | Q(e2__in=entries_qs))
 
-        # Parse and validate order_by parameter
-        order_fields, error_response = validate_order_by(order_by, valid_order_fields)
-        if error_response:
-            return error_response
+        details = request.query_params.get("details")
+        if details:
+            relations = relations.filter(details__icontains=details)
 
-        if order_fields:
-            relations = relations.order_by(*order_fields)
-        else:
-            relations = relations.order_by("-created_at")
-
+        relations = relations.order_by("id")
         # Optimize query
         relations = relations.select_related("e1", "e2")
 

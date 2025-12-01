@@ -1177,8 +1177,8 @@ export default function AccountSettings({
                                                     setActiveSection(item.id)
                                                 }
                                                 className={`cradle-btn w-full flex items-center gap-3 ${activeSection === item.id
-                                                        ? 'cradle-btn-primary'
-                                                        : 'cradle-btn-ghost'
+                                                    ? 'cradle-btn-primary'
+                                                    : 'cradle-btn-ghost'
                                                     }`}
                                             >
                                                 <Icon className='w-5 h-5 flex-shrink-0' />

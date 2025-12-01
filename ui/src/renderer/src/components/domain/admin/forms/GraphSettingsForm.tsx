@@ -4,13 +4,9 @@ import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { useEffect, useState } from 'react';
 import * as Yup from 'yup';
 import {
-    Form,
     FormAlert,
     FormAlertState,
-    FormInput,
-    FormSelect,
-    FormSwitch,
-    SelectOption,
+    SelectOption
 } from '../../../forms';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 import { TabClasses } from '../../../layout/Tabs/types';
@@ -238,139 +234,6 @@ export default function GraphSettingsForm() {
                 </h1>
                 <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
                     <Tabs tabClass={TabClasses.PILL}>
-                        <Tab title="Simulation Settings">
-                            <Form<GraphSettingsFormValues>
-                                schema={graphSettingsSchema}
-                                defaultValues={initialData}
-                                onSubmit={handleSubmit}
-                                successMessage="Graph settings updated successfully!"
-                                className="flex flex-col gap-4 pt-2"
-                            >
-                                {({ watch }) => {
-                                    const simulateMethod = watch('simulate_method');
-                                    const isForceAtlas2 = simulateMethod?.value === 'forceatlas2';
-                                    const isGraphTool = simulateMethod?.value === 'graph_tool';
-
-                                    return (
-                                        <>
-                                            <FormSelect<
-                                                GraphSettingsFormValues,
-                                                SimulateMethodOption
-                                            >
-                                                name="simulate_method"
-                                                label="Simulation Method"
-                                                options={simulateMethodOptions}
-                                                required
-                                            />
-
-                                            {isForceAtlas2 && (
-                                                <>
-                                                    <FormSwitch<GraphSettingsFormValues>
-                                                        name="dissuade_hubs"
-                                                        label="Dissuade Hubs"
-                                                    />
-                                                    <FormSwitch<GraphSettingsFormValues>
-                                                        name="lin_log_mode"
-                                                        label="LinLog Mode"
-                                                    />
-                                                    <FormSwitch<GraphSettingsFormValues>
-                                                        name="adjust_sizes"
-                                                        label="Adjust Sizes (Prevent Overlap)"
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="jitter_tolerance"
-                                                        label="Jitter Tolerance"
-                                                        type="number"
-                                                        step={0.01}
-                                                    />
-                                                    <FormSwitch<GraphSettingsFormValues>
-                                                        name="barnes_hut_optimize"
-                                                        label="Barnes-Hut Optimize"
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="barnes_hut_theta"
-                                                        label="Barnes-Hut Theta"
-                                                        type="number"
-                                                        step={0.01}
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="scaling_ratio"
-                                                        label="Scaling Ratio"
-                                                        type="number"
-                                                        step={0.01}
-                                                    />
-                                                    <FormSwitch<GraphSettingsFormValues>
-                                                        name="strong_gravity_mode"
-                                                        label="Strong Gravity Mode"
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="gravity"
-                                                        label="Gravity Coefficient"
-                                                        type="number"
-                                                        step={0.01}
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="max_iter_fa2"
-                                                        label="Max Iterations"
-                                                        type="number"
-                                                        step={10}
-                                                    />
-                                                </>
-                                            )}
-
-                                            {isGraphTool && (
-                                                <>
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="K"
-                                                        label="Edge Length Constant (K)"
-                                                        type="number"
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="p"
-                                                        label="Repulsive Force Strength (p)"
-                                                        type="number"
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="theta"
-                                                        label="Tradeoff Between Speed and Precision (theta)"
-                                                        type="number"
-                                                        step={0.01}
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="max_level"
-                                                        label="Max Level (for Multilevel Optimization)"
-                                                        type="number"
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="r"
-                                                        label="r (Attractive Force Between Connected Components)"
-                                                        type="number"
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="epsilon"
-                                                        label="Convergence Precision (epsilon)"
-                                                        type="number"
-                                                        step={0.001}
-                                                    />
-                                                    <FormInput<GraphSettingsFormValues>
-                                                        name="max_iter_gt"
-                                                        label="Maximum Iterations (max_iter)"
-                                                        type="number"
-                                                    />
-                                                </>
-                                            )}
-
-                                            <button
-                                                type="submit"
-                                                className="btn btn-primary btn-block mt-2"
-                                            >
-                                                Save Settings
-                                            </button>
-                                        </>
-                                    );
-                                }}
-                            </Form>
-                        </Tab>
                         <Tab title="Actions">
                             <div className="flex flex-col gap-4 pt-4">
                                 <FormAlert

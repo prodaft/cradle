@@ -1,3 +1,4 @@
+import { useCradleNavigate } from '@/hooks';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
@@ -7,7 +8,6 @@ import Tooltip from '@components/base/Tooltip/Tooltip';
 import { EnrichmentRequestList } from '@services/cradle/models';
 import { Eye, Refresh, Trash } from 'iconoir-react';
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 type EnrichmentRequest = EnrichmentRequestList;
 
@@ -74,7 +74,7 @@ function EnrichmentRequestsList({
     onDeleteSelected = () => { },
     onRetrySelected = () => { },
 }: EnrichmentRequestsListProps) {
-    const navigate = useNavigate();
+    const { navigateLink } = useCradleNavigate();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -131,7 +131,7 @@ function EnrichmentRequestsList({
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
-            <tr key={request.id}>
+            <tr key={request.id} onClick={navigateLink(`/enrichment/${request.id}`)}>
                 {enableMultiSelect && (
                     <td
                         className='w-12'
@@ -176,7 +176,7 @@ function EnrichmentRequestsList({
                         <Tooltip content='View Details' side='top'>
                             <button
                                 className='btn btn-ghost btn-sm'
-                                onClick={() => navigate(`/enrichment/${request.id}`)}
+                                onClick={navigateLink(`/enrichment/${request.id}`)}
                             >
                                 <Eye />
                             </button>

@@ -9,6 +9,11 @@ export interface Node {
     [key: string]: any;
 }
 
+export interface Edge {
+    source: string;
+    target: string;
+}
+
 /**
  * Filters nodes based on disabled types
  * @param nodes - All nodes in the graph

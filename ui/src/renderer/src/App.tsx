@@ -37,6 +37,9 @@ const DigestData = React.lazy(() => import('./components/domain/activity/DigestD
 const EnrichmentRequests = React.lazy(
     () => import('./components/domain/enrichment/EnrichmentRequests'),
 );
+const EnrichmentResults = React.lazy(
+    () => import('./components/domain/enrichment/EnrichmentResults'),
+);
 
 // Feedback components
 import CradleLoading from './components/base/Loading/CradleLoading';
@@ -132,6 +135,12 @@ function App() {
                                                                             }
                                                                         />
                                                                         <Route
+                                                                            path='/enrichment/:id'
+                                                                            element={
+                                                                                <EnrichmentResults />
+                                                                            }
+                                                                        />
+                                                                        <Route
                                                                             path='/dashboards/:subtype/:name'
                                                                             element={
                                                                                 <Dashboard />
@@ -164,7 +173,7 @@ function App() {
                                                                             element={
                                                                                 <ReportList />
                                                                             }
-                                                                        />
+                                                                        />,
                                                                         <Route
                                                                             path='/settings'
                                                                             element={

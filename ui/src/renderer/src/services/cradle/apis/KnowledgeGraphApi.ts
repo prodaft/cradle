@@ -35,11 +35,11 @@ import {
 } from '../models/index';
 
 export interface KnowledgeGraphFetchRetrieveRequest {
+    endDate: Date;
     src: number;
+    startDate: Date;
     depth?: number;
-    endDate?: Date;
     pageSize?: number;
-    startDate?: Date;
 }
 
 export interface KnowledgeGraphInaccessibleRetrieveRequest {
@@ -69,10 +69,24 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
      * Fetch knowledge graph data
      */
     async knowledgeGraphFetchRetrieveRaw(requestParameters: KnowledgeGraphFetchRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LazyPaginatedSubGraphSerializerResponse>> {
+        if (requestParameters['endDate'] == null) {
+            throw new runtime.RequiredError(
+                'endDate',
+                'Required parameter "endDate" was null or undefined when calling knowledgeGraphFetchRetrieve().'
+            );
+        }
+
         if (requestParameters['src'] == null) {
             throw new runtime.RequiredError(
                 'src',
                 'Required parameter "src" was null or undefined when calling knowledgeGraphFetchRetrieve().'
+            );
+        }
+
+        if (requestParameters['startDate'] == null) {
+            throw new runtime.RequiredError(
+                'startDate',
+                'Required parameter "startDate" was null or undefined when calling knowledgeGraphFetchRetrieve().'
             );
         }
 

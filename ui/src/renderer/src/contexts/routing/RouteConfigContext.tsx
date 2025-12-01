@@ -44,6 +44,9 @@ const DigestData = React.lazy(
 const EnrichmentRequests = React.lazy(
     () => import('@/components/domain/enrichment/EnrichmentRequests.jsx'),
 );
+const EnrichmentResults = React.lazy(
+    () => import('@/components/domain/enrichment/EnrichmentResults.jsx'),
+);
 
 /**
  * Route configuration structure
@@ -57,7 +60,7 @@ export interface RouteConfig {
 /**
  * Define route configurations
  */
-const routeConfigs: RouteConfig[] = [
+export const routeConfigs: RouteConfig[] = [
     { path: '/notes/:id', component: NoteViewer },
     { path: '/notes', component: Documents },
     { path: '/dashboards/:subtype/:name', component: Dashboard },
@@ -76,6 +79,7 @@ const routeConfigs: RouteConfig[] = [
     { path: '/activity', component: ActivityList },
     { path: '/settings', component: () => <AccountSettings target='me' /> },
     { path: '/enrich', component: EnrichmentRequests },
+    { path: '/enrichment/:id', component: EnrichmentResults },
     { path: '/', exact: true, component: Welcome },
 ];
 
