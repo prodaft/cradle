@@ -63,7 +63,6 @@ export default function EnrichmentRequests() {
     });
 
     const fetchEnrichmentRequests = useCallback(async () => {
-        console.log('fetchEnrichmentRequests called');
         setLoading(true);
         try {
             const searchQueryParams: any = {
@@ -114,7 +113,7 @@ export default function EnrichmentRequests() {
 
     useEffect(() => {
         fetchEnrichmentRequests();
-    }, [fetchEnrichmentRequests]);
+    }, []);
 
     // Initialize filters from URL parameters
     useEffect(() => {

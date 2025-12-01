@@ -82,12 +82,16 @@ export default function Selector<
 }: SelectorProps<Option, IsMulti, Group>): JSX.Element {
     const customSelectClassNames = {
         control: (state: any) =>
-            `input input-block min-h-[2.5rem] !p-0 ${state.isFocused ? 'ring-1 ring-cradle2' : ''}`,
+            `input input-block min-h-[2.5rem] !p-0 ${state.isFocused ? 'ring-1 ring-cradle2' : ''} ${state.isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`,
         valueContainer: () => 'px-4 gap-1 flex items-center',
-        placeholder: () => 'text-gray-500 dark:text-gray-400',
-        input: () => 'text-inherit m-0 p-0',
-        singleValue: () => 'text-inherit',
-        indicatorsContainer: () => 'pr-2',
+        placeholder: (state: any) =>
+            `text-gray-500 dark:text-gray-400 ${state.isDisabled ? 'cursor-not-allowed' : ''}`,
+        input: (state: any) =>
+            `text-inherit m-0 p-0 ${state.isDisabled ? 'cursor-not-allowed' : ''}`,
+        singleValue: (state: any) =>
+            `text-inherit ${state.isDisabled ? 'opacity-70' : ''}`,
+        indicatorsContainer: (state: any) =>
+            `pr-2 ${state.isDisabled ? 'opacity-50' : ''}`,
         menu: () =>
             'cradle-bg-elevated cradle-border rounded-md mt-1 shadow-lg z-[9999]',
         menuPortal: () => 'z-[9999]',

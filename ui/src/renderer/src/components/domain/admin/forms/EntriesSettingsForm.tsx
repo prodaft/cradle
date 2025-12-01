@@ -1,86 +1,82 @@
 import useApi from '@/hooks/api/useApi';
+import { useAPICall } from '@/hooks/api/useAPICall';
 import { useState } from 'react';
-import AlertBox from '../../../base/Alert/AlertBox';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
+import { FormAlert, FormAlertState } from '../../../forms';
 
 export default function EntriesManagement() {
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
     const { managementApi } = useApi();
+    const { execute } = useAPICall();
+    const [alert, setAlert] = useState<FormAlertState>({ type: null, message: '' });
 
     const handlePropagateAccessVectors = async () => {
         try {
-            await managementApi.managementActionsCreate({
-                actionName: 'propagateAccessVectors',
-            });
+            await execute(
+                () =>
+                    managementApi.managementActionsCreate({
+                        actionName: 'propagateAccessVectors',
+                    }),
+                { suppressNotification: true },
+            );
             setAlert({
-                show: true,
+                type: 'success',
                 message: 'Propagate Access Vectors action triggered successfully!',
-                color: 'green',
             });
-        } catch (error) {
+        } catch {
             setAlert({
-                show: true,
+                type: 'error',
                 message: 'Error occurred while propagating access vectors.',
-                color: 'red',
             });
         }
     };
 
     const handleDeleteHangingArtifacts = async () => {
         try {
-            const response = await managementApi.managementActionsCreate({
-                actionName: 'deleteHangingArtifacts',
-            });
+            const response = await execute(
+                () =>
+                    managementApi.managementActionsCreate({
+                        actionName: 'deleteHangingArtifacts',
+                    }),
+                { suppressNotification: true },
+            );
             setAlert({
-                show: true,
-                message: response.message || 'Action completed successfully!',
-                color: 'green',
+                type: 'success',
+                message: (response as any)?.message || 'Action completed successfully!',
             });
-        } catch (error) {
+        } catch {
             setAlert({
-                show: true,
+                type: 'error',
                 message: 'Error occurred while deleting hanging artifacts.',
-                color: 'red',
             });
         }
     };
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="w-full max-w-xl px-4">
+                <h1 className="text-center text-xl font-bold text-primary mb-4">
                     Entry Settings
                 </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
-                    <div className='flex flex-col gap-4 mb-3'>
+                <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
+                    <FormAlert
+                        alert={alert}
+                        onDismiss={() => setAlert({ type: null, message: '' })}
+                    />
+                    <div className="flex flex-col gap-4">
                         <button
-                            type='button'
-                            className='btn btn-outline'
+                            type="button"
+                            className="btn btn-outline"
                             onClick={handlePropagateAccessVectors}
                         >
                             Propagate Access Vectors
                         </button>
-                    </div>
-
-                    <div className='flex flex-col gap-4 mb-3'>
                         <button
-                            type='button'
-                            className='btn btn-outline'
+                            type="button"
+                            className="btn btn-outline"
                             onClick={handleDeleteHangingArtifacts}
                         >
                             Delete Hanging Artifacts
                         </button>
                     </div>
-                    <AlertBox alert={alert} />
                 </div>
             </div>
         </div>

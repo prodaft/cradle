@@ -68,7 +68,7 @@ export interface EnrichmentDetailRetrieveRequest {
 
 export interface EnrichmentRelationsRetrieveRequest {
     enricherType: string;
-    id: string;
+    id: number;
     fromEntry?: string;
     orderBy?: string;
     page?: number;

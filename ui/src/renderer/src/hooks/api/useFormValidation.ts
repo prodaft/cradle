@@ -1,5 +1,20 @@
 /**
  * Hook for form validation with API error handling
+ *
+ * @deprecated Use the Form component from '@/components/forms' instead.
+ * The Form component automatically handles API validation errors and merges
+ * them with client-side validation errors.
+ *
+ * @example
+ * // Instead of:
+ * const { handleSubmit, getFieldError } = useFormValidation();
+ *
+ * // Use:
+ * import { Form, FormInput } from '@/components/forms';
+ *
+ * <Form schema={schema} onSubmit={apiCall} successMessage="Success!">
+ *   <FormInput name="username" label="Username" />
+ * </Form>
  */
 
 import { useNotif } from '@/contexts/ui/NotificationContext';

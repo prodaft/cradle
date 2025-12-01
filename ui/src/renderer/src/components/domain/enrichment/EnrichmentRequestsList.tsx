@@ -158,6 +158,9 @@ function EnrichmentRequestsList({
                                     ? 'badge-warning'
                                     : 'badge-info'
                             }`}
+                        style={{
+                            border: 0,
+                        }}
                     >
                         {request.status}
                     </span>

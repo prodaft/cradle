@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.generics import GenericAPIView
@@ -472,24 +473,10 @@ class EnrichmentRestartAPIView(APIView):
                 default="-created_at",
             ),
             OpenApiParameter(
-                name="reason",
+                name="entry",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by reason (case-insensitive partial match)",
-                required=False,
-            ),
-            OpenApiParameter(
-                name="from_entry",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Filter by source entry ID",
-                required=False,
-            ),
-            OpenApiParameter(
-                name="to_entry",
-                type=str,
-                location=OpenApiParameter.QUERY,
-                description="Filter by target entry ID",
+                description="Filter by entry ID",
                 required=False,
             ),
         ],
@@ -570,18 +557,9 @@ class EnrichmentRelationsAPIView(APIView):
                 detail="page_size cannot be greater than 100."
             )
 
-        # Apply filters
-        reason = request.query_params.get("reason")
-        if reason:
-            relations = relations.filter(reason__icontains=reason)
-
-        from_entry = request.query_params.get("from_entry")
-        if from_entry:
-            relations = relations.filter(from_entry_id=from_entry)
-
-        to_entry = request.query_params.get("to_entry")
-        if to_entry:
-            relations = relations.filter(to_entry_id=to_entry)
+        entry = request.query_params.get("entry")
+        if entry:
+            relations = relations.filter(Q(e1__id=entry) | Q(e2__id=entry))
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -602,7 +580,7 @@ class EnrichmentRelationsAPIView(APIView):
             relations = relations.order_by("-created_at")
 
         # Optimize query
-        relations = relations.select_related("from_entry", "to_entry")
+        relations = relations.select_related("e1", "e2")
 
         # Apply pagination
         paginator = TotalPagesPagination(page_size=page_size)

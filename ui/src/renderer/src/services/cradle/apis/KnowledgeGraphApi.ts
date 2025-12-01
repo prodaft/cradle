@@ -37,7 +37,9 @@ import {
 export interface KnowledgeGraphFetchRetrieveRequest {
     src: number;
     depth?: number;
+    endDate?: Date;
     pageSize?: number;
+    startDate?: Date;
 }
 
 export interface KnowledgeGraphInaccessibleRetrieveRequest {
@@ -80,12 +82,20 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
             queryParameters['depth'] = requestParameters['depth'];
         }
 
+        if (requestParameters['endDate'] != null) {
+            queryParameters['end_date'] = (requestParameters['endDate'] as any).toISOString();
+        }
+
         if (requestParameters['pageSize'] != null) {
             queryParameters['page_size'] = requestParameters['pageSize'];
         }
 
         if (requestParameters['src'] != null) {
             queryParameters['src'] = requestParameters['src'];
+        }
+
+        if (requestParameters['startDate'] != null) {
+            queryParameters['start_date'] = (requestParameters['startDate'] as any).toISOString();
         }
 
         const headerParameters: runtime.HTTPHeaders = {};

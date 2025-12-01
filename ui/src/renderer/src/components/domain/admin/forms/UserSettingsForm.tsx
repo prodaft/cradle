@@ -1,63 +1,41 @@
 import useApi from '@/hooks/api/useApi';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import AlertBox from '../../../base/Alert/AlertBox';
-import FormField from '../../../forms/FormField';
+import { Form, FormSwitch } from '../../../forms';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 import { TabClasses } from '../../../layout/Tabs/types';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
 
 interface UserSettingsFormProps {
     onAdd?: () => void;
 }
 
 interface FormData {
-    allowRegistration?: boolean;
-    requireEmailActivation?: boolean;
-    requireAdminConfirmation?: boolean;
+    allowRegistration: boolean;
+    requireEmailActivation: boolean;
+    requireAdminConfirmation: boolean;
 }
 
 const accountSettingsSchema = Yup.object().shape({
-    allowRegistration: Yup.boolean(),
-    requireEmailActivation: Yup.boolean(),
-    requireAdminConfirmation: Yup.boolean(),
+    allowRegistration: Yup.boolean().default(false),
+    requireEmailActivation: Yup.boolean().default(false),
+    requireAdminConfirmation: Yup.boolean().default(false),
 });
 
 export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
-    const {
-        register,
-        handleSubmit,
-        reset,
-        formState: { errors },
-    } = useForm<FormData>({
-        resolver: yupResolver(accountSettingsSchema),
-        defaultValues: {
-            allowRegistration: false,
-            requireEmailActivation: false,
-            requireAdminConfirmation: false,
-        },
-    });
-
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
     const { managementApi } = useApi();
+    const [isLoading, setIsLoading] = useState(true);
+    const [initialData, setInitialData] = useState<FormData>({
+        allowRegistration: false,
+        requireEmailActivation: false,
+        requireAdminConfirmation: false,
+    });
 
     useEffect(() => {
         async function fetchSettings() {
             try {
                 const settings = await managementApi.managementSettingsRetrieve();
                 if (settings && settings.users) {
-                    reset({
+                    setInitialData({
                         allowRegistration: settings.users.allow_registration ?? false,
                         requireEmailActivation:
                             settings.users.require_email_confirmation ?? false,
@@ -66,58 +44,50 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                     });
                 }
             } catch (error) {
-                console.error(error);
-                setAlert({
-                    show: true,
-                    message: 'Failed to fetch account settings',
-                    color: 'red',
-                });
+                console.error('Failed to fetch account settings:', error);
+            } finally {
+                setIsLoading(false);
             }
         }
         fetchSettings();
-    }, [reset, managementApi]);
+    }, [managementApi]);
 
-    const onSubmit = async (data: FormData) => {
-        try {
-            await managementApi.managementSettingsCreate({
-                requestBody: {
-                    users: {
-                        allow_registration: data.allowRegistration,
-                        require_email_confirmation: data.requireEmailActivation,
-                        require_admin_confirmation: data.requireAdminConfirmation,
-                    },
+    const handleSubmit = async (data: FormData) => {
+        await managementApi.managementSettingsCreate({
+            requestBody: {
+                users: {
+                    allow_registration: data.allowRegistration,
+                    require_email_confirmation: data.requireEmailActivation,
+                    require_admin_confirmation: data.requireAdminConfirmation,
                 },
-            });
-            setAlert({
-                show: true,
-                message: 'Account settings updated successfully!',
-                color: 'green',
-            });
-        } catch (error) {
-            console.error(error);
-            setAlert({
-                show: true,
-                message: 'Error updating account settings',
-                color: 'red',
-            });
-        }
+            },
+        });
+        if (onAdd) onAdd();
     };
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            </div>
+        );
+    }
+
     return (
-        <div className='min-h-screen cradle-bg-primary'>
+        <div className="min-h-screen cradle-bg-primary">
             {/* Page Header - Full Width */}
-            <div className='cradle-border-b cradle-bg-elevated'>
-                <div className='max-w-6xl mx-auto px-6 py-6'>
-                    <div className='flex items-center justify-between'>
+            <div className="cradle-border-b cradle-bg-elevated">
+                <div className="max-w-6xl mx-auto px-6 py-6">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <h1 className='text-2xl font-bold cradle-text-primary cradle-mono tracking-tight'>
+                            <h1 className="text-2xl font-bold cradle-text-primary cradle-mono tracking-tight">
                                 System Settings
                             </h1>
-                            <p className='text-sm cradle-text-tertiary cradle-mono mt-1'>
+                            <p className="text-sm cradle-text-tertiary cradle-mono mt-1">
                                 Configure system-wide preferences and policies
                             </p>
                         </div>
-                        <div className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                        <div className="text-xs cradle-text-muted cradle-mono tracking-wider">
                             SYSTEM SETTINGS
                         </div>
                     </div>
@@ -125,54 +95,39 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             </div>
 
             {/* Content Area */}
-            <div className='max-w-6xl mx-auto px-6 py-8'>
-                <form onSubmit={handleSubmit(onSubmit)}>
-                    <Tabs tabClass={TabClasses.PILL}>
-                        <Tab title='User Management'>
-                            <div className='cradle-border cradle-bg-elevated p-6 mt-6'>
-                                <div className='space-y-4'>
-                                    <FormField
-                                        type='checkbox'
-                                        label='Allow Registration'
-                                        className='switch switch-ghost-primary'
-                                        row={true}
-                                        {...register('allowRegistration')}
-                                        error={errors.allowRegistration}
-                                    />
-                                    <FormField
-                                        type='checkbox'
-                                        label='Require Email Activation'
-                                        className='switch switch-ghost-primary'
-                                        row={true}
-                                        {...register('requireEmailActivation')}
-                                        error={errors.requireEmailActivation}
-                                    />
-                                    <FormField
-                                        type='checkbox'
-                                        label='Require Admin Confirmation of New Accounts'
-                                        className='switch switch-ghost-primary'
-                                        row={true}
-                                        {...register('requireAdminConfirmation')}
-                                        error={errors.requireAdminConfirmation}
-                                    />
-                                    <button
-                                        type='submit'
-                                        className='cradle-btn cradle-btn-primary w-full mt-6'
-                                    >
-                                        Save Settings
-                                    </button>
-                                </div>
-                            </div>
-                        </Tab>
-                    </Tabs>
-
-                    {/* Alert at bottom */}
-                    {alert.show && (
-                        <div className='mt-6'>
-                            <AlertBox alert={alert} />
+            <div className="max-w-6xl mx-auto px-6 py-8">
+                <Tabs tabClass={TabClasses.PILL}>
+                    <Tab title="User Management">
+                        <div className="cradle-border cradle-bg-elevated p-6 mt-6">
+                            <Form<FormData>
+                                schema={accountSettingsSchema}
+                                defaultValues={initialData}
+                                onSubmit={handleSubmit}
+                                successMessage="Account settings updated successfully!"
+                                className="space-y-4"
+                            >
+                                <FormSwitch<FormData>
+                                    name="allowRegistration"
+                                    label="Allow Registration"
+                                />
+                                <FormSwitch<FormData>
+                                    name="requireEmailActivation"
+                                    label="Require Email Activation"
+                                />
+                                <FormSwitch<FormData>
+                                    name="requireAdminConfirmation"
+                                    label="Require Admin Confirmation of New Accounts"
+                                />
+                                <button
+                                    type="submit"
+                                    className="cradle-btn cradle-btn-primary w-full mt-6"
+                                >
+                                    Save Settings
+                                </button>
+                            </Form>
                         </div>
-                    )}
-                </form>
+                    </Tab>
+                </Tabs>
             </div>
         </div>
     );

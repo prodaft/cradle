@@ -1,28 +1,26 @@
-import AlertBox from '@/components/base/Alert/AlertBox';
-import FormFieldComponent from '@/components/forms/FormField';
-import Selector from '@/components/forms/Selector';
 import { Tab, Tabs } from '@/components/layout/Tabs/Tabs';
 import { TabClasses } from '@/components/layout/Tabs/types';
 import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { displayError } from '@/utils/api';
 import { capitalizeString } from '@/utils/dashboard';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, FormProvider } from 'react-hook-form';
 import * as Yup from 'yup';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
+import {
+    FormAlert,
+    FormAlertState,
+    FormInput,
+    FormSelect,
+    FormSwitch,
+    SelectOption,
+} from '../../../forms';
+import Selector from '../../../forms/Selector';
 
 interface EnrichmentSettingsFormProps {
     enrichment_class: string;
 }
 
-interface EclassOption {
+interface EclassOption extends SelectOption<string> {
     value: string;
     label: string;
 }
@@ -38,87 +36,68 @@ interface FormFields {
 }
 
 interface FormData {
-    for_eclasses?: EclassOption[];
-    enabled?: boolean;
+    for_eclasses: EclassOption[];
+    enabled: boolean;
     settings: Record<string, any>;
     id?: string;
 }
 
 // Dynamic schema generation based on form_fields
-const createEnrichmentSchema = (
-    form_fields: FormFields,
-): Yup.ObjectSchema<FormData> => {
-    const schemaFields = {
-        for_eclasses: Yup.array(),
-        enabled: Yup.boolean(),
+const createEnrichmentSchema = (form_fields: FormFields) => {
+    const settingsShape = Object.entries(form_fields || {}).reduce(
+        (acc, [key, field]) => {
+            let validator: Yup.AnySchema = Yup.string();
+
+            if (field.type === 'number') {
+                validator = Yup.number();
+            } else if (field.type === 'choice') {
+                validator = Yup.string();
+            }
+
+            if (field.required) {
+                validator = validator.required(`${key} is required`);
+            }
+
+            acc[key] = validator;
+            return acc;
+        },
+        {} as Record<string, Yup.AnySchema>,
+    );
+
+    return Yup.object().shape({
+        for_eclasses: Yup.array().default([]),
+        enabled: Yup.boolean().default(false),
         id: Yup.string(),
-        settings: Yup.object().shape(
-            Object.entries(form_fields || {}).reduce(
-                (acc, [key, field]) => {
-                    let validator: Yup.AnySchema = Yup.string();
-
-                    if (field.type === 'number') {
-                        validator = Yup.number();
-                    } else if (field.type === 'choice') {
-                        validator = Yup.string();
-                    }
-
-                    if (field.required) {
-                        validator = validator.required(`${key} is required`);
-                    }
-
-                    acc[key] = validator;
-                    return acc;
-                },
-                {} as Record<string, Yup.AnySchema>,
-            ),
-        ),
-    };
-
-    return Yup.object().shape(schemaFields);
+        settings: Yup.object().shape(settingsShape),
+    });
 };
 
-/**
- * EnrichmentSettingsForm component
- *
- * @param {Object} props
- * @param {string} props.enrichment_class - The enrichment class to fetch settings for
- */
 export default function EnrichmentSettingsForm({
     enrichment_class,
 }: EnrichmentSettingsFormProps) {
-    const { navigate, navigateLink } = useCradleNavigate();
     const { intelioApi, entriesApi } = useApi();
     const [displayName, setDisplayName] = useState('');
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
-    });
+    const [alert, setAlert] = useState<FormAlertState>({ type: null, message: '' });
     const [formFields, setFormFields] = useState<FormFields>({});
     const [loading, setLoading] = useState(true);
+    const [validationSchema, setValidationSchema] = useState(createEnrichmentSchema({}));
 
-    // For dynamic form validation
-    const [validationSchema, setValidationSchema] = useState(
-        createEnrichmentSchema({}),
-    );
-
-    // Setup form with resolver
-    const {
-        register,
-        handleSubmit,
-        control,
-        reset,
-        setValue,
-        formState: { errors },
-    } = useForm<FormData>({
-        resolver: yupResolver(validationSchema),
+    const methods = useForm<FormData>({
+        resolver: yupResolver(validationSchema) as any,
         defaultValues: {
             for_eclasses: [],
             enabled: false,
             settings: {},
         },
     });
+
+    const {
+        handleSubmit,
+        control,
+        reset,
+        register,
+        formState: { errors },
+    } = methods;
 
     // Fetch all entry classes for the for_eclasses selector
     const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
@@ -129,13 +108,13 @@ export default function EnrichmentSettingsForm({
                     .filter((x) => x.subtype.startsWith(q))
                     .map((entry) => ({
                         value: entry.subtype,
-                        label: `${entry.subtype}`,
+                        label: entry.subtype,
                     }));
             } else {
                 return [];
             }
         } catch (err) {
-            displayError(setAlert, navigate)(err);
+            console.error('Failed to fetch entry classes:', err);
             return [];
         }
     };
@@ -149,14 +128,8 @@ export default function EnrichmentSettingsForm({
                 .then((settings) => {
                     if (settings) {
                         setDisplayName(settings.displayName || '');
-
-                        // Set form fields for validation schema
                         setFormFields(settings.formFields || {});
-
-                        // Update validation schema based on form_fields
-                        setValidationSchema(
-                            createEnrichmentSchema(settings.formFields || {}),
-                        );
+                        setValidationSchema(createEnrichmentSchema(settings.formFields || {}));
 
                         // Initialize settings object with defaults
                         const initialSettings: Record<string, string | number> = {};
@@ -182,11 +155,12 @@ export default function EnrichmentSettingsForm({
                     setLoading(false);
                 })
                 .catch((err) => {
-                    displayError(setAlert, navigate)(err);
+                    console.error('Failed to fetch enrichment settings:', err);
+                    setAlert({ type: 'error', message: 'Failed to load enrichment settings' });
                     setLoading(false);
                 });
         }
-    }, [enrichment_class, reset, navigate, intelioApi]);
+    }, [enrichment_class, reset, intelioApi]);
 
     const onSubmit = async (data: FormData) => {
         try {
@@ -199,13 +173,10 @@ export default function EnrichmentSettingsForm({
                 enricherType: enrichment_class,
                 enrichmentSettingsRequest: formatted_data,
             });
-            setAlert({
-                show: true,
-                message: 'Enrichment settings saved successfully!',
-                color: 'green',
-            });
+            setAlert({ type: 'success', message: 'Enrichment settings saved successfully!' });
         } catch (err) {
-            displayError(setAlert, navigate)(err);
+            console.error('Failed to save enrichment settings:', err);
+            setAlert({ type: 'error', message: 'Failed to save enrichment settings' });
         }
     };
 
@@ -214,60 +185,75 @@ export default function EnrichmentSettingsForm({
         return Object.entries(formFields).map(([key, field]) => {
             if (field.type === 'choice') {
                 return (
-                    <div className='w-full mt-4' key={key}>
+                    <div className="w-full" key={key}>
                         <label
                             htmlFor={`settings.${key}`}
-                            className='block text-sm font-medium'
+                            className="block text-sm font-medium cradle-text-tertiary mb-1"
                         >
                             {capitalizeString(key)}
+                            {field.required && <span className="text-red-500 ml-1">*</span>}
                         </label>
-                        <div className='mt-1'>
-                            <select
-                                className='form-select select select-ghost-primary select-block focus:ring-0'
-                                {...register(`settings.${key}`)}
-                            >
-                                {field.options?.map((option) => (
-                                    <option key={option} value={option}>
-                                        {option}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.settings?.[key] && (
-                                <p className='text-red-600 text-sm'>
-                                    {errors.settings[key]?.message?.toString() || ''}
-                                </p>
-                            )}
-                        </div>
+                        <select
+                            className="form-select select select-ghost-primary select-block focus:ring-0"
+                            {...register(`settings.${key}`)}
+                        >
+                            {field.options?.map((option) => (
+                                <option key={option} value={option}>
+                                    {option}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.settings?.[key] && (
+                            <p className="text-red-600 text-sm mt-1">
+                                {errors.settings[key]?.message?.toString() || ''}
+                            </p>
+                        )}
                     </div>
                 );
             } else if (field.type === 'number') {
                 return (
-                    <>
-                        <div className='mt-4' key={`${key}-spacer`} />
-                        <FormFieldComponent
-                            key={key}
-                            type='number'
-                            label={capitalizeString(key)}
-                            className='form-input input input-ghost-primary input-block focus:ring-0'
+                    <div className="w-full" key={key}>
+                        <label
+                            htmlFor={`settings.${key}`}
+                            className="block text-sm font-medium cradle-text-tertiary mb-1"
+                        >
+                            {capitalizeString(key)}
+                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                        <input
+                            type="number"
+                            className="cradle-search w-full"
                             {...register(`settings.${key}`)}
-                            error={errors.settings?.[key]?.message?.toString() || ''}
                         />
-                    </>
+                        {errors.settings?.[key] && (
+                            <p className="text-red-600 text-sm mt-1">
+                                {errors.settings[key]?.message?.toString() || ''}
+                            </p>
+                        )}
+                    </div>
                 );
             } else {
                 // Default to string input
                 return (
-                    <>
-                        <div className='mt-4' key={`${key}-spacer`} />
-                        <FormFieldComponent
-                            key={key}
-                            type='text'
-                            label={capitalizeString(key)}
-                            className='form-input input input-ghost-primary input-block focus:ring-0'
+                    <div className="w-full" key={key}>
+                        <label
+                            htmlFor={`settings.${key}`}
+                            className="block text-sm font-medium cradle-text-tertiary mb-1"
+                        >
+                            {capitalizeString(key)}
+                            {field.required && <span className="text-red-500 ml-1">*</span>}
+                        </label>
+                        <input
+                            type="text"
+                            className="cradle-search w-full"
                             {...register(`settings.${key}`)}
-                            error={errors.settings?.[key]?.message?.toString() || ''}
                         />
-                    </>
+                        {errors.settings?.[key] && (
+                            <p className="text-red-600 text-sm mt-1">
+                                {errors.settings[key]?.message?.toString() || ''}
+                            </p>
+                        )}
+                    </div>
                 );
             }
         });
@@ -275,80 +261,82 @@ export default function EnrichmentSettingsForm({
 
     if (loading) {
         return (
-            <div className='flex justify-center items-center min-h-screen'>
-                Loading enrichment settings...
+            <div className="flex justify-center items-center min-h-screen">
+                <div className="animate-pulse cradle-text-secondary">
+                    Loading enrichment settings...
+                </div>
             </div>
         );
     }
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="w-full max-w-2xl px-4">
+                <h1 className="text-center text-xl font-bold text-primary mb-4">
                     {displayName} Settings
                 </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
-                    <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                        <Tabs tabClass={TabClasses.PILL}>
-                            <Tab title='General' classes='space-y-4'>
-                                <div className='mt-4' />
+                <div className="bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md">
+                    <FormProvider {...methods}>
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            <FormAlert
+                                alert={alert}
+                                onDismiss={() => setAlert({ type: null, message: '' })}
+                            />
 
-                                <FormFieldComponent
-                                    type='checkbox'
-                                    label='Enabled'
-                                    className='switch switch-ghost-primary'
-                                    {...register('enabled')}
-                                    row={true}
-                                    error={errors.enabled}
-                                />
+                            <Tabs tabClass={TabClasses.PILL}>
+                                <Tab title="General" classes="space-y-4 pt-4">
+                                    <div className="w-full">
+                                        <label className="flex items-center justify-between gap-4 cursor-pointer">
+                                            <span className="cradle-label cradle-text-tertiary">
+                                                Enabled
+                                            </span>
+                                            <input
+                                                type="checkbox"
+                                                className="switch switch-ghost-primary"
+                                                {...register('enabled')}
+                                            />
+                                        </label>
+                                    </div>
 
-                                <div className='w-full mt-4'>
-                                    <label
-                                        htmlFor='for_eclasses'
-                                        className='block text-sm font-medium'
-                                    >
-                                        Entry Classes
-                                    </label>
-                                    <div className='mt-1'>
+                                    <div className="w-full">
+                                        <label className="block text-sm font-medium cradle-text-tertiary mb-1">
+                                            Entry Classes
+                                        </label>
                                         <Controller
-                                            name='for_eclasses'
+                                            name="for_eclasses"
                                             control={control}
-                                            render={({
-                                                field: { onChange, value },
-                                            }) => (
+                                            render={({ field: { onChange, value } }) => (
                                                 <Selector
                                                     value={value}
                                                     onChange={onChange}
                                                     fetchOptions={fetchEntryClasses}
                                                     isMulti={true}
-                                                    placeholder='Select entry classes...'
+                                                    placeholder="Select entry classes..."
                                                 />
                                             )}
                                         />
                                         {errors.for_eclasses && (
-                                            <p className='text-red-600 text-sm'>
+                                            <p className="text-red-600 text-sm mt-1">
                                                 {errors.for_eclasses.message}
                                             </p>
                                         )}
                                     </div>
-                                </div>
-                            </Tab>
-                            {Object.keys(formFields).length > 0 && (
-                                <Tab title='Settings' classes='space-y-4'>
-                                    <div className='mt-4' />
-                                    {renderSettingsFields()}
                                 </Tab>
-                            )}
-                        </Tabs>
 
-                        <AlertBox alert={alert} />
+                                {Object.keys(formFields).length > 0 && (
+                                    <Tab title="Settings" classes="space-y-4 pt-4">
+                                        {renderSettingsFields()}
+                                    </Tab>
+                                )}
+                            </Tabs>
 
-                        <div className='flex gap-2 pt-4'>
-                            <button type='submit' className='btn btn-primary btn-block'>
-                                Save
-                            </button>
-                        </div>
-                    </form>
+                            <div className="flex gap-2 pt-4">
+                                <button type="submit" className="btn btn-primary btn-block">
+                                    Save
+                                </button>
+                            </div>
+                        </form>
+                    </FormProvider>
                 </div>
             </div>
         </div>

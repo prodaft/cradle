@@ -17,16 +17,21 @@ interface FormFieldWithErrorProps
 
 /**
  * Form field component that displays validation errors.
- * Use with useFormValidation hook for automatic error display.
+ *
+ * @deprecated Use FormInput from '@/components/forms' instead.
+ * FormInput integrates with react-hook-form and automatically
+ * displays both client-side and API validation errors.
  *
  * @example
+ * // Instead of:
  * const { getFieldError } = useFormValidation();
+ * <FormFieldWithError name="username" error={getFieldError('username')} />
  *
- * <FormFieldWithError
- *   name="username"
- *   label="Username"
- *   error={getFieldError('username')}
- * />
+ * // Use:
+ * import { Form, FormInput } from '@/components/forms';
+ * <Form schema={schema} onSubmit={handleSubmit}>
+ *   <FormInput name="username" label="Username" />
+ * </Form>
  */
 export default function FormFieldWithError({
     name,

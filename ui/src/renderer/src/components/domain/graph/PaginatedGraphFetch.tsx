@@ -5,7 +5,7 @@ import { LinkTreeFlattener, truncateText } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
 import type { EdgeRelation } from '@services/cradle/models';
-import { format, parseISO } from 'date-fns';
+import { parseISO } from 'date-fns';
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 import { ChangeEvent, useEffect, useState } from 'react';
 import Datepicker from 'react-tailwindcss-datepicker';
@@ -31,8 +31,8 @@ interface SelectorOption {
 }
 
 interface DateRangeValue {
-    startDate: string | Date;
-    endDate: string | Date;
+    startDate: Date;
+    endDate: Date;
 }
 
 interface QueryValues {
@@ -77,11 +77,8 @@ export default function PaginatedGraphFetch({
     // Define local states for source node and date range.
     const [sourceNode, setSourceNode] = useState<SelectorOption | null>(null);
     const [dateRange, setDateRange] = useState<DateRangeValue>({
-        startDate: format(
-            new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-            'yyyy-MM-dd',
-        ),
-        endDate: format(new Date(), 'yyyy-MM-dd'),
+        startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        endDate: new Date(),
     });
 
     // Initialize local states from queryValues, if provided.
@@ -90,12 +87,8 @@ export default function PaginatedGraphFetch({
             setSourceNode(queryValues.src || null);
             setDateRange({
                 startDate:
-                    queryValues.startDate ||
-                    format(
-                        new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-                        'yyyy-MM-dd',
-                    ),
-                endDate: queryValues.endDate || format(new Date(), 'yyyy-MM-dd'),
+                    queryValues.startDate ? new Date(queryValues.startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+                endDate: queryValues.endDate ? new Date(queryValues.endDate) : new Date(),
             });
             setPageSize(queryValues.pageSize || 250);
             // Ensure depth never exceeds MAX_DEPTH
@@ -125,6 +118,8 @@ export default function PaginatedGraphFetch({
                 src: sourceNode?.value,
                 depth: currentDepth,
                 pageSize: pageSize,
+                startDate: dateRange.startDate,
+                endDate: dateRange.endDate,
             });
 
             has_next = response.hasNext;
@@ -235,8 +230,8 @@ export default function PaginatedGraphFetch({
     const handleDateRangeChange = (value: any) => {
         if (value.startDate && value.endDate) {
             const newRange = {
-                startDate: format(value.startDate, "yyyy-MM-dd'T'HH:mm"),
-                endDate: format(value.endDate, "yyyy-MM-dd'T'HH:mm"),
+                startDate: value.startDate,
+                endDate: value.endDate,
             };
             setDateRange(newRange);
             // Update queryValues with the new date range.

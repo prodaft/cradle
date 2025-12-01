@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db.models import F, Q
 from django.utils.dateparse import parse_datetime
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -338,6 +340,20 @@ class GraphInaccessibleView(APIView):
             location=OpenApiParameter.QUERY,
             description="Number of results per page",
             default=200,
+        ),
+        OpenApiParameter(
+            name="start_date",
+            type=datetime,
+            location=OpenApiParameter.QUERY,
+            description="Start date",
+            required=True,
+        ),
+        OpenApiParameter(
+            name="end_date",
+            type=datetime,
+            location=OpenApiParameter.QUERY,
+            description="End date",
+            required=True,
         ),
     ],
     responses={

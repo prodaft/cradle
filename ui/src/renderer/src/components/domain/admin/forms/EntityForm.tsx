@@ -1,23 +1,18 @@
 import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { displayError } from '@/utils/api';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { AccessUser, Entity, EntryClass } from '@services/cradle/models';
+import { AccessUser, Entity } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import AlertBox from '../../../base/Alert/AlertBox';
-import FormField from '../../../forms/FormField';
-import Selector from '../../../forms/Selector';
+import {
+    Form,
+    FormInput,
+    FormSelect,
+    FormSwitch,
+    FormTextArea,
+    SelectOption,
+} from '../../../forms';
 import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
 import { TabClasses } from '../../../layout/Tabs/types';
 import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
-
-interface Alert {
-    show: boolean;
-    message: string;
-    color: string;
-}
 
 interface EntityFormProps {
     id?: number | string | null;
@@ -25,14 +20,19 @@ interface EntityFormProps {
     onAdd?: (result: Entity) => void;
 }
 
-interface AliasOption {
+interface AliasOption extends SelectOption<number> {
     value: number;
+    label: string;
+}
+
+interface SubtypeOption extends SelectOption<string> {
+    value: string;
     label: string;
 }
 
 interface FormData {
     name: string;
-    subtype: string;
+    subtype: SubtypeOption | null;
     description: string;
     isPublic: boolean;
     aliases: AliasOption[];
@@ -40,10 +40,23 @@ interface FormData {
 
 const entitySchema: Yup.ObjectSchema<FormData> = Yup.object().shape({
     name: Yup.string().required('Name is required'),
-    subtype: Yup.string().required('Subtype is required'),
-    description: Yup.string().notRequired(),
-    isPublic: Yup.boolean().notRequired(),
-    aliases: Yup.array().notRequired(),
+    subtype: Yup.object()
+        .shape({
+            value: Yup.string().required(),
+            label: Yup.string().required(),
+        })
+        .nullable()
+        .required('Subtype is required'),
+    description: Yup.string().default(''),
+    isPublic: Yup.boolean().default(false),
+    aliases: Yup.array()
+        .of(
+            Yup.object().shape({
+                value: Yup.number().required(),
+                label: Yup.string().required(),
+            }),
+        )
+        .default([]),
 }) as Yup.ObjectSchema<FormData>;
 
 export default function EntityForm({
@@ -51,283 +64,238 @@ export default function EntityForm({
     isEdit = false,
     onAdd,
 }: EntityFormProps) {
-    const { navigate, navigateLink } = useCradleNavigate();
     const { accessApi, entriesApi, queryApi } = useApi();
+
     const [accesses, setAccessUsers] = useState<AccessUser[]>([]);
     const [entity, setEntity] = useState<Entity | null>(null);
-    const [subclasses, setSubclasses] = useState<EntryClass[]>([]);
-    const [alert, setAlert] = useState<Alert>({
-        show: false,
-        message: '',
-        color: 'red',
+    const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [initialData, setInitialData] = useState<FormData>({
+        name: '',
+        subtype: null,
+        description: '',
+        isPublic: false,
+        aliases: [],
     });
 
-    const fetchAliases = async (q: string | string[]): Promise<AliasOption[]> => {
+    // Fetch aliases for async select
+    const fetchAliases = async (q: string): Promise<AliasOption[]> => {
         try {
             const results = await queryApi.queryAdvancedRetrieve({
-                query: Array.isArray(q) ? q : [q],
+                query: [q],
                 wildcard: true,
             });
 
-            const a = results.results.map((alias) => ({
+            return results.results.map((alias) => ({
                 value: alias.id!,
                 label: `${alias.subtype}:${alias.name}`,
             }));
-            return a;
         } catch (error) {
-            displayError(setAlert, navigate)(error);
+            console.error('Failed to fetch aliases:', error);
             return [];
         }
     };
 
-    const {
-        register,
-        handleSubmit,
-        watch,
-        reset,
-        control,
-        formState: { errors },
-    } = useForm<FormData>({
-        resolver: yupResolver(entitySchema),
-        defaultValues: {
-            name: '',
-            subtype: '',
-            description: '',
-            isPublic: false,
-            aliases: [],
-        },
-    });
-
-    // Populate subclass options.
+    // Fetch subtype options on mount
     useEffect(() => {
         (async () => {
             try {
                 const entryClasses = await entriesApi.entryClassesList({
                     showCount: true,
                 });
-                const subclasses = entryClasses.filter(
+                const entityClasses = entryClasses.filter(
                     (entity) => entity.type === 'entity',
                 );
-                setSubclasses(subclasses);
+                const options = entityClasses.map((c) => ({
+                    value: c.subtype,
+                    label: c.subtype,
+                }));
+                setSubtypeOptions(options);
 
-                if (!isEdit && subclasses.length > 0) {
-                    reset((prev) => ({ ...prev, subtype: subclasses[0].subtype }));
+                // Set default subtype for new entities
+                if (!isEdit && options.length > 0) {
+                    setInitialData((prev) => ({ ...prev, subtype: options[0] }));
                 }
             } catch (err) {
-                displayError(setAlert, navigate)(err);
+                console.error('Failed to fetch subtypes:', err);
             }
         })();
-    }, [isEdit, navigate, reset, entriesApi]);
+    }, [isEdit, entriesApi]);
 
-    // Prepopulate form data if editing.
+    // Fetch entity data when editing
     useEffect(() => {
         (async () => {
             if (isEdit && id) {
+                setIsLoading(true);
                 try {
-                    const [entity, accesses] = await Promise.all([
+                    const [entityData, accessData] = await Promise.all([
                         entriesApi.entitiesRetrieve({ entityId: Number(id) }),
                         accessApi.accessEntityList({ entityId: Number(id) }),
                     ]);
-                    reset({
-                        name: entity.name,
-                        subtype: entity.subtype,
-                        description: entity.description || '',
-                        isPublic: entity.isPublic || false,
+
+                    setInitialData({
+                        name: entityData.name,
+                        subtype: {
+                            value: entityData.subtype,
+                            label: entityData.subtype,
+                        },
+                        description: entityData.description || '',
+                        isPublic: entityData.isPublic || false,
                         aliases:
-                            entity.aliasesDetail?.map((alias) => ({
-                                value: alias.id,
-                                label: `${alias.subtype}:${alias.name}`,
-                            })) ?? [],
+                            entityData.aliasesDetail
+                                ?.filter((alias) => alias.id !== undefined)
+                                .map((alias) => ({
+                                    value: alias.id!,
+                                    label: `${alias.subtype}:${alias.name}`,
+                                })) ?? [],
                     });
 
-                    setAccessUsers(accesses);
-                    setEntity(entity);
+                    setAccessUsers(accessData);
+                    setEntity(entityData);
                 } catch (err) {
-                    console.log(err);
-                    displayError(setAlert, navigate)(err);
+                    console.error('Failed to fetch entity:', err);
+                } finally {
+                    setIsLoading(false);
                 }
             } else {
-                reset({
-                    name: '',
-                    subtype: '',
-                    description: '',
-                    isPublic: false,
-                    aliases: [],
-                });
+                setIsLoading(false);
             }
-            setAlert({ show: false, message: '', color: 'red' });
         })();
-    }, [isEdit, id, navigate, reset, entriesApi, accessApi]);
+    }, [isEdit, id, entriesApi, accessApi]);
 
-    const onSubmit = async (data: FormData) => {
+    // Handle form submission
+    const handleSubmit = async (data: FormData) => {
         const payload = {
             type: 'entity',
             name: data.name,
             description: data.description,
-            subtype: data.subtype,
+            subtype: data.subtype?.value || '',
             is_public: data.isPublic,
             aliases: data.aliases.map((alias) => alias.value),
         };
-        console.log('Payload:', payload);
 
-        try {
-            if (isEdit) {
-                await entriesApi.entitiesUpdate({
-                    entityId: Number(id),
-                    entityRequest: payload,
-                });
-            } else {
-                let result = await entriesApi.entitiesCreate({
-                    entityRequest: payload,
-                });
-                if (onAdd) onAdd(result);
-            }
-
-            setAlert({
-                show: true,
-                message: 'Successfully saved entity!',
-                color: 'green',
+        if (isEdit) {
+            await entriesApi.entitiesUpdate({
+                entityId: Number(id),
+                entityRequest: payload,
             });
-        } catch (err) {
-            displayError(setAlert, navigate)(err);
+        } else {
+            const result = await entriesApi.entitiesCreate({
+                entityRequest: payload,
+            });
+            if (onAdd) onAdd(result);
         }
     };
 
-    // Auto-fill name when subtype changes in creation mode.
-    const watchSubtype = watch('subtype');
-    useEffect(() => {
-        if (!isEdit && watchSubtype) {
-            entriesApi
-                .entriesNextNameRetrieve({ classSubtype: watchSubtype })
-                .then((response) => {
-                    reset((prev) => ({ ...prev, name: response.name || '' }));
-                })
-                .catch((err) => displayError(setAlert, navigate)(err));
+    // Auto-fill name when subtype changes (for new entities)
+    const handleSubtypeChange = async (
+        subtype: SubtypeOption | null,
+        reset: (values: Partial<FormData>) => void,
+        currentValues: FormData,
+    ) => {
+        if (!isEdit && subtype) {
+            try {
+                const response = await entriesApi.entriesNextNameRetrieve({
+                    classSubtype: subtype.value,
+                });
+                reset({ ...currentValues, subtype, name: response.name || '' });
+            } catch (err) {
+                console.error('Failed to fetch next name:', err);
+            }
         }
-    }, [watchSubtype, isEdit, entriesApi, navigate, reset]);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <div className="animate-pulse cradle-text-secondary">Loading...</div>
+            </div>
+        );
+    }
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
+        <div className="flex items-center justify-center min-h-screen">
+            <div className="w-full max-w-2xl px-4">
+                <h1 className="text-center text-xl font-bold text-primary mb-4">
                     {isEdit ? 'Edit Entity' : 'Add New Entity'}
                 </h1>
 
                 <Tabs tabClass={TabClasses.PILL}>
-                    <Tab title='Settings' classes='space-y-4'>
-                        <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
-                            <form
-                                onSubmit={handleSubmit(onSubmit)}
-                                className='space-y-2'
+                    <Tab title="Settings" classes="space-y-4">
+                        <div className="p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20">
+                            <Form<FormData>
+                                schema={entitySchema}
+                                defaultValues={initialData}
+                                onSubmit={handleSubmit}
+                                successMessage={
+                                    isEdit
+                                        ? 'Entity updated successfully!'
+                                        : 'Entity created successfully!'
+                                }
+                                className="space-y-4"
                             >
-                                <FormField
-                                    type='text'
-                                    label='Name'
-                                    className='form-input input input-block focus:ring-0'
-                                    {...register('name')}
-                                    error={errors.name}
-                                    disabled={isEdit}
-                                />
-                                <div className='w-full'>
-                                    <label
-                                        htmlFor='subtype'
-                                        className='block text-sm font-medium'
-                                    >
-                                        Subtype
-                                    </label>
-                                    <div className='mt-1'>
-                                        <select
-                                            className='form-select select select-ghost-primary select-block focus:ring-0'
-                                            {...register('subtype')}
-                                            disabled={isEdit}
-                                        >
-                                            {subclasses.map((subclass, index) => (
-                                                <option
-                                                    key={index}
-                                                    value={subclass.subtype}
-                                                >
-                                                    {subclass.subtype}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.subtype && (
-                                            <p className='text-red-600 text-sm'>
-                                                {errors.subtype.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <FormField
-                                    type='switch'
-                                    label='Publicly Available'
-                                    className='switch-ghost-primary'
-                                    {...register('isPublic')}
-                                    row={true}
-                                    error={errors.isPublic}
-                                />
-                                <div className='w-full'>
-                                    <label
-                                        htmlFor='description'
-                                        className='block text-sm font-medium'
-                                    >
-                                        Description
-                                    </label>
-                                    <div className='mt-1'>
-                                        <textarea
-                                            placeholder='Description'
-                                            className='textarea-ghost-primary textarea-block focus:ring-0 textarea'
-                                            {...register('description')}
-                                        />
-                                        {errors.description && (
-                                            <p className='text-red-600 text-sm'>
-                                                {errors.description.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                {/* Aliases Field */}
-                                <div className='w-full'>
-                                    <label className='block text-sm font-medium'>
-                                        Aliases
-                                    </label>
-                                    <div className='mt-1'>
-                                        <Controller
-                                            name='aliases'
-                                            control={control}
-                                            render={({
-                                                field: { onChange, value },
-                                            }) => (
-                                                <Selector
-                                                    value={value}
-                                                    onChange={onChange}
-                                                    fetchOptions={fetchAliases}
-                                                    isMulti={true}
-                                                    placeholder='Select aliases...'
-                                                />
-                                            )}
-                                        />
-                                        {errors.aliases && (
-                                            <p className='text-red-600 text-sm'>
-                                                {errors.aliases.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                                <AlertBox alert={alert} />
-                                <div className='flex gap-2'>
-                                    <button
-                                        type='submit'
-                                        className='btn btn-primary btn-block'
-                                    >
-                                        {isEdit ? 'Edit' : 'Add'}
-                                    </button>
-                                </div>
-                            </form>
+                                {({ watch, reset, getValues }) => {
+                                    const watchedSubtype = watch('subtype');
+
+                                    return (
+                                        <>
+                                            <FormInput<FormData>
+                                                name="name"
+                                                label="Name"
+                                                disabled={isEdit}
+                                                required
+                                            />
+
+                                            <FormSelect<FormData, SubtypeOption>
+                                                name="subtype"
+                                                label="Subtype"
+                                                options={subtypeOptions}
+                                                isDisabled={isEdit}
+                                                required
+                                                onChange={(newValue) => {
+                                                    handleSubtypeChange(
+                                                        newValue as SubtypeOption | null,
+                                                        reset,
+                                                        getValues(),
+                                                    );
+                                                }}
+                                            />
+
+                                            <FormSwitch<FormData>
+                                                name="isPublic"
+                                                label="Publicly Available"
+                                            />
+
+                                            <FormTextArea<FormData>
+                                                name="description"
+                                                label="Description"
+                                                placeholder="Description"
+                                                rows={4}
+                                            />
+
+                                            <FormSelect<FormData, AliasOption, true>
+                                                name="aliases"
+                                                label="Aliases"
+                                                fetchOptions={fetchAliases}
+                                                isMulti
+                                                placeholder="Select aliases..."
+                                            />
+
+                                            <button
+                                                type="submit"
+                                                className="btn btn-primary btn-block"
+                                            >
+                                                {isEdit ? 'Edit' : 'Add'}
+                                            </button>
+                                        </>
+                                    );
+                                }}
+                            </Form>
                         </div>
                     </Tab>
 
                     {isEdit && entity && accesses.length > 0 && (
-                        <Tab title='Access' classes='space-y-4'>
+                        <Tab title="Access" classes="space-y-4">
                             {accesses.map((access) => {
                                 const user = access.user;
                                 return (
