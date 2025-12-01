@@ -38,6 +38,10 @@ export interface Alert {
     code?: string;
     /** Optional button configuration */
     button?: AlertButton;
+    /** Optional icon to display */
+    icon?: React.ReactNode;
+    /** Optional timeout in ms for auto-dismiss */
+    timeout?: number;
 }
 
 /**
@@ -118,10 +122,10 @@ export default function AlertBox({
             normalizedColor === 'green'
                 ? 'var(--cradle-accent-success)'
                 : normalizedColor === 'red'
-                  ? 'var(--cradle-accent-error)'
-                  : normalizedColor === 'yellow'
-                    ? 'var(--cradle-accent-warning)'
-                    : 'var(--cradle-accent-primary)';
+                    ? 'var(--cradle-accent-error)'
+                    : normalizedColor === 'yellow'
+                        ? 'var(--cradle-accent-warning)'
+                        : 'var(--cradle-accent-primary)';
 
         switch (normalizedColor) {
             case 'green':

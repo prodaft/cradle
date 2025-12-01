@@ -97,75 +97,100 @@ export default function TwoFactorSetupModal({
 
     if (loading) {
         return (
-            <div className='p-4'>
-                <h2 className='text-2xl font-bold mb-4'>
-                    Setting up Two-Factor Authentication
-                </h2>
-                <div className='flex justify-center'>
-                    <div className='loading loading-spinner loading-lg'></div>
+            <div className="w-full min-w-[28rem]">
+                <div className="mb-6">
+                    <h2 className="text-xl font-semibold cradle-text-primary cradle-mono mb-2">
+                        Setting up Two-Factor Authentication
+                    </h2>
+                </div>
+                <div className="flex justify-center py-8">
+                    <div className="loading loading-spinner loading-lg"></div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className='w-full max-w-md'>
-            <h2 className='text-2xl font-bold mb-4'>
-                {isDisabling ? 'Disable' : 'Set up'} Two-Factor Authentication
-            </h2>
+        <div className="w-full min-w-[28rem]">
+            {/* Header */}
+            <div className="mb-6">
+                <h2 className="text-xl font-semibold cradle-text-primary cradle-mono mb-2">
+                    {isDisabling ? 'Disable' : 'Set up'} Two-Factor Authentication
+                </h2>
+            </div>
 
             {!isDisabling && (
-                <div className='mb-6'>
-                    <div className='flex justify-center mb-4'>
-                        <div className='p-4 bg-white rounded'>
-                            <QRCodeSVG value={otpAuthUrl} size={200} level='H' />
+                <>
+                    {/* QR Code Section */}
+                    <div className="flex justify-center mb-4">
+                        <div className="p-4 bg-white">
+                            <QRCodeSVG value={otpAuthUrl} size={200} level="H" />
                         </div>
                     </div>
 
-                    <div className='mb-4 p-4 bg-gray-100 dark:bg-zinc-800 rounded'>
-                        <p className='text-sm mb-2'>
-                            Can't scan the QR code? Enter this secret key manually in
-                            your authenticator app:
-                        </p>
-                        <code className='block bg-white dark:bg-zinc-900 p-2 rounded text-center select-all'>
-                            {secret}
-                        </code>
+                    <div className="mb-6 p-4 cradle-border cradle-bg-secondary">
+                        <div className="flex items-start gap-3">
+                            <div className="cradle-status-light cradle-status-info mt-1 flex-shrink-0"></div>
+                            <div className="flex-1">
+                                <h3 className="text-sm font-semibold cradle-text-primary cradle-mono mb-2">
+                                    Manual Entry
+                                </h3>
+                                <p className="text-xs cradle-text-tertiary cradle-mono mb-3">
+                                    Can't scan the QR code? Enter this secret key manually in
+                                    your authenticator app:
+                                </p>
+                                <code className="block cradle-bg-primary p-2 text-center select-all cradle-mono text-sm">
+                                    {secret}
+                                </code>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            )}
+                </>
+            )
+            }
 
-            <form onSubmit={handleSubmit}>
-                <div className='mb-4'>
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                    <label className="block text-sm font-medium cradle-text-secondary cradle-mono mb-2">
+                        Verification Code
+                    </label>
                     <input
-                        type='text'
-                        className='input input-bordered w-full input-block'
+                        type="text"
+                        className="cradle-input w-full"
                         placeholder={
                             isDisabling
                                 ? 'Enter code to confirm 2FA disable'
-                                : 'Enter verification code'
+                                : 'Enter 6-digit code'
                         }
                         value={verificationCode}
                         onChange={(e) => setVerificationCode(e.target.value)}
-                        pattern='[0-9]*'
+                        pattern="[0-9]*"
                         maxLength={6}
                     />
                 </div>
 
                 <AlertBox alert={alert} />
 
-                <div className='flex justify-end gap-2 mt-3'>
-                    <button type='button' className='btn' onClick={closeModal}>
-                        Cancel
-                    </button>
-                    <button
-                        type='submit'
-                        className={`btn ${isDisabling ? 'btn-error' : 'btn-primary'}`}
-                        disabled={!verificationCode}
-                    >
-                        {isDisabling ? 'Disable 2FA' : 'Verify and Enable'}
-                    </button>
+                <div className="cradle-border-t pt-5 mt-5">
+                    <div className="flex gap-3">
+                        <button
+                            type="button"
+                            className="cradle-btn cradle-btn-ghost flex-1"
+                            onClick={closeModal}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className={`cradle-btn flex-1 ${isDisabling ? 'cradle-btn-danger' : 'cradle-btn-primary'}`}
+                            disabled={!verificationCode}
+                        >
+                            {isDisabling ? 'Disable 2FA' : 'Verify and Enable'}
+                        </button>
+                    </div>
                 </div>
             </form>
-        </div>
+        </div >
     );
 }

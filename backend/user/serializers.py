@@ -257,7 +257,7 @@ class EmailConfirmSerializer(serializers.Serializer):
 
 
 class Enable2FASerializer(serializers.Serializer):
-    config_url = serializers.URLField(required=True)
+    config_url = serializers.CharField(required=True)
 
 
 class Verify2FASerializer(serializers.Serializer):

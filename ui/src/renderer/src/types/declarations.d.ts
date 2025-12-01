@@ -82,6 +82,8 @@ declare module 'iconoir-react' {
 
     export const WarningCircle: ComponentType<SVGProps<SVGSVGElement>>;
     export const CheckSolid: ComponentType<SVGProps<SVGSVGElement>>;
+    export const CheckCircle: ComponentType<SVGProps<SVGSVGElement>>;
+    export const CheckCircleSolid: ComponentType<SVGProps<SVGSVGElement>>;
     export const InfoEmpty: ComponentType<SVGProps<SVGSVGElement>>;
     export const Xmark: ComponentType<SVGProps<SVGSVGElement>>;
     export const Search: ComponentType<SVGProps<SVGSVGElement>>;
@@ -126,11 +128,15 @@ declare module 'iconoir-react' {
     export const Edit: ComponentType<SVGProps<SVGSVGElement>>;
     export const EditPencil: ComponentType<SVGProps<SVGSVGElement>>;
     export const Eye: ComponentType<SVGProps<SVGSVGElement>>;
+    export const EyeClosed: ComponentType<SVGProps<SVGSVGElement>>;
     export const PlusCircle: ComponentType<SVGProps<SVGSVGElement>>;
     export const RefreshCircle: ComponentType<SVGProps<SVGSVGElement>>;
+    export const Copy: ComponentType<SVGProps<SVGSVGElement>>;
+
 
     // Missing icons - add declarations
     export const Check: ComponentType<SVGProps<SVGSVGElement>>;
+    export const Calendar: ComponentType<SVGProps<SVGSVGElement>>;
     export const Clock: ComponentType<SVGProps<SVGSVGElement>>;
     export const ClockRotateRight: ComponentType<SVGProps<SVGSVGElement>>;
     export const DesignNib: ComponentType<SVGProps<SVGSVGElement>>;

@@ -20,8 +20,8 @@ export interface MarkdownEditorModalProps {
     closeModal: () => void;
     /** Initial markdown content */
     initialContent?: string;
-    /** Optional help text to display below the editor */
-    helpText?: string | null;
+    /** Optional help text to display below the editor - can be a string or React node */
+    helpText?: React.ReactNode;
 }
 
 /**
@@ -39,6 +39,16 @@ export interface MarkdownEditorModalProps {
  *   closeModal={closeModal}
  *   helpText="This note will be saved to your collection"
  * />
+ *
+ * // With custom HTML
+ * <MarkdownEditorModal
+ *   title="My Note"
+ *   titleEditable={true}
+ *   initialContent="# Hello World"
+ *   onConfirm={(content, title) => console.log(content, title)}
+ *   closeModal={closeModal}
+ *   helpText={<div>Custom <strong>HTML</strong> content</div>}
+ * />
  * ```
  */
 export default function MarkdownEditorModal({
@@ -47,7 +57,7 @@ export default function MarkdownEditorModal({
     titleEditable = false,
     closeModal,
     initialContent = '',
-    helpText = null,
+    helpText,
 }: MarkdownEditorModalProps): JSX.Element {
     const [userInput, setUserInput] = useState(initialContent);
     const [noteTitle, setNoteTitle] = useState(title || '');
@@ -72,58 +82,74 @@ export default function MarkdownEditorModal({
     };
 
     return (
-        <div className='w-[100%]'>
-            <h2 className='text-2xl font-bold mb-4 mt-8'>
-                {titleEditable ? (
-                    <input
-                        type='text'
-                        value={noteTitle}
-                        onChange={handleTitleChange}
-                        placeholder='Enter title'
-                        className='input input-block input-bordered w-full text-xl'
-                    />
-                ) : (
-                    noteTitle
-                )}
-            </h2>
+        <div className="w-full min-w-[28rem]">
+            {/* Header */}
+            {titleEditable ? (
+                <input
+                    type="text"
+                    value={noteTitle}
+                    onChange={handleTitleChange}
+                    placeholder="Enter title"
+                    className="font-semibold mb-3 mt-3 cradle-text-primary cradle-mono mb-2 w-full bg-transparent border-none outline-none focus:ring-0 p-0"
+                />
+            ) : (
+                <h2 className="text-xl font-semibold cradle-text-primary cradle-mono mb-3">
+                    {noteTitle}
+                </h2>
+            )}
 
-            <div className='mb-4'>
+            {/* Editor Section */}
+            <div className="mb-6">
                 <label
-                    htmlFor='markdown-content'
-                    className='block text-sm font-medium text-gray-700 mb-1 dark:text-gray-400'
+                    htmlFor="markdown-content"
+                    className="block text-sm font-medium cradle-text-secondary cradle-mono mb-2"
                 >
                     Content
                 </label>
-                <div className='border border-gray-300 rounded-md overflow-hidden'>
+                <div className="cradle-border rounded overflow-hidden">
                     <CodeMirror
                         value={userInput}
                         onChange={handleContentChange}
                         theme={isDarkMode ? 'dark' : eclipse}
-                        height='300px'
+                        height="300px"
                         extensions={extensions}
-                        placeholder='Write your markdown content here...'
-                        className='w-full CodeMirror'
+                        placeholder="Write your markdown content here..."
+                        className="w-full CodeMirror"
                     />
                 </div>
             </div>
 
+
+            {/* Help Text Section */}
             {helpText && (
-                <div className='mb-4 text-sm text-gray-600 bg-gray-100 p-3 rounded-md dark:bg-gray-800 dark:text-gray-300'>
-                    <p>{helpText}</p>
+                <div className="mb-6 p-4 cradle-border cradle-bg-secondary rounded">
+                    <div className="flex items-start gap-3">
+                        <div className="cradle-status-light cradle-status-info mt-1 flex-shrink-0"></div>
+                        <div className="text-xs cradle-text-tertiary cradle-mono leading-relaxed">
+                            {helpText}
+                        </div>
+                    </div>
                 </div>
             )}
 
-            <div className='flex justify-end gap-2'>
-                <button type='button' className='btn' onClick={closeModal}>
-                    Cancel
-                </button>
-                <button
-                    type='button'
-                    className='btn btn-primary'
-                    onClick={handleConfirm}
-                >
-                    Save
-                </button>
+            {/* Actions */}
+            <div className="cradle-border-t pt-5 mt-5">
+                <div className="flex gap-3">
+                    <button
+                        type="button"
+                        className="cradle-btn cradle-btn-ghost flex-1"
+                        onClick={closeModal}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        className="cradle-btn cradle-btn-primary flex-1"
+                        onClick={handleConfirm}
+                    >
+                        Save
+                    </button>
+                </div>
             </div>
         </div>
     );

@@ -41,7 +41,9 @@ class Enable2FAView(APIView):
             raise TwoFactorAlreadyEnabledException(detail="2FA is already enabled")
 
         config_url = request.user.enable_2fa()
-        return Response(Enable2FASerializer(data={"config_url": config_url}).data)
+        serializer = Enable2FASerializer(data={"config_url": config_url})
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data)
 
 
 @extend_schema_view(

@@ -4,9 +4,8 @@ import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
-import Tooltip from '@components/base/Tooltip/Tooltip';
 import { EnrichmentRequestList } from '@services/cradle/models';
-import { Eye, Refresh, Trash } from 'iconoir-react';
+import { Refresh, Trash } from 'iconoir-react';
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 
 type EnrichmentRequest = EnrichmentRequestList;
@@ -109,7 +108,6 @@ function EnrichmentRequestsList({
             { key: 'status', label: 'Status' },
             { key: 'user', label: 'User', filterType: 'text' as const },
             { key: 'createdAt', label: 'Created At' },
-            { key: 'actions', label: 'Actions' },
         ];
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
@@ -131,7 +129,7 @@ function EnrichmentRequestsList({
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         return (
-            <tr key={request.id} onClick={navigateLink(`/enrichment/${request.id}`)}>
+            <tr key={request.id} onClick={navigateLink(`/enrichment/${request.id}`)} className='cursor-pointer'>
                 {enableMultiSelect && (
                     <td
                         className='w-12'
@@ -170,18 +168,6 @@ function EnrichmentRequestsList({
                     {request.createdAt
                         ? formatDate(new Date(request.createdAt))
                         : 'N/A'}
-                </td>
-                <td className='w-20'>
-                    <div className='flex gap-2'>
-                        <Tooltip content='View Details' side='top'>
-                            <button
-                                className='btn btn-ghost btn-sm'
-                                onClick={navigateLink(`/enrichment/${request.id}`)}
-                            >
-                                <Eye />
-                            </button>
-                        </Tooltip>
-                    </div>
                 </td>
             </tr>
         );

@@ -41,11 +41,12 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
 
     const handleAddSnippet = (e: MouseEvent) => {
         setModal(MarkdownEditorModal, {
-            title: '',
             titleEditable: true,
             initialContent: '',
             helpText:
-                'You can use CodeMirror snippet format: https://codemirror.net/docs/ref/#autocomplete.snippet',
+                <div>
+                    You can use CodeMirror snippet format: <a href="https://codemirror.net/docs/ref/#autocomplete.snippet" target="_blank" rel="noopener noreferrer">https://codemirror.net/docs/ref/#autocomplete.snippet</a>
+                </div>,
             onConfirm: async (content: string, title: string) => {
                 if (title.trim() && content.trim()) {
                     try {
@@ -124,7 +125,9 @@ export default function SnippetList({ userId = null }: SnippetListProps) {
         <div className='w-full'>
             {/* Header with title and add button */}
             <div className='flex items-center justify-between mb-3'>
-                <h3 className='text-lg font-semibold'>Snippets</h3>
+                <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono'>
+                    Note Snippets
+                </h3>
                 <button
                     onClick={handleAddSnippet}
                     className='btn btn-sm btn-primary flex items-center gap-2'

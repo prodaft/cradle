@@ -48,21 +48,18 @@ export default function ChangePasswordModal({
     };
 
     return (
-        <div className="p-6 max-w-md mx-auto">
+        <div className="w-full min-w-[28rem]">
             {/* Header */}
             <div className="mb-6">
                 <h2 className="text-xl font-semibold cradle-text-primary cradle-mono mb-2">
                     Change Password
                 </h2>
-                <p className="text-sm cradle-text-tertiary cradle-mono">
-                    Update your password to maintain account security
-                </p>
             </div>
 
             {/* Info Section */}
-            <div className="mb-6 p-4 cradle-border cradle-bg-secondary">
+            <div className="mb-6 p-4 cradle-border cradle-bg-secondary rounded">
                 <div className="flex items-start gap-3">
-                    <div className="cradle-status-light cradle-status-info mt-1"></div>
+                    <div className="cradle-status-light cradle-status-info mt-1 flex-shrink-0"></div>
                     <div>
                         <h3 className="text-sm font-semibold cradle-text-primary cradle-mono mb-1">
                             Password Requirements
@@ -85,14 +82,11 @@ export default function ChangePasswordModal({
                 }}
                 onSubmit={handleSubmit}
                 onSuccess={closeModal}
-                className="space-y-4"
+                className="space-y-5"
             >
                 {({ formState: { isSubmitting } }) => (
                     <>
                         <div>
-                            <h3 className="text-sm font-semibold cradle-text-secondary cradle-mono mb-3">
-                                Current Authentication
-                            </h3>
                             <FormInput<FormData>
                                 name="oldPassword"
                                 type="password"
@@ -104,10 +98,7 @@ export default function ChangePasswordModal({
                         <div className="cradle-separator"></div>
 
                         <div>
-                            <h3 className="text-sm font-semibold cradle-text-secondary cradle-mono mb-3">
-                                New Password
-                            </h3>
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <FormInput<FormData>
                                     name="newPassword"
                                     type="password"
@@ -123,22 +114,22 @@ export default function ChangePasswordModal({
                             </div>
                         </div>
 
-                        <div className="cradle-border-t pt-4 mt-4">
+                        <div className="cradle-border-t pt-5 mt-5">
                             <div className="flex gap-3">
                                 <button
-                                    type="submit"
-                                    className="cradle-btn cradle-btn-primary cradle-btn-sm flex-1"
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Updating...' : 'Update Password'}
-                                </button>
-                                <button
                                     type="button"
-                                    className="cradle-btn cradle-btn-ghost cradle-btn-sm flex-1"
+                                    className="cradle-btn cradle-btn-ghost flex-1"
                                     onClick={closeModal}
                                     disabled={isSubmitting}
                                 >
                                     Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="cradle-btn cradle-btn-primary flex-1"
+                                    disabled={isSubmitting}
+                                >
+                                    {isSubmitting ? 'Updating...' : 'Update Password'}
                                 </button>
                             </div>
                         </div>
