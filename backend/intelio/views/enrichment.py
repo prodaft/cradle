@@ -14,6 +14,7 @@ from core.openapi import (
 from core.pagination import TotalPagesPagination
 from user.permissions import HasAdminRole
 
+from ..enums import EnrichmentStatus
 from ..exceptions import (
     EnricherNotFoundException,
     EnricherTypeNotFoundException,
@@ -301,12 +302,26 @@ class EnrichmentAPIView(APIView):
             **get_common_error_responses(),
         },
     ),
+    delete=extend_schema(
+        operation_id="enrichment_detail_delete",
+        summary="Delete enrichment request",
+        description="Delete a specific enrichment request. Only the owner or staff can delete an enrichment request.",
+        responses={
+            204: None,
+            **get_error_responses(
+                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelioErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
 )
 class EnrichmentDetailAPIView(APIView):
     """
     API view for retrieving detailed information about a specific enrichment request.
 
     GET: Retrieve enrichment request details.
+    DELETE: Delete an enrichment request.
     """
 
     authentication_classes = [JWTAuthentication]
@@ -335,6 +350,96 @@ class EnrichmentDetailAPIView(APIView):
                 detail="You don't have permission to view this enrichment request."
             )
 
+        serializer = EnrichmentRequestDetailSerializer(enrichment_request)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        """Delete an enrichment request"""
+        enrichment_request = self.get_object(pk)
+
+        if enrichment_request is None:
+            raise EnrichmentRequestNotFoundException(
+                detail="Enrichment request not found."
+            )
+
+        # Check if user has access to this request
+        if enrichment_request.user != request.user and not request.user.is_staff:
+            raise PermissionDeniedException(
+                detail="You don't have permission to delete this enrichment request."
+            )
+
+        enrichment_request.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@extend_schema_view(
+    post=extend_schema(
+        operation_id="enrichment_restart",
+        summary="Restart enrichment request",
+        description="Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or staff can restart an enrichment request.",
+        responses={
+            200: EnrichmentRequestDetailSerializer,
+            **get_error_responses(
+                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelioErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class EnrichmentRestartAPIView(APIView):
+    """
+    API view for restarting an enrichment request.
+
+    POST: Restart an enrichment request.
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return EnrichmentRequest.objects.prefetch_related(
+                "enrichers_settings", "entities"
+            ).get(pk=pk)
+        except EnrichmentRequest.DoesNotExist:
+            return None
+
+    def post(self, request, pk):
+        """Restart an enrichment request"""
+        enrichment_request = self.get_object(pk)
+
+        if enrichment_request is None:
+            raise EnrichmentRequestNotFoundException(
+                detail="Enrichment request not found."
+            )
+
+        # Check if user has access to this request
+        if enrichment_request.user != request.user and not request.user.is_staff:
+            raise PermissionDeniedException(
+                detail="You don't have permission to restart this enrichment request."
+            )
+
+        # Reset the enrichment request state
+        enrichment_request.status = EnrichmentStatus.WAITING
+        enrichment_request.errors = []
+        enrichment_request.warnings = []
+        enrichment_request.enricher_status = {}
+        enrichment_request.completed_at = None
+        enrichment_request.save(
+            update_fields=[
+                "status",
+                "errors",
+                "warnings",
+                "enricher_status",
+                "completed_at",
+            ]
+        )
+
+        # Start the enrichment process
+        enrichment_request.start_enrichment()
+
+        # Return the updated enrichment request
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
         return Response(serializer.data)
 

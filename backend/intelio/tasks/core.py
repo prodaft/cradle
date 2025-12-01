@@ -22,13 +22,14 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
         set(settings.for_eclasses.all().values_list("subtype", flat=True))
     )
     try:
+        enricher.pre_enrich(entries)
         enricher.enrich(entries)
     except Exception as e:
         request._append_error(f"Enricher {settings.name} failed: {str(e)}")
-        request._set_enricher_status(enricher_id, EnrichmentStatus.ERROR)
+        request._set_enricher_status(enricher.name, EnrichmentStatus.ERROR)
         return
 
-    request._set_enricher_status(enricher_id, EnrichmentStatus.DONE)
+    request._set_enricher_status(enricher.name, EnrichmentStatus.DONE)
 
     refresh_edges_materialized_view.apply_async()
     return

@@ -45,7 +45,7 @@ export interface ProfileProviderProps {
  * ProfileProvider component
  * Fetches and manages user profile data
  */
-export function ProfileProvider({ children }: ProfileProviderProps): JSX.Element {
+function ProfileProvider({ children }: ProfileProviderProps): JSX.Element {
     const [profile, setProfile] = useState<ExtendedProfile | null>(null);
     const { usersApi } = useApi();
     const auth = useAuth();
@@ -114,10 +114,12 @@ export function ProfileProvider({ children }: ProfileProviderProps): JSX.Element
  * @returns Profile context value
  * @throws Error if used outside ProfileProvider
  */
-export function useProfile(): ProfileContextValue {
+function useProfile(): ProfileContextValue {
     const context = useContext(ProfileContext);
     if (context === undefined) {
         throw new Error('useProfile must be used within ProfileProvider');
     }
     return context;
 }
+
+export { ProfileProvider, useProfile };

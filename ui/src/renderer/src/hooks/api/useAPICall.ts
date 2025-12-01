@@ -3,8 +3,10 @@
  */
 
 import { useNotif } from '@/contexts/ui/NotificationContext';
+import { SessionExpiredException } from '@/exceptions/AuthExceptions';
 import { handleAPIError, parseAPIError, ParsedAPIError } from '@/utils/api';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Options for execute function
@@ -60,8 +62,11 @@ export interface UseAPICallReturn {
  */
 export function useAPICall(): UseAPICallReturn {
     const { notify } = useNotif();
+    const navigate = useNavigate();
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<ParsedAPIError | null>(null);
+
+    const sessionExpiredNotifiedRef = useRef<boolean>(false);
 
     /**
      * Execute an API call with automatic error handling
@@ -97,6 +102,40 @@ export function useAPICall(): UseAPICallReturn {
 
                 return result;
             } catch (err) {
+                // Handle session expiration separately
+                if (err instanceof SessionExpiredException) {
+                    if (!sessionExpiredNotifiedRef.current) {
+                        sessionExpiredNotifiedRef.current = true;
+                        notify({
+                            type: 'error',
+                            text: 'Authentication failed. Please log in again.',
+                            duration: 5000,
+                        });
+                        navigate('/login');
+
+                        setTimeout(() => {
+                            sessionExpiredNotifiedRef.current = false;
+                        }, 1000);
+                    }
+
+                    const parsed: ParsedAPIError = {
+                        code: 'SESSION_EXPIRED',
+                        detail: err.message,
+                        status: 401,
+                        title: 'Session Expired',
+                        instance: 'unknown',
+                        timestamp: new Date().toISOString(),
+                        isValidationError: false,
+                        fieldErrors: {},
+                        raw: err,
+                    };
+
+                    if (options.onError) {
+                        options.onError(parsed);
+                    }
+                    throw parsed;
+                }
+
                 let parsed = await handleError(err, options);
                 if (options.onError) {
                     options.onError(parsed);
@@ -106,7 +145,7 @@ export function useAPICall(): UseAPICallReturn {
                 setLoading(false);
             }
         },
-        [notify],
+        [notify, navigate],
     );
 
     /**

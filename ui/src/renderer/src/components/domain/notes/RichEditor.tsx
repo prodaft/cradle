@@ -20,9 +20,7 @@ import {
 } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
 import {
-    defaultHighlightStyle,
-    indentOnInput,
-    syntaxHighlighting,
+    indentOnInput
 } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
@@ -36,6 +34,7 @@ import {
 } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
 import {
+    baseSyntaxHighlights,
     prosemarkBaseThemeSetup,
     prosemarkBasicSetup,
     prosemarkMarkdownSyntaxExtensions,
@@ -153,7 +152,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
     }, []);
 
-    // Custom extension to add copy buttons to code blocks
     const codeBlockCopyExtension = useMemo(() => {
         return EditorView.domEventHandlers({
             click: (event, view) => {
@@ -196,13 +194,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             }),
             // Basic prosemark extensions
             prosemarkBasicSetup(),
-            // Theme extensions
             prosemarkBaseThemeSetup(),
-            // Render HTML blocks
             htmlBlockExtension,
-            // Code block copy handler
             codeBlockCopyExtension,
-            // Control when formatting marks are shown
+            baseSyntaxHighlights,
             EditorView.contentAttributes.of({
                 'data-formatting-mode': source ? 'show' : 'auto',
             }),
@@ -213,7 +208,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             rectangularSelection(),
             highlightActiveLine(),
             indentOnInput(),
-            syntaxHighlighting(defaultHighlightStyle),
             closeBrackets(),
             Prec.highest(
                 keymap.of([

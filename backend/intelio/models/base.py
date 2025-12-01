@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.utils import timezone
 from django_lifecycle import (
     AFTER_DELETE,
     LifecycleModel,
@@ -438,6 +439,7 @@ class EnrichmentRequest(LifecycleModel):
                     f"Unknown enricher type: {enricher_settings.enricher_type}"
                 )
             config = subclass(settings=enricher_settings.settings, request=self)
+            config.id = enricher_settings.id
             enrichers.append(config)
 
         return enrichers
@@ -483,22 +485,32 @@ class EnrichmentRequest(LifecycleModel):
         self.relations.update(access_vector=self.access_vector)
 
     def _set_enricher_status(self, enricher_type: str, status: EnrichmentStatus):
-        if self.finished_enrichers and enricher_type in self.finished_enrichers:
+        if (
+            self.enricher_status
+            and self.enricher_status.get(enricher_type) == status.value
+        ):
             return
         with transaction.atomic():
             instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
-            instance.finished_enrichers = instance.finished_enrichers or {}
-            if enricher_type not in instance.finished_enrichers:
-                instance.finished_enrichers[enricher_type] = status
+            instance.enricher_status = instance.enricher_status or {}
+            if enricher_type not in instance.enricher_status:
+                instance.enricher_status[enricher_type] = status.value
 
                 if (
-                    len(instance.finished_enrichers)
+                    len(
+                        list(
+                            filter(
+                                lambda x: x == EnrichmentStatus.DONE.value,
+                                instance.enricher_status.values(),
+                            )
+                        )
+                    )
                     == instance.enrichers_settings.count()
                 ):
-                    instance.completed_at = models.DateTimeField(auto_now=True)
+                    instance.completed_at = timezone.now()
                     err_count, succes_count = 0, 0
-                    for stat in instance.finished_enrichers.values():
-                        if stat == EnrichmentStatus.ERROR:
+                    for stat in instance.enricher_status.values():
+                        if stat == EnrichmentStatus.ERROR.value:
                             err_count += 1
                         else:
                             succes_count += 1
@@ -508,13 +520,13 @@ class EnrichmentRequest(LifecycleModel):
                     elif err_count > 0:
                         instance.status = EnrichmentStatus.WARNING
                     else:
-                        instance.status = EnrichmentStatus.COMPLETED
+                        instance.status = EnrichmentStatus.DONE
 
                     instance.save(
-                        update_fields=["finished_enrichers", "completed_at", "status"]
+                        update_fields=["enricher_status", "completed_at", "status"]
                     )
                 else:
-                    instance.save(update_fields=["finished_enrichers"])
+                    instance.save(update_fields=["enricher_status"])
 
     def _append_error(self, error):
         if error in self.errors:

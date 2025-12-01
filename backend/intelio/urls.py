@@ -6,6 +6,7 @@ from .views.enrichment import (
     EnrichmentAPIView,
     EnrichmentDetailAPIView,
     EnrichmentRelationsAPIView,
+    EnrichmentRestartAPIView,
     EnrichmentSettingsAPIView,
     EnrichmentSubclassesAPIView,
 )
@@ -57,12 +58,17 @@ urlpatterns = [
         name="enrichment-requests",
     ),
     path(
-        "enrich/<uuid:pk>/",
+        "enrich/<int:pk>/",
         EnrichmentDetailAPIView.as_view(),
         name="enrichment-detail",
     ),
     path(
-        "enrich/<uuid:pk>/<str:enricher_type>/",
+        "enrich/<int:pk>/restart/",
+        EnrichmentRestartAPIView.as_view(),
+        name="enrichment-restart",
+    ),
+    path(
+        "enrich/<int:pk>/<str:enricher_type>/",
         EnrichmentRelationsAPIView.as_view(),
         name="enrichment-relations",
     ),

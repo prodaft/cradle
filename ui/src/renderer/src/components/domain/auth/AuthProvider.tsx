@@ -1,4 +1,7 @@
-import { AuthTokenException } from '@/exceptions/AuthExceptions';
+import {
+    AuthTokenException,
+    SessionExpiredException,
+} from '@/exceptions/AuthExceptions';
 import {
     createContext,
     ReactNode,
@@ -52,7 +55,7 @@ export interface AuthContextValue {
 /**
  * AuthContext - the context for authentication of the application
  */
-export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 /**
  * Authentication result enum
@@ -131,12 +134,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.setItem('role', data.role);
 
         setRole(data.role);
-
-        // Increment token version to trigger re-renders in dependent components
         setTokenVersion((prev) => prev + 1);
-
-        // Extract user_id from access token if needed (optional, could be from backend)
-        // For now, we'll just keep the existing user_id logic
+        scheduleTokenRefresh();
     }, []);
 
     /**
@@ -170,13 +169,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     /**
      * Refresh the access token using the refresh token
-     * @returns true if refresh succeeded, false otherwise
+     * @returns true if refresh succeeded
+     * @throws {SessionExpiredException} if the server rejects the refresh token
+     * Note: Returns false (does NOT throw) for network/connection errors
      */
     const refreshAccessToken = useCallback(async (): Promise<boolean> => {
         const refreshToken = refreshTokenRef.current;
 
         if (!refreshToken) {
-            return false;
+            clearTokens();
+            throw new SessionExpiredException('No refresh token available');
         }
 
         try {
@@ -191,15 +193,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
             if (response.ok) {
                 const data = await response.json();
                 storeTokens(data);
+                scheduleTokenRefresh();
                 return true;
             } else {
-                // Refresh failed, clear tokens
+                // Server rejected the refresh token (expired, revoked, invalid)
                 clearTokens();
-                return false;
+                throw new SessionExpiredException();
             }
         } catch (error) {
-            console.error('Token refresh failed:', error);
-            clearTokens();
+            // Re-throw SessionExpiredException (from above or elsewhere)
+            if (error instanceof SessionExpiredException) {
+                throw error;
+            }
+
+            // Network/connection error - do NOT clear tokens, just return false
+            console.error('Token refresh failed due to network error:', error);
             return false;
         }
     }, [basePath, storeTokens, clearTokens]);
@@ -208,7 +216,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
      * Schedule automatic token refresh before expiration
      */
     const scheduleTokenRefresh = useCallback(() => {
-        // Clear existing timer
         if (refreshTimerRef.current) {
             clearTimeout(refreshTimerRef.current);
         }
@@ -225,18 +232,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const refreshIn = Math.max(0, timeUntilExpiry - 120000);
 
         refreshTimerRef.current = setTimeout(async () => {
-            const success = await refreshAccessToken();
-            if (success) {
-                // Schedule next refresh
-                scheduleTokenRefresh();
-            }
+            await refreshAccessToken();
         }, refreshIn);
     }, [refreshAccessToken]);
 
     /**
      * Get a valid access token, refreshing if necessary
      * @returns Valid access token
-     * @throws {AuthTokenException} If unable to obtain valid token
+     * @throws {AuthTokenException} If no access token is available
+     * @throws {SessionExpiredException} If the session has expired and refresh was rejected
+     * Note: If refresh fails due to network error, returns the current token anyway
      */
     const getAccessToken = useCallback(async (): Promise<string> => {
         const accessToken = accessTokenRef.current;
@@ -249,12 +254,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const expiresAt = new Date(accessExpiresAt);
         const now = new Date();
 
-        // If token expires in less than 60 seconds, refresh it
+        // If token expires in less than 60 seconds, try to refresh it
         if (expiresAt.getTime() - now.getTime() < 60000) {
-            const success = await refreshAccessToken();
-            if (!success) {
-                throw new AuthTokenException('Failed to refresh access token');
+            try {
+                await refreshAccessToken();
+            } catch (error) {
+                // Re-throw SessionExpiredException - user needs to re-authenticate
+                if (error instanceof SessionExpiredException) {
+                    throw error;
+                }
+                // For other errors, log and continue with current token
+                console.error('Unexpected error during token refresh:', error);
             }
+            // Note: If refreshAccessToken returns false (network error),
+            // we continue with the current token and let the API call fail
+            // with a proper network error if needed
         }
 
         return accessTokenRef.current;
@@ -288,14 +302,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 if (response.ok) {
                     const data = await response.json();
                     storeTokens(data);
-
-                    // Store user_id if available (you might need to decode or get from backend)
-                    // For now assuming it's in the response or will be fetched separately
                     localStorage.setItem('user_id', data.user_id || '');
                     setUserId(data.user_id || null);
-
-                    // Schedule automatic token refresh
-                    scheduleTokenRefresh();
 
                     return { result: AuthResult.SUCCESS };
                 } else {
@@ -399,8 +407,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 isAdmin,
                 isEntryManager,
                 isLoading,
-                setTokensDirectly, // For admin simulate session feature
-                tokenVersion, // Expose version for dependent components
+                setTokensDirectly,
+                tokenVersion,
                 basePath,
                 setBasePath,
             }}
@@ -409,3 +417,5 @@ export function AuthProvider({ children }: AuthProviderProps) {
         </AuthContext.Provider>
     );
 }
+
+export { AuthContext };

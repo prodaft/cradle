@@ -39,12 +39,12 @@ export default function EnrichmentRequests() {
     const [sortField, setSortField] = useState(
         searchParams.get('sort_field') || 'created_at',
     );
-    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-        (searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc',
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>((searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc',
     );
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('pagesize')) || 25,
     );
+    const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
 
     // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -227,6 +227,56 @@ export default function EnrichmentRequests() {
         });
     };
 
+    const handleDeleteSelected = async () => {
+        if (selectedRequests.length === 0) return;
+
+        try {
+            // Delete all selected requests
+            await Promise.all(
+                selectedRequests.map((id) =>
+                    intelioApi.enrichmentDetailDelete({ id: id })
+                )
+            );
+
+            notify({
+                type: 'success',
+                text: `Deleted ${selectedRequests.length} enrichment request(s)`,
+            });
+            setSelectedRequests([]);
+            fetchEnrichmentRequests();
+        } catch (error: any) {
+            notify({
+                type: 'error',
+                text: `Error deleting enrichment requests: ${error.message}`,
+            });
+        }
+    };
+
+    const handleRetrySelected = async () => {
+        if (selectedRequests.length === 0) return;
+
+        try {
+            // Retry all selected requests
+            await Promise.all(
+                selectedRequests.map((id) =>
+                    intelioApi.enrichmentRestart({ id: id })
+                )
+            );
+
+            notify({
+                type: 'success',
+                text: `Retried ${selectedRequests.length} enrichment request(s)`,
+            });
+            setSelectedRequests([]);
+            fetchEnrichmentRequests();
+        } catch (error: any) {
+            notify({
+                type: 'error',
+                text: `Error retrying enrichment requests: ${error.message}`,
+            });
+        }
+    };
+
     return (
         <div className='w-full h-full'>
             {/* Page Header */}
@@ -267,6 +317,10 @@ export default function EnrichmentRequests() {
                     searchFilters={searchFilters}
                     onSearchChange={handleSearchChange}
                     onSearchSubmit={handleSearchSubmit}
+                    selectedRequests={selectedRequests}
+                    setSelectedRequests={setSelectedRequests}
+                    onDeleteSelected={handleDeleteSelected}
+                    onRetrySelected={handleRetrySelected}
                 />
             </div>
         </div>

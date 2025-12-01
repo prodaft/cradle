@@ -73,7 +73,7 @@ export default function AdminPanel() {
                     }),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayEntryTypes = async () => {
@@ -96,7 +96,7 @@ export default function AdminPanel() {
                     ),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayUsers = async () => {
@@ -114,7 +114,7 @@ export default function AdminPanel() {
                     )),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayMappingTypes = async () => {
@@ -135,7 +135,7 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayEnrichmentTypes = async () => {
@@ -156,7 +156,7 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     useEffect(() => {
@@ -264,7 +264,7 @@ export default function AdminPanel() {
                                         title='Type Mappings'
                                         addEnabled={false}
                                         addTooltipText=''
-                                        handleAdd={() => {}}
+                                        handleAdd={() => { }}
                                         isLoading={mappingTypes === null}
                                     >
                                         {mappingTypes}
@@ -314,7 +314,7 @@ export default function AdminPanel() {
                                             title='Enrichment'
                                             addEnabled={false}
                                             addTooltipText=''
-                                            handleAdd={() => {}}
+                                            handleAdd={() => { }}
                                             isLoading={enrichmentTypes === null}
                                         >
                                             {enrichmentTypes}
@@ -327,7 +327,7 @@ export default function AdminPanel() {
                                             title='Management'
                                             addEnabled={false}
                                             addTooltipText=''
-                                            handleAdd={() => {}}
+                                            handleAdd={() => { }}
                                             isLoading={false}
                                         >
                                             {[

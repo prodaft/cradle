@@ -1,3 +1,4 @@
+import { ApiContext } from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import {
     AccessApi,
@@ -17,32 +18,7 @@ import {
     UsersApi,
 } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
-import { createContext, ReactNode, useMemo } from 'react';
-
-interface ApiContextValue {
-    accessApi: AccessApi;
-    entriesApi: EntriesApi;
-    fileTransferApi: FileTransferApi;
-    fleetingNotesApi: FleetingNotesApi;
-    intelioApi: IntelioApi;
-    knowledgeGraphApi: KnowledgeGraphApi;
-    logsApi: LogsApi;
-    lspApi: LspApi;
-    managementApi: ManagementApi;
-    notesApi: NotesApi;
-    notificationsApi: NotificationsApi;
-    queryApi: QueryApi;
-    reportsApi: ReportsApi;
-    statisticsApi: StatisticsApi;
-    usersApi: UsersApi;
-    basePath: string;
-    setBasePath: (path: string) => void;
-}
-
-/**
- * ApiContext - provides access to all API instances
- */
-export const ApiContext = createContext<ApiContextValue | undefined>(undefined);
+import { ReactNode, useMemo } from 'react';
 
 interface ApiProviderProps {
     children: ReactNode;
@@ -62,14 +38,14 @@ export function ApiProvider({ children }: ApiProviderProps) {
             basePath: basePath,
             accessToken: isLoggedIn()
                 ? async () => {
-                      try {
-                          const token = await getAccessToken();
-                          return token || '';
-                      } catch (error) {
-                          console.error('Failed to get access token:', error);
-                          return '';
-                      }
-                  }
+                    try {
+                        const token = await getAccessToken();
+                        return token || '';
+                    } catch (error) {
+                        console.error('Failed to get access token:', error);
+                        return '';
+                    }
+                }
                 : undefined,
             headers: {
                 'Content-Type': 'application/json',

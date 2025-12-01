@@ -58,8 +58,12 @@ import {
     PaginatedEnrichmentRequestListSerializerResponseToJSON,
 } from '../models/index';
 
+export interface EnrichmentDetailDeleteRequest {
+    id: number;
+}
+
 export interface EnrichmentDetailRetrieveRequest {
-    id: string;
+    id: number;
 }
 
 export interface EnrichmentRelationsRetrieveRequest {
@@ -83,6 +87,10 @@ export interface EnrichmentRequestListRequest {
     pageSize?: number;
     title?: string;
     userUsername?: string;
+}
+
+export interface EnrichmentRestartRequest {
+    id: number;
 }
 
 export interface EnrichmentSettingsRetrieveRequest {
@@ -138,6 +146,52 @@ export interface MappingsSchemaListRequest {
  * 
  */
 export class IntelioApi extends runtime.BaseAPI {
+
+    /**
+     * Delete a specific enrichment request. Only the owner or staff can delete an enrichment request.
+     * Delete enrichment request
+     */
+    async enrichmentDetailDeleteRaw(requestParameters: EnrichmentDetailDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling enrichmentDetailDelete().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/intelio/enrich/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete a specific enrichment request. Only the owner or staff can delete an enrichment request.
+     * Delete enrichment request
+     */
+    async enrichmentDetailDelete(requestParameters: EnrichmentDetailDeleteRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
+        await this.enrichmentDetailDeleteRaw(requestParameters, initOverrides);
+    }
 
     /**
      * Retrieve detailed information about a specific enrichment request including enricher types, entries requested, warnings, and errors.
@@ -370,6 +424,53 @@ export class IntelioApi extends runtime.BaseAPI {
      */
     async enrichmentRequestList(requestParameters: EnrichmentRequestListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedEnrichmentRequestListSerializerResponse> {
         const response = await this.enrichmentRequestListRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or staff can restart an enrichment request.
+     * Restart enrichment request
+     */
+    async enrichmentRestartRaw(requestParameters: EnrichmentRestartRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<EnrichmentRequestDetail>> {
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling enrichmentRestart().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/intelio/enrich/{id}/restart/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => EnrichmentRequestDetailFromJSON(jsonValue));
+    }
+
+    /**
+     * Restart a specific enrichment request by resetting its status and rerunning the enrichment process. Only the owner or staff can restart an enrichment request.
+     * Restart enrichment request
+     */
+    async enrichmentRestart(requestParameters: EnrichmentRestartRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<EnrichmentRequestDetail> {
+        const response = await this.enrichmentRestartRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

@@ -59,9 +59,8 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                 <input
                     ref={ref}
                     type={type}
-                    className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${
-                        hasError ? 'border-red-500 focus:ring-red-500' : ''
-                    } ${className || ''}`}
+                    className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${hasError ? 'border-red-500 focus:ring-red-500' : ''
+                        } ${className || ''}`}
                     aria-invalid={hasError}
                     aria-describedby={hasError ? `${props.name}-error` : undefined}
                     {...props}
@@ -86,9 +85,8 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                     <input
                         ref={ref}
                         type={type === 'radio' ? 'radio' : 'checkbox'}
-                        className={`${type} ${
-                            hasError ? 'border-red-500' : ''
-                        } ${className || ''}`}
+                        className={`${hasError ? 'border-red-500' : ''
+                            } ${className || ''}`}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${props.name}-error` : undefined}
                         {...props}
@@ -117,9 +115,8 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
     return (
         <div className='w-full'>
             <label
-                className={`flex ${
-                    row ? 'flex-row items-center' : 'flex-col'
-                } justify-between w-full gap-2`}
+                className={`flex ${row ? 'flex-row items-center' : 'flex-col'
+                    } justify-between w-full gap-2`}
             >
                 <span className='cradle-label cradle-text-tertiary'>
                     {label}
@@ -129,9 +126,8 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                     <input
                         ref={ref}
                         type={type}
-                        className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${
-                            hasError ? 'border-red-500 focus:ring-red-500' : ''
-                        } ${className || ''}`}
+                        className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${hasError ? 'border-red-500 focus:ring-red-500' : ''
+                            } ${className || ''}`}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${props.name}-error` : undefined}
                         {...props}

@@ -69,8 +69,10 @@ export class CradleLinkWidget extends WidgetType {
         const linkSpan = document.createElement('span');
         const displayName = this.alias || this.name;
         const url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
+        const a = document.createElement('a');
+        a.href = `/#${url}`;
 
-        linkSpan.textContent = displayName;
+        a.textContent = displayName;
         linkSpan.style.color = this.color || '#FF8C00';
         linkSpan.style.cursor = 'pointer';
         linkSpan.style.textDecoration = 'underline';
@@ -78,6 +80,7 @@ export class CradleLinkWidget extends WidgetType {
         linkSpan.setAttribute('data-link-url', url);
         linkSpan.setAttribute('data-link-full-text', this.fullText);
         linkSpan.className = 'cradle-link-widget';
+        linkSpan.appendChild(a);
 
         linkSpan.addEventListener('click', (e) => {
             e.preventDefault();

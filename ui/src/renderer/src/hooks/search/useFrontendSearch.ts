@@ -9,7 +9,7 @@ import { ReactElement, useEffect, useState } from 'react';
  */
 interface SearchableChild extends ReactElement {
     props: {
-        searchKey: string;
+        searchKey?: string;
         [key: string]: any;
     };
 }
@@ -48,9 +48,10 @@ export const useFrontendSearch = (
         if (searchVal === '') {
             setFilteredChildren(children);
         } else {
-            const filtered = children.filter((child) =>
-                child.props.searchKey.toLowerCase().includes(searchVal.toLowerCase()),
-            );
+            const filtered = children.filter((child) => {
+                console.log(child.props);
+                return (child.props.searchKey || child.props.name || child.props.key || child.props.id || '').toString().toLowerCase().includes(searchVal.toLowerCase());
+            });
             setFilteredChildren(filtered);
         }
     }, [searchVal, children]);

@@ -12,29 +12,24 @@ export function createCradleTheme(isDarkMode: boolean) {
             },
             '.cm-content': {
                 color: 'var(--cradle-text-primary)',
-                /* === COLORS === */
-                /* Primary / formatting colors */
                 '--pm-header-mark-color': 'var(--cradle-accent-primary)',
                 '--pm-link-color': 'var(--cradle-accent-primary)',
                 '--pm-muted-color': 'var(--cradle-text-tertiary)',
                 '--pm-cursor-color': isDarkMode ? 'white' : 'black',
 
-                /* Code */
                 '--pm-code-background-color': isDarkMode
-                    ? 'var(--cradle-bg-tertiary)' // purrmd-inline-code-bg-color
+                    ? 'var(--cradle-bg-tertiary)'
                     : 'var(--cradle-bg-secondary)',
                 '--pm-code-btn-background-color': isDarkMode
-                    ? 'var(--cradle-bg-secondary)' // code-block-bg-color
+                    ? 'var(--cradle-bg-secondary)'
                     : 'var(--cradle-bg-tertiary)',
                 '--pm-code-btn-hover-background-color': isDarkMode
                     ? 'rgba(255, 140, 0, 0.1)'
                     : 'rgba(255, 140, 0, 0.08)',
 
-                /* Blockquote */
                 '--pm-blockquote-vertical-line-background-color':
                     'var(--cradle-accent-primary)',
 
-                /* Syntax highlight */
                 '--pm-syntax-keyword': 'var(--cradle-accent-primary)',
                 '--pm-syntax-link': 'var(--cradle-accent-primary)',
                 '--pm-syntax-string': 'var(--cradle-text-primary)',

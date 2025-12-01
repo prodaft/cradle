@@ -2,7 +2,6 @@
  * Hook for accessing API client instances
  */
 
-import { ApiContext } from '@/contexts/api/ApiProvider';
 import type {
     AccessApi,
     EntriesApi,
@@ -20,7 +19,7 @@ import type {
     StatisticsApi,
     UsersApi,
 } from '@services/cradle/apis';
-import { useContext } from 'react';
+import { createContext, useContext } from 'react';
 
 /**
  * API context value containing all API instances
@@ -41,7 +40,14 @@ export interface ApiContextValue {
     reportsApi: ReportsApi;
     statisticsApi: StatisticsApi;
     usersApi: UsersApi;
+    basePath: string;
+    setBasePath: (path: string) => void;
 }
+
+/**
+ * ApiContext - provides access to all API instances
+ */
+export const ApiContext = createContext<ApiContextValue | undefined>(undefined);
 
 /**
  * Hook to use the ApiContext

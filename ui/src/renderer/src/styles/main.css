@@ -118,7 +118,7 @@ h6:hover .header-anchor-icon {
 /* Input Components */
 .input,
 .form-input,
-input[type='text'],
+:where(body):not(:has(#CosmographSearch *)) input[type='text'],
 input[type='email'],
 input[type='password'] {
     @apply cradle-input;

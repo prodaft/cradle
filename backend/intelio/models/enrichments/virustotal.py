@@ -1,11 +1,14 @@
 # Ported from IntelOwl: https://github.com/intelowlproject/IntelOwl
 
 from typing import Optional
-from django.db import models
-from entries.models import Entry, Relation
-from entries.enums import RelationReason
-from ..base import BaseEnricher
+
 import requests
+from django.db import models
+
+from entries.enums import RelationReason
+from entries.models import Entry, Relation
+
+from ..base import BaseEnricher
 
 
 class VirusTotalEnricher(BaseEnricher):
