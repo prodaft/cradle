@@ -158,8 +158,8 @@ SPECTACULAR_SETTINGS = {
 
 SIMPLE_JWT = {
     "TOKEN_OBTAIN_SERIALIZER": "user.serializers.TokenObtainSerializer",
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
     "ROTATE_REFRESH_TOKENS": True,
 }
 

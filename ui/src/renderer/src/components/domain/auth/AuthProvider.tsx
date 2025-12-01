@@ -254,21 +254,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const expiresAt = new Date(accessExpiresAt);
         const now = new Date();
 
-        // If token expires in less than 60 seconds, try to refresh it
         if (expiresAt.getTime() - now.getTime() < 60000) {
             try {
                 await refreshAccessToken();
             } catch (error) {
-                // Re-throw SessionExpiredException - user needs to re-authenticate
                 if (error instanceof SessionExpiredException) {
+                    clearTokens();
                     throw error;
                 }
-                // For other errors, log and continue with current token
                 console.error('Unexpected error during token refresh:', error);
             }
-            // Note: If refreshAccessToken returns false (network error),
-            // we continue with the current token and let the API call fail
-            // with a proper network error if needed
         }
 
         return accessTokenRef.current;

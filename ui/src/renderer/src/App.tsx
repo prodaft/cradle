@@ -69,9 +69,9 @@ function App() {
         <HashRouter>
             <AuthProvider>
                 <ApiProvider>
-                    <ProfileProvider>
-                        <ThemeProvider>
-                            <NotificationProvider>
+                    <NotificationProvider>
+                        <ProfileProvider>
+                            <ThemeProvider>
                                 <TooltipProvider>
                                     <RouteConfigProvider>
                                         <TabHostProvider>
@@ -252,9 +252,9 @@ function App() {
                                         </TabHostProvider>
                                     </RouteConfigProvider>
                                 </TooltipProvider>
-                            </NotificationProvider>
-                        </ThemeProvider>
-                    </ProfileProvider>
+                            </ThemeProvider>
+                        </ProfileProvider>
+                    </NotificationProvider>
                 </ApiProvider>
             </AuthProvider>
         </HashRouter>

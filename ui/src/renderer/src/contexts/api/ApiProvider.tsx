@@ -38,14 +38,9 @@ export function ApiProvider({ children }: ApiProviderProps) {
             basePath: basePath,
             accessToken: isLoggedIn()
                 ? async () => {
-                      try {
-                          const token = await getAccessToken();
-                          return token || '';
-                      } catch (error) {
-                          console.error('Failed to get access token:', error);
-                          return '';
-                      }
-                  }
+                    const token = await getAccessToken();
+                    return token;
+                }
                 : undefined,
             headers: {
                 'Content-Type': 'application/json',

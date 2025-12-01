@@ -3,6 +3,7 @@
  * Manages user profile state and role-based permissions
  */
 
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import type { Profile } from '@/types/index';
@@ -47,43 +48,42 @@ export interface ProfileProviderProps {
  */
 function ProfileProvider({ children }: ProfileProviderProps): JSX.Element {
     const [profile, setProfile] = useState<ExtendedProfile | null>(null);
+    const { execute } = useAPICall();
     const { usersApi } = useApi();
     const auth = useAuth();
 
     const getUserProfile = async (): Promise<void> => {
-        try {
-            const user = await usersApi.usersRetrieve({ userId: 'me' });
-            if (user) {
-                setProfile(user as ExtendedProfile);
-            } else {
-                setProfile(null); // Clear profile if no data is returned
-            }
+        const user = await execute(() => usersApi.usersRetrieve({ userId: 'me' }), {
+            errorMessage: 'Failed to fetch user profile',
+        });
+        if (user) {
+            setProfile(user as ExtendedProfile);
+        } else {
+            setProfile(null); // Clear profile if no data is returned
+        }
 
-            const defaultNoteTemplate = await usersApi.usersDefaultNoteTemplateRetrieve(
-                {
-                    userId: 'me',
-                },
-            );
-            if (defaultNoteTemplate && defaultNoteTemplate.template) {
-                // Assuming the default note template is stored in the profile
-                setProfile((prevProfile) => {
-                    if (!prevProfile) return null;
-                    return {
-                        ...prevProfile,
-                        defaultNoteTemplate: defaultNoteTemplate.template || undefined,
-                    };
-                });
-            } else {
-                setProfile((prevProfile) => {
-                    if (!prevProfile) return null;
-                    return {
-                        ...prevProfile,
-                        defaultNoteTemplate: undefined,
-                    };
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching user profile:', error);
+        const defaultNoteTemplate = await execute(() => usersApi.usersDefaultNoteTemplateRetrieve(
+            {
+                userId: 'me',
+            }), { errorMessage: 'Failed to fetch default note template' });
+
+        if (defaultNoteTemplate && defaultNoteTemplate.template) {
+            // Assuming the default note template is stored in the profile
+            setProfile((prevProfile) => {
+                if (!prevProfile) return null;
+                return {
+                    ...prevProfile,
+                    defaultNoteTemplate: defaultNoteTemplate.template || undefined,
+                };
+            });
+        } else {
+            setProfile((prevProfile) => {
+                if (!prevProfile) return null;
+                return {
+                    ...prevProfile,
+                    defaultNoteTemplate: undefined,
+                };
+            });
         }
     };
 

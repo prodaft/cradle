@@ -1,9 +1,9 @@
+import { useAPICall } from '@/hooks';
+import { StatisticsNote } from '@/services/cradle';
 import Logo from '@components/base/Logo/Logo';
-import { useNotif } from '@contexts/ui/NotificationContext';
 import { useProfile } from '@contexts/user/ProfileContext';
 import useApi from '@hooks/api/useApi';
 import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
-import { handleAPIError, parseAPIError } from '@utils/api';
 import { truncateText } from '@utils/dashboard';
 import { formatDate } from '@utils/dates';
 import { parseMarkdownInline } from '@utils/parser/parse';
@@ -23,17 +23,6 @@ interface ItemWithName {
     subtype: string;
 }
 
-interface NoteWithMetadata {
-    id: string;
-    metadata?: {
-        title?: string;
-    };
-    author?: {
-        username?: string;
-    };
-    timestamp: string;
-}
-
 interface RecentItemsCardProps {
     title: string;
     items: ItemWithName[];
@@ -46,10 +35,10 @@ interface RecentItemsCardProps {
 
 interface RecentNotesCardProps {
     title: string;
-    notes: NoteWithMetadata[];
+    notes: StatisticsNote[];
     icon: ReactNode;
     emptyMessage: string;
-    onNoteClick: (note: NoteWithMetadata) => (e: React.MouseEvent) => void;
+    onNoteClick: (note: StatisticsNote) => (e: React.MouseEvent) => void;
     color: string;
     totalCount: number;
 }
@@ -149,7 +138,7 @@ function RecentNotesCard({
                                 <div className='cradle-text-primary font-medium truncate'>
                                     {truncateText(
                                         parseMarkdownInline(
-                                            note.metadata?.title || 'Untitled',
+                                            note.title || 'Untitled',
                                         ),
                                         50,
                                     )}
@@ -182,49 +171,39 @@ function RecentNotesCard({
  * It displays a modern dashboard with quick actions, statistics, and recent activity.
  */
 export default function Welcome() {
-    const { notify } = useNotif();
+    const { execute } = useAPICall();
     const [artifacts, setArtifacts] = useState<ItemWithName[]>([]);
     const [entities, setEntities] = useState<ItemWithName[]>([]);
-    const [notes, setNotes] = useState<NoteWithMetadata[]>([]);
+    const [notes, setNotes] = useState<StatisticsNote[]>([]);
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
     const { fleetingNotesApi, statisticsApi } = useApi();
 
     useEffect(() => {
         (async () => {
-            try {
-                const response = await statisticsApi.statisticsRetrieve();
-                const { artifacts, entities, notes } = response as any;
-                setArtifacts(artifacts || []);
-                setEntities(entities || []);
-                setNotes(notes || []);
-            } catch (error: any) {
-                const parsed = await parseAPIError(error);
-                handleAPIError(parsed, notify, {
-                    message: 'Failed to load statistics',
-                });
-            }
+            const response = await execute(() => statisticsApi.statisticsRetrieve(), {
+                errorMessage: 'Failed to load statistics',
+            });
+            const { artifacts, entities, notes } = response;
+            setArtifacts(artifacts || []);
+            setEntities(entities || []);
+            setNotes(notes || []);
         })();
     }, []);
 
     const handleCreateNewNote = async () => {
-        try {
-            const defaultContent =
-                profile?.defaultNoteTemplate ||
-                '# Untitled\n\nStart writing your note here...';
-            const response = await fleetingNotesApi.fleetingNotesCreate({
-                fleetingNoteRequest: {
-                    content: defaultContent,
-                    files: [],
-                },
-            });
-            navigate(`/notes/${response.id}`);
-        } catch (error: any) {
-            const parsed = await parseAPIError(error);
-            handleAPIError(parsed, notify, {
-                message: 'Failed to create note',
-            });
-        }
+        const defaultContent =
+            profile?.defaultNoteTemplate ||
+            '# Untitled\n\nStart writing your note here...';
+        const response = await execute(() => fleetingNotesApi.fleetingNotesCreate({
+            fleetingNoteRequest: {
+                content: defaultContent,
+                files: [],
+            },
+        }), {
+            errorMessage: 'Failed to create note',
+        });
+        navigate(`/notes/${response.id}`);
     };
 
     const quickActions: QuickAction[] = [

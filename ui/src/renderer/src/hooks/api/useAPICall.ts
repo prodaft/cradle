@@ -105,44 +105,13 @@ export function useAPICall(): UseAPICallReturn {
 
                 return result;
             } catch (err) {
-                // Handle session expiration separately
-                if (err instanceof SessionExpiredException) {
-                    if (!sessionExpiredNotifiedRef.current) {
-                        sessionExpiredNotifiedRef.current = true;
-                        notify({
-                            type: 'error',
-                            text: 'Authentication failed. Please log in again.',
-                            duration: 5000,
-                        });
-                        navigate('/login');
-
-                        setTimeout(() => {
-                            sessionExpiredNotifiedRef.current = false;
-                        }, 1000);
-                    }
-
-                    const parsed: ParsedAPIError = {
-                        code: 'SESSION_EXPIRED',
-                        detail: err.message,
-                        status: 401,
-                        title: 'Session Expired',
-                        instance: 'unknown',
-                        timestamp: new Date().toISOString(),
-                        isValidationError: false,
-                        fieldErrors: {},
-                        raw: err,
-                    };
-
+                const parsed = await handleError(err, options);
+                if (parsed?.code !== 'UNAUTHENTICATED' && parsed?.code !== 'SESSION_EXPIRED') {
                     if (options.onError) {
-                        options.onError(parsed);
+                        options.onError(parsed!);
                     }
-                    throw parsed;
                 }
 
-                let parsed = await handleError(err, options);
-                if (options.onError) {
-                    options.onError(parsed);
-                }
                 throw parsed;
             } finally {
                 setLoading(false);
@@ -179,11 +148,45 @@ export function useAPICall(): UseAPICallReturn {
      */
     const handleError = useCallback(
         async <T = unknown>(err: unknown, options: ExecuteOptions<T>) => {
-            const parsed = await parseAPIError(err);
+            // Handle session expiration separately
+            let parsed: ParsedAPIError | null = null;
+            if (err instanceof SessionExpiredException) {
+                parsed = {
+                    code: 'SESSION_EXPIRED',
+                    detail: err.message,
+                    status: 401,
+                    title: 'Session Expired',
+                    instance: 'unknown',
+                    timestamp: new Date().toISOString(),
+                    isValidationError: false,
+                    fieldErrors: {},
+                    raw: err,
+                };
+            } else {
+                parsed = await parseAPIError(err);
+            }
+
+            if (parsed?.code === 'UNAUTHENTICATED' || parsed?.code === 'SESSION_EXPIRED') {
+                if (!sessionExpiredNotifiedRef.current) {
+                    sessionExpiredNotifiedRef.current = true;
+                    notify({
+                        type: 'error',
+                        text: 'Authentication failed. Please log in again.',
+                        duration: 3000,
+                    });
+                    navigate('/login');
+
+                    setTimeout(() => {
+                        sessionExpiredNotifiedRef.current = false;
+                    }, 5000);
+                }
+                return parsed;
+            }
+
 
             // Only notify if not suppressed
             if (!options.suppressNotification) {
-                handleAPIError(parsed, notify, {
+                handleAPIError(parsed!, notify, {
                     message: options.errorMessage,
                     duration: options.duration,
                 });
@@ -191,7 +194,7 @@ export function useAPICall(): UseAPICallReturn {
 
             // Optional error callback
             if (options.onError) {
-                options.onError(parsed);
+                options.onError(parsed!);
             }
 
             return parsed;
