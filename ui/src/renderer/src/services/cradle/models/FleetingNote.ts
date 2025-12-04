@@ -39,7 +39,7 @@ export interface FleetingNote {
      * @type {string}
      * @memberof FleetingNote
      */
-    content: string;
+    content?: string;
     /**
      * 
      * @type {Date}
@@ -76,7 +76,6 @@ export interface FleetingNote {
  * Check if a given object implements the FleetingNote interface.
  */
 export function instanceOfFleetingNote(value: object): value is FleetingNote {
-    if (!('content' in value) || value['content'] === undefined) return false;
     return true;
 }
 
@@ -91,7 +90,7 @@ export function FleetingNoteFromJSONTyped(json: any, ignoreDiscriminator: boolea
     return {
         
         'id': json['id'] == null ? undefined : json['id'],
-        'content': json['content'],
+        'content': json['content'] == null ? undefined : json['content'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
         'files': json['files'] == null ? undefined : ((json['files'] as Array<any>).map(FileReferenceFromJSON)),
         'title': json['title'] == null ? undefined : json['title'],

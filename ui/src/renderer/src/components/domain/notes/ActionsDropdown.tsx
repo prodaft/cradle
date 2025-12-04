@@ -1,6 +1,6 @@
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import { TreeView } from '@phosphor-icons/react';
-import { Check, CloudUpload, MoreVert, RefreshCircle } from 'iconoir-react';
+import { Check, CloudUpload, MoreVert, RefreshCircle, StatsReport } from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
 import { ViewMode } from './constants';
 
@@ -20,6 +20,7 @@ interface ActionsDropdownProps {
     saving: boolean;
     handlePublish: () => void;
     handleDelete: () => void;
+    handleUploadFiles: () => void;
 }
 
 /**
@@ -41,6 +42,7 @@ export default function ActionsDropdown({
     saving,
     handlePublish,
     handleDelete,
+    handleUploadFiles,
 }: ActionsDropdownProps) {
     return (
         <div className='relative'>
@@ -121,9 +123,10 @@ export default function ActionsDropdown({
                             <button
                                 onClick={() => {
                                     setShowActionsMenu(false);
+                                    handleUploadFiles();
                                 }}
                                 className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                data-testid='upload-files-menu-item'
+                                data-testid='manage-files-menu-item'
                             >
                                 <CloudUpload width='16' height='16' />
                                 <span className='flex-1'>Upload Files</span>
@@ -152,7 +155,7 @@ export default function ActionsDropdown({
                                 className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
                                 data-testid='publish-menu-item'
                             >
-                                <CloudUpload width='16' height='16' />
+                                <StatsReport width='16' height='16' />
                                 <span className='flex-1'>Publish</span>
                             </button>
                             <button

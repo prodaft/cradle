@@ -33,7 +33,7 @@ export interface FleetingNoteRequest {
      * @type {string}
      * @memberof FleetingNoteRequest
      */
-    content: string;
+    content?: string;
     /**
      * 
      * @type {Array<FileReferenceRequest>}
@@ -58,7 +58,6 @@ export interface FleetingNoteRequest {
  * Check if a given object implements the FleetingNoteRequest interface.
  */
 export function instanceOfFleetingNoteRequest(value: object): value is FleetingNoteRequest {
-    if (!('content' in value) || value['content'] === undefined) return false;
     return true;
 }
 
@@ -72,7 +71,7 @@ export function FleetingNoteRequestFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
-        'content': json['content'],
+        'content': json['content'] == null ? undefined : json['content'],
         'files': json['files'] == null ? undefined : ((json['files'] as Array<any>).map(FileReferenceRequestFromJSON)),
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],

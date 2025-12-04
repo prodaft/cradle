@@ -3,7 +3,7 @@
  * Manages user profile state and role-based permissions
  */
 
-import { useAPICall } from '@/hooks';
+import { useAPICall } from '@/hooks/api/useAPICall';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import type { Profile } from '@/types/index';

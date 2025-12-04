@@ -35,7 +35,7 @@ import {
 } from '../models/index';
 
 export interface FleetingNotesCreateRequest {
-    fleetingNoteRequest: FleetingNoteRequest;
+    fleetingNoteRequest?: FleetingNoteRequest;
 }
 
 export interface FleetingNotesDestroyRequest {
@@ -52,7 +52,7 @@ export interface FleetingNotesRetrieveRequest {
 
 export interface FleetingNotesUpdateRequest {
     id: string;
-    fleetingNoteRequest: FleetingNoteRequest;
+    fleetingNoteRequest?: FleetingNoteRequest;
 }
 
 /**
@@ -65,13 +65,6 @@ export class FleetingNotesApi extends runtime.BaseAPI {
      * Create fleeting note
      */
     async fleetingNotesCreateRaw(requestParameters: FleetingNotesCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FleetingNote>> {
-        if (requestParameters['fleetingNoteRequest'] == null) {
-            throw new runtime.RequiredError(
-                'fleetingNoteRequest',
-                'Required parameter "fleetingNoteRequest" was null or undefined when calling fleetingNotesCreate().'
-            );
-        }
-
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -104,7 +97,7 @@ export class FleetingNotesApi extends runtime.BaseAPI {
      * Creates a new fleeting note for the authenticated user.
      * Create fleeting note
      */
-    async fleetingNotesCreate(requestParameters: FleetingNotesCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FleetingNote> {
+    async fleetingNotesCreate(requestParameters: FleetingNotesCreateRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FleetingNote> {
         const response = await this.fleetingNotesCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -302,13 +295,6 @@ export class FleetingNotesApi extends runtime.BaseAPI {
             throw new runtime.RequiredError(
                 'id',
                 'Required parameter "id" was null or undefined when calling fleetingNotesUpdate().'
-            );
-        }
-
-        if (requestParameters['fleetingNoteRequest'] == null) {
-            throw new runtime.RequiredError(
-                'fleetingNoteRequest',
-                'Required parameter "fleetingNoteRequest" was null or undefined when calling fleetingNotesUpdate().'
             );
         }
 

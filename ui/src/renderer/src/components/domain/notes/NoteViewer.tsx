@@ -31,6 +31,7 @@ import StatusIndicators from './StatusIndicators';
 import ViewsDropdown from './ViewsDropdown';
 
 import Tooltip from '@/components/base/Tooltip/Tooltip';
+import FileUploadModal from '@/components/modals/notes/FileUploadModal';
 import { EditPencil, Eye } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
@@ -142,7 +143,7 @@ export default function NoteViewer() {
                 return;
             }
 
-            const doc = view.state;
+            const doc = view.selection.main.to;
             let to = doc.selection.main.to;
             let from = doc.selection.main.from;
             let content = doc.doc.toString();
@@ -225,6 +226,7 @@ export default function NoteViewer() {
 
         execute(() => loadNote())
             .then((responseNote) => {
+                console.log('NoteViewer - Note loaded successfully:', responseNote);
                 setNote(responseNote);
                 setMarkdownContent(responseNote.content);
                 setInitialMarkdown(responseNote.content);
@@ -398,6 +400,35 @@ export default function NoteViewer() {
         });
     }, [handleDelete, setModal]);
 
+    const handleFilesChange = useCallback((files: FileReferenceWithNote[]) => {
+        (async () => {
+            if (isFleeting) {
+                await execute(() => fleetingNotesApi.fleetingNotesUpdate({
+                    id,
+                    fleetingNoteRequest: {
+                        files: files,
+                    },
+                }));
+            } else {
+                await execute(() => notesApi.notesUpdate({
+                    noteId: id,
+                    noteEditRequest: {
+                        files: files,
+                    },
+                }));
+            }
+        })();
+
+        setFileData(files);
+    }, [setFileData, isFleeting]);
+
+    const handleUploadFiles = useCallback((filesList?: any[]) => {
+        setModal(FileUploadModal, {
+            files: fileData,
+            onFilesChange: handleFilesChange,
+        });
+    }, [fileData, setFileData, setModal]);
+
     const debouncedSaveNote = useMemo(
         () => debounce(handleSaveNote, 1500),
         [handleSaveNote],
@@ -517,10 +548,7 @@ export default function NoteViewer() {
                                     setRichEditor={setRichEditor}
                                     isAdmin={isAdmin()}
                                     isFleeting={isFleeting}
-                                    hasFiles={
-                                        (note && note.files && note.files.length > 0) ||
-                                        false
-                                    }
+                                    hasFiles={fileData.length > 0}
                                 />
                                 <ActionsDropdown
                                     activeView={activeView}
@@ -538,6 +566,7 @@ export default function NoteViewer() {
                                     saving={saving}
                                     handlePublish={handlePublish}
                                     handleDelete={handleDeleteWithConfirmation}
+                                    handleUploadFiles={handleUploadFiles}
                                 />
                             </>
                         )}
@@ -603,7 +632,7 @@ export default function NoteViewer() {
                                                             setMarkdownContent
                                                         }
                                                         fileData={fileData}
-                                                        setFileData={setFileData}
+                                                        setFileData={handleFilesChange}
                                                         source={!richEditor}
                                                         saveNote={handleSaveNote}
                                                         enableEditing={enableEditing}
@@ -612,9 +641,7 @@ export default function NoteViewer() {
 
                                                 {/* Reference Tree below the editor */}
                                                 {note && (
-                                                    <div className='mt-4'>
-                                                        <ReferenceTree note={note} />
-                                                    </div>
+                                                    <ReferenceTree note={note} className='mt-4' />
                                                 )}
                                             </div>
                                         </Panel>
@@ -630,7 +657,7 @@ export default function NoteViewer() {
                                                 markdownContent={markdownContent}
                                                 setMarkdownContent={setMarkdownContent}
                                                 fileData={fileData}
-                                                setFileData={setFileData}
+                                                setFileData={handleFilesChange}
                                                 source={!richEditor}
                                                 saveNote={handleSaveNote}
                                                 enableEditing={enableEditing}
@@ -640,9 +667,7 @@ export default function NoteViewer() {
 
                                         {/* Reference Tree below the editor */}
                                         {note && (
-                                            <div className='mt-4'>
-                                                <ReferenceTree note={note} />
-                                            </div>
+                                            <ReferenceTree note={note} className='mt-4' />
                                         )}
                                     </div>
                                 )}

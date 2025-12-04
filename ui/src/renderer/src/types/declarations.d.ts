@@ -128,6 +128,8 @@ declare module 'iconoir-react' {
     export const Edit: ComponentType<SVGProps<SVGSVGElement>>;
     export const EditPencil: ComponentType<SVGProps<SVGSVGElement>>;
     export const Eye: ComponentType<SVGProps<SVGSVGElement>>;
+    export const StatsReport: ComponentType<SVGProps<SVGSVGElement>>;
+    export const Box: ComponentType<SVGProps<SVGSVGElement>>;
     export const EyeClosed: ComponentType<SVGProps<SVGSVGElement>>;
     export const PlusCircle: ComponentType<SVGProps<SVGSVGElement>>;
     export const RefreshCircle: ComponentType<SVGProps<SVGSVGElement>>;

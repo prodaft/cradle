@@ -11,7 +11,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from notes.models import Note
 from notes.serializers import (
     FleetingNoteRetrieveSerializer,
@@ -20,9 +24,10 @@ from notes.serializers import (
     NoteRetrieveSerializer,
 )
 from user.models import CradleUser
+
 from .exceptions import (
-    FleetingNoteNotFoundException,
     EmptyContentException,
+    FleetingNoteNotFoundException,
     FleetingNotesErrorCodes,
 )
 
@@ -142,7 +147,7 @@ class FleetingNotesList(APIView):
             200: FleetingNoteSerializer,
             **get_error_responses(
                 FleetingNotesErrorCodes.EMPTY_CONTENT,
-                FleetingNotesErrorCodes.FLEETING_NOTE_NOT_FOUND
+                FleetingNotesErrorCodes.FLEETING_NOTE_NOT_FOUND,
             ),
             **get_validation_error_response(),
             **get_common_error_responses(),
@@ -193,7 +198,9 @@ class FleetingNotesDetail(APIView):
                 pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
-            raise FleetingNoteNotFoundException(detail="The fleeting note does not exist")
+            raise FleetingNoteNotFoundException(
+                detail="The fleeting note does not exist"
+            )
 
         serializer = FleetingNoteSerializer(note)
         return Response(serializer.data)
@@ -219,7 +226,7 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the fleeting note entry
         """
         data = request.data
-        if "content" not in data or not data.get("content"):
+        if "content" in data and not data.get("content"):
             raise EmptyContentException(detail="Content cannot be empty")
 
         try:
@@ -315,7 +322,9 @@ class FleetingNotesFinal(APIView):
                 pk=id, author=cast(CradleUser, request.user)
             )
         except Note.DoesNotExist:
-            raise FleetingNoteNotFoundException(detail="The fleeting note does not exist")
+            raise FleetingNoteNotFoundException(
+                detail="The fleeting note does not exist"
+            )
 
         if isinstance(request.data, QueryDict):
             request.data._mutable = True

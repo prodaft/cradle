@@ -1,5 +1,5 @@
 import { Graph } from '@phosphor-icons/react';
-import { Check, ClockRotateRight, Code, Page } from 'iconoir-react';
+import { Box, Check, ClockRotateRight, Code, Page } from 'iconoir-react';
 import Tooltip from '../../base/Tooltip/Tooltip';
 import { ViewMode } from './constants';
 
@@ -45,6 +45,7 @@ export default function ViewsDropdown({
         if (activeView === ViewMode.GRAPH) return <Graph width='16' height='16' />;
         if (activeView === ViewMode.HISTORY)
             return <ClockRotateRight width='16' height='16' />;
+        if (activeView === ViewMode.FILES) return <Box width='16' height='16' />;
         return null;
     };
 
@@ -97,7 +98,7 @@ export default function ViewsDropdown({
                                     <Check width='16' height='16' />
                                 )}
                             </button>
-                            {isFleeting && (<>
+                            {!isFleeting && (<>
                                 <button
                                     onClick={() => {
                                         setShowViewsMenu(false);
@@ -128,22 +129,23 @@ export default function ViewsDropdown({
                                         )}
                                     </button>
                                 )}
-                                {hasFiles && (
-                                    <button
-                                        onClick={() => {
-                                            setShowViewsMenu(false);
-                                            setActiveView(ViewMode.FILES);
-                                        }}
-                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                        data-testid='files-view-menu-item'
-                                    >
-                                        <span className='flex-1'>Files</span>
-                                        {activeView === ViewMode.FILES && (
-                                            <Check width='16' height='16' />
-                                        )}
-                                    </button>
-                                )}
                             </>
+                            )}
+                            {hasFiles && (
+                                <button
+                                    onClick={() => {
+                                        setShowViewsMenu(false);
+                                        setActiveView(ViewMode.FILES);
+                                    }}
+                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    data-testid='files-view-menu-item'
+                                >
+                                    <Box width='16' height='16' />
+                                    <span className='flex-1'>Files</span>
+                                    {activeView === ViewMode.FILES && (
+                                        <Check width='16' height='16' />
+                                    )}
+                                </button>
                             )}
                         </div>
                     </div>

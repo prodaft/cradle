@@ -527,6 +527,7 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
     """
 
     files = FileReferenceSerializer(many=True, required=False)
+    content = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = Note

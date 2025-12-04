@@ -1,3 +1,5 @@
+import { ConfirmDeletionModal } from '@/components/modals';
+import { useModal } from '@/contexts';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useAuth from '@/hooks/auth/useAuth';
 import type { FileReference, StateSetter } from '@/types';
@@ -33,6 +35,7 @@ export default function FileTable({
 }: FileTableProps) {
     const { executor } = useAPICall();
     const { basePath } = useAuth();
+    const { setModal } = useModal();
 
     // Pre-configured clipboard copy with automatic error/success handling
     const copyToClipboard = executor(
@@ -44,6 +47,7 @@ export default function FileTable({
 
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (data: FileReference) => {
+        console.log('handleDelete', data);
         setFileData(fileData.filter((d) => d.minioFileName !== data.minioFileName));
         const minioCache = JSON.parse(localStorage.getItem('minio-cache') || '{}');
         if (minioCache) {
@@ -65,7 +69,7 @@ export default function FileTable({
 
     return (
         <>
-            <div className='w-full h-full mx-auto p-2 bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
+            <div className='w-full h-full mx-auto bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
                 <div className='overflow-x-auto'>
                     <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>
                         {(!fileData || fileData.length === 0) && (
@@ -146,7 +150,12 @@ export default function FileTable({
                                                     id={`delete-${index}`}
                                                     data-testid={`delete-${index}`}
                                                     className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
-                                                    onClick={() => handleDelete(data)}
+                                                    onClick={() => {
+                                                        setModal(ConfirmDeletionModal, {
+                                                            text: 'Are you sure you want to delete this file?',
+                                                            onConfirm: () => handleDelete(data),
+                                                        });
+                                                    }}
                                                 >
                                                     <Trash width='20px' />
                                                 </button>

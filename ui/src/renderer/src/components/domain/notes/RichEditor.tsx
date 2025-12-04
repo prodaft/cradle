@@ -374,7 +374,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             {fileData && fileData.length > 0 && (
                 <div className='max-h-[25%] rounded-md flex flex-col justify-end z-30'>
                     <div
-                        className='bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] my-1 rounded-md hover:cursor-pointer flex flex-row space-x-2'
+                        className='bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] mt-1 hover:cursor-pointer flex flex-row space-x-2'
                         onClick={toggleFileList}
                     >
                         <span>
