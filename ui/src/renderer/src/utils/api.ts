@@ -5,6 +5,7 @@
  * All functions are explicit and require manual invocation.
  */
 
+import { FetchError } from '@/services/cradle/runtime';
 import type { NotificationOptions } from '@/types/index';
 
 /**
@@ -56,17 +57,31 @@ export interface Alert {
 export async function parseAPIError(error: any): Promise<ParsedAPIError> {
     // Network error (no response from server)
     if (!error.response) {
-        return {
-            code: 'NETWORK_ERROR',
-            detail: 'Unable to connect to the server. Please check your connection.',
-            status: 0,
-            title: 'Network Error',
-            instance: error.config?.url || 'unknown',
-            timestamp: new Date().toISOString(),
-            isValidationError: false,
-            fieldErrors: {},
-            raw: error,
-        };
+        if (error instanceof FetchError) {
+            return {
+                code: 'NETWORK_ERROR',
+                detail: 'Unable to connect to the server. Please check your connection.',
+                status: 0,
+                title: 'Network Error',
+                instance: 'unknown',
+                timestamp: new Date().toISOString(),
+                isValidationError: false,
+                fieldErrors: {},
+                raw: error,
+            };
+        } else {
+            return {
+                code: 'UNKNOWN_ERROR',
+                detail: 'An unknown error occurred',
+                status: 0,
+                title: 'Unknown Error',
+                instance: 'unknown',
+                timestamp: new Date().toISOString(),
+                isValidationError: false,
+                fieldErrors: {},
+                raw: error,
+            }
+        }
     }
 
     const data: APIErrorResponse = (await error.response.json()) || {};

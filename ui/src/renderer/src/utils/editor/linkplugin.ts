@@ -1,3 +1,4 @@
+import { NavigateOptions } from '@/hooks/navigation/useCradleNavigate';
 import { syntaxTree } from '@codemirror/language';
 import { Diagnostic, forEachDiagnostic } from '@codemirror/lint';
 import { EditorState, Range } from '@codemirror/state';
@@ -12,7 +13,7 @@ export class CradleLinkWidget extends WidgetType {
     name: string;
     alias: string;
     color: string;
-    navigate: (url: string) => void;
+    navigate: (url: string, options?: NavigateOptions) => void;
     fullText: string;
     timestamp: string;
     hasPrefix: boolean;
@@ -22,7 +23,7 @@ export class CradleLinkWidget extends WidgetType {
         name: string,
         alias: string,
         color: string,
-        navigate: (url: string) => void,
+        navigate: (url: string, options?: NavigateOptions) => void,
         fullText: string,
         timestamp: string,
         hasPrefix: boolean,
@@ -85,9 +86,7 @@ export class CradleLinkWidget extends WidgetType {
         linkSpan.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            if (e.ctrlKey || e.metaKey) {
-                this.navigate(url);
-            }
+            this.navigate(url, { event: e as unknown as React.MouseEvent });
         });
 
         linkSpan.addEventListener('mouseenter', () => {
@@ -125,7 +124,7 @@ export class CradleLinkWidget extends WidgetType {
  */
 export function cradleLinksPlugin(
     entryColors: Map<string, string>,
-    navigate: (url: string) => void,
+    navigate: (url: string, options?: NavigateOptions) => void,
     sourceMode: boolean,
 ) {
     return ViewPlugin.fromClass(

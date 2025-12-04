@@ -61,11 +61,7 @@ export default function NoteViewer() {
             ? localStorage.getItem('richEditor') === 'true'
             : true,
     );
-    const [enableEditing, setEnableEditing] = useState(
-        localStorage.getItem('enableEditing')
-            ? localStorage.getItem('enableEditing') === 'true'
-            : true,
-    );
+    const [enableEditing, setEnableEditing] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
     const { setModal } = useModal();
     const { notify } = useNotif();
@@ -184,8 +180,6 @@ export default function NoteViewer() {
 
         // Try to load as regular note first, then fallback to fleeting note if it fails
         const loadNote = async () => {
-            console.log('NoteViewer - Loading note with ID:', id, 'Type:', typeof id);
-
             try {
                 // First try to load as a regular note
                 const responseNote = await execute(() =>
@@ -195,6 +189,7 @@ export default function NoteViewer() {
                 // Check if this is a fleeting note using the fleeting field
                 const isFleetingNote = responseNote.fleeting === true;
                 setIsFleeting(isFleetingNote);
+                setEnableEditing(isFleetingNote);
 
                 // Debug logging
                 console.log('NoteViewer - Note loaded successfully:', {

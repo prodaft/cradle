@@ -133,7 +133,8 @@ export function useAPICall(): UseAPICallReturn {
             apiCall: (...args: any[]) => Promise<T>,
             options: ExecuteOptions<T> = {},
         ) => {
-            return async (...args: any[]): Promise<T> => {
+            return (...args: any[]): Promise<T> => {
+                console.log("EXECUTING", args)
                 return execute(() => apiCall(...args), options);
             };
         },

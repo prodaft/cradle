@@ -15,6 +15,7 @@ import {
     Calendar,
     CheckCircle,
     Clock,
+    Download,
     InfoCircle,
     User,
     WarningCircle,
@@ -22,6 +23,7 @@ import {
 } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { Tab, Tabs } from '../../layout/Tabs/Tabs';
 
 /**
  * EnrichmentResults component - displays enrichment results in a split-pane view
@@ -253,6 +255,48 @@ export default function EnrichmentResults(): JSX.Element {
 
     const enricherWarning = getEnricherWarning();
 
+    // Download results as JSON
+    const handleDownloadResults = () => {
+        if (!results || results.length === 0) return;
+
+        // Format the data according to specifications
+        const formattedData = results.map((result) => {
+            // Build entries array from e1 and e2
+            const entries: Array<{ type: string; name: string }> = [];
+
+            if (result.e1) {
+                entries.push({
+                    type: result.e1.subtype || 'unknown',
+                    name: result.e1.name || '',
+                });
+            }
+
+            if (result.e2) {
+                entries.push({
+                    type: result.e2.subtype || 'unknown',
+                    name: result.e2.name || '',
+                });
+            }
+
+            return {
+                entries,
+                details: result.details || {},
+            };
+        });
+
+        // Create and download the file
+        const jsonString = JSON.stringify(formattedData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `enrichment-results-${selectedEnricher || 'export'}-${Date.now()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    };
+
     return (
         <div className='w-full h-full flex flex-col overflow-hidden'>
             {/* Title Section */}
@@ -304,59 +348,128 @@ export default function EnrichmentResults(): JSX.Element {
                 <PanelGroup direction='horizontal' className='h-full'>
                     {/* Left Panel - Enrichment Techniques */}
                     <Panel defaultSize={30} minSize={20} maxSize={50}>
-                        <div className='h-full flex flex-col px-3 pt-3'>
-                            <div className='flex-grow overflow-y-auto'>
-                                {loadingDetails ? (
-                                    <div className='flex items-center justify-center min-h-[200px]'>
-                                        <div className='spinner-dot-pulse spinner-xl'>
-                                            <div className='spinner-pulse-dot'></div>
-                                        </div>
-                                    </div>
-                                ) : enricherTypes.length === 0 ? (
-                                    <div className='flex flex-col items-center justify-center min-h-[200px]'>
-                                        <p className='text-sm cradle-text-tertiary'>
-                                            No enrichment techniques found.
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className='space-y-1 pr-2'>
-                                        {enrichersDetail.map((enricher) => (
-                                            <div
-                                                key={enricher.enricher_type}
-                                                className={`p-2 hover:border-2 hover:border-cradle-accent-primary cursor-pointer transition-colors ${
-                                                    selectedEnricher ===
-                                                    enricher.enricher_type
-                                                        ? 'cradle-bg-accent border-2 border-cradle-border-accent'
-                                                        : 'cradle-bg-base'
-                                                }`}
-                                                onClick={() => {
-                                                    setSelectedEnricher(
-                                                        enricher.enricher_type,
-                                                    );
-                                                    setPage(1);
-                                                    setSearchParams({
-                                                        query: '',
-                                                        details: '',
-                                                    });
-                                                    setSearchInput({
-                                                        query: '',
-                                                        details: '',
-                                                    });
-                                                }}
-                                            >
-                                                <div className='flex items-center gap-2'>
-                                                    {getEnricherStatusIcon(
-                                                        enricher.enricher_type,
-                                                    )}
-                                                    <span className='text-sm font-medium cradle-text-primary truncate'>
-                                                        {enricher.display_name}
-                                                    </span>
+                        <div className='h-full overflow-y-auto'>
+                            <Tabs defaultTab={0} queryParam='enrichmentTab'>
+                                {/* Enrichers Tab */}
+                                <Tab title='Enrichers'>
+                                    <div className='px-3 pt-3 h-full overflow-y-auto'>
+                                        {loadingDetails ? (
+                                            <div className='flex items-center justify-center min-h-[200px]'>
+                                                <div className='spinner-dot-pulse spinner-xl'>
+                                                    <div className='spinner-pulse-dot'></div>
                                                 </div>
                                             </div>
-                                        ))}
+                                        ) : enricherTypes.length === 0 ? (
+                                            <div className='flex flex-col items-center justify-center min-h-[200px]'>
+                                                <p className='text-sm cradle-text-tertiary'>
+                                                    No enrichment techniques found.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <div className='space-y-1 pr-2'>
+                                                {enrichersDetail.map((enricher) => (
+                                                    <div
+                                                        key={enricher.enricher_type}
+                                                        className={`p-2 hover:border-2 hover:border-cradle-accent-primary cursor-pointer transition-colors ${
+                                                            selectedEnricher ===
+                                                            enricher.enricher_type
+                                                                ? 'cradle-bg-accent border-2 border-cradle-border-accent'
+                                                                : 'cradle-bg-base'
+                                                        }`}
+                                                        onClick={() => {
+                                                            setSelectedEnricher(
+                                                                enricher.enricher_type,
+                                                            );
+                                                            setPage(1);
+                                                            setSearchParams({
+                                                                query: '',
+                                                                details: '',
+                                                            });
+                                                            setSearchInput({
+                                                                query: '',
+                                                                details: '',
+                                                            });
+                                                        }}
+                                                    >
+                                                        <div className='flex items-center gap-2'>
+                                                            {getEnricherStatusIcon(
+                                                                enricher.enricher_type,
+                                                            )}
+                                                            <span className='text-sm font-medium cradle-text-primary truncate'>
+                                                                {enricher.display_name}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </Tab>
+
+                                {/* Warnings Tab */}
+                                {enrichmentDetails?.warnings &&
+                                    Object.keys(enrichmentDetails.warnings).length > 0 && (
+                                        <Tab title='Warnings'>
+                                            <div className='px-3 pt-3 h-full overflow-y-auto'>
+                                                <div className='space-y-2 pr-2'>
+                                                    {Object.entries(enrichmentDetails.warnings).map(
+                                                        ([key, value]) => (
+                                                            <div
+                                                                key={key}
+                                                                className='p-3 cradle-bg-base border-l-4 border-amber-500'
+                                                            >
+                                                                <div className='text-xs font-semibold cradle-text-secondary mb-1'>
+                                                                    {key}
+                                                                </div>
+                                                                <div className='text-sm cradle-text-primary whitespace-pre-wrap'>
+                                                                    {typeof value === 'string'
+                                                                        ? value
+                                                                        : JSON.stringify(
+                                                                              value,
+                                                                              null,
+                                                                              2,
+                                                                          )}
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Tab>
+                                    )}
+
+                                {/* Errors Tab */}
+                                {enrichmentDetails?.errors &&
+                                    Object.keys(enrichmentDetails.errors).length > 0 && (
+                                        <Tab title='Errors'>
+                                            <div className='px-3 pt-3 h-full overflow-y-auto'>
+                                                <div className='space-y-2 pr-2'>
+                                                    {Object.entries(enrichmentDetails.errors).map(
+                                                        ([key, value]) => (
+                                                            <div
+                                                                key={key}
+                                                                className='p-3 cradle-bg-base border-l-4 border-red-500'
+                                                            >
+                                                                <div className='text-xs font-semibold cradle-text-secondary mb-1'>
+                                                                    {key}
+                                                                </div>
+                                                                <div className='text-sm cradle-text-primary whitespace-pre-wrap'>
+                                                                    {typeof value === 'string'
+                                                                        ? value
+                                                                        : JSON.stringify(
+                                                                              value,
+                                                                              null,
+                                                                              2,
+                                                                          )}
+                                                                </div>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Tab>
+                                    )}
+                            </Tabs>
                         </div>
                     </Panel>
 
@@ -418,6 +531,14 @@ export default function EnrichmentResults(): JSX.Element {
                                                 onClick={handleSearch}
                                             >
                                                 Search
+                                            </button>
+                                            <button
+                                                className='btn btn-secondary'
+                                                onClick={handleDownloadResults}
+                                                disabled={!results || results.length === 0}
+                                                title='Download results as JSON'
+                                            >
+                                                <Download width='18' height='18' />
                                             </button>
                                         </div>
                                     </div>

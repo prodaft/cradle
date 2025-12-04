@@ -3,7 +3,7 @@ import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-interface NavigateOptions {
+export interface NavigateOptions {
     event?: React.MouseEvent;
     state?: any;
     replace?: boolean;
@@ -42,6 +42,7 @@ const useCradleNavigate = () => {
             const targetPath = typeof to === 'string' ? to : to.pathname;
 
             if (event && (event.ctrlKey || event.metaKey || event.button === 1)) {
+                console.log('Ctrl/Cmd + click or middle click:', event);
                 // Ctrl/Cmd + click or middle click: open in new tab in active pane
                 if (openTab && activePaneId) {
                     openTab(activePaneId, targetPath);
@@ -70,11 +71,11 @@ const useCradleNavigate = () => {
         navigate: smartNavigate,
         navigateLink:
             (to: string | { pathname: string }, options: NavigateOptions = {}) =>
-            (e: React.MouseEvent) => {
-                e.stopPropagation();
-                e.preventDefault();
-                smartNavigate(to, { event: e, ...options });
-            },
+                (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    smartNavigate(to, { event: e, ...options });
+                },
     };
 };
 

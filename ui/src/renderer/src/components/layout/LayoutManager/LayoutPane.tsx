@@ -76,12 +76,12 @@ const hasCradleTab = (dt: DataTransfer | null): boolean => {
 const setGlobalDragFlag = (value: boolean): void => {
     try {
         window.__cradleTabDragging = value;
-    } catch {}
+    } catch { }
 };
 const clearGlobalDragFlag = (): void => {
     try {
         window.__cradleTabDragging = false;
-    } catch {}
+    } catch { }
 };
 
 /**
@@ -180,19 +180,18 @@ const Tab = memo(
                     className={`
                     flex items-center gap-2 px-4 h-full min-w-[120px] max-w-[200px]
                     cursor-move group relative focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2
-                    ${
-                        isTabActive
+                    ${isTabActive
                             ? 'cradle-bg-primary border-l border-r cradle-border cradle-text-secondary border-b border-cradle-bg-primary'
                             : 'cradle-bg-elevated cradle-text-tertiary cradle-border'
-                    }
+                        }
                     ${isDragging ? 'opacity-50' : ''}
                     ${isTabActive && isActive ? 'border-t-2' : 'border-t cradle-border'}
                 `}
                     style={
                         isTabActive && isActive
                             ? {
-                                  borderTopColor: 'var(--cradle-accent-primary)',
-                              }
+                                borderTopColor: 'var(--cradle-accent-primary)',
+                            }
                             : {}
                     }
                     onClick={() => onTabClick(index)}
@@ -529,12 +528,12 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                             } as CSSProperties
                         }
                         onMouseEnter={(e) =>
-                            ((e.target as HTMLElement).style.borderColor =
-                                'var(--cradle-accent-primary)')
+                        ((e.target as HTMLElement).style.borderColor =
+                            'var(--cradle-accent-primary)')
                         }
                         onMouseLeave={(e) =>
-                            ((e.target as HTMLElement).style.borderColor =
-                                'var(--cradle-border-primary)')
+                        ((e.target as HTMLElement).style.borderColor =
+                            'var(--cradle-border-primary)')
                         }
                         onClick={() => createNewTab(paneId)}
                         title='New Tab'
@@ -557,12 +556,12 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                                     } as CSSProperties
                                 }
                                 onMouseEnter={(e) =>
-                                    ((e.target as HTMLElement).style.borderColor =
-                                        'var(--cradle-accent-primary)')
+                                ((e.target as HTMLElement).style.borderColor =
+                                    'var(--cradle-accent-primary)')
                                 }
                                 onMouseLeave={(e) =>
-                                    ((e.target as HTMLElement).style.borderColor =
-                                        'var(--cradle-border-primary)')
+                                ((e.target as HTMLElement).style.borderColor =
+                                    'var(--cradle-border-primary)')
                                 }
                                 onClick={() => splitPane(paneId, 'vertical', 'after')}
                                 title='Split Horizontally'
@@ -581,12 +580,12 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                                     } as CSSProperties
                                 }
                                 onMouseEnter={(e) =>
-                                    ((e.target as HTMLElement).style.borderColor =
-                                        'var(--cradle-accent-primary)')
+                                ((e.target as HTMLElement).style.borderColor =
+                                    'var(--cradle-accent-primary)')
                                 }
                                 onMouseLeave={(e) =>
-                                    ((e.target as HTMLElement).style.borderColor =
-                                        'var(--cradle-border-primary)')
+                                ((e.target as HTMLElement).style.borderColor =
+                                    'var(--cradle-border-primary)')
                                 }
                                 onClick={() => splitPane(paneId, 'horizontal', 'after')}
                                 title='Split Vertically'

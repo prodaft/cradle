@@ -1,5 +1,6 @@
 import { ConfirmDeletionModal } from '@/components/modals';
 import { useModal } from '@/contexts';
+import { useApi } from '@/hooks';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useAuth from '@/hooks/auth/useAuth';
 import type { FileReference, StateSetter } from '@/types';
@@ -33,17 +34,15 @@ export default function FileTable({
     setFileData,
     insertTextCallback,
 }: FileTableProps) {
-    const { executor } = useAPICall();
+    const { execute } = useAPICall();
+    const { fileTransferApi } = useApi();
     const { basePath } = useAuth();
     const { setModal } = useModal();
 
     // Pre-configured clipboard copy with automatic error/success handling
-    const copyToClipboard = executor(
-        async (text: string) => {
-            await navigator.clipboard.writeText(text);
-        },
-        { successMessage: 'Copied to clipboard!' },
-    );
+    const copyToClipboard = async (text: string) => {
+        await navigator.clipboard.writeText(text);
+    };
 
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (data: FileReference) => {
@@ -57,10 +56,13 @@ export default function FileTable({
     };
 
     // Downloads a file
-    const handleDownload = (data: FileReference) => {
-        const url = createDownloadPath(data, basePath);
+    const handleDownload = async (data: FileReference) => {
+        const { presigned } = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
+            bucketName: data.bucketName,
+            minioFileName: data.minioFileName,
+        }));
         const link = document.createElement('a');
-        link.href = url;
+        link.href = presigned;
         link.download = data.fileName;
         document.body.appendChild(link);
         link.click();

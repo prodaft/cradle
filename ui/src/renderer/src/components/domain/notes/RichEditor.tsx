@@ -1,10 +1,12 @@
 import { useNotif } from '@/contexts';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
+import { referenceLinksPlugin, referenceLinkSyntax } from '@/utils/editor/referenceLinks';
 import { createCradleTheme } from '@/utils/editor/theme';
 import {
     acceptCompletion,
@@ -33,6 +35,7 @@ import {
 import { GFM } from '@lezer/markdown';
 import {
     baseSyntaxHighlights,
+    clickLinkHandler,
     prosemarkBaseThemeSetup,
     prosemarkBasicSetup,
     prosemarkMarkdownSyntaxExtensions,
@@ -65,6 +68,7 @@ interface RichEditorProps {
     enableEditing?: boolean;
     source?: boolean;
     editorUtils: CradleEditor;
+    referenceMappings?: Record<string, FileReference>;
 }
 
 export interface RichEditorRef {
@@ -93,12 +97,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const [showFileList, setShowFileList] = useState(false);
     const { profile } = useProfile();
     const { isDarkMode } = useTheme();
-    const { entriesApi } = useApi();
+    const { entriesApi, fileTransferApi } = useApi();
     const { navigate } = useCradleNavigate();
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
     const markdownContentRef = useRef(markdownContent);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
+    const { executor } = useAPICall();
     const { notify } = useNotif();
 
     useEffect(() => {
@@ -168,6 +173,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         });
     }, [handleCodeBlockCopy]);
 
+    const referenceMappings = useMemo(() => {
+        let mappings = {};
+        for (const file of fileData) {
+            mappings[file.minioFileName] = file;
+        }
+        return mappings;
+    }, [fileData]);
+
     const extensions = useMemo(() => {
         if (entryColors.size === 0) {
             return [];
@@ -176,6 +189,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         let exts: Extension[] = [
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
+            referenceLinksPlugin(referenceMappings, navigate, executor(fileTransferApi.fileTransferDownloadRetrieve.bind(fileTransferApi))),
             // Markdown language support with ProseMark extensions
             markdown({
                 codeLanguages: languages,
@@ -186,6 +200,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     prosemarkMarkdownSyntaxExtensions,
                     // Cradle editor extension
                     editorUtils.extension(),
+                    referenceLinkSyntax(referenceMappings || {}),
                 ],
             }),
             // Basic prosemark extensions
@@ -193,6 +208,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             prosemarkBaseThemeSetup(),
             htmlBlockExtension,
             codeBlockCopyExtension,
+            clickLinkHandler.of((url: string) => {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }),
             baseSyntaxHighlights,
             EditorView.contentAttributes.of({
                 'data-formatting-mode': source ? 'show' : 'auto',
@@ -273,6 +291,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         cradleTheme,
         saveNote,
         setMarkdownContent,
+        codeBlockCopyExtension,
+        referenceMappings,
     ]);
 
     useEffect(() => {
