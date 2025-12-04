@@ -41,10 +41,15 @@ export function createCradleTheme(isDarkMode: boolean) {
             '.cm-scroller': {
                 backgroundColor: 'var(--cradle-bg-primary)',
             },
-            '&.cm-focused .cm-selectionBackground, ::selection': {
+            '.cm-selectionBackground': {
                 backgroundColor: isDarkMode
                     ? 'rgba(255, 140, 0, 0.3) !important'
                     : 'rgba(255, 140, 0, 0.2) !important',
+
+                zIndex: 3,
+            },
+            '.cm-selectionLayer': {
+                zIndex: '0 !important',
             },
             '.cm-lineNumbers': {
                 backgroundColor: 'var(--cradle-bg-primary)',
@@ -62,6 +67,12 @@ export function createCradleTheme(isDarkMode: boolean) {
             '.cm-gutters': {
                 backgroundColor: 'var(--cradle-bg-primary)',
                 borderRight: '1px solid var(--cradle-border-primary)',
+            },
+            '.cm-activeLine': {
+                backgroundColor: 'var(--cradle-bg-secondary) !important',
+            },
+            '.cm-activeLineGutter': {
+                backgroundColor: 'var(--cradle-bg-secondary) !important',
             },
         },
         {

@@ -30,6 +30,7 @@ import RichEditor from './RichEditor';
 import StatusIndicators from './StatusIndicators';
 import ViewsDropdown from './ViewsDropdown';
 
+import Tooltip from '@/components/base/Tooltip/Tooltip';
 import { EditPencil, Eye } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
@@ -235,7 +236,7 @@ export default function NoteViewer() {
                 }
                 return responseNote;
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => {
                 // Turn off loading spinner regardless of success or failure
                 setIsLoading(false);
@@ -273,7 +274,7 @@ export default function NoteViewer() {
             const stateNotes = state.notes.filter((n) => n.id !== id);
             const newState = { ...state, notes: stateNotes };
             navigate(from?.pathname || '/', { replace: true, state: newState });
-        }).catch(() => {});
+        }).catch(() => { });
     }, [id, execute, navigate, note, fleetingNotesApi, notesApi, state, from]);
 
     // Use a ref to store the latest values for the save function
@@ -304,8 +305,8 @@ export default function NoteViewer() {
                     ? 'Fleeting note saved.'
                     : undefined
                 : showAlert
-                  ? 'Note saved successfully.'
-                  : undefined;
+                    ? 'Note saved successfully.'
+                    : undefined;
 
             execute(
                 async () => {
@@ -335,7 +336,7 @@ export default function NoteViewer() {
                     setInitialMarkdown(content);
                     setHasUnsavedChanges(false);
                 })
-                .catch(() => {})
+                .catch(() => { })
                 .finally(() => {
                     setSaving(false);
                 });
@@ -357,7 +358,7 @@ export default function NoteViewer() {
                 // Navigate to the regular note view
                 navigate(`/notes/${response.id}`, { replace: true });
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => {
                 setSaving(false);
             });
@@ -490,20 +491,22 @@ export default function NoteViewer() {
                         {!id?.startsWith('guide_') && (
                             <>
                                 {activeView === ViewMode.CONTENT && (
-                                    <button
-                                        onClick={() => {
-                                            toggleEditing();
-                                        }}
-                                        className='w-full text-left px-2 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                        data-testid='toggle-editing-mode-menu-item'
-                                    >
-                                        {enableEditing ? (
-                                            <EditPencil width='16' height='16' />
-                                        ) : (
-                                            <Eye width='16' height='16' />
-                                        )}
-                                        {/* <span className='flex-1'>{enableEditing ? 'Mode' : 'Preview Mode'}</span> */}
-                                    </button>
+                                    <Tooltip content={enableEditing ? 'Edit' : 'View'}>
+                                        <button
+                                            onClick={() => {
+                                                toggleEditing();
+                                            }}
+                                            className='w-full text-left px-2 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                            data-testid='toggle-editing-mode-menu-item'
+                                        >
+                                            {enableEditing ? (
+                                                <EditPencil width='16' height='16' />
+                                            ) : (
+                                                <Eye width='16' height='16' />
+                                            )}
+                                            {/* <span className='flex-1'>{enableEditing ? 'Mode' : 'Preview Mode'}</span> */}
+                                        </button>
+                                    </Tooltip>
                                 )}
                                 <ViewsDropdown
                                     activeView={activeView}
@@ -513,6 +516,7 @@ export default function NoteViewer() {
                                     setActiveView={setActiveView}
                                     setRichEditor={setRichEditor}
                                     isAdmin={isAdmin()}
+                                    isFleeting={isFleeting}
                                     hasFiles={
                                         (note && note.files && note.files.length > 0) ||
                                         false
@@ -664,7 +668,7 @@ export default function NoteViewer() {
                         </div>
                     )}
                 </div>
-            </div>
+            </div >
         </>
     );
 }

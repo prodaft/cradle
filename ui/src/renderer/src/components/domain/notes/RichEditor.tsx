@@ -92,10 +92,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 ) {
     const [showFileList, setShowFileList] = useState(false);
     const { profile } = useProfile();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [lspLoaded, setLspLoaded] = useState(false);
     const { isDarkMode } = useTheme();
-    const { entriesApi, notesApi, lspApi } = useApi();
+    const { entriesApi } = useApi();
     const { navigate } = useCradleNavigate();
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
@@ -217,6 +215,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 ]),
             ),
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+            EditorState.readOnly.of(!enableEditing),
+            EditorView.editable.of(enableEditing),
             keymap.of([
                 {
                     key: 'Ctrl-s',

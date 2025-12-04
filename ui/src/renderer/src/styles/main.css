@@ -24,17 +24,6 @@
     font-size: 14px;
 }
 
-/* Remove active line background highlighting for Rich Editor only  */
-.rich-editor .cm-editor .cm-activeLine,
-.rich-editor .cm-editor .cm-activeLineGutter {
-    background-color: var(--cradle-bg-secondary) !important;
-}
-
-/* Ensure consistent background for all lines for Rich Editor only  */
-.rich-editor .cm-content .cm-line:not(.cm-activeLine) {
-    background-color: var(--cradle-bg-primary) !important;
-}
-
 /* Make cursor white in editor */
 .cm-editor .cm-cursor,
 .cm-editor .cm-cursor-primary {

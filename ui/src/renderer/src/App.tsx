@@ -52,6 +52,7 @@ import PrivateRoute from './components/domain/auth/PrivateRoute';
 import GlobalTabPortals from './components/layout/GlobalTabPortals/GlobalTabPortals';
 
 // Context providers
+import { ProfileProvider } from '@/contexts';
 import { TooltipProvider } from './components/base/Tooltip/Tooltip';
 import { AuthProvider } from './components/domain/auth/AuthProvider';
 import { ApiProvider } from './contexts/api/ApiProvider';
@@ -62,7 +63,6 @@ import { LayoutProvider } from './contexts/ui/LayoutContext';
 import { ModalProvider } from './contexts/ui/ModalContext';
 import { NotificationProvider } from './contexts/ui/NotificationContext';
 import { ThemeProvider } from './contexts/ui/ThemeContext';
-import { ProfileProvider } from './contexts/user/ProfileContext';
 
 function App() {
     return (

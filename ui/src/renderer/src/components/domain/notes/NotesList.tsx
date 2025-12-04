@@ -199,12 +199,12 @@ export default function NotesList({
     };
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        {
-            author: (value) => handleColumnFilter('author', value),
-            editor: (value) => handleColumnFilter('editor', value),
-            createdAt: (value) => handleColumnFilter('createdAt', value),
-            lastChanged: (value) => handleColumnFilter('lastChanged', value),
-        };
+    {
+        author: (value) => handleColumnFilter('author', value),
+        editor: (value) => handleColumnFilter('editor', value),
+        createdAt: (value) => handleColumnFilter('createdAt', value),
+        lastChanged: (value) => handleColumnFilter('lastChanged', value),
+    };
 
     useEffect(() => {
         setColumnFilters({

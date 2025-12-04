@@ -6,6 +6,7 @@ import { ViewMode } from './constants';
 interface ViewsDropdownProps {
     activeView: ViewMode;
     richEditor: boolean;
+    isFleeting: boolean;
     showViewsMenu: boolean;
     setShowViewsMenu: (show: boolean) => void;
     setActiveView: (view: ViewMode) => void;
@@ -19,6 +20,7 @@ interface ViewsDropdownProps {
  */
 export default function ViewsDropdown({
     activeView,
+    isFleeting,
     richEditor,
     showViewsMenu,
     setShowViewsMenu,
@@ -95,50 +97,53 @@ export default function ViewsDropdown({
                                     <Check width='16' height='16' />
                                 )}
                             </button>
-                            <button
-                                onClick={() => {
-                                    setShowViewsMenu(false);
-                                    setActiveView(ViewMode.GRAPH);
-                                }}
-                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                data-testid='graph-view-menu-item'
-                            >
-                                <Graph width='16' height='16' />
-                                <span className='flex-1'>Graph</span>
-                                {activeView === ViewMode.GRAPH && (
-                                    <Check width='16' height='16' />
+                            {isFleeting && (<>
+                                <button
+                                    onClick={() => {
+                                        setShowViewsMenu(false);
+                                        setActiveView(ViewMode.GRAPH);
+                                    }}
+                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    data-testid='graph-view-menu-item'
+                                >
+                                    <Graph width='16' height='16' />
+                                    <span className='flex-1'>Graph</span>
+                                    {activeView === ViewMode.GRAPH && (
+                                        <Check width='16' height='16' />
+                                    )}
+                                </button>
+                                {isAdmin && (
+                                    <button
+                                        onClick={() => {
+                                            setShowViewsMenu(false);
+                                            setActiveView(ViewMode.HISTORY);
+                                        }}
+                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                        data-testid='history-view-menu-item'
+                                    >
+                                        <ClockRotateRight width='16' height='16' />
+                                        <span className='flex-1'>History</span>
+                                        {activeView === ViewMode.HISTORY && (
+                                            <Check width='16' height='16' />
+                                        )}
+                                    </button>
                                 )}
-                            </button>
-                            {isAdmin && (
-                                <button
-                                    onClick={() => {
-                                        setShowViewsMenu(false);
-                                        setActiveView(ViewMode.HISTORY);
-                                    }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                    data-testid='history-view-menu-item'
-                                >
-                                    <ClockRotateRight width='16' height='16' />
-                                    <span className='flex-1'>History</span>
-                                    {activeView === ViewMode.HISTORY && (
-                                        <Check width='16' height='16' />
-                                    )}
-                                </button>
-                            )}
-                            {hasFiles && (
-                                <button
-                                    onClick={() => {
-                                        setShowViewsMenu(false);
-                                        setActiveView(ViewMode.FILES);
-                                    }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                    data-testid='files-view-menu-item'
-                                >
-                                    <span className='flex-1'>Files</span>
-                                    {activeView === ViewMode.FILES && (
-                                        <Check width='16' height='16' />
-                                    )}
-                                </button>
+                                {hasFiles && (
+                                    <button
+                                        onClick={() => {
+                                            setShowViewsMenu(false);
+                                            setActiveView(ViewMode.FILES);
+                                        }}
+                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                        data-testid='files-view-menu-item'
+                                    >
+                                        <span className='flex-1'>Files</span>
+                                        {activeView === ViewMode.FILES && (
+                                            <Check width='16' height='16' />
+                                        )}
+                                    </button>
+                                )}
+                            </>
                             )}
                         </div>
                     </div>
