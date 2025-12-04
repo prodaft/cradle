@@ -32,7 +32,6 @@ export default function Files({ obj }: FilesProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { notify } = useNotif();
     const [searchParams, setSearchParams] = useSearchParams();
-    const [exactMatch, setExactMatch] = useState(false);
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         linked_to: obj?.id || '',
         entity_type: obj?.type || '',
@@ -64,7 +63,6 @@ export default function Files({ obj }: FilesProps) {
     // Prepare the query for FilesList
     const query = {
         ...searchFilters,
-        linked_to_exact_match: exactMatch,
     };
 
     return (
@@ -99,22 +97,6 @@ export default function Files({ obj }: FilesProps) {
                                 />
                             </div>
                         </div>
-
-                        {obj.type === 'entity' && (
-                            <div className='flex items-center space-x-2'>
-                                <input
-                                    type='checkbox'
-                                    id='exactMatch'
-                                    name='exactMatch'
-                                    className='switch switch-ghost-primary h-5 w-14'
-                                    checked={exactMatch}
-                                    onChange={(e) => setExactMatch(e.target.checked)}
-                                />
-                                <label htmlFor='exactMatch' className='text-sm'>
-                                    Exact match
-                                </label>
-                            </div>
-                        )}
 
                         <div className='cradle-separator'></div>
 

@@ -134,7 +134,6 @@ export function useAPICall(): UseAPICallReturn {
             options: ExecuteOptions<T> = {},
         ) => {
             return (...args: any[]): Promise<T> => {
-                console.log("EXECUTING", args)
                 return execute(() => apiCall(...args), options);
             };
         },

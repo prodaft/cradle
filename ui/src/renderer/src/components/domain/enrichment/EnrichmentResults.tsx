@@ -264,14 +264,14 @@ export default function EnrichmentResults(): JSX.Element {
             // Build entries array from e1 and e2
             const entries: Array<{ type: string; name: string }> = [];
 
-            if (result.e1) {
+            if (result.e1 && result.e1.subtype !== 'enrichment') {
                 entries.push({
                     type: result.e1.subtype || 'unknown',
                     name: result.e1.name || '',
                 });
             }
 
-            if (result.e2) {
+            if (result.e2 && result.e2.subtype !== 'enrichment') {
                 entries.push({
                     type: result.e2.subtype || 'unknown',
                     name: result.e2.name || '',
@@ -370,12 +370,11 @@ export default function EnrichmentResults(): JSX.Element {
                                                 {enrichersDetail.map((enricher) => (
                                                     <div
                                                         key={enricher.enricher_type}
-                                                        className={`p-2 hover:border-2 hover:border-cradle-accent-primary cursor-pointer transition-colors ${
-                                                            selectedEnricher ===
-                                                            enricher.enricher_type
+                                                        className={`p-2 hover:border-2 hover:border-cradle-accent-primary cursor-pointer transition-colors ${selectedEnricher ===
+                                                                enricher.enricher_type
                                                                 ? 'cradle-bg-accent border-2 border-cradle-border-accent'
                                                                 : 'cradle-bg-base'
-                                                        }`}
+                                                            }`}
                                                         onClick={() => {
                                                             setSelectedEnricher(
                                                                 enricher.enricher_type,
@@ -425,10 +424,10 @@ export default function EnrichmentResults(): JSX.Element {
                                                                     {typeof value === 'string'
                                                                         ? value
                                                                         : JSON.stringify(
-                                                                              value,
-                                                                              null,
-                                                                              2,
-                                                                          )}
+                                                                            value,
+                                                                            null,
+                                                                            2,
+                                                                        )}
                                                                 </div>
                                                             </div>
                                                         ),
@@ -457,10 +456,10 @@ export default function EnrichmentResults(): JSX.Element {
                                                                     {typeof value === 'string'
                                                                         ? value
                                                                         : JSON.stringify(
-                                                                              value,
-                                                                              null,
-                                                                              2,
-                                                                          )}
+                                                                            value,
+                                                                            null,
+                                                                            2,
+                                                                        )}
                                                                 </div>
                                                             </div>
                                                         ),
@@ -488,11 +487,11 @@ export default function EnrichmentResults(): JSX.Element {
                                                     show: true,
                                                     message:
                                                         typeof enricherWarning ===
-                                                        'string'
+                                                            'string'
                                                             ? enricherWarning
                                                             : JSON.stringify(
-                                                                  enricherWarning,
-                                                              ),
+                                                                enricherWarning,
+                                                            ),
                                                     color: 'warning',
                                                 }}
                                             />
@@ -567,15 +566,15 @@ export default function EnrichmentResults(): JSX.Element {
                                                             {/* Entry badges */}
                                                             {(result.e1 ||
                                                                 result.e2) && (
-                                                                <div className='flex flex-wrap gap-2 mb-3'>
-                                                                    {renderEntryBadge(
-                                                                        result.e1,
-                                                                    )}
-                                                                    {renderEntryBadge(
-                                                                        result.e2,
-                                                                    )}
-                                                                </div>
-                                                            )}
+                                                                    <div className='flex flex-wrap gap-2 mb-3'>
+                                                                        {renderEntryBadge(
+                                                                            result.e1,
+                                                                        )}
+                                                                        {renderEntryBadge(
+                                                                            result.e2,
+                                                                        )}
+                                                                    </div>
+                                                                )}
 
                                                             {/* Details JSON viewer */}
                                                             {result.details && (

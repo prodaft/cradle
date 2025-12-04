@@ -113,7 +113,6 @@ export default function SearchDialog({
     };
 
     const handleResultClick = (link: string) => (e: React.MouseEvent) => {
-        e.preventDefault();
         setAlert({ ...alert, show: false });
         onClose();
         navigate(link, { event: e });

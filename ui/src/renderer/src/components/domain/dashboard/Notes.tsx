@@ -31,7 +31,6 @@ export default function Notes({ obj }: NotesProps) {
         content: '',
         author__username: '',
     });
-    const [linked_to_exact_match, setLinkedToExactMatch] = useState(false);
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
         null,
     );
@@ -46,17 +45,15 @@ export default function Notes({ obj }: NotesProps) {
         setSearchFilters((prev) => ({
             ...prev,
             ['linked_to']: obj.id,
-            linked_to_exact_match,
         }));
 
         setSubmittedFilters({
             ...searchFilters,
             ['linked_to']: obj.id,
-            linked_to_exact_match,
             timestamp_gte: '',
             timestamp_lte: '',
         });
-    }, [obj, linked_to_exact_match]);
+    }, [obj]);
 
     // Auto-submit when date range changes
     useEffect(() => {
@@ -83,10 +80,10 @@ export default function Notes({ obj }: NotesProps) {
                 : '',
             timestamp_lte: value.endDate
                 ? (() => {
-                      const endDate = new Date(value.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(value.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : '',
         }));
         setDateRange(value);
@@ -126,26 +123,6 @@ export default function Notes({ obj }: NotesProps) {
                             <button type='submit' className='btn'>
                                 <Search /> Search
                             </button>
-                            {obj.type == 'entity' && (
-                                <div className='flex items-center'>
-                                    <input
-                                        type='checkbox'
-                                        id='searchOption'
-                                        name='searchOption'
-                                        className='switch switch-ghost-primary h-5 w-14'
-                                        checked={linked_to_exact_match}
-                                        onChange={(e) =>
-                                            setLinkedToExactMatch(e.target.checked)
-                                        }
-                                    />
-                                    <label
-                                        htmlFor='searchOption'
-                                        className='ml-2 text-sm'
-                                    >
-                                        Exact match
-                                    </label>
-                                </div>
-                            )}
                         </div>
                     </form>
                 </div>

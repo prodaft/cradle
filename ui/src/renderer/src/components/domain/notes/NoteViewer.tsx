@@ -139,7 +139,9 @@ export default function NoteViewer() {
                 return;
             }
 
-            const doc = view.selection.main.to;
+            console.log(view)
+
+            const doc = view.state;
             let to = doc.selection.main.to;
             let from = doc.selection.main.from;
             let content = doc.doc.toString();
