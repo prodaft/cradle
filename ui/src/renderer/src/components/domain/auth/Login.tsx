@@ -131,14 +131,14 @@ export default function Login() {
                         <div className='cradle-border cradle-bg-elevated'>
                             {/* Top Control Bar */}
                             <div className='cradle-card-header cradle-border-b'>
-                                <span className='cradle-mono text-xs tracking-widest ml-8'>
+                                <span className='cradle-mono text-xs tracking-widest'>
                                     {showSettings
                                         ? 'CONFIGURATION'
                                         : requiresTwoFactor
                                           ? 'AUTHENTICATION'
                                           : 'SYSTEM ACCESS'}
                                 </span>
-                                <div className='flex items-center gap-2'>
+                                <div className='flex items-center gap-2 -mr-1.5'>
                                     {showSettings ? (
                                         <>
                                             {auth.basePath && (
@@ -147,7 +147,7 @@ export default function Login() {
                                                         setBackendUrl(auth.basePath);
                                                         setShowSettings(false);
                                                     }}
-                                                    className='p-1.5 hover:text-cradle2 cradle-text-tertiary hover:border-[var(--cradle-accent-primary)]'
+                                                    className='cradle-btn p-2'
                                                     data-testid='back-button'
                                                     title='Back'
                                                 >
@@ -156,7 +156,7 @@ export default function Login() {
                                             )}
                                             <button
                                                 onClick={toggleTheme}
-                                                className='p-1.5 hover:text-cradle2 cradle-text-tertiary hover:border-[var(--cradle-accent-primary)]'
+                                                className='cradle-btn p-2'
                                                 data-testid='theme-button'
                                                 title='Toggle Theme'
                                             >
@@ -173,7 +173,7 @@ export default function Login() {
                                                 onClick={() =>
                                                     setShowSettings(!showSettings)
                                                 }
-                                                className='p-1.5 hover:text-cradle2 cradle-text-tertiary hover:border-[var(--cradle-accent-primary)]'
+                                                className='cradle-btn p-2'
                                                 data-testid='settings-button'
                                                 title='Settings'
                                             >

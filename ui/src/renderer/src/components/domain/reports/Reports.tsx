@@ -46,6 +46,7 @@ export default function Reports() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(Number(searchParams.get('reports_page')) || 1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const [sortField, setSortField] = useState(
         searchParams.get('reports_sort_field') || 'created_at',
     );
@@ -103,6 +104,7 @@ export default function Reports() {
             });
             setReports(response.results);
             setTotalPages(response.totalPages);
+            setTotalCount(response.count || 0);
         } catch (error: any) {
             console.error('Failed to fetch reports', error);
             notify({
@@ -355,6 +357,14 @@ export default function Reports() {
                     <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
                         Manage & View Your Reports
                     </p>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
+                    <span className="font-semibold">
+                        {reports.length === totalCount || (reports.length === 0 && totalCount === 0)
+                            ? totalCount
+                            : `${reports.length}/${totalCount}`}
+                    </span>
+                    <span className="opacity-70">reports</span>
                 </div>
             </div>
 

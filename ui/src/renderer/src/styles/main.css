@@ -1,24 +1,25 @@
-@import 'tailwindcss/base';
-@import 'tailwindcss/components';
-@import 'tailwindcss/utilities';
+/* ============================================
+   MAIN CSS ENTRY POINT
+   Font imports, Tailwind, and app-specific overrides
+   ============================================ */
 
-/* Cradle Minimal Design System - Must come after Tailwind utilities */
-@import './cradle-design-system.css';
+/* Font imports must come before Tailwind */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
 
-@layer base {
-    body {
-        font-family: 'Roboto', sans-serif;
-        @apply cradle-bg-primary cradle-text-primary;
-    }
+@import 'tailwindcss';
 
-    /* Apply mono font to specific elements */
-    code,
-    pre,
-    .mono {
-        @apply cradle-mono;
-    }
-}
+/* Source directive for content scanning */
+@source "../../**/*.{ts,tsx,html}";
 
+/* Cradle Design System - includes tokens, theme config, and components */
+@import './design.css';
+
+/* Dark mode variant using selector */
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ============================================
+   CODEMIRROR EDITOR STYLES
+   ============================================ */
 .CodeMirror {
     font-family: 'Source Code Pro', monospace;
     font-size: 14px;
@@ -38,14 +39,17 @@
     border-left-color: #000000 !important;
 }
 
-/* This class belongs to the reponse message from a vim command in the CodeMirror editor */
+/* Vim command response message in CodeMirror */
 .cm-vim-message {
     overflow: hidden !important;
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
-    max-width: 275px !important; /* Text is truncated after this size */
+    max-width: 275px !important;
 }
 
+/* ============================================
+   GRAPH & TOOLTIP STYLES
+   ============================================ */
 .graph-highlighted {
     stroke: #f68d2e !important;
     stroke-width: 4 !important;
@@ -57,6 +61,9 @@
     white-space: pre-line;
 }
 
+/* ============================================
+   THEME-SPECIFIC OVERRIDES
+   ============================================ */
 [data-theme='light'] .tab-toggle:checked + .tab.tab-pill,
 [data-theme='light'] .tabs-boxed .tab-toggle:checked + .tab {
     --tw-bg-opacity: 0.2 !important;
@@ -74,230 +81,13 @@ h6:hover .header-anchor-icon {
 }
 
 /* ============================================
-   GLOBAL DESIGN SYSTEM OVERRIDES
-   Apply minimal design to existing components
+   PREVIEW PANE WORD BREAKING
    ============================================ */
-
-/* Card Components */
-.card-container {
-    @apply cradle-card;
-}
-
-.card-title {
-    @apply cradle-card-title;
-}
-
-.card-header {
-    @apply cradle-card-header;
-}
-
-.card-body {
-    @apply cradle-card-body;
-}
-
-/* Table Components */
-.table {
-    @apply cradle-table;
-}
-
-.table thead th {
-    @apply cradle-label;
-}
-
-/* Input Components */
-.input,
-.form-input,
-:where(body):not(:has(#CosmographSearch *)) input[type='text'],
-input[type='email'],
-input[type='password'] {
-    @apply cradle-input;
-}
-
-input[type='search'] {
-    @apply cradle-search;
-}
-
-input[type='number'] {
-    @apply cradle-input;
-    width: auto;
-}
-
-textarea,
-.textarea {
-    @apply cradle-textarea;
-}
-
-select,
-.select {
-    @apply cradle-select;
-}
-
-/* Input modifiers */
-.input-block,
-.input-bordered {
-    /* Already covered by cradle-input */
-}
-
-/* Button Components */
-.btn {
-    @apply cradle-btn;
-}
-
-.btn-primary {
-    @apply cradle-btn-primary;
-}
-
-.btn-secondary {
-    @apply cradle-btn-secondary;
-}
-
-.btn-ghost {
-    @apply cradle-btn-ghost;
-}
-
-.btn-error {
-    @apply cradle-btn-error;
-}
-
-.btn-sm {
-    @apply cradle-btn-sm;
-}
-
-.btn-circle {
-    width: 2rem;
-    height: 2rem;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* Lists */
-ul.menu {
-    @apply list-none;
-}
-
-/* Panels and Sections */
-.panel {
-    @apply cradle-card;
-}
-
-/* Status Badges */
-.badge {
-    @apply cradle-status;
-}
-
-/* Scrollbars */
-.overflow-auto,
-.overflow-y-auto,
-.overflow-x-auto {
-    @apply cradle-scrollbar;
-}
-
-/* ============================================
-   SQUARE CORNERS - REMOVE ALL BORDER RADIUS
-   Applied to all components except sidebar
-   ============================================ */
-
-/* Remove rounded corners from all elements except sidebar */
-*:not(.sidebar):not(.sidebar *):not(.menu *):not(.menu-item *):not([class*='rounded']) {
-    border-radius: 0 !important;
-}
-
-/* Explicitly allow sidebar elements to have rounded corners */
-.sidebar,
-.sidebar *,
-.menu-item {
-    /* Sidebar elements can have rounded corners as specified in their classes */
-}
-
-/* Ensure buttons are square */
-button:not(.sidebar *):not(.rounded-full),
-.btn:not(.sidebar *):not(.rounded-full) {
-    border-radius: 0 !important;
-}
-
-/* Ensure inputs are square */
-input:not(.sidebar *),
-textarea:not(.sidebar *),
-select:not(.sidebar *) {
-    border-radius: 0 !important;
-}
-
-/* Ensure cards are square */
-.card:not(.sidebar *),
-.cradle-card:not(.sidebar *) {
-    border-radius: 0 !important;
-}
-
-/* Ensure modals are square */
-.modal:not(.sidebar *),
-.dialog:not(.sidebar *) {
-    border-radius: 0 !important;
-}
-
-/* Ensure dropdowns are square */
-.dropdown:not(.sidebar *),
-.dropdown-content:not(.sidebar *) {
-    border-radius: 0 !important;
-}
-
-/* Ensure badges and status indicators are square */
-.badge:not(.sidebar *),
-.status:not(.sidebar *) {
-    border-radius: 0 !important;
-}
-
-/* Ensure switches have square toggle elements - override ripple-ui styles */
-
-.switch:not(.sidebar *)::before,
-.switch:not(.sidebar *)::after,
-input.switch:not(.sidebar *)::before,
-input.switch:not(.sidebar *)::after,
-input[type='checkbox'].switch:not(.sidebar *)::before,
-input[type='checkbox'].switch:not(.sidebar *)::after {
-    position: absolute;
-    top: 14%;
-    left: 10%;
-
-    height: 14px !important;
-    width: 14px !important;
-    border-radius: 0 !important;
-}
-
-/* ============================================
-   ICON COLORS - ORANGE PRIMARY
-   ============================================ */
-
-/* All icons use orange as primary color */
-svg:not(.sidebar svg) {
-    color: var(--cradle-accent-primary);
-}
-
-/* Icon links and buttons */
-a svg,
-button svg {
-    /* No transitions for strict square style */
-}
-
-a:hover svg,
-button:hover svg {
-    color: var(--cradle-accent-secondary);
-}
-
-/* Icons in text */
-.text-primary svg,
-.cradle-text-primary svg {
-    color: var(--cradle-accent-primary);
-}
-
-/* Force word breaking in preview content to prevent horizontal overflow */
 #preview-pane {
     word-break: break-word;
     overflow-wrap: break-word;
 }
 
-/* Only apply to text content, not code blocks or links */
 #preview-pane p,
 #preview-pane h1,
 #preview-pane h2,
@@ -312,7 +102,10 @@ button:hover svg {
     overflow-wrap: break-word;
 }
 
-/* ProseMD CSS variables */
+/* ============================================
+   PROSEMD MARKDOWN EDITOR STYLES
+   ============================================ */
+
 /* === HEADINGS === */
 .prosemd h1 {
     font-size: 1.802em;
@@ -357,7 +150,7 @@ button:hover svg {
 }
 .prosemd a[href^='http']::after {
     color: var(--cradle-accent-secondary);
-} /* URL preview title */
+}
 
 /* Faded link formatting marks */
 .prosemd .pm-format-link {
@@ -380,7 +173,7 @@ button:hover svg {
 /* === CODE BLOCKS === */
 .prosemd pre {
     background: var(--cradle-bg-secondary);
-    border-radius: 0px;
+    border-radius: var(--cradle-radius-md);
 }
 
 /* Info bar hover */

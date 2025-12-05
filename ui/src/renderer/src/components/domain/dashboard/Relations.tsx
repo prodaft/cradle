@@ -246,7 +246,7 @@ export default function Relations({ obj }: RelationsProps) {
     }, [page]);
 
     return (
-        <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
+        <div className='bg-cradle3 p-4 bg-opacity-20 rounded-xl flex flex-col flex-1'>
             <div className='mb-4 flex items-center gap-2'>
                 {/* Depth Input with Label */}
                 <div className='flex flex-col'>

@@ -293,7 +293,7 @@ export default function EntryTypeForm({
                 <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {isEdit ? 'Edit Entry Type' : 'Add New Entry Type'}
                 </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
+                <div className='bg-cradle3 p-8 bg-opacity-20 rounded-md'>
                     <Form<EntryTypeFormValues>
                         schema={entryTypeSchema}
                         defaultValues={initialData}

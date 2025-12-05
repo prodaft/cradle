@@ -77,25 +77,14 @@ export const ModalProvider = ({ children }: ModalProviderProps): JSX.Element => 
                     className='modal-overlay'
                     onClick={closeModal}
                 />
-                <div className='modal-content p-0 w-[100%]'>
-                    {modalData.Component && (
-                        <div className='modal-content rounded'>
-                            {/* Close button */}
-                            <button
-                                className='btn btn-sm btn-circle btn-ghost modal-close absolute right-2 top-2'
-                                onClick={closeModal}
-                            >
-                                ✕
-                            </button>
-                            {/* Render the modal component with its props.
-                  Pass closeModal so the modal content can also close itself if needed */}
-                            <modalData.Component
-                                {...modalData.props}
-                                closeModal={closeModal}
-                            />
-                        </div>
-                    )}
-                </div>
+                {modalData.Component && (
+                    <div className='modal-content cradle-bg-elevated cradle-border p-5'>
+                        <modalData.Component
+                            {...modalData.props}
+                            closeModal={closeModal}
+                        />
+                    </div>
+                )}
             </div>
         </ModalContext.Provider>
     );

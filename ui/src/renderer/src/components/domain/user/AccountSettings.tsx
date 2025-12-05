@@ -9,16 +9,14 @@ import { UserCreateRequestThemeEnum, UserRetrieve } from '@/services/cradle/mode
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
 import SnippetList from '@components/base/SnippetList/SnippetList';
-import FormField from '@components/forms/FormField';
 import ApiKeyGenerateModal from '@components/modals/auth/ApiKeyGenerateModal';
 import ChangePasswordModal from '@components/modals/auth/ChangePasswordModal';
 import TwoFactorSetupModal from '@components/modals/auth/TwoFactorSetupModal';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@components/modals/notes/MarkdownEditorModal';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Edit, Key, Lock, Settings, User } from 'iconoir-react';
-import type { ComponentType } from 'react';
-import { useEffect, useId, useState } from 'react';
+import { Edit, SunLight, HalfMoon } from 'iconoir-react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 
@@ -40,12 +38,6 @@ interface AccountSettingsProps {
     target?: string;
     isEdit?: boolean;
     onAdd?: (user: any) => void;
-}
-
-interface SidebarItem {
-    id: string;
-    label: string;
-    icon: ComponentType<{ className?: string }>;
 }
 
 interface Alert {
@@ -88,7 +80,6 @@ export default function AccountSettings({
     const { notify } = useNotif();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [user, setUser] = useState<UserRetrieve | null>(null);
-    const [activeSection, setActiveSection] = useState('account');
     const isOwnAccount = isEdit ? target === 'me' || profile?.id === target : false;
     const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
     const { setModal } = useModal();
@@ -123,6 +114,8 @@ export default function AccountSettings({
         handleSubmit,
         reset,
         getValues,
+        watch,
+        setValue,
         formState: { errors, isDirty },
     } = useForm<AccountFormData>({
         resolver: yupResolver(accountSettingsSchema, {
@@ -136,6 +129,10 @@ export default function AccountSettings({
         message: '',
         color: 'red',
     });
+
+    const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const isInitialLoad = useRef(true);
+    const previousValuesRef = useRef<Partial<AccountFormData> | null>(null);
 
     // Prepopulate form in edit mode.
     useEffect(() => {
@@ -158,12 +155,38 @@ export default function AccountSettings({
                         vim_mode: user.vimMode || false,
                     });
                     setTwoFactorEnabled(user.twoFactorEnabled || false);
+                    // Store initial values for comparison
+                    previousValuesRef.current = {
+                        username: user.username,
+                        email: user.email,
+                        password: 'password',
+                        catalystKey: user.catalystApiKey ? 'apikey' : '',
+                        vimMode: user.vimMode || false,
+                        theme: user.theme || 'dark',
+                        role: user.role || 'user',
+                        email_confirmed: user.emailConfirmed || false,
+                        is_active: user.isActive || false,
+                    };
+                    // Mark initial load as complete after a short delay
+                    setTimeout(() => {
+                        isInitialLoad.current = false;
+                    }, 1000);
                 })
                 .catch(displayError(setAlert, navigate));
         } else {
             reset(defaultValues);
+            isInitialLoad.current = false;
         }
     }, [isEdit, target, reset, navigate, usersApi]);
+
+    // Cleanup timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (autoSaveTimeoutRef.current) {
+                clearTimeout(autoSaveTimeoutRef.current);
+            }
+        };
+    }, []);
 
     const onSubmit = async (data: AccountFormData) => {
         if (isEdit) {
@@ -231,6 +254,97 @@ export default function AccountSettings({
             }
         }
     };
+
+    const autoSave = async (data: AccountFormData, previousData: Partial<AccountFormData> | null) => {
+        if (!isEdit || !data.id) return;
+
+        // Check if any relevant field actually changed
+        const hasChanges = 
+            (isAdminAndNotOwn && (
+                data.username !== previousData?.username ||
+                data.email !== previousData?.email ||
+                data.role !== previousData?.role ||
+                data.email_confirmed !== previousData?.email_confirmed ||
+                data.is_active !== previousData?.is_active
+            )) ||
+            (data.password !== 'password' && data.password !== previousData?.password) ||
+            (data.catalystKey !== 'apikey' && data.catalystKey !== previousData?.catalystKey) ||
+            data.vimMode !== previousData?.vimMode ||
+            data.theme !== previousData?.theme;
+
+        if (!hasChanges) return;
+
+        // Clear existing timeout
+        if (autoSaveTimeoutRef.current) {
+            clearTimeout(autoSaveTimeoutRef.current);
+        }
+
+        // Debounce auto-save by 500ms
+        autoSaveTimeoutRef.current = setTimeout(async () => {
+            const payload: any = {};
+            if (data.password !== 'password' && data.password !== previousData?.password) {
+                payload.password = data.password;
+            }
+            if (data.catalystKey !== 'apikey' && data.catalystKey !== previousData?.catalystKey) {
+                payload.catalyst_api_key = data.catalystKey;
+            }
+            if (data.vimMode !== previousData?.vimMode) {
+                payload.vim_mode = data.vimMode;
+            }
+            if (data.theme !== previousData?.theme) {
+                payload.theme = data.theme;
+            }
+            if (isAdminAndNotOwn) {
+                if (data.username !== previousData?.username) payload.username = data.username;
+                if (data.email !== previousData?.email) payload.email = data.email;
+                if (data.email_confirmed !== previousData?.email_confirmed) payload.email_confirmed = data.email_confirmed;
+                if (data.is_active !== previousData?.is_active) payload.is_active = data.is_active;
+                if (data.role !== previousData?.role) payload.role = data.role;
+            }
+
+            // Only save if there are actual changes in payload
+            if (Object.keys(payload).length === 0) return;
+
+            try {
+                const updatedUser = await usersApi.usersUpdate({
+                    userId: data.id,
+                    userUpdateRequest: payload,
+                });
+
+                if (isOwnAccount) {
+                    setProfile((prevProfile: any) => ({
+                        ...prevProfile,
+                        ...updatedUser,
+                    }));
+                }
+
+                // Update previous values after successful save
+                previousValuesRef.current = {
+                    username: data.username,
+                    email: data.email,
+                    password: data.password,
+                    catalystKey: data.catalystKey,
+                    vimMode: data.vimMode,
+                    theme: data.theme,
+                    role: data.role,
+                    email_confirmed: data.email_confirmed,
+                    is_active: data.is_active,
+                };
+            } catch (err) {
+                displayError(setAlert, navigate)(err);
+            }
+        }, 500);
+    };
+
+    // Watch for form changes and auto-save
+    const watchedValues = watch(['username', 'email', 'password', 'catalystKey', 'vimMode', 'theme', 'role', 'email_confirmed', 'is_active']);
+    useEffect(() => {
+        if (isEdit && getValues('id') && !isInitialLoad.current) {
+            const currentValues = getValues();
+            autoSave(currentValues, previousValuesRef.current);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [watchedValues, isEdit]);
 
     const handleDelete = async () => {
         try {
@@ -344,514 +458,470 @@ export default function AccountSettings({
         }
     };
 
-    const sidebarItems: SidebarItem[] = [
-        { id: 'account', label: 'Account', icon: User },
-        ...(isEdit && (twoFactorEnabled || isOwnAccount)
-            ? [{ id: 'security', label: 'Security', icon: Lock }]
-            : []),
-        { id: 'apikeys', label: 'API Keys', icon: Key },
-        { id: 'interface', label: 'Interface', icon: Settings },
-    ];
-
-    const renderSection = () => {
-        switch (activeSection) {
-            case 'account':
-                return (
-                    <div className='p-6'>
-                        <div className='mb-6'>
-                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
-                                Account Information
-                            </h2>
-                            <p className='text-sm cradle-text-tertiary cradle-mono'>
-                                Basic account details and credentials
-                            </p>
-                        </div>
-
-                        <div className='space-y-4'>
-                            {/* User ID - Read Only */}
-                            <div className='w-full'>
-                                <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                    User ID
-                                </label>
-                                <input
-                                    type='text'
-                                    value={profile?.id || ''}
-                                    className='cradle-search w-full'
-                                    disabled
-                                    readOnly
-                                />
-                                <p className='text-xs cradle-text-muted mt-1'>
-                                    Unique identifier for this account
-                                </p>
-                            </div>
-
-                            <FormField
-                                label='Username'
-                                type='text'
-                                placeholder='Username'
-                                {...register('username')}
-                                error={errors.username}
-                                disabled={!isAdminAndNotOwn && isEdit}
-                            />
-
-                            <FormField
-                                label='Email'
-                                type='text'
-                                placeholder='Email'
-                                {...register('email')}
-                                error={errors.email}
-                                disabled={!isAdminAndNotOwn && isEdit}
-                            />
-
-                            {/* Role - Read Only */}
-                            <div className='w-full'>
-                                <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                    Role
-                                </label>
-                                <input
-                                    type='text'
-                                    value={profile?.role || ''}
-                                    className='cradle-search w-full'
-                                    disabled
-                                    readOnly
-                                />
-                                <p className='text-xs cradle-text-muted mt-1'>
-                                    Current user role and permissions level
-                                </p>
-                            </div>
-
-                            {isEdit ? (
-                                isAdminAndNotOwn && (
-                                    <FormField
-                                        label='Password'
-                                        type='password'
-                                        placeholder='Password'
-                                        {...register('password')}
-                                        error={errors.password}
-                                    />
-                                )
-                            ) : (
-                                <FormField
-                                    label='Password'
-                                    type='password'
-                                    placeholder='Password'
-                                    {...register('password')}
-                                    error={errors.password}
-                                />
-                            )}
-
-                            {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
-                                <>
-                                    <div className='cradle-separator my-6'></div>
-                                    <div className='mb-4'>
-                                        <h3 className='text-lg font-semibold cradle-text-secondary cradle-mono mb-1'>
-                                            Administrative Settings
-                                        </h3>
-                                        <p className='text-sm cradle-text-tertiary'>
-                                            Administrative controls for this account
-                                        </p>
-                                    </div>
-
-                                    <div className='w-full'>
-                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                            Role
-                                        </label>
-                                        <select
-                                            className='cradle-search w-full'
-                                            {...register('role')}
-                                        >
-                                            <option value='author'>User</option>
-                                            <option value='entrymanager'>
-                                                Entry Manager
-                                            </option>
-                                            <option value='admin'>Admin</option>
-                                        </select>
-                                        {errors.role && (
-                                            <p className='cradle-status-error text-sm mt-2'>
-                                                {errors.role.message}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <FormField
-                                        type='checkbox'
-                                        label='Email Confirmed'
-                                        className='switch switch-ghost-primary'
-                                        {...register('email_confirmed')}
-                                        row={true}
-                                    />
-
-                                    <FormField
-                                        type='checkbox'
-                                        label='Account Active'
-                                        className='switch switch-ghost-primary'
-                                        {...register('is_active')}
-                                        row={true}
-                                    />
-                                </>
-                            )}
-                        </div>
-
-                        <div className='cradle-border-t pt-6 mt-6'>
-                            <button
-                                type='submit'
-                                className='cradle-btn cradle-btn-primary w-full'
-                                disabled={!isDirty}
-                            >
-                                {isEdit ? 'Save Changes' : 'Create User'}
-                            </button>
-                        </div>
-                    </div>
-                );
-            case 'security':
-                return (
-                    <div className='p-6'>
-                        <div className='mb-6'>
-                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
-                                Security Settings
-                            </h2>
-                            <p className='text-sm cradle-text-tertiary cradle-mono'>
-                                Manage authentication and account security
-                            </p>
-                        </div>
-
-                        <div className='space-y-3'>
-                            {isOwnAccount && (
-                                <>
-                                    {/* Change Password Section */}
-                                    <div className='py-3'>
-                                        <div className='flex items-center justify-between'>
-                                            <div>
-                                                <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                    Password
-                                                </label>
-                                                <p className='text-xs cradle-text-muted'>
-                                                    Change your account password
-                                                </p>
-                                            </div>
-                                            <button
-                                                type='button'
-                                                className='cradle-btn cradle-btn-ghost'
-                                                onClick={handleChangePassword}
-                                            >
-                                                Change Password
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className='cradle-separator'></div>
-
-                                    {/* API Key Section */}
-                                    <div className='py-3'>
-                                        <div className='flex items-center justify-between'>
-                                            <div>
-                                                <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                    API Key
-                                                </label>
-                                                <p className='text-xs cradle-text-muted'>
-                                                    Generate a new API key for
-                                                    programmatic access
-                                                </p>
-                                            </div>
-                                            <button
-                                                type='button'
-                                                className='cradle-btn cradle-btn-ghost'
-                                                onClick={handleGenerateApiKey}
-                                            >
-                                                Generate API Key
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className='cradle-separator'></div>
-                                </>
-                            )}
-
-                            {(twoFactorEnabled || isOwnAccount) && (
-                                <>
-                                    {/* Two-Factor Authentication Section */}
-                                    <div className='py-3'>
-                                        <div className='flex items-center justify-between'>
-                                            <div>
-                                                <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                    Two-Factor Authentication
-                                                </label>
-                                                <p className='text-xs cradle-text-muted'>
-                                                    {twoFactorEnabled
-                                                        ? 'Two-factor authentication is currently enabled'
-                                                        : 'Add an extra layer of security to your account'}
-                                                </p>
-                                            </div>
-                                            <button
-                                                type='button'
-                                                className={`cradle-btn ${twoFactorEnabled ? 'cradle-status-error !bg-opacity-10' : 'cradle-btn-ghost'}`}
-                                                onClick={handle2FASetup}
-                                            >
-                                                {twoFactorEnabled
-                                                    ? 'Disable 2FA'
-                                                    : 'Enable 2FA'}
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    <div className='cradle-separator'></div>
-                                </>
-                            )}
-
-                            {isOwnAccount && (
-                                <div className='mt-6'>
-                                    <div className='mb-4'>
-                                        <h3 className='text-lg font-semibold cradle-status-error cradle-mono mb-1'>
-                                            Danger Zone
-                                        </h3>
-                                        <p className='text-sm cradle-text-tertiary'>
-                                            Irreversible actions require confirmation
-                                        </p>
-                                    </div>
-                                    <div className='flex items-center justify-between py-3 border-2 border-red-500/20 rounded px-4'>
-                                        <div>
-                                            <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                                Delete Account
-                                            </label>
-                                            <p className='text-xs cradle-text-muted'>
-                                                Permanently delete your account and all
-                                                associated data
-                                            </p>
-                                        </div>
-                                        <button
-                                            type='button'
-                                            className='cradle-btn cradle-status-error !bg-opacity-10'
-                                            onClick={() =>
-                                                setModal(ConfirmDeletionModal, {
-                                                    text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
-                                                    onConfirm: handleDelete,
-                                                })
-                                            }
-                                        >
-                                            Delete Account
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                );
-            case 'apikeys':
-                return (
-                    <div className='p-6'>
-                        <div className='mb-6'>
-                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
-                                API Integration
-                            </h2>
-                            <p className='text-sm cradle-text-tertiary cradle-mono'>
-                                Configure third-party service API keys
-                            </p>
-                        </div>
-
-                        <div className='space-y-4'>
-                            <FormField
-                                label='Catalyst API Key'
-                                type='password'
-                                placeholder='Catalyst API Key'
-                                {...register('catalystKey')}
-                            />
-                        </div>
-
-                        <div className='cradle-border-t pt-6 mt-6'>
-                            <button
-                                type='submit'
-                                className='cradle-btn cradle-btn-primary w-full'
-                                disabled={!isDirty}
-                            >
-                                {isEdit ? 'Save Changes' : 'Create User'}
-                            </button>
-                        </div>
-                    </div>
-                );
-            case 'interface':
-                return (
-                    <div className='p-6'>
-                        <div className='mb-6'>
-                            <h2 className='text-lg font-semibold cradle-text-primary cradle-mono mb-2'>
-                                Interface Preferences
-                            </h2>
-                            <p className='text-sm cradle-text-tertiary cradle-mono'>
-                                Customize your editing and viewing experience
-                            </p>
-                        </div>
-
-                        <div className='space-y-6'>
-                            {/* Editor Settings */}
-                            <div>
-                                <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono mb-4'>
-                                    Editor Settings
-                                </h3>
-                                <div className='flex items-center justify-between py-3'>
-                                    <label
-                                        htmlFor={vimModeId}
-                                        className='flex items-center gap-3 cursor-pointer flex-1'
-                                    >
-                                        <img
-                                            src={vimIcon}
-                                            alt='Vim'
-                                            className='w-6 h-6'
-                                        />
-                                        <div>
-                                            <span className='cradle-label cradle-text-tertiary block mb-1'>
-                                                Vim Mode
-                                            </span>
-                                            <p className='text-xs cradle-text-muted'>
-                                                Enable Vim keybindings in the editor
-                                            </p>
-                                        </div>
-                                    </label>
-                                    <input
-                                        id={vimModeId}
-                                        data-testid='vim-toggle'
-                                        type='checkbox'
-                                        className='switch switch-ghost-primary'
-                                        {...register('vimMode')}
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Appearance */}
-                            <div>
-                                <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono mb-4'>
-                                    Appearance
-                                </h3>
-                                <div className='w-full'>
-                                    <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                        Theme
-                                    </label>
-                                    <select
-                                        className='cradle-search w-full'
-                                        {...register('theme')}
-                                    >
-                                        <option value='dark'>Dark</option>
-                                        <option value='light'>Light</option>
-                                    </select>
-                                    {errors.theme && (
-                                        <p className='cradle-status-error text-sm mt-2'>
-                                            {errors.theme.message}
-                                        </p>
-                                    )}
-                                    <p className='text-xs cradle-text-muted mt-1'>
-                                        Choose your preferred color scheme
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Note Templates */}
-                            <div>
-                                <div className='flex items-center justify-between py-3'>
-                                    <div>
-                                        <label className='cradle-label cradle-text-tertiary block mb-1'>
-                                            Default Note Template
-                                        </label>
-                                        <p className='text-xs cradle-text-muted'>
-                                            Customize the template used for new notes
-                                        </p>
-                                    </div>
-                                    <button
-                                        type='button'
-                                        className='cradle-btn cradle-btn-ghost flex items-center gap-2'
-                                        onClick={editDefaultNoteTemplate}
-                                    >
-                                        <Edit className='w-4 h-4' />
-                                        Edit Template
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Snippets */}
-                            <SnippetList userId={target} />
-                        </div>
-
-                        <div className='cradle-border-t pt-6 mt-6'>
-                            <button
-                                type='submit'
-                                className='cradle-btn cradle-btn-primary w-full'
-                                disabled={!isDirty}
-                            >
-                                {isEdit ? 'Save Changes' : 'Create User'}
-                            </button>
-                        </div>
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
 
     return (
-        <>
-            <div className='w-full h-full'>
-                {/* Page Header */}
-                <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
-                    <div>
-                        <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                            {isEdit ? 'Settings' : 'Add New User'}
-                        </h1>
-                        <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                            {isEdit
-                                ? 'Manage your account preferences and security'
-                                : 'Create a new user account'}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Content Area - Sidebar Layout */}
-                <div className='flex flex-col space-y-4 p-4'>
-                    <div className='flex gap-4'>
-                        {/* Sidebar */}
-                        <div className='w-64 flex-shrink-0'>
-                            <div className='cradle-border cradle-border-l cradle-border-r cradle-bg-elevated sticky top-6'>
-                                <nav className='p-4 space-y-2'>
-                                    {sidebarItems.map((item) => {
-                                        const Icon = item.icon;
-                                        return (
-                                            <button
-                                                key={item.id}
-                                                type='button'
-                                                onClick={() =>
-                                                    setActiveSection(item.id)
-                                                }
-                                                className={`cradle-btn w-full flex items-center gap-3 ${
-                                                    activeSection === item.id
-                                                        ? 'cradle-btn-primary'
-                                                        : 'cradle-btn-ghost'
-                                                }`}
-                                            >
-                                                <Icon className='w-5 h-5 flex-shrink-0' />
-                                                <span className='text-left flex-1'>
-                                                    {item.label}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
-                                </nav>
-                            </div>
-                        </div>
-
-                        {/* Main Content */}
-                        <div className='flex-1'>
-                            <div className='cradle-border cradle-border-l cradle-border-r cradle-bg-elevated'>
-                                <form onSubmit={handleSubmit(onSubmit)}>
-                                    {renderSection()}
-
-                                    {/* Alert at bottom */}
-                                    {alert.show && (
-                                        <div className='p-6 cradle-border-t'>
-                                            <AlertBox alert={alert} />
-                                        </div>
-                                    )}
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        {isEdit ? 'Settings' : 'Add New User'}
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        {isEdit
+                            ? 'Manage your account preferences and security'
+                            : 'Create a new user account'}
+                    </p>
                 </div>
             </div>
-        </>
+
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='max-w-4xl mx-auto'>
+                        <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onSubmit)}>
+                            {/* Account Section */}
+                            <section
+                                id='account'
+                                className='pb-8'
+                            >
+                                <h2 className='text-lg font-semibold cradle-text-primary cradle-mono'>
+                                    Account
+                                </h2>
+                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                    Basic account details and credentials
+                                </p>
+
+                                <div className='space-y-4'>
+                                    {/* Basic Information Card */}
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                        <div className='flex items-center justify-between gap-4 py-2'>
+                                            <div className='flex-1'>
+                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                    Username
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>Your display name across the platform</p>
+                                                {errors.username && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.username.message}</p>
+                                                )}
+                                            </div>
+                                            <div className='w-64'>
+                                                <input
+                                                    type='text'
+                                                    placeholder='Username'
+                                                    className='cradle-input w-full text-sm h-10'
+                                                    {...register('username')}
+                                                    disabled={!isAdminAndNotOwn && isEdit}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className='cradle-separator'></div>
+
+                                        <div className='flex items-center justify-between gap-4 py-2'>
+                                            <div className='flex-1'>
+                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                    Email
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>Used for login and notifications</p>
+                                                {errors.email && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.email.message}</p>
+                                                )}
+                                            </div>
+                                            <div className='w-72'>
+                                                <input
+                                                    type='text'
+                                                    placeholder='Email'
+                                                    className='cradle-input w-full text-sm h-10'
+                                                    {...register('email')}
+                                                    disabled={!isAdminAndNotOwn && isEdit}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Read-Only Information Card */}
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                        <div className='flex items-center justify-between gap-4 py-2'>
+                                            <div className='flex-1'>
+                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                    User ID
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>Unique identifier for API integrations</p>
+                                            </div>
+                                            <div className='w-72'>
+                                                <input
+                                                    type='text'
+                                                    value={profile?.id || ''}
+                                                    className='cradle-input w-full text-sm h-10 opacity-60'
+                                                    disabled
+                                                    readOnly
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className='cradle-separator'></div>
+
+                                        <div className='flex items-center justify-between gap-4 py-2'>
+                                            <div className='flex-1'>
+                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                    Role
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>Determines your access permissions</p>
+                                            </div>
+                                            <div className='w-32'>
+                                                <input
+                                                    type='text'
+                                                    value={profile?.role || ''}
+                                                    className='cradle-input w-full text-sm h-10 opacity-60'
+                                                    disabled
+                                                    readOnly
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {!isEdit && (
+                                        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
+                                            <div className='flex items-center justify-between gap-4'>
+                                                <div className='flex-1'>
+                                                    <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                        Password
+                                                    </label>
+                                                    <p className='text-sm cradle-text-muted'>Minimum 8 characters recommended</p>
+                                                    {errors.password && (
+                                                        <p className='text-sm text-red-500 mt-1'>{errors.password.message}</p>
+                                                    )}
+                                                </div>
+                                                <div className='w-48'>
+                                                    <input
+                                                        type='password'
+                                                        placeholder='Password'
+                                                        className='cradle-input w-full text-sm h-10'
+                                                        {...register('password')}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
+                                        <>
+                                            {/* Administrative Settings Card */}
+                                            <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                                <h3 className='text-base font-semibold cradle-text-secondary cradle-mono mb-2'>
+                                                    Administrative
+                                                </h3>
+
+                                                <div className='flex items-center justify-between gap-4 py-2'>
+                                                    <div className='flex-1'>
+                                                        <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                            Role
+                                                        </label>
+                                                        <p className='text-sm cradle-text-muted'>Controls feature access level</p>
+                                                    </div>
+                                                    <div className='w-40'>
+                                                        <select
+                                                            className='cradle-input w-full text-sm h-10'
+                                                            {...register('role')}
+                                                        >
+                                                            <option value='author'>User</option>
+                                                            <option value='entrymanager'>Entry Manager</option>
+                                                            <option value='admin'>Admin</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div className='cradle-separator'></div>
+
+                                                <div>
+                                                    <label className='flex items-center gap-2 cursor-pointer py-2'>
+                                                        <input
+                                                            type='checkbox'
+                                                            className='switch switch-ghost-primary'
+                                                            {...register('email_confirmed')}
+                                                        />
+                                                        <div>
+                                                            <span className='text-sm cradle-text-tertiary block'>Email Confirmed</span>
+                                                            <span className='text-sm cradle-text-muted'>Allow login without email verification</span>
+                                                        </div>
+                                                    </label>
+                                                    <div className='cradle-separator'></div>
+                                                    <label className='flex items-center gap-2 cursor-pointer py-2'>
+                                                        <input
+                                                            type='checkbox'
+                                                            className='switch switch-ghost-primary'
+                                                            {...register('is_active')}
+                                                        />
+                                                        <div>
+                                                            <span className='text-sm cradle-text-tertiary block'>Active</span>
+                                                            <span className='text-sm cradle-text-muted'>Disabled accounts cannot log in</span>
+                                                        </div>
+                                                    </label>
+                                                </div>
+
+                                                {isAdminAndNotOwn && (
+                                                    <>
+                                                        <div className='cradle-separator'></div>
+                                                        <div className='flex items-center justify-between gap-4 py-2'>
+                                                            <div className='flex-1'>
+                                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                                    Password
+                                                                </label>
+                                                                <p className='text-sm cradle-text-muted'>Set a new password for this user</p>
+                                                            </div>
+                                                            <div className='w-48'>
+                                                                <input
+                                                                    type='password'
+                                                                    placeholder='Password'
+                                                                    className='cradle-input w-full text-sm h-10'
+                                                                    {...register('password')}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* Security Section */}
+                            <section
+                                id='security'
+                                className='border-t border-white/5 pt-8 pb-8'
+                            >
+                                <h2 className='text-lg font-semibold cradle-text-primary cradle-mono'>
+                                    Security
+                                </h2>
+                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                    Authentication, API keys, and account security
+                                </p>
+
+                                <div className='space-y-4'>
+                                    {/* Authentication Card */}
+                                    {(isOwnAccount || (twoFactorEnabled || isOwnAccount)) && (
+                                        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                            {isOwnAccount && (
+                                                <>
+                                                    <div className='flex items-center justify-between py-2'>
+                                                        <div>
+                                                            <span className='text-base cradle-text-primary block'>Password</span>
+                                                            <span className='text-sm cradle-text-muted'>Change your account password</span>
+                                                        </div>
+                                                        <button
+                                                            type='button'
+                                                            className='cradle-btn cradle-btn-ghost text-sm px-3 py-1.5'
+                                                            onClick={handleChangePassword}
+                                                        >
+                                                            Change
+                                                        </button>
+                                                    </div>
+
+                                                    <div className='cradle-separator'></div>
+
+                                                    <div className='flex items-center justify-between py-2'>
+                                                        <div>
+                                                            <span className='text-base cradle-text-primary block'>API Key</span>
+                                                            <span className='text-sm cradle-text-muted'>Generate key for programmatic access</span>
+                                                        </div>
+                                                        <button
+                                                            type='button'
+                                                            className='cradle-btn cradle-btn-ghost text-sm px-3 py-1.5'
+                                                            onClick={handleGenerateApiKey}
+                                                        >
+                                                            Generate
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {(twoFactorEnabled || isOwnAccount) && (
+                                                <>
+                                                    {isOwnAccount && <div className='cradle-separator'></div>}
+                                                    <div className='flex items-center justify-between py-2'>
+                                                        <div>
+                                                            <span className='text-base cradle-text-primary block'>Two-Factor Auth</span>
+                                                            <span className='text-sm cradle-text-muted'>
+                                                                {twoFactorEnabled ? 'Currently enabled' : 'Add extra security layer'}
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            type='button'
+                                                            className={`text-sm px-3 py-1.5 rounded ${twoFactorEnabled ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'cradle-btn cradle-btn-ghost'}`}
+                                                            onClick={handle2FASetup}
+                                                        >
+                                                            {twoFactorEnabled ? 'Disable' : 'Enable'}
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* API Integration Card */}
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                    Catalyst API Key
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>
+                                                    Enables threat intelligence enrichment from PRODAFT Catalyst
+                                                </p>
+                                            </div>
+                                            <div className='w-72'>
+                                                <input
+                                                    type='password'
+                                                    placeholder='Enter API key'
+                                                    className='cradle-input w-full text-sm h-10'
+                                                    {...register('catalystKey')}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {isOwnAccount && (
+                                        <>
+                                            {/* Danger Zone Card */}
+                                            <div className='rounded-lg border border-red-500/20 bg-red-500/[0.02] p-4'>
+                                                <div className='flex items-center justify-between'>
+                                                    <div>
+                                                        <span className='text-base text-red-400 block'>Delete Account</span>
+                                                        <span className='text-sm cradle-text-muted'>Permanently remove account and data</span>
+                                                    </div>
+                                                    <button
+                                                        type='button'
+                                                        className='text-sm px-3 py-1.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20'
+                                                        onClick={() =>
+                                                            setModal(ConfirmDeletionModal, {
+                                                                text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
+                                                                onConfirm: handleDelete,
+                                                            })
+                                                        }
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* Interface Section */}
+                            <section
+                                id='interface'
+                                className='border-t border-white/5 pt-8 pb-8'
+                            >
+                                <h2 className='text-lg font-semibold cradle-text-primary cradle-mono'>
+                                    Interface
+                                </h2>
+                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                    Customize your editing and viewing experience
+                                </p>
+
+                                <div className='space-y-4'>
+                                    {/* Appearance Card */}
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                        <div className='flex items-center justify-between gap-4 py-2'>
+                                            <div className='flex-1'>
+                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                    Theme
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>Choose your preferred color scheme</p>
+                                            </div>
+                                            <button
+                                                type='button'
+                                                onClick={() => setValue('theme', watch('theme') === 'dark' ? 'light' : 'dark')}
+                                                className='p-2 rounded transition-colors bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                                            >
+                                                {watch('theme') === 'dark' ? (
+                                                    <SunLight className='w-5 h-5' />
+                                                ) : (
+                                                    <HalfMoon className='w-5 h-5' />
+                                                )}
+                                            </button>
+                                        </div>
+
+                                        <div className='cradle-separator'></div>
+
+                                        <div className='py-2'>
+                                            <div className='flex items-center justify-between gap-4'>
+                                                <div className='flex-1'>
+                                                    <label className='cradle-label cradle-text-tertiary text-sm block mb-1 flex items-center gap-2'>
+                                                        Vim Mode
+                                                        <img src={vimIcon} alt='Vim' className='w-4 h-4' />
+                                                    </label>
+                                                    <p className='text-sm cradle-text-muted'>Use Vim keybindings in the markdown editor</p>
+                                                </div>
+                                                <label
+                                                    htmlFor={vimModeId}
+                                                    className='relative inline-flex items-center cursor-pointer'
+                                                >
+                                                    <input
+                                                        id={vimModeId}
+                                                        data-testid='vim-toggle'
+                                                        type='checkbox'
+                                                        className='sr-only'
+                                                        {...register('vimMode')}
+                                                    />
+                                                    <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${watch('vimMode') ? 'bg-orange-500' : 'bg-gray-600'}`}>
+                                                        <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-transform duration-200 ease-in-out ${watch('vimMode') ? 'translate-x-5' : 'translate-x-0'}`}></div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Note Template Card */}
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
+                                        <div className='flex items-center justify-between'>
+                                            <div>
+                                                <span className='text-sm cradle-text-tertiary block mb-0.5'>Note Template</span>
+                                                <span className='text-sm cradle-text-muted'>Preset structure for new notes you create</span>
+                                            </div>
+                                            <button
+                                                type='button'
+                                                className='cradle-btn cradle-btn-ghost text-sm px-3 py-1.5 flex items-center gap-1.5'
+                                                onClick={editDefaultNoteTemplate}
+                                            >
+                                                <Edit className='w-3.5 h-3.5' />
+                                                Edit
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Snippets Card */}
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
+                                        <p className='text-sm cradle-text-muted mb-2'>Reusable text blocks you can insert with shortcuts</p>
+                                        <SnippetList userId={target} />
+                                    </div>
+                                </div>
+                            </section>
+
+                            {/* Save Button - Only for new user creation */}
+                            {!isEdit && (
+                                <div className='border-t border-white/5 pt-5'>
+                                    <button
+                                        type='submit'
+                                        className='cradle-btn cradle-btn-primary px-6'
+                                        disabled={!isDirty}
+                                    >
+                                        Create User
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Alert */}
+                            {alert.show && (
+                                <div className='pt-4'>
+                                    <AlertBox alert={alert} />
+                                </div>
+                            )}
+                        </form>
+                </div>
+            </div>
+        </div>
     );
 }

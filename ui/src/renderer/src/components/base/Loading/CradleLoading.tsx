@@ -7,7 +7,7 @@ const CradleLoading = () => {
                 <Logo text={true} />
             </div>
             <svg
-                className='spinner-ring spinner-primary spinner-xl dark:[--spinner-color:--white]'
+                className='spinner-ring spinner-primary spinner-xl dark:[--spinner-color:#ffffff]'
                 viewBox='25 25 50 50'
                 strokeWidth='5'
             >

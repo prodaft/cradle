@@ -39,6 +39,7 @@ interface FilesListProps {
     references?: any;
     setAlert?: StateSetter<Alert> | null;
     onError?: ((error: any) => void) | null;
+    onCountChange?: (count: { current: number; total: number }) => void;
 }
 
 export default function FilesList({
@@ -48,6 +49,7 @@ export default function FilesList({
     references = null,
     setAlert: externalSetAlert = null,
     onError = null,
+    onCountChange,
 }: FilesListProps) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [files, setFiles] = useState<FileReferenceWithNote[]>([]);
@@ -129,6 +131,12 @@ export default function FilesList({
             const response = await notesApi.notesFilesRetrieve(params);
             setFiles(response.results);
             setTotalPages(response.totalPages);
+            if (onCountChange) {
+                onCountChange({
+                    current: response.results.length,
+                    total: response.count || 0,
+                });
+            }
             setLoading(false);
         } catch (error) {
             if (onError) {

@@ -114,7 +114,7 @@ export default function Sidebar({
         : { color: 'var(--cradle-sidebar-icon)' };
 
     return (
-        <div className='h-full sticky top-0' data-testid='sidebar-test'>
+        <div className='h-full shrink-0' data-testid='sidebar-test'>
             <aside
                 className={`cradle-border-r !h-full w-14 overflow-visible group/sidebar`}
                 style={{

@@ -1,3 +1,4 @@
+import { Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**
@@ -76,14 +77,28 @@ export default function FormModal({
     };
 
     return (
-        <div className='w-[100%]'>
-            <h2 className='text-2xl font-bold mb-4'>{title}</h2>
+        <div className='min-w-[320px] max-w-lg'>
+            {/* Header with title and close button */}
+            <div className='flex items-center justify-between mb-5'>
+                <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
+                    {title}
+                </h2>
+                <button
+                    type='button'
+                    className='cradle-btn p-2'
+                    onClick={closeModal}
+                    title='Close'
+                >
+                    <Xmark width={16} height={16} />
+                </button>
+            </div>
+
             <form onSubmit={handleSubmit}>
                 {fields.map((field, index) => (
                     <div key={index} className='mb-4'>
                         <label
                             htmlFor={field.name}
-                            className='block text-sm font-medium text-gray-700 mb-1'
+                            className='cradle-label mb-2 block'
                         >
                             {field.label}
                         </label>
@@ -91,7 +106,7 @@ export default function FormModal({
                             <textarea
                                 id={field.name}
                                 name={field.name}
-                                className='textarea textarea-bordered w-full'
+                                className='cradle-textarea'
                                 placeholder={field.placeholder || ''}
                                 value={formData[field.name]}
                                 onChange={handleChange}
@@ -101,7 +116,7 @@ export default function FormModal({
                                 id={field.name}
                                 name={field.name}
                                 type={field.type}
-                                className='input input-block input-bordered w-full'
+                                className='cradle-input'
                                 placeholder={field.placeholder || ''}
                                 value={formData[field.name]}
                                 onChange={handleChange}
@@ -109,11 +124,20 @@ export default function FormModal({
                         )}
                     </div>
                 ))}
-                <div className='flex justify-end gap-2'>
-                    <button type='button' className='btn' onClick={closeModal}>
+
+                {/* Action buttons */}
+                <div className='flex gap-3 pt-3'>
+                    <button
+                        type='button'
+                        className='cradle-btn flex-1'
+                        onClick={closeModal}
+                    >
                         Cancel
                     </button>
-                    <button type='submit' className='btn btn-primary'>
+                    <button
+                        type='submit'
+                        className='cradle-btn cradle-btn-primary flex-1'
+                    >
                         Submit
                     </button>
                 </div>

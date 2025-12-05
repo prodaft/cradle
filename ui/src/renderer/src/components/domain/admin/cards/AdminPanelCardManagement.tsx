@@ -32,7 +32,7 @@ export default function AdminPanelCardManagement({
                 title={name}
                 actions={actions}
                 onClick={handleClick}
-                className='bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg'
+                className='bg-cradle3 bg-opacity-20'
             />
         </>
     );

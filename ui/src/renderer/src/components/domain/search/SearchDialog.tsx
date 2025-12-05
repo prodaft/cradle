@@ -6,7 +6,7 @@ import { useNotif } from '@contexts/ui';
 import { useApi, useAPICall, useCradleNavigate } from '@hooks';
 import { handleAPIError } from '@utils/api';
 import { createDashboardLink } from '@utils/dashboard';
-import { Search } from 'iconoir-react';
+import { Search, Xmark } from 'iconoir-react';
 import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';
@@ -110,6 +110,10 @@ export default function SearchDialog({
             setPage(1);
             performSearch();
         }
+        // Escape to close
+        if (event.key === 'Escape') {
+            onClose();
+        }
     };
 
     const handleResultClick = (link: string) => (e: React.MouseEvent) => {
@@ -184,41 +188,80 @@ export default function SearchDialog({
 
     if (!isOpen || !dialogRoot) return null;
 
+    const hasActiveFilters = entrySubtypeFilters.length > 0;
+
     return createPortal(
         <div
-            className='fixed inset-0 bg-black bg-opacity-20 flex items-center justify-center z-50'
+            className='fixed inset-0 bg-black/70 flex items-start justify-center z-50 pt-[10vh]'
             onClick={() => {
                 setAlert({ ...alert, show: false });
                 onClose();
             }}
         >
             <div
-                className='w-11/12 md:w-3/4 lg:w-1/2 h-4/5 bg-cradle3 p-8 bg-opacity-50 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col relative'
+                className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] cradle-bg-elevated cradle-border flex flex-col relative overflow-hidden'
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className='mb-4 flex items-center gap-2'>
-                    <div className='flex-grow relative'>
-                        <textarea
-                            ref={inputRef}
-                            className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white resize-none max-h-[20vh] overflow-auto overflow-y-hidden'
-                            placeholder='Search...'
-                            value={searchQuery}
-                            rows={1}
-                            onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
-                                setSearchQuery(event.target.value);
-                                autoResize(event.target);
-                            }}
-                            onKeyDown={handleKeyDown}
-                        />
+                {/* Search Header */}
+                <div className='p-4 cradle-border-b'>
+                    <div className='flex items-center gap-3'>
+                        <div className='flex-grow flex items-center gap-2 cradle-bg-secondary cradle-border px-3 py-2 rounded'>
+                            <textarea
+                                ref={inputRef}
+                                className='flex-grow bg-transparent text-cradle-text-primary placeholder:text-cradle-text-muted text-base resize-none outline-none max-h-[15vh] overflow-y-auto leading-relaxed'
+                                placeholder='Search entries...'
+                                value={searchQuery}
+                                rows={1}
+                                onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
+                                    setSearchQuery(event.target.value);
+                                    autoResize(event.target);
+                                }}
+                                onKeyDown={handleKeyDown}
+                            />
+                            <button
+                                onClick={() => {
+                                    setPage(1);
+                                    performSearch();
+                                }}
+                                className='cradle-btn cradle-btn-secondary p-1.5 hover:cradle-bg-elevated rounded flex-shrink-0 transition-colors'
+                                title='Search'
+                            >
+                                <Search className='w-4 h-4' />
+                            </button>
+                        </div>
                         <button
-                            onClick={() => performSearch()}
-                            className='absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer'
+                            onClick={onClose}
+                            className='cradle-btn p-2'
+                            title='Close (Esc)'
                         >
-                            <Search />
+                            <Xmark width={16} height={16} />
                         </button>
+                    </div>
+
+                    {/* Keyboard hint */}
+                    <div className='flex items-center gap-4 mt-3 text-xs text-cradle-text-muted'>
+                        <span className='flex items-center gap-1.5'>
+                            <kbd className='px-1.5 py-0.5 cradle-bg-secondary cradle-border text-[10px] font-mono'>
+                                Enter
+                            </kbd>
+                            <span>search</span>
+                        </span>
+                        <span className='flex items-center gap-1.5'>
+                            <kbd className='px-1.5 py-0.5 cradle-bg-secondary cradle-border text-[10px] font-mono'>
+                                Shift+Enter
+                            </kbd>
+                            <span>new line</span>
+                        </span>
+                        <span className='flex items-center gap-1.5'>
+                            <kbd className='px-1.5 py-0.5 cradle-bg-secondary cradle-border text-[10px] font-mono'>
+                                Esc
+                            </kbd>
+                            <span>close</span>
+                        </span>
                     </div>
                 </div>
 
+                {/* Filters Section */}
                 <SearchFilterSection
                     showFilters={showFilters}
                     setShowFilters={setShowFilters}
@@ -227,44 +270,88 @@ export default function SearchDialog({
                     setEntrySubtypeFilters={setEntrySubtypeFilters}
                 />
 
-                <AlertBox alert={alert} />
-                {isLoading ? (
-                    <div className='flex items-center justify-center h-full'>
-                        <div className='spinner-dot-pulse spinner-xl'>
-                            <div className='spinner-pulse-dot'></div>
-                        </div>
+                {/* Active Filters Display */}
+                {hasActiveFilters && (
+                    <div className='px-4 py-2 cradle-border-b flex items-center gap-2 flex-wrap'>
+                        <span className='text-xs text-cradle-text-muted uppercase tracking-wider'>
+                            Active:
+                        </span>
+                        {entrySubtypeFilters.map((filter) => (
+                            <button
+                                key={filter}
+                                onClick={() =>
+                                    setEntrySubtypeFilters((prev) =>
+                                        prev.filter((f) => f !== filter),
+                                    )
+                                }
+                                className='inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-cradle-accent-primary/10 text-cradle-accent-primary border border-cradle-accent-primary/30 hover:bg-cradle-accent-primary/20 transition-colors'
+                            >
+                                <span>{filter}</span>
+                                <Xmark className='w-3 h-3' />
+                            </button>
+                        ))}
+                        <button
+                            onClick={() => setEntrySubtypeFilters([])}
+                            className='text-xs text-cradle-text-muted hover:text-cradle-accent-primary transition-colors'
+                        >
+                            Clear all
+                        </button>
                     </div>
-                ) : (
-                    <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
-                        {results && results.length > 0 ? (
-                            <div>
-                                {results.map((result) => {
-                                    const dashboardLink = createDashboardLink(result);
-                                    return (
-                                        <div className='mb-3' key={result.id}>
-                                            <SearchResult
-                                                name={result.name}
-                                                type={result.type}
-                                                subtype={result.subtype}
-                                                onClick={handleResultClick(
-                                                    dashboardLink,
-                                                )}
-                                            />
-                                        </div>
-                                    );
-                                })}
+                )}
 
-                                <Pagination
-                                    currentPage={page}
-                                    totalPages={totalPages}
-                                    onPageChange={setPage}
-                                />
+                <AlertBox alert={alert} />
+
+                {/* Results Section */}
+                <div className='flex-1 overflow-y-auto min-h-0'>
+                    {isLoading ? (
+                        <div className='flex items-center justify-center py-12'>
+                            <div className='spinner-dot-pulse spinner-xl'>
+                                <div className='spinner-pulse-dot'></div>
                             </div>
-                        ) : (
-                            <div className='w-full text-center text-zinc-400 dark:text-zinc-300'>
-                                No results found!
-                            </div>
-                        )}
+                        </div>
+                    ) : results && results.length > 0 ? (
+                        <div className='divide-y divide-cradle-border-primary'>
+                            {results.map((result) => {
+                                const dashboardLink = createDashboardLink(result);
+                                return (
+                                    <div
+                                        key={result.id}
+                                        className='group hover:bg-cradle-bg-secondary transition-colors'
+                                    >
+                                        <SearchResult
+                                            name={result.name}
+                                            type={result.type}
+                                            subtype={result.subtype}
+                                            onClick={handleResultClick(dashboardLink)}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className='flex flex-col items-center justify-center py-12 text-cradle-text-muted'>
+                            <Search className='w-10 h-10 mb-3 opacity-30' />
+                            <span className='text-sm'>No results found</span>
+                            {searchQuery && (
+                                <span className='text-xs mt-1 opacity-70'>
+                                    Try a different search term
+                                </span>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer with Pagination */}
+                {results && results.length > 0 && (
+                    <div className='px-4 py-3 cradle-border-t cradle-bg-secondary flex items-center justify-between'>
+                        <span className='text-xs text-cradle-text-muted'>
+                            Page {page} of {totalPages}
+                        </span>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={setPage}
+                        />
                     </div>
                 )}
             </div>

@@ -4,10 +4,9 @@ import { useProfile } from '@contexts';
 import { useNotif } from '@contexts/ui';
 import { useApi, useCradleNavigate } from '@hooks';
 import { handleAPIError, parseAPIError } from '@utils/api';
-import { ArrowLeft, ArrowRight, Search } from 'iconoir-react';
+import { Search } from 'iconoir-react';
 import { ReactNode, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
-import NavbarButton from './NavbarButton';
 
 /**
  * Navbar component props
@@ -81,7 +80,7 @@ export default function Navbar({ contents }: NavbarProps): JSX.Element {
 
     return (
         <div
-            className='sticky top-0 w-full z-40 cradle-border-b h-14'
+            className='sticky top-0 w-full z-40 cradle-border-b h-14 shrink-0'
             style={{
                 backgroundColor: 'var(--cradle-bg-topbar)',
                 color: 'var(--cradle-sidebar-text)',
@@ -94,31 +93,9 @@ export default function Navbar({ contents }: NavbarProps): JSX.Element {
                 </div>
 
                 <div className='flex items-center justify-center space-x-2'>
-                    <NavbarButton
-                        icon={
-                            <ArrowLeft
-                                style={{ color: 'var(--cradle-sidebar-icon)' }}
-                                width='1em'
-                                height='1.1em'
-                                strokeWidth='1.5'
-                            />
-                        }
-                        onClick={() => navigate(-1)}
-                    />
-                    <NavbarButton
-                        icon={
-                            <ArrowRight
-                                style={{ color: 'var(--cradle-sidebar-icon)' }}
-                                width='1em'
-                                height='1.1em'
-                                strokeWidth='1.5'
-                            />
-                        }
-                        onClick={() => navigate(1)}
-                    />
                     <div className='relative w-full max-w-lg'>
                         <input
-                            className='w-full py-1.5 pl-10 pr-3 text-sm border bg-transparent'
+                            className='w-full py-1.5 pl-10 pr-3 text-sm border bg-transparent rounded-full'
                             style={{
                                 borderColor: 'var(--cradle-border-accent)',
                                 color: 'var(--cradle-sidebar-text)',

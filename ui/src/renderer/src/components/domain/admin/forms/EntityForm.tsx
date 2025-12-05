@@ -222,7 +222,7 @@ export default function EntityForm({
 
                 <Tabs tabClass={TabClasses.PILL}>
                     <Tab title='Settings' classes='space-y-4'>
-                        <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
+                        <div className='p-8 rounded-md bg-cradle3 bg-opacity-20'>
                             <Form<FormData>
                                 schema={entitySchema}
                                 defaultValues={initialData}

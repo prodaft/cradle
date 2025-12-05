@@ -1,3 +1,4 @@
+import { WarningCircle, Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**
@@ -48,30 +49,57 @@ export default function ActionConfirmationModal({
     };
 
     return (
-        <div className=''>
-            <h2 className='text-2xl font-bold mb-4'>Confirm Action</h2>
-            <p className='mb-4'>{text}</p>
+        <div className='min-w-[320px] max-w-md'>
+            {/* Header with icon and close button */}
+            <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <div className='p-2 bg-cradle-accent-warning/10 text-cradle-accent-warning'>
+                        <WarningCircle className='w-5 h-5' />
+                    </div>
+                    <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
+                        Confirm Action
+                    </h2>
+                </div>
+                <button
+                    className='cradle-btn p-2'
+                    onClick={closeModal}
+                    title='Close'
+                >
+                    <Xmark width={16} height={16} />
+                </button>
+            </div>
+
+            {/* Body text */}
+            <p className='text-sm text-cradle-text-secondary mb-5 leading-relaxed'>
+                {text}
+            </p>
+
+            {/* Confirmation input */}
             {confirmText && (
-                <div className='mb-4'>
-                    <label className='block text-sm font-medium text-gray-700 mb-1'>
-                        Please type "<span className='font-bold'>{confirmText}</span>"
-                        to confirm:
+                <div className='mb-5'>
+                    <label className='cradle-label mb-2 block'>
+                        Type "<span className='text-cradle-accent-primary'>{confirmText}</span>" to confirm
                     </label>
                     <input
                         type='text'
-                        className='input input-bordered w-full'
-                        placeholder={`Type "${confirmText}" here`}
+                        className='cradle-input'
+                        placeholder={confirmText}
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                     />
                 </div>
             )}
-            <div className='flex justify-end gap-2'>
-                <button className='btn' onClick={closeModal}>
+
+            {/* Action buttons */}
+            <div className='flex gap-3 pt-2'>
+                <button
+                    className='cradle-btn flex-1'
+                    onClick={closeModal}
+                >
                     Cancel
                 </button>
                 <button
-                    className='btn btn-primary'
+                    className='cradle-btn cradle-btn-primary flex-1'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >

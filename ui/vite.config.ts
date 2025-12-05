@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import dns from 'dns';
 import path from 'path';
@@ -8,7 +9,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 dns.setDefaultResultOrder('verbatim');
 
 export default defineConfig(({ mode }) => ({
-    plugins: [react(), visualizer(), nodePolyfills()],
+    plugins: [tailwindcss(), react(), visualizer(), nodePolyfills()],
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src/renderer/src'),

@@ -1,4 +1,4 @@
-import { ChangeEvent, Dispatch, SetStateAction } from 'react';
+import { Dispatch, SetStateAction } from 'react';
 
 /**
  * SearchFilter component props
@@ -34,33 +34,30 @@ export default function SearchFilter({
     filters,
     setFilters,
 }: SearchFilterProps): JSX.Element {
-    const updatePrevState = (
-        prevState: string[],
-        name: string,
-        checked: boolean,
-    ): string[] => {
-        if (checked) {
-            return [...prevState, name];
-        } else {
-            return prevState.filter((item) => item !== name);
-        }
-    };
+    const isActive = filters.includes(option);
 
-    const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const { name, checked } = event.target;
-        setFilters((prevFilters) => updatePrevState(prevFilters, name, checked));
+    const toggleFilter = () => {
+        setFilters((prevFilters) =>
+            isActive
+                ? prevFilters.filter((item) => item !== option)
+                : [...prevFilters, option],
+        );
     };
 
     return (
-        <label key={option} className='flex items-center space-x-3 w-36'>
-            <input
-                type='checkbox'
-                className='cradle-checkbox'
-                name={option}
-                checked={filters.includes(option)}
-                onChange={handleCheckboxChange}
-            />
-            <span className='text-zinc-300'>{text}</span>
-        </label>
+        <button
+            onClick={toggleFilter}
+            className={`
+                px-2.5 py-1 text-xs font-mono transition-all duration-150
+                border
+                ${
+                    isActive
+                        ? 'bg-cradle-accent-primary/15 text-cradle-accent-primary border-cradle-accent-primary/40'
+                        : 'bg-transparent text-cradle-text-secondary border-cradle-border-primary hover:border-cradle-border-interactive hover:text-cradle-text-primary'
+                }
+            `}
+        >
+            {text}
+        </button>
     );
 }

@@ -59,8 +59,8 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                 <input
                     ref={ref}
                     type={type}
-                    className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${
-                        hasError ? 'border-red-500 focus:ring-red-500' : ''
+                    className={`cradle-input w-full ${
+                        hasError ? 'border-cradle-accent-error' : ''
                     } ${className || ''}`}
                     aria-invalid={hasError}
                     aria-describedby={hasError ? `${props.name}-error` : undefined}
@@ -129,8 +129,8 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                     <input
                         ref={ref}
                         type={type}
-                        className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${
-                            hasError ? 'border-red-500 focus:ring-red-500' : ''
+                        className={`cradle-input w-full ${
+                            hasError ? 'border-cradle-accent-error' : ''
                         } ${className || ''}`}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${props.name}-error` : undefined}

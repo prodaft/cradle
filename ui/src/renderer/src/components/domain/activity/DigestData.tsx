@@ -44,6 +44,7 @@ export default function DigestData() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const [sortField, setSortField] = useState(
         searchParams.get('digests_sort_field') || 'created_at',
     );
@@ -242,6 +243,7 @@ export default function DigestData() {
 
             setDigests(response.results);
             setTotalPages(response.totalPages);
+            setTotalCount(response.count || 0);
         } catch (error: any) {
             console.error('Failed to fetch digests', error);
             notify({
@@ -297,6 +299,14 @@ export default function DigestData() {
                     <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
                         Browse & Manage Imported Data
                     </p>
+                </div>
+                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
+                    <span className="font-semibold">
+                        {digests.length === totalCount || (digests.length === 0 && totalCount === 0)
+                            ? totalCount
+                            : `${digests.length}/${totalCount}`}
+                    </span>
+                    <span className="opacity-70">digests</span>
                 </div>
             </div>
 

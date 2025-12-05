@@ -1,3 +1,4 @@
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'electron-vite';
 import path from 'path';
@@ -6,7 +7,7 @@ export default defineConfig({
     main: {},
     preload: {},
     renderer: {
-        plugins: [react()],
+        plugins: [tailwindcss(), react()],
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src/renderer/src'),

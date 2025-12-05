@@ -126,7 +126,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                 <Link
                                                     key={`${entry.name}:${entry.subtype}`}
                                                     to={createDashboardLink(entry)}
-                                                    className='text-zinc-100 dark:text-zinc-300 hover:underline hover:text-cradle2 backdrop-filter bg-cradle3 bg-opacity-60 backdrop-blur-lg h-6 px-1 py-1 mx-1 my-1 rounded-md'
+                                                    className='text-zinc-100 dark:text-zinc-300 hover:underline hover:text-cradle2 bg-cradle3 bg-opacity-60 h-6 px-1 py-1 mx-1 my-1 rounded-md'
                                                 >
                                                     {truncateText(entry.name, 30)}
                                                 </Link>

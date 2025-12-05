@@ -50,6 +50,7 @@ export default function Notes() {
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
         null,
     );
+    const [notesCount, setNotesCount] = useState({ current: 0, total: 0 });
 
     const updateSearchParams = (filters: SearchFilters) => {
         const newParams = new URLSearchParams(searchParams);
@@ -168,12 +169,14 @@ export default function Notes() {
                         Search & Manage Your Notes
                     </p>
                 </div>
-                <button
-                    className='cradle-btn cradle-btn-primary flex items-center justify-center w-10 h-10 text-white text-xl font-bold'
-                    onClick={handleCreateNewNote}
-                >
-                    +
-                </button>
+                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
+                    <span className='font-semibold'>
+                        {notesCount.current === notesCount.total || (notesCount.current === 0 && notesCount.total === 0)
+                            ? notesCount.total
+                            : `${notesCount.current}/${notesCount.total}`}
+                    </span>
+                    <span className='opacity-70'>notes</span>
+                </div>
             </div>
 
             {/* Results Section */}
@@ -183,6 +186,8 @@ export default function Notes() {
                         query={submittedFilters}
                         noteActions={[{ Component: DeleteNote, props: {} }]}
                         onFilterChange={handleColumnFilterChange}
+                        onCreateNote={handleCreateNewNote}
+                        onTotalCountChange={setNotesCount}
                         contentSearch={{
                             value: searchFilters.content,
                             onChange: (value: string) => {

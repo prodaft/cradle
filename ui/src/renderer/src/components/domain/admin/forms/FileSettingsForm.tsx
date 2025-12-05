@@ -194,7 +194,7 @@ export default function FileSettingsForm() {
                 <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     File Processing Settings
                 </h1>
-                <div className='p-8 backdrop-blur-sm rounded-md bg-cradle3 bg-opacity-20'>
+                <div className='p-8 rounded-md bg-cradle3 bg-opacity-20'>
                     <Tabs tabClass={TabClasses.PILL}>
                         <Tab title='Settings'>
                             <Form<FileSettingsFormValues>

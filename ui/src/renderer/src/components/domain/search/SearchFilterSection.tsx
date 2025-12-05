@@ -1,7 +1,7 @@
 import Collapsible from '@components/base/Collapsible/Collapsible';
 import SearchFilter from '@components/forms/SearchFilter';
 import { SubtypeHierarchy } from '@utils/dashboard';
-import { NavArrowDown, NavArrowUp } from 'iconoir-react';
+import { FilterList, NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { Dispatch, SetStateAction } from 'react';
 
 /**
@@ -47,62 +47,66 @@ export default function SearchFilterSection({
     };
 
     const hierarchy = new SubtypeHierarchy(entrySubtypes);
+    const hasFilters = entrySubtypeFilters.length > 0;
 
     return (
-        <>
-            <div
-                className='flex items-center justify-start cursor-pointer'
+        <div className='cradle-border-b'>
+            {/* Filter Toggle Button */}
+            <button
                 onClick={toggleFilters}
+                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-cradle-bg-secondary transition-colors group'
             >
-                <div className='text-zinc-400 font-medium'>Filters</div>
+                <div className='flex items-center gap-2'>
+                    <FilterList className='w-4 h-4 text-cradle-text-muted group-hover:text-cradle-accent-primary transition-colors' />
+                    <span className='text-sm text-cradle-text-secondary font-medium'>
+                        Filter by type
+                    </span>
+                    {hasFilters && (
+                        <span className='px-1.5 py-0.5 text-[10px] bg-cradle-accent-primary text-white font-mono'>
+                            {entrySubtypeFilters.length}
+                        </span>
+                    )}
+                </div>
                 {showFilters ? (
-                    <NavArrowUp
-                        className='text-zinc-400'
-                        height='1.5em'
-                        width='1.5em'
-                    />
+                    <NavArrowUp className='w-4 h-4 text-cradle-text-muted' />
                 ) : (
-                    <NavArrowDown
-                        className='text-zinc-400'
-                        height='1.5em'
-                        width='1.5em'
-                    />
+                    <NavArrowDown className='w-4 h-4 text-cradle-text-muted' />
                 )}
-            </div>
+            </button>
+
+            {/* Collapsible Filter Content */}
             <div
-                className={`flex-shrink-0 overflow-x-hidden overflow-y-scroll no-scrollbar backdrop-blur-lg rounded-lg my-2 ${showFilters ? 'h-48' : 'h-0 opacity-0'}`}
+                className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                    showFilters ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+                }`}
             >
-                <div className='flex flex-col md:flex-row justify-start items-start space-y-4 md:space-y-0 md:space-x-4 px-4'>
-                    <div className='w-auto flex flex-col'>
-                        <div className='flex flex-wrap text-zinc-300'>
-                            {hierarchy.convert(
-                                (value, children) => (
-                                    <Collapsible
-                                        className='text-zinc-300'
-                                        label={value}
-                                        key={value}
-                                    >
-                                        <div className='w-auto flex flex-col'>
-                                            <div className='flex flex-wrap'>
-                                                {children}
-                                            </div>
-                                        </div>
-                                    </Collapsible>
-                                ),
-                                (value, path) => (
-                                    <SearchFilter
-                                        key={value}
-                                        text={value}
-                                        option={`${path}${value}`}
-                                        filters={entrySubtypeFilters}
-                                        setFilters={setEntrySubtypeFilters}
-                                    />
-                                ),
-                            )}
-                        </div>
+                <div className='px-4 py-3 bg-cradle-bg-secondary/50 overflow-y-auto max-h-56'>
+                    <div className='space-y-2'>
+                        {hierarchy.convert(
+                            (value, children) => (
+                                <Collapsible
+                                    className='text-cradle-text-secondary'
+                                    label={value}
+                                    key={value}
+                                >
+                                    <div className='pl-4 pt-2 flex flex-wrap gap-1.5'>
+                                        {children}
+                                    </div>
+                                </Collapsible>
+                            ),
+                            (value, path) => (
+                                <SearchFilter
+                                    key={value}
+                                    text={value}
+                                    option={`${path}${value}`}
+                                    filters={entrySubtypeFilters}
+                                    setFilters={setEntrySubtypeFilters}
+                                />
+                            ),
+                        )}
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }

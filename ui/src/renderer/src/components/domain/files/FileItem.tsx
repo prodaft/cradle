@@ -78,7 +78,7 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
         <div ref={ref} {...props}>
             <div
                 key={file.id}
-                className='relative h-fit w-full bg-cradle3 px-3 py-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl my-2 flex items-center'
+                className='relative h-fit w-full bg-cradle3 px-3 py-4 bg-opacity-20 rounded-xl my-2 flex items-center'
             >
                 <div className='flex-grow text-xs'>
                     <div className='flex flex-wrap gap-2 mb-2 ml-1'>

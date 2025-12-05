@@ -267,23 +267,21 @@ function EnrichmentRequestsList({
             )}
 
             {/* Table */}
-            <TableCard>
-                <ListView
-                    data={enrichmentRequests}
-                    columns={columns}
-                    renderRow={renderRow}
-                    loading={loading}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={onSort}
-                    sortFieldMapping={sortFieldMapping}
-                    filterableColumns={filterableColumns}
-                    filterValues={columnFilters}
-                    emptyMessage='No enrichment requests found'
-                    enableMultiSelect={true}
-                    setSelected={(ids) => setSelectedRequests(ids)}
-                />
-            </TableCard>
+            <ListView
+                data={enrichmentRequests}
+                columns={columns}
+                renderRow={renderRow}
+                loading={loading}
+                sortField={sortField}
+                sortDirection={sortDirection}
+                onSort={onSort}
+                sortFieldMapping={sortFieldMapping}
+                filterableColumns={filterableColumns}
+                filterValues={columnFilters}
+                emptyMessage='No enrichment requests found'
+                enableMultiSelect={true}
+                setSelected={(ids) => setSelectedRequests(ids)}
+            />
         </div>
     );
 }

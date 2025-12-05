@@ -239,7 +239,7 @@ export default function GraphSettingsForm() {
                 <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     Graph Simulation Settings
                 </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
+                <div className='bg-cradle3 p-8 bg-opacity-20 rounded-md'>
                     <Tabs tabClass={TabClasses.PILL}>
                         <Tab title='Actions'>
                             <div className='flex flex-col gap-4 pt-4'>

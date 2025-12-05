@@ -82,7 +82,7 @@ export default function Pagination({
             {totalPages > 1 && currentPage !== 1 && (
                 <span
                     onClick={() => onPageChange(1)}
-                    className='cursor-pointer px-0 hover:opacity-70'
+                    className='cursor-pointer px-1 hover:opacity-70'
                     title='First page'
                 >
                     &lt;&lt;
@@ -93,7 +93,7 @@ export default function Pagination({
             {totalPages > 1 && currentPage !== 1 && (
                 <span
                     onClick={() => onPageChange(currentPage - 1)}
-                    className='cursor-pointer px-0 hover:opacity-70'
+                    className='cursor-pointer px-1 hover:opacity-70'
                     title='Previous page'
                 >
                     &lt;
@@ -101,14 +101,14 @@ export default function Pagination({
             )}
 
             {/* Current Page / Total */}
-            <div className='flex items-center font-medium text-sm flex-shrink-0'>
+            <div className='flex items-center font-medium text-sm flex-shrink-0 px-1'>
                 <input
                     type='text'
                     value={inputValue}
                     onChange={handlePageInputChange}
                     onBlur={handlePageInputBlur}
                     onKeyDown={handlePageInputKeyDown}
-                    className='border border-base-300 rounded text-center text-sm bg-base-100 focus:outline-none focus:border-primary'
+                    className='border border-cradle-border-accent rounded text-center text-sm bg-transparent focus:outline-none focus:border-cradle-accent-primary'
                     style={{
                         width: `${String(inputValue).length * 0.6 + 0.8}em`,
                         padding: '0 2px',
@@ -123,7 +123,7 @@ export default function Pagination({
             {totalPages > 1 && currentPage !== totalPages && (
                 <span
                     onClick={() => onPageChange(currentPage + 1)}
-                    className='cursor-pointer px-0 hover:opacity-70'
+                    className='cursor-pointer px-1 hover:opacity-70'
                     title='Next page'
                 >
                     &gt;
@@ -134,26 +134,11 @@ export default function Pagination({
             {totalPages > 1 && currentPage !== totalPages && (
                 <span
                     onClick={() => onPageChange(totalPages)}
-                    className='cursor-pointer px-0 hover:opacity-70'
+                    className='cursor-pointer px-1 hover:opacity-70'
                     title='Last page'
                 >
                     &gt;&gt;
                 </span>
-            )}
-
-            {/* Page Size Input */}
-            {pageSize !== null && onPageSizeChange && (
-                <select
-                    value={pageSize}
-                    onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                    className='cradle-select text-sm w-16 ml-1 px-2 py-1'
-                    title='Items per page'
-                >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                </select>
             )}
         </div>
     );
