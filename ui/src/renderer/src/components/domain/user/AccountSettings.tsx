@@ -2,10 +2,11 @@ import vimIcon from '@/assets/vim32x32.gif';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { UserCreateRequestThemeEnum, UserRetrieve } from '@/services/cradle/models';
+import { UserCreateRequest, UserRetrieve, UserUpdateRequest } from '@/services/cradle/models';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
 import SnippetList from '@components/base/SnippetList/SnippetList';
@@ -21,20 +22,6 @@ import type { ComponentType } from 'react';
 import { useEffect, useId, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-
-interface AccountFormData {
-    id: string;
-    username: string;
-    email: string;
-    password: string;
-    catalystKey: string;
-    role: string;
-    vim_mode: boolean;
-    vimMode?: boolean;
-    theme?: UserCreateRequestThemeEnum;
-    email_confirmed: boolean;
-    is_active: boolean;
-}
 
 interface AccountSettingsProps {
     target?: string;
@@ -54,8 +41,7 @@ interface Alert {
     color: string;
 }
 
-const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().shape({
-    id: Yup.string().notRequired(),
+const accountSettingsSchema: Yup.ObjectSchema<UserUpdateRequest> = Yup.object().shape({
     username: Yup.string().required('Username is required'),
     email: Yup.string().email('Invalid email').required('Email is required'),
     password: Yup.string().when('$isEdit', {
@@ -63,18 +49,18 @@ const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().sh
         then: () => Yup.string().required('Password is required'),
         otherwise: () => Yup.string(),
     }),
-    catalystKey: Yup.string(),
+    catalystApiKey: Yup.string(),
     role: Yup.string().when('$isAdminAndNotOwn', {
         is: true,
         then: () => Yup.string().required('Role is required'),
         otherwise: () => Yup.string(),
     }),
-    email_confirmed: Yup.boolean(),
-    is_active: Yup.boolean(),
-    vim_mode: Yup.boolean(),
-    vimMode: Yup.boolean().notRequired(),
-    theme: Yup.string().notRequired(),
-}) as Yup.ObjectSchema<AccountFormData>;
+    emailConfirmed: Yup.boolean(),
+    twoFactorEnabled: Yup.boolean(),
+    isActive: Yup.boolean(),
+    vimMode: Yup.boolean(),
+    theme: Yup.string(),
+}) as Yup.ObjectSchema<UserUpdateRequest>;
 
 export default function AccountSettings({
     target = 'me',
@@ -82,6 +68,7 @@ export default function AccountSettings({
     onAdd,
 }: AccountSettingsProps) {
     const { navigate, navigateLink } = useCradleNavigate();
+    const { execute } = useAPICall();
     const { usersApi } = useApi();
     const auth = useAuth();
     const { profile, setProfile, isAdmin } = useProfile();
@@ -90,33 +77,36 @@ export default function AccountSettings({
     const [user, setUser] = useState<UserRetrieve | null>(null);
     const [activeSection, setActiveSection] = useState('account');
     const isOwnAccount = isEdit ? target === 'me' || profile?.id === target : false;
+    const id = isEdit ? (target === 'me' ? profile?.id : target) : undefined;
     const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
     const { setModal } = useModal();
     const vimModeId = useId();
 
-    const defaultValues: AccountFormData = isEdit
+    const defaultValues: UserUpdateRequest = isEdit
         ? {
-              id: '',
-              username: '',
-              email: '',
-              password: 'password',
-              catalystKey: 'apikey',
-              role: 'user',
-              vim_mode: false,
-              email_confirmed: false,
-              is_active: false,
-          }
+            username: '',
+            email: '',
+            password: 'password',
+            catalystApiKey: 'apikey',
+            role: 'author',
+            vimMode: false,
+            emailConfirmed: false,
+            isActive: false,
+            twoFactorEnabled: false,
+            theme: 'dark',
+        }
         : {
-              id: '',
-              username: '',
-              email: '',
-              password: '',
-              catalystKey: '',
-              role: 'user',
-              vim_mode: false,
-              email_confirmed: false,
-              is_active: false,
-          };
+            username: '',
+            email: '',
+            password: '',
+            catalystApiKey: '',
+            role: 'author',
+            vimMode: false,
+            emailConfirmed: false,
+            isActive: false,
+            twoFactorEnabled: false,
+            theme: 'dark',
+        };
 
     const {
         register,
@@ -124,7 +114,7 @@ export default function AccountSettings({
         reset,
         getValues,
         formState: { errors, isDirty },
-    } = useForm<AccountFormData>({
+    } = useForm<UserUpdateRequest>({
         resolver: yupResolver(accountSettingsSchema, {
             context: { isEdit, isAdminAndNotOwn },
         }),
@@ -139,53 +129,58 @@ export default function AccountSettings({
 
     // Prepopulate form in edit mode.
     useEffect(() => {
-        if (isEdit && target) {
-            usersApi
-                .usersRetrieve({ userId: target })
-                .then((user) => {
+        const fetchUser = async () => {
+            if (isEdit && target) {
+                try {
+                    const user = await execute(() =>
+                        usersApi
+                            .usersRetrieve({ userId: target }), { errorMessage: 'Failed to fetch user' });
                     setUser(user);
                     reset({
-                        id: user.id,
                         username: user.username,
                         email: user.email,
                         password: 'password',
-                        vimMode: user.vimMode || false,
                         theme: user.theme || 'dark',
-                        catalystKey: user.catalystApiKey ? 'apikey' : '',
-                        role: user.role || 'user',
-                        email_confirmed: user.emailConfirmed || false,
-                        is_active: user.isActive || false,
-                        vim_mode: user.vimMode || false,
+                        catalystApiKey: user.catalystApiKey ? 'apikey' : '',
+                        role: user.role || 'author',
+                        emailConfirmed: user.emailConfirmed || false,
+                        isActive: user.isActive || false,
+                        vimMode: user.vimMode || false,
+                        twoFactorEnabled: user.twoFactorEnabled || false,
                     });
                     setTwoFactorEnabled(user.twoFactorEnabled || false);
-                })
-                .catch(displayError(setAlert, navigate));
-        } else {
-            reset(defaultValues);
+                } catch (err) {
+                    setUser(null);
+                }
+            } else {
+                reset(defaultValues);
+            }
         }
+        fetchUser();
     }, [isEdit, target, reset, navigate, usersApi]);
 
-    const onSubmit = async (data: AccountFormData) => {
+    const onSubmit = async (data: UserUpdateRequest) => {
+        console.log(data);
         if (isEdit) {
             const payload: any = {};
             if (data.password !== 'password') {
                 payload.password = data.password;
             }
-            if (data.catalystKey !== 'apikey') {
-                payload.catalyst_api_key = data.catalystKey;
+            if (data.catalystApiKey !== 'apikey') {
+                payload.catalystApiKey = data.catalystApiKey;
             }
             payload.vim_mode = data.vimMode;
             payload.theme = data.theme;
             if (isAdminAndNotOwn) {
                 payload.username = data.username;
                 payload.email = data.email;
-                payload.email_confirmed = data.email_confirmed;
-                payload.is_active = data.is_active;
+                payload.emailConfirmed = data.emailConfirmed;
+                payload.isActive = data.isActive;
                 payload.role = data.role;
             }
             try {
                 const updatedUser = await usersApi.usersUpdate({
-                    userId: data.id,
+                    userId: id!,
                     userUpdateRequest: payload,
                 });
 
@@ -204,18 +199,15 @@ export default function AccountSettings({
                 displayError(setAlert, navigate)(err);
             }
         } else {
-            const payload = {
-                username: data.username,
-                email: data.email,
-                password: data.password,
-                catalyst_api_key: data.catalystKey,
-                role: data.role,
-                email_confirmed: data.email_confirmed,
-                is_active: data.is_active,
-                vim_mode: data.vimMode,
-                theme: data.theme,
-            };
             try {
+                let payload: UserCreateRequest = {
+                    username: data.username!,
+                    email: data.email!,
+                    password: data.password!,
+                    catalystApiKey: data.catalystApiKey,
+                    vimMode: data.vimMode,
+                    theme: data.theme,
+                };
                 const newUser = await usersApi.usersCreate({
                     userCreateRequest: payload,
                 });
@@ -234,7 +226,7 @@ export default function AccountSettings({
 
     const handleDelete = async () => {
         try {
-            await usersApi.usersDestroy({ userId: getValues('id') });
+            await usersApi.usersDestroy({ userId: id! });
             auth.logOut();
         } catch (err) {
             displayError(setAlert)(err);
@@ -243,7 +235,7 @@ export default function AccountSettings({
 
     const handleGenerateApiKey = () => {
         setModal(ApiKeyGenerateModal, {
-            userId: getValues('id'),
+            userId: id!,
         });
     };
 
@@ -353,6 +345,10 @@ export default function AccountSettings({
         { id: 'interface', label: 'Interface', icon: Settings },
     ];
 
+    if (!user && id) {
+        return <></>
+    }
+
     const renderSection = () => {
         switch (activeSection) {
             case 'account':
@@ -369,21 +365,23 @@ export default function AccountSettings({
 
                         <div className='space-y-4'>
                             {/* User ID - Read Only */}
-                            <div className='w-full'>
-                                <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                    User ID
-                                </label>
-                                <input
-                                    type='text'
-                                    value={profile?.id || ''}
-                                    className='cradle-search w-full'
-                                    disabled
-                                    readOnly
-                                />
-                                <p className='text-xs cradle-text-muted mt-1'>
-                                    Unique identifier for this account
-                                </p>
-                            </div>
+                            {id && (
+                                <div className='w-full'>
+                                    <label className='cradle-label cradle-text-tertiary block mb-2'>
+                                        User ID
+                                    </label>
+                                    <input
+                                        type='text'
+                                        value={id}
+                                        className='cradle-search w-full'
+                                        disabled
+                                        readOnly
+                                    />
+                                    <p className='text-xs cradle-text-muted mt-1'>
+                                        Unique identifier for this account
+                                    </p>
+                                </div>
+                            )}
 
                             <FormField
                                 label='Username'
@@ -410,7 +408,7 @@ export default function AccountSettings({
                                 </label>
                                 <input
                                     type='text'
-                                    value={profile?.role || ''}
+                                    {...register('role')}
                                     className='cradle-search w-full'
                                     disabled
                                     readOnly
@@ -420,25 +418,6 @@ export default function AccountSettings({
                                 </p>
                             </div>
 
-                            {isEdit ? (
-                                isAdminAndNotOwn && (
-                                    <FormField
-                                        label='Password'
-                                        type='password'
-                                        placeholder='Password'
-                                        {...register('password')}
-                                        error={errors.password}
-                                    />
-                                )
-                            ) : (
-                                <FormField
-                                    label='Password'
-                                    type='password'
-                                    placeholder='Password'
-                                    {...register('password')}
-                                    error={errors.password}
-                                />
-                            )}
 
                             {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
                                 <>
@@ -473,11 +452,21 @@ export default function AccountSettings({
                                         )}
                                     </div>
 
+
+
+                                    <FormField
+                                        label='Password'
+                                        type='password'
+                                        placeholder='Password'
+                                        {...register('password')}
+                                        error={errors.password}
+                                    />
+
                                     <FormField
                                         type='checkbox'
                                         label='Email Confirmed'
                                         className='switch switch-ghost-primary'
-                                        {...register('email_confirmed')}
+                                        {...register('emailConfirmed')}
                                         row={true}
                                     />
 
@@ -485,7 +474,7 @@ export default function AccountSettings({
                                         type='checkbox'
                                         label='Account Active'
                                         className='switch switch-ghost-primary'
-                                        {...register('is_active')}
+                                        {...register('isActive')}
                                         row={true}
                                     />
                                 </>
@@ -653,7 +642,7 @@ export default function AccountSettings({
                                 label='Catalyst API Key'
                                 type='password'
                                 placeholder='Catalyst API Key'
-                                {...register('catalystKey')}
+                                {...register('catalystApiKey')}
                             />
                         </div>
 
@@ -817,11 +806,10 @@ export default function AccountSettings({
                                                 onClick={() =>
                                                     setActiveSection(item.id)
                                                 }
-                                                className={`cradle-btn w-full flex items-center gap-3 ${
-                                                    activeSection === item.id
-                                                        ? 'cradle-btn-primary'
-                                                        : 'cradle-btn-ghost'
-                                                }`}
+                                                className={`cradle-btn w-full flex items-center gap-3 ${activeSection === item.id
+                                                    ? 'cradle-btn-primary'
+                                                    : 'cradle-btn-ghost'
+                                                    }`}
                                             >
                                                 <Icon className='w-5 h-5 flex-shrink-0' />
                                                 <span className='text-left flex-1'>

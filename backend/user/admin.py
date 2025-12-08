@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from file_transfer.utils import MinioClient
+
 from .models import CradleUser
 
 
@@ -53,7 +54,7 @@ class CradleUserAdmin(UserAdmin):
                 )
             },
         ),
-        ("API Keys", {"fields": ("vt_api_key", "catalyst_api_key")}),
+        ("API Keys", {"fields": ("catalyst_api_key",)}),
         (
             "Tokens & Expiry",
             {
