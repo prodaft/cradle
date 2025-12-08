@@ -1,3 +1,5 @@
+import { useNotif } from '@/contexts';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Form, FormInput } from '@components/forms';
@@ -30,15 +32,38 @@ export default function Register() {
     const { navigate } = useCradleNavigate();
     const location = useLocation();
     const { usersApi } = useApi();
+    const { execute } = useAPICall();
+    const { notify } = useNotif();
 
     const handleSubmit = async (data: FormData) => {
-        await usersApi.usersCreate({
+        let user = await execute(() => usersApi.usersCreate({
             userCreateRequest: {
                 username: data.username,
                 email: data.email,
                 password: data.password,
             },
-        });
+        }));
+
+        if (!user.emailConfirmed) {
+            notify({
+                type: 'success',
+                text: 'Please check your email for a confirmation link.',
+            });
+        }
+
+        if (!user.isActive) {
+            notify({
+                type: 'success',
+                text: 'Your account must be activated by an administrator before you can login.',
+            });
+        }
+
+        if (user.emailConfirmed && user.isActive) {
+            notify({
+                type: 'success',
+                text: 'Account created successfully.',
+            });
+        }
     };
 
     return (
