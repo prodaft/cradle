@@ -33,14 +33,6 @@ import {
     rectangularSelection,
 } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
-import {
-    baseSyntaxHighlights,
-    clickLinkHandler,
-    prosemarkBaseThemeSetup,
-    prosemarkBasicSetup,
-    prosemarkMarkdownSyntaxExtensions,
-} from '@prosemark/core';
-import { htmlBlockExtension } from '@prosemark/render-html';
 import { vim, Vim } from '@replit/codemirror-vim';
 import { FileReference } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
@@ -76,8 +68,8 @@ export interface RichEditorRef {
 }
 
 /**
- * RichEditor component that uses ProseMark for WYSIWYG markdown editing
- * This component provides a rich-text editing mode for Markdown content with instant preview
+ * RichEditor component that uses CodeMirror for markdown editing
+ * This component provides a markdown editor with syntax highlighting
  */
 const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEditor(
     {
@@ -91,6 +83,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         enableEditing = true,
         source = false,
         editorUtils,
+        referenceMappings: propReferenceMappings,
     },
     ref,
 ) {
@@ -107,9 +100,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const { notify } = useNotif();
 
     useEffect(() => {
+        let isMounted = true;
         const fetchEntryColors = async () => {
             try {
                 const entries = await entriesApi.entryClassesList({});
+                if (!isMounted) return;
                 const colorMap = new Map<string, string>();
                 for (const entry of entries) {
                     if (entry.color) {
@@ -118,10 +113,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 }
                 setEntryColors(colorMap);
             } catch (error) {
-                console.error('Failed to fetch entry colors:', error);
+                if (isMounted) {
+                    console.error('Failed to fetch entry colors:', error);
+                }
             }
         };
         fetchEntryColors();
+        return () => {
+            isMounted = false;
+        };
     }, [entriesApi]);
 
     const cradleTheme = useMemo(() => createCradleTheme(isDarkMode), [isDarkMode]);
@@ -140,18 +140,22 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
 
-    const handleCodeBlockCopy = useCallback((lang, code, event) => {
-        if (event && event.target) {
-            const originalText = event.target.innerText;
-            event.target.innerText = 'Copied!';
-            setTimeout(() => {
-                event.target.innerText = originalText;
-            }, 900);
-        }
-        if (typeof code === 'string') {
-            navigator.clipboard.writeText(code);
-        }
-    }, []);
+    const handleCodeBlockCopy = useCallback(
+        (lang: string, code: string, event: MouseEvent) => {
+            if (event && event.target) {
+                const target = event.target as HTMLElement;
+                const originalText = target.innerText;
+                target.innerText = 'Copied!';
+                setTimeout(() => {
+                    target.innerText = originalText;
+                }, 900);
+            }
+            if (typeof code === 'string') {
+                navigator.clipboard.writeText(code);
+            }
+        },
+        [],
+    );
 
     const codeBlockCopyExtension = useMemo(() => {
         return EditorView.domEventHandlers({
@@ -173,45 +177,37 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         });
     }, [handleCodeBlockCopy]);
 
+    // Use prop referenceMappings if provided, otherwise compute from fileData
     const referenceMappings = useMemo(() => {
-        let mappings = {};
+        if (propReferenceMappings) {
+            return propReferenceMappings;
+        }
+        const mappings: Record<string, FileReference> = {};
         for (const file of fileData) {
             mappings[file.minioFileName] = file;
         }
         return mappings;
-    }, [fileData]);
+    }, [fileData, propReferenceMappings]);
 
     const extensions = useMemo(() => {
-        if (entryColors.size === 0) {
-            return [];
-        }
-
+        // Don't return empty array - allow editor to initialize with basic extensions
+        // entryColors will be populated asynchronously and extensions will be reconfigured
         let exts: Extension[] = [
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
             referenceLinksPlugin(referenceMappings, navigate, executor(fileTransferApi.fileTransferDownloadRetrieve.bind(fileTransferApi))),
-            // Markdown language support with ProseMark extensions
+            // Markdown language support
             markdown({
                 codeLanguages: languages,
                 extensions: [
                     // GitHub Flavored Markdown (support for autolinks, strikethroughs)
                     GFM,
-                    // additional parsing tags for existing markdown features, backslash escapes, emojis
-                    prosemarkMarkdownSyntaxExtensions,
                     // Cradle editor extension
                     editorUtils.extension(),
                     referenceLinkSyntax(referenceMappings || {}),
                 ],
             }),
-            // Basic prosemark extensions
-            prosemarkBasicSetup(),
-            prosemarkBaseThemeSetup(),
-            htmlBlockExtension,
             codeBlockCopyExtension,
-            clickLinkHandler.of((url: string) => {
-                window.open(url, '_blank', 'noopener,noreferrer');
-            }),
-            baseSyntaxHighlights,
             EditorView.contentAttributes.of({
                 'data-formatting-mode': source ? 'show' : 'auto',
             }),
@@ -263,13 +259,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             exts.push(
                 EditorView.theme({
                     '.cm-gutters': { display: 'none' },
-                    '.cm-content': { paddingLeft: '0px' },
+                    '.cm-content': { padding: '1rem' },
                 }),
             );
         }
 
         if (profile?.vimMode) {
-            // @ts-ignore - Vim types are not fully compatible with CodeMirror 6 types or missing
+            // Vim types from @replit/codemirror-vim are not fully compatible with CodeMirror 6 types
+            // The cm parameter is actually a CodeMirror instance with vim state, not a pure EditorView
             Vim.defineEx('write', 'w', (cm: any) => {
                 setMarkdownContent(cm.state.doc.toString());
                 saveNote(true);
@@ -328,32 +325,53 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 editorViewRef.current = view;
             } catch (error) {
                 console.error('Failed to initialize RichEditor:', error);
+                const errorMessage =
+                    error instanceof Error ? error.message : 'Unknown error occurred';
                 notify({
                     type: 'error',
-                    text: 'Failed to initialize editor. Please refresh the page.',
+                    text: `Failed to initialize editor: ${errorMessage}. Please refresh the page.`,
                 });
             }
         }
     }, [extensions, setMarkdownContent, notify, markdownContent]);
+
+    // Cleanup: destroy editor view on unmount only
+    useEffect(() => {
+        return () => {
+            if (editorViewRef.current) {
+                editorViewRef.current.destroy();
+                editorViewRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
         if (
             editorViewRef.current &&
             markdownContent !== editorViewRef.current.state.doc.toString()
         ) {
-            // We only update if the difference is significant or if it's a fresh load
-            // But here we just blindly update which might cause cursor jumps if typing fast and prop updates lag
-            // However, markdownContentRef check in dispatch prevents local loops.
-            // This effect handles external updates.
+            // Preserve cursor position when updating from external source
+            const view = editorViewRef.current;
+            const state = view.state;
+            const selection = state.selection.main;
+            const cursorPos = selection.head;
 
-            // Simple check to avoid overwriting if the content is effectively the same (CodeMirror handles this efficiently usually)
-            editorViewRef.current.dispatch({
-                changes: {
-                    from: 0,
-                    to: editorViewRef.current.state.doc.length,
-                    insert: markdownContent,
-                },
-            });
+            // Only update if content actually changed (not just a re-render)
+            const currentContent = state.doc.toString();
+            if (currentContent !== markdownContent) {
+                view.dispatch({
+                    changes: {
+                        from: 0,
+                        to: state.doc.length,
+                        insert: markdownContent,
+                    },
+                    // Try to preserve cursor position, but clamp to new document length
+                    selection: {
+                        anchor: Math.min(cursorPos, markdownContent.length),
+                        head: Math.min(cursorPos, markdownContent.length),
+                    },
+                });
+            }
         }
     }, [markdownContent]);
 
@@ -434,6 +452,11 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.fileData === nextProps.fileData &&
         prevProps.additionalExtensions === nextProps.additionalExtensions &&
         prevProps.source === nextProps.source &&
-        prevProps.enableEditing === nextProps.enableEditing
+        prevProps.enableEditing === nextProps.enableEditing &&
+        prevProps.editorUtils === nextProps.editorUtils &&
+        prevProps.saveNote === nextProps.saveNote &&
+        prevProps.setMarkdownContent === nextProps.setMarkdownContent &&
+        prevProps.setFileData === nextProps.setFileData &&
+        prevProps.referenceMappings === nextProps.referenceMappings
     );
 });

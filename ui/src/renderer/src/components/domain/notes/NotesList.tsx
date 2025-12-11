@@ -6,9 +6,7 @@ import { formatDate } from '@/utils/dates';
 import { parseMarkdownInline } from '@/utils/parser';
 import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import {
-    Copy,
     DesignNib,
-    Download,
     InfoCircleSolid,
     PlusCircle,
     Refresh,
@@ -128,7 +126,6 @@ export default function NotesList({
         !!contentSearch?.value,
     );
     const searchInputRef = useRef<HTMLInputElement>(null);
-    const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
     const [totalCount, setTotalCount] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -278,52 +275,6 @@ export default function NotesList({
         }
     };
 
-    // Duplicate selected note
-    const handleDuplicate = async () => {
-        if (selectedNotes.length !== 1) return;
-        const note = notes.find((n) => n.id === selectedNotes[0]);
-        if (!note) return;
-        
-        try {
-            const newNote = await fleetingNotesApi.fleetingNotesCreate({
-                fleetingNoteRequest: {
-                    content: note.content || '',
-                    files: [],
-                },
-            });
-            fetchNotes();
-            setAlert({
-                show: true,
-                color: 'green',
-                message: 'Note duplicated successfully',
-            });
-        } catch {
-            setAlert({
-                show: true,
-                color: 'red',
-                message: 'Failed to duplicate note',
-            });
-        }
-    };
-
-    // Export selected notes as markdown
-    const handleExport = () => {
-        const notesToExport = notes.filter((n) => selectedNotes.includes(n.id!));
-        if (notesToExport.length === 0) return;
-        
-        notesToExport.forEach((note) => {
-            const content = note.content || `# ${note.metadata?.title || 'Untitled'}\n\n${note.metadata?.description || ''}`;
-            const blob = new Blob([content], { type: 'text/markdown' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${note.metadata?.title || note.id || 'note'}.md`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-    };
 
     // Keyboard shortcuts
     useEffect(() => {
@@ -342,18 +293,6 @@ export default function NotesList({
             if (e.key === 'Delete' && selectedNotes.length > 0 && !hideActionBar) {
                 e.preventDefault();
                 actions[0].handler(selectedNotes);
-            }
-            
-            // Ctrl+D / Cmd+D - Duplicate
-            if ((e.ctrlKey || e.metaKey) && e.key === 'd' && selectedNotes.length === 1) {
-                e.preventDefault();
-                handleDuplicate();
-            }
-            
-            // Ctrl+E / Cmd+E - Export
-            if ((e.ctrlKey || e.metaKey) && e.key === 'e' && selectedNotes.length > 0) {
-                e.preventDefault();
-                handleExport();
             }
             
             // Ctrl+F / Cmd+F - Focus search
@@ -647,36 +586,6 @@ export default function NotesList({
                                             </button>
                                         </Tooltip>
 
-                                        {/* Duplicate */}
-                                        <Tooltip content='Duplicate selected note (Ctrl+D)'>
-                                            <button
-                                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                                onClick={handleDuplicate}
-                                                disabled={selectedNotes.length !== 1}
-                                            >
-                                                <Copy 
-                                                    className='text-cradle-text-secondary'
-                                                    width={18} 
-                                                    height={18} 
-                                                />
-                                            </button>
-                                        </Tooltip>
-
-                                        {/* Export */}
-                                        <Tooltip content={`Export ${selectedNotes.length} note${selectedNotes.length !== 1 ? 's' : ''} as markdown (Ctrl+E)`}>
-                                            <button
-                                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                                onClick={handleExport}
-                                                disabled={selectedNotes.length === 0}
-                                            >
-                                                <Download 
-                                                    className='text-cradle-text-secondary'
-                                                    width={18} 
-                                                    height={18} 
-                                                />
-                                            </button>
-                                        </Tooltip>
-
                                         <div className='h-8 w-px bg-cradle-border-accent' />
                                     </>
                                 )}
@@ -761,29 +670,6 @@ export default function NotesList({
                             {/* Right side controls */}
                             <div className='flex items-center gap-2'>
 
-                                {/* View mode toggle */}
-                                <Tooltip content={viewMode === 'table' ? 'Switch to card view' : 'Switch to table view'}>
-                                    <button
-                                        className='flex items-center justify-center w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary font-mono text-xs'
-                                        onClick={() => setViewMode(viewMode === 'table' ? 'cards' : 'table')}
-                                    >
-                                        {viewMode === 'table' ? (
-                                            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <rect x="3" y="3" width="7" height="7" rx="1" />
-                                                <rect x="14" y="3" width="7" height="7" rx="1" />
-                                                <rect x="3" y="14" width="7" height="7" rx="1" />
-                                                <rect x="14" y="14" width="7" height="7" rx="1" />
-                                            </svg>
-                                        ) : (
-                                            <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <line x1="3" y1="6" x2="21" y2="6" />
-                                                <line x1="3" y1="12" x2="21" y2="12" />
-                                                <line x1="3" y1="18" x2="21" y2="18" />
-                                            </svg>
-                                        )}
-                                    </button>
-                                </Tooltip>
-
                                 {/* Refresh */}
                                 <Tooltip content='Refresh (R)'>
                                     <button
@@ -816,9 +702,8 @@ export default function NotesList({
                     </TableCard>
                 )}
 
-                {viewMode === 'table' ? (
                 <ListView
-                        data={displayedNotes}
+                    data={displayedNotes}
                     columns={columns}
                     renderRow={renderRow}
                     loading={loading}
@@ -833,76 +718,6 @@ export default function NotesList({
                     filterableColumns={filterableColumns}
                     filterValues={columnFilters}
                 />
-                ) : (
-                    <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4'>
-                        {loading ? (
-                            <div className='col-span-full text-center text-cradle-text-muted py-8'>
-                                Loading...
-                            </div>
-                        ) : displayedNotes.length === 0 ? (
-                            <div className='col-span-full text-center text-cradle-text-muted py-8'>
-                                No notes found!
-                            </div>
-                        ) : (
-                            displayedNotes.map((note) => (
-                                <div
-                                    key={note.id}
-                                    className={`p-4 border cursor-pointer transition-all hover:border-cradle-accent-primary ${
-                                        selectedNotes.includes(note.id!) 
-                                            ? 'border-cradle-accent-primary bg-cradle-accent-primary/10' 
-                                            : 'border-cradle-border-accent'
-                                    }`}
-                                    onClick={(e) => {
-                                        if (e.ctrlKey || e.metaKey) {
-                                            // Toggle selection
-                                            setSelectedNotes((prev) =>
-                                                prev.includes(note.id!)
-                                                    ? prev.filter((id) => id !== note.id)
-                                                    : [...prev, note.id!]
-                                            );
-                                        } else {
-                                            navigateLink(`/notes/${note.id}`)(e);
-                                        }
-                                    }}
-                                >
-                                    <div className='flex items-start justify-between gap-2 mb-2'>
-                                        <div className='flex items-center gap-2'>
-                                            {note.fleeting ? (
-                                                <DesignNib className='text-[#FF8C00] flex-shrink-0' width={16} height={16} />
-                                            ) : note.status && (
-                                                <span className='flex-shrink-0'>{getStatusIcon(note.status)}</span>
-                                            )}
-                                            <h3 className='font-medium text-cradle-text-primary truncate'>
-                                                {parseMarkdownInline(note.metadata?.title || 'Untitled')}
-                                            </h3>
-                                        </div>
-                                        <input
-                                            type='checkbox'
-                                            className='cradle-checkbox flex-shrink-0'
-                                            checked={selectedNotes.includes(note.id!)}
-                                            onChange={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedNotes((prev) =>
-                                                    prev.includes(note.id!)
-                                                        ? prev.filter((id) => id !== note.id)
-                                                        : [...prev, note.id!]
-                                                );
-                                            }}
-                                            onClick={(e) => e.stopPropagation()}
-                                        />
-                                    </div>
-                                    <p className='text-sm text-cradle-text-secondary line-clamp-2 mb-3'>
-                                        {note.metadata?.description || 'No description'}
-                                    </p>
-                                    <div className='flex items-center justify-between text-xs text-cradle-text-muted font-mono'>
-                                        <span>{note.author?.username}</span>
-                                        <span>{note.timestamp && formatDate(new Date(note.timestamp))}</span>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                )}
             </div>
         </PreviewTipProvider>
     );

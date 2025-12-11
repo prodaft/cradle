@@ -73,8 +73,8 @@ class FleetingNotesList(APIView):
                 if the user is not authenticated
         """
         fleeting_notes = (
-            Note.objects.fleeting()
-            .filter(author=cast(CradleUser, request.user))
+            Note.objects.get_accessible_notes(cast(CradleUser, request.user))
+            .fleeting()
             .order_by("-timestamp")
         )
 
@@ -194,8 +194,10 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the fleeting note entry
         """
         try:
-            note = Note.objects.fleeting().get(
-                pk=id, author=cast(CradleUser, request.user)
+            note = (
+                Note.objects.get_accessible_notes(cast(CradleUser, request.user))
+                .fleeting()
+                .get(pk=id)
             )
         except Note.DoesNotExist:
             raise FleetingNoteNotFoundException(
@@ -230,8 +232,10 @@ class FleetingNotesDetail(APIView):
             raise EmptyContentException(detail="Content cannot be empty")
 
         try:
-            note = Note.objects.fleeting().get(
-                pk=id, author=cast(CradleUser, request.user)
+            note = (
+                Note.objects.get_accessible_notes(cast(CradleUser, request.user))
+                .fleeting()
+                .get(pk=id)
             )
         except Note.DoesNotExist:
             raise FleetingNoteNotFoundException(detail="Fleeting note does not exist")
@@ -262,8 +266,10 @@ class FleetingNotesDetail(APIView):
                 or the user does not own the fleeting note entry
         """
         try:
-            note = Note.objects.fleeting().get(
-                pk=id, author=cast(CradleUser, request.user)
+            note = (
+                Note.objects.get_accessible_notes(cast(CradleUser, request.user))
+                .fleeting()
+                .get(pk=id)
             )
         except Note.DoesNotExist:
             raise FleetingNoteNotFoundException(detail="Fleeting note does not exist")
@@ -318,8 +324,10 @@ class FleetingNotesFinal(APIView):
                 if the fleeting note entry does not exist
         """
         try:
-            note = Note.objects.fleeting().get(
-                pk=id, author=cast(CradleUser, request.user)
+            note = (
+                Note.objects.get_accessible_notes(cast(CradleUser, request.user))
+                .fleeting()
+                .get(pk=id)
             )
         except Note.DoesNotExist:
             raise FleetingNoteNotFoundException(

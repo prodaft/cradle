@@ -8,32 +8,11 @@ export function createCradleTheme(isDarkMode: boolean) {
         {
             '&': {
                 backgroundColor: 'var(--cradle-bg-primary)',
-                color: 'var(--cradle-text-primary)',
+                color: 'inherit',
             },
             '.cm-content': {
-                color: 'var(--cradle-text-primary)',
-                '--pm-header-mark-color': 'var(--cradle-accent-primary)',
-                '--pm-link-color': 'var(--cradle-accent-primary)',
-                '--pm-muted-color': 'var(--cradle-text-tertiary)',
+                color: 'inherit',
                 '--pm-cursor-color': isDarkMode ? 'white' : 'black',
-
-                '--pm-code-background-color': isDarkMode
-                    ? 'var(--cradle-bg-tertiary)'
-                    : 'var(--cradle-bg-secondary)',
-                '--pm-code-btn-background-color': isDarkMode
-                    ? 'var(--cradle-bg-secondary)'
-                    : 'var(--cradle-bg-tertiary)',
-                '--pm-code-btn-hover-background-color': isDarkMode
-                    ? 'rgba(255, 140, 0, 0.1)'
-                    : 'rgba(255, 140, 0, 0.08)',
-
-                '--pm-blockquote-vertical-line-background-color':
-                    'var(--cradle-accent-primary)',
-
-                '--pm-syntax-keyword': 'var(--cradle-accent-primary)',
-                '--pm-syntax-link': 'var(--cradle-accent-primary)',
-                '--pm-syntax-string': 'var(--cradle-text-primary)',
-                '--pm-syntax-comment': 'var(--cradle-text-tertiary)',
             },
             '.cm-editor': {
                 backgroundColor: 'var(--cradle-bg-primary)',
@@ -69,10 +48,10 @@ export function createCradleTheme(isDarkMode: boolean) {
                 borderRight: '1px solid var(--cradle-border-primary)',
             },
             '.cm-activeLine': {
-                backgroundColor: 'var(--cradle-bg-secondary) !important',
+                backgroundColor: 'transparent !important',
             },
             '.cm-activeLineGutter': {
-                backgroundColor: 'var(--cradle-bg-secondary) !important',
+                backgroundColor: 'transparent !important',
             },
         },
         {

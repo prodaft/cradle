@@ -4,7 +4,7 @@
    ============================================ */
 
 /* Font imports must come before Tailwind */
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&family=VT323&family=Press+Start+2P&family=Comic+Neue:wght@400;700&display=swap');
 
 @import 'tailwindcss';
 
@@ -13,17 +13,6 @@
 
 /* Cradle Design System - includes tokens, theme config, and components */
 @import './design.css';
-
-/* Dark mode variant using selector */
-@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-
-/* ============================================
-   CODEMIRROR EDITOR STYLES
-   ============================================ */
-.CodeMirror {
-    font-family: 'Source Code Pro', monospace;
-    font-size: 14px;
-}
 
 /* Make cursor white in editor */
 .cm-editor .cm-cursor,
@@ -103,111 +92,404 @@ h6:hover .header-anchor-icon {
 }
 
 /* ============================================
-   PROSEMD MARKDOWN EDITOR STYLES
+   GITHUB MARKDOWN CSS (PROSEMARK)
    ============================================ */
+.markdown-body,
+.cm-editor,
+.cm-content {
+    color-scheme: light;
+    background-color: transparent !important;
+    color: #1f2328;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
+    font-size: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
 
-/* === HEADINGS === */
-.prosemd h1 {
-    font-size: 1.802em;
+    --pm-header-mark-color: #1f2328;
+    --pm-link-color: #0969da;
+    --pm-muted-color: #59636e;
+    --pm-code-background-color: #2A2A2A;
+    --pm-code-btn-background-color: #2A2A2A;
+    --pm-code-btn-hover-background-color: #3A3A3A;
+    --pm-blockquote-vertical-line-background-color: #d1d9e0;
+
+    --pm-syntax-link: #0a3069;
+    --pm-syntax-keyword: #cf222e;
+    --pm-syntax-atom: #0550ae;
+    --pm-syntax-literal: #953800;
+    --pm-syntax-string: #0a3069;
+    --pm-syntax-regexp: #116329;
+    --pm-syntax-definition-variable: #0550ae;
+    --pm-syntax-local-variable: #1f2328;
+    --pm-syntax-type-namespace: #6639ba;
+    --pm-syntax-class-name: #0550ae;
+    --pm-syntax-special-variable-macro: #8250df;
+    --pm-syntax-definition-property: #116329;
+    --pm-syntax-comment: #59636e;
+    --pm-syntax-invalid: #d1242f;
+    --pm-cursor-color: black;
+}
+
+.markdown-body a {
+    background-color: transparent;
+    color: #0969da;
+    text-decoration: none;
+}
+
+.markdown-body a:hover {
+    text-decoration: underline;
+}
+
+.markdown-body b,
+.markdown-body strong {
     font-weight: 600;
-    color: var(--cradle-text-primary);
 }
-.prosemd h2 {
-    font-size: 1.602em;
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
     font-weight: 600;
-    color: var(--cradle-text-primary);
+    line-height: 1.25;
+    color: #1f2328;
 }
-.prosemd h3 {
-    font-size: 1.424em;
-    font-weight: 600;
-    color: var(--cradle-text-primary);
+
+.markdown-body h1 {
+    margin: 0.67em 0;
+    padding-bottom: 0.3em;
+    font-size: 2em;
+    border-bottom: 1px solid #d1d9e0b3;
 }
-.prosemd h4 {
-    font-size: 1.266em;
-    font-weight: 500;
-    color: var(--cradle-text-primary);
+
+.markdown-body h2 {
+    padding-bottom: 0.3em;
+    font-size: 1.5em;
+    border-bottom: 1px solid #d1d9e0b3;
 }
-.prosemd h5 {
-    font-size: 1.125em;
-    font-weight: 500;
-    color: var(--cradle-text-primary);
+
+.markdown-body h3 {
+    font-size: 1.25em;
 }
-.prosemd h6 {
+
+.markdown-body h4 {
     font-size: 1em;
-    font-weight: 500;
-    color: var(--cradle-text-primary);
 }
 
-/* Faded heading markers */
-.prosemd .pm-format-h {
-    color: var(--cradle-text-tertiary);
-    opacity: 0.7;
+.markdown-body h5 {
+    font-size: 0.875em;
 }
 
-/* === LINKS === */
-.prosemd a {
-    color: var(--cradle-accent-primary);
-}
-.prosemd a[href^='http']::after {
-    color: var(--cradle-accent-secondary);
+.markdown-body h6 {
+    font-size: 0.85em;
+    color: #59636e;
 }
 
-/* Faded link formatting marks */
-.prosemd .pm-format-link {
-    color: var(--cradle-accent-primary);
-    opacity: 0.8;
+.markdown-body p {
+    margin-top: 0;
+    margin-bottom: 10px;
 }
 
-/* === INLINE CODE === */
-.prosemd code {
-    background: var(--cradle-bg-tertiary);
-    color: var(--cradle-text-primary);
+.markdown-body blockquote {
+    margin: 0;
+    padding: 0 1em;
+    color: #59636e;
+    border-left: 0.25em solid #d1d9e0;
 }
 
-/* Formatting markers for code */
-.prosemd .pm-format-code {
-    color: var(--cradle-text-tertiary);
-    opacity: 0.7;
+.markdown-body ul,
+.markdown-body ol {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 2em;
 }
 
-/* === CODE BLOCKS === */
-.prosemd pre {
-    background: var(--cradle-bg-secondary);
-    border-radius: var(--cradle-radius-md);
+.markdown-body code,
+.markdown-body tt,
+.markdown-body samp {
+    font-family: monospace !important;
+    font-size: 1em;
+    padding: 0.2em 0.4em;
+    margin: 0;
+    white-space: break-spaces;
+    background-color: #2A2A2A;
+    border-radius: 6px;
 }
 
-/* Info bar hover */
-.prosemd .pm-code-info:hover {
-    background: rgba(255, 140, 0, 0.1);
+.markdown-body pre {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-family: monospace !important;
+    font-size: 1em;
+    word-wrap: normal;
+    padding: 1rem;
+    overflow: auto;
+    line-height: 1.45;
+    color: inherit;
+    background-color: #2A2A2A;
+    border-radius: 6px;
 }
 
-/* === BLOCKQUOTE === */
-.prosemd blockquote {
-    border-left: 2px solid var(--cradle-accent-primary);
-}
-.prosemd .pm-format-blockquote {
-    color: var(--cradle-accent-primary);
-    opacity: 0.8;
-}
-
-/* === LISTS === */
-.prosemd ul .pm-format,
-.prosemd ol .pm-format {
-    color: var(--cradle-text-tertiary);
-    opacity: 0.8;
-}
-.prosemd ul > li::marker {
-    color: var(--cradle-accent-primary);
+.markdown-body pre code,
+.markdown-body pre tt {
+    display: inline;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    line-height: inherit;
+    word-wrap: normal;
+    background-color: transparent;
+    border: 0;
 }
 
-/* === CHECKBOXES === */
-.prosemd input[type='checkbox'] {
-    height: 1rem;
-    width: 1rem;
-    border: 2px solid var(--cradle-border-accent);
-    background: var(--cradle-bg-elevated);
+.markdown-body hr {
+    box-sizing: content-box;
+    overflow: hidden;
+    height: 0.25em;
+    margin: 1.5rem 0;
+    background-color: #d1d9e0;
+    border: 0;
+    border-bottom: 1px solid #d1d9e0b3;
+    padding: 0;
 }
-.prosemd input[type='checkbox']:checked {
-    background: var(--cradle-accent-primary);
-    border-color: var(--cradle-accent-primary);
+
+.markdown-body table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow: auto;
+    font-variant: tabular-nums;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+    padding: 6px 13px;
+    border: 1px solid #d1d9e0;
+}
+
+.markdown-body table tr {
+    background-color: #ffffff;
+    border-top: 1px solid #d1d9e0b3;
+}
+
+.markdown-body table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+.markdown-body kbd {
+    display: inline-block;
+    padding: 0.25rem;
+    font: 11px ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace;
+    line-height: 10px;
+    color: #1f2328;
+    vertical-align: middle;
+    background-color: #f6f8fa;
+    border: solid 1px #d1d9e0b3;
+    border-radius: 6px;
+    box-shadow: inset 0 -1px 0 #d1d9e0b3;
+}
+
+[data-theme='dark'] .markdown-body,
+[data-theme='dark'] .cm-editor,
+[data-theme='dark'] .cm-content {
+    color-scheme: dark;
+    background-color: transparent !important;
+    color: #f0f6fc;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
+    font-size: 16px;
+    line-height: 1.5;
+    word-wrap: break-word;
+
+    --pm-cursor-color: white;
+    --pm-header-mark-color: #f0f6fc;
+    --pm-link-color: #4493f8;
+    --pm-muted-color: #9198a1;
+    --pm-code-background-color: #2A2A2A;
+    --pm-code-btn-background-color: #2A2A2A;
+    --pm-code-btn-hover-background-color: #3A3A3A;
+    --pm-blockquote-vertical-line-background-color: #3d444d;
+
+    --pm-syntax-link: #a5d6ff;
+    --pm-syntax-keyword: #ff7b72;
+    --pm-syntax-atom: #79c0ff;
+    --pm-syntax-literal: #ffa657;
+    --pm-syntax-string: #a5d6ff;
+    --pm-syntax-regexp: #7ee787;
+    --pm-syntax-definition-variable: #7ee787;
+    --pm-syntax-local-variable: #f0f6fc;
+    --pm-syntax-type-namespace: #d2a8ff;
+    --pm-syntax-class-name: #7ee787;
+    --pm-syntax-special-variable-macro: #d2a8ff;
+    --pm-syntax-definition-property: #7ee787;
+    --pm-syntax-comment: #9198a1;
+    --pm-syntax-invalid: #f85149;
+}
+
+[data-theme='dark'] .markdown-body a {
+    background-color: transparent;
+    color: #4493f8;
+    text-decoration: none;
+}
+
+[data-theme='dark'] .markdown-body a:hover {
+    text-decoration: underline;
+}
+
+[data-theme='dark'] .markdown-body b,
+[data-theme='dark'] .markdown-body strong {
+    font-weight: 600;
+}
+
+[data-theme='dark'] .markdown-body h1,
+[data-theme='dark'] .markdown-body h2,
+[data-theme='dark'] .markdown-body h3,
+[data-theme='dark'] .markdown-body h4,
+[data-theme='dark'] .markdown-body h5,
+[data-theme='dark'] .markdown-body h6 {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: #f0f6fc;
+}
+
+[data-theme='dark'] .markdown-body h1 {
+    margin: 0.67em 0;
+    padding-bottom: 0.3em;
+    font-size: 2em;
+    border-bottom: 1px solid #3d444db3;
+}
+
+[data-theme='dark'] .markdown-body h2 {
+    padding-bottom: 0.3em;
+    font-size: 1.5em;
+    border-bottom: 1px solid #3d444db3;
+}
+
+[data-theme='dark'] .markdown-body h3 {
+    font-size: 1.25em;
+}
+
+[data-theme='dark'] .markdown-body h4 {
+    font-size: 1em;
+}
+
+[data-theme='dark'] .markdown-body h5 {
+    font-size: 0.875em;
+}
+
+[data-theme='dark'] .markdown-body h6 {
+    font-size: 0.85em;
+    color: #9198a1;
+}
+
+[data-theme='dark'] .markdown-body p {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+[data-theme='dark'] .markdown-body blockquote {
+    margin: 0;
+    padding: 0 1em;
+    color: #9198a1;
+    border-left: 0.25em solid #3d444d;
+}
+
+[data-theme='dark'] .markdown-body ul,
+[data-theme='dark'] .markdown-body ol {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 2em;
+}
+
+[data-theme='dark'] .markdown-body code,
+[data-theme='dark'] .markdown-body tt,
+[data-theme='dark'] .markdown-body samp {
+    font-family: monospace !important;
+    font-size: 1em;
+    padding: 0.2em 0.4em;
+    margin: 0;
+    white-space: break-spaces;
+    background-color: #2A2A2A;
+    border-radius: 6px;
+}
+
+[data-theme='dark'] .markdown-body pre {
+    margin-top: 0;
+    margin-bottom: 0;
+    font-family: monospace !important;
+    font-size: 1em;
+    word-wrap: normal;
+    padding: 1rem;
+    overflow: auto;
+    line-height: 1.45;
+    color: inherit;
+    background-color: #2A2A2A;
+    border-radius: 6px;
+}
+
+[data-theme='dark'] .markdown-body pre code,
+[data-theme='dark'] .markdown-body pre tt {
+    display: inline;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+    line-height: inherit;
+    word-wrap: normal;
+    background-color: transparent;
+    border: 0;
+}
+
+[data-theme='dark'] .markdown-body hr {
+    box-sizing: content-box;
+    overflow: hidden;
+    height: 0.25em;
+    margin: 1.5rem 0;
+    background-color: #3d444d;
+    border: 0;
+    border-bottom: 1px solid #3d444db3;
+    padding: 0;
+}
+
+[data-theme='dark'] .markdown-body table {
+    border-spacing: 0;
+    border-collapse: collapse;
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow: auto;
+    font-variant: tabular-nums;
+}
+
+[data-theme='dark'] .markdown-body table th,
+[data-theme='dark'] .markdown-body table td {
+    padding: 6px 13px;
+    border: 1px solid #3d444d;
+}
+
+[data-theme='dark'] .markdown-body table tr {
+    background-color: #0d1117;
+    border-top: 1px solid #3d444db3;
+}
+
+[data-theme='dark'] .markdown-body table tr:nth-child(2n) {
+    background-color: #151b23;
+}
+
+[data-theme='dark'] .markdown-body kbd {
+    display: inline-block;
+    padding: 0.25rem;
+    font: 11px ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace;
+    line-height: 10px;
+    color: #f0f6fc;
+    vertical-align: middle;
+    background-color: #151b23;
+    border: solid 1px #3d444db3;
+    border-radius: 6px;
+    box-shadow: inset 0 -1px 0 #3d444db3;
 }

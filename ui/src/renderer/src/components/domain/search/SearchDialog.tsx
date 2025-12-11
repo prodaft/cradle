@@ -344,7 +344,7 @@ export default function SearchDialog({
                 {/* Footer with Pagination */}
                 {results && results.length > 0 && (
                     <div className='px-4 py-3 cradle-border-t cradle-bg-secondary flex items-center justify-between'>
-                        <span className='text-xs text-cradle-text-muted'>
+                        <span className='text-xs text-cradle-text-muted whitespace-nowrap'>
                             Page {page} of {totalPages}
                         </span>
                         <Pagination
