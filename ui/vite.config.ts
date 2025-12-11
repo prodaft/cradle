@@ -8,6 +8,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 dns.setDefaultResultOrder('verbatim');
 
 export default defineConfig(({ mode }) => ({
+    base: './',
     plugins: [react(), visualizer(), nodePolyfills()],
     resolve: {
         alias: {
