@@ -3,6 +3,8 @@ export interface HeaderNode {
     onNodeClick: (nodeName: string, children: HeaderNode[], level: number) => void;
     children: HeaderNode[];
     separatorBefore?: boolean;
+    startLine: number;
+    endLine: number;
 }
 
 /**
@@ -12,15 +14,15 @@ export interface HeaderNode {
  * separator was found between it and the previous header.
  *
  * Additionally, each header node's onNodeClick calls the provided `onClick`
- * callback with the offset (the character index in the file) of the header's start.
+ * callback with the offset (the line number in the file) of the header's start.
  *
  * @param content The markdown content as a string.
- * @param onClick A callback that receives the offset of the header when a node is clicked.
+ * @param onClick A callback that receives the line number of the header when a node is clicked.
  * @returns An array of header nodes representing the markdown header hierarchy.
  */
 export default function extractHeaderHierarchy(
     content: string,
-    onClick: (offset: number) => void,
+    onClick: (lineNumber: number) => void,
 ): HeaderNode[] {
     const lines = content.split('\n');
     const result: HeaderNode[] = [];
@@ -41,6 +43,9 @@ export default function extractHeaderHierarchy(
         });
     }
 
+    // Keep track of all headers in order to calculate endLine
+    const allHeaders: HeaderNode[] = [];
+
     for (let i = 0; i < lines.length; i++) {
         const rawLine = lines[i];
         const line = rawLine.trim();
@@ -49,9 +54,8 @@ export default function extractHeaderHierarchy(
             pendingSeparator = true;
         } else if (line.startsWith('#')) {
             const match = line.match(/^(#+)\s+(.*)$/);
-            if (!match) {
-                continue;
-            }
+            if (!match) continue;
+
             const level = match[1].length;
             const text = parseLink(match[2].trim());
 
@@ -61,6 +65,8 @@ export default function extractHeaderHierarchy(
                     onClick(i + 1);
                 },
                 children: [],
+                startLine: i + 1, // line numbers start from 1
+                endLine: lines.length, // temporary, will adjust later
             };
 
             if (headerFound && pendingSeparator) {
@@ -70,19 +76,40 @@ export default function extractHeaderHierarchy(
             pendingSeparator = false;
 
             while (stack.length > 0 && stack[stack.length - 1].level >= level) {
-                stack.pop();
+                const popped = stack.pop();
+                if (popped) {
+                    // Set endLine of parent header
+                    popped.node.endLine = i;
+                }
             }
 
             if (stack.length === 0) {
                 result.push(node);
             } else {
                 const parent = stack[stack.length - 1].node;
-                parent.children = parent.children || [];
                 parent.children.push(node);
             }
+
             stack.push({ level, node });
+            allHeaders.push(node);
         }
     }
+
+    // Adjust endLine for any remaining headers in the stack
+    while (stack.length > 0) {
+        const { node } = stack.pop()!;
+        node.endLine = lines.length;
+    }
+
+    // Adjust endLine to first child's startLine if a node has children
+    function adjustEndLines(node: HeaderNode) {
+        if (node.children.length > 0) {
+            node.endLine = node.children[0].startLine;
+            node.children.forEach(adjustEndLines);
+        }
+    }
+
+    result.forEach(adjustEndLines);
 
     return result;
 }

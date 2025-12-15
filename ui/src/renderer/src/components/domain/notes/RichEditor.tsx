@@ -68,6 +68,7 @@ interface RichEditorProps {
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
     source?: boolean;
+    setLineNumber: (lineNumber: number) => void;
     editorUtils: CradleEditor;
     referenceMappings?: Record<string, FileReference>;
 }
@@ -91,6 +92,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         enableEditing = true,
         source = false,
         editorUtils,
+        setLineNumber,
         referenceMappings: propReferenceMappings,
     },
     ref,
@@ -211,9 +213,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     }),
                 ]
                 : []),
-            EditorView.contentAttributes.of({
-                'data-formatting-mode': source ? 'show' : 'auto',
-            }),
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
             history(),
@@ -247,6 +246,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             autocompletion(),
             ...editorUtils.autocomplete(),
             editorUtils.lint(),
+            EditorView.theme({
+                '&': { height: '100%' },
+                '.cm-scroller': { overflow: 'auto' },
+            }),
             ...additionalExtensions,
         ];
 
@@ -310,16 +313,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     state,
                     parent: editorRef.current,
                     dispatch: (tr: Transaction) => {
-                        try {
-                            view.update([tr]);
-                        } catch (e) {
-                            console.error('Editor update failed:', e);
-                        }
+                        console.log(tr);
+                        view.update([tr]);
                         if (tr.docChanged) {
                             const newContent = tr.state.doc.toString();
                             if (newContent !== markdownContentRef.current) {
                                 setMarkdownContent(newContent);
                             }
+                        }
+                        if (tr.selection) {
+                            const line = tr.state.doc.lineAt(tr.state.selection.main.head).number;
+                            setLineNumber(line);
                         }
                     },
                 });
@@ -354,13 +358,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (currentContent === markdownContent) return;
 
         const cursorPos = view.state.selection.main.head;
-        view.dispatch({
-            changes: { from: 0, to: view.state.doc.length, insert: markdownContent },
-            selection: {
-                anchor: Math.min(cursorPos, markdownContent.length),
-                head: Math.min(cursorPos, markdownContent.length),
-            },
-        });
     }, [markdownContent]);
 
     // Update search panel labels - only observe when editor exists
@@ -411,24 +408,22 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const toggleFileList = useCallback(() => setShowFileList((prev) => !prev), []);
 
     return (
-        <div className={`${!source ? 'rich-editor markdown-body' : ''} h-full w-full flex flex-col flex-1`}>
-            <div className="h-full w-full flex flex-col overflow-auto">
-                <div className="flex h-full overflow-y-hidden">
-                    <div
-                        ref={editorRef}
-                        className="w-full overflow-y-auto rounded-lg rich-editor markdown-body"
-                        role="textbox"
-                        aria-label="Rich text editor"
-                        aria-multiline="true"
-                        tabIndex={0}
-                        style={{ minHeight: '400px', backgroundColor: 'transparent' }}
-                    />
-                </div>
+        <div className="h-full w-full flex flex-col overflow-hidden">
+            <div className="flex-1 min-h-0 relative">
+                <div
+                    ref={editorRef}
+                    className="absolute inset-0 rich-editor markdown-body"
+                    role="textbox"
+                    aria-label="Rich text editor"
+                    aria-multiline="true"
+                    tabIndex={0}
+                    style={{ backgroundColor: 'transparent' }}
+                />
             </div>
             {fileData && fileData.length > 0 && (
-                <div className="max-h-[25%] rounded-md flex flex-col justify-end z-30">
+                <div className="flex-none max-h-[25%] rounded-md flex flex-col justify-end z-30">
                     <div
-                        className="bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] mt-1 hover:cursor-pointer flex flex-row space-x-2"
+                        className="bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] hover:cursor-pointer flex flex-row space-x-2 border-b border-cradle-border-primary"
                         onClick={toggleFileList}
                     >
                         <span>

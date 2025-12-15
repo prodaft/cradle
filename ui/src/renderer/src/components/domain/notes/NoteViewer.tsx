@@ -83,6 +83,7 @@ export default function NoteViewer() {
         const saved = localStorage.getItem('showOutline');
         return saved === 'true';
     });
+    const [lineNumber, setLineNumber] = useState(0);
     const [noteOutline, setNoteOutline] = useState<HeaderNode[]>([]);
     const [lspLoaded, setLspLoaded] = useState(false);
     const rawContentRef = useRef<HTMLDivElement | null>(null);
@@ -660,6 +661,7 @@ export default function NoteViewer() {
                                                     data={noteOutline}
                                                     title='Note Outline'
                                                     showSeparators={true}
+                                                    currentLine={lineNumber}
                                                 />
                                             </div>
                                         </Panel>
@@ -689,6 +691,7 @@ export default function NoteViewer() {
                                                         source={!richEditor}
                                                         saveNote={handleSaveNote}
                                                         enableEditing={enableEditing}
+                                                        setLineNumber={setLineNumber}
                                                     />
                                                 </div>
 
@@ -715,6 +718,7 @@ export default function NoteViewer() {
                                                 saveNote={handleSaveNote}
                                                 enableEditing={enableEditing}
                                                 editorUtils={editorUtils}
+                                                setLineNumber={setLineNumber}
                                             />
                                         </div>
 

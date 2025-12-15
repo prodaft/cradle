@@ -6,12 +6,14 @@ interface TreeNodeProps {
     nodeData: HeaderNode;
     level?: number;
     showSeparators?: boolean;
+    currentLine?: number;
 }
 
 const TreeNode: React.FC<TreeNodeProps> = ({
     nodeData,
     level = 0,
     showSeparators = false,
+    currentLine,
 }) => {
     const [expanded, setExpanded] = useState(true);
     const hasChildren = nodeData.children && nodeData.children.length > 0;
@@ -27,39 +29,34 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         }
     };
 
+    // Check if this node is the current line
+    const isCurrent =
+        currentLine !== undefined &&
+        currentLine >= nodeData.startLine &&
+        currentLine <= nodeData.endLine;
+
     return (
         <div className='ml-4'>
             <div
-                className='flex items-center py-1 hover:bg-gray-700 hover:bg-opacity-50 rounded   cursor-pointer'
+                className={`flex items-center py-1 rounded cursor-pointer hover:text-cradle-accent-primary`}
                 onClick={handleNodeClick}
             >
                 {hasChildren ? (
                     <button
                         onClick={toggleExpand}
-                        className={`w-4 flex items-center justify-center mr-2 text-cradle2  focus:outline-none`}
+                        className='w-4 flex items-center justify-center mr-2 text-cradle2 focus:outline-none'
                         title={expanded ? 'Collapse' : 'Expand'}
                     >
                         {expanded ? (
-                            <NavArrowRight
-                                className='text-cradle2'
-                                width='14'
-                                height='14'
-                            />
+                            <NavArrowRight className='text-cradle2' width='14' height='14' />
                         ) : (
-                            <NavArrowDown
-                                className='text-cradle2'
-                                width='14'
-                                height='14'
-                            />
+                            <NavArrowDown className='text-cradle2' width='14' height='14' />
                         )}
                     </button>
                 ) : (
-                    // Render an empty span as a placeholder to reserve space
-                    <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>
-                        #
-                    </span>
+                    <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>#</span>
                 )}
-                <span className='font-medium dark:text-white'>{nodeData.nodeName}</span>
+                <span className={`font-medium ${isCurrent ? 'underline decoration-cradle-accent-primary' : ''}`}>{nodeData.nodeName}</span>
             </div>
 
             {expanded && hasChildren && (
@@ -73,6 +70,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                                 nodeData={child}
                                 level={level + 1}
                                 showSeparators={showSeparators}
+                                currentLine={currentLine}
                             />
                         </React.Fragment>
                     ))}
@@ -86,12 +84,14 @@ interface NoteOutlineProps {
     data: HeaderNode[];
     showSeparators?: boolean;
     title?: string;
+    currentLine?: number;
 }
 
 const NoteOutline: React.FC<NoteOutlineProps> = ({
     data,
     showSeparators = false,
     title = 'Tree View',
+    currentLine,
 }) => {
     return (
         <div className='pt-3'>
@@ -101,7 +101,11 @@ const NoteOutline: React.FC<NoteOutlineProps> = ({
                         {showSeparators && node.separatorBefore && (
                             <div className='border-b border-gray-700 my-2 mx-1 opacity-50'></div>
                         )}
-                        <TreeNode nodeData={node} showSeparators={showSeparators} />
+                        <TreeNode
+                            nodeData={node}
+                            showSeparators={showSeparators}
+                            currentLine={currentLine}
+                        />
                     </React.Fragment>
                 ))}
             </div>
