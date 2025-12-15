@@ -306,6 +306,11 @@ function parseCradleLink(
 ): Range<Decoration> | null {
     const from = node.from;
     const to = node.to;
+
+    if (to > text.length) {
+        return null;
+    }
+
     const linkText = text.slice(from, to);
 
     let hasPrefix = false;
@@ -385,6 +390,10 @@ function createColorMarks(
     const marks: Range<Decoration>[] = [];
     const from = node.from;
     const to = node.to;
+
+    if (to > text.length) {
+        return marks;
+    }
 
     let type = '';
     let linkEnd = to;

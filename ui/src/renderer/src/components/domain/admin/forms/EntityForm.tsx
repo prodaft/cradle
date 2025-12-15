@@ -131,6 +131,8 @@ export default function EntityForm({
                 if (!isEdit && options.length > 0) {
                     reset((prev) => ({ ...prev, subtype: options[0] }));
                 }
+
+                handleSubtypeChange(options[0]);
             } catch (err) {
                 console.error('Failed to fetch subtypes:', err);
             }

@@ -143,7 +143,13 @@ export default function AccountSettings({
     useEffect(() => {
         (async () => {
             if (isEdit && target) {
-                const user = await execute(() => usersApi.usersRetrieve({ userId: target }));
+                let user: UserRetrieve | null = null;
+                try {
+                    user = await execute(() => usersApi.usersRetrieve({ userId: target }));
+                } catch (error) {
+                    setUser(null);
+                    return;
+                }
                 setUser(user);
 
                 const initialData = {
@@ -450,6 +456,8 @@ export default function AccountSettings({
             text: 'Deleting this user will permanently remove all their data, including notes, entries, and settings. This action cannot be undone.',
         });
     };
+
+    if (!user) return <div></div>;
 
 
     return (

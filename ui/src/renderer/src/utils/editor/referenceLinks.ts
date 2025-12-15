@@ -483,6 +483,10 @@ function createReferenceDecoration(
     const from = node.from;
     const to = node.to;
 
+    if (to > text.length) {
+        return null;
+    }
+
     if (cursorPos >= from && cursorPos <= to) {
         return null;
     }

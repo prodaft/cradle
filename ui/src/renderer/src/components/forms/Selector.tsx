@@ -143,7 +143,7 @@ export default function Selector<
             [
                 'cursor-pointer rounded-sm px-3 py-2 text-sm',
                 'cradle-text-secondary',
-                state.isFocused && 'bg-cradle-hover',
+                state.isFocused && 'bg-cradle-accent-primary/10',
                 state.isSelected && 'bg-cradle2/20 cradle-text-primary',
                 state.isDisabled && 'opacity-50 cursor-not-allowed',
             ]

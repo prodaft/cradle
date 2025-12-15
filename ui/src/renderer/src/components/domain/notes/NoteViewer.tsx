@@ -13,7 +13,7 @@ import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/model
 import { debounce } from 'lodash';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import FileInput from '../../forms/FileInput';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
@@ -62,7 +62,8 @@ export default function NoteViewer() {
             ? localStorage.getItem('richEditor') === 'true'
             : true,
     );
-    const [enableEditing, setEnableEditing] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [enableEditing, setEnableEditing] = useState(searchParams.get('enableEditing') === 'true');
     const [markdownContent, setMarkdownContent] = useState('');
     const { setModal } = useModal();
     const { notify } = useNotif();
@@ -126,7 +127,7 @@ export default function NoteViewer() {
     const toggleEditing = useCallback(() => {
         const newValue = !enableEditing;
         setEnableEditing(newValue);
-        localStorage.setItem('enableEditing', newValue.toString());
+        // setSearchParams({ enableEditing: newValue.toString() }, { replace: true });
     }, [enableEditing]);
 
     const smartLink = useCallback(

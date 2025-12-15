@@ -5,10 +5,10 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { CradleEditor } from '@/utils/editor/enhancements';
+import { classHighlightStyle } from '@/utils/editor/highlighting';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import { referenceLinksPlugin, referenceLinkSyntax } from '@/utils/editor/referenceLinks';
 import { createCradleTheme } from '@/utils/editor/theme';
-import { classHighlightStyle } from '@/utils/editor/highlighting';
 import {
     acceptCompletion,
     autocompletion,
@@ -223,15 +223,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             // ProseMark setup only for Rich Editor (non-source) mode
             ...(!source
                 ? [
-                      prosemarkBasicSetup(),
-                      prosemarkBaseThemeSetup(),
-                      htmlBlockExtension,
-                      codeBlockCopyExtension,
-                      clickLinkHandler.of((url: string) => {
-                          window.open(url, '_blank', 'noopener,noreferrer');
-                      }),
-                      baseSyntaxHighlights,
-                  ]
+                    prosemarkBasicSetup(),
+                    prosemarkBaseThemeSetup(),
+                    htmlBlockExtension,
+                    codeBlockCopyExtension,
+                    clickLinkHandler.of((url: string) => {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                    }),
+                    baseSyntaxHighlights,
+                ]
                 : []),
             EditorView.contentAttributes.of({
                 'data-formatting-mode': source ? 'show' : 'auto',
@@ -339,7 +339,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     state,
                     parent: editorRef.current,
                     dispatch: (tr: Transaction) => {
-                        view.update([tr]);
+                        try {
+                            view.update([tr]);
+                        } catch (e) {
+                            console.error('Editor update failed:', e);
+                        }
                         if (tr.docChanged) {
                             const newContent = tr.state.doc.toString();
                             if (newContent !== markdownContentRef.current) {
@@ -360,7 +364,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 });
             }
         }
-    }, [extensions, setMarkdownContent, notify, markdownContent]);
+    }, [extensions, notify]);
 
     // Cleanup: destroy editor view on unmount only
     useEffect(() => {

@@ -40,12 +40,17 @@ export interface EnrichmentRequestModalProps {
     onSuccess?: () => void;
     /** Optional callback to execute on error */
     onError?: (error: Error) => void;
+    /** Optional list of entity IDs or promise resolving to list of entity IDs */
+    entitiesList?: number[] | Promise<number[]>;
+    /** Optional artifacts text or promise resolving to artifacts text */
+    artifactsList?: string | Promise<string>;
 }
 
 /**
  * EnrichmentRequestModal component - creates enrichment requests for entities
  *
  * Allows users to select enrichment techniques and specify artifacts to enrich.
+ * Optionally accepts pre-populated entities and artifacts lists as props.
  *
  * @example
  * ```tsx
@@ -53,6 +58,17 @@ export interface EnrichmentRequestModalProps {
  *   closeModal={closeModal}
  *   onSuccess={() => console.log('Request created')}
  *   onError={(err) => console.error(err)}
+ *   entitiesList={[1, 2, 3]}
+ *   artifactsList="type:artifact\ntype:artifact"
+ * />
+ * ```
+ *
+ * @example With promises
+ * ```tsx
+ * <EnrichmentRequestModal
+ *   closeModal={closeModal}
+ *   entitiesList={fetchEntityIds()}
+ *   artifactsList={getArtifactsText()}
  * />
  * ```
  */
@@ -60,13 +76,16 @@ export default function EnrichmentRequestModal({
     closeModal,
     onSuccess,
     onError,
+    entitiesList,
+    artifactsList,
 }: EnrichmentRequestModalProps): JSX.Element {
     const { intelioApi, entriesApi } = useApi();
     const { execute } = useAPICall();
     const [loading, setLoading] = useState(false);
     const [enricherTypes, setEnricherTypes] = useState<EnricherOption[]>([]);
     const [loadingEnrichers, setLoadingEnrichers] = useState(true);
-    const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
+    const [selectedEntities, setSelectedEntities] = useState<Array<{ value: number, label: string }>>([]);
+    const [initialDataLoading, setInitialDataLoading] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState<EnrichmentFormData>({
@@ -95,6 +114,68 @@ export default function EnrichmentRequestModal({
         fetchEnricherTypes();
     }, [intelioApi, onError]);
 
+    // Load initial data from props (entities and artifacts lists)
+    useEffect(() => {
+        const loadInitialData = async () => {
+            if (!entitiesList && !artifactsList) {
+                return;
+            }
+
+            setInitialDataLoading(true);
+            try {
+                // Resolve entities list if provided
+                let resolvedEntities: number[] | undefined;
+                if (entitiesList) {
+                    resolvedEntities = await Promise.resolve(entitiesList);
+                }
+
+                // Resolve artifacts list if provided
+                let resolvedArtifacts: string | undefined;
+                if (artifactsList) {
+                    resolvedArtifacts = await Promise.resolve(artifactsList);
+                }
+
+                // Fetch entity details for the UI if entity IDs are provided
+                let entityOptions: Array<{ value: number, label: string }> = [];
+                if (resolvedEntities && resolvedEntities.length > 0) {
+                    const allEntities = await execute(
+                        () => entriesApi.entitiesList(),
+                        {
+                            errorMessage: 'Failed to fetch entities',
+                        }
+                    );
+                    entityOptions = allEntities
+                        .filter((entity) => entity.id !== undefined && resolvedEntities!.includes(entity.id))
+                        .map((entity) => ({
+                            value: entity.id!,
+                            label: entity.name,
+                        }));
+                }
+
+                // Update form data with resolved values
+                setFormData((prev) => ({
+                    ...prev,
+                    entities: resolvedEntities || prev.entities,
+                    request: resolvedArtifacts || prev.request,
+                }));
+
+                // Update selected entities state for the UI
+                if (entityOptions.length > 0) {
+                    setSelectedEntities(entityOptions);
+                }
+            } catch (error) {
+                console.error('Failed to load initial data:', error);
+                if (onError) {
+                    onError(error as Error);
+                }
+            } finally {
+                setInitialDataLoading(false);
+            }
+        };
+
+        loadInitialData();
+    }, [entitiesList, artifactsList, entriesApi, execute, onError]);
+
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
@@ -115,7 +196,7 @@ export default function EnrichmentRequestModal({
 
     const handleEntityChange = (selectedOptions) => {
         const entities = selectedOptions ? selectedOptions.map((opt) => opt.value) : [];
-        setSelectedEntities(entities);
+        setSelectedEntities(selectedOptions || []);
         setFormData((prev) => ({
             ...prev,
             entities,
@@ -281,6 +362,8 @@ export default function EnrichmentRequestModal({
                         usePortal={false}
                         menuPosition='absolute'
                         onChange={handleEntityChange}
+                        value={selectedEntities}
+                        isLoading={initialDataLoading}
                     />
                 </div>
 
@@ -309,16 +392,16 @@ export default function EnrichmentRequestModal({
                         type='button'
                         className='btn'
                         onClick={closeModal}
-                        disabled={loading}
+                        disabled={loading || initialDataLoading}
                     >
                         Cancel
                     </button>
                     <button
                         type='submit'
                         className='btn btn-primary'
-                        disabled={loading}
+                        disabled={loading || initialDataLoading}
                     >
-                        {loading ? 'Creating...' : 'Create Request'}
+                        {loading ? 'Creating...' : initialDataLoading ? 'Loading...' : 'Create Request'}
                     </button>
                 </div>
             </form>
