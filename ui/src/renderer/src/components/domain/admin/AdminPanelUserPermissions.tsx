@@ -1,12 +1,12 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import useFrontendSearch from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
+import { SettingsButton, SettingsCard, SettingsSeparator } from '@components/forms';
+import { Mail, RefreshDouble, User } from 'iconoir-react';
 import { ReactElement, useEffect, useState } from 'react';
-import Tooltip from '../../base/Tooltip/Tooltip';
+import { Search, Xmark } from 'iconoir-react';
 import AdminPanelPermissionCard from './cards/AdminPanelPermissionCard';
 
 interface AdminPanelUserPermissionsProps {
@@ -15,28 +15,18 @@ interface AdminPanelUserPermissionsProps {
 }
 
 /**
- * AdminPanelUserPermissions component - This component is used to display the permissions for a specific user.
- * The component displays the following information:
- * - User permissions
- * The component will display the permissions for the user for each entity.
- * The component will allow changing the access level for the user.
- *
- * @function AdminPanelUserPermissions
- * @returns {AdminPanelUserPermissions}
- * @constructor
+ * AdminPanelUserPermissions component - Displays and manages permissions for a specific user
  */
 export default function AdminPanelUserPermissions({
     username,
     id,
 }: AdminPanelUserPermissionsProps) {
     const [entities, setEntities] = useState<ReactElement[]>([]);
-    const { notify } = useNotif();
+    const [searchVal, setSearchVal] = useState('');
     const { accessApi, usersApi } = useApi();
-    const { navigate, navigateLink } = useCradleNavigate();
+    const { navigate } = useCradleNavigate();
     const auth = useAuth();
     const { execute } = useAPICall();
-
-    const { searchVal, setSearchVal, filteredChildren } = useFrontendSearch(entities);
 
     const simulateSession = () => {
         execute(() =>
@@ -46,7 +36,6 @@ export default function AdminPanelUserPermissions({
             }),
         )
             .then((res) => {
-                // Backend returns access, refresh, and expiration times
                 auth.setTokensDirectly(res as any);
                 navigate('/', { replace: true });
             })
@@ -107,75 +96,129 @@ export default function AdminPanelUserPermissions({
             .catch(() => {});
     }, [id, accessApi, execute]);
 
-    return (
-        <>
-            <div className='w-full overflow-x-hidden overflow-y-scroll'>
-                <div className='container w-[90%] mx-auto py-4 center'>
-                    <h1 className='text-3xl font-bold my-4'>
-                        User Settings:
-                        <span className='text-3xl text-zinc-500'> {username}</span>
-                    </h1>
-                    <div className='bg-gray-2 p-4 rounded-md'>
-                        <div
-                            id='actions'
-                            className='w-full h-fit mt-1 flex flex-row justify-start items-center text-zinc-400 pb-2'
-                        >
-                            <Tooltip content={'Jump into a session for this user'}>
-                                <button
-                                    id='simulate-user'
-                                    data-testid='simulate-user'
-                                    name='simulate-user'
-                                    type='button'
-                                    className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ml-2'
-                                    onClick={simulateSession}
-                                >
-                                    Simulate
-                                </button>
-                            </Tooltip>
-                            <Tooltip content={'Send email confirmation'}>
-                                <button
-                                    id='email-confirmation'
-                                    data-testid='email-confirmation'
-                                    name='email-confirmation'
-                                    type='button'
-                                    className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ml-2'
-                                    onClick={sendEmailConfirmation}
-                                >
-                                    Email Confirmation
-                                </button>
-                            </Tooltip>
-                            <Tooltip content={'Send password reset email'}>
-                                <button
-                                    id='password-reset'
-                                    data-testid='password-reset'
-                                    name='password-reset'
-                                    type='button'
-                                    className='btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ml-2'
-                                    onClick={sendPasswordResetEmail}
-                                >
-                                    Password Reset
-                                </button>
-                            </Tooltip>
-                        </div>
+    // Filter entities based on search
+    const filteredEntities = entities.filter((entity) => {
+        const searchKey = (entity.props?.searchKey || '').toLowerCase();
+        return searchKey.includes(searchVal.toLowerCase());
+    });
 
-                        <div className='w-full h-12 my-2'>
-                            <input
-                                type='text'
-                                placeholder='Search'
-                                className='form-input input input-rounded input-md input-block input-ghost-primary focus:ring-0 w-full'
-                                onChange={(e) => setSearchVal(e.target.value)}
-                            />
-                        </div>
-                        <div className='w-full rounded-lg my-2 h-[80vh] overflow-y-auto'>
-                            {filteredChildren.sort((a, b) => {
-                                const aKey = a.key?.toString() || '';
-                                const bKey = b.key?.toString() || '';
-                                return naturalSort(aKey, bKey);
-                            })}
-                        </div>
-                    </div>
+    return (
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        User Permissions: {username}
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Manage entity access and user actions
+                    </p>
                 </div>
             </div>
-        </>
+
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='w-full'>
+                    {/* Actions Section */}
+                    <section id='actions' className='pb-8'>
+                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            User Actions
+                        </h2>
+                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            Administrative actions for this user
+                        </p>
+
+                        <div className='space-y-4'>
+                            <SettingsCard>
+                                <SettingsButton
+                                    label='Simulate Session'
+                                    description='Jump into a session for this user'
+                                    buttonText='Simulate'
+                                    icon={<User className='w-3.5 h-3.5' />}
+                                    onClick={simulateSession}
+                                />
+
+                                <SettingsSeparator />
+
+                                <SettingsButton
+                                    label='Email Confirmation'
+                                    description='Send email verification to user'
+                                    buttonText='Send Email'
+                                    icon={<Mail className='w-3.5 h-3.5' />}
+                                    onClick={sendEmailConfirmation}
+                                />
+
+                                <SettingsSeparator />
+
+                                <SettingsButton
+                                    label='Password Reset'
+                                    description='Send password reset email'
+                                    buttonText='Send Reset'
+                                    icon={<RefreshDouble className='w-3.5 h-3.5' />}
+                                    onClick={sendPasswordResetEmail}
+                                />
+                            </SettingsCard>
+                        </div>
+                    </section>
+
+                    {/* Permissions Section */}
+                    <section id='permissions' className='border-t border-white/5 pt-5 pb-8'>
+                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            Entity Permissions
+                        </h2>
+                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            Configure access levels for each entity
+                        </p>
+
+                        {/* Search Bar */}
+                        <div className='mb-4'>
+                            <div className='flex items-center gap-2 bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                                <button
+                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                    title='Search'
+                                >
+                                    <Search className='w-4 h-4' />
+                                </button>
+                                <input
+                                    type='text'
+                                    placeholder='Search entities'
+                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                    onChange={(e) => setSearchVal(e.target.value)}
+                                    value={searchVal}
+                                />
+                                {searchVal && (
+                                    <button
+                                        onClick={() => setSearchVal('')}
+                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                        title='Clear search'
+                                    >
+                                        <Xmark className='w-4 h-4' />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Permissions List */}
+                        <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                            {filteredEntities.length > 0 ? (
+                                filteredEntities.sort((a, b) => {
+                                    const aKey = a.key?.toString() || '';
+                                    const bKey = b.key?.toString() || '';
+                                    return naturalSort(aKey, bKey);
+                                })
+                            ) : (
+                                <div className='text-center py-8'>
+                                    <p className='text-sm cradle-text-muted'>
+                                        {searchVal
+                                            ? 'No entities found matching your search'
+                                            : 'No entities available'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
     );
 }

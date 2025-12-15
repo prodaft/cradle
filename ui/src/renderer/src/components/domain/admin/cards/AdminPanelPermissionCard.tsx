@@ -1,7 +1,6 @@
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { NavArrowDown } from 'iconoir-react';
+import { SettingsRadio } from '@components/forms';
 import { useState } from 'react';
 
 type AccessLevel = 'none' | 'read' | 'read-write';
@@ -13,6 +12,12 @@ interface AdminPanelPermissionCardProps {
     accessLevel: AccessLevel;
     searchKey: string;
 }
+
+const ACCESS_OPTIONS = [
+    { value: 'none', label: 'None' },
+    { value: 'read', label: 'Read' },
+    { value: 'read-write', label: 'Read-Write' },
+];
 
 /**
  * AdminPanelPermissionCard component - Displays and manages user permissions for an entity
@@ -27,21 +32,21 @@ export default function AdminPanelPermissionCard({
     const [currentAccess, setCurrentAccess] = useState<AccessLevel>(accessLevel);
     const { execute } = useAPICall();
     const { accessApi } = useApi();
-    const { navigate, navigateLink } = useCradleNavigate();
 
-    const handleChange = async (newAccess: AccessLevel) => {
-        if (currentAccess !== newAccess) {
+    const handleChange = async (newAccess: string) => {
+        const accessValue = newAccess as AccessLevel;
+        if (currentAccess !== accessValue) {
             execute(
                 () =>
                     accessApi.accessUserUpdate({
                         userId: userId,
                         entityId: entityId,
-                        accessRequest: { accessType: newAccess },
+                        accessRequest: { accessType: accessValue },
                     }),
                 { successMessage: 'Access updated successfully' },
             )
                 .then(() => {
-                    setCurrentAccess(newAccess);
+                    setCurrentAccess(accessValue);
                 })
                 .catch(() => {
                     // Error already handled by execute
@@ -50,48 +55,16 @@ export default function AdminPanelPermissionCard({
     };
 
     return (
-        <>
-            <div className='h-fit w-full bg-cradle3 p-4 my-1 bg-opacity-20 rounded-xl flex flex-row justify-start'>
-                <h2 className='card-header w-full mx-2'>{text}</h2>
-                <div className='w-full flex flex-row justify-end'>
-                    <div className='dropdown'>
-                        <label
-                            className='btn btn-ghost my-2'
-                            tabIndex={0}
-                            data-testid='accessLevelDisplay'
-                        >
-                            {currentAccess}{' '}
-                            <NavArrowDown
-                                color='gray-12'
-                                height='1.5em'
-                                width='1.5em'
-                            />
-                        </label>
-                        <div className='dropdown-menu'>
-                            <a
-                                className='dropdown-item text-sm'
-                                onClick={() => handleChange('none')}
-                            >
-                                none
-                            </a>
-                            <a
-                                tabIndex={-1}
-                                className='dropdown-item text-sm'
-                                onClick={() => handleChange('read')}
-                            >
-                                read
-                            </a>
-                            <a
-                                tabIndex={-1}
-                                className='dropdown-item text-sm'
-                                onClick={() => handleChange('read-write')}
-                            >
-                                read-write
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </>
+        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1'>
+            <SettingsRadio
+                label={text}
+                description={`Entity access permissions`}
+                name={`access-${entityId}`}
+                options={ACCESS_OPTIONS}
+                value={currentAccess}
+                onChange={handleChange}
+                layout='horizontal'
+            />
+        </div>
     );
 }

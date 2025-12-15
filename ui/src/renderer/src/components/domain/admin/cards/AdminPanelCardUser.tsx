@@ -3,7 +3,7 @@ import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ClockRotateRight, Lock, Trash } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
 import Card from '../../../base/Card/Card';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
@@ -50,11 +50,11 @@ export default function AdminPanelCardUser({
         );
     };
 
-    const handleEditClick = () => {
+    const handleUserClick = () => {
         setRightPane(<AccountSettings target={String(id)} />);
     };
 
-    const handleUserClick = () => {
+    const handlePermissionsClick = () => {
         setRightPane(
             <AdminPanelUserPermissions
                 username={name}
@@ -73,8 +73,8 @@ export default function AdminPanelCardUser({
             variant: 'ghost' as const,
         },
         {
-            icon: <EditPencil />,
-            onClick: handleEditClick,
+            icon: <Lock />,
+            onClick: handlePermissionsClick,
             tooltip: 'Edit',
             variant: 'ghost' as const,
         },
