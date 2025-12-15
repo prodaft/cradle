@@ -475,7 +475,7 @@ export default function AccountSettings({
                     {isAdminAndNotOwn && isEdit && (
                         <section
                             id='admin-actions'
-                            className='border-t border-white/5 pt-5 pb-8'
+                            className='border-b border-white/5 pb-8'
                         >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 User Management
@@ -532,7 +532,7 @@ export default function AccountSettings({
                         {/* Account Section */}
                         <section
                             id='account'
-                            className='pb-8'
+                            className='pb-8 pt-5'
                         >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 Account
