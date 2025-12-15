@@ -252,125 +252,308 @@ export default function EntryTypeForm({
     }
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                    {isEdit ? 'Edit Entry Type' : 'Add New Entry Type'}
-                </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 rounded-md'>
-                    <Form<EntryTypeFormValues>
-                        schema={entryTypeSchema}
-                        defaultValues={initialData}
-                        onSubmit={handleSubmit}
-                        successMessage='Entry Type saved successfully!'
-                        className='space-y-4'
-                    >
-                        {({ watch }) => {
-                            const watchType = watch('type');
-                            const watchTypeFormat = watch('typeFormat');
-                            const isEntity = watchType?.value === 'entity';
-                            const isArtifact = watchType?.value === 'artifact';
-                            const isOptions = watchTypeFormat?.value === 'options';
-                            const isRegex = watchTypeFormat?.value === 'regex';
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        {isEdit ? 'Edit Entry Type' : 'New Entry Type'}
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        {isEdit ? 'Modify entry class definition' : 'Create new entry class'}
+                    </p>
+                </div>
+            </div>
 
-                            return (
-                                <>
-                                    <Tabs tabClass={TabClasses.PILL}>
-                                        <Tab title='Basic' classes='space-y-4 pt-4'>
-                                            <FormSelect<EntryTypeFormValues, TypeOption>
-                                                name='type'
-                                                label='Class Type'
-                                                options={typeOptions}
-                                                required
-                                            />
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='w-full'>
+                    <form onSubmit={handleFormSubmit(onSubmit)}>
+                        {/* Basic Section */}
+                        <section id='basic' className='pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                Basic Information
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Core properties of the entry type
+                            </p>
 
-                                            <FormInput<EntryTypeFormValues>
-                                                name='subtype'
-                                                label={isEdit ? 'Name' : 'Subtype'}
-                                                required
-                                            />
-
-                                            <FormTextArea<EntryTypeFormValues>
-                                                name='description'
-                                                label='Description'
-                                                placeholder='Description'
-                                            />
-
-                                            <ColorPickerField />
-                                        </Tab>
-
-                                        <Tab title='Advanced' classes='space-y-4 pt-4'>
-                                            {isEntity && (
-                                                <FormInput<EntryTypeFormValues>
-                                                    name='prefix'
-                                                    label='Prefix'
+                            <div className='space-y-4'>
+                                <SettingsCard>
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Class Type
+                                                    <span className='text-red-500 ml-1'>*</span>
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>
+                                                    Artifact or Entity classification
+                                                </p>
+                                                {errors.type?.message && (
+                                                    <p className='text-sm text-red-500 mt-1'>
+                                                        {errors.type.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='w-auto flex-1'>
+                                                <Controller
+                                                    name='type'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Selector
+                                                            {...field}
+                                                            staticOptions={typeOptions}
+                                                            placeholder='Select type'
+                                                        />
+                                                    )}
                                                 />
-                                            )}
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                            {isArtifact && (
-                                                <>
-                                                    <FormSelect<
-                                                        EntryTypeFormValues,
-                                                        FormatOption
-                                                    >
-                                                        name='typeFormat'
-                                                        label='Format'
-                                                        options={formatOptions}
-                                                        isClearable
+                                    <SettingsSeparator />
+
+                                    <SettingsField
+                                        label={isEdit ? 'Name' : 'Subtype'}
+                                        description='Unique identifier for this entry class'
+                                        {...register('subtype')}
+                                        error={errors.subtype}
+                                        required
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsTextArea
+                                        label='Description'
+                                        description='Brief explanation of this entry type'
+                                        placeholder='Description'
+                                        rows={3}
+                                        {...register('description')}
+                                        error={errors.description}
+                                        layout='vertical'
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <div className='py-2'>
+                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                            Color
+                                            <span className='text-red-500 ml-1'>*</span>
+                                        </label>
+                                        <p className='text-sm cradle-text-muted mb-2'>
+                                            Display color for this entry type
+                                        </p>
+                                        <div className='flex items-center space-x-2'>
+                                            <Controller
+                                                name='color'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <input
+                                                        type='text'
+                                                        className='cradle-input w-full text-sm h-10 rounded-full'
+                                                        {...field}
                                                     />
+                                                )}
+                                            />
+                                            <div
+                                                className='h-10 w-12 rounded cursor-pointer border border-gray-300 flex-shrink-0'
+                                                style={{ backgroundColor: watchColor }}
+                                                onClick={() => setShowColorPicker(!showColorPicker)}
+                                            />
+                                            <button
+                                                type='button'
+                                                className='cradle-btn cradle-btn-secondary h-10 px-3 flex-shrink-0'
+                                                onClick={generateRandomColor}
+                                            >
+                                                <svg
+                                                    xmlns='http://www.w3.org/2000/svg'
+                                                    className='h-4 w-4'
+                                                    fill='none'
+                                                    viewBox='0 0 24 24'
+                                                    stroke='currentColor'
+                                                >
+                                                    <path
+                                                        strokeLinecap='round'
+                                                        strokeLinejoin='round'
+                                                        strokeWidth={2}
+                                                        d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        {showColorPicker && (
+                                            <div className='relative mt-2'>
+                                                <div
+                                                    className='fixed inset-0 z-10'
+                                                    onClick={() => setShowColorPicker(false)}
+                                                />
+                                                <div className='absolute z-20'>
+                                                    <Controller
+                                                        name='color'
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <HexColorPicker
+                                                                color={field.value}
+                                                                onChange={field.onChange}
+                                                            />
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                        {errors.color && (
+                                            <p className='text-sm text-red-500 mt-1'>
+                                                {errors.color.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                </SettingsCard>
+                            </div>
+                        </section>
 
-                                                    {isOptions && (
-                                                        <FormTextArea<EntryTypeFormValues>
-                                                            name='options'
-                                                            label='Options'
-                                                            placeholder='Enter possible values separated by newlines.'
-                                                        />
-                                                    )}
+                        {/* Advanced Section */}
+                        <section id='advanced' className='border-t border-white/5 pt-5 pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                Advanced Settings
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Additional configuration and validation
+                            </p>
 
-                                                    {isRegex && (
-                                                        <FormTextArea<EntryTypeFormValues>
-                                                            name='regex'
-                                                            label='Regex'
-                                                            placeholder='Enter the regex for the type.'
-                                                        />
-                                                    )}
+                            <div className='space-y-4'>
+                                <SettingsCard>
+                                    {isEntity && (
+                                        <>
+                                            <SettingsField
+                                                label='Prefix'
+                                                description='Prefix used when generating entity names'
+                                                {...register('prefix')}
+                                                error={errors.prefix}
+                                            />
+                                        </>
+                                    )}
 
-                                                    {!isOptions && (
-                                                        <FormTextArea<EntryTypeFormValues>
-                                                            name='generativeRegex'
-                                                            label='Generative Regex'
-                                                            placeholder='Regex used to generate random values.'
+                                    {isArtifact && (
+                                        <>
+                                            <div className='py-2'>
+                                                <div className='flex items-center justify-between gap-4'>
+                                                    <div className='flex-1'>
+                                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                            Format
+                                                        </label>
+                                                        <p className='text-sm cradle-text-muted'>
+                                                            Validation format for artifact values
+                                                        </p>
+                                                    </div>
+                                                    <div className='w-auto flex-1'>
+                                                        <Controller
+                                                            name='typeFormat'
+                                                            control={control}
+                                                            render={({ field }) => (
+                                                                <Selector
+                                                                    {...field}
+                                                                    staticOptions={formatOptions}
+                                                                    placeholder='Select format'
+                                                                    isClearable
+                                                                />
+                                                            )}
                                                         />
-                                                    )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {isOptions && (
+                                                <>
+                                                    <SettingsSeparator />
+                                                    <SettingsTextArea
+                                                        label='Options'
+                                                        description='Allowed values (one per line)'
+                                                        placeholder='Enter possible values separated by newlines.'
+                                                        rows={6}
+                                                        {...register('options')}
+                                                        error={errors.options}
+                                                        layout='vertical'
+                                                    />
                                                 </>
                                             )}
 
-                                            <FormSelect<
-                                                EntryTypeFormValues,
-                                                ChildOption,
-                                                true
-                                            >
-                                                name='children'
-                                                label='Children'
-                                                options={entryTypes}
-                                                isMulti
-                                                placeholder='Select child entry types...'
-                                            />
-                                        </Tab>
-                                    </Tabs>
+                                            {isRegex && (
+                                                <>
+                                                    <SettingsSeparator />
+                                                    <SettingsTextArea
+                                                        label='Regex'
+                                                        description='Regular expression for validation'
+                                                        placeholder='Enter the regex for the type.'
+                                                        rows={3}
+                                                        {...register('regex')}
+                                                        error={errors.regex}
+                                                        layout='vertical'
+                                                    />
+                                                </>
+                                            )}
 
-                                    <div className='flex gap-2 pt-4'>
-                                        <button
-                                            type='submit'
-                                            className='btn btn-primary btn-block'
-                                        >
-                                            {isEdit ? 'Edit' : 'Add'}
-                                        </button>
+                                            {!isOptions && (
+                                                <>
+                                                    <SettingsSeparator />
+                                                    <SettingsTextArea
+                                                        label='Generative Regex'
+                                                        description='Regex used to generate random sample values'
+                                                        placeholder='Regex used to generate random values.'
+                                                        rows={3}
+                                                        {...register('generativeRegex')}
+                                                        error={errors.generativeRegex}
+                                                        layout='vertical'
+                                                    />
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+
+                                    {((isEntity && isArtifact === false) || isArtifact) && (
+                                        <SettingsSeparator />
+                                    )}
+
+                                    <div className='py-2'>
+                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                            Children
+                                        </label>
+                                        <p className='text-sm cradle-text-muted mb-2'>
+                                            Entry types that can be children of this type
+                                        </p>
+                                        <Controller
+                                            name='children'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Selector
+                                                    {...field}
+                                                    staticOptions={entryTypes}
+                                                    placeholder='Select child entry types...'
+                                                    isMulti
+                                                />
+                                            )}
+                                        />
+                                        {errors.children && (
+                                            <p className='text-sm text-red-500 mt-1'>
+                                                {errors.children.message}
+                                            </p>
+                                        )}
                                     </div>
-                                </>
-                            );
-                        }}
-                    </Form>
+                                </SettingsCard>
+                            </div>
+                        </section>
+
+                        {/* Save Button */}
+                        <div className='border-t border-white/5 pt-5 flex justify-end'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entry Type'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

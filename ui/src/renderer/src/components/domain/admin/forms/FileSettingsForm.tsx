@@ -1,10 +1,12 @@
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClass, EntryClassTypeEnum } from '@services/cradle/models';
+import { Refresh } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import {
     FormAlert,
@@ -16,8 +18,6 @@ import {
     SettingsTextArea,
     SettingsToggle,
 } from '../../../forms';
-import { useNotif } from '@/contexts/ui/NotificationContext';
-import { Refresh } from 'iconoir-react';
 import Selector from '../../../forms/Selector';
 
 interface SubtypeOption extends SelectOption<string> {
@@ -144,27 +144,27 @@ export default function FileSettingsForm() {
                     )
                         ? settings.files.mimetype_patterns.join('\n')
                         : settings.files.mimetype_patterns ||
-                          'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
+                        'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
                     reset({
                         autoprocessFiles: settings.files.autoprocess_files ?? true,
                         md5Subtype: settings.files.md5_subtype
                             ? {
-                                  value: settings.files.md5_subtype,
-                                  label: settings.files.md5_subtype,
-                              }
+                                value: settings.files.md5_subtype,
+                                label: settings.files.md5_subtype,
+                            }
                             : null,
                         sha1Subtype: settings.files.sha1_subtype
                             ? {
-                                  value: settings.files.sha1_subtype,
-                                  label: settings.files.sha1_subtype,
-                              }
+                                value: settings.files.sha1_subtype,
+                                label: settings.files.sha1_subtype,
+                            }
                             : null,
                         sha256Subtype: settings.files.sha256_subtype
                             ? {
-                                  value: settings.files.sha256_subtype,
-                                  label: settings.files.sha256_subtype,
-                              }
+                                value: settings.files.sha256_subtype,
+                                label: settings.files.sha256_subtype,
+                            }
                             : null,
                         mimetypePatterns: mimetypePatternsString,
                     });

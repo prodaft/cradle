@@ -17,9 +17,11 @@ import {
     Clock,
     Download,
     InfoCircle,
+    Search,
     User,
     WarningCircle,
     WarningTriangle,
+    Xmark,
 } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
@@ -370,11 +372,11 @@ export default function EnrichmentResults(): JSX.Element {
                                                 {enrichersDetail.map((enricher) => (
                                                     <div
                                                         key={enricher.enricher_type}
-                                                        className={`p-2 hover:border-2 hover:border-cradle-accent-primary cursor-pointer transition-colors ${selectedEnricher ===
-                                                                enricher.enricher_type
-                                                                ? 'cradle-bg-accent border-2 border-cradle-border-accent'
-                                                                : 'cradle-bg-base'
-                                                            }`}
+                                                        className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
+                                                            selectedEnricher === enricher.enricher_type
+                                                                ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
+                                                                : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
+                                                        }`}
                                                         onClick={() => {
                                                             setSelectedEnricher(
                                                                 enricher.enricher_type,
@@ -390,14 +392,12 @@ export default function EnrichmentResults(): JSX.Element {
                                                             });
                                                         }}
                                                     >
-                                                        <div className='flex items-center gap-2'>
-                                                            {getEnricherStatusIcon(
-                                                                enricher.enricher_type,
-                                                            )}
-                                                            <span className='text-sm font-medium cradle-text-primary truncate'>
-                                                                {enricher.display_name}
-                                                            </span>
-                                                        </div>
+                                                        {getEnricherStatusIcon(
+                                                            enricher.enricher_type,
+                                                        )}
+                                                        <span className='text-sm font-medium truncate text-cradle-text-primary'>
+                                                            {enricher.display_name}
+                                                        </span>
                                                     </div>
                                                 ))}
                                             </div>
@@ -415,12 +415,12 @@ export default function EnrichmentResults(): JSX.Element {
                                                         ([key, value]) => (
                                                             <div
                                                                 key={key}
-                                                                className='p-3 cradle-bg-base border-l-4 border-amber-500'
+                                                                className='p-3 bg-cradle-bg-elevated border border-cradle-border-primary border-l-4 border-l-amber-500 rounded-md shadow-sm'
                                                             >
-                                                                <div className='text-xs font-semibold cradle-text-secondary mb-1'>
+                                                                <div className='text-xs font-semibold text-cradle-text-secondary mb-1 uppercase tracking-wider'>
                                                                     {key}
                                                                 </div>
-                                                                <div className='text-sm cradle-text-primary whitespace-pre-wrap'>
+                                                                <div className='text-sm text-cradle-text-primary whitespace-pre-wrap font-mono bg-cradle-bg-tertiary p-2 rounded'>
                                                                     {typeof value === 'string'
                                                                         ? value
                                                                         : JSON.stringify(
@@ -447,12 +447,12 @@ export default function EnrichmentResults(): JSX.Element {
                                                         ([key, value]) => (
                                                             <div
                                                                 key={key}
-                                                                className='p-3 cradle-bg-base border-l-4 border-red-500'
+                                                                className='p-3 bg-cradle-bg-elevated border border-cradle-border-primary border-l-4 border-l-red-500 rounded-md shadow-sm'
                                                             >
-                                                                <div className='text-xs font-semibold cradle-text-secondary mb-1'>
+                                                                <div className='text-xs font-semibold text-cradle-text-secondary mb-1 uppercase tracking-wider'>
                                                                     {key}
                                                                 </div>
-                                                                <div className='text-sm cradle-text-primary whitespace-pre-wrap'>
+                                                                <div className='text-sm text-cradle-text-primary whitespace-pre-wrap font-mono bg-cradle-bg-tertiary p-2 rounded'>
                                                                     {typeof value === 'string'
                                                                         ? value
                                                                         : JSON.stringify(
@@ -500,39 +500,91 @@ export default function EnrichmentResults(): JSX.Element {
 
                                     <div className='w-full flex flex-col pt-3 pb-3'>
                                         {/* Search Bars */}
-                                        <div className='flex gap-2'>
-                                            <input
-                                                type='text'
-                                                className='input input-md input-block w-full'
-                                                placeholder='Search entries...'
-                                                value={searchInput.query}
-                                                onChange={(e) =>
-                                                    setSearchInput({
-                                                        ...searchInput,
-                                                        query: e.target.value,
-                                                    })
-                                                }
-                                            />
-                                            <input
-                                                type='text'
-                                                className='input input-md input-block w-full'
-                                                placeholder='Search details...'
-                                                value={searchInput.details}
-                                                onChange={(e) =>
-                                                    setSearchInput({
-                                                        ...searchInput,
-                                                        details: e.target.value,
-                                                    })
-                                                }
-                                            />
+                                        <div className='flex gap-2 items-center'>
+                                            {/* Search Entries */}
+                                            <div className='flex items-center gap-2 flex-grow bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full focus-within:border-cradle-accent-primary focus-within:shadow-[0_0_0_1px_var(--cradle-accent-primary)] transition-all'>
+                                                <button
+                                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                                    title='Search'
+                                                    onClick={handleSearch}
+                                                >
+                                                    <Search className='w-4 h-4' />
+                                                </button>
+                                                <input
+                                                    type='text'
+                                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                                    placeholder='Search entries...'
+                                                    value={searchInput.query}
+                                                    onChange={(e) =>
+                                                        setSearchInput({
+                                                            ...searchInput,
+                                                            query: e.target.value,
+                                                        })
+                                                    }
+                                                    onKeyDown={handleSearchKeyPress}
+                                                />
+                                                {searchInput.query && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSearchInput({
+                                                                ...searchInput,
+                                                                query: '',
+                                                            });
+                                                        }}
+                                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                                        title='Clear'
+                                                    >
+                                                        <Xmark className='w-4 h-4' />
+                                                    </button>
+                                                )}
+                                            </div>
+
+                                            {/* Search Details */}
+                                            <div className='flex items-center gap-2 flex-grow bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full focus-within:border-cradle-accent-primary focus-within:shadow-[0_0_0_1px_var(--cradle-accent-primary)] transition-all'>
+                                                <button
+                                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                                    title='Search Details'
+                                                    onClick={handleSearch}
+                                                >
+                                                    <Search className='w-4 h-4' />
+                                                </button>
+                                                <input
+                                                    type='text'
+                                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                                    placeholder='Search details...'
+                                                    value={searchInput.details}
+                                                    onChange={(e) =>
+                                                        setSearchInput({
+                                                            ...searchInput,
+                                                            details: e.target.value,
+                                                        })
+                                                    }
+                                                    onKeyDown={handleSearchKeyPress}
+                                                />
+                                                {searchInput.details && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSearchInput({
+                                                                ...searchInput,
+                                                                details: '',
+                                                            });
+                                                        }}
+                                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                                        title='Clear'
+                                                    >
+                                                        <Xmark className='w-4 h-4' />
+                                                    </button>
+                                                )}
+                                            </div>
+
                                             <button
-                                                className='btn btn-primary'
+                                                className='cradle-btn cradle-btn-primary h-10 px-6 rounded-full'
                                                 onClick={handleSearch}
                                             >
                                                 Search
                                             </button>
                                             <button
-                                                className='btn btn-secondary'
+                                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full text-cradle-accent-primary'
                                                 onClick={handleDownloadResults}
                                                 disabled={!results || results.length === 0}
                                                 title='Download results as JSON'

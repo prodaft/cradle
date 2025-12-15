@@ -2,7 +2,7 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { useState } from 'react';
 import { FormAlert, FormAlertState, SettingsButton, SettingsCard, SettingsSeparator } from '../../../forms';
-import { Database, Trash } from 'iconoir-react';
+import { Server, Trash } from 'iconoir-react';
 
 export default function EntriesManagement() {
     const { managementApi } = useApi();
@@ -89,7 +89,7 @@ export default function EntriesManagement() {
                                     label='Propagate Access Vectors'
                                     description='Update access permissions across all entries'
                                     buttonText='Propagate'
-                                    icon={<Database className='w-3.5 h-3.5' />}
+                                    icon={<Server className='w-3.5 h-3.5' />}
                                     onClick={handlePropagateAccessVectors}
                                 />
 

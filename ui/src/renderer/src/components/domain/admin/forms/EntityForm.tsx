@@ -1,18 +1,20 @@
 import useApi from '@/hooks/api/useApi';
 import { AccessUser, Entity } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import {
-    Form,
-    FormInput,
-    FormSelect,
-    FormSwitch,
-    FormTextArea,
     SelectOption,
+    SettingsCard,
+    SettingsField,
+    SettingsSeparator,
+    SettingsTextArea,
+    SettingsToggle,
 } from '../../../forms';
-import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
-import { TabClasses } from '../../../layout/Tabs/types';
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
+import Selector from '../../../forms/Selector';
 
 interface EntityFormProps {
     id?: number | string | null;
@@ -65,17 +67,30 @@ export default function EntityForm({
     onAdd,
 }: EntityFormProps) {
     const { accessApi, entriesApi, queryApi } = useApi();
+    const { notify } = useNotif();
 
     const [accesses, setAccessUsers] = useState<AccessUser[]>([]);
     const [entity, setEntity] = useState<Entity | null>(null);
     const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [initialData, setInitialData] = useState<FormData>({
-        name: '',
-        subtype: null,
-        description: '',
-        isPublic: false,
-        aliases: [],
+
+    const {
+        register,
+        handleSubmit: handleFormSubmit,
+        reset,
+        watch,
+        control,
+        getValues,
+        formState: { errors, isSubmitting },
+    } = useForm<FormData>({
+        resolver: yupResolver(entitySchema),
+        defaultValues: {
+            name: '',
+            subtype: null,
+            description: '',
+            isPublic: false,
+            aliases: [],
+        },
     });
 
     // Fetch aliases for async select
@@ -114,13 +129,13 @@ export default function EntityForm({
 
                 // Set default subtype for new entities
                 if (!isEdit && options.length > 0) {
-                    setInitialData((prev) => ({ ...prev, subtype: options[0] }));
+                    reset((prev) => ({ ...prev, subtype: options[0] }));
                 }
             } catch (err) {
                 console.error('Failed to fetch subtypes:', err);
             }
         })();
-    }, [isEdit, entriesApi]);
+    }, [isEdit, entriesApi, reset]);
 
     // Fetch entity data when editing
     useEffect(() => {
@@ -133,7 +148,7 @@ export default function EntityForm({
                         accessApi.accessEntityList({ entityId: Number(id) }),
                     ]);
 
-                    setInitialData({
+                    reset({
                         name: entityData.name,
                         subtype: {
                             value: entityData.subtype,
@@ -161,43 +176,57 @@ export default function EntityForm({
                 setIsLoading(false);
             }
         })();
-    }, [isEdit, id, entriesApi, accessApi]);
+    }, [isEdit, id, entriesApi, accessApi, reset]);
 
     // Handle form submission
-    const handleSubmit = async (data: FormData) => {
-        const payload = {
-            type: 'entity',
-            name: data.name,
-            description: data.description,
-            subtype: data.subtype?.value || '',
-            is_public: data.isPublic,
-            aliases: data.aliases.map((alias) => alias.value),
-        };
+    const onSubmit = async (data: FormData) => {
+        try {
+            const payload = {
+                type: 'entity',
+                name: data.name,
+                description: data.description,
+                subtype: data.subtype?.value || '',
+                is_public: data.isPublic,
+                aliases: data.aliases.map((alias) => alias.value),
+            };
 
-        if (isEdit) {
-            await entriesApi.entitiesUpdate({
-                entityId: Number(id),
-                entityRequest: payload,
+            if (isEdit) {
+                await entriesApi.entitiesUpdate({
+                    entityId: Number(id),
+                    entityRequest: payload,
+                });
+                notify({
+                    type: 'success',
+                    text: 'Entity updated successfully!',
+                });
+            } else {
+                const result = await entriesApi.entitiesCreate({
+                    entityRequest: payload,
+                });
+                notify({
+                    type: 'success',
+                    text: 'Entity created successfully!',
+                });
+                if (onAdd) onAdd(result);
+            }
+        } catch (error) {
+            notify({
+                type: 'error',
+                text: `Failed to ${isEdit ? 'update' : 'create'} entity`,
             });
-        } else {
-            const result = await entriesApi.entitiesCreate({
-                entityRequest: payload,
-            });
-            if (onAdd) onAdd(result);
         }
     };
 
     // Auto-fill name when subtype changes (for new entities)
     const handleSubtypeChange = async (
         subtype: SubtypeOption | null,
-        reset: (values: Partial<FormData>) => void,
-        currentValues: FormData,
     ) => {
         if (!isEdit && subtype) {
             try {
                 const response = await entriesApi.entriesNextNameRetrieve({
                     classSubtype: subtype.value,
                 });
+                const currentValues = getValues();
                 reset({ ...currentValues, subtype, name: response.name || '' });
             } catch (err) {
                 console.error('Failed to fetch next name:', err);
@@ -214,104 +243,175 @@ export default function EntityForm({
     }
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                    {isEdit ? 'Edit Entity' : 'Add New Entity'}
-                </h1>
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        {isEdit ? 'Edit Entity' : 'New Entity'}
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        {isEdit ? 'Modify entity details' : 'Create new entity'}
+                    </p>
+                </div>
+            </div>
 
-                <Tabs tabClass={TabClasses.PILL}>
-                    <Tab title='Settings' classes='space-y-4'>
-                        <div className='p-8 rounded-md bg-cradle3 bg-opacity-20'>
-                            <Form<FormData>
-                                schema={entitySchema}
-                                defaultValues={initialData}
-                                onSubmit={handleSubmit}
-                                successMessage={
-                                    isEdit
-                                        ? 'Entity updated successfully!'
-                                        : 'Entity created successfully!'
-                                }
-                                className='space-y-4'
-                            >
-                                {({ watch, reset, getValues }) => {
-                                    const watchedSubtype = watch('subtype');
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='w-full'>
+                    <form onSubmit={handleFormSubmit(onSubmit)}>
+                        {/* Basic Section */}
+                        <section id='basic' className='pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                Basic Information
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Core entity properties
+                            </p>
 
-                                    return (
-                                        <>
-                                            <FormInput<FormData>
-                                                name='name'
-                                                label='Name'
-                                                disabled={isEdit}
-                                                required
-                                            />
-
-                                            <FormSelect<FormData, SubtypeOption>
-                                                name='subtype'
-                                                label='Subtype'
-                                                options={subtypeOptions}
-                                                isDisabled={isEdit}
-                                                required
-                                                onChange={(newValue) => {
-                                                    handleSubtypeChange(
-                                                        newValue as SubtypeOption | null,
-                                                        reset,
-                                                        getValues(),
-                                                    );
-                                                }}
-                                            />
-
-                                            <FormSwitch<FormData>
-                                                name='isPublic'
-                                                label='Publicly Available'
-                                            />
-
-                                            <FormTextArea<FormData>
-                                                name='description'
-                                                label='Description'
-                                                placeholder='Description'
-                                                rows={4}
-                                            />
-
-                                            <FormSelect<FormData, AliasOption, true>
-                                                name='aliases'
-                                                label='Aliases'
-                                                fetchOptions={fetchAliases}
-                                                isMulti
-                                                placeholder='Select aliases...'
-                                            />
-
-                                            <button
-                                                type='submit'
-                                                className='btn btn-primary btn-block'
-                                            >
-                                                {isEdit ? 'Edit' : 'Add'}
-                                            </button>
-                                        </>
-                                    );
-                                }}
-                            </Form>
-                        </div>
-                    </Tab>
-
-                    {isEdit && entity && accesses.length > 0 && (
-                        <Tab title='Access' classes='space-y-4'>
-                            {accesses.map((access) => {
-                                const user = access.user;
-                                return (
-                                    <AdminPanelPermissionCard
-                                        key={user.id}
-                                        userId={user.id!}
-                                        text={user.username}
-                                        entityId={entity.id!}
-                                        accessLevel={access.accessType}
-                                        searchKey={user.username}
+                            <div className='space-y-4'>
+                                <SettingsCard>
+                                    <SettingsField
+                                        label='Name'
+                                        description='Unique identifier for this entity'
+                                        {...register('name')}
+                                        error={errors.name}
+                                        disabled={isEdit}
+                                        required
                                     />
-                                );
-                            })}
-                        </Tab>
-                    )}
-                </Tabs>
+
+                                    <SettingsSeparator />
+
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Subtype
+                                                    <span className='text-red-500 ml-1'>*</span>
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>
+                                                    Entity class type
+                                                </p>
+                                                {errors.subtype?.message && (
+                                                    <p className='text-sm text-red-500 mt-1'>
+                                                        {errors.subtype.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='w-auto flex-1'>
+                                                <Controller
+                                                    name='subtype'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Selector
+                                                            {...field}
+                                                            staticOptions={subtypeOptions}
+                                                            placeholder='Select subtype'
+                                                            isDisabled={isEdit}
+                                                            onChange={(newValue) => {
+                                                                field.onChange(newValue);
+                                                                handleSubtypeChange(newValue as SubtypeOption | null);
+                                                            }}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <SettingsSeparator />
+
+                                    <SettingsToggle
+                                        label='Publicly Available'
+                                        description='Allow public access to this entity'
+                                        {...register('isPublic')}
+                                        watch={watch}
+                                        error={errors.isPublic}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsTextArea
+                                        label='Description'
+                                        description='Brief explanation of this entity'
+                                        placeholder='Description'
+                                        rows={4}
+                                        {...register('description')}
+                                        error={errors.description}
+                                        layout='vertical'
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <div className='py-2'>
+                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                            Aliases
+                                        </label>
+                                        <p className='text-sm cradle-text-muted mb-2'>
+                                            Alternate names or references for this entity
+                                        </p>
+                                        <Controller
+                                            name='aliases'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Selector
+                                                    {...field}
+                                                    fetchOptions={fetchAliases}
+                                                    placeholder='Select aliases...'
+                                                    isMulti
+                                                />
+                                            )}
+                                        />
+                                        {errors.aliases && (
+                                            <p className='text-sm text-red-500 mt-1'>
+                                                {errors.aliases.message}
+                                            </p>
+                                        )}
+                                    </div>
+                                </SettingsCard>
+                            </div>
+                        </section>
+
+                        {/* Access Section (only in edit mode with accesses) */}
+                        {isEdit && entity && accesses.length > 0 && (
+                            <section id='access' className='border-t border-white/5 pt-5 pb-8'>
+                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                    Access Control
+                                </h2>
+                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                    User permissions for this entity
+                                </p>
+
+                                <div className='space-y-2'>
+                                    {accesses.map((access) => {
+                                        const user = access.user;
+                                        return (
+                                            <AdminPanelPermissionCard
+                                                key={user.id}
+                                                userId={user.id!}
+                                                text={user.username}
+                                                entityId={entity.id!}
+                                                accessLevel={access.accessType}
+                                                searchKey={user.username}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Save Button */}
+                        <div className='border-t border-white/5 pt-5 flex justify-end'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entity'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     );
