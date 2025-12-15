@@ -90,7 +90,7 @@ export default function MarkdownEditorModal({
                     value={noteTitle}
                     onChange={handleTitleChange}
                     placeholder='Enter title'
-                    className='font-semibold mb-3 mt-3 cradle-text-primary cradle-mono mb-2 w-full bg-transparent border-none outline-none focus:ring-0 p-0'
+                    className='font-semibold mt-1 mb-3 cradle-text-primary cradle-mono w-full bg-transparent border-none outline-none focus:ring-0 p-0'
                 />
             ) : (
                 <h2 className='text-xl font-semibold cradle-text-primary cradle-mono mb-3'>
@@ -132,21 +132,21 @@ export default function MarkdownEditorModal({
             )}
 
             {/* Actions */}
-            <div className='cradle-border-t pt-5 mt-5'>
-                <div className='flex gap-3'>
+            <div className='cradle-border-t pt-4 mt-5'>
+                <div className='flex justify-end gap-2'>
                     <button
                         type='button'
-                        className='cradle-btn cradle-btn-ghost flex-1'
+                        className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
                         onClick={closeModal}
                     >
-                        Cancel
+                        <span>Cancel</span>
                     </button>
                     <button
                         type='button'
-                        className='cradle-btn cradle-btn-primary flex-1'
+                        className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-accent-primary hover:bg-cradle-accent-primary/10 text-sm px-3 py-1.5 flex items-center gap-1.5'
                         onClick={handleConfirm}
                     >
-                        Save
+                        <span>Save</span>
                     </button>
                 </div>
             </div>

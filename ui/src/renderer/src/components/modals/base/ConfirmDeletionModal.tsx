@@ -51,28 +51,18 @@ export default function ConfirmDeletionModal({
 
     return (
         <div className='min-w-[320px] max-w-md'>
-            {/* Header with icon and close button */}
-            <div className='flex items-center justify-between mb-4'>
+            {/* Header with title and close button */}
+            <div className='flex items-end justify-between mb-4'>
                 <div className='flex items-center gap-3'>
-                    <div className='p-2 bg-cradle-accent-error/10 text-cradle-accent-error'>
-                        <Trash className='w-5 h-5' />
-                    </div>
-                    <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
+                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
                         Confirm Deletion
                     </h2>
                 </div>
-                <button
-                    type='button'
-                    className='cradle-btn p-2 rounded-full'
-                    onClick={closeModal}
-                    title='Close'
-                >
-                    <Xmark width={16} height={16} />
-                </button>
+                
             </div>
 
             {/* Body text */}
-            <p className='text-sm text-cradle-text-secondary mb-5 leading-relaxed'>
+            <p className='text-sm text-cradle-text-secondary mb-3 leading-relaxed'>
                 {text}
             </p>
 
@@ -92,14 +82,22 @@ export default function ConfirmDeletionModal({
                 </div>
             )}
 
-            {/* Action button */}
-            <div className='pt-2'>
+            {/* Action buttons */}
+            <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                 <button
-                    className='cradle-btn cradle-btn-danger w-full'
+                    type='button'
+                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    onClick={closeModal}
+                >
+                    <span>Cancel</span>
+                </button>
+                <button
+                    type='button'
+                    className='rounded-full border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors text-sm px-3 py-1.5 flex items-center gap-1.5'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >
-                    Delete
+                    <span>Delete</span>
                 </button>
             </div>
         </div>

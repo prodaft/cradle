@@ -2,7 +2,6 @@ import AlertBox from '@/components/base/Alert/AlertBox';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import { QRCodeSVG } from 'qrcode.react';
-import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 
 /**
@@ -99,18 +98,10 @@ export default function TwoFactorSetupModal({
     if (loading) {
         return (
             <div className='w-full min-w-[28rem]'>
-                <div className='flex items-center justify-between mb-6'>
+                <div className='flex items-end justify-between mb-6'>
                     <h2 className='text-xl font-semibold cradle-text-primary cradle-mono'>
                         Setting up Two-Factor Auth
                     </h2>
-                    <button
-                        type='button'
-                        className='cradle-btn p-2 rounded-full'
-                        onClick={closeModal}
-                        title='Close'
-                    >
-                        <Xmark width={16} height={16} />
-                    </button>
                 </div>
                 <div className='flex justify-center py-8'>
                     <div className='loading loading-spinner loading-lg'></div>
@@ -122,18 +113,10 @@ export default function TwoFactorSetupModal({
     return (
         <div className='w-full min-w-[28rem]'>
             {/* Header */}
-            <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-end justify-between mb-6'>
                 <h2 className='text-xl font-semibold cradle-text-primary cradle-mono'>
                     {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
                 </h2>
-                <button
-                    type='button'
-                    className='cradle-btn p-2 rounded-full'
-                    onClick={closeModal}
-                    title='Close'
-                >
-                    <Xmark width={16} height={16} />
-                </button>
             </div>
 
             {!isDisabling && (
@@ -235,14 +218,27 @@ export default function TwoFactorSetupModal({
 
                 <AlertBox alert={alert} />
 
-                <div className='cradle-border-t pt-5 mt-5'>
-                    <button
-                        type='submit'
-                        className={`cradle-btn w-full ${isDisabling ? 'cradle-btn-danger' : 'cradle-btn-primary'}`}
-                        disabled={verificationCode.length !== 6}
-                    >
-                        {isDisabling ? 'Disable 2FA' : 'Verify and Enable'}
-                    </button>
+                <div className='cradle-border-t pt-4 mt-5'>
+                    <div className='flex justify-end gap-2'>
+                        <button
+                            type='button'
+                            className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                            onClick={closeModal}
+                        >
+                            <span>Cancel</span>
+                        </button>
+                        <button
+                            type='submit'
+                            className={`rounded-full border bg-transparent transition-colors text-sm px-3 py-1.5 flex items-center gap-1.5 ${
+                                isDisabling
+                                    ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10'
+                                    : 'border-cradle-border-accent hover:border-cradle-accent-primary text-cradle-accent-primary hover:bg-cradle-accent-primary/10'
+                            }`}
+                            disabled={verificationCode.length !== 6}
+                        >
+                            <span>{isDisabling ? 'Disable 2FA' : 'Enable'}</span>
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
