@@ -1,11 +1,13 @@
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import SnippetList from '../../../base/SnippetList/SnippetList';
-import { Form, FormAlert, FormAlertState, FormInput, FormSwitch } from '../../../forms';
-import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
-import { TabClasses } from '../../../layout/Tabs/types';
+import { FormAlert, FormAlertState, SettingsButton, SettingsCard, SettingsField, SettingsSeparator, SettingsToggle } from '../../../forms';
+import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Refresh } from 'iconoir-react';
 
 interface FormData {
     minEntries: number;
@@ -33,16 +35,27 @@ const noteSettingsSchema = Yup.object().shape({
 export default function NoteSettingsForm() {
     const { managementApi } = useApi();
     const { execute } = useAPICall();
+    const { notify } = useNotif();
     const [isLoading, setIsLoading] = useState(true);
     const [actionAlert, setActionAlert] = useState<FormAlertState>({
         type: null,
         message: '',
     });
-    const [initialData, setInitialData] = useState<FormData>({
-        minEntries: 1,
-        minEntities: 1,
-        maxCliqueSize: 1,
-        allowDynamicEntryClassCreation: false,
+
+    const {
+        register,
+        handleSubmit: handleFormSubmit,
+        reset,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm<FormData>({
+        resolver: yupResolver(noteSettingsSchema),
+        defaultValues: {
+            minEntries: 1,
+            minEntities: 1,
+            maxCliqueSize: 1,
+            allowDynamicEntryClassCreation: false,
+        },
     });
 
     useEffect(() => {
@@ -50,7 +63,7 @@ export default function NoteSettingsForm() {
             try {
                 const settings = await managementApi.managementSettingsRetrieve();
                 if (settings && settings.notes) {
-                    setInitialData({
+                    reset({
                         minEntries: settings.notes.min_entries || 1,
                         minEntities: settings.notes.min_entities || 1,
                         maxCliqueSize: settings.notes.max_clique_size || 1,
@@ -65,20 +78,31 @@ export default function NoteSettingsForm() {
             }
         }
         fetchSettings();
-    }, [managementApi]);
+    }, [managementApi, reset]);
 
-    const handleSubmit = async (data: FormData) => {
-        await managementApi.managementSettingsCreate({
-            requestBody: {
-                notes: {
-                    min_entries: data.minEntries,
-                    min_entities: data.minEntities,
-                    max_clique_size: data.maxCliqueSize,
-                    allow_dynamic_entry_class_creation:
-                        data.allowDynamicEntryClassCreation,
+    const onSubmit = async (data: FormData) => {
+        try {
+            await managementApi.managementSettingsCreate({
+                requestBody: {
+                    notes: {
+                        min_entries: data.minEntries,
+                        min_entities: data.minEntities,
+                        max_clique_size: data.maxCliqueSize,
+                        allow_dynamic_entry_class_creation:
+                            data.allowDynamicEntryClassCreation,
+                    },
                 },
-            },
-        });
+            });
+            notify({
+                type: 'success',
+                text: 'Settings updated successfully!',
+            });
+        } catch (error) {
+            notify({
+                type: 'error',
+                text: 'Failed to save settings',
+            });
+        }
     };
 
     const handleReLinkNotes = async () => {
@@ -108,71 +132,130 @@ export default function NoteSettingsForm() {
     }
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                    Note Settings
-                </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 rounded-md'>
-                    <Tabs tabClass={TabClasses.PILL}>
-                        <Tab title='Settings'>
-                            <Form<FormData>
-                                schema={noteSettingsSchema}
-                                defaultValues={initialData}
-                                onSubmit={handleSubmit}
-                                successMessage='Settings updated successfully!'
-                                className='flex flex-col gap-4 pt-2'
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        Note Settings
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Configure note creation and linking behavior
+                    </p>
+                </div>
+            </div>
+
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='w-full'>
+                    <form onSubmit={handleFormSubmit(onSubmit)}>
+                        {/* General Section */}
+                        <section id='general' className='pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                General
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Basic note configuration and validation rules
+                            </p>
+
+                            <div className='space-y-4'>
+                                <SettingsCard>
+                                    <SettingsField
+                                        label='Minimum Entries'
+                                        description='Minimum number of entries required in a note'
+                                        type='number'
+                                        {...register('minEntries')}
+                                        error={errors.minEntries}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsField
+                                        label='Minimum Entities'
+                                        description='Minimum number of entities required in a note'
+                                        type='number'
+                                        {...register('minEntities')}
+                                        error={errors.minEntities}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsField
+                                        label='Maximum Clique Size'
+                                        description='Maximum size for clique detection'
+                                        type='number'
+                                        {...register('maxCliqueSize')}
+                                        error={errors.maxCliqueSize}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsToggle
+                                        label='Dynamic Entry Class Creation'
+                                        description='Allow automatic creation of new entry classes'
+                                        {...register('allowDynamicEntryClassCreation')}
+                                        watch={watch}
+                                        error={errors.allowDynamicEntryClassCreation}
+                                    />
+                                </SettingsCard>
+                            </div>
+                        </section>
+
+                        {/* Snippets Section */}
+                        <section id='snippets' className='border-t border-white/5 pt-5 pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                Global Snippets
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Reusable text blocks available to all users
+                            </p>
+
+                            <div className='space-y-4'>
+                                <SnippetList userId='null' showTitle={false} />
+                            </div>
+                        </section>
+
+                        {/* Actions Section */}
+                        <section id='actions' className='border-t border-white/5 pt-5 pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                Actions
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Maintenance operations for notes
+                            </p>
+
+                            <div className='space-y-4'>
+                                {actionAlert.type && (
+                                    <FormAlert
+                                        alert={actionAlert}
+                                        onDismiss={() =>
+                                            setActionAlert({ type: null, message: '' })
+                                        }
+                                    />
+                                )}
+                                <SettingsCard>
+                                    <SettingsButton
+                                        label='Re-Link All Notes'
+                                        description='Regenerate all note links based on current entries'
+                                        buttonText='Re-Link'
+                                        icon={<Refresh className='w-3.5 h-3.5' />}
+                                        onClick={handleReLinkNotes}
+                                    />
+                                </SettingsCard>
+                            </div>
+                        </section>
+
+                        {/* Save Button */}
+                        <div className='border-t border-white/5 pt-5 flex justify-end'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                disabled={isSubmitting}
                             >
-                                <FormInput<FormData>
-                                    name='minEntries'
-                                    label='Minimum Number of Entries in a Note'
-                                    type='number'
-                                />
-                                <FormInput<FormData>
-                                    name='minEntities'
-                                    label='Minimum Number of Entities in a Note'
-                                    type='number'
-                                />
-                                <FormInput<FormData>
-                                    name='maxCliqueSize'
-                                    label='Maximum Clique Size'
-                                    type='number'
-                                />
-                                <FormSwitch<FormData>
-                                    name='allowDynamicEntryClassCreation'
-                                    label='Allow Dynamic Entry Class Creation'
-                                />
-                                <button
-                                    type='submit'
-                                    className='btn btn-primary btn-block mt-2'
-                                >
-                                    Save Settings
-                                </button>
-                            </Form>
-                        </Tab>
-                        <Tab title='Snippets'>
-                            <div className='flex flex-col gap-3 pt-2'>
-                                <SnippetList userId='null' />
-                            </div>
-                        </Tab>
-                        <Tab title='Actions'>
-                            <div className='flex flex-col gap-2 pt-4'>
-                                <FormAlert
-                                    alert={actionAlert}
-                                    onDismiss={() =>
-                                        setActionAlert({ type: null, message: '' })
-                                    }
-                                />
-                                <button
-                                    type='button'
-                                    className='btn btn-outline'
-                                    onClick={handleReLinkNotes}
-                                >
-                                    Re-Link all Notes
-                                </button>
-                            </div>
-                        </Tab>
-                    </Tabs>
+                                {isSubmitting ? 'Saving...' : 'Save Settings'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

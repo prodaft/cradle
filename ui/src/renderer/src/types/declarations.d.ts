@@ -95,6 +95,7 @@ declare module 'iconoir-react' {
     export const ArrowRight: ComponentType<SVGProps<SVGSVGElement>>;
     export const Bin: ComponentType<SVGProps<SVGSVGElement>>;
     export const Download: ComponentType<SVGProps<SVGSVGElement>>;
+    export const FilterList: ComponentType<SVGProps<SVGSVGElement>>;
 
     // File operations
     export const InputField: ComponentType<SVGProps<SVGSVGElement>>;

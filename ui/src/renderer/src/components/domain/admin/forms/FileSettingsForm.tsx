@@ -3,18 +3,22 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClass, EntryClassTypeEnum } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import {
-    Form,
     FormAlert,
     FormAlertState,
-    FormSelect,
-    FormSwitch,
-    FormTextArea,
     SelectOption,
+    SettingsButton,
+    SettingsCard,
+    SettingsSeparator,
+    SettingsTextArea,
+    SettingsToggle,
 } from '../../../forms';
-import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
-import { TabClasses } from '../../../layout/Tabs/types';
+import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Refresh } from 'iconoir-react';
+import Selector from '../../../forms/Selector';
 
 interface SubtypeOption extends SelectOption<string> {
     value: string;
@@ -59,6 +63,7 @@ const fileSettingsSchema = Yup.object().shape({
 export default function FileSettingsForm() {
     const { entriesApi, managementApi } = useApi();
     const { execute } = useAPICall();
+    const { notify } = useNotif();
 
     const [isLoading, setIsLoading] = useState(true);
     const [subtypes, setSubtypes] = useState<SubtypeOption[]>([]);
@@ -66,13 +71,24 @@ export default function FileSettingsForm() {
         type: null,
         message: '',
     });
-    const [initialData, setInitialData] = useState<FileSettingsFormValues>({
-        autoprocessFiles: true,
-        md5Subtype: null,
-        sha1Subtype: null,
-        sha256Subtype: null,
-        mimetypePatterns:
-            'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document',
+
+    const {
+        register,
+        handleSubmit: handleFormSubmit,
+        reset,
+        watch,
+        control,
+        formState: { errors, isSubmitting },
+    } = useForm<FileSettingsFormValues>({
+        resolver: yupResolver(fileSettingsSchema),
+        defaultValues: {
+            autoprocessFiles: true,
+            md5Subtype: null,
+            sha1Subtype: null,
+            sha256Subtype: null,
+            mimetypePatterns:
+                'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        },
     });
 
     const handleReProcessAllFiles = async () => {
@@ -130,7 +146,7 @@ export default function FileSettingsForm() {
                         : settings.files.mimetype_patterns ||
                           'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
-                    setInitialData({
+                    reset({
                         autoprocessFiles: settings.files.autoprocess_files ?? true,
                         md5Subtype: settings.files.md5_subtype
                             ? {
@@ -160,24 +176,35 @@ export default function FileSettingsForm() {
             }
         }
         fetchSettings();
-    }, [managementApi]);
+    }, [managementApi, reset]);
 
-    const handleSubmit = async (data: FileSettingsFormValues) => {
-        const mimetypePatternsArray = data.mimetypePatterns
-            .split('\n')
-            .filter((pattern) => pattern.trim() !== '');
+    const onSubmit = async (data: FileSettingsFormValues) => {
+        try {
+            const mimetypePatternsArray = data.mimetypePatterns
+                .split('\n')
+                .filter((pattern) => pattern.trim() !== '');
 
-        await managementApi.managementSettingsCreate({
-            requestBody: {
-                files: {
-                    autoprocess_files: data.autoprocessFiles,
-                    md5_subtype: data.md5Subtype?.value || '',
-                    sha1_subtype: data.sha1Subtype?.value || '',
-                    sha256_subtype: data.sha256Subtype?.value || '',
-                    mimetype_patterns: mimetypePatternsArray,
+            await managementApi.managementSettingsCreate({
+                requestBody: {
+                    files: {
+                        autoprocess_files: data.autoprocessFiles,
+                        md5_subtype: data.md5Subtype?.value || '',
+                        sha1_subtype: data.sha1Subtype?.value || '',
+                        sha256_subtype: data.sha256Subtype?.value || '',
+                        mimetype_patterns: mimetypePatternsArray,
+                    },
                 },
-            },
-        });
+            });
+            notify({
+                type: 'success',
+                text: 'File settings updated successfully!',
+            });
+        } catch (error) {
+            notify({
+                type: 'error',
+                text: 'Failed to save settings',
+            });
+        }
     };
 
     if (isLoading) {
@@ -189,84 +216,197 @@ export default function FileSettingsForm() {
     }
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                    File Processing Settings
-                </h1>
-                <div className='p-8 rounded-md bg-cradle3 bg-opacity-20'>
-                    <Tabs tabClass={TabClasses.PILL}>
-                        <Tab title='Settings'>
-                            <Form<FileSettingsFormValues>
-                                schema={fileSettingsSchema}
-                                defaultValues={initialData}
-                                onSubmit={handleSubmit}
-                                successMessage='File settings updated successfully!'
-                                className='space-y-4'
-                            >
-                                <FormSwitch<FileSettingsFormValues>
-                                    name='autoprocessFiles'
-                                    label='Process Files Automatically'
-                                />
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        File Settings
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Configure file processing and hash generation
+                    </p>
+                </div>
+            </div>
 
-                                <FormSelect<FileSettingsFormValues, SubtypeOption>
-                                    name='md5Subtype'
-                                    label='MD5 Subtype'
-                                    options={subtypes}
-                                    placeholder='Select MD5 subtype'
-                                    required
-                                />
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='w-full'>
+                    <form onSubmit={handleFormSubmit(onSubmit)}>
+                        {/* Processing Section */}
+                        <section id='processing' className='pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                Processing
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Configure automatic file processing and hash subtypes
+                            </p>
 
-                                <FormSelect<FileSettingsFormValues, SubtypeOption>
-                                    name='sha1Subtype'
-                                    label='SHA1 Subtype'
-                                    options={subtypes}
-                                    placeholder='Select SHA1 subtype'
-                                    required
-                                />
+                            <div className='space-y-4'>
+                                <SettingsCard>
+                                    <SettingsToggle
+                                        label='Autoprocess Files'
+                                        description='Automatically process uploaded files'
+                                        {...register('autoprocessFiles')}
+                                        watch={watch}
+                                        error={errors.autoprocessFiles}
+                                    />
 
-                                <FormSelect<FileSettingsFormValues, SubtypeOption>
-                                    name='sha256Subtype'
-                                    label='SHA256 Subtype'
-                                    options={subtypes}
-                                    placeholder='Select SHA256 subtype'
-                                    required
-                                />
+                                    <SettingsSeparator />
 
-                                <FormTextArea<FileSettingsFormValues>
-                                    name='mimetypePatterns'
-                                    label='MIME Type Patterns to be Hashed'
-                                    rows={6}
-                                    placeholder='image/*&#10;application/pdf&#10;application/msword'
-                                    required
-                                />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    MD5 Subtype
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>
+                                                    Entry class for MD5 hash artifacts
+                                                </p>
+                                                {errors.md5Subtype && (
+                                                    <p className='text-sm text-red-500 mt-1'>
+                                                        {errors.md5Subtype.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='w-auto flex-1'>
+                                                <Controller
+                                                    name='md5Subtype'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Selector
+                                                            {...field}
+                                                            staticOptions={subtypes}
+                                                            placeholder='Select MD5 subtype'
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                <button
-                                    type='submit'
-                                    className='btn btn-primary btn-block'
-                                >
-                                    Save Settings
-                                </button>
-                            </Form>
-                        </Tab>
-                        <Tab title='Actions'>
-                            <div className='flex flex-col gap-4 pt-4'>
-                                <FormAlert
-                                    alert={actionAlert}
-                                    onDismiss={() =>
-                                        setActionAlert({ type: null, message: '' })
-                                    }
-                                />
-                                <button
-                                    type='button'
-                                    className='btn btn-outline'
-                                    onClick={handleReProcessAllFiles}
-                                >
-                                    Process All Files
-                                </button>
+                                    <SettingsSeparator />
+
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    SHA1 Subtype
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>
+                                                    Entry class for SHA1 hash artifacts
+                                                </p>
+                                                {errors.sha1Subtype && (
+                                                    <p className='text-sm text-red-500 mt-1'>
+                                                        {errors.sha1Subtype.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='w-auto flex-1'>
+                                                <Controller
+                                                    name='sha1Subtype'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Selector
+                                                            {...field}
+                                                            staticOptions={subtypes}
+                                                            placeholder='Select SHA1 subtype'
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <SettingsSeparator />
+
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    SHA256 Subtype
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>
+                                                    Entry class for SHA256 hash artifacts
+                                                </p>
+                                                {errors.sha256Subtype && (
+                                                    <p className='text-sm text-red-500 mt-1'>
+                                                        {errors.sha256Subtype.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='w-auto flex-1'>
+                                                <Controller
+                                                    name='sha256Subtype'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Selector
+                                                            {...field}
+                                                            staticOptions={subtypes}
+                                                            placeholder='Select SHA256 subtype'
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <SettingsSeparator />
+
+                                    <SettingsTextArea
+                                        label='MIME Type Patterns'
+                                        description='File types to generate hashes for (one per line)'
+                                        rows={6}
+                                        placeholder='image/*&#10;application/pdf&#10;application/msword'
+                                        {...register('mimetypePatterns')}
+                                        error={errors.mimetypePatterns}
+                                        layout='vertical'
+                                    />
+                                </SettingsCard>
                             </div>
-                        </Tab>
-                    </Tabs>
+                        </section>
+
+                        {/* Actions Section */}
+                        <section id='actions' className='border-t border-white/5 pt-5 pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                Actions
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Maintenance operations for files
+                            </p>
+
+                            <div className='space-y-4'>
+                                {actionAlert.type && (
+                                    <FormAlert
+                                        alert={actionAlert}
+                                        onDismiss={() =>
+                                            setActionAlert({ type: null, message: '' })
+                                        }
+                                    />
+                                )}
+                                <SettingsCard>
+                                    <SettingsButton
+                                        label='Process All Files'
+                                        description='Re-process all files with current settings'
+                                        buttonText='Process'
+                                        icon={<Refresh className='w-3.5 h-3.5' />}
+                                        onClick={handleReProcessAllFiles}
+                                    />
+                                </SettingsCard>
+                            </div>
+                        </section>
+
+                        {/* Save Button */}
+                        <div className='border-t border-white/5 pt-5 flex justify-end'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Saving...' : 'Save Settings'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

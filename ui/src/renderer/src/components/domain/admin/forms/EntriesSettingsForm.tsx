@@ -1,7 +1,8 @@
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { useState } from 'react';
-import { FormAlert, FormAlertState } from '../../../forms';
+import { FormAlert, FormAlertState, SettingsButton, SettingsCard, SettingsSeparator } from '../../../forms';
+import { Database, Trash } from 'iconoir-react';
 
 export default function EntriesManagement() {
     const { managementApi } = useApi();
@@ -51,32 +52,60 @@ export default function EntriesManagement() {
     };
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                    Entry Settings
-                </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 rounded-md'>
-                    <FormAlert
-                        alert={alert}
-                        onDismiss={() => setAlert({ type: null, message: '' })}
-                    />
-                    <div className='flex flex-col gap-4'>
-                        <button
-                            type='button'
-                            className='btn btn-outline'
-                            onClick={handlePropagateAccessVectors}
-                        >
-                            Propagate Access Vectors
-                        </button>
-                        <button
-                            type='button'
-                            className='btn btn-outline'
-                            onClick={handleDeleteHangingArtifacts}
-                        >
-                            Delete Hanging Artifacts
-                        </button>
-                    </div>
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        Entry Settings
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Manage entries and artifacts
+                    </p>
+                </div>
+            </div>
+
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='w-full'>
+                    {/* Actions Section */}
+                    <section id='actions' className='pb-8'>
+                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            Actions
+                        </h2>
+                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            Maintenance operations for entries and artifacts
+                        </p>
+
+                        <div className='space-y-4'>
+                            {alert.type && (
+                                <FormAlert
+                                    alert={alert}
+                                    onDismiss={() => setAlert({ type: null, message: '' })}
+                                />
+                            )}
+                            <SettingsCard>
+                                <SettingsButton
+                                    label='Propagate Access Vectors'
+                                    description='Update access permissions across all entries'
+                                    buttonText='Propagate'
+                                    icon={<Database className='w-3.5 h-3.5' />}
+                                    onClick={handlePropagateAccessVectors}
+                                />
+
+                                <SettingsSeparator />
+
+                                <SettingsButton
+                                    label='Delete Hanging Artifacts'
+                                    description='Remove artifacts that are no longer referenced'
+                                    buttonText='Delete'
+                                    icon={<Trash className='w-3.5 h-3.5' />}
+                                    variant='danger'
+                                    onClick={handleDeleteHangingArtifacts}
+                                />
+                            </SettingsCard>
+                        </div>
+                    </section>
                 </div>
             </div>
         </div>
