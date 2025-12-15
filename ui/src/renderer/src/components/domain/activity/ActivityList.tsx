@@ -7,7 +7,7 @@ import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
-import Datepicker from 'react-tailwindcss-datepicker';
+import Datepicker from '@components/base/Datepicker/Datepicker';
 import Activity from './Activity';
 
 // Local ActivityLog interface to match Activity component expectations
@@ -180,45 +180,30 @@ export default function ActivityList({
                         </div>
 
                         {/* Date range picker */}
-                        <div className='flex-1 min-w-[260px]'>
+                        <div className='flex-1 min-w-[320px]'>
                             <Datepicker
-                                value={{
-                                    startDate: searchFilters.start_date
+                                startDate={
+                                    searchFilters.start_date
                                         ? new Date(searchFilters.start_date)
-                                        : null,
-                                    endDate: searchFilters.end_date
+                                        : null
+                                }
+                                endDate={
+                                    searchFilters.end_date
                                         ? new Date(searchFilters.end_date)
-                                        : null,
+                                        : null
+                                }
+                                onChange={([start, end]) => {
+                                    setSearchFilters((prev) => ({
+                                        ...prev,
+                                        start_date: start
+                                            ? format(start, "yyyy-MM-dd'T'HH:mm")
+                                            : '',
+                                        end_date: end
+                                            ? format(end, "yyyy-MM-dd'T'HH:mm")
+                                            : '',
+                                    }));
                                 }}
-                                onChange={(value) => {
-                                    if (value?.startDate && value?.endDate) {
-                                        const startDate =
-                                            value.startDate instanceof Date
-                                                ? value.startDate
-                                                : new Date(
-                                                      value.startDate as unknown as string,
-                                                  );
-                                        const endDate =
-                                            value.endDate instanceof Date
-                                                ? value.endDate
-                                                : new Date(
-                                                      value.endDate as unknown as string,
-                                                  );
-                                        setSearchFilters((prev) => ({
-                                            ...prev,
-                                            start_date: format(
-                                                startDate,
-                                                "yyyy-MM-dd'T'HH:mm",
-                                            ),
-                                            end_date: format(endDate, "yyyy-MM-dd'T'HH:mm"),
-                                        }));
-                                    }
-                                }}
-                                inputClassName='cradle-input h-10 rounded-full py-1 px-4 text-sm w-full max-w-full font-mono'
-                                toggleClassName='hidden'
-                                showShortcuts={true}
-                                showFooter={true}
-                                displayFormat='YYYY-MM-DD HH:mm'
+                                className='cradle-input h-10 rounded-full py-1 px-4 text-sm w-full max-w-full font-mono'
                             />
                         </div>
 

@@ -7,7 +7,7 @@ import Selector from '@components/forms/Selector';
 import type { EdgeRelation } from '@services/cradle/models';
 import { ArrowLeft, ArrowRight, PlaySolid } from 'iconoir-react';
 import { ChangeEvent, useEffect, useState } from 'react';
-import Datepicker from 'react-tailwindcss-datepicker';
+import Datepicker from '@components/base/Datepicker/Datepicker';
 
 interface Node {
     id: string;
@@ -290,14 +290,15 @@ export default function PaginatedGraphFetch({
                     <div className='flex flex-col flex-grow'>
                         <label className='text-xs text-gray-400 mb-1'>Date Range</label>
                         <Datepicker
-                            value={{
-                                startDate: dateRange.startDate,
-                                endDate: dateRange.endDate,
+                            startDate={dateRange.startDate}
+                            endDate={dateRange.endDate}
+                            onChange={([start, end]) => {
+                                handleDateRangeChange({
+                                    startDate: start,
+                                    endDate: end,
+                                });
                             }}
-                            onChange={handleDateRangeChange}
-                            inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
-                            toggleClassName='hidden'
-                            disabled={isGraphFetching}
+                            className='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
                         />
                     </div>
 
