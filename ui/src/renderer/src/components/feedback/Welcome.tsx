@@ -7,14 +7,14 @@ import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
 import { truncateText } from '@utils/dashboard';
 import { formatDate } from '@utils/dates';
 import { parseMarkdownInline } from '@utils/parser/parse';
+import { Sparks } from 'iconoir-react';
 import {
     Clock,
     DatabaseBackup,
     Notes,
     PlusCircle,
     Search,
-    StatsReport,
-    User,
+    User
 } from 'iconoir-react/regular';
 import { ReactNode, useEffect, useState } from 'react';
 
@@ -84,7 +84,7 @@ function RecentItemsCard({
                         <div
                             key={index}
                             onClick={onItemClick(item)}
-                            className='cradle-card p-3 cursor-pointer hover:border-orange-500'
+                            className='cradle-card p-3 cursor-pointer hover:border-cradle-accent-primary'
                         >
                             <div className='flex items-center justify-between'>
                                 <span className='cradle-text-primary font-medium truncate'>
@@ -132,7 +132,7 @@ function RecentNotesCard({
                         <div
                             key={index}
                             onClick={onNoteClick(note)}
-                            className='cradle-card p-3 cursor-pointer hover:border-orange-500'
+                            className='cradle-card p-3 cursor-pointer hover:border-cradle-accent-primary'
                         >
                             <div className='space-y-1'>
                                 <div className='cradle-text-primary font-medium truncate'>
@@ -225,15 +225,15 @@ export default function Welcome() {
             title: 'Graph Search',
             description: 'Explore connections',
             icon: <Search width={24} height={24} />,
-            onClick: navigateLink('/graph-search'),
+            onClick: navigateLink('/knowledge-graph'),
             color: 'cradle-status-warning',
         },
         {
-            title: 'Analytics',
-            description: 'View statistics',
-            icon: <StatsReport width={24} height={24} />,
-            onClick: navigateLink('/dashboard'),
-            color: 'cradle-status-info',
+            title: 'Enrich Artifacts',
+            description: 'Enrich IOCs with external sources',
+            icon: <Sparks width={24} height={24} />,
+            onClick: navigateLink('/enrich'),
+            color: 'cradle-status-warning',
         },
     ];
 
@@ -270,7 +270,7 @@ export default function Welcome() {
                                 <button
                                     key={index}
                                     onClick={action.onClick}
-                                    className='cradle-card p-6 text-left hover:border-orange-500'
+                                    className='cradle-card p-6 text-left hover:border-cradle-accent-primary cursor-pointer'
                                 >
                                     <div className='flex items-center gap-3 mb-3'>
                                         <div

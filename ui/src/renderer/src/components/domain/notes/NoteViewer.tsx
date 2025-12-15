@@ -32,8 +32,8 @@ import ViewsDropdown from './ViewsDropdown';
 
 import Tooltip from '@/components/base/Tooltip/Tooltip';
 import FileUploadModal from '@/components/modals/notes/FileUploadModal';
-import { EditPencil, Eye } from 'iconoir-react';
 import { openSearchPanel } from '@codemirror/search';
+import { EditPencil, Eye } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 
@@ -192,7 +192,6 @@ export default function NoteViewer() {
                 // Check if this is a fleeting note using the fleeting field
                 const isFleetingNote = responseNote.fleeting === true;
                 setIsFleeting(isFleetingNote);
-                setEnableEditing(isFleetingNote);
 
                 // Debug logging
                 console.log('NoteViewer - Note loaded successfully:', {

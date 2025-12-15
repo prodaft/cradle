@@ -71,7 +71,8 @@ export class CradleLinkWidget extends WidgetType {
         const displayName = this.alias || this.name;
         const url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
         const a = document.createElement('a');
-        a.href = `/#${url}`;
+        const path = document.location.pathname;
+        a.href = `${path}#${url}`;
 
         a.textContent = displayName;
         linkSpan.style.color = this.color || '#FF8C00';
