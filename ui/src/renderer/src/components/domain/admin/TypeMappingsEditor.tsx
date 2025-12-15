@@ -452,58 +452,70 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
     }
 
     return (
-        <div className='container w-[90%] h-full mx-auto my-4'>
-            <h1 className='text-3xl font-bold my-4'>Edit Type Mappings</h1>
-            <div className='h-full mx-auto bg-gray-2 rounded-md my-4 p-4'>
-                {/* Save All button moved to the left */}
-                <div className='flex justify-start mb-4'>
-                    <button
-                        onClick={handleSaveAll}
-                        disabled={!rows.some((row) => row.edited)}
-                        className={`btn btn-solid-primary flex flex-row items-center hover:bg-gray-4 ${
-                            !rows.some((row) => row.edited) &&
-                            'opacity-50 cursor-not-allowed'
-                        }`}
-                    >
-                        Save All
-                    </button>
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        Edit Type Mappings
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Manage data type transformations
+                    </p>
                 </div>
+            </div>
 
-                {/* Table container with fixed height and scrollable */}
-                <div className='overflow-x-auto overflow-y-auto h-[70vh] border border-gray-3 rounded-md'>
-                    <table className='table-auto w-full mb-4 w-dvh'>
-                        <thead className='sticky top-0 bg-gray-2 z-10'>
-                            <tr>
-                                {/* Actions column */}
-                                <th className='px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>
-                                    Actions
-                                </th>
-                                {allColumns.map((column) => (
-                                    <th
-                                        key={column}
-                                        className='px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-96'
-                                    >
-                                        {capitalizeString(column)}
-                                        {columnDefinitions[column]?.required && (
-                                            <span className='text-red-500 ml-1'>*</span>
-                                        )}
+            <div className='p-5'>
+                <div className='rounded-lg cradle-border bg-white/[0.02] p-4'>
+                    {/* Save All button moved to the left */}
+                    <div className='flex justify-start mb-4'>
+                        <button
+                            onClick={handleSaveAll}
+                            disabled={!rows.some((row) => row.edited)}
+                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-full px-6 hover:bg-cradle-bg-tertiary ${
+                                !rows.some((row) => row.edited) &&
+                                'opacity-50 cursor-not-allowed'
+                            }`}
+                        >
+                            Save All
+                        </button>
+                    </div>
+
+                    {/* Table container with fixed height and scrollable */}
+                    <div className='overflow-x-auto overflow-y-auto h-[70vh] border border-cradle-border-primary rounded-md'>
+                        <table className='table-auto w-full mb-4 w-dvh'>
+                            <thead className='sticky top-0 bg-cradle-bg-elevated z-10'>
+                                <tr>
+                                    {/* Actions column */}
+                                    <th className='px-4 py-3 text-left text-xs font-medium text-cradle-text-tertiary uppercase tracking-wider border-b border-cradle-border-primary'>
+                                        Actions
                                     </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row, index) => (
-                                <tr
-                                    key={index}
-                                    className={
-                                        index < rows.length - 1 && !row.edited
-                                            ? 'bg-gray-1'
-                                            : ''
-                                    }
-                                >
-                                    {/* Actions cell with Delete and Save buttons */}
-                                    <td className='px-4 py-2 whitespace-nowrap'>
-                                        <div className='flex space-x-2'>
+                                    {allColumns.map((column) => (
+                                        <th
+                                            key={column}
+                                            className='px-4 py-3 text-left text-xs font-medium text-cradle-text-tertiary uppercase tracking-wider w-96 border-b border-cradle-border-primary'
+                                        >
+                                            {capitalizeString(column)}
+                                            {columnDefinitions[column]?.required && (
+                                                <span className='text-red-500 ml-1'>*</span>
+                                            )}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row, index) => (
+                                    <tr
+                                        key={index}
+                                        className={`border-b border-cradle-border-primary/50 ${
+                                            index < rows.length - 1 && !row.edited
+                                                ? 'bg-transparent'
+                                                : ''
+                                        } hover:bg-cradle-bg-tertiary/20 transition-colors`}
+                                    >
+                                        {/* Actions cell with Delete and Save buttons */}
+                                        <td className='px-4 py-2 whitespace-nowrap'>
+                                            <div className='flex space-x-2'>
                                             {index !== rows.length - 1 && (
                                                 <button
                                                     onClick={() =>
@@ -584,11 +596,11 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className={`form-input input input-block ${
+                                                        className={`cradle-input w-full ${
                                                             hasError
                                                                 ? 'border-red-500'
-                                                                : 'input-ghost-primary'
-                                                        } focus:ring-0 w-full`}
+                                                                : ''
+                                                        }`}
                                                         min={colDef.min}
                                                         max={colDef.max}
                                                         placeholder={
@@ -615,11 +627,11 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                                                                 e.target.value,
                                                             )
                                                         }
-                                                        className={`form-input input input-block ${
+                                                        className={`cradle-input w-full ${
                                                             hasError
                                                                 ? 'border-red-500'
-                                                                : 'input-ghost-primary'
-                                                        } focus:ring-0 w-full`}
+                                                                : ''
+                                                        }`}
                                                         minLength={colDef.minLength}
                                                         maxLength={colDef.maxLength}
                                                         pattern={colDef.pattern}
@@ -639,6 +651,7 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                     </table>
                 </div>
             </div>
+        </div>
         </div>
     );
 };
