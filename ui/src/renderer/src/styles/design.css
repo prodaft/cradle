@@ -599,7 +599,8 @@
         max-width: 600px;
         max-height: 90vh;
         overflow-y: auto;
-        box-shadow: var(--cradle-shadow-lg);
+        /* Removed drop shadow for modal content */
+        box-shadow: none;
     }
 
     .modal-content h2,
@@ -925,8 +926,11 @@
         border: 1px solid var(--cradle-border-accent);
         background: var(--cradle-bg-elevated);
         color: var(--cradle-text-primary);
-        font-family: 'JetBrains Mono', monospace;
+        /* Match Tailwind `text-sm` button typography (body font) */
+        font-family: inherit;
         font-size: 0.875rem;
+        text-transform: none;
+        letter-spacing: normal;
         outline: none;
     }
 

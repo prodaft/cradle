@@ -495,7 +495,7 @@ class EmailConfirm(APIView):
     post=extend_schema(
         operation_id="users_reset_password_create",
         summary="Request password reset",
-        description="Sends a password reset email to the user. Requires either email or username.",
+        description="Sends a password reset email to the user using their email address.",
         request=PasswordResetRequestSerializer,
         responses={
             200: {"description": "Password reset email sent"},
@@ -519,22 +519,15 @@ class PasswordReset(APIView):
     serializer_class = PasswordResetRequestSerializer
 
     def post(self, request):
-        email = request.data.get("email")
-        username = request.data.get("username")
+        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not email and not username:
-            from core.exceptions import ValidationException
+        email = serializer.validated_data["email"]
 
-            raise ValidationException(detail="Email or username must be provided")
+        user_qs = CradleUser.objects.active().filter(email=email)
 
-        user = None
-        if email:
-            user = CradleUser.objects.active().filter(email=email)
-        elif username:
-            user = CradleUser.objects.active().filter(username=username)
-
-        if user.exists():
-            user = user[0]
+        if user_qs.exists():
+            user = user_qs[0]
             user.send_password_reset()
 
         return Response("Password reset email sent.", status=status.HTTP_200_OK)
