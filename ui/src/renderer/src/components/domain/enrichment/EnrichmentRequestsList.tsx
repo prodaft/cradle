@@ -5,7 +5,7 @@ import TableCard from '@components/base/Card/TableCard';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { EnrichmentRequestList } from '@services/cradle/models';
-import { Search, Trash, Xmark } from 'iconoir-react';
+import { Search, Xmark } from 'iconoir-react';
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 
 type EnrichmentRequest = EnrichmentRequestList;
@@ -63,17 +63,17 @@ function EnrichmentRequestsList({
     sortDirection = 'desc',
     onSort,
     pageSize = 10,
-    setPageSize = () => {},
+    setPageSize = () => { },
     onColumnFilterChange = null,
     columnFilters = { user: '' },
     searchFilters = {},
-    onSearchChange = () => {},
-    onSearchSubmit = () => {},
+    onSearchChange = () => { },
+    onSearchSubmit = () => { },
     selectedRequests = [],
-    setSelectedRequests = () => {},
-    onDeleteSelected = () => {},
-    onRetrySelected = () => {},
-    onCreateRequest = () => {},
+    setSelectedRequests = () => { },
+    onDeleteSelected = () => { },
+    onRetrySelected = () => { },
+    onCreateRequest = () => { },
 }: EnrichmentRequestsListProps) {
     const { navigateLink } = useCradleNavigate();
     const [isSearchExpanded, setIsSearchExpanded] = useState(!!searchFilters?.title);
@@ -115,13 +115,38 @@ function EnrichmentRequestsList({
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
         onColumnFilterChange
             ? {
-                  user: (value: string | DateRangeFilter) => {
-                      if (typeof value === 'string') {
-                          onColumnFilterChange('user', value);
-                      }
-                  },
-              }
+                user: (value: string | DateRangeFilter) => {
+                    if (typeof value === 'string') {
+                        onColumnFilterChange('user', value);
+                    }
+                },
+            }
             : {};
+
+    const getStatusBadgeClasses = (status: string) => {
+        const baseClasses =
+            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white shadow-sm';
+        let colorClass = 'bg-zinc-500';
+
+        switch (status) {
+            case 'done':
+                colorClass = 'bg-green-600';
+                break;
+            case 'error':
+                colorClass = 'bg-red-600';
+                break;
+            case 'waiting':
+                colorClass = 'bg-yellow-600';
+                break;
+            case 'info':
+                colorClass = 'bg-blue-600';
+                break;
+            default:
+                colorClass = 'bg-zinc-500';
+                break;
+        }
+        return `${baseClasses} ${colorClass}`;
+    };
 
     const renderRow = (
         request: EnrichmentRequest,
@@ -154,18 +179,7 @@ function EnrichmentRequestsList({
                 </td>
                 <td className='w-32'>
                     <span
-                        className={`badge ${
-                            request.status === 'done'
-                                ? 'badge-success'
-                                : request.status === 'error'
-                                  ? 'badge-error'
-                                  : request.status === 'waiting'
-                                    ? 'badge-warning'
-                                    : 'badge-info'
-                        }`}
-                        style={{
-                            border: 0,
-                        }}
+                        className={getStatusBadgeClasses(request.status || '')}
                     >
                         {request.status}
                     </span>

@@ -50,6 +50,7 @@ export interface KnowledgeGraphInaccessibleRetrieveRequest {
 export interface KnowledgeGraphNeighborsRetrieveRequest {
     src: string;
     depth?: number;
+    page?: number;
     pageSize?: number;
     query?: string;
     wildcard?: boolean;
@@ -214,6 +215,10 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
 
         if (requestParameters['depth'] != null) {
             queryParameters['depth'] = requestParameters['depth'];
+        }
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
         }
 
         if (requestParameters['pageSize'] != null) {

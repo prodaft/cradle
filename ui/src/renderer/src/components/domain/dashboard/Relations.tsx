@@ -115,7 +115,8 @@ export default function Relations({ obj }: RelationsProps) {
                 .knowledgeGraphNeighborsRetrieve({
                     src: String(obj.id),
                     depth: depth,
-                    pageSize: page,
+                    page: page,
+                    pageSize: pageSize,
                     query: searchQuery,
                     wildcard: true,
                 })
@@ -320,34 +321,6 @@ export default function Relations({ obj }: RelationsProps) {
         );
     };
 
-    // Calculate total pages for PaginationWrapper (if API provides count, use it, otherwise estimate)
-    // The current API response handling in performSearch only sets hasNextPage, not total count
-    // So we'll approximate or stick to LazyPagination logic if we can't use PaginationWrapper fully
-    // But request asked to match NotesList, which uses PaginationWrapper.
-    // Ideally, we need total count from API. Assuming pageSize=10 for now.
-    // If we don't have total count, we might need to stick to simple prev/next logic or adapt PaginationWrapper.
-    // However, PaginationWrapper requires totalPages.
-    // Let's assume we can use the same logic as NotesList or fallback.
-    // Since the original code used LazyPagination (which just needs hasNextPage),
-    // and PaginationWrapper expects totalPages, we might need to stick to LazyPagination 
-    // OR try to adapt. NotesList gets 'count' from API.
-    // Relations API response seems to have 'hasNext'.
-
-    // To match visual style of NotesList (which uses PaginationWrapper), we should use PaginationWrapper.
-    // If we don't have total pages, we can pass a dummy high number if hasNext is true, or just 1.
-    // Or we can keep LazyPagination but style it to look like the one in NotesList (if they differ).
-    // Actually, NotesList puts PaginationWrapper in the toolbar. LazyPagination was a separate component.
-    // I will try to use PaginationWrapper if possible, but if data is missing, I might have to mock it 
-    // or assume the API returns count (it might not).
-    // Looking at previous code, `knowledgeGraphNeighborsRetrieve` returns `hasNext`.
-    // Let's stick to a simple prev/next button group if we can't use PaginationWrapper, 
-    // BUT formatted to look like the toolbar buttons. 
-
-    // Actually, `PaginationWrapper` is what makes it look like `NotesList`. 
-    // I will use `PaginationWrapper` but since I don't have `totalCount` from `knowledgeGraphNeighborsRetrieve` easily (checked types),
-    // I will just use `LazyPagination` inside the toolbar but make sure it fits well, 
-    // OR better: use `PaginationWrapper` and assume we can't fully support "jump to last page".
-    // Let's try to use `PaginationWrapper` with a calculated totalPages.
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
     return (
@@ -449,12 +422,10 @@ export default function Relations({ obj }: RelationsProps) {
                         {/* Pagination */}
                         <PaginationWrapper
                             currentPage={page}
-                            // Fallback since API doesn't return total count for this endpoint
                             totalPages={calculatedTotalPages}
                             onPageChange={setPage}
-                            pageSize={10}
-                            // Disable pageSize change as API might be fixed to 10 or we don't have total count to manage it well
-                            onPageSizeChange={() => { }}
+                            pageSize={pageSize}
+                            onPageSizeChange={setPageSize}
                             disabled={!results || results.length === 0}
                         />
                     </div>

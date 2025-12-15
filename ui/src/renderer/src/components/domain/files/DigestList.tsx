@@ -136,6 +136,31 @@ function DigestList({
         onSelect?: () => void;
     }
 
+    const getStatusBadgeClasses = (status: string) => {
+        const baseClasses =
+            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white shadow-sm';
+        let colorClass = 'bg-zinc-500';
+
+        switch (status) {
+            case 'done':
+                colorClass = 'bg-green-600';
+                break;
+            case 'error':
+                colorClass = 'bg-red-600';
+                break;
+            case 'waiting':
+                colorClass = 'bg-yellow-600';
+                break;
+            case 'info':
+                colorClass = 'bg-blue-600';
+                break;
+            default:
+                colorClass = 'bg-zinc-500';
+                break;
+        }
+        return `${baseClasses} ${colorClass}`;
+    };
+
     const renderRow = (
         digest: BaseDigest,
         index: number,
@@ -161,18 +186,8 @@ function DigestList({
                     {truncateText(digest.displayName || '', 24)}
                 </td>
                 <td className='w-16'>
-                    {/* Border color same as badge color */}
                     <span
-                        className={`badge ${
-                            digest.status === 'done'
-                                ? 'badge-success'
-                                : digest.status === 'error'
-                                  ? 'badge-error'
-                                  : 'badge-secondary'
-                        }`}
-                        style={{
-                            border: 0,
-                        }}
+                        className={getStatusBadgeClasses(digest.status || '')}
                     >
                         {digest.status
                             ? digest.status.charAt(0).toUpperCase() +
@@ -198,10 +213,7 @@ function DigestList({
                         color='warning'
                     >
                         <span
-                            className={`badge badge-warning`}
-                            style={{
-                                border: 0,
-                            }}
+                            className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-yellow-600'
                         >
                             {digest.warnings?.length || 0}
                         </span>
@@ -219,10 +231,7 @@ function DigestList({
                         color='error'
                     >
                         <span
-                            className={`badge badge-error`}
-                            style={{
-                                border: 0,
-                            }}
+                            className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-red-600'
                         >
                             {digest.errors?.length || 0}
                         </span>

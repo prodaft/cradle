@@ -105,6 +105,13 @@ class GraphPathFindView(APIView):
             default=1,
         ),
         OpenApiParameter(
+            name="page",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Page number",
+            default=1,
+        ),
+        OpenApiParameter(
             name="page_size",
             type=int,
             location=OpenApiParameter.QUERY,
