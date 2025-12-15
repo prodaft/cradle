@@ -1,8 +1,9 @@
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { AccessUser, Entity } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import {
     SelectOption,
@@ -12,9 +13,8 @@ import {
     SettingsTextArea,
     SettingsToggle,
 } from '../../../forms';
-import { useNotif } from '@/contexts/ui/NotificationContext';
-import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 import Selector from '../../../forms/Selector';
+import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 
 interface EntityFormProps {
     id?: number | string | null;
@@ -298,7 +298,7 @@ export default function EntityForm({
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className='w-auto flex-1'>
+                                            <div className='w-fit flex-1'>
                                                 <Controller
                                                     name='subtype'
                                                     control={control}

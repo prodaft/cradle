@@ -75,6 +75,7 @@ export class CradleLinkWidget extends WidgetType {
         a.href = `${path}#${url}`;
 
         a.textContent = displayName;
+        a.style.color = this.color || '#FF8C00'; // Explicitly set color on the 'a' tag
         linkSpan.style.color = this.color || '#FF8C00';
         linkSpan.style.cursor = 'pointer';
         linkSpan.style.textDecoration = 'underline';

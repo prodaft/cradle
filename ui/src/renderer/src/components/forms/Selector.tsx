@@ -82,31 +82,93 @@ export default function Selector<
 }: SelectorProps<Option, IsMulti, Group>): JSX.Element {
     const customSelectClassNames = {
         control: (state: any) =>
-            `input input-block min-h-[2.5rem] !p-0 ${state.isFocused ? 'ring-1 ring-cradle2' : ''} ${state.isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`,
-        valueContainer: () => 'px-4 gap-1 flex items-center',
+            [
+                'flex min-h-10 items-center rounded-md',
+                'cradle-bg-input cradle-border',
+                'transition-shadow',
+                state.isFocused && 'ring-2 ring-cradle2',
+                state.isDisabled && 'opacity-50 cursor-not-allowed',
+            ]
+                .filter(Boolean)
+                .join(' '),
+
+        valueContainer: () =>
+            'flex flex-wrap items-center gap-1 px-3 py-1.5',
+
         placeholder: (state: any) =>
-            `text-gray-500 dark:text-gray-400 ${state.isDisabled ? 'cursor-not-allowed' : ''}`,
+            [
+                'text-sm cradle-text-tertiary',
+                state.isDisabled && 'cursor-not-allowed',
+            ]
+                .filter(Boolean)
+                .join(' '),
+
         input: (state: any) =>
-            `text-inherit m-0 p-0 ${state.isDisabled ? 'cursor-not-allowed' : ''}`,
+            [
+                'text-sm cradle-text-primary',
+                'm-0 p-0 focus:outline-none',
+                state.isDisabled && 'cursor-not-allowed',
+            ]
+                .filter(Boolean)
+                .join(' '),
+
         singleValue: (state: any) =>
-            `text-inherit ${state.isDisabled ? 'opacity-70' : ''}`,
+            [
+                'text-sm cradle-text-primary',
+                state.isDisabled && 'opacity-70',
+            ]
+                .filter(Boolean)
+                .join(' '),
+
         indicatorsContainer: (state: any) =>
-            `pr-2 ${state.isDisabled ? 'opacity-50' : ''}`,
+            [
+                'flex items-center gap-1 pr-2',
+                state.isDisabled && 'opacity-50',
+            ]
+                .filter(Boolean)
+                .join(' '),
+
         menu: () =>
-            'cradle-bg-elevated cradle-border rounded-md mt-1 shadow-lg z-[9999]',
+            [
+                'mt-1 rounded-md',
+                'cradle-bg-elevated cradle-border',
+                'shadow-lg',
+            ].join(' '),
+
         menuPortal: () => 'z-[9999]',
+
         menuList: () => 'p-1',
+
         option: (state: any) =>
-            `px-3 py-2 text-sm cradle-text-secondary rounded-sm cursor-pointer ${
-                state.isFocused ? 'cradle-border border-[#FF8C00] bg-opacity-50' : ''
-            } ${state.isSelected ? 'bg-cradle2 bg-opacity-20' : ''}`,
-        multiValue: () => 'bg-cradle2 bg-opacity-30 rounded-sm',
-        multiValueLabel: () => 'cradle-text-primary text-sm px-2 py-0.5',
+            [
+                'cursor-pointer rounded-sm px-3 py-2 text-sm',
+                'cradle-text-secondary',
+                state.isFocused && 'bg-cradle-hover',
+                state.isSelected && 'bg-cradle2/20 cradle-text-primary',
+                state.isDisabled && 'opacity-50 cursor-not-allowed',
+            ]
+                .filter(Boolean)
+                .join(' '),
+
+        multiValue: () =>
+            'flex items-center rounded-sm bg-cradle2/20',
+
+        multiValueLabel: () =>
+            'px-2 py-0.5 text-sm cradle-text-primary',
+
         multiValueRemove: () =>
-            'cradle-text-secondary hover:cradle-text-primary hover:bg-opacity-50 px-1 cursor-pointer',
-        noOptionsMessage: () => 'cradle-text-secondary text-sm py-2',
-        loadingMessage: () => 'cradle-text-secondary text-sm py-2',
+            [
+                'px-1 cursor-pointer rounded-sm',
+                'cradle-text-secondary hover:cradle-text-primary hover:bg-cradle-hover',
+            ].join(' '),
+
+        noOptionsMessage: () =>
+            'px-3 py-2 text-sm cradle-text-tertiary',
+
+        loadingMessage: () =>
+            'px-3 py-2 text-sm cradle-text-tertiary',
     };
+
 
     // Common props for both Select and AsyncSelect
     const commonProps = {

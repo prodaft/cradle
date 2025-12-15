@@ -8,6 +8,7 @@ import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import { referenceLinksPlugin, referenceLinkSyntax } from '@/utils/editor/referenceLinks';
 import { createCradleTheme } from '@/utils/editor/theme';
+import { classHighlightStyle } from '@/utils/editor/highlighting';
 import {
     acceptCompletion,
     autocompletion,
@@ -21,7 +22,7 @@ import {
     indentWithTab,
 } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
-import { indentOnInput } from '@codemirror/language';
+import { indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
@@ -218,6 +219,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     referenceLinkSyntax(referenceMappings || {}),
                 ],
             }),
+            syntaxHighlighting(classHighlightStyle),
             // ProseMark setup only for Rich Editor (non-source) mode
             ...(!source
                 ? [

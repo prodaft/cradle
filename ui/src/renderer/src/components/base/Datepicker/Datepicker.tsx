@@ -56,20 +56,6 @@ const Datepicker = ({
                 placeholderText={placeholderText}
                 wrapperClassName='w-full'
                 popperClassName='z-[9999]'
-                popperModifiers={[
-                    {
-                        name: 'preventOverflow',
-                        options: {
-                            boundary: 'viewport',
-                        },
-                    },
-                    {
-                        name: 'flip',
-                        options: {
-                            fallbackPlacements: ['bottom-end', 'top-start', 'top-end'],
-                        },
-                    },
-                ]}
             />
         </div>
     );
