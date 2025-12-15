@@ -1,15 +1,30 @@
 import Tooltip from '@components/base/Tooltip/Tooltip';
-import { TreeView } from '@phosphor-icons/react';
-import { Check, CloudUpload, MoreVert, RefreshCircle, StatsReport } from 'iconoir-react';
+import { Graph, TreeView } from '@phosphor-icons/react';
+import {
+    Box,
+    Check,
+    CloudUpload,
+    ClockRotateRight,
+    Code,
+    Eye,
+    MoreVert,
+    Page,
+    RefreshCircle,
+    StatsReport,
+} from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
 import { InputOutput, Search } from 'iconoir-react';
 import { ViewMode } from './constants';
 
 interface ActionsDropdownProps {
     activeView: ViewMode;
+    richEditor: boolean;
     showActionsMenu: boolean;
     enableEditing: boolean;
     setShowActionsMenu: (show: boolean) => void;
+    toggleEditing: () => void;
+    setActiveView: (view: ViewMode) => void;
+    setRichEditor: (rich: boolean) => void;
     showOutline: boolean;
     toggleOutline: () => void;
     lspLoaded: boolean;
@@ -17,6 +32,7 @@ interface ActionsDropdownProps {
     isAdmin: boolean;
     handleRelinkNote: () => void;
     isFleeting: boolean;
+    hasFiles: boolean;
     handleSaveAsFinal: () => void;
     saving: boolean;
     handlePublish: () => void;
@@ -31,9 +47,13 @@ interface ActionsDropdownProps {
  */
 export default function ActionsDropdown({
     activeView,
+    richEditor,
     showActionsMenu,
     enableEditing,
     setShowActionsMenu,
+    toggleEditing,
+    setActiveView,
+    setRichEditor,
     showOutline,
     toggleOutline,
     lspLoaded,
@@ -41,6 +61,7 @@ export default function ActionsDropdown({
     isAdmin,
     handleRelinkNote,
     isFleeting,
+    hasFiles,
     handleSaveAsFinal,
     saving,
     handlePublish,
@@ -73,14 +94,111 @@ export default function ActionsDropdown({
                     />
                     <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20 rounded-xl overflow-hidden py-1 px-1'>
                         <div role='menu'>
+                            {/* View / editor mode options */}
+                            <button
+                                onClick={() => {
+                                    setShowActionsMenu(false);
+                                    setActiveView(ViewMode.CONTENT);
+                                    setRichEditor(true);
+                                }}
+                                className={menuButtonClasses}
+                                data-testid='rich-editor-menu-item'
+                            >
+                                <Page width='16' height='16' />
+                                <span className='flex-1'>Rich Editor</span>
+                                {activeView === ViewMode.CONTENT && richEditor && (
+                                    <Check width='16' height='16' />
+                                )}
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setShowActionsMenu(false);
+                                    setActiveView(ViewMode.CONTENT);
+                                    setRichEditor(false);
+                                }}
+                                className={menuButtonClasses}
+                                data-testid='markdown-editor-menu-item'
+                            >
+                                <Code width='16' height='16' />
+                                <span className='flex-1'>Markdown Editor</span>
+                                {activeView === ViewMode.CONTENT && !richEditor && (
+                                    <Check width='16' height='16' />
+                                )}
+                            </button>
+                            {!isFleeting && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            setActiveView(ViewMode.GRAPH);
+                                        }}
+                                        className={menuButtonClasses}
+                                        data-testid='graph-view-menu-item'
+                                    >
+                                        <Graph width='16' height='16' />
+                                        <span className='flex-1'>Graph</span>
+                                        {activeView === ViewMode.GRAPH && (
+                                            <Check width='16' height='16' />
+                                        )}
+                                    </button>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={() => {
+                                                setShowActionsMenu(false);
+                                                setActiveView(ViewMode.HISTORY);
+                                            }}
+                                            className={menuButtonClasses}
+                                            data-testid='history-view-menu-item'
+                                        >
+                                            <ClockRotateRight width='16' height='16' />
+                                            <span className='flex-1'>History</span>
+                                            {activeView === ViewMode.HISTORY && (
+                                                <Check width='16' height='16' />
+                                            )}
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                            {hasFiles && (
+                                <button
+                                    onClick={() => {
+                                        setShowActionsMenu(false);
+                                        setActiveView(ViewMode.FILES);
+                                    }}
+                                    className={menuButtonClasses}
+                                    data-testid='files-view-menu-item'
+                                >
+                                    <Box width='16' height='16' />
+                                    <span className='flex-1'>Files</span>
+                                    {activeView === ViewMode.FILES && (
+                                        <Check width='16' height='16' />
+                                    )}
+                                </button>
+                            )}
+                            <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
+
+                            {/* Reading mode toggle & editor tools */}
                             {activeView === ViewMode.CONTENT && (
                                 <>
                                     <button
                                         onClick={() => {
                                             setShowActionsMenu(false);
+                                            toggleEditing();
+                                        }}
+                                        className={menuButtonClasses}
+                                        data-testid='toggle-editing-mode-menu-item'
+                                        aria-pressed={!enableEditing}
+                                    >
+                                        <Eye width='16' height='16' />
+                                        <span className='flex-1'>Reading view</span>
+                                        {!enableEditing && <Check width='16' height='16' />}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
                                             handleFind();
                                         }}
-                                    className={menuButtonClasses}
+                                        className={menuButtonClasses}
                                         data-testid='find-menu-item'
                                     >
                                         <Search width='16' height='16' />
@@ -91,7 +209,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             handleReplace();
                                         }}
-                                    className={menuButtonClasses}
+                                        className={menuButtonClasses}
                                         data-testid='replace-menu-item'
                                     >
                                         <InputOutput width='16' height='16' />

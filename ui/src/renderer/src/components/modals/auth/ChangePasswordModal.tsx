@@ -1,6 +1,5 @@
 import { Form, FormInput } from '@/components/forms';
 import useApi from '@/hooks/api/useApi';
-import { Xmark } from 'iconoir-react';
 import * as Yup from 'yup';
 
 interface FormData {
@@ -51,18 +50,10 @@ export default function ChangePasswordModal({
     return (
         <div className='w-full min-w-[28rem]'>
             {/* Header */}
-            <div className='flex items-center justify-between mb-6'>
+            <div className='flex items-end justify-between mb-6'>
                 <h2 className='text-xl font-semibold cradle-text-primary cradle-mono'>
                     Change Password
                 </h2>
-                <button
-                    type='button'
-                    className='cradle-btn p-2 rounded-full'
-                    onClick={closeModal}
-                    title='Close'
-                >
-                    <Xmark width={16} height={16} />
-                </button>
             </div>
 
             {/* Info Section */}
@@ -124,14 +115,24 @@ export default function ChangePasswordModal({
                             </div>
                         </div>
 
-                        <div className='cradle-border-t pt-5 mt-5'>
-                            <button
-                                type='submit'
-                                className='cradle-btn cradle-btn-primary w-full'
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Updating...' : 'Update Password'}
-                            </button>
+                        <div className='cradle-border-t pt-4 mt-5'>
+                            <div className='flex justify-end gap-2'>
+                                <button
+                                    type='button'
+                                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                                    onClick={closeModal}
+                                    disabled={isSubmitting}
+                                >
+                                    <span>Cancel</span>
+                                </button>
+                                <button
+                                    type='submit'
+                                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-accent-primary hover:bg-cradle-accent-primary/10 text-sm px-3 py-1.5 flex items-center gap-1.5'
+                                    disabled={isSubmitting}
+                                >
+                                    <span>{isSubmitting ? 'Updating...' : 'Change'}</span>
+                                </button>
+                            </div>
                         </div>
                     </>
                 )}

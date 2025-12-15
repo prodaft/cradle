@@ -17,6 +17,7 @@ import { useLocation } from 'react-router-dom';
 import FileInput from '../../forms/FileInput';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
+import ActionConfirmationModal from '../../modals/base/ActionConfirmationModal';
 import ActivityList from '../activity/ActivityList';
 import GraphExplorer from '../graph/GraphExplorer';
 import NoteGraphSearch from '../graph/NoteGraphSearch';
@@ -28,9 +29,6 @@ import NoteMetadata from './NoteMetadata';
 import NoteOutline from './NoteOutline';
 import RichEditor from './RichEditor';
 import StatusIndicators from './StatusIndicators';
-import ViewsDropdown from './ViewsDropdown';
-
-import Tooltip from '@/components/base/Tooltip/Tooltip';
 import FileUploadModal from '@/components/modals/notes/FileUploadModal';
 import { openSearchPanel } from '@codemirror/search';
 import { EditPencil, Eye } from 'iconoir-react';
@@ -70,7 +68,6 @@ export default function NoteViewer() {
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState<ViewMode>(ViewMode.CONTENT);
-    const [showViewsMenu, setShowViewsMenu] = useState(false);
     const [showActionsMenu, setShowActionsMenu] = useState(false);
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -128,6 +125,20 @@ export default function NoteViewer() {
         setEnableEditing(newValue);
         localStorage.setItem('enableEditing', newValue.toString());
     }, [enableEditing]);
+
+    const handleEnableEditingWithConfirmation = useCallback(() => {
+        // If we're already in editing mode, there's nothing to do
+        if (enableEditing) {
+            return;
+        }
+
+        setModal(ActionConfirmationModal, {
+            onConfirm: () => {
+                setEnableEditing(true);
+                localStorage.setItem('enableEditing', 'true');
+            },
+        });
+    }, [enableEditing, setModal]);
 
     const smartLink = useCallback(
         async (onlyTimestamps: boolean) => {
@@ -539,40 +550,15 @@ export default function NoteViewer() {
                     <div className='flex items-center gap-2'>
                         {!id?.startsWith('guide_') && (
                             <>
-                                {activeView === ViewMode.CONTENT && (
-                                    <Tooltip content={enableEditing ? 'Edit' : 'View'}>
-                                        <button
-                                            onClick={() => {
-                                                toggleEditing();
-                                            }}
-                                            className='w-full text-left px-2 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                            data-testid='toggle-editing-mode-menu-item'
-                                        >
-                                            {enableEditing ? (
-                                                <EditPencil width='16' height='16' />
-                                            ) : (
-                                                <Eye width='16' height='16' />
-                                            )}
-                                            {/* <span className='flex-1'>{enableEditing ? 'Mode' : 'Preview Mode'}</span> */}
-                                        </button>
-                                    </Tooltip>
-                                )}
-                                <ViewsDropdown
-                                    activeView={activeView}
-                                    richEditor={richEditor}
-                                    showViewsMenu={showViewsMenu}
-                                    setShowViewsMenu={setShowViewsMenu}
-                                    setActiveView={setActiveView}
-                                    setRichEditor={setRichEditor}
-                                    isAdmin={isAdmin()}
-                                    isFleeting={isFleeting}
-                                    hasFiles={fileData.length > 0}
-                                />
                                 <ActionsDropdown
                                     activeView={activeView}
+                                    richEditor={richEditor}
                                     showActionsMenu={showActionsMenu}
                                     setShowActionsMenu={setShowActionsMenu}
                                     enableEditing={enableEditing}
+                                    toggleEditing={toggleEditing}
+                                    setActiveView={setActiveView}
+                                    setRichEditor={setRichEditor}
                                     showOutline={showOutline}
                                     toggleOutline={toggleOutline}
                                     lspLoaded={lspLoaded}
@@ -580,6 +566,7 @@ export default function NoteViewer() {
                                     isAdmin={isAdmin()}
                                     handleRelinkNote={handleRelinkNote}
                                     isFleeting={isFleeting}
+                                    hasFiles={fileData.length > 0}
                                     handleSaveAsFinal={handleSaveAsFinal}
                                     saving={saving}
                                     handlePublish={handlePublish}
@@ -633,7 +620,10 @@ export default function NoteViewer() {
                                         <PanelResizeHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
                                         <Panel defaultSize={85} minSize={50}>
-                                            <div className='h-full flex flex-col border-l cradle-border'>
+                                            <div
+                                                className='h-full flex flex-col border-l cradle-border'
+                                                onDoubleClick={handleEnableEditingWithConfirmation}
+                                            >
                                                 {/* Embedded Rich Editor */}
                                                 <div className='flex-1 min-h-0'>
                                                     <RichEditor
@@ -667,7 +657,10 @@ export default function NoteViewer() {
                                         </Panel>
                                     </PanelGroup>
                                 ) : (
-                                    <div className='h-full flex flex-col border-l cradle-border'>
+                                    <div
+                                        className='h-full flex flex-col border-l cradle-border'
+                                        onDoubleClick={handleEnableEditingWithConfirmation}
+                                    >
                                         {/* Embedded Rich Editor */}
                                         <div className='flex-1 min-h-0'>
                                             <RichEditor

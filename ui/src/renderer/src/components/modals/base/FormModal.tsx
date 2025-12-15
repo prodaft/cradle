@@ -1,4 +1,3 @@
-import { Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**
@@ -78,19 +77,11 @@ export default function FormModal({
 
     return (
         <div className='min-w-[320px] max-w-lg'>
-            {/* Header with title and close button */}
-            <div className='flex items-center justify-between mb-5'>
+            {/* Header with title */}
+            <div className='flex items-end justify-between mb-5'>
                 <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
                     {title}
                 </h2>
-                <button
-                    type='button'
-                    className='cradle-btn p-2 rounded-full'
-                    onClick={closeModal}
-                    title='Close'
-                >
-                    <Xmark width={16} height={16} />
-                </button>
             </div>
 
             <form onSubmit={handleSubmit}>
