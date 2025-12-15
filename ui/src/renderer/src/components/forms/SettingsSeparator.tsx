@@ -8,7 +8,7 @@ interface SettingsSeparatorProps {
 
 /**
  * Separator component that provides visual division between settings fields.
- * Uses the cradle-separator class from the design system.
+ * Uses the cradle-separator classes from the design system.
  *
  * @example
  * ```tsx
@@ -21,6 +21,7 @@ interface SettingsSeparatorProps {
  */
 export default function SettingsSeparator({
     minimal = false,
-}): JSX.Element {
-    return <div className={`cradle-separator-${minimal ? 'minimal' : ''} opacity-40`} aria-hidden='true'></div>;
+}: SettingsSeparatorProps): JSX.Element {
+    const baseClass = minimal ? 'cradle-separator-minimal' : 'cradle-separator';
+    return <div className={`${baseClass} opacity-40`} aria-hidden='true'></div>;
 }
