@@ -2,9 +2,10 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
 import { Search, Xmark } from 'iconoir-react';
-import { ReactElement, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import AdminPanelPermissionCard from './cards/AdminPanelPermissionCard';
 
 interface AdminPanelUserPermissionsProps {
@@ -19,7 +20,7 @@ export default function AdminPanelUserPermissions({
     username,
     id,
 }: AdminPanelUserPermissionsProps) {
-    const [entities, setEntities] = useState<ReactElement[]>([]);
+    const [entities, setEntities] = useState<SearchableChild[]>([]);
     const [searchVal, setSearchVal] = useState('');
     const { accessApi, usersApi } = useApi();
     const { navigate } = useCradleNavigate();

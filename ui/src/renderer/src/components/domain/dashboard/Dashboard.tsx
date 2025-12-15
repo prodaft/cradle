@@ -115,7 +115,7 @@ export default function Dashboard() {
                         </div>
                     </div>
                 ) : (
-                    <div className='w-[95%] h-full flex flex-col p-6 space-y-4'>
+                    <div className='w-full h-full flex flex-col p-6 space-y-4'>
                         {contentObject.name && (
                             <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4'>
                                 <div>

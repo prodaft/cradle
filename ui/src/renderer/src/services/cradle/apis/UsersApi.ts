@@ -127,7 +127,7 @@ export interface UsersRefreshCreateRequest {
 }
 
 export interface UsersResetPasswordCreateRequest {
-    passwordResetRequestRequest?: PasswordResetRequestRequest;
+    passwordResetRequestRequest: PasswordResetRequestRequest;
 }
 
 export interface UsersResetPasswordUpdateRequest {
@@ -810,10 +810,17 @@ export class UsersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Sends a password reset email to the user. Requires either email or username.
+     * Sends a password reset email to the user using their email address.
      * Request password reset
      */
     async usersResetPasswordCreateRaw(requestParameters: UsersResetPasswordCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['passwordResetRequestRequest'] == null) {
+            throw new runtime.RequiredError(
+                'passwordResetRequestRequest',
+                'Required parameter "passwordResetRequestRequest" was null or undefined when calling usersResetPasswordCreate().'
+            );
+        }
+
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -839,10 +846,10 @@ export class UsersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Sends a password reset email to the user. Requires either email or username.
+     * Sends a password reset email to the user using their email address.
      * Request password reset
      */
-    async usersResetPasswordCreate(requestParameters: UsersResetPasswordCreateRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+    async usersResetPasswordCreate(requestParameters: UsersResetPasswordCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
         const response = await this.usersResetPasswordCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -6,14 +6,13 @@ import {
     ClockRotateRight,
     CloudUpload,
     Code,
-    Eye,
     InputOutput,
     MoreVert,
     Page,
     RefreshCircle,
     Search,
     Sparks,
-    StatsReport,
+    StatsReport
 } from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
 import { ViewMode } from './constants';
@@ -54,7 +53,6 @@ export default function ActionsDropdown({
     showActionsMenu,
     enableEditing,
     setShowActionsMenu,
-    toggleEditing,
     setActiveView,
     setRichEditor,
     showOutline,
@@ -184,19 +182,6 @@ export default function ActionsDropdown({
                             {/* Reading mode toggle & editor tools */}
                             {activeView === ViewMode.CONTENT && (
                                 <>
-                                    <button
-                                        onClick={() => {
-                                            setShowActionsMenu(false);
-                                            toggleEditing();
-                                        }}
-                                        className={menuButtonClasses}
-                                        data-testid='toggle-editing-mode-menu-item'
-                                        aria-pressed={!enableEditing}
-                                    >
-                                        <Eye width='16' height='16' />
-                                        <span className='flex-1'>Reading view</span>
-                                        {!enableEditing && <Check width='16' height='16' />}
-                                    </button>
                                     <button
                                         onClick={() => {
                                             setShowActionsMenu(false);

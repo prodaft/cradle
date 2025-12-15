@@ -288,7 +288,7 @@ export default function EntityForm({
                                         label='Subtype'
                                         description='Entity class type'
                                         required
-                                        error={errors.subtype}
+                                        error={errors.subtype?.message?.toString()}
                                         inputWidth='w-72'
                                     >
                                         <Controller

@@ -14,29 +14,24 @@
 
 import { mapValues } from '../runtime';
 /**
- * Serializer for password reset requests
+ * Serializer for password reset requests (email-based only).
  * @export
  * @interface PasswordResetRequestRequest
  */
 export interface PasswordResetRequestRequest {
     /**
-     * 
+     * Email address to send the password reset link to
      * @type {string}
      * @memberof PasswordResetRequestRequest
      */
-    email?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof PasswordResetRequestRequest
-     */
-    username?: string;
+    email: string;
 }
 
 /**
  * Check if a given object implements the PasswordResetRequestRequest interface.
  */
 export function instanceOfPasswordResetRequestRequest(value: object): value is PasswordResetRequestRequest {
+    if (!('email' in value) || value['email'] === undefined) return false;
     return true;
 }
 
@@ -50,8 +45,7 @@ export function PasswordResetRequestRequestFromJSONTyped(json: any, ignoreDiscri
     }
     return {
         
-        'email': json['email'] == null ? undefined : json['email'],
-        'username': json['username'] == null ? undefined : json['username'],
+        'email': json['email'],
     };
 }
 
@@ -67,7 +61,6 @@ export function PasswordResetRequestRequestToJSONTyped(value?: PasswordResetRequ
     return {
         
         'email': value['email'],
-        'username': value['username'],
     };
 }
 

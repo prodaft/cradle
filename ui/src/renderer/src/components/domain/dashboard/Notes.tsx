@@ -47,20 +47,18 @@ export default function Notes({ obj }: NotesProps) {
     };
 
     return (
-        <>
-            <div className='bg-cradle3 p-4 bg-opacity-20 rounded-xl flex flex-col flex-1'>
-                {submittedFilters && (
-                    <NotesList
-                        query={submittedFilters}
-                        noteActions={[{ Component: DeleteNote, props: {} }]}
-                        contentSearch={{
-                            value: searchFilters.content,
-                            onChange: handleSearchChange,
-                            onSubmit: handleSearchSubmit,
-                        }}
-                    />
-                )}
-            </div>
-        </>
+        <div className='flex flex-col h-full'>
+            {submittedFilters && (
+                <NotesList
+                    query={submittedFilters}
+                    noteActions={[{ Component: DeleteNote, props: {} }]}
+                    contentSearch={{
+                        value: searchFilters.content,
+                        onChange: handleSearchChange,
+                        onSubmit: handleSearchSubmit,
+                    }}
+                />
+            )}
+        </div>
     );
 }

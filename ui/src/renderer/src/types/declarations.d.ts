@@ -153,6 +153,7 @@ declare module 'iconoir-react' {
     export const Mail: ComponentType<SVGProps<SVGSVGElement>>;
     export const MailOpen: ComponentType<SVGProps<SVGSVGElement>>;
     export const MinusCircle: ComponentType<SVGProps<SVGSVGElement>>;
+    export const Book: ComponentType<SVGProps<SVGSVGElement>>;
     export const MoreVert: ComponentType<SVGProps<SVGSVGElement>>;
     export const PauseSolid: ComponentType<SVGProps<SVGSVGElement>>;
     export const PlaySolid: ComponentType<SVGProps<SVGSVGElement>>;

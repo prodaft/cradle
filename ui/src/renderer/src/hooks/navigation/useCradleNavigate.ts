@@ -42,16 +42,17 @@ const useCradleNavigate = () => {
             const targetPath = typeof to === 'string' ? to : to.pathname;
 
             if (event && (event.ctrlKey || event.metaKey || event.button === 1)) {
-                console.log('Ctrl/Cmd + click or middle click:', event);
                 // Ctrl/Cmd + click or middle click: open in new tab in active pane
                 if (openTab && activePaneId) {
                     openTab(activePaneId, targetPath);
                 } else {
                     // Fallback to opening in new window if tabs context is not available
                     const url = '#' + targetPath;
+                    console.log('Opening new tab:', url);
                     window.open(url, '_blank');
                 }
             } else {
+                console.log('Normal click or programmatic navigation:', event);
                 // Normal click or programmatic navigation: use React Router navigation
                 const { event: _, ...navOptions } = options; // Remove event from options before passing to navigate
 

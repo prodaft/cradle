@@ -1,4 +1,3 @@
-import { Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**

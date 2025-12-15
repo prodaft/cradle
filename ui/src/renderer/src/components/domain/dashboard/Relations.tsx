@@ -1,3 +1,4 @@
+import Tooltip from '@/components/base/Tooltip/Tooltip';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
@@ -6,9 +7,11 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { handleAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
 import AlertBox from '@components/base/Alert/AlertBox';
-import LazyPagination from '@components/base/Pagination/LazyPagination';
+import TableCard from '@components/base/Card/TableCard';
+import ListView from '@components/base/ListView/ListView';
+import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
-import { Check, Search } from 'iconoir-react';
+import { Check, Copy, Search, Xmark } from 'iconoir-react';
 import {
     ChangeEvent,
     KeyboardEvent,
@@ -63,6 +66,10 @@ export default function Relations({ obj }: RelationsProps) {
     const [isCopied, setIsCopied] = useState(false);
     const [inaccessibleEntities, setInaccessibleEntities] = useState<string[]>([]);
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+    const [pageSize, setPageSize] = useState(10); // Default page size
+
     const { profile } = useProfile();
     const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
     const { execute } = useAPICall();
@@ -90,6 +97,10 @@ export default function Relations({ obj }: RelationsProps) {
             event.preventDefault();
             setPage(1);
             performSearch(depth, 1);
+        } else if (event.key === 'Escape') {
+            if (!searchQuery) {
+                setIsSearchExpanded(false);
+            }
         }
     };
 
@@ -136,8 +147,8 @@ export default function Relations({ obj }: RelationsProps) {
                     const filteredResults =
                         entrySubtypeFilters.length > 0
                             ? resultsWithDepth.filter((r) =>
-                                  entrySubtypeFilters.includes(r.subtype),
-                              )
+                                entrySubtypeFilters.includes(r.subtype),
+                            )
                             : resultsWithDepth;
                     setResults(filteredResults);
                 })
@@ -207,16 +218,24 @@ export default function Relations({ obj }: RelationsProps) {
             .then(() => {
                 setInaccessibleEntities([]); // Clear inaccessible entities after request
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => {
                 setIsRequestingAccess(false);
             });
     };
 
     const copyToCSV = () => {
+        if (!results || results.length === 0) return;
+
         let csvContent = '"type","name"\n';
-        if (results && results.length > 0) {
-            results.forEach((result) => {
+
+        // Filter results based on selection if any are selected
+        const itemsToCopy = selectedIds.length > 0
+            ? results.filter(r => r.id !== undefined && selectedIds.includes(r.id))
+            : results;
+
+        if (itemsToCopy.length > 0) {
+            itemsToCopy.forEach((result) => {
                 // Escape double quotes if necessary
                 const type = String(result.subtype).replace(/"/g, '""');
                 const name = String(result.name).replace(/"/g, '""');
@@ -228,6 +247,8 @@ export default function Relations({ obj }: RelationsProps) {
             .then(() => {
                 setIsCopied(true);
                 setTimeout(() => setIsCopied(false), 2000);
+                // Optional: clear selection after copy
+                // setSelectedIds([]); 
             })
             .catch((err) => {
                 console.error('Error copying CSV: ', err);
@@ -245,60 +266,200 @@ export default function Relations({ obj }: RelationsProps) {
         populateEntrySubtypes();
     }, [page]);
 
-    return (
-        <div className='bg-cradle3 p-4 bg-opacity-20 rounded-xl flex flex-col flex-1'>
-            <div className='mb-4 flex items-center gap-2'>
-                {/* Depth Input with Label */}
-                <div className='flex flex-col'>
-                    <input
-                        id='depth-input'
-                        type='number'
-                        min='0'
-                        max='5'
-                        className='form-input input input-block input-ghost-primary focus:ring-0 text-white w-20'
-                        placeholder='Depth'
-                        value={depth}
-                        onChange={handleDepthChange}
-                    />
-                </div>
+    useEffect(() => {
+        if (isSearchExpanded && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [isSearchExpanded]);
 
-                {/* Search Input */}
-                <div className='flex-grow relative'>
-                    <input
-                        ref={inputRef}
-                        type='text'
-                        className='form-input input input-block input-ghost-primary focus:ring-0 pr-10 text-white'
-                        placeholder='Search...'
-                        value={searchQuery}
-                        onChange={(event) => {
-                            setSearchQuery(event.target.value);
+    const columns = [
+        { key: 'subtype', label: 'Type', className: 'w-32' },
+        { key: 'name', label: 'Name' },
+        { key: 'depth', label: 'Depth', className: 'w-20' },
+    ];
+
+    const renderRow = (result: Result, index: number, selectProps: any = {}) => {
+        const { enableMultiSelect, isSelected, onSelect } = selectProps;
+        const dashboardLink = createDashboardLink(result);
+
+        return (
+            <tr
+                key={result.id}
+                className='cursor-pointer hover:bg-cradle-bg-elevated transition-colors'
+                onClick={navigateLink(dashboardLink)}
+            >
+                {enableMultiSelect && (
+                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                        <div className='flex items-center'>
+                            <input
+                                type='checkbox'
+                                className='cradle-checkbox'
+                                checked={isSelected}
+                                onChange={onSelect}
+                            />
+                        </div>
+                    </td>
+                )}
+                <td className='py-3 px-4'>
+                    <span
+                        className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white shadow-sm'
+                        style={{
+                            backgroundColor: result.color || '#71717a',
                         }}
-                        onKeyDown={handleKeyDown}
-                    />
-                    <button
-                        onClick={() => {
-                            setPage(1);
-                            performSearch(depth, page);
-                        }}
-                        className='absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent border-none cursor-pointer'
                     >
-                        <Search />
-                    </button>
+                        {result.subtype}
+                    </span>
+                </td>
+                <td className='py-3 px-4'>{result.name}</td>
+                <td className='py-3 px-4'>
+                    <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
+                        {result.depth}
+                    </span>
+                </td>
+            </tr>
+        );
+    };
+
+    // Calculate total pages for PaginationWrapper (if API provides count, use it, otherwise estimate)
+    // The current API response handling in performSearch only sets hasNextPage, not total count
+    // So we'll approximate or stick to LazyPagination logic if we can't use PaginationWrapper fully
+    // But request asked to match NotesList, which uses PaginationWrapper.
+    // Ideally, we need total count from API. Assuming pageSize=10 for now.
+    // If we don't have total count, we might need to stick to simple prev/next logic or adapt PaginationWrapper.
+    // However, PaginationWrapper requires totalPages.
+    // Let's assume we can use the same logic as NotesList or fallback.
+    // Since the original code used LazyPagination (which just needs hasNextPage),
+    // and PaginationWrapper expects totalPages, we might need to stick to LazyPagination 
+    // OR try to adapt. NotesList gets 'count' from API.
+    // Relations API response seems to have 'hasNext'.
+
+    // To match visual style of NotesList (which uses PaginationWrapper), we should use PaginationWrapper.
+    // If we don't have total pages, we can pass a dummy high number if hasNext is true, or just 1.
+    // Or we can keep LazyPagination but style it to look like the one in NotesList (if they differ).
+    // Actually, NotesList puts PaginationWrapper in the toolbar. LazyPagination was a separate component.
+    // I will try to use PaginationWrapper if possible, but if data is missing, I might have to mock it 
+    // or assume the API returns count (it might not).
+    // Looking at previous code, `knowledgeGraphNeighborsRetrieve` returns `hasNext`.
+    // Let's stick to a simple prev/next button group if we can't use PaginationWrapper, 
+    // BUT formatted to look like the toolbar buttons. 
+
+    // Actually, `PaginationWrapper` is what makes it look like `NotesList`. 
+    // I will use `PaginationWrapper` but since I don't have `totalCount` from `knowledgeGraphNeighborsRetrieve` easily (checked types),
+    // I will just use `LazyPagination` inside the toolbar but make sure it fits well, 
+    // OR better: use `PaginationWrapper` and assume we can't fully support "jump to last page".
+    // Let's try to use `PaginationWrapper` with a calculated totalPages.
+    const calculatedTotalPages = hasNextPage ? page + 1 : page;
+
+    return (
+        <div className='flex flex-col h-full gap-4'>
+            <TableCard>
+                <div className='flex flex-wrap items-center justify-between gap-4'>
+                    <div className='flex items-center gap-2 flex-shrink-0'>
+                        {/* Copy CSV Action */}
+                        <Tooltip content='Copy to CSV'>
+                            <button
+                                onClick={copyToCSV}
+                                disabled={selectedIds.length === 0}
+                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
+                            >
+                                {isCopied ? (
+                                    <Check className='w-4 h-4 text-green-500' />
+                                ) : (
+                                    <Copy
+                                        className={selectedIds.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                        width={18}
+                                        height={18}
+                                    />
+                                )}
+                            </button>
+                        </Tooltip>
+                        <div className='h-8 w-px bg-cradle-border-accent' />
+
+                        {/* Depth Control */}
+                        <div className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent rounded-full bg-transparent'>
+                            <Tooltip content='Depth'>
+                                <input
+                                    id='depth-input'
+                                    type='number'
+                                    min='0'
+                                    max='5'
+                                    className='bg-transparent text-cradle-text-primary h-full w-8 outline-none text-center font-mono text-sm'
+                                    value={depth}
+                                    onChange={handleDepthChange}
+                                />
+                            </Tooltip>
+                        </div>
+
+                        <div className='h-8 w-px bg-cradle-border-accent' />
+
+                        {/* Search */}
+                        {!isSearchExpanded ? (
+                            <button
+                                onClick={() => setIsSearchExpanded(true)}
+                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
+                                title='Search'
+                            >
+                                <Search className='w-4 h-4' />
+                            </button>
+                        ) : (
+                            <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                                <button
+                                    onClick={() => {
+                                        setPage(1);
+                                        performSearch(depth, 1);
+                                    }}
+                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                    title='Search'
+                                >
+                                    <Search className='w-4 h-4' />
+                                </button>
+                                <input
+                                    ref={inputRef}
+                                    type='text'
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    onBlur={() => {
+                                        if (!searchQuery) {
+                                            setIsSearchExpanded(false);
+                                        }
+                                    }}
+                                    placeholder='Search relations...'
+                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                />
+                                {searchQuery && (
+                                    <button
+                                        onClick={() => {
+                                            setSearchQuery('');
+                                            setPage(1);
+                                            performSearch(depth, 1);
+                                        }}
+                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                        title='Clear search'
+                                    >
+                                        <Xmark className='w-4 h-4' />
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    <div className='flex items-center gap-2'>
+                        {/* Pagination */}
+                        <PaginationWrapper
+                            currentPage={page}
+                            // Fallback since API doesn't return total count for this endpoint
+                            totalPages={calculatedTotalPages}
+                            onPageChange={setPage}
+                            pageSize={10}
+                            // Disable pageSize change as API might be fixed to 10 or we don't have total count to manage it well
+                            onPageSizeChange={() => { }}
+                            disabled={!results || results.length === 0}
+                        />
+                    </div>
                 </div>
-                <button
-                    onClick={copyToCSV}
-                    className={`btn flex items-center gap-2  ${isCopied ? 'bg-green-800 text-white' : ''}`}
-                >
-                    {isCopied ? (
-                        <>
-                            <Check className='w-5 h-5' />
-                            Copied!
-                        </>
-                    ) : (
-                        'Copy CSV'
-                    )}
-                </button>
-            </div>
+            </TableCard>
 
             <SearchFilterSection
                 showFilters={showFilters}
@@ -309,75 +470,21 @@ export default function Relations({ obj }: RelationsProps) {
             />
 
             <AlertBox alert={alert} />
-            {isLoading ? (
-                <div className='flex items-center justify-center h-full'>
-                    <div className='spinner-dot-pulse spinner-xl'>
-                        <div className='spinner-pulse-dot'></div>
-                    </div>
-                </div>
-            ) : (
-                <div className='flex-grow overflow-y-auto no-scrollbar space-y-2'>
-                    {results && results.length > 0 ? (
-                        <div>
-                            <LazyPagination
-                                currentPage={page}
-                                hasNextPage={hasNextPage}
-                                onPageChange={setPage}
-                            />
 
-                            <div className='overflow-x-auto w-full'>
-                                <table className='table table-zebra'>
-                                    <thead>
-                                        <tr>
-                                            <th className='w-32'>Type</th>
-                                            <th className=''>Name</th>
-                                            <th className='w-20'>Depth</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {results.map((result) => {
-                                            const dashboardLink =
-                                                createDashboardLink(result);
-                                            return (
-                                                <tr
-                                                    key={result.id}
-                                                    className='cursor-pointer hover:bg-zinc-100 hover:dark:bg-zinc-800'
-                                                    onClick={navigateLink(
-                                                        dashboardLink,
-                                                    )}
-                                                >
-                                                    <td className=''>
-                                                        <span
-                                                            className='badge text-white'
-                                                            style={{
-                                                                backgroundColor:
-                                                                    result.color ||
-                                                                    '#ccc',
-                                                            }}
-                                                        >
-                                                            {result.subtype}
-                                                        </span>
-                                                    </td>
-                                                    <td className=''>{result.name}</td>
-                                                    <td className=''>
-                                                        <span className='badge badge-xs'>
-                                                            {result.depth}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className='w-full text-center text-zinc-500'>
-                            No results found
-                        </div>
-                    )}
+            <div className='flex-grow overflow-hidden flex flex-col'>
+                <div className='flex-grow overflow-auto'>
+                    <ListView
+                        data={results || []}
+                        columns={columns}
+                        renderRow={renderRow}
+                        loading={isLoading}
+                        emptyMessage='No relations found'
+                        tableClassName='table w-full'
+                        enableMultiSelect={true}
+                        setSelected={(ids) => setSelectedIds(ids as number[])}
+                    />
                 </div>
-            )}
+            </div>
         </div>
     );
 }

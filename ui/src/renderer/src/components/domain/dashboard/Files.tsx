@@ -1,5 +1,6 @@
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import TableCard from '@components/base/Card/TableCard';
 import FilesList from '@components/domain/files/FilesList';
 import { Search } from 'iconoir-react';
 import { ChangeEvent, FormEvent, useState } from 'react';
@@ -66,54 +67,41 @@ export default function Files({ obj }: FilesProps) {
     };
 
     return (
-        <div className='w-full h-full flex flex-col'>
-            <div className='cradle-card cradle-card-compact mb-4'>
-                <div className='cradle-card-header'>
-                    <span>Search Files</span>
-                </div>
-                <div className='cradle-card-body'>
-                    <form onSubmit={handleSearchSubmit} className='space-y-4'>
-                        <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
-                            <div className='flex flex-col gap-2'>
-                                <label className='cradle-label'>Keyword</label>
-                                <input
-                                    type='text'
-                                    name='keyword'
-                                    value={searchFilters.keyword}
-                                    onChange={handleSearchChange}
-                                    placeholder='Search by name or hash...'
-                                    className='cradle-search'
-                                />
-                            </div>
-                            <div className='flex flex-col gap-2'>
-                                <label className='cradle-label'>MIME Type</label>
-                                <input
-                                    type='text'
-                                    name='mimetype'
-                                    value={searchFilters.mimetype}
-                                    onChange={handleSearchChange}
-                                    placeholder='Search by mimetype...'
-                                    className='cradle-search'
-                                />
-                            </div>
-                        </div>
-
-                        <div className='cradle-separator'></div>
-
+        <div className='w-full h-full flex flex-col gap-4'>
+            <TableCard>
+                <form
+                    onSubmit={handleSearchSubmit}
+                    className='flex items-center gap-4 w-full'
+                >
+                    <div className='relative flex-grow'>
+                        <input
+                            type='text'
+                            name='keyword'
+                            value={searchFilters.keyword}
+                            onChange={handleSearchChange}
+                            placeholder='Search files by name or hash...'
+                            className='w-full bg-transparent border border-cradle-border-accent hover:border-cradle-accent-primary text-cradle-text-primary rounded-full px-4 pr-10 h-10 outline-none transition-colors'
+                        />
                         <button
                             type='submit'
-                            className='cradle-btn cradle-btn-primary w-full md:w-auto px-8'
+                            className='absolute right-3 top-1/2 transform -translate-y-1/2 text-cradle-text-secondary hover:text-cradle-text-primary transition-colors'
                         >
-                            <Search
-                                className='inline-block mr-2'
-                                width={16}
-                                height={16}
-                            />{' '}
-                            Search Files
+                            <Search width={16} height={16} />
                         </button>
-                    </form>
-                </div>
-            </div>
+                    </div>
+
+                    <div className='w-80'>
+                        <input
+                            type='text'
+                            name='mimetype'
+                            value={searchFilters.mimetype}
+                            onChange={handleSearchChange}
+                            placeholder='MIME Type'
+                            className='w-full bg-transparent border border-cradle-border-accent hover:border-cradle-accent-primary text-cradle-text-primary rounded-full px-4 h-10 outline-none transition-colors'
+                        />
+                    </div>
+                </form>
+            </TableCard>
 
             <FilesList query={query} onError={handleError} />
         </div>

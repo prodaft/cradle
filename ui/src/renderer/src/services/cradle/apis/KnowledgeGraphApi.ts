@@ -16,7 +16,7 @@
 import * as runtime from '../runtime';
 import type {
   GraphInaccessibleResponse,
-  LazyPaginatedEntryWithDepthSerializerResponse,
+  LazyPaginatedEntryWithDepthSerializerViewResponse,
   LazyPaginatedSubGraphSerializerResponse,
   PathfindQueryRequest,
   SubGraph,
@@ -24,8 +24,8 @@ import type {
 import {
     GraphInaccessibleResponseFromJSON,
     GraphInaccessibleResponseToJSON,
-    LazyPaginatedEntryWithDepthSerializerResponseFromJSON,
-    LazyPaginatedEntryWithDepthSerializerResponseToJSON,
+    LazyPaginatedEntryWithDepthSerializerViewResponseFromJSON,
+    LazyPaginatedEntryWithDepthSerializerViewResponseToJSON,
     LazyPaginatedSubGraphSerializerResponseFromJSON,
     LazyPaginatedSubGraphSerializerResponseToJSON,
     PathfindQueryRequestFromJSON,
@@ -202,7 +202,7 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
      * Get neighboring entries in the knowledge graph for a given source entry.
      * Get graph neighbors
      */
-    async knowledgeGraphNeighborsRetrieveRaw(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LazyPaginatedEntryWithDepthSerializerResponse>> {
+    async knowledgeGraphNeighborsRetrieveRaw(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LazyPaginatedEntryWithDepthSerializerViewResponse>> {
         if (requestParameters['src'] == null) {
             throw new runtime.RequiredError(
                 'src',
@@ -252,14 +252,14 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => LazyPaginatedEntryWithDepthSerializerResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => LazyPaginatedEntryWithDepthSerializerViewResponseFromJSON(jsonValue));
     }
 
     /**
      * Get neighboring entries in the knowledge graph for a given source entry.
      * Get graph neighbors
      */
-    async knowledgeGraphNeighborsRetrieve(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LazyPaginatedEntryWithDepthSerializerResponse> {
+    async knowledgeGraphNeighborsRetrieve(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LazyPaginatedEntryWithDepthSerializerViewResponse> {
         const response = await this.knowledgeGraphNeighborsRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }

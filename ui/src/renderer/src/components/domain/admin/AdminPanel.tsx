@@ -1,6 +1,7 @@
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
+import { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { createDashboardLink } from '@/utils/dashboard';
 import {
     EnrichmentSubclass,
@@ -10,7 +11,7 @@ import {
     UserRetrieve,
 } from '@services/cradle/models';
 import { uniqueId } from 'lodash';
-import { ReactElement, ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation } from 'react-router-dom';
 import { Tab, Tabs } from '../../layout/Tabs/Tabs';
@@ -41,12 +42,12 @@ import UserSettingsForm from './forms/UserSettingsForm';
  * the logic for deletion, editing, and activity navigation.
  */
 export default function AdminPanel() {
-    const [entities, setEntities] = useState<ReactElement[] | null>(null);
-    const [mappingTypes, setMappingTypes] = useState<ReactElement[] | null>(null);
-    const [enrichmentTypes, setEnrichmentTypes] = useState<ReactElement[] | null>(null);
-    const [users, setUsers] = useState<ReactElement[] | null>(null);
+    const [entities, setEntities] = useState<SearchableChild[] | null>(null);
+    const [mappingTypes, setMappingTypes] = useState<SearchableChild[] | null>(null);
+    const [enrichmentTypes, setEnrichmentTypes] = useState<SearchableChild[] | null>(null);
+    const [users, setUsers] = useState<SearchableChild[] | null>(null);
     const { isAdmin } = useProfile();
-    const [entryTypes, setEntryTypes] = useState<ReactElement[] | null>(null);
+    const [entryTypes, setEntryTypes] = useState<SearchableChild[] | null>(null);
     const [rightPane, setRightPane] = useState<ReactNode | null>(null);
     const location = useLocation();
     const { entriesApi, usersApi, queryApi, intelioApi } = useApi();
@@ -73,7 +74,7 @@ export default function AdminPanel() {
                     }),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayEntryTypes = async () => {
@@ -96,7 +97,7 @@ export default function AdminPanel() {
                     ),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayUsers = async () => {
@@ -114,7 +115,7 @@ export default function AdminPanel() {
                     )),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayMappingTypes = async () => {
@@ -135,7 +136,7 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const displayEnrichmentTypes = async () => {
@@ -156,7 +157,7 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     useEffect(() => {
@@ -264,7 +265,7 @@ export default function AdminPanel() {
                                         title='Type Mappings'
                                         addEnabled={false}
                                         addTooltipText=''
-                                        handleAdd={() => {}}
+                                        handleAdd={() => { }}
                                         isLoading={mappingTypes === null}
                                     >
                                         {mappingTypes}
@@ -314,7 +315,7 @@ export default function AdminPanel() {
                                             title='Enrichment'
                                             addEnabled={false}
                                             addTooltipText=''
-                                            handleAdd={() => {}}
+                                            handleAdd={() => { }}
                                             isLoading={enrichmentTypes === null}
                                         >
                                             {enrichmentTypes}
@@ -327,7 +328,7 @@ export default function AdminPanel() {
                                             title='Management'
                                             addEnabled={false}
                                             addTooltipText=''
-                                            handleAdd={() => {}}
+                                            handleAdd={() => { }}
                                             isLoading={false}
                                         >
                                             {[

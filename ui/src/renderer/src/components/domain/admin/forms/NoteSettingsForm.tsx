@@ -1,13 +1,13 @@
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Plus, Refresh } from 'iconoir-react';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import SnippetList from '../../../base/SnippetList/SnippetList';
+import SnippetList, { SnippetListRef } from '../../../base/SnippetList/SnippetList';
 import { FormAlert, FormAlertState, SettingsButton, SettingsCard, SettingsField, SettingsSeparator, SettingsToggle } from '../../../forms';
-import { useNotif } from '@/contexts/ui/NotificationContext';
-import { Refresh } from 'iconoir-react';
 
 interface FormData {
     minEntries: number;
@@ -37,6 +37,7 @@ export default function NoteSettingsForm() {
     const { execute } = useAPICall();
     const { notify } = useNotif();
     const [isLoading, setIsLoading] = useState(true);
+    const snippetListRef = useRef<SnippetListRef>(null);
     const [actionAlert, setActionAlert] = useState<FormAlertState>({
         type: null,
         message: '',
@@ -211,7 +212,20 @@ export default function NoteSettingsForm() {
                             </p>
 
                             <div className='space-y-4'>
-                                <SnippetList userId='null' showTitle={false} />
+                                <SettingsCard>
+                                    <SettingsButton
+                                        label='Global Snippets'
+                                        description='Reusable text blocks available to all users'
+                                        buttonText='New Snippet'
+                                        icon={<Plus className='w-3.5 h-3.5' />}
+                                        onClick={() => {
+                                            snippetListRef.current?.handleAddSnippet();
+                                        }}
+                                    />
+                                    <div className='mt-4'>
+                                        <SnippetList ref={snippetListRef} userId='null' showTitle={false} />
+                                    </div>
+                                </SettingsCard>
                             </div>
                         </section>
 

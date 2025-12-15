@@ -1,9 +1,11 @@
+import { useNotif } from '@/contexts';
+import { useAPICall } from '@/hooks';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@components/modals/notes/MarkdownEditorModal';
 import { useModal } from '@contexts/ui/ModalContext';
 import useApi from '@hooks/api/useApi';
 import { Edit, Plus, Trash } from 'iconoir-react/regular';
-import { MouseEvent, useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import { forwardRef, MouseEvent, useEffect, useImperativeHandle, useState } from 'react';
 
 interface Snippet {
     id: string;
@@ -24,6 +26,8 @@ export interface SnippetListRef {
 const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = null, showTitle = true, description }, ref) => {
     const [snippets, setSnippets] = useState<Snippet[]>([]);
     const [loading, setLoading] = useState(true);
+    const { execute } = useAPICall();
+    const { notify } = useNotif();
     const { setModal } = useModal();
     const { notesApi } = useApi();
 
@@ -34,9 +38,9 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
     const loadSnippets = async () => {
         try {
             setLoading(true);
-            const response = await notesApi.notesSnippetsUserList({
+            const response = await execute(() => notesApi.notesSnippetsUserList({
                 userId: userId === null ? 'null' : String(userId),
-            });
+            }));
             setSnippets((response as any) || []);
         } catch (error) {
             console.error('Error loading snippets:', error);
@@ -73,14 +77,23 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
                             content: content.trim(),
                         };
 
-                        await notesApi.notesSnippetsUserCreate({
+                        await execute(() => notesApi.notesSnippetsUserCreate({
                             userId: userId === null ? 'null' : String(userId),
                             snippetRequest: snippetData,
+                        }), {
+                            successMessage: 'Snippet created successfully',
+                            errorMessage: 'Failed to create snippet',
                         });
                         await loadSnippets();
                     } catch (error) {
                         console.error('Error creating snippet:', error);
                     }
+                } else if (title.trim() === '') {
+                    notify({ type: 'error', text: 'Title is required' });
+                    throw new Error('Title is required');
+                } else if (content.trim() === '') {
+                    notify({ type: 'error', text: 'Content is required' });
+                    throw new Error('Content is required');
                 }
             },
         });
@@ -107,9 +120,12 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
                             content: content.trim(),
                         };
 
-                        await notesApi.notesSnippetsUpdate({
+                        await execute(() => notesApi.notesSnippetsUpdate({
                             snippetId: snippet.id,
                             snippetRequest: snippetData,
+                        }), {
+                            successMessage: 'Snippet updated successfully',
+                            errorMessage: 'Failed to update snippet',
                         });
                         await loadSnippets();
                     } catch (error) {
@@ -134,11 +150,6 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
                 }
             },
         });
-    };
-
-    // Note: handleSnippetClick is referenced but not defined in the original code
-    const handleSnippetClick = (snippet: Snippet) => {
-        // Implementation needed
     };
 
     return (
@@ -175,7 +186,6 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
                         {snippets.map((snippet) => (
                             <div
                                 key={snippet.id}
-                                onClick={() => handleSnippetClick(snippet)}
                                 className='px-3 py-2 cursor-pointer flex items-center justify-between'
                             >
                                 <div className='font-medium text-sm truncate flex-1 mr-2'>

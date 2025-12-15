@@ -1,3 +1,5 @@
+import Tooltip from '@/components/base/Tooltip/Tooltip';
+import FileUploadModal from '@/components/modals/notes/FileUploadModal';
 import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
 import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useModal } from '@/contexts/ui/ModalContext';
@@ -9,16 +11,20 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
+import { openSearchPanel } from '@codemirror/search';
 import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
+import { Book, EditPencil } from 'iconoir-react';
 import { debounce } from 'lodash';
+import 'prismjs/plugins/autoloader/prism-autoloader.js';
+import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import FileInput from '../../forms/FileInput';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
-import ActionConfirmationModal from '../../modals/base/ActionConfirmationModal';
 import ActivityList from '../activity/ActivityList';
+import { EnrichmentRequestModal } from '../enrichment';
 import GraphExplorer from '../graph/GraphExplorer';
 import NoteGraphSearch from '../graph/NoteGraphSearch';
 import ReferenceTree from '../relations/ReferenceTree';
@@ -29,12 +35,6 @@ import NoteMetadata from './NoteMetadata';
 import NoteOutline from './NoteOutline';
 import RichEditor from './RichEditor';
 import StatusIndicators from './StatusIndicators';
-import FileUploadModal from '@/components/modals/notes/FileUploadModal';
-import { openSearchPanel } from '@codemirror/search';
-import { EditPencil, Eye } from 'iconoir-react';
-import 'prismjs/plugins/autoloader/prism-autoloader.js';
-import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
-import { EnrichmentRequestModal } from '../enrichment';
 
 interface LocationState {
     from?: { pathname: string };
@@ -151,13 +151,12 @@ export default function NoteViewer() {
             return;
         }
 
-        setModal(ActionConfirmationModal, {
-            onConfirm: () => {
-                setEnableEditing(true);
-                localStorage.setItem('enableEditing', 'true');
-            },
+        toggleEditing();
+        notify({
+            type: 'info',
+            text: 'Double click detected. Enabling editing mode.',
         });
-    }, [enableEditing, setModal]);
+    }, [enableEditing]);
 
     const smartLink = useCallback(
         async (onlyTimestamps: boolean) => {
@@ -608,6 +607,18 @@ export default function NoteViewer() {
                     </div>
 
                     <div className='flex items-center gap-2'>
+                        <Tooltip content={enableEditing ? 'Editing mode' : 'Reading mode'}>
+                            <button
+                                onClick={() => toggleEditing()}
+                                className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
+                                data-testid='actions-dropdown-btn'
+                            >
+                                {
+                                    enableEditing ? <EditPencil width='20' height='20' /> : <Book width='20' height='20' />
+                                }
+
+                            </button>
+                        </Tooltip>
                         {!id?.startsWith('guide_') && (
                             <>
                                 <ActionsDropdown

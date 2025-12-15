@@ -114,15 +114,42 @@ class SubGraphSerializer(serializers.Serializer):
 
 class EntryWithDepthSerializerExtension(OpenApiSerializerExtension):
     target_class = "knowledge_graph.serializers.EntryWithDepthSerializer"
+    match_subclasses = True
 
     def map_serializer(self, auto_schema, direction):
         schema = super().map_serializer(auto_schema, direction)
         properties = schema.get("properties", {})
+        properties.pop("entry_class", None)
+
         properties["depth"] = {
             "type": "integer",
             "description": "Depth of the entry in the graph traversal",
             "readOnly": True,
         }
+        properties["type"] = {
+            "type": "string",
+            "description": "Type of the entry (e.g., entity, artifact)",
+        }
+        properties["subtype"] = {
+            "type": "string",
+            "description": "Subtype for the entry",
+        }
+        properties["description"] = {
+            "type": "string",
+            "description": "Description of the entry",
+            "nullable": True,
+        }
+        properties["color"] = {
+            "type": "string",
+            "description": "Color associated with the entry class",
+            "nullable": True,
+        }
+
+        required = set(schema.get("required", []))
+
+        required.add("subtype")
+        required.add("type")
+        schema["required"] = list(required)
         return schema
 
 
@@ -133,3 +160,16 @@ class EntryWithDepthSerializer(EntrySerializer):
     class Meta:
         model = Entry
         fields = ["id", "name", "entry_class", "depth"]
+
+
+class EntryWithDepthSerializerView(serializers.Serializer):
+    depth = serializers.IntegerField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
+    name = serializers.CharField(read_only=True)
+    subtype = serializers.CharField(read_only=True)
+    type = serializers.CharField(read_only=True)
+    description = serializers.CharField(read_only=True, allow_blank=True)
+    color = serializers.CharField(read_only=True, allow_blank=True)
+
+    class Meta:
+        fields = ["id", "name", "depth", "subtype", "type", "description", "color"]

@@ -7,7 +7,7 @@ import { ReactElement, useEffect, useState } from 'react';
 /**
  * Child element with searchKey prop
  */
-interface SearchableChild extends ReactElement {
+export interface SearchableChild extends ReactElement {
     props: {
         searchKey?: string;
         [key: string]: any;

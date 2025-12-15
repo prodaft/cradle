@@ -55,7 +55,7 @@ models/EntryListCompressedTree.ts
 models/EntryRequest.ts
 models/EntryResponse.ts
 models/EntrySerializerMinimal.ts
-models/EntryWithDepth.ts
+models/EntryWithDepthSerializerView.ts
 models/EssentialUserRetrieve.ts
 models/EssentialUserRetrieveRequest.ts
 models/EventLog.ts
@@ -69,7 +69,7 @@ models/FleetingNoteRequest.ts
 models/FleetingNoteRetrieve.ts
 models/GraphInaccessibleResponse.ts
 models/HomePageStatistics.ts
-models/LazyPaginatedEntryWithDepthSerializerResponse.ts
+models/LazyPaginatedEntryWithDepthSerializerViewResponse.ts
 models/LazyPaginatedSubGraphSerializerResponse.ts
 models/ManagementActionResponse.ts
 models/MappingSubclass.ts

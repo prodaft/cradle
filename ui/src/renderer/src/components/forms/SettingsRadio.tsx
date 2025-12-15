@@ -12,7 +12,7 @@ export interface RadioOption {
 }
 
 export interface SettingsRadioProps
-    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
+    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'type' | 'onChange'> {
     /** Label text for the radio group */
     label: string;
     /** Description text displayed below the label */

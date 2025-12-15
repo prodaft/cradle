@@ -15,7 +15,6 @@ from access.models import Access
 from core.pagination import LazyPaginator
 from entries.enums import EntryType
 from entries.models import Edge, Entry
-from entries.serializers import EntrySerializer
 from knowledge_graph.utils import (
     filter_valid_edges,
     get_edges_for_paths,
@@ -27,6 +26,7 @@ from query.utils import parse_query
 
 from .serializers import (
     EntryWithDepthSerializer,
+    EntryWithDepthSerializerView,
     GraphInaccessibleResponseSerializer,
     PathfindQuery,
     SubGraphSerializer,
@@ -128,7 +128,7 @@ class GraphPathFindView(APIView):
     ],
     responses={
         200: LazyPaginator().get_paginated_response_serializer(
-            EntryWithDepthSerializer
+            EntryWithDepthSerializerView
         ),
         400: {"description": "Invalid parameters or query syntax"},
         401: {"description": "User is not authenticated"},
@@ -138,7 +138,6 @@ class GraphPathFindView(APIView):
 class GraphNeighborsView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = EntrySerializer
 
     def get(self, request: Request) -> Response:
         source_id = request.query_params.get("src")

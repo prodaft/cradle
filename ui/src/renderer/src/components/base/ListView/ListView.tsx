@@ -32,8 +32,8 @@ interface ListViewProps<T extends { id?: string | number }> {
     sortFieldMapping?: Record<string, string>;
     emptyMessage?: string;
     renderRow?:
-        | ((item: T, index: number, options: RenderRowOptions<T>) => ReactNode)
-        | null;
+    | ((item: T, index: number, options: RenderRowOptions<T>) => ReactNode)
+    | null;
     tableClassName?: string;
     enableMultiSelect?: boolean;
     setSelected?: (ids: NonNullable<T['id']>[]) => void;
@@ -60,7 +60,7 @@ export default function ListView<T extends { id?: string | number }>({
     renderRow = null,
     tableClassName = 'table table-hover',
     enableMultiSelect = false,
-    setSelected = () => {},
+    setSelected = () => { },
     filterableColumns = {},
     filterValues = {},
 }: ListViewProps<T>) {
@@ -101,8 +101,8 @@ export default function ListView<T extends { id?: string | number }>({
             // New field, default to descending for timestamp fields, ascending for others
             const newDirection =
                 newSortField.includes('timestamp') ||
-                newSortField.includes('created_at') ||
-                newSortField.includes('edit_timestamp')
+                    newSortField.includes('created_at') ||
+                    newSortField.includes('edit_timestamp')
                     ? 'desc'
                     : 'asc';
             onSort(newSortField, newDirection);
@@ -206,7 +206,7 @@ export default function ListView<T extends { id?: string | number }>({
             >
                 {isFilterActive ? (
                     <div
-                        ref={(el) => (filterInputRefs.current[column] = el)}
+                        ref={(el) => { filterInputRefs.current[column] = el }}
                         className='p-1'
                     >
                         {filterType === 'date' ? (
@@ -347,10 +347,10 @@ export default function ListView<T extends { id?: string | number }>({
                         data.map((item, index) =>
                             renderRow
                                 ? renderRow(item, index, {
-                                      enableMultiSelect,
-                                      isSelected: selectedIds.includes(item.id!),
-                                      onSelect: () => handleSelectRow(item.id!),
-                                  })
+                                    enableMultiSelect,
+                                    isSelected: selectedIds.includes(item.id!),
+                                    onSelect: () => handleSelectRow(item.id!),
+                                })
                                 : null,
                         )
                     )}

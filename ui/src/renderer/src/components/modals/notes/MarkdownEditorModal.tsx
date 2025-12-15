@@ -11,7 +11,7 @@ import { useState } from 'react';
  */
 export interface MarkdownEditorModalProps {
     /** Callback function when content is confirmed, receives content and title */
-    onConfirm: (content: string, title: string) => void;
+    onConfirm: (content: string, title: string) => Promise<void>;
     /** Title for the modal/note */
     title?: string;
     /** Whether the title is editable */
@@ -68,8 +68,8 @@ export default function MarkdownEditorModal({
         EditorView.lineWrapping,
     ];
 
-    const handleConfirm = () => {
-        onConfirm(userInput, noteTitle);
+    const handleConfirm = async () => {
+        await onConfirm(userInput, noteTitle);
         closeModal();
     };
 

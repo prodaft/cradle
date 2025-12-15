@@ -1,5 +1,7 @@
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
+import { yupResolver } from '@hookform/resolvers/yup';
 import {
     EntryClass,
     EntryClassRequest,
@@ -8,7 +10,6 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import {
     SelectOption,
@@ -17,7 +18,6 @@ import {
     SettingsSeparator,
     SettingsTextArea,
 } from '../../../forms';
-import { useNotif } from '@/contexts/ui/NotificationContext';
 import Selector from '../../../forms/Selector';
 
 interface EntryTypeFormProps {
@@ -284,7 +284,7 @@ export default function EntryTypeForm({
                                         label='Class Type'
                                         description='Artifact or Entity classification'
                                         required
-                                        error={errors.type}
+                                        error={errors.type?.message?.toString()}
                                         inputWidth='w-72'
                                     >
                                         <Controller

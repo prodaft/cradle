@@ -1,15 +1,15 @@
-import useFrontendSearch from '@/hooks/search/useFrontendSearch';
+import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import { PlusCircle, Search, Xmark } from 'iconoir-react';
-import { ReactElement, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 interface AdminPanelSectionProps {
     title: string;
     addEnabled: boolean;
     addTooltipText: string;
-    handleAdd: (addItemCallback: (item: ReactElement) => void) => void;
-    children: ReactElement[] | null;
+    handleAdd: (addItemCallback: (item: SearchableChild) => void) => void;
+    children: SearchableChild[] | null;
     isLoading?: boolean;
 }
 
@@ -30,7 +30,7 @@ export default function AdminPanelSection({
     children,
     isLoading = false,
 }: AdminPanelSectionProps) {
-    const [addedItems, setAddedItems] = useState<ReactElement[]>([]);
+    const [addedItems, setAddedItems] = useState<SearchableChild[]>([]);
     const combinedItems = useMemo(
         () => [...(children || []), ...addedItems],
         [children, addedItems],

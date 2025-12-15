@@ -44,8 +44,8 @@ interface FileSettingsResponse {
     };
 }
 
-const fileSettingsSchema = Yup.object().shape({
-    autoprocessFiles: Yup.boolean().default(true),
+const fileSettingsSchema: Yup.ObjectSchema<FileSettingsFormValues> = Yup.object().shape({
+    autoprocessFiles: Yup.boolean().default(true).required(),
     md5Subtype: Yup.object()
         .shape({ value: Yup.string().required(), label: Yup.string().required() })
         .nullable()
@@ -258,7 +258,7 @@ export default function FileSettingsForm() {
                                     <SettingsField
                                         label='MD5 Subtype'
                                         description='Entry class for MD5 hash artifacts'
-                                        error={errors.md5Subtype}
+                                        error={errors.md5Subtype?.message?.toString()}
                                         inputWidth='w-72'
                                     >
                                         <Controller
@@ -279,7 +279,7 @@ export default function FileSettingsForm() {
                                     <SettingsField
                                         label='SHA1 Subtype'
                                         description='Entry class for SHA1 hash artifacts'
-                                        error={errors.sha1Subtype}
+                                        error={errors.sha1Subtype?.message?.toString()}
                                         inputWidth='w-72'
                                     >
                                         <Controller
@@ -300,7 +300,7 @@ export default function FileSettingsForm() {
                                     <SettingsField
                                         label='SHA256 Subtype'
                                         description='Entry class for SHA256 hash artifacts'
-                                        error={errors.sha256Subtype}
+                                        error={errors.sha256Subtype?.message?.toString()}
                                         inputWidth='w-72'
                                     >
                                         <Controller

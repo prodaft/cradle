@@ -257,7 +257,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
     const openTab = useCallback(
         (paneId: string, path: string) => {
             // TODO: Eventually enable this again
-            window.open(path, '_blank');
+            window.open('#' + path, '_blank');
             /*
             const newTab = createTab(path);
 

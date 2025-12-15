@@ -28,6 +28,7 @@ interface FormField {
     type: 'string' | 'number' | 'choice';
     required?: boolean;
     options?: string[];
+    description?: string;
 }
 
 interface FormFields {
@@ -232,7 +233,7 @@ export default function EnrichmentSettingsForm({
                             description={field.description}
                             type={field.type === 'number' ? 'number' : 'text'}
                             {...register(`settings.${key}`)}
-                            error={errors.settings?.[key]}
+                            error={errors.settings?.[key]?.message?.toString()}
                             required={field.required}
                         />
                     )}
