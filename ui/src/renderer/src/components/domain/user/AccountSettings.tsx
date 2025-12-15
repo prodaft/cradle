@@ -17,7 +17,7 @@ import AlertBox from '@components/base/Alert/AlertBox';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { SettingsButton, SettingsCard, SettingsField, SettingsSelect, SettingsSeparator, SettingsToggle } from '@components/forms';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Edit, HalfMoon, Key, Lock, Plus, SunLight, Trash } from 'iconoir-react';
+import { Edit, HalfMoon, Key, Lock, Mail, Plus, RefreshDouble, SunLight, Trash, User } from 'iconoir-react';
 import { debounce } from 'lodash'; // Import lodash debounce
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -397,6 +397,60 @@ export default function AccountSettings({
         }
     };
 
+    // Admin-only actions
+    const simulateSession = () => {
+        execute(() =>
+            usersApi.usersManageRetrieve({
+                userId: target,
+                actionName: 'simulate',
+            }),
+        )
+            .then((res) => {
+                auth.setTokensDirectly(res as any);
+                navigate('/', { replace: true });
+            })
+            .catch(() => { });
+    };
+
+    const sendEmailConfirmation = () => {
+        execute(
+            () =>
+                usersApi.usersManageRetrieve({
+                    userId: target,
+                    actionName: 'send_email_confirmation',
+                }),
+            { successMessage: 'Email confirmation sent successfully' },
+        ).catch(() => { });
+    };
+
+    const sendPasswordResetEmail = () => {
+        execute(
+            () =>
+                usersApi.usersManageRetrieve({
+                    userId: target,
+                    actionName: 'password_reset_email',
+                }),
+            { successMessage: 'Password reset email sent successfully' },
+        ).catch(() => { });
+    };
+
+    const handleDeleteUser = async () => {
+        await execute(() => usersApi.usersDestroy({ userId: target }));
+        notify({
+            type: 'success',
+            text: 'User deleted successfully',
+        });
+        navigate('/admin/users');
+    };
+
+    const openDeleteUserModal = () => {
+        setModal(ConfirmDeletionModal, {
+            onConfirm: handleDeleteUser,
+            confirmText: getValues('username') || 'DELETE',
+            text: 'Deleting this user will permanently remove all their data, including notes, entries, and settings. This action cannot be undone.',
+        });
+    };
+
 
     return (
         <div className='w-full h-full overflow-auto'>
@@ -408,7 +462,7 @@ export default function AccountSettings({
                     </h1>
                     <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
                         {isEdit
-                            ? 'Manage your account preferences and security'
+                            ? 'Manage account preferences and security'
                             : 'Create a new user account'}
                     </p>
                 </div>
@@ -417,6 +471,63 @@ export default function AccountSettings({
             {/* Content Area */}
             <div className='p-5'>
                 <div className='w-full'>
+                    {/* Admin Actions Section - Only visible to admins viewing other users */}
+                    {isAdminAndNotOwn && isEdit && (
+                        <section
+                            id='admin-actions'
+                            className='border-t border-white/5 pt-5 pb-8'
+                        >
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                User Management
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Administrative actions for this user
+                            </p>
+
+                            <div className='space-y-4'>
+                                <SettingsCard>
+                                    <SettingsButton
+                                        label='Simulate Session'
+                                        description='Jump into a session for this user'
+                                        buttonText='Simulate'
+                                        icon={<User className='w-3.5 h-3.5' />}
+                                        onClick={simulateSession}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsButton
+                                        label='Email Confirmation'
+                                        description='Send email verification to user'
+                                        buttonText='Send Email'
+                                        icon={<Mail className='w-3.5 h-3.5' />}
+                                        onClick={sendEmailConfirmation}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsButton
+                                        label='Password Reset'
+                                        description='Send password reset email'
+                                        buttonText='Send Reset'
+                                        icon={<RefreshDouble className='w-3.5 h-3.5' />}
+                                        onClick={sendPasswordResetEmail}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsButton
+                                        label='Delete User'
+                                        description='Permanently remove this user and all their data'
+                                        buttonText='Delete'
+                                        icon={<Trash className='w-3.5 h-3.5' />}
+                                        variant='danger'
+                                        onClick={openDeleteUserModal}
+                                    />
+                                </SettingsCard>
+                            </div>
+                        </section>
+                    )}
                     <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onSubmit)}>
                         {/* Account Section */}
                         <section

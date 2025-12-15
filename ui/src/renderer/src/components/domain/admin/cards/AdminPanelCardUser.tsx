@@ -3,10 +3,9 @@ import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { ClockRotateRight, Lock, Trash } from 'iconoir-react/regular';
+import { ClockRotateRight, Lock } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
 import Card from '../../../base/Card/Card';
-import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
 import AccountSettings from '../../user/AccountSettings';
 import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
@@ -29,15 +28,6 @@ export default function AdminPanelCardUser({
     const { navigate, navigateLink } = useCradleNavigate();
     const { isAdmin } = useProfile();
     const { setModal } = useModal();
-
-    // Pre-configured delete function with automatic error handling
-    const handleDelete = executor(
-        async () => {
-            await usersApi.usersDestroy({ userId: String(id) });
-            onDelete();
-        },
-        { successMessage: 'User deleted successfully' },
-    );
 
     const handleActivityClick = () => {
         setRightPane(
@@ -73,23 +63,11 @@ export default function AdminPanelCardUser({
             variant: 'ghost' as const,
         },
         {
-            icon: <Lock />,
+            icon: <Lock height={30} width={30} />,
             onClick: handlePermissionsClick,
             tooltip: 'Edit',
             variant: 'ghost' as const,
-        },
-        {
-            icon: <Trash />,
-            onClick: () =>
-                setModal(ConfirmDeletionModal, {
-                    text: 'Are you sure you want to delete this user? This is not reversible.',
-                    onConfirm: handleDelete,
-                    confirmText: name,
-                }),
-            tooltip: 'Delete',
-            show: isAdmin(),
-            variant: 'danger' as const,
-        },
+        }
     ];
 
     return (

@@ -3,10 +3,8 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { naturalSort } from '@/utils/dashboard';
-import { SettingsButton, SettingsCard, SettingsSeparator } from '@components/forms';
-import { Mail, RefreshDouble, User } from 'iconoir-react';
-import { ReactElement, useEffect, useState } from 'react';
 import { Search, Xmark } from 'iconoir-react';
+import { ReactElement, useEffect, useState } from 'react';
 import AdminPanelPermissionCard from './cards/AdminPanelPermissionCard';
 
 interface AdminPanelUserPermissionsProps {
@@ -39,7 +37,7 @@ export default function AdminPanelUserPermissions({
                 auth.setTokensDirectly(res as any);
                 navigate('/', { replace: true });
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const sendEmailConfirmation = () => {
@@ -50,7 +48,7 @@ export default function AdminPanelUserPermissions({
                     actionName: 'send_email_confirmation',
                 }),
             { successMessage: 'Email confirmation sent successfully' },
-        ).catch(() => {});
+        ).catch(() => { });
     };
 
     const sendPasswordResetEmail = () => {
@@ -61,7 +59,7 @@ export default function AdminPanelUserPermissions({
                     actionName: 'password_reset_email',
                 }),
             { successMessage: 'Password reset email sent successfully' },
-        ).catch(() => {});
+        ).catch(() => { });
     };
 
     useEffect(() => {
@@ -79,9 +77,9 @@ export default function AdminPanelUserPermissions({
                                     searchKey={c.name}
                                     accessLevel={
                                         (c.accessType ?? 'none') as
-                                            | 'none'
-                                            | 'read'
-                                            | 'read-write'
+                                        | 'none'
+                                        | 'read'
+                                        | 'read-write'
                                     }
                                 />
                             );
@@ -93,7 +91,7 @@ export default function AdminPanelUserPermissions({
                         }),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     }, [id, accessApi, execute]);
 
     // Filter entities based on search
@@ -119,50 +117,8 @@ export default function AdminPanelUserPermissions({
             {/* Content Area */}
             <div className='p-5'>
                 <div className='w-full'>
-                    {/* Actions Section */}
-                    <section id='actions' className='pb-8'>
-                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
-                            User Actions
-                        </h2>
-                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
-                            Administrative actions for this user
-                        </p>
-
-                        <div className='space-y-4'>
-                            <SettingsCard>
-                                <SettingsButton
-                                    label='Simulate Session'
-                                    description='Jump into a session for this user'
-                                    buttonText='Simulate'
-                                    icon={<User className='w-3.5 h-3.5' />}
-                                    onClick={simulateSession}
-                                />
-
-                                <SettingsSeparator />
-
-                                <SettingsButton
-                                    label='Email Confirmation'
-                                    description='Send email verification to user'
-                                    buttonText='Send Email'
-                                    icon={<Mail className='w-3.5 h-3.5' />}
-                                    onClick={sendEmailConfirmation}
-                                />
-
-                                <SettingsSeparator />
-
-                                <SettingsButton
-                                    label='Password Reset'
-                                    description='Send password reset email'
-                                    buttonText='Send Reset'
-                                    icon={<RefreshDouble className='w-3.5 h-3.5' />}
-                                    onClick={sendPasswordResetEmail}
-                                />
-                            </SettingsCard>
-                        </div>
-                    </section>
-
                     {/* Permissions Section */}
-                    <section id='permissions' className='border-t border-white/5 pt-5 pb-8'>
+                    <section id='permissions'>
                         <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                             Entity Permissions
                         </h2>
