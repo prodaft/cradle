@@ -27,7 +27,7 @@ const tabClassesMap = {
             'cradle-text-muted border-b-2 border-cradle-border-primary hover:cradle-text-tertiary hover:border-cradle-border-secondary',
         container: 'flex flex-wrap -mb-0.5',
         button: 'px-4 py-2 whitespace-nowrap text-center flex-1',
-        lip: 'absolute bottom-0 left-0 right-0 h-0.5 border-l-2 border-r-2 border-cradle-accent-primary', // side lip
+        lip: '', // side lip
     },
     [TabClasses.PILL]: {
         active: 'leading-none cradle-bg-secondary cradle-text-secondary rounded-full shadow px-4 py-1',

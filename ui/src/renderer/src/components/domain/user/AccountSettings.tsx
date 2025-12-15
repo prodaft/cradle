@@ -7,6 +7,7 @@ import MarkdownEditorModal from '@/components/modals/notes/MarkdownEditorModal';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -16,7 +17,8 @@ import AlertBox from '@components/base/Alert/AlertBox';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Edit, HalfMoon, Key, Lock, Plus, SunLight, Trash } from 'iconoir-react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { debounce } from 'lodash'; // Import lodash debounce
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 
@@ -74,6 +76,7 @@ export default function AccountSettings({
     const { navigate, navigateLink } = useCradleNavigate();
     const { usersApi } = useApi();
     const auth = useAuth();
+    const { execute } = useAPICall();
     const { profile, setProfile, isAdmin } = useProfile();
     const { setModal } = useModal();
     const { notify } = useNotif();
@@ -84,7 +87,7 @@ export default function AccountSettings({
     const vimModeId = useId();
     const snippetListRef = useRef<SnippetListRef>(null);
 
-    // Note template loading state (used before opening modal)
+    // Note template loading state
     const [noteTemplateLoading, setNoteTemplateLoading] = useState(false);
 
     const defaultValues: AccountFormData = isEdit
@@ -132,134 +135,56 @@ export default function AccountSettings({
         color: 'red',
     });
 
-    const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const isInitialLoad = useRef(true);
     const previousValuesRef = useRef<Partial<AccountFormData> | null>(null);
 
     // Prepopulate form in edit mode.
     useEffect(() => {
-        if (isEdit && target) {
-            usersApi
-                .usersRetrieve({ userId: target })
-                .then((user) => {
-                    setUser(user);
-                    reset({
-                        id: user.id,
-                        username: user.username,
-                        email: user.email,
-                        password: 'password',
-                        theme: user.theme || 'dark',
-                        catalystApiKey: user.catalystApiKey ? 'apikey' : '',
-                        role: user.role || 'author',
-                        emailConfirmed: user.emailConfirmed || false,
-                        isActive: user.isActive || false,
-                        vimMode: user.vimMode || false,
-                    });
-                    setTwoFactorEnabled(user.twoFactorEnabled || false);
-                    // Store initial values for comparison
-                    previousValuesRef.current = {
-                        username: user.username,
-                        email: user.email,
-                        password: 'password',
-                        catalystApiKey: user.catalystApiKey ? 'apikey' : '',
-                        vimMode: user.vimMode || false,
-                        theme: user.theme || 'dark',
-                        role: user.role || 'author',
-                        emailConfirmed: user.emailConfirmed || false,
-                        isActive: user.isActive || false,
-                    };
-                    // Mark initial load as complete after a short delay
-                    setTimeout(() => {
-                        isInitialLoad.current = false;
-                    }, 1000);
-                })
-                .catch(displayError(setAlert, navigate));
-        } else {
-            reset(defaultValues);
-            isInitialLoad.current = false;
-        }
+        (async () => {
+            if (isEdit && target) {
+                const user = await execute(() => usersApi.usersRetrieve({ userId: target }));
+                setUser(user);
+
+                const initialData = {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    password: 'password',
+                    theme: user.theme || 'dark',
+                    catalystApiKey: user.catalystApiKey ? 'apikey' : '',
+                    role: user.role || 'author',
+                    emailConfirmed: user.emailConfirmed || false,
+                    isActive: user.isActive || false,
+                    vimMode: user.vimMode || false,
+                };
+
+                reset(initialData);
+                setTwoFactorEnabled(user.twoFactorEnabled || false);
+
+                // Store initial values for comparison
+                previousValuesRef.current = initialData;
+
+                // Mark initial load as complete
+                setTimeout(() => {
+                    isInitialLoad.current = false;
+                }, 1000);
+            } else {
+                reset(defaultValues);
+                isInitialLoad.current = false;
+            }
+        })()
     }, [isEdit, target, reset, navigate, usersApi]);
 
-    // Cleanup timeout on unmount
-    useEffect(() => {
-        return () => {
-            if (autoSaveTimeoutRef.current) {
-                clearTimeout(autoSaveTimeoutRef.current);
-            }
-        };
-    }, []);
+    /**
+     * Performs the actual API call and diffing. 
+     * This function is not debounced directly; it is called by the debounced wrapper.
+     */
+    const processAutoSave = async (data: AccountFormData) => {
+        const previousData = previousValuesRef.current;
 
-    const onSubmit = async (data: AccountFormData) => {
-        if (isEdit) {
-            const payload: any = {};
-            if (data.password !== 'password') {
-                payload.password = data.password;
-            }
-            if (data.catalystApiKey !== 'apikey') {
-                payload.catalyst_api_key = data.catalystApiKey;
-            }
-            payload.vim_mode = data.vimMode;
-            payload.theme = data.theme;
-            if (isAdminAndNotOwn) {
-                payload.username = data.username;
-                payload.email = data.email;
-                payload.emailConfirmed = data.emailConfirmed;
-                payload.isActive = data.isActive;
-                payload.role = data.role;
-            }
-            try {
-                const updatedUser = await usersApi.usersUpdate({
-                    userId: data.id,
-                    userUpdateRequest: payload,
-                });
-
-                if (isOwnAccount) {
-                    setProfile((prevProfile: any) => ({
-                        ...prevProfile,
-                        ...updatedUser,
-                    }));
-                }
-
-                notify({
-                    type: 'success',
-                    text: 'User updated successfully',
-                });
-            } catch (err) {
-                displayError(setAlert, navigate)(err);
-            }
-        } else {
-            const payload = {
-                username: data.username,
-                email: data.email,
-                password: data.password,
-                catalyst_api_key: data.catalystApiKey,
-                role: data.role,
-                emailConfirmed: data.emailConfirmed,
-                isActive: data.isActive,
-                vim_mode: data.vimMode,
-                theme: data.theme,
-            };
-            try {
-                const newUser = await usersApi.usersCreate({
-                    userCreateRequest: payload,
-                });
-
-                notify({
-                    type: 'success',
-                    text: 'User created successfully',
-                });
-                reset();
-                if (onAdd) onAdd(newUser);
-            } catch (err) {
-                displayError(setAlert, navigate)(err);
-            }
-        }
-    };
-
-    const autoSave = async (data: AccountFormData, previousData: Partial<AccountFormData> | null) => {
         if (!isEdit || !data.id) return;
 
-        // Check if any relevant field actually changed
+        // Check if any relevant field actually changed using strict equality
         const hasChanges =
             (isAdminAndNotOwn && (
                 data.username !== previousData?.username ||
@@ -275,85 +200,121 @@ export default function AccountSettings({
 
         if (!hasChanges) return;
 
-        // Clear existing timeout
-        if (autoSaveTimeoutRef.current) {
-            clearTimeout(autoSaveTimeoutRef.current);
+        const payload: any = {};
+        if (data.password !== 'password' && data.password !== previousData?.password) {
+            payload.password = data.password;
+        }
+        if (data.catalystApiKey !== 'apikey' && data.catalystApiKey !== previousData?.catalystApiKey) {
+            payload.catalyst_api_key = data.catalystApiKey;
+        }
+        if (data.vimMode !== previousData?.vimMode) {
+            payload.vim_mode = data.vimMode;
+        }
+        if (data.theme !== previousData?.theme) {
+            payload.theme = data.theme;
+        }
+        if (isAdminAndNotOwn) {
+            if (data.username !== previousData?.username) payload.username = data.username;
+            if (data.email !== previousData?.email) payload.email = data.email;
+            if (data.emailConfirmed !== previousData?.emailConfirmed) payload.emailConfirmed = data.emailConfirmed;
+            if (data.isActive !== previousData?.isActive) payload.isActive = data.isActive;
+            if (data.role !== previousData?.role) payload.role = data.role;
         }
 
-        // Debounce auto-save by 500ms
-        autoSaveTimeoutRef.current = setTimeout(async () => {
-            const payload: any = {};
-            if (data.password !== 'password' && data.password !== previousData?.password) {
-                payload.password = data.password;
-            }
-            if (data.catalystApiKey !== 'apikey' && data.catalystApiKey !== previousData?.catalystApiKey) {
-                payload.catalyst_api_key = data.catalystApiKey;
-            }
-            if (data.vimMode !== previousData?.vimMode) {
-                payload.vim_mode = data.vimMode;
-            }
-            if (data.theme !== previousData?.theme) {
-                payload.theme = data.theme;
-            }
-            if (isAdminAndNotOwn) {
-                if (data.username !== previousData?.username) payload.username = data.username;
-                if (data.email !== previousData?.email) payload.email = data.email;
-                if (data.emailConfirmed !== previousData?.emailConfirmed) payload.emailConfirmed = data.emailConfirmed;
-                if (data.isActive !== previousData?.isActive) payload.isActive = data.isActive;
-                if (data.role !== previousData?.role) payload.role = data.role;
+        if (Object.keys(payload).length === 0) return;
+
+        try {
+            const updatedUser = await execute(() => usersApi.usersUpdate({
+                userId: data.id,
+                userUpdateRequest: payload,
+            }), {
+                // Optional: Reduce noise by removing success message on autosave
+                successMessage: 'Saved',
+                errorMessage: 'Failed to auto-save',
+            });
+
+            if (isOwnAccount) {
+                setProfile((prevProfile: any) => ({
+                    ...prevProfile,
+                    ...updatedUser,
+                }));
             }
 
-            // Only save if there are actual changes in payload
-            if (Object.keys(payload).length === 0) return;
-
-            try {
-                const updatedUser = await usersApi.usersUpdate({
-                    userId: data.id,
-                    userUpdateRequest: payload,
-                });
-
-                if (isOwnAccount) {
-                    setProfile((prevProfile: any) => ({
-                        ...prevProfile,
-                        ...updatedUser,
-                    }));
-                }
-
-                // Update previous values after successful save
-                previousValuesRef.current = {
-                    username: data.username,
-                    email: data.email,
-                    password: data.password,
-                    catalystApiKey: data.catalystApiKey,
-                    vimMode: data.vimMode,
-                    theme: data.theme,
-                    role: data.role,
-                    emailConfirmed: data.emailConfirmed,
-                    isActive: data.isActive,
-                };
-            } catch (err) {
-                displayError(setAlert, navigate)(err);
-            }
-        }, 500);
+            // Update previous values AFTER successful save
+            previousValuesRef.current = {
+                ...previousData,
+                ...data,
+                // Ensure password/api key reset to placeholder in our reference to match form state
+                password: 'password',
+                catalystApiKey: data.catalystApiKey ? 'apikey' : '',
+            };
+        } catch (error) {
+            console.error("Autosave failed", error);
+        }
     };
 
-    // Watch for form changes and auto-save
-    const watchedValues = watch(['username', 'email', 'password', 'catalystApiKey', 'vimMode', 'theme', 'role', 'emailConfirmed', 'isActive']);
+    const processAutoSaveRef = useRef(processAutoSave);
+
+    useEffect(() => {
+        processAutoSaveRef.current = processAutoSave;
+    });
+
+    const debouncedSave = useMemo(
+        () => debounce((data: AccountFormData) => {
+            processAutoSaveRef.current(data);
+        }, 1000),
+        []
+    );
+
+    // Cleanup debounce on unmount
+    useEffect(() => {
+        return () => {
+            debouncedSave.cancel();
+        };
+    }, [debouncedSave]);
+
+    // Watch for form changes
+    const watchedValues = watch(); // Watch all fields
+
     useEffect(() => {
         if (isEdit && getValues('id') && !isInitialLoad.current) {
             const currentValues = getValues();
-            autoSave(currentValues, previousValuesRef.current);
+            debouncedSave(currentValues);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [watchedValues, isEdit]);
+    }, [watchedValues, isEdit, debouncedSave, getValues]);
+
+
+    const onSubmit = async (data: AccountFormData) => {
+        if (isEdit) {
+            debouncedSave.flush(); // Force immediate execution of pending autosaves
+        } else {
+            const payload = {
+                username: data.username,
+                email: data.email,
+                password: data.password,
+                catalyst_api_key: data.catalystApiKey,
+                role: data.role,
+                emailConfirmed: data.emailConfirmed,
+                isActive: data.isActive,
+                vim_mode: data.vimMode,
+                theme: data.theme,
+            };
+            const newUser = await execute(() => usersApi.usersCreate({
+                userCreateRequest: payload,
+            }));
+
+            notify({
+                type: 'success',
+                text: 'User created successfully',
+            });
+            reset();
+            if (onAdd) onAdd(newUser);
+        }
+    };
 
     const handleDelete = async () => {
-        try {
-            await usersApi.usersDestroy({ userId: getValues('id') });
-            auth.logOut();
-        } catch (err) {
-            displayError(setAlert)(err);
-        }
+        await execute(() => usersApi.usersDestroy({ userId: getValues('id') }));
+        auth.logOut();
     };
 
     const openChangePasswordModal = () => {
@@ -394,9 +355,9 @@ export default function AccountSettings({
     const openNoteTemplateModal = async () => {
         setNoteTemplateLoading(true);
         try {
-            const defaultNoteResponse = await usersApi.usersDefaultNoteTemplateRetrieve({
+            const defaultNoteResponse = await execute(() => usersApi.usersDefaultNoteTemplateRetrieve({
                 userId: target,
-            });
+            }));
             const initialTemplate = defaultNoteResponse.template || '';
 
             setModal(MarkdownEditorModal, {
@@ -469,6 +430,13 @@ export default function AccountSettings({
                             </p>
 
                             <div className='space-y-4'>
+                                {/* Alert */}
+                                {alert.show && (
+                                    <div className='pt-4'>
+                                        <AlertBox alert={alert} />
+                                    </div>
+                                )}
+
                                 {/* Basic Information Card */}
                                 <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1 space-y-0'>
                                     <div className='flex items-center justify-between gap-4 py-2'>
@@ -584,13 +552,20 @@ export default function AccountSettings({
                                 )}
 
                                 {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
-                                    <>
+
+                                    <section
+                                        id='interface'
+                                        className='border-t border-white/5 pt-5'
+                                    >
+                                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                            Administrative
+                                        </h2>
+                                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                            Manage user permissions and settings
+                                        </p>
+
                                         {/* Administrative Settings Card */}
                                         <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1 space-y-0'>
-                                            <h3 className='text-base font-semibold cradle-text-secondary cradle-mono mb-2'>
-                                                Administrative
-                                            </h3>
-
                                             <div className='flex items-center justify-between gap-4 py-2'>
                                                 <div className='flex-1'>
                                                     <label className='text-sm cradle-text-tertiary block mb-0.5'>
@@ -613,28 +588,52 @@ export default function AccountSettings({
 
                                             <div className='cradle-separator'></div>
 
-                                            <div>
-                                                <label className='flex items-center gap-2 cursor-pointer py-2'>
+                                            <div className='flex items-center justify-between gap-4 py-2'>
+                                                <div className='flex-1'>
+                                                    <label className='text-sm cradle-text-tertiary block mb-0.5 flex items-center gap-2'>
+                                                        Email Confirmed
+                                                    </label>
+                                                    <p className='text-sm cradle-text-muted'>User's email confirmation status</p>
+                                                </div>
+                                                <label
+                                                    htmlFor="emailConfirmed"
+                                                    className='relative inline-flex items-center cursor-pointer'
+                                                >
                                                     <input
+                                                        id="emailConfirmed"
+                                                        data-testid='emailConfirmed-toggle'
                                                         type='checkbox'
-                                                        className='switch switch-ghost-primary'
+                                                        className='sr-only'
                                                         {...register('emailConfirmed')}
                                                     />
-                                                    <div>
-                                                        <span className='text-sm cradle-text-tertiary block'>Email Confirmed</span>
-                                                        <span className='text-sm cradle-text-muted'>Allow login without email verification</span>
+                                                    <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${watch('emailConfirmed') ? 'bg-cradle-accent-primary' : 'bg-gray-600'}`}>
+                                                        <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-transform duration-200 ease-in-out ${watch('emailConfirmed') ? 'translate-x-5' : 'translate-x-0'}`}></div>
                                                     </div>
                                                 </label>
-                                                <div className='cradle-separator'></div>
-                                                <label className='flex items-center gap-2 cursor-pointer py-2'>
+                                            </div>
+
+                                            <div className='cradle-separator'></div>
+
+                                            <div className='flex items-center justify-between gap-4 py-2'>
+                                                <div className='flex-1'>
+                                                    <label className='text-sm cradle-text-tertiary block mb-0.5 flex items-center gap-2'>
+                                                        Active
+                                                    </label>
+                                                    <p className='text-sm cradle-text-muted'>Disabled accounts cannot log in</p>
+                                                </div>
+                                                <label
+                                                    htmlFor="isActive"
+                                                    className='relative inline-flex items-center cursor-pointer'
+                                                >
                                                     <input
+                                                        id="isActive"
+                                                        data-testid='isActive-toggle'
                                                         type='checkbox'
-                                                        className='switch switch-ghost-primary'
+                                                        className='sr-only'
                                                         {...register('isActive')}
                                                     />
-                                                    <div>
-                                                        <span className='text-sm cradle-text-tertiary block'>Active</span>
-                                                        <span className='text-sm cradle-text-muted'>Disabled accounts cannot log in</span>
+                                                    <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${watch('isActive') ? 'bg-cradle-accent-primary' : 'bg-gray-600'}`}>
+                                                        <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-transform duration-200 ease-in-out ${watch('isActive') ? 'translate-x-5' : 'translate-x-0'}`}></div>
                                                     </div>
                                                 </label>
                                             </div>
@@ -661,26 +660,25 @@ export default function AccountSettings({
                                                 </>
                                             )}
                                         </div>
-                                    </>
+                                    </section>
                                 )}
                             </div>
                         </section>
 
-                        {/* Security Section */}
-                        <section
-                            id='security'
-                            className='border-t border-white/5 pt-8 pb-8'
-                        >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
-                                Security
-                            </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
-                                Authentication, API keys, and account security
-                            </p>
+                        {(isOwnAccount || (twoFactorEnabled || isOwnAccount)) && (
+                            <section
+                                id='security'
+                                className='border-t border-white/5 pt-5 pb-8'
+                            >
+                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                    Security
+                                </h2>
+                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                    Authentication, API keys, and account security
+                                </p>
 
-                            <div className='space-y-4'>
-                                {/* Authentication Card */}
-                                {(isOwnAccount || (twoFactorEnabled || isOwnAccount)) && (
+                                <div className='space-y-4'>
+                                    {/* Authentication Card */}
                                     <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1 space-y-0'>
                                         {isOwnAccount && (
                                             <>
@@ -779,14 +777,14 @@ export default function AccountSettings({
                                             </>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        </section>
+                                </div>
+                            </section>
+                        )}
 
                         {/* Interface Section */}
                         <section
                             id='interface'
-                            className='border-t border-white/5 pt-8 pb-8'
+                            className='border-t border-white/5 pt-5 pb-8'
                         >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 Interface
@@ -840,7 +838,7 @@ export default function AccountSettings({
                                                     className='sr-only'
                                                     {...register('vimMode')}
                                                 />
-                                                <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${watch('vimMode') ? 'bg-orange-500' : 'bg-gray-600'}`}>
+                                                <div className={`relative w-11 h-6 rounded-full transition-colors duration-200 ease-in-out ${watch('vimMode') ? 'bg-cradle-accent-primary' : 'bg-gray-600'}`}>
                                                     <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-5 w-5 transition-transform duration-200 ease-in-out ${watch('vimMode') ? 'translate-x-5' : 'translate-x-0'}`}></div>
                                                 </div>
                                             </label>
@@ -904,13 +902,6 @@ export default function AccountSettings({
                                 >
                                     Create User
                                 </button>
-                            </div>
-                        )}
-
-                        {/* Alert */}
-                        {alert.show && (
-                            <div className='pt-4'>
-                                <AlertBox alert={alert} />
                             </div>
                         )}
                     </form>
