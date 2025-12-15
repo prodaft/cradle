@@ -908,6 +908,48 @@ export class CradleEditor {
         return [filteredChanges.length, formattedText];
     }
 
+    async artifactsAndEntries(editor: any, start: number, end: number): Promise<{ artifacts: Array<{ type: string; value: string }>, entities: Array<{ type: string; value: string }> }> {
+        await this.ready();
+        if (!this.entryClasses) return { artifacts: [], entities: [] };
+
+        const text: string = editor.state.doc.toString();
+        const entries: Array<{ type: string; value: string, from: number, to: number }> = [];
+        const tree = syntaxTree(editor.state);
+
+        // First, add timestamps to existing cradle links that don't have them
+        tree.iterate({
+            from: 0,
+            to: editor.state.doc.length,
+            enter: (syntaxNode) => {
+                const node = syntaxNode.node;
+                if (node.name === 'CradleLink') {
+                    let typeNode = node.getChildren('CradleLinkType');
+                    let valueNode = node.getChildren('CradleLinkValue');
+                    if (!typeNode || !valueNode) return true;
+
+                    let type = text.slice(typeNode[0].from, typeNode[0].to);
+                    let value = text.slice(valueNode[0].from, valueNode[0].to);
+
+                    entries.push({ type, value, from: typeNode[0].from, to: valueNode[0].to });
+                    return true;
+                }
+            },
+        });
+
+        let artifacts: Array<{ type: string; value: string }> = [];
+        let entities: Array<{ type: string; value: string }> = [];
+        for (const entry of entries) {
+            if (this.entryClasses?.[entry.type].type === 'entity') {
+                entities.push(entry);
+            } else {
+                if (entry.from < start || entry.to > end) continue;
+                artifacts.push(entry);
+            }
+        }
+
+        return { artifacts, entities };
+    }
+
     /*============================================================================
     LINTING METHODS
   =============================================================================*/

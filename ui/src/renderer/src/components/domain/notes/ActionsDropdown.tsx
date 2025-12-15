@@ -1,8 +1,7 @@
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import { TreeView } from '@phosphor-icons/react';
-import { Check, CloudUpload, MoreVert, RefreshCircle, StatsReport } from 'iconoir-react';
+import { Check, CloudUpload, InputOutput, MoreVert, RefreshCircle, Search, Sparks, StatsReport } from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
-import { InputOutput, Search } from 'iconoir-react';
 import { ViewMode } from './constants';
 
 interface ActionsDropdownProps {
@@ -24,6 +23,7 @@ interface ActionsDropdownProps {
     handleUploadFiles: () => void;
     handleFind: () => void;
     handleReplace: () => void;
+    enrichData: () => void;
 }
 
 /**
@@ -48,6 +48,7 @@ export default function ActionsDropdown({
     handleUploadFiles,
     handleFind,
     handleReplace,
+    enrichData,
 }: ActionsDropdownProps) {
     const menuButtonClasses =
         'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:border-[#FF8C00] rounded-xl flex items-center gap-2';
@@ -80,7 +81,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             handleFind();
                                         }}
-                                    className={menuButtonClasses}
+                                        className={menuButtonClasses}
                                         data-testid='find-menu-item'
                                     >
                                         <Search width='16' height='16' />
@@ -91,7 +92,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             handleReplace();
                                         }}
-                                    className={menuButtonClasses}
+                                        className={menuButtonClasses}
                                         data-testid='replace-menu-item'
                                     >
                                         <InputOutput width='16' height='16' />
@@ -122,7 +123,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             smartLink(false);
                                         }}
-                                    className={menuButtonClasses}
+                                        className={menuButtonClasses}
                                         data-testid='auto-link-menu-item'
                                     >
                                         <LightBulb width='16' height='16' />
@@ -137,7 +138,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             smartLink(true);
                                         }}
-                                    className={menuButtonClasses}
+                                        className={menuButtonClasses}
                                         data-testid='add-timestamps-menu-item'
                                     >
                                         <LightBulb width='16' height='16' />
@@ -152,7 +153,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             handleRelinkNote();
                                         }}
-                                    className={menuButtonClasses}
+                                        className={menuButtonClasses}
                                         data-testid='relink-note-menu-item'
                                     >
                                         <RefreshCircle width='16' height='16' />
@@ -188,6 +189,17 @@ export default function ActionsDropdown({
                                     )}
                                 </button>
                             )}
+                            <button
+                                onClick={() => {
+                                    setShowActionsMenu(false);
+                                    enrichData();
+                                }}
+                                className={menuButtonClasses}
+                                data-testid='enrich-data-menu-item'
+                            >
+                                <Sparks width='16' height='16' />
+                                <span className='flex-1'>Enrich Artifacts</span>
+                            </button>
                             <button
                                 onClick={() => {
                                     setShowActionsMenu(false);

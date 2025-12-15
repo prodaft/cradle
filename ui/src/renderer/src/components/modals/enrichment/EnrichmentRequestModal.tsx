@@ -41,7 +41,7 @@ export interface EnrichmentRequestModalProps {
     /** Optional callback to execute on error */
     onError?: (error: Error) => void;
     /** Optional list of entity IDs or promise resolving to list of entity IDs */
-    entitiesList?: number[] | Promise<number[]>;
+    entitiesList?: number[] | Promise<Array<{ type: string; value: string }>>;
     /** Optional artifacts text or promise resolving to artifacts text */
     artifactsList?: string | Promise<string>;
 }
@@ -126,7 +126,12 @@ export default function EnrichmentRequestModal({
                 // Resolve entities list if provided
                 let resolvedEntities: number[] | undefined;
                 if (entitiesList) {
-                    resolvedEntities = await Promise.resolve(entitiesList);
+                    let entities = (await Promise.resolve(entitiesList));
+                    let allEntities = await execute(() => entriesApi.entitiesList(), {
+                        errorMessage: 'Failed to fetch entities',
+                    });
+                    resolvedEntities = entities.map((entity) => allEntities.find((e) => e.name === entity.value && e.subtype === entity.type)?.id!);
+                    console.log(allEntities, entities, resolvedEntities);
                 }
 
                 // Resolve artifacts list if provided

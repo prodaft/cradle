@@ -36,6 +36,7 @@ import { openSearchPanel } from '@codemirror/search';
 import { EditPencil, Eye } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
+import { EnrichmentRequestModal } from '../enrichment';
 
 interface LocationState {
     from?: { pathname: string };
@@ -189,6 +190,31 @@ export default function NoteViewer() {
         },
         [editorUtils, setMarkdownContent, notify],
     );
+
+
+    const handleEnrichData = useCallback(async () => {
+        if (!editorRef.current) return;
+        const view = editorRef.current.view || editorRef.current;
+        if (!view) return;
+
+        let to = view.state.selection.main.to;
+        let from = view.state.selection.main.from;
+        let content = view.state.doc.toString();
+
+        if (to === from) {
+            from = 0;
+            to = content.length;
+        }
+        const result = editorUtils.artifactsAndEntries(view, from, to);
+        const entities = result.then((result) => result.entities);
+        const artifacts = result.then((result) => result.artifacts.map((artifact) => `${artifact.type}:${artifact.value}`).join('\n'));
+
+        setModal(EnrichmentRequestModal, {
+            entitiesList: entities,
+            artifactsList: artifacts,
+        }
+        )
+    }, [editorUtils, setModal]);
 
     useEffect(() => {
         if (!id) {
@@ -621,6 +647,7 @@ export default function NoteViewer() {
                                     handleUploadFiles={handleUploadFiles}
                                     handleFind={handleFind}
                                     handleReplace={handleReplace}
+                                    enrichData={handleEnrichData}
                                 />
                             </>
                         )}
