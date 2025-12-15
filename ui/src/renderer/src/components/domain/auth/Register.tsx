@@ -2,6 +2,7 @@ import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Form, FormInput } from '@components/forms';
 import { Link, useLocation } from 'react-router-dom';
+import { Undo } from 'iconoir-react';
 import * as Yup from 'yup';
 
 interface FormData {
@@ -65,8 +66,18 @@ export default function Register() {
                         <div className='cradle-border cradle-bg-elevated'>
                             <div className='cradle-card-header cradle-border-b'>
                                 <span className='cradle-mono text-xs tracking-widest'>
-                                    USER REGISTRATION
+                                    REGISTRATION
                                 </span>
+                                <div className='flex items-center gap-2 -mr-1.5'>
+                                    <button
+                                        onClick={() => navigate('/login', { replace: true })}
+                                        className='cradle-btn p-2 rounded-full'
+                                        data-testid='back-button'
+                                        title='Back to Login'
+                                    >
+                                        <Undo width={18} height={18} />
+                                    </button>
+                                </div>
                             </div>
 
                             <div className='p-8'>

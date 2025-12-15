@@ -1,24 +1,24 @@
 import vimIcon from '@/assets/vim32x32.gif';
-import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
+import { useModal } from '@/contexts/ui/ModalContext';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { UserCreateRequestThemeEnum, UserRetrieve } from '@/services/cradle/models';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
-import SnippetList from '@components/base/SnippetList/SnippetList';
-import ApiKeyGenerateModal from '@components/modals/auth/ApiKeyGenerateModal';
-import ChangePasswordModal from '@components/modals/auth/ChangePasswordModal';
-import TwoFactorSetupModal from '@components/modals/auth/TwoFactorSetupModal';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import MarkdownEditorModal from '@components/modals/notes/MarkdownEditorModal';
+import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Edit, SunLight, HalfMoon } from 'iconoir-react';
+import { Edit, SunLight, HalfMoon, Plus, Trash, Key, Lock } from 'iconoir-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
+import ChangePasswordModal from '@/components/modals/auth/ChangePasswordModal';
+import ApiKeyGenerateModal from '@/components/modals/auth/ApiKeyGenerateModal';
+import TwoFactorSetupModal from '@/components/modals/auth/TwoFactorSetupModal';
+import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
+import MarkdownEditorModal from '@/components/modals/notes/MarkdownEditorModal';
 
 interface AccountFormData {
     id: string;
@@ -77,13 +77,17 @@ export default function AccountSettings({
     const { usersApi } = useApi();
     const auth = useAuth();
     const { profile, setProfile, isAdmin } = useProfile();
+    const { setModal } = useModal();
     const { notify } = useNotif();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [user, setUser] = useState<UserRetrieve | null>(null);
     const isOwnAccount = isEdit ? target === 'me' || profile?.id === target : false;
     const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
-    const { setModal } = useModal();
     const vimModeId = useId();
+    const snippetListRef = useRef<SnippetListRef>(null);
+
+    // Note template loading state (used before opening modal)
+    const [noteTemplateLoading, setNoteTemplateLoading] = useState(false);
 
     const defaultValues: AccountFormData = isEdit
         ? {
@@ -355,106 +359,82 @@ export default function AccountSettings({
         }
     };
 
-    const handleGenerateApiKey = () => {
+    const openChangePasswordModal = () => {
+        setModal(ChangePasswordModal);
+    };
+
+    const openApiKeyModal = () => {
+        const id = getValues('id');
+        if (!id) return;
         setModal(ApiKeyGenerateModal, {
-            userId: getValues('id'),
+            userId: id,
         });
     };
 
-    const handleChangePassword = () => {
-        setModal(ChangePasswordModal, {
+    const openTwoFactorModal = () => {
+        setModal(TwoFactorSetupModal, {
+            isDisabling: twoFactorEnabled,
             onSuccess: () => {
+                setTwoFactorEnabled((prev) => !prev);
                 notify({
                     type: 'success',
-                    text: 'Password changed successfully!',
+                    text: twoFactorEnabled
+                        ? 'Two-Factor Auth has been disabled.'
+                        : 'Two-Factor Auth has been enabled.',
                 });
             },
         });
     };
 
-    const editDefaultNoteTemplate = async () => {
+    const openDeleteAccountModal = () => {
+        setModal(ConfirmDeletionModal, {
+            onConfirm: handleDelete,
+            confirmText: 'DELETE',
+            text: 'Deleting your account will permanently remove all your data, including notes, entries, and settings. This action cannot be undone.',
+        });
+    };
+
+    const openNoteTemplateModal = async () => {
+        setNoteTemplateLoading(true);
         try {
-            const defaultNoteResponse = await usersApi.usersDefaultNoteTemplateRetrieve(
-                {
-                    userId: target,
-                },
-            );
+            const defaultNoteResponse = await usersApi.usersDefaultNoteTemplateRetrieve({
+                userId: target,
+            });
+            const initialTemplate = defaultNoteResponse.template || '';
 
             setModal(MarkdownEditorModal, {
-                title: 'Edit Default Note Template',
-                initialContent: defaultNoteResponse.template || '',
-                onConfirm: (content: string) => {
-                    if (isOwnAccount) {
-                        setProfile((prevProfile: any) => ({
-                            ...prevProfile,
-                            defaultNoteTemplate: content,
-                        }));
-                    }
+                title: 'Default Note Template',
+                titleEditable: false,
+                initialContent: initialTemplate,
+                helpText:
+                    'This markdown template will be used as the starting content for new notes you create.',
+                onConfirm: async (content: string) => {
+                    try {
+                        if (isOwnAccount) {
+                            setProfile((prevProfile: any) => ({
+                                ...prevProfile,
+                                defaultNoteTemplate: content,
+                            }));
+                        }
 
-                    usersApi
-                        .usersDefaultNoteTemplateCreate({
+                        await usersApi.usersDefaultNoteTemplateCreate({
                             userId: target,
                             defaultNoteTemplateRequest: { template: content },
-                        })
-                        .then(() => {
-                            notify({
-                                type: 'success',
-                                text: 'Default note template updated successfully!',
-                            });
-                        })
-                        .catch((err) => {
-                            displayError(setAlert)(err);
                         });
+
+                        notify({
+                            type: 'success',
+                            text: 'Default note template updated successfully!',
+                        });
+                    } catch (err) {
+                        displayError(setAlert)(err);
+                    }
                 },
-                titleEditable: false,
             });
         } catch (err) {
             displayError(setAlert)(err);
-        }
-    };
-
-    const handle2FASetup = () => {
-        if (twoFactorEnabled) {
-            if (isOwnAccount) {
-                // Show modal to disable 2FA
-                setModal(TwoFactorSetupModal, {
-                    isDisabling: true,
-                    onSuccess: () => {
-                        setTwoFactorEnabled(false);
-                        notify({
-                            type: 'success',
-                            text: '2FA has been successfully disabled for your account',
-                        });
-                    },
-                });
-            } else if (user) {
-                // Admin disabling 2FA for another user
-                usersApi.usersUpdate({
-                    userId: target,
-                    userUpdateRequest: {
-                        username: user.username,
-                        email: user.email,
-                        twoFactorEnabled: false,
-                    },
-                });
-                setTwoFactorEnabled(false);
-                notify({
-                    type: 'success',
-                    text: '2FA has been successfully disabled for the selected account!',
-                });
-            }
-        } else {
-            // Show modal to enable 2FA
-            setModal(TwoFactorSetupModal, {
-                isDisabling: false,
-                onSuccess: () => {
-                    setTwoFactorEnabled(true);
-                    notify({
-                        type: 'success',
-                        text: '2FA has been successfully enabled for your account',
-                    });
-                },
-            });
+        } finally {
+            setNoteTemplateLoading(false);
         }
     };
 
@@ -477,14 +457,14 @@ export default function AccountSettings({
 
             {/* Content Area */}
             <div className='p-5'>
-                <div className='max-w-4xl mx-auto'>
+                <div className='w-full'>
                         <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onSubmit)}>
                             {/* Account Section */}
                             <section
                                 id='account'
                                 className='pb-8'
                             >
-                                <h2 className='text-lg font-semibold cradle-text-primary cradle-mono'>
+                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                     Account
                                 </h2>
                                 <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
@@ -493,10 +473,10 @@ export default function AccountSettings({
 
                                 <div className='space-y-4'>
                                     {/* Basic Information Card */}
-                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1 space-y-0'>
                                         <div className='flex items-center justify-between gap-4 py-2'>
                                             <div className='flex-1'>
-                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                     Username
                                                 </label>
                                                 <p className='text-sm cradle-text-muted'>Your display name across the platform</p>
@@ -504,11 +484,11 @@ export default function AccountSettings({
                                                     <p className='text-sm text-red-500 mt-1'>{errors.username.message}</p>
                                                 )}
                                             </div>
-                                            <div className='w-64'>
+                                            <div className='w-auto'>
                                                 <input
                                                     type='text'
                                                     placeholder='Username'
-                                                    className='cradle-input w-full text-sm h-10'
+                                                    className='cradle-input w-fit text-sm h-10 rounded-full'
                                                     {...register('username')}
                                                     disabled={!isAdminAndNotOwn && isEdit}
                                                 />
@@ -519,7 +499,7 @@ export default function AccountSettings({
 
                                         <div className='flex items-center justify-between gap-4 py-2'>
                                             <div className='flex-1'>
-                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                     Email
                                                 </label>
                                                 <p className='text-sm cradle-text-muted'>Used for login and notifications</p>
@@ -527,32 +507,32 @@ export default function AccountSettings({
                                                     <p className='text-sm text-red-500 mt-1'>{errors.email.message}</p>
                                                 )}
                                             </div>
-                                            <div className='w-72'>
+                                            <div className='w-auto'>
                                                 <input
                                                     type='text'
                                                     placeholder='Email'
-                                                    className='cradle-input w-full text-sm h-10'
+                                                    className='cradle-input w-fit text-sm h-10 rounded-full'
                                                     {...register('email')}
                                                     disabled={!isAdminAndNotOwn && isEdit}
                                                 />
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Read-Only Information Card */}
-                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                        <div className='cradle-separator'></div>
+
                                         <div className='flex items-center justify-between gap-4 py-2'>
                                             <div className='flex-1'>
-                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                     User ID
                                                 </label>
                                                 <p className='text-sm cradle-text-muted'>Unique identifier for API integrations</p>
                                             </div>
-                                            <div className='w-72'>
+                                            <div className='w-auto'>
                                                 <input
                                                     type='text'
                                                     value={profile?.id || ''}
-                                                    className='cradle-input w-full text-sm h-10 opacity-60'
+                                                    className='cradle-input inline-block text-sm h-10 rounded-full opacity-60'
+                                                    style={{ width: 'auto' }}
                                                     disabled
                                                     readOnly
                                                 />
@@ -563,16 +543,17 @@ export default function AccountSettings({
 
                                         <div className='flex items-center justify-between gap-4 py-2'>
                                             <div className='flex-1'>
-                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                     Role
                                                 </label>
                                                 <p className='text-sm cradle-text-muted'>Determines your access permissions</p>
                                             </div>
-                                            <div className='w-32'>
+                                            <div className='w-auto'>
                                                 <input
                                                     type='text'
                                                     value={profile?.role || ''}
-                                                    className='cradle-input w-full text-sm h-10 opacity-60'
+                                                    className='cradle-input inline-block text-sm h-10 rounded-full opacity-60'
+                                                    style={{ width: 'auto' }}
                                                     disabled
                                                     readOnly
                                                 />
@@ -581,10 +562,10 @@ export default function AccountSettings({
                                     </div>
 
                                     {!isEdit && (
-                                        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
+                                        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1'>
                                             <div className='flex items-center justify-between gap-4'>
                                                 <div className='flex-1'>
-                                                    <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                    <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                         Password
                                                     </label>
                                                     <p className='text-sm cradle-text-muted'>Minimum 8 characters recommended</p>
@@ -592,11 +573,12 @@ export default function AccountSettings({
                                                         <p className='text-sm text-red-500 mt-1'>{errors.password.message}</p>
                                                     )}
                                                 </div>
-                                                <div className='w-48'>
+                                                <div className='w-auto'>
                                                     <input
                                                         type='password'
                                                         placeholder='Password'
-                                                        className='cradle-input w-full text-sm h-10'
+                                                        className='cradle-input inline-block text-sm h-10 rounded-full'
+                                                        style={{ width: 'auto' }}
                                                         {...register('password')}
                                                     />
                                                 </div>
@@ -607,21 +589,22 @@ export default function AccountSettings({
                                     {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
                                         <>
                                             {/* Administrative Settings Card */}
-                                            <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                            <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1 space-y-0'>
                                                 <h3 className='text-base font-semibold cradle-text-secondary cradle-mono mb-2'>
                                                     Administrative
                                                 </h3>
 
                                                 <div className='flex items-center justify-between gap-4 py-2'>
                                                     <div className='flex-1'>
-                                                        <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                             Role
                                                         </label>
                                                         <p className='text-sm cradle-text-muted'>Controls feature access level</p>
                                                     </div>
-                                                    <div className='w-40'>
+                                                    <div className='w-auto'>
                                                         <select
-                                                            className='cradle-input w-full text-sm h-10'
+                                                            className='cradle-input inline-block text-sm h-10 rounded-full'
+                                                            style={{ width: 'auto' }}
                                                             {...register('role')}
                                                         >
                                                             <option value='author'>User</option>
@@ -664,7 +647,7 @@ export default function AccountSettings({
                                                         <div className='cradle-separator'></div>
                                                         <div className='flex items-center justify-between gap-4 py-2'>
                                                             <div className='flex-1'>
-                                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                                     Password
                                                                 </label>
                                                                 <p className='text-sm cradle-text-muted'>Set a new password for this user</p>
@@ -673,7 +656,7 @@ export default function AccountSettings({
                                                                 <input
                                                                     type='password'
                                                                     placeholder='Password'
-                                                                    className='cradle-input w-full text-sm h-10'
+                                                                    className='cradle-input w-full text-sm h-10 rounded-full'
                                                                     {...register('password')}
                                                                 />
                                                             </div>
@@ -691,7 +674,7 @@ export default function AccountSettings({
                                 id='security'
                                 className='border-t border-white/5 pt-8 pb-8'
                             >
-                                <h2 className='text-lg font-semibold cradle-text-primary cradle-mono'>
+                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                     Security
                                 </h2>
                                 <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
@@ -701,20 +684,26 @@ export default function AccountSettings({
                                 <div className='space-y-4'>
                                     {/* Authentication Card */}
                                     {(isOwnAccount || (twoFactorEnabled || isOwnAccount)) && (
-                                        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1 space-y-0'>
                                             {isOwnAccount && (
                                                 <>
                                                     <div className='flex items-center justify-between py-2'>
                                                         <div>
-                                                            <span className='text-base cradle-text-primary block'>Password</span>
-                                                            <span className='text-sm cradle-text-muted'>Change your account password</span>
+                                                            <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                                Password
+                                                            </span>
+                                                            <span className='text-sm cradle-text-muted'>
+                                                                Change your account password
+                                                            </span>
                                                         </div>
                                                         <button
                                                             type='button'
-                                                            className='cradle-btn cradle-btn-ghost text-sm px-3 py-1.5'
-                                                            onClick={handleChangePassword}
+                                                            className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                                                            onClick={openChangePasswordModal}
+                                                            title='Change Password'
                                                         >
-                                                            Change
+                                                            <Lock className='w-3.5 h-3.5' />
+                                                            <span>Change</span>
                                                         </button>
                                                     </div>
 
@@ -722,15 +711,21 @@ export default function AccountSettings({
 
                                                     <div className='flex items-center justify-between py-2'>
                                                         <div>
-                                                            <span className='text-base cradle-text-primary block'>API Key</span>
-                                                            <span className='text-sm cradle-text-muted'>Generate key for programmatic access</span>
+                                                            <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                                API Key
+                                                            </span>
+                                                            <span className='text-sm cradle-text-muted'>
+                                                                Generate key for API access
+                                                            </span>
                                                         </div>
                                                         <button
                                                             type='button'
-                                                            className='cradle-btn cradle-btn-ghost text-sm px-3 py-1.5'
-                                                            onClick={handleGenerateApiKey}
+                                                            className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                                                            onClick={openApiKeyModal}
+                                                            title='Generate API Key'
                                                         >
-                                                            Generate
+                                                            <Key className='w-3.5 h-3.5' />
+                                                            <span>Generate</span>
                                                         </button>
                                                     </div>
                                                 </>
@@ -741,70 +736,53 @@ export default function AccountSettings({
                                                     {isOwnAccount && <div className='cradle-separator'></div>}
                                                     <div className='flex items-center justify-between py-2'>
                                                         <div>
-                                                            <span className='text-base cradle-text-primary block'>Two-Factor Auth</span>
+                                                            <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                                Two-Factor Auth
+                                                            </span>
                                                             <span className='text-sm cradle-text-muted'>
-                                                                {twoFactorEnabled ? 'Currently enabled' : 'Add extra security layer'}
+                                                                Protect your account with one-time codes from an authenticator app
                                                             </span>
                                                         </div>
                                                         <button
                                                             type='button'
-                                                            className={`text-sm px-3 py-1.5 rounded ${twoFactorEnabled ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'cradle-btn cradle-btn-ghost'}`}
-                                                            onClick={handle2FASetup}
+                                                            className={`text-sm px-3 py-1.5 rounded-full border transition-colors flex items-center gap-1.5 ${
+                                                                twoFactorEnabled
+                                                                    ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent'
+                                                                    : 'border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent text-cradle-text-secondary hover:text-cradle-text-primary'
+                                                            }`}
+                                                            onClick={openTwoFactorModal}
                                                         >
-                                                            {twoFactorEnabled ? 'Disable' : 'Enable'}
+                                                            <Lock className='w-3.5 h-3.5' />
+                                                            <span>{twoFactorEnabled ? 'Disable' : 'Enable'}</span>
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+
+                                            {isOwnAccount && (
+                                                <>
+                                                    <div className='cradle-separator'></div>
+                                                    <div className='flex items-center justify-between py-2'>
+                                                        <div>
+                                                            <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                                Delete Account
+                                                            </span>
+                                                            <span className='text-sm cradle-text-muted'>
+                                                                Permanently remove account and data
+                                                            </span>
+                                                        </div>
+                                                        <button
+                                                            type='button'
+                                                            className='rounded-full border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent text-sm px-3 py-1.5 transition-colors flex items-center gap-1.5'
+                                                            onClick={openDeleteAccountModal}
+                                                        >
+                                                            <Trash className='w-3.5 h-3.5' />
+                                                            <span>Delete</span>
                                                         </button>
                                                     </div>
                                                 </>
                                             )}
                                         </div>
-                                    )}
-
-                                    {/* API Integration Card */}
-                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
-                                                    Catalyst API Key
-                                                </label>
-                                                <p className='text-sm cradle-text-muted'>
-                                                    Enables threat intelligence enrichment from PRODAFT Catalyst
-                                                </p>
-                                            </div>
-                                            <div className='w-72'>
-                                                <input
-                                                    type='password'
-                                                    placeholder='Enter API key'
-                                                    className='cradle-input w-full text-sm h-10'
-                                                    {...register('catalystKey')}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {isOwnAccount && (
-                                        <>
-                                            {/* Danger Zone Card */}
-                                            <div className='rounded-lg border border-red-500/20 bg-red-500/[0.02] p-4'>
-                                                <div className='flex items-center justify-between'>
-                                                    <div>
-                                                        <span className='text-base text-red-400 block'>Delete Account</span>
-                                                        <span className='text-sm cradle-text-muted'>Permanently remove account and data</span>
-                                                    </div>
-                                                    <button
-                                                        type='button'
-                                                        className='text-sm px-3 py-1.5 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                                                        onClick={() =>
-                                                            setModal(ConfirmDeletionModal, {
-                                                                text: 'Are you sure you want to delete your account? All data related to you will be deleted.',
-                                                                onConfirm: handleDelete,
-                                                            })
-                                                        }
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </>
                                     )}
                                 </div>
                             </section>
@@ -814,7 +792,7 @@ export default function AccountSettings({
                                 id='interface'
                                 className='border-t border-white/5 pt-8 pb-8'
                             >
-                                <h2 className='text-lg font-semibold cradle-text-primary cradle-mono'>
+                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                     Interface
                                 </h2>
                                 <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
@@ -823,10 +801,10 @@ export default function AccountSettings({
 
                                 <div className='space-y-4'>
                                     {/* Appearance Card */}
-                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4 space-y-0'>
+                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1 space-y-0'>
                                         <div className='flex items-center justify-between gap-4 py-2'>
                                             <div className='flex-1'>
-                                                <label className='cradle-label cradle-text-tertiary text-sm block mb-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                     Theme
                                                 </label>
                                                 <p className='text-sm cradle-text-muted'>Choose your preferred color scheme</p>
@@ -834,7 +812,7 @@ export default function AccountSettings({
                                             <button
                                                 type='button'
                                                 onClick={() => setValue('theme', watch('theme') === 'dark' ? 'light' : 'dark')}
-                                                className='p-2 rounded transition-colors bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                                                className='p-2 rounded-full transition-colors bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
                                             >
                                                 {watch('theme') === 'dark' ? (
                                                     <SunLight className='w-5 h-5' />
@@ -849,7 +827,7 @@ export default function AccountSettings({
                                         <div className='py-2'>
                                             <div className='flex items-center justify-between gap-4'>
                                                 <div className='flex-1'>
-                                                    <label className='cradle-label cradle-text-tertiary text-sm block mb-1 flex items-center gap-2'>
+                                                    <label className='text-sm cradle-text-tertiary block mb-0.5 flex items-center gap-2'>
                                                         Vim Mode
                                                         <img src={vimIcon} alt='Vim' className='w-4 h-4' />
                                                     </label>
@@ -872,40 +850,60 @@ export default function AccountSettings({
                                                 </label>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    {/* Note Template Card */}
-                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
-                                        <div className='flex items-center justify-between'>
+                                        <div className='cradle-separator'></div>
+
+                                        <div className='flex items-center justify-between py-2'>
                                             <div>
-                                                <span className='text-sm cradle-text-tertiary block mb-0.5'>Note Template</span>
-                                                <span className='text-sm cradle-text-muted'>Preset structure for new notes you create</span>
+                                                <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Note Template
+                                                </span>
+                                                <span className='text-sm cradle-text-muted'>
+                                                    Preset structure for new notes you create
+                                                </span>
                                             </div>
                                             <button
                                                 type='button'
-                                                className='cradle-btn cradle-btn-ghost text-sm px-3 py-1.5 flex items-center gap-1.5'
-                                                onClick={editDefaultNoteTemplate}
+                                                className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                                                onClick={openNoteTemplateModal}
+                                                disabled={noteTemplateLoading}
                                             >
                                                 <Edit className='w-3.5 h-3.5' />
-                                                Edit
+                                                {noteTemplateLoading ? 'Loading...' : 'Edit'}
                                             </button>
                                         </div>
-                                    </div>
 
-                                    {/* Snippets Card */}
-                                    <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] p-4'>
-                                        <p className='text-sm cradle-text-muted mb-2'>Reusable text blocks you can insert with shortcuts</p>
-                                        <SnippetList userId={target} />
+                                        <div className='cradle-separator'></div>
+
+                                        <div className='flex items-center justify-between py-2'>
+                                            <div>
+                                                <span className='text-sm cradle-text-tertiary block mb-0.5'>Note Snippets</span>
+                                                <p className='text-sm cradle-text-muted'>Reusable text blocks you can insert with shortcuts</p>
+                                            </div>
+                                            <button
+                                                type='button'
+                                                className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                                                onClick={() => {
+                                                    snippetListRef.current?.handleAddSnippet();
+                                                }}
+                                            >
+                                                <Plus className='w-3.5 h-3.5' />
+                                                New Snippet
+                                            </button>
+                                        </div>
+                                        <div className='mt-4'>
+                                            <SnippetList ref={snippetListRef} userId={target} showTitle={false} />
+                                        </div>
                                     </div>
                                 </div>
                             </section>
 
                             {/* Save Button - Only for new user creation */}
                             {!isEdit && (
-                                <div className='border-t border-white/5 pt-5'>
+                                <div className='border-t border-white/5 pt-5 flex justify-end'>
                                     <button
                                         type='submit'
-                                        className='cradle-btn cradle-btn-primary px-6'
+                                        className='cradle-btn cradle-btn-primary px-6 rounded-full'
                                         disabled={!isDirty}
                                     >
                                         Create User

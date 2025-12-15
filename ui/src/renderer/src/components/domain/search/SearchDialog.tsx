@@ -206,6 +206,16 @@ export default function SearchDialog({
                 <div className='p-4 cradle-border-b'>
                     <div className='flex items-center gap-3'>
                         <div className='flex-grow flex items-center gap-2 cradle-bg-secondary cradle-border px-3 py-2 rounded'>
+                            <button
+                                onClick={() => {
+                                    setPage(1);
+                                    performSearch();
+                                }}
+                                className='py-1.5 pr-1.5 pl-1 hover:cradle-bg-elevated rounded flex-shrink-0 transition-colors border-0'
+                                title='Search'
+                            >
+                                <Search className='w-4 h-4' />
+                            </button>
                             <textarea
                                 ref={inputRef}
                                 className='flex-grow bg-transparent text-cradle-text-primary placeholder:text-cradle-text-muted text-base resize-none outline-none max-h-[15vh] overflow-y-auto leading-relaxed'
@@ -218,24 +228,42 @@ export default function SearchDialog({
                                 }}
                                 onKeyDown={handleKeyDown}
                             />
-                            <button
-                                onClick={() => {
-                                    setPage(1);
-                                    performSearch();
-                                }}
-                                className='cradle-btn cradle-btn-secondary p-1.5 hover:cradle-bg-elevated rounded flex-shrink-0 transition-colors'
-                                title='Search'
-                            >
-                                <Search className='w-4 h-4' />
-                            </button>
+                            {searchQuery && (
+                                <button
+                                    onClick={() => {
+                                        setSearchQuery('');
+                                        const event = {
+                                            target: { name: 'title', value: '' },
+                                        } as ChangeEvent<HTMLTextAreaElement>;
+                                        if (inputRef.current) {
+                                            autoResize(inputRef.current);
+                                        }
+                                        setPage(1);
+                                        performSearch();
+                                    }}
+                                    className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                    title='Clear search'
+                                >
+                                    <svg
+                                        width='1.5em'
+                                        height='1.5em'
+                                        strokeWidth='1.5'
+                                        viewBox='0 0 24 24'
+                                        fill='none'
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        color='currentColor'
+                                        className='w-4 h-4'
+                                    >
+                                        <path
+                                            d='M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                    </svg>
+                                </button>
+                            )}
                         </div>
-                        <button
-                            onClick={onClose}
-                            className='cradle-btn p-2'
-                            title='Close (Esc)'
-                        >
-                            <Xmark width={16} height={16} />
-                        </button>
                     </div>
 
                     {/* Keyboard hint */}

@@ -108,7 +108,7 @@ export default function Pagination({
                     onChange={handlePageInputChange}
                     onBlur={handlePageInputBlur}
                     onKeyDown={handlePageInputKeyDown}
-                    className='border border-cradle-border-accent rounded text-center text-sm bg-transparent focus:outline-none focus:border-cradle-accent-primary'
+                    className='border border-cradle-border-accent rounded-full text-center text-sm bg-transparent focus:outline-none focus:border-cradle-accent-primary'
                     style={{
                         width: `${String(inputValue).length * 0.6 + 0.8}em`,
                         padding: '0 2px',

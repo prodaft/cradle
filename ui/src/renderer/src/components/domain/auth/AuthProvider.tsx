@@ -304,11 +304,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 } else {
                     const data = await response.json();
 
-                    // Check for 2FA requirement
-                    if (data.requires_2fa) {
+                    if (
+                        data.code === 'TWO_FACTOR_REQUIRED' ||
+                        data.code === 'two-factor-required' ||
+                        data.detail?.toLowerCase?.().includes('2fa token required')
+                    ) {
                         return {
                             result: AuthResult.REQUIRES_2FA,
-                            message: data.message || '2FA token required',
+                            message: '',
+                        };
+                    }
+
+                    if (
+                        data.code === 'INVALID_TWO_FACTOR_TOKEN' ||
+                        data.code === 'invalid-two-factor-token'
+                    ) {
+                        return {
+                            result: AuthResult.INVALID_CREDENTIALS,
+                            message: data.detail || data.message || 'Invalid 2FA token',
                         };
                     }
 

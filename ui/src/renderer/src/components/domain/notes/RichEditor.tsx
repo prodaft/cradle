@@ -23,6 +23,7 @@ import {
 import { markdown } from '@codemirror/lang-markdown';
 import { indentOnInput } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
+import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
 import {
     drawSelection,
@@ -33,6 +34,14 @@ import {
     rectangularSelection,
 } from '@codemirror/view';
 import { GFM } from '@lezer/markdown';
+import {
+    baseSyntaxHighlights,
+    clickLinkHandler,
+    prosemarkBaseThemeSetup,
+    prosemarkBasicSetup,
+    prosemarkMarkdownSyntaxExtensions,
+} from '@prosemark/core';
+import { htmlBlockExtension } from '@prosemark/render-html';
 import { vim, Vim } from '@replit/codemirror-vim';
 import { FileReference } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
@@ -202,18 +211,34 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 extensions: [
                     // GitHub Flavored Markdown (support for autolinks, strikethroughs)
                     GFM,
+                    // ProseMark parsing only in Rich Editor mode
+                    ...(!source ? [prosemarkMarkdownSyntaxExtensions] : []),
                     // Cradle editor extension
                     editorUtils.extension(),
                     referenceLinkSyntax(referenceMappings || {}),
                 ],
             }),
-            codeBlockCopyExtension,
+            // ProseMark setup only for Rich Editor (non-source) mode
+            ...(!source
+                ? [
+                      prosemarkBasicSetup(),
+                      prosemarkBaseThemeSetup(),
+                      htmlBlockExtension,
+                      codeBlockCopyExtension,
+                      clickLinkHandler.of((url: string) => {
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                      }),
+                      baseSyntaxHighlights,
+                  ]
+                : []),
             EditorView.contentAttributes.of({
                 'data-formatting-mode': source ? 'show' : 'auto',
             }),
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
             history(),
+            search({ top: true }),
+            highlightSelectionMatches(),
             drawSelection(),
             rectangularSelection(),
             highlightActiveLine(),
@@ -228,7 +253,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     },
                 ]),
             ),
-            keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap]),
+            keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap, ...searchKeymap]),
             EditorState.readOnly.of(!enableEditing),
             EditorView.editable.of(enableEditing),
             keymap.of([
@@ -375,6 +400,59 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
     }, [markdownContent]);
 
+    // Update search panel labels when it opens
+    useEffect(() => {
+        if (!editorViewRef.current) return;
+
+        const view = editorViewRef.current;
+        const updateLabels = () => {
+            const panel = view.dom.querySelector('.cm-search');
+            if (!panel) return;
+
+            const labels = panel.querySelectorAll('label');
+            labels.forEach((label) => {
+                const textNode = Array.from(label.childNodes).find(
+                    (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+                );
+                if (textNode) {
+                    const text = textNode.textContent?.trim() || '';
+                    if (text === 'match case') {
+                        textNode.textContent = 'Match Case';
+                    } else if (text === 'by word') {
+                        textNode.textContent = 'Match Whole Word';
+                    } else if (text === 'regexp') {
+                        textNode.textContent = 'Use Regular Expression';
+                    }
+                }
+            });
+        };
+
+        // Watch for panel opening via MutationObserver
+        const observer = new MutationObserver(() => {
+            const panel = view.dom.querySelector('.cm-search');
+            if (panel) {
+                // Use requestAnimationFrame to ensure DOM is ready
+                requestAnimationFrame(() => {
+                    updateLabels();
+                });
+            }
+        });
+
+        observer.observe(view.dom, {
+            childList: true,
+            subtree: true,
+        });
+
+        // Initial check
+        requestAnimationFrame(() => {
+            updateLabels();
+        });
+
+        return () => {
+            observer.disconnect();
+        };
+    }, []);
+
     const insertTextToCodeMirror = useCallback((text: string) => {
         if (editorViewRef.current) {
             // CodeMirror 6 way to replace selection
@@ -390,13 +468,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     return (
         <div
-            className={`${!source ? 'rich-editor' : ''} h-full w-full flex flex-col flex-1`}
+            className={`${!source ? 'rich-editor markdown-body' : ''} h-full w-full flex flex-col flex-1`}
         >
             <div className='h-full w-full flex flex-col overflow-auto'>
                 <div className='flex h-full overflow-y-hidden'>
                     <div
                         ref={editorRef}
-                        className='w-full overflow-y-auto rounded-lg rich-editor'
+                        className='w-full overflow-y-auto rounded-lg rich-editor markdown-body'
                         role='textbox'
                         aria-label='Rich text editor'
                         aria-multiline='true'

@@ -10,9 +10,8 @@ import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { BaseDigest } from '@services/cradle/models';
-import { Bin } from 'iconoir-react';
-import React from 'react';
-import ActionsTable from '../activity/ActionsTable';
+import { Bin, Search, Xmark } from 'iconoir-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface DigestListProps {
     digests: BaseDigest[];
@@ -62,6 +61,15 @@ function DigestList({
     const { setModal } = useModal();
     const { intelioApi } = useApi();
     const { executor } = useAPICall();
+    const [isSearchExpanded, setIsSearchExpanded] = useState(!!searchFilters.title);
+    const [searchQuery, setSearchQuery] = useState(searchFilters.title || '');
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (isSearchExpanded && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isSearchExpanded]);
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -241,160 +249,176 @@ function DigestList({
         );
     };
 
-    // Define actions for the ActionBar
-    const actions = [
-        {
-            value: 'delete',
-            label: 'Delete',
-            handler: async (selectedIds: string[]) => {
-                setModal(ConfirmDeletionModal, {
-                    onConfirm: async () => {
-                        try {
-                            // Send all delete requests in parallel
-                            const deletePromises = selectedIds.map((id) =>
-                                intelioApi.intelioDigestDestroy({ id }),
-                            );
-                            const results = await Promise.allSettled(deletePromises);
+    const handleDeleteSelected = async (selectedIds: string[]) => {
+        setModal(ConfirmDeletionModal, {
+            onConfirm: async () => {
+                try {
+                    // Send all delete requests in parallel
+                    const deletePromises = selectedIds.map((id) =>
+                        intelioApi.intelioDigestDestroy({ id }),
+                    );
+                    const results = await Promise.allSettled(deletePromises);
 
-                            // Count successes and failures
-                            const successes = results.filter(
-                                (r) => r.status === 'fulfilled',
-                            ).length;
-                            const failures = results.filter(
-                                (r) => r.status === 'rejected',
-                            ).length;
+                    // Count successes and failures
+                    const successes = results.filter(
+                        (r) => r.status === 'fulfilled',
+                    ).length;
+                    const failures = results.filter(
+                        (r) => r.status === 'rejected',
+                    ).length;
 
-                            if (failures === 0) {
-                                setAlert({
-                                    show: true,
-                                    color: 'green',
-                                    message: `Successfully deleted ${successes} digest${successes > 1 ? 's' : ''}`,
-                                });
-                            } else if (successes === 0) {
-                                setAlert({
-                                    show: true,
-                                    color: 'red',
-                                    message: `Failed to delete ${failures} digest${failures > 1 ? 's' : ''}`,
-                                });
-                            } else {
-                                setAlert({
-                                    show: true,
-                                    color: 'amber',
-                                    message: `Deleted ${successes} digest${successes > 1 ? 's' : ''}, ${failures} failed`,
-                                });
-                            }
+                    if (failures === 0) {
+                        setAlert({
+                            show: true,
+                            color: 'green',
+                            message: `Successfully deleted ${successes} digest${successes > 1 ? 's' : ''}`,
+                        });
+                    } else if (successes === 0) {
+                        setAlert({
+                            show: true,
+                            color: 'red',
+                            message: `Failed to delete ${failures} digest${failures > 1 ? 's' : ''}`,
+                        });
+                    } else {
+                        setAlert({
+                            show: true,
+                            color: 'amber',
+                            message: `Deleted ${successes} digest${successes > 1 ? 's' : ''}, ${failures} failed`,
+                        });
+                    }
 
-                            // Refresh the digests list
-                            setSelectedDigests([]);
-                            if (onDigestDelete) onDigestDelete();
-                        } catch (error) {
-                            setAlert({
-                                show: true,
-                                color: 'red',
-                                message:
-                                    'An unexpected error occurred while deleting digests',
-                            });
-                        }
-                    },
-                    text: `Are you sure you want to delete ${selectedIds.length} digest${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
-                });
+                    // Refresh the digests list
+                    setSelectedDigests([]);
+                    if (onDigestDelete) onDigestDelete();
+                } catch (error) {
+                    setAlert({
+                        show: true,
+                        color: 'red',
+                        message:
+                            'An unexpected error occurred while deleting digests',
+                    });
+                }
             },
-        },
-    ];
+            text: `Are you sure you want to delete ${selectedIds.length} digest${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
+        });
+    };
 
-    // Search component for the actions bar
-    const searchComponent = (
-        <div className='flex items-stretch gap-2 min-w-[280px]'>
-            <div className='relative flex-1'>
-                <input
-                    type='text'
-                    name='title'
-                    placeholder='Search by title'
-                    className='cradle-search text-sm py-2 px-3 w-full pr-8 h-full'
-                    value={searchFilters.title || ''}
-                    onChange={onSearchChange}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && onSearchSubmit) {
-                            onSearchSubmit(e);
-                        }
-                    }}
-                />
-                {searchFilters.title && (
-                    <button
-                        onClick={() => {
-                            const event = {
-                                target: { name: 'title', value: '' },
-                            } as React.ChangeEvent<HTMLInputElement>;
-                            onSearchChange(event);
-                            if (onSearchSubmit) {
-                                onSearchSubmit(event);
-                            }
-                        }}
-                        className='absolute right-2 top-1/2 -translate-y-1/2 p-1 cradle-btn cradle-btn-secondary rounded'
-                        title='Clear search'
-                    >
-                        <svg
-                            className='w-4 h-4 cradle-text-tertiary'
-                            fill='none'
-                            stroke='currentColor'
-                            viewBox='0 0 24 24'
-                        >
-                            <path
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                                strokeWidth='2'
-                                d='M6 18L18 6M6 6l12 12'
-                            ></path>
-                        </svg>
-                    </button>
-                )}
-            </div>
-            <button
-                onClick={onSearchSubmit}
-                className='cradle-btn cradle-btn-secondary px-3 py-2 hover:cradle-bg-secondary rounded flex items-center justify-center'
-                title='Search'
-            >
-                <svg
-                    width='1.5em'
-                    height='1.5em'
-                    viewBox='0 0 24 24'
-                    strokeWidth='1.5'
-                    fill='none'
-                    xmlns='http://www.w3.org/2000/svg'
-                    color='currentColor'
-                    className='w-4 h-4'
-                >
-                    <path
-                        d='M17 17L21 21'
-                        stroke='currentColor'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                    ></path>
-                    <path
-                        d='M3 11C3 15.4183 6.58172 19 11 19C13.213 19 15.2161 18.1015 16.6644 16.6493C18.1077 15.2022 19 13.2053 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11Z'
-                        stroke='currentColor'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                    ></path>
-                </svg>
-            </button>
-        </div>
-    );
+    const handleSearchSubmit = () => {
+        const event = {
+            target: { name: 'title', value: searchQuery },
+        } as React.ChangeEvent<HTMLInputElement>;
+        onSearchChange(event);
+        if (onSearchSubmit) {
+            onSearchSubmit(event);
+        }
+    };
 
     return (
         <>
             {!loading && (
                 <TableCard>
                     <div className='flex flex-wrap items-center justify-between gap-4'>
-                        {/* Left: Actions and Search */}
-                        <div className='flex items-center gap-4 flex-shrink-0'>
-                            <ActionsTable
-                                actions={actions}
-                                selectedItems={selectedDigests}
-                                itemLabel='row'
-                                disabled={digests.length === 0}
-                            />
-                            {searchComponent}
+                        {/* Left: Actions */}
+                        <div className='flex items-center gap-2 flex-shrink-0'>
+                            <button
+                                onClick={() => handleDeleteSelected(selectedDigests)}
+                                disabled={digests.length === 0 || selectedDigests.length === 0}
+                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                            >
+                                <svg
+                                    width='18'
+                                    height='18'
+                                    viewBox='0 0 24 24'
+                                    strokeWidth='1.5'
+                                    fill='none'
+                                    xmlns='http://www.w3.org/2000/svg'
+                                    color='currentColor'
+                                    className='text-cradle-text-secondary'
+                                >
+                                    <path
+                                        d='M20 9L18.005 20.3463C17.8369 21.3026 17.0062 22 16.0353 22H7.96474C6.99379 22 6.1631 21.3026 5.99496 20.3463L4 9'
+                                        stroke='currentColor'
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                    ></path>
+                                    <path
+                                        d='M21 6L15.375 6M3 6L8.625 6M8.625 6V4C8.625 2.89543 9.52043 2 10.625 2H13.375C14.4796 2 15.375 2.89543 15.375 4V6M8.625 6L15.375 6'
+                                        stroke='currentColor'
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
+                                    ></path>
+                                </svg>
+                            </button>
+                            <div className='h-8 w-px bg-cradle-border-accent'></div>
+                            {!isSearchExpanded ? (
+                                <button
+                                    onClick={() => setIsSearchExpanded(true)}
+                                    className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
+                                    title='Search'
+                                >
+                                    <Search className='w-4 h-4' />
+                                </button>
+                            ) : (
+                                <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                                    <button
+                                        onClick={() => {
+                                            handleSearchSubmit();
+                                        }}
+                                        className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                        title='Search'
+                                    >
+                                        <Search className='w-4 h-4' />
+                                    </button>
+                                    <input
+                                        ref={searchInputRef}
+                                        type='text'
+                                        name='title'
+                                        value={searchQuery}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value);
+                                            const event = {
+                                                target: { name: 'title', value: e.target.value },
+                                            } as React.ChangeEvent<HTMLInputElement>;
+                                            onSearchChange(event);
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleSearchSubmit();
+                                            }
+                                            if (e.key === 'Escape') {
+                                                if (!searchQuery) {
+                                                    setIsSearchExpanded(false);
+                                                }
+                                            }
+                                        }}
+                                        onBlur={() => {
+                                            if (!searchQuery) {
+                                                setIsSearchExpanded(false);
+                                            }
+                                        }}
+                                        placeholder='Search by title...'
+                                        className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            onClick={() => {
+                                                setSearchQuery('');
+                                                const event = {
+                                                    target: { name: 'title', value: '' },
+                                                } as React.ChangeEvent<HTMLInputElement>;
+                                                onSearchChange(event);
+                                                if (onSearchSubmit) {
+                                                    onSearchSubmit(event);
+                                                }
+                                            }}
+                                            className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                            title='Clear search'
+                                        >
+                                            <Xmark className='w-4 h-4' />
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {/* Right: Pagination */}

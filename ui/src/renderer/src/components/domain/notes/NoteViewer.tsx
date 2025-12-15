@@ -33,6 +33,7 @@ import ViewsDropdown from './ViewsDropdown';
 import Tooltip from '@/components/base/Tooltip/Tooltip';
 import FileUploadModal from '@/components/modals/notes/FileUploadModal';
 import { EditPencil, Eye } from 'iconoir-react';
+import { openSearchPanel } from '@codemirror/search';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 
@@ -426,6 +427,27 @@ export default function NoteViewer() {
         });
     }, [fileData, setFileData, setModal]);
 
+    const handleFind = useCallback(() => {
+        const view = editorRef.current?.view || editorRef.current;
+        if (!view) return;
+        openSearchPanel(view);
+    }, []);
+
+    const handleReplace = useCallback(() => {
+        const view = editorRef.current?.view || editorRef.current;
+        if (!view) return;
+        openSearchPanel(view);
+        requestAnimationFrame(() => {
+            const replaceInput = view.dom?.querySelector?.('input[name="replace"]') as
+                | HTMLInputElement
+                | null;
+            if (replaceInput) {
+                replaceInput.focus();
+                replaceInput.select();
+            }
+        });
+    }, []);
+
     const debouncedSaveNote = useMemo(
         () => debounce(handleSaveNote, 1500),
         [handleSaveNote],
@@ -564,6 +586,8 @@ export default function NoteViewer() {
                                     handlePublish={handlePublish}
                                     handleDelete={handleDeleteWithConfirmation}
                                     handleUploadFiles={handleUploadFiles}
+                                    handleFind={handleFind}
+                                    handleReplace={handleReplace}
                                 />
                             </>
                         )}

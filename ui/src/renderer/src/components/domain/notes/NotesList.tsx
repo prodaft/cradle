@@ -9,7 +9,6 @@ import {
     DesignNib,
     InfoCircleSolid,
     PlusCircle,
-    Refresh,
     Search,
     Trash,
     WarningCircleSolid,
@@ -300,13 +299,6 @@ export default function NotesList({
                 e.preventDefault();
                 setIsSearchExpanded(true);
             }
-            
-            // R - Refresh
-            if (e.key === 'r' && !e.ctrlKey && !e.metaKey && 
-                document.activeElement?.tagName !== 'INPUT') {
-                e.preventDefault();
-                fetchNotes();
-            }
         };
         
         window.addEventListener('keydown', handleKeyDown);
@@ -546,7 +538,7 @@ export default function NotesList({
                                 {onCreateNote && (
                                     <Tooltip content='Create new note (Ctrl+N)'>
                                         <button
-                                            className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors'
+                                            className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
                                             onClick={onCreateNote}
                                         >
                                             <PlusCircle 
@@ -565,7 +557,7 @@ export default function NotesList({
                                         {/* Delete */}
                                         <Tooltip content={selectedNotes.length > 0 ? `Delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''} (Del)` : 'Select notes to delete'}>
                                             <button
-                                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                                 onClick={() => {
                                                     if (selectedNotes.length > 0) {
                                                         actions[0].handler(selectedNotes);
@@ -574,7 +566,7 @@ export default function NotesList({
                                                 disabled={selectedNotes.length === 0 || notes.length === 0}
                                             >
                                                 <Trash 
-                                                    className='text-cradle-text-secondary'
+                                                    className={selectedNotes.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
                                                     width={18} 
                                                     height={18} 
                                                 />
@@ -595,13 +587,13 @@ export default function NotesList({
                                         {!isSearchExpanded ? (
                                             <button
                                                 onClick={() => setIsSearchExpanded(true)}
-                                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary'
+                                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
                                                 title='Search'
                                             >
                                                 <Search className='w-4 h-4' />
                                             </button>
                                         ) : (
-                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-md'>
+                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
                                         <button
                                             onClick={() => {
                                                 if (contentSearch?.onSubmit) {
@@ -669,18 +661,6 @@ export default function NotesList({
 
                             {/* Right side controls */}
                             <div className='flex items-center gap-2'>
-
-                                {/* Refresh */}
-                                <Tooltip content='Refresh (R)'>
-                                    <button
-                                        className='flex items-center justify-center w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary'
-                                        onClick={() => fetchNotes()}
-                                    >
-                                        <Refresh width={16} height={16} />
-                                    </button>
-                                </Tooltip>
-
-                                <div className='h-8 w-px bg-cradle-border-accent' />
 
                             <PaginationWrapper
                                 currentPage={page}

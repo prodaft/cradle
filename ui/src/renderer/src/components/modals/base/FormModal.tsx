@@ -85,7 +85,7 @@ export default function FormModal({
                 </h2>
                 <button
                     type='button'
-                    className='cradle-btn p-2'
+                    className='cradle-btn p-2 rounded-full'
                     onClick={closeModal}
                     title='Close'
                 >

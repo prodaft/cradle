@@ -69,11 +69,21 @@ export default function Login() {
         );
 
         if (result.result === 'success') {
+            setRequiresTwoFactor(false);
+            setAlert({ show: false, message: '', color: 'red' });
             console.log('Login successful');
-            navigate(from, { replace: true });
+
+            const redirectPath =
+                typeof from === 'string'
+                    ? from.includes('#')
+                        ? from.slice(from.indexOf('#') + 1) || '/'
+                        : from
+                    : from?.pathname || '/';
+
+            navigate(redirectPath, { replace: true });
         } else if (result.result === 'requires_2fa') {
             setRequiresTwoFactor(true);
-            setAlert({ show: true, message: result.message || '', color: 'yellow' });
+            setAlert({ show: false, message: '', color: 'yellow' });
         } else if (result.result === 'unconfirmed_email') {
             setAlert({ show: true, message: result.message || '', color: 'red' });
         } else if (result.result === 'inactive_account') {
@@ -135,7 +145,7 @@ export default function Login() {
                                     {showSettings
                                         ? 'CONFIGURATION'
                                         : requiresTwoFactor
-                                          ? 'AUTHENTICATION'
+                                          ? '2FA AUTHENTICATION'
                                           : 'SYSTEM ACCESS'}
                                 </span>
                                 <div className='flex items-center gap-2 -mr-1.5'>
@@ -147,7 +157,7 @@ export default function Login() {
                                                         setBackendUrl(auth.basePath);
                                                         setShowSettings(false);
                                                     }}
-                                                    className='cradle-btn p-2'
+                                                    className='cradle-btn p-2 rounded-full'
                                                     data-testid='back-button'
                                                     title='Back'
                                                 >
@@ -156,7 +166,7 @@ export default function Login() {
                                             )}
                                             <button
                                                 onClick={toggleTheme}
-                                                className='cradle-btn p-2'
+                                                className='cradle-btn p-2 rounded-full'
                                                 data-testid='theme-button'
                                                 title='Toggle Theme'
                                             >
@@ -167,19 +177,32 @@ export default function Login() {
                                                 )}
                                             </button>
                                         </>
+                                    ) : requiresTwoFactor ? (
+                                        <button
+                                            onClick={() => {
+                                                setRequiresTwoFactor(false);
+                                                setTwoFactorToken('');
+                                                setAlert({
+                                                    show: false,
+                                                    message: '',
+                                                    color: 'red',
+                                                });
+                                            }}
+                                            className='cradle-btn p-2 rounded-full'
+                                            data-testid='back-button'
+                                            title='Back to Login'
+                                        >
+                                            <Undo width={18} height={18} />
+                                        </button>
                                     ) : (
-                                        !requiresTwoFactor && (
-                                            <button
-                                                onClick={() =>
-                                                    setShowSettings(!showSettings)
-                                                }
-                                                className='cradle-btn p-2'
-                                                data-testid='settings-button'
-                                                title='Settings'
-                                            >
-                                                <Settings width={18} height={18} />
-                                            </button>
-                                        )
+                                        <button
+                                            onClick={() => setShowSettings(!showSettings)}
+                                            className='cradle-btn p-2 rounded-full'
+                                            data-testid='settings-button'
+                                            title='Settings'
+                                        >
+                                            <Settings width={18} height={18} />
+                                        </button>
                                     )}
                                 </div>
                             </div>
@@ -219,16 +242,8 @@ export default function Login() {
                                         <>
                                             {requiresTwoFactor ? (
                                                 <div className='space-y-5'>
-                                                    <div className='cradle-separator-labeled my-6'>
-                                                        <span>
-                                                            Two-Factor Authentication
-                                                        </span>
-                                                    </div>
                                                     <div>
-                                                        <label className='cradle-label cradle-text-tertiary block mb-2'>
-                                                            Authentication Code
-                                                        </label>
-                                                        <div className='flex gap-2 justify-center'>
+                                                        <div className='flex gap-2 justify-between w-full'>
                                                             {[0, 1, 2, 3, 4, 5].map(
                                                                 (index) => (
                                                                     <input
@@ -238,7 +253,7 @@ export default function Login() {
                                                                         type='text'
                                                                         autoComplete='twoFactorToken'
                                                                         className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
-                                                                        placeholder=''
+                                                                        placeholder='0'
                                                                         pattern='[0-9]*'
                                                                         maxLength={1}
                                                                         value={
@@ -357,22 +372,7 @@ export default function Login() {
                                                         data-testid='login-register-button'
                                                         className='cradle-btn cradle-btn-primary w-full'
                                                     >
-                                                        Verify Code
-                                                    </button>
-                                                    <button
-                                                        type='button'
-                                                        className='cradle-btn cradle-btn-ghost w-full'
-                                                        onClick={() => {
-                                                            setRequiresTwoFactor(false);
-                                                            setTwoFactorToken('');
-                                                            setAlert({
-                                                                show: false,
-                                                                message: '',
-                                                                color: 'red',
-                                                            });
-                                                        }}
-                                                    >
-                                                        Back to Login
+                                                        Verify
                                                     </button>
                                                 </div>
                                             ) : (

@@ -1,5 +1,6 @@
 import type { GraphEdge } from '@/types/index';
-import { ChangeEvent } from 'react';
+import { NavArrowDown, NavArrowRight } from 'iconoir-react';
+import { ChangeEvent, useState } from 'react';
 
 interface Node {
     [key: string]: any;
@@ -27,18 +28,33 @@ export default function GraphSettings({
     nodes,
     edges,
 }: GraphSettingsProps) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
     return (
         <div className='px-8 pt-3'>
-            <div className='flex flex-wrap gap-2 mt-2'>
-                <span className='badge badge-outline-primary'>
-                    Total Nodes: {nodes.length}
-                </span>
-                <span className='badge badge-outline-primary'>
-                    Total Edges: {edges.length}
-                </span>
-            </div>
-            {/* Search, clear, and reset layout controls removed */}
-            <div className='mt-4 space-y-3 px-4'>
+            <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className='flex items-center gap-2 text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity'
+            >
+                {isExpanded ? (
+                    <NavArrowDown width='16' height='16' />
+                ) : (
+                    <NavArrowRight width='16' height='16' />
+                )}
+                <span>Display</span>
+            </button>
+            {isExpanded && (
+                <>
+                    <div className='flex flex-wrap gap-2 mt-2'>
+                        <span className='badge badge-outline-primary'>
+                            Total Nodes: {nodes.length}
+                        </span>
+                        <span className='badge badge-outline-primary'>
+                            Total Edges: {edges.length}
+                        </span>
+                    </div>
+                    {/* Search, clear, and reset layout controls removed */}
+                    <div className='mt-4 space-y-3 px-4'>
                 {[
                     {
                         label: 'Node Size',
@@ -122,8 +138,10 @@ export default function GraphSettings({
                             className='input input-block input-sm w-16 ml-2'
                         />
                     </div>
-                ))}
-            </div>
+                    ))}
+                    </div>
+                </>
+            )}
         </div>
     );
 }

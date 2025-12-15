@@ -50,42 +50,53 @@ export default function GraphViewer({
     const [disableSimulation, setDisableSimulation] = useState(false);
     const [graphInstanceKey, setGraphInstanceKey] = useState(0);
 
+    // Filter out invalid nodes first
+    const validNodes = useMemo(() => {
+        return nodes.filter((node) => node.id != null && node.id !== '');
+    }, [nodes]);
+
     // Create a map from node id to index for efficient lookups
     const nodeIdToIndex = useMemo(() => {
         const map = new Map<string, number>();
-        nodes.forEach((node, index) => {
+        validNodes.forEach((node, index) => {
             map.set(node.id, index);
         });
         return map;
-    }, [nodes]);
+    }, [validNodes]);
 
     // Create a map from index to node for reverse lookups
     const indexToNode = useMemo(() => {
         const map = new Map<number, Node>();
-        nodes.forEach((node, index) => {
+        validNodes.forEach((node, index) => {
             map.set(index, node);
         });
         return map;
-    }, [nodes]);
+    }, [validNodes]);
 
     // Prepare points data with index column for Cosmograph v2
     const pointsData = useMemo(() => {
-        return nodes.map((node, index) => ({
+        return validNodes.map((node, index) => ({
             ...node,
             _index: index,
             _color: node.color || '#4A90E2',
             _size: normalize(node.degree || 1, 1, 60),
             _label: node.label || node.id,
         }));
-    }, [nodes]);
+    }, [validNodes]);
 
     // Prepare links data for Cosmograph v2
     const linksData = useMemo(() => {
-        return edges.map((edge) => ({
-            ...edge,
-            _sourceIndex: nodeIdToIndex.get(edge.source) ?? 0,
-            _targetIndex: nodeIdToIndex.get(edge.target) ?? 0,
-        }));
+        return edges
+            .filter((edge) => {
+                const sourceIndex = nodeIdToIndex.get(edge.source);
+                const targetIndex = nodeIdToIndex.get(edge.target);
+                return sourceIndex !== undefined && targetIndex !== undefined;
+            })
+            .map((edge) => ({
+                ...edge,
+                _sourceIndex: nodeIdToIndex.get(edge.source)!,
+                _targetIndex: nodeIdToIndex.get(edge.target)!,
+            }));
     }, [edges, nodeIdToIndex]);
 
     // onClick handles both point clicks and background clicks
@@ -154,6 +165,9 @@ export default function GraphViewer({
         }
     }, [selectedNodes, nodeIdToIndex]);
 
+    // Only render Cosmograph when we have valid data
+    const hasValidData = pointsData.length > 0;
+
     return (
         <div
             style={{
@@ -164,86 +178,95 @@ export default function GraphViewer({
                 overflow: 'hidden',
             }}
         >
-            <CosmographProvider>
-                <div className='absolute top-2 right-2 z-10 flex items-center gap-2 cradle-bg-elevated cradle-border px-3 py-2'>
-                    <CosmographSearch
-                        accessor='_label'
-                        onSelect={(suggestion: any) => {
-                            if (suggestion == null || cosmographRef.current == null) return;
-                            const index = suggestion._index;
-                            if (index !== undefined) {
-                                cosmographRef.current.setFocusedPoint(index);
-                                cosmographRef.current.zoomToPoint(index);
-                                const node = indexToNode.get(index);
-                                if (node) {
-                                    setSelectedNodes(new Set([node]));
+            {hasValidData ? (
+                <CosmographProvider>
+                    <div className='absolute top-2 right-2 z-10 flex items-center gap-2 cradle-bg-elevated cradle-border px-3 py-2'>
+                        <CosmographSearch
+                            accessor='_label'
+                            onSelect={(suggestion: any) => {
+                                if (suggestion == null || cosmographRef.current == null) return;
+                                const index = suggestion._index;
+                                if (index !== undefined) {
+                                    cosmographRef.current.setFocusedPoint(index);
+                                    cosmographRef.current.zoomToPoint(index);
+                                    const node = indexToNode.get(index);
+                                    if (node) {
+                                        setSelectedNodes(new Set([node]));
+                                    }
                                 }
-                            }
-                        }}
+                            }}
+                        />
+                        <button
+                            type='button'
+                            className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
+                            title='Clear graph elements'
+                            onClick={() => onClearGraph && onClearGraph()}
+                        >
+                            <Erase />
+                        </button>
+                        <button
+                            type='button'
+                            className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
+                            title='Toggle simulation'
+                            onClick={() => setDisableSimulation(!disableSimulation)}
+                        >
+                            {disableSimulation ? <PlaySolid /> : <PauseSolid />}
+                        </button>
+                        <button
+                            type='button'
+                            className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
+                            title='Refresh graph'
+                            onClick={() => setGraphInstanceKey((k) => k + 1)}
+                        >
+                            <RefreshDouble />
+                        </button>
+                    </div>
+                    <Cosmograph
+                        key={graphInstanceKey}
+                        ref={cosmographRef}
+                        points={pointsData}
+                        links={linksData}
+                        pointIdBy='id'
+                        pointIndexBy='_index'
+                        pointColorBy='_color'
+                        pointLabelBy='_label'
+                        pointSizeBy='_size'
+                        linkSourceBy='source'
+                        linkTargetBy='target'
+                        linkSourceIndexBy='_sourceIndex'
+                        linkTargetIndexBy='_targetIndex'
+                        backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}
+                        pointGreyoutOpacity={0.1}
+                        pointSizeRange={[
+                            2 * (config.nodeRadiusCoefficient ?? 1),
+                            10 * (config.nodeRadiusCoefficient ?? 1),
+                        ]}
+                        showDynamicLabels={true}
+                        enableSimulation={true}
+                        linkColor='#999999'
+                        focusedPointRingColor='#f68d2e'
+                        linkWidthRange={[
+                            2 * (config.linkWidthCoefficient ?? 1),
+                            2 * (config.linkWidthCoefficient ?? 1),
+                        ]}
+                        simulationGravity={config.simulationGravity ?? 0.2}
+                        simulationRepulsion={config.simulationRepulsion ?? 1.5}
+                        simulationLinkSpring={config.simulationLinkSpring ?? 0.5}
+                        simulationLinkDistance={config.simulationLinkDistance ?? 10}
+                        curvedLinks={false}
+                        onClick={onClick}
+                        selectPointOnClick='single'
+                        focusPointOnClick={true}
                     />
-                    <button
-                        type='button'
-                        className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
-                        title='Clear graph elements'
-                        onClick={() => onClearGraph && onClearGraph()}
-                    >
-                        <Erase />
-                    </button>
-                    <button
-                        type='button'
-                        className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
-                        title='Toggle simulation'
-                        onClick={() => setDisableSimulation(!disableSimulation)}
-                    >
-                        {disableSimulation ? <PlaySolid /> : <PauseSolid />}
-                    </button>
-                    <button
-                        type='button'
-                        className='cradle-btn cradle-btn-secondary p-2 hover:border-[#FF8C00] border border-transparent'
-                        title='Refresh graph'
-                        onClick={() => setGraphInstanceKey((k) => k + 1)}
-                    >
-                        <RefreshDouble />
-                    </button>
+                </CosmographProvider>
+            ) : (
+                <div className='flex items-center justify-center h-full text-gray-500'>
+                    <div className='text-center'>
+                        <p className='text-lg mb-2'>No graph data available</p>
+                        <p className='text-sm'>Add nodes to visualize the graph</p>
+                    </div>
                 </div>
-                <Cosmograph
-                    key={graphInstanceKey}
-                    ref={cosmographRef}
-                    points={pointsData}
-                    links={linksData}
-                    pointIdBy='id'
-                    pointIndexBy='_index'
-                    pointColorBy='_color'
-                    pointLabelBy='_label'
-                    pointSizeBy='_size'
-                    linkSourceBy='source'
-                    linkTargetBy='target'
-                    linkSourceIndexBy='_sourceIndex'
-                    linkTargetIndexBy='_targetIndex'
-                    backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}
-                    pointGreyoutOpacity={0.1}
-                    pointSizeRange={[
-                        2 * (config.nodeRadiusCoefficient ?? 1),
-                        10 * (config.nodeRadiusCoefficient ?? 1),
-                    ]}
-                    showDynamicLabels={true}
-                    enableSimulation={true}
-                    linkColor='#999999'
-                    focusedPointRingColor='#f68d2e'
-                    linkWidthRange={[
-                        2 * (config.linkWidthCoefficient ?? 1),
-                        2 * (config.linkWidthCoefficient ?? 1),
-                    ]}
-                    simulationGravity={config.simulationGravity ?? 0.2}
-                    simulationRepulsion={config.simulationRepulsion ?? 1.5}
-                    simulationLinkSpring={config.simulationLinkSpring ?? 0.5}
-                    simulationLinkDistance={config.simulationLinkDistance ?? 10}
-                    curvedLinks={false}
-                    onClick={onClick}
-                    selectPointOnClick='single'
-                    focusPointOnClick={true}
-                />
-            </CosmographProvider>
+            )}
         </div>
     );
 }

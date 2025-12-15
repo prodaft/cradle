@@ -8,7 +8,7 @@ import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileReferenceWithNote } from '@services/cradle/models';
-import { Download } from 'iconoir-react';
+import { Download, Search, Xmark } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -74,8 +74,9 @@ export default function FilesList({
         Number(searchParams.get('files_pagesize')) || 10,
     );
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const { notesApi, fileTransferApi } = useApi();
 
     // Mapping of table columns to API field names
@@ -114,7 +115,7 @@ export default function FilesList({
                 pageSize: pageSize,
                 orderBy: orderBy,
                 date: query.date,
-                keyword: query.keyword,
+                keyword: searchQuery || query.keyword,
                 linkedTo: query.linked_to,
                 linkedToExactMatch: query.linked_to_exact_match,
                 mimetype: query.mimetype,
@@ -150,7 +151,7 @@ export default function FilesList({
             }
             setLoading(false);
         }
-    }, [page, pageSize, sortField, sortDirection, query, notesApi]);
+    }, [page, pageSize, sortField, sortDirection, query, searchQuery, notesApi]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard
@@ -229,25 +230,20 @@ export default function FilesList({
                 color: 'red',
             });
         }
-        setIsDropdownOpen(false);
     };
 
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node)
-            ) {
-                setIsDropdownOpen(false);
-            }
-        };
+    const handleSearchSubmit = () => {
+        setPage(1);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('files_page', '1');
+        setSearchParams(newParams, { replace: true });
+    };
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
+    useEffect(() => {
+        if (isSearchExpanded && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isSearchExpanded]);
 
     useEffect(() => {
         setPage(Number(searchParams.get('files_page')) || 1);
@@ -361,59 +357,122 @@ export default function FilesList({
                 {!loading && (
                     <TableCard>
                         <div className='flex flex-wrap items-center justify-between gap-4'>
-                            {/* Left: Actions Dropdown */}
-                            <div className='flex items-center gap-4 flex-shrink-0'>
-                                <div
-                                    className={`${files.length === 0 ? 'opacity-50 pointer-events-none' : ''}`}
+                            {/* Left: Actions */}
+                            <div className='flex items-center gap-2 flex-shrink-0'>
+                                <button
+                                    onClick={handleDownloadSelected}
+                                    disabled={files.length === 0 || selectedFiles.length === 0}
+                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                 >
-                                    <div className='cradle-dropdown' ref={dropdownRef}>
+                                    <svg
+                                        width='18'
+                                        height='18'
+                                        viewBox='0 0 24 24'
+                                        strokeWidth='1.5'
+                                        fill='none'
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        color='currentColor'
+                                        className='text-cradle-text-secondary'
+                                    >
+                                        <path
+                                            d='M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                        <path
+                                            d='M12 3V16M12 16L16 11.625M12 16L8 11.625'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    disabled={true}
+                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                >
+                                    <svg
+                                        width='18'
+                                        height='18'
+                                        viewBox='0 0 24 24'
+                                        strokeWidth='1.5'
+                                        fill='none'
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        color='currentColor'
+                                        className='text-cradle-text-secondary'
+                                    >
+                                        <path
+                                            d='M20 9L18.005 20.3463C17.8369 21.3026 17.0062 22 16.0353 22H7.96474C6.99379 22 6.1631 21.3026 5.99496 20.3463L4 9'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                        <path
+                                            d='M21 6L15.375 6M3 6L8.625 6M8.625 6V4C8.625 2.89543 9.52043 2 10.625 2H13.375C14.4796 2 15.375 2.89543 15.375 4V6M8.625 6L15.375 6'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                    </svg>
+                                </button>
+                                <div className='h-8 w-px bg-cradle-border-accent'></div>
+                                {!isSearchExpanded ? (
+                                    <button
+                                        onClick={() => setIsSearchExpanded(true)}
+                                        className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
+                                        title='Search'
+                                    >
+                                        <Search className='w-4 h-4' />
+                                    </button>
+                                ) : (
+                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
                                         <button
-                                            type='button'
-                                            className={`cradle-select text-sm flex items-center justify-between gap-2 min-w-[120px] ${selectedFiles.length > 0 ? 'opacity-100 cursor-pointer' : 'opacity-50 cursor-not-allowed'}`}
-                                            disabled={selectedFiles.length === 0}
-                                            title={
-                                                selectedFiles.length > 0
-                                                    ? `${selectedFiles.length} file(s) selected`
-                                                    : 'Select files to perform actions'
-                                            }
-                                            onClick={() =>
-                                                setIsDropdownOpen(!isDropdownOpen)
-                                            }
+                                            onClick={() => {
+                                                handleSearchSubmit();
+                                            }}
+                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                            title='Search'
                                         >
-                                            <span className='truncate'>
-                                                {selectedFiles.length > 0
-                                                    ? `${selectedFiles.length} selected`
-                                                    : 'Actions'}
-                                            </span>
-                                            <svg
-                                                className={`w-4 h-4 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                                                fill='none'
-                                                stroke='currentColor'
-                                                viewBox='0 0 24 24'
-                                            >
-                                                <path
-                                                    strokeLinecap='round'
-                                                    strokeLinejoin='round'
-                                                    strokeWidth='2'
-                                                    d='M19 9l-7 7-7-7'
-                                                ></path>
-                                            </svg>
+                                            <Search className='w-4 h-4' />
                                         </button>
-
-                                        {isDropdownOpen && selectedFiles.length > 0 && (
-                                            <div className='cradle-dropdown-menu'>
-                                                <button
-                                                    type='button'
-                                                    className='cradle-dropdown-option flex items-center gap-2'
-                                                    onClick={handleDownloadSelected}
-                                                >
-                                                    <Download className='w-4 h-4' />
-                                                    Download
-                                                </button>
-                                            </div>
+                                        <input
+                                            ref={searchInputRef}
+                                            type='text'
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleSearchSubmit();
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    if (!searchQuery) {
+                                                        setIsSearchExpanded(false);
+                                                    }
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                if (!searchQuery) {
+                                                    setIsSearchExpanded(false);
+                                                }
+                                            }}
+                                            placeholder='Search files...'
+                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                        />
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => {
+                                                    setSearchQuery('');
+                                                    handleSearchSubmit();
+                                                }}
+                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                                title='Clear search'
+                                            >
+                                                <Xmark className='w-4 h-4' />
+                                            </button>
                                         )}
                                     </div>
-                                </div>
+                                )}
                             </div>
 
                             {/* Right: Pagination */}

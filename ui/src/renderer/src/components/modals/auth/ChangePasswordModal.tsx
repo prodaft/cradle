@@ -1,5 +1,6 @@
 import { Form, FormInput } from '@/components/forms';
 import useApi from '@/hooks/api/useApi';
+import { Xmark } from 'iconoir-react';
 import * as Yup from 'yup';
 
 interface FormData {
@@ -50,10 +51,18 @@ export default function ChangePasswordModal({
     return (
         <div className='w-full min-w-[28rem]'>
             {/* Header */}
-            <div className='mb-6'>
-                <h2 className='text-xl font-semibold cradle-text-primary cradle-mono mb-2'>
+            <div className='flex items-center justify-between mb-6'>
+                <h2 className='text-xl font-semibold cradle-text-primary cradle-mono'>
                     Change Password
                 </h2>
+                <button
+                    type='button'
+                    className='cradle-btn p-2 rounded-full'
+                    onClick={closeModal}
+                    title='Close'
+                >
+                    <Xmark width={16} height={16} />
+                </button>
             </div>
 
             {/* Info Section */}
@@ -116,23 +125,13 @@ export default function ChangePasswordModal({
                         </div>
 
                         <div className='cradle-border-t pt-5 mt-5'>
-                            <div className='flex gap-3'>
-                                <button
-                                    type='button'
-                                    className='cradle-btn cradle-btn-ghost flex-1'
-                                    onClick={closeModal}
-                                    disabled={isSubmitting}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type='submit'
-                                    className='cradle-btn cradle-btn-primary flex-1'
-                                    disabled={isSubmitting}
-                                >
-                                    {isSubmitting ? 'Updating...' : 'Update Password'}
-                                </button>
-                            </div>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary w-full'
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Updating...' : 'Update Password'}
+                            </button>
                         </div>
                     </>
                 )}

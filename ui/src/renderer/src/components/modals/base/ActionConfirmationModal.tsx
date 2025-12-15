@@ -61,7 +61,7 @@ export default function ActionConfirmationModal({
                     </h2>
                 </div>
                 <button
-                    className='cradle-btn p-2'
+                    className='cradle-btn p-2 rounded-full'
                     onClick={closeModal}
                     title='Close'
                 >

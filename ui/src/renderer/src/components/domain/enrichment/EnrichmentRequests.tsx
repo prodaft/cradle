@@ -289,21 +289,13 @@ export default function EnrichmentRequests() {
                         Browse & Manage Enrichment Requests
                     </p>
                 </div>
-                <div className='flex items-center gap-4'>
-                    <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
-                        <span className="font-semibold">
-                            {enrichmentRequests.length === totalCount || (enrichmentRequests.length === 0 && totalCount === 0)
-                                ? totalCount
-                                : `${enrichmentRequests.length}/${totalCount}`}
-                        </span>
-                        <span className="opacity-70">requests</span>
-                    </div>
-                    <button
-                        className='cradle-btn cradle-btn-primary flex items-center justify-center w-10 h-10 text-white text-xl font-bold'
-                        onClick={handleCreateRequest}
-                    >
-                        +
-                    </button>
+                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
+                    <span className="font-semibold">
+                        {enrichmentRequests.length === totalCount || (enrichmentRequests.length === 0 && totalCount === 0)
+                            ? totalCount
+                            : `${enrichmentRequests.length}/${totalCount}`}
+                    </span>
+                    <span className="opacity-70">requests</span>
                 </div>
             </div>
 
@@ -331,6 +323,7 @@ export default function EnrichmentRequests() {
                     setSelectedRequests={setSelectedRequests}
                     onDeleteSelected={handleDeleteSelected}
                     onRetrySelected={handleRetrySelected}
+                    onCreateRequest={handleCreateRequest}
                 />
             </div>
         </div>

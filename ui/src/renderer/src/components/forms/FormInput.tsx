@@ -64,7 +64,7 @@ export default function FormInput<TFieldValues extends FieldValues = FieldValues
                 step={step}
                 className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${
                     errorMessage ? 'border-red-500 focus:ring-red-500' : ''
-                }`}
+                } ${className}`}
                 aria-invalid={Boolean(errorMessage)}
                 aria-describedby={errorMessage ? `${name}-error` : undefined}
                 {...register(name as Path<TFieldValues>, {

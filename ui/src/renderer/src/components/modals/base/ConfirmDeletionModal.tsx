@@ -1,4 +1,4 @@
-import { Trash } from 'iconoir-react';
+import { Trash, Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**
@@ -51,14 +51,24 @@ export default function ConfirmDeletionModal({
 
     return (
         <div className='min-w-[320px] max-w-md'>
-            {/* Header with icon */}
-            <div className='flex items-center gap-3 mb-4'>
-                <div className='p-2 bg-cradle-accent-error/10 text-cradle-accent-error'>
-                    <Trash className='w-5 h-5' />
+            {/* Header with icon and close button */}
+            <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <div className='p-2 bg-cradle-accent-error/10 text-cradle-accent-error'>
+                        <Trash className='w-5 h-5' />
+                    </div>
+                    <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
+                        Confirm Deletion
+                    </h2>
                 </div>
-                <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
-                    Confirm Deletion
-                </h2>
+                <button
+                    type='button'
+                    className='cradle-btn p-2 rounded-full'
+                    onClick={closeModal}
+                    title='Close'
+                >
+                    <Xmark width={16} height={16} />
+                </button>
             </div>
 
             {/* Body text */}
@@ -82,16 +92,10 @@ export default function ConfirmDeletionModal({
                 </div>
             )}
 
-            {/* Action buttons */}
-            <div className='flex gap-3 pt-2'>
+            {/* Action button */}
+            <div className='pt-2'>
                 <button
-                    className='cradle-btn flex-1'
-                    onClick={closeModal}
-                >
-                    Cancel
-                </button>
-                <button
-                    className='cradle-btn cradle-btn-danger flex-1'
+                    className='cradle-btn cradle-btn-danger w-full'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >

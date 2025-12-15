@@ -12,9 +12,9 @@ import ListView, {
     SortDirection,
 } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
-import ActionsTable, { Action } from '@components/domain/activity/ActionsTable';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { useEffect, useState } from 'react';
+import { Search, Xmark } from 'iconoir-react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface ColumnFilters {
@@ -57,6 +57,9 @@ export default function Reports() {
         Number(searchParams.get('reports_pagesize')) || 10,
     );
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         user: '',
         createdAt: { from: '', to: '' },
@@ -73,7 +76,13 @@ export default function Reports() {
 
     useEffect(() => {
         fetchReports();
-    }, [page, sortField, sortDirection, pageSize, columnFilters]);
+    }, [page, sortField, sortDirection, pageSize, columnFilters, searchQuery]);
+
+    useEffect(() => {
+        if (isSearchExpanded && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isSearchExpanded]);
 
     const fetchReports = async () => {
         setLoading(true);
@@ -100,7 +109,7 @@ export default function Reports() {
                 page: queryParams.page,
                 pageSize: queryParams.page_size,
                 orderBy: queryParams.order_by,
-                search: queryParams.search,
+                search: searchQuery || undefined,
             });
             setReports(response.results);
             setTotalPages(response.totalPages);
@@ -272,18 +281,12 @@ export default function Reports() {
         }
     };
 
-    const actions: Action[] = [
-        {
-            value: 'download',
-            label: 'Download',
-            handler: (items) => handleDownload(items),
-        },
-        {
-            value: 'delete',
-            label: 'Delete',
-            handler: (items) => handleDelete(items),
-        },
-    ];
+    const handleSearchSubmit = () => {
+        setPage(1);
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('reports_page', '1');
+        setSearchParams(newParams, { replace: true });
+    };
 
     const renderRow = (
         report: Report,
@@ -374,13 +377,122 @@ export default function Reports() {
                     <TableCard>
                         <div className='flex flex-wrap items-center justify-between gap-4'>
                             {/* Left: Actions */}
-                            <div className='flex items-center gap-4 flex-shrink-0'>
-                                <ActionsTable
-                                    actions={actions}
-                                    selectedItems={selectedReports}
-                                    itemLabel='report'
-                                    disabled={reports.length === 0}
-                                />
+                            <div className='flex items-center gap-2 flex-shrink-0'>
+                                <button
+                                    onClick={() => handleDownload(selectedReports)}
+                                    disabled={reports.length === 0 || selectedReports.length === 0}
+                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                >
+                                    <svg
+                                        width='18'
+                                        height='18'
+                                        viewBox='0 0 24 24'
+                                        strokeWidth='1.5'
+                                        fill='none'
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        color='currentColor'
+                                        className='text-cradle-text-secondary'
+                                    >
+                                        <path
+                                            d='M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                        <path
+                                            d='M12 3V16M12 16L16 11.625M12 16L8 11.625'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(selectedReports)}
+                                    disabled={reports.length === 0 || selectedReports.length === 0}
+                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                >
+                                    <svg
+                                        width='18'
+                                        height='18'
+                                        viewBox='0 0 24 24'
+                                        strokeWidth='1.5'
+                                        fill='none'
+                                        xmlns='http://www.w3.org/2000/svg'
+                                        color='currentColor'
+                                        className='text-cradle-text-secondary'
+                                    >
+                                        <path
+                                            d='M20 9L18.005 20.3463C17.8369 21.3026 17.0062 22 16.0353 22H7.96474C6.99379 22 6.1631 21.3026 5.99496 20.3463L4 9'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                        <path
+                                            d='M21 6L15.375 6M3 6L8.625 6M8.625 6V4C8.625 2.89543 9.52043 2 10.625 2H13.375C14.4796 2 15.375 2.89543 15.375 4V6M8.625 6L15.375 6'
+                                            stroke='currentColor'
+                                            strokeLinecap='round'
+                                            strokeLinejoin='round'
+                                        ></path>
+                                    </svg>
+                                </button>
+                                <div className='h-8 w-px bg-cradle-border-accent'></div>
+                                {!isSearchExpanded ? (
+                                    <button
+                                        onClick={() => setIsSearchExpanded(true)}
+                                        className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
+                                        title='Search'
+                                    >
+                                        <Search className='w-4 h-4' />
+                                    </button>
+                                ) : (
+                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                                        <button
+                                            onClick={() => {
+                                                handleSearchSubmit();
+                                            }}
+                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                            title='Search'
+                                        >
+                                            <Search className='w-4 h-4' />
+                                        </button>
+                                        <input
+                                            ref={searchInputRef}
+                                            type='text'
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    handleSearchSubmit();
+                                                }
+                                                if (e.key === 'Escape') {
+                                                    if (!searchQuery) {
+                                                        setIsSearchExpanded(false);
+                                                    }
+                                                }
+                                            }}
+                                            onBlur={() => {
+                                                if (!searchQuery) {
+                                                    setIsSearchExpanded(false);
+                                                }
+                                            }}
+                                            placeholder='Search reports...'
+                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                        />
+                                        {searchQuery && (
+                                            <button
+                                                onClick={() => {
+                                                    setSearchQuery('');
+                                                    handleSearchSubmit();
+                                                }}
+                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                                title='Clear search'
+                                            >
+                                                <Xmark className='w-4 h-4' />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Right: Pagination */}
