@@ -6,7 +6,7 @@ import Selector from '@components/forms/Selector';
 import { Search } from 'iconoir-react';
 import { FormEvent, useEffect, useState } from 'react';
 import { MultiValue } from 'react-select';
-import Datepicker from 'react-tailwindcss-datepicker';
+import Datepicker from '@components/base/Datepicker/Datepicker';
 import * as Yup from 'yup';
 
 interface Node {
@@ -266,18 +266,15 @@ export default function PathFindSearch({
                     <div className='flex flex-col !max-w-full w-full'>
                         <label className='text-xs text-gray-400 mb-1'>Date Range</label>
                         <Datepicker
-                            value={{
-                                startDate: formValues.startDate,
-                                endDate: formValues.endDate,
-                            }}
-                            onChange={(value: any) => {
-                                if (value.startDate && value.endDate) {
-                                    setFieldValue('startDate', value.startDate);
-                                    setFieldValue('endDate', value.endDate);
+                            startDate={formValues.startDate}
+                            endDate={formValues.endDate}
+                            onChange={([start, end]) => {
+                                if (start && end) {
+                                    setFieldValue('startDate', start);
+                                    setFieldValue('endDate', end);
                                 }
                             }}
-                            inputClassName='input py-1 px-2 text-sm flex-grow !max-w-full w-full'
-                            toggleClassName='hidden'
+                            className='input py-1 px-2 text-sm flex-grow !max-w-full w-full'
                         />
                         {(errors.startDate || errors.endDate) &&
                             (touched.startDate || touched.endDate) && (

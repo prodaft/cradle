@@ -159,9 +159,9 @@ export default function Activity({ log }: ActivityProps) {
 
     return (
         <Card
-            className='dark:bg-opacity-70 mt-3'
+            className='mt-3 dark:!bg-cradle-bg-elevated/70'
             badge={log.type}
-            badgeClass='badge-outline-primary'
+            badgeClass='border border-cradle-accent-primary text-cradle-accent-primary'
             details={{
                 User: log.user.username,
                 Timestamp: formattedTimestamp,
@@ -170,7 +170,7 @@ export default function Activity({ log }: ActivityProps) {
         >
             {log.details && (
                 <div className='text-gray-700 dark:text-gray-300 text-sm'>
-                    <strong className='text-cradle2 text-sm'>Details:</strong>
+                    <strong className='text-cradle-accent-primary text-sm'>Details:</strong>
                     <div
                         className='mt-2'
                         dangerouslySetInnerHTML={{
@@ -181,7 +181,7 @@ export default function Activity({ log }: ActivityProps) {
             )}
             {log.srcLog && (
                 <div className='mt-3'>
-                    <strong className='text-cradle2 text-sm'>Caused by:</strong>
+                    <strong className='text-cradle-accent-primary text-sm'>Caused by:</strong>
                     <Activity log={log.src_log!} />
                 </div>
             )}

@@ -7,8 +7,7 @@ import type { BaseDigest, DigestSubclass } from '@services/cradle/models';
 import { NavArrowDown, NavArrowUp, Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import type { DateValueType } from 'react-tailwindcss-datepicker';
-import Datepicker from 'react-tailwindcss-datepicker';
+import Datepicker from '@components/base/Datepicker/Datepicker';
 import DigestList from './DigestList';
 import UploadForm from './UploadForm';
 
@@ -28,8 +27,11 @@ interface SubmittedFilters extends SearchFilters {
     created_at_lte?: string;
 }
 
-// Use DateValueType from the datepicker library
-type DateRange = DateValueType;
+// Use local DateRange type
+type DateRange = {
+    startDate: Date | null;
+    endDate: Date | null;
+};
 
 export default function UploadExternal() {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -325,11 +327,16 @@ export default function UploadExternal() {
                         className='flex space-x-4 px-3 pb-2'
                     >
                         <Datepicker
-                            value={dateRange}
-                            onChange={handleDateRangeChange}
-                            inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
-                            toggleClassName='hidden'
-                            placeholder='Select date range'
+                            startDate={dateRange.startDate}
+                            endDate={dateRange.endDate}
+                            onChange={([start, end]) => {
+                                handleDateRangeChange({
+                                    startDate: start,
+                                    endDate: end,
+                                });
+                            }}
+                            className='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                            placeholderText='Select date range'
                         />
                         <input
                             type='text'
