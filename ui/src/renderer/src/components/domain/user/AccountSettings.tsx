@@ -581,7 +581,7 @@ export default function AccountSettings({
                                         <input
                                             type='text'
                                             value={profile?.id || ''}
-                                            className='cradle-input inline-block text-sm h-10 rounded-full opacity-60'
+                                            className='cradle-input inline-block text-sm h-8 rounded-full opacity-60'
                                             style={{ width: 'auto' }}
                                             disabled
                                             readOnly
@@ -597,7 +597,7 @@ export default function AccountSettings({
                                         <input
                                             type='text'
                                             value={profile?.role || ''}
-                                            className='cradle-input inline-block text-sm h-10 rounded-full opacity-60'
+                                            className='cradle-input inline-block text-sm h-8 rounded-full opacity-60'
                                             style={{ width: 'auto' }}
                                             disabled
                                             readOnly

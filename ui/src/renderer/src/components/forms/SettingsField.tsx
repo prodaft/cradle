@@ -86,7 +86,7 @@ const SettingsField = forwardRef<HTMLInputElement, SettingsFieldProps>(
                         <input
                             ref={ref}
                             type={type}
-                            className={`cradle-input w-fit text-sm h-10 rounded-full ${
+                            className={`cradle-input w-fit text-sm h-8 rounded-full ${
                                 errorMessage ? 'border-red-500' : ''
                             } ${className || ''}`}
                             aria-invalid={Boolean(errorMessage)}

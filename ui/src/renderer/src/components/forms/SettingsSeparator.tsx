@@ -16,5 +16,5 @@
  * ```
  */
 export default function SettingsSeparator(): JSX.Element {
-    return <div className='cradle-separator'></div>;
+    return <div className='cradle-separator opacity-40' aria-hidden='true'></div>;
 }

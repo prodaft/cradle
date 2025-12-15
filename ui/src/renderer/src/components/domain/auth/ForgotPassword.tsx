@@ -2,21 +2,16 @@ import useApi from '@/hooks/api/useApi';
 import { Form, FormInput } from '@components/forms';
 import { useWindowSize } from '@uidotdev/usehooks';
 import { Link, useLocation } from 'react-router-dom';
+import { Undo } from 'iconoir-react';
 import * as Yup from 'yup';
 
 interface FormData {
-    username: string;
     email: string;
 }
 
-const forgotPasswordSchema = Yup.object()
-    .shape({
-        username: Yup.string().default(''),
-        email: Yup.string().email('Invalid email').default(''),
-    })
-    .test('at-least-one', 'You must fill at least one field!', (value) => {
-        return !!(value.username || value.email);
-    });
+const forgotPasswordSchema = Yup.object().shape({
+    email: Yup.string().email('Invalid email').required('Email is required'),
+});
 
 /**
  * ForgotPassword component - renders the form for a user to get a forgot password email.
@@ -29,8 +24,7 @@ export default function ForgotPassword() {
     const handleSubmit = async (data: FormData) => {
         await usersApi.usersResetPasswordCreate({
             passwordResetRequestRequest: {
-                username: data.username || undefined,
-                email: data.email || undefined,
+                email: data.email,
             },
         });
     };
@@ -60,28 +54,36 @@ export default function ForgotPassword() {
                                 <span className='cradle-mono text-xs tracking-widest'>
                                     PASSWORD RECOVERY
                                 </span>
+                                <div className='flex items-center gap-2 -mr-1.5'>
+                                    <Link
+                                        to='/login'
+                                        replace={true}
+                                        state={location.state}
+                                    >
+                                        <button
+                                            className='cradle-btn p-2 rounded-full'
+                                            data-testid='back-button'
+                                            title='Back to Login'
+                                        >
+                                            <Undo width={18} height={18} />
+                                        </button>
+                                    </Link>
+                                </div>
                             </div>
 
                             <div className='p-8'>
                                 <p className='text-sm cradle-text-secondary mb-6 cradle-mono'>
-                                    Enter your username or email to receive password
-                                    reset instructions.
+                                    Enter your email to receive password reset
+                                    instructions.
                                 </p>
 
                                 <Form<FormData>
                                     schema={forgotPasswordSchema}
-                                    defaultValues={{ username: '', email: '' }}
+                                    defaultValues={{ email: '' }}
                                     onSubmit={handleSubmit}
                                     successMessage='Password change email sent to your inbox!'
                                     className='space-y-5'
                                 >
-                                    <FormInput<FormData>
-                                        name='username'
-                                        label='Username'
-                                    />
-                                    <div className='cradle-separator-labeled my-4'>
-                                        <span>Or</span>
-                                    </div>
                                     <FormInput<FormData>
                                         name='email'
                                         label='Email'

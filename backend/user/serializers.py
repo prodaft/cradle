@@ -275,15 +275,11 @@ class APIKeyRequestSerializer(serializers.Serializer):
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):
-    """Serializer for password reset requests"""
+    """Serializer for password reset requests (email-based only)."""
 
-    email = serializers.EmailField(required=False)
-    username = serializers.CharField(required=False)
-
-    def validate(self, data):
-        if not data.get("email") and not data.get("username"):
-            raise serializers.ValidationError("Email or username must be provided")
-        return data
+    email = serializers.EmailField(
+        required=True, help_text="Email address to send the password reset link to"
+    )
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
