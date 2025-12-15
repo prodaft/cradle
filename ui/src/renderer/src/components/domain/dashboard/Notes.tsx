@@ -1,21 +1,11 @@
 import DeleteNote from '@components/domain/notes/DeleteNote';
 import NotesList from '@components/domain/notes/NotesList';
-import { Search } from 'iconoir-react';
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
-import Datepicker from 'react-tailwindcss-datepicker';
+import { useEffect, useState } from 'react';
 
 interface SearchFilters {
     content: string;
-    author__username: string;
     linked_to?: number; // Entry ID (BigAutoField)
     linked_to_exact_match?: boolean;
-    timestamp_gte?: string;
-    timestamp_lte?: string;
-}
-
-interface DateRange {
-    startDate: Date | null;
-    endDate: Date | null;
 }
 
 interface NotesProps {
@@ -29,15 +19,10 @@ interface NotesProps {
 export default function Notes({ obj }: NotesProps) {
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         content: '',
-        author__username: '',
     });
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
         null,
     );
-    const [dateRange, setDateRange] = useState<DateRange>({
-        startDate: null,
-        endDate: null,
-    });
 
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
@@ -50,86 +35,29 @@ export default function Notes({ obj }: NotesProps) {
         setSubmittedFilters({
             ...searchFilters,
             ['linked_to']: obj.id,
-            timestamp_gte: '',
-            timestamp_lte: '',
         });
     }, [obj]);
 
-    // Auto-submit when date range changes
-    useEffect(() => {
-        if (searchFilters.linked_to) {
-            setSubmittedFilters(searchFilters);
-        }
-    }, [searchFilters.timestamp_gte, searchFilters.timestamp_lte]);
-
-    const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSearchSubmit = () => {
         setSubmittedFilters(searchFilters);
     };
 
-    const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setSearchFilters((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleDateRangeChange = (value: any) => {
-        setSearchFilters((prev) => ({
-            ...prev,
-            timestamp_gte: value.startDate
-                ? new Date(value.startDate).toISOString()
-                : '',
-            timestamp_lte: value.endDate
-                ? (() => {
-                    const endDate = new Date(value.endDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    return endDate.toISOString();
-                })()
-                : '',
-        }));
-        setDateRange(value);
+    const handleSearchChange = (value: string) => {
+        setSearchFilters((prev) => ({ ...prev, content: value }));
     };
 
     return (
         <>
-            <div className='bg-cradle3 p-4 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl flex flex-col flex-1'>
-                <div className='flex flex-col space-y-4'>
-                    <form
-                        onSubmit={handleSearchSubmit}
-                        className='flex space-x-4 px-3 pb-2'
-                    >
-                        <Datepicker
-                            value={dateRange}
-                            onChange={handleDateRangeChange}
-                            inputClassName='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
-                            toggleClassName='hidden'
-                        />
-                        <input
-                            type='text'
-                            name='content'
-                            value={searchFilters.content}
-                            onChange={handleSearchChange}
-                            placeholder='Search by content'
-                            className='input input-block'
-                        />
-                        <input
-                            type='text'
-                            name='author__username'
-                            value={searchFilters.author__username}
-                            onChange={handleSearchChange}
-                            placeholder='Search by author'
-                            className='input input-block'
-                        />
-                        <div className='flex items-center space-x-2'>
-                            <button type='submit' className='btn'>
-                                <Search /> Search
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <div className='bg-cradle3 p-4 bg-opacity-20 rounded-xl flex flex-col flex-1'>
                 {submittedFilters && (
                     <NotesList
                         query={submittedFilters}
                         noteActions={[{ Component: DeleteNote, props: {} }]}
+                        contentSearch={{
+                            value: searchFilters.content,
+                            onChange: handleSearchChange,
+                            onSubmit: handleSearchSubmit,
+                        }}
                     />
                 )}
             </div>

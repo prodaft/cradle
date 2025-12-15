@@ -1,3 +1,4 @@
+import { Trash, Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**
@@ -49,30 +50,52 @@ export default function ConfirmDeletionModal({
     };
 
     return (
-        <div className=''>
-            <h2 className='text-2xl font-bold mb-4'>Confirm Deletion</h2>
-            <p className='mb-4'>{text}</p>
+        <div className='min-w-[320px] max-w-md'>
+            {/* Header with icon and close button */}
+            <div className='flex items-center justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <div className='p-2 bg-cradle-accent-error/10 text-cradle-accent-error'>
+                        <Trash className='w-5 h-5' />
+                    </div>
+                    <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
+                        Confirm Deletion
+                    </h2>
+                </div>
+                <button
+                    type='button'
+                    className='cradle-btn p-2 rounded-full'
+                    onClick={closeModal}
+                    title='Close'
+                >
+                    <Xmark width={16} height={16} />
+                </button>
+            </div>
+
+            {/* Body text */}
+            <p className='text-sm text-cradle-text-secondary mb-5 leading-relaxed'>
+                {text}
+            </p>
+
+            {/* Confirmation input */}
             {confirmText && (
-                <div className='mb-4'>
-                    <label className='block text-sm font-medium text-gray-700 dark:text-gray-500 mb-1'>
-                        Please type "<span className='font-bold'>{confirmText}</span>"
-                        to confirm:
+                <div className='mb-5'>
+                    <label className='cradle-label mb-2 block'>
+                        Type "<span className='text-cradle-accent-primary'>{confirmText}</span>" to confirm
                     </label>
                     <input
                         type='text'
-                        className='input input-block w-full'
+                        className='cradle-input'
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
-                        placeholder={`Type "${confirmText}" here`}
+                        placeholder={confirmText}
                     />
                 </div>
             )}
-            <div className='flex justify-center gap-2'>
-                <button className='btn w-full' onClick={closeModal}>
-                    Cancel
-                </button>
+
+            {/* Action button */}
+            <div className='pt-2'>
                 <button
-                    className='btn btn-error w-full'
+                    className='cradle-btn cradle-btn-danger w-full'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >

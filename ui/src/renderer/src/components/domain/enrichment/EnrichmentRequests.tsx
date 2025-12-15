@@ -36,6 +36,7 @@ export default function EnrichmentRequests() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const [sortField, setSortField] = useState(
         searchParams.get('sort_field') || 'created_at',
     );
@@ -90,6 +91,7 @@ export default function EnrichmentRequests() {
 
             setEnrichmentRequests(response.results || []);
             setTotalPages(response.totalPages || 1);
+            setTotalCount(response.count || 0);
         } catch (error: any) {
             console.error('Failed to fetch enrichment requests', error);
             notify({
@@ -287,12 +289,14 @@ export default function EnrichmentRequests() {
                         Browse & Manage Enrichment Requests
                     </p>
                 </div>
-                <button
-                    className='cradle-btn cradle-btn-primary flex items-center justify-center w-10 h-10 text-white text-xl font-bold'
-                    onClick={handleCreateRequest}
-                >
-                    +
-                </button>
+                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
+                    <span className="font-semibold">
+                        {enrichmentRequests.length === totalCount || (enrichmentRequests.length === 0 && totalCount === 0)
+                            ? totalCount
+                            : `${enrichmentRequests.length}/${totalCount}`}
+                    </span>
+                    <span className="opacity-70">requests</span>
+                </div>
             </div>
 
             {/* Content Area */}
@@ -319,6 +323,7 @@ export default function EnrichmentRequests() {
                     setSelectedRequests={setSelectedRequests}
                     onDeleteSelected={handleDeleteSelected}
                     onRetrySelected={handleRetrySelected}
+                    onCreateRequest={handleCreateRequest}
                 />
             </div>
         </div>

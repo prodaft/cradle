@@ -2,7 +2,7 @@ import AlertBox from '@/components/base/Alert/AlertBox';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import { displayError } from '@/utils/api';
-import { Copy, Eye, EyeClosed } from 'iconoir-react';
+import { Copy, Eye, EyeClosed, Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**
@@ -69,10 +69,18 @@ export default function ApiKeyGenerateModal({
     return (
         <div className='w-full min-w-[28rem]'>
             {/* Header */}
-            <div className='mb-6'>
-                <h2 className='text-xl font-semibold cradle-text-primary cradle-mono mb-2'>
+            <div className='flex items-center justify-between mb-6'>
+                <h2 className='text-xl font-semibold cradle-text-primary cradle-mono'>
                     Generate API Key
                 </h2>
+                <button
+                    type='button'
+                    className='cradle-btn p-2 rounded-full'
+                    onClick={closeModal}
+                    title='Close'
+                >
+                    <Xmark width={16} height={16} />
+                </button>
             </div>
 
             {!apiKey ? (
@@ -97,24 +105,14 @@ export default function ApiKeyGenerateModal({
                     <AlertBox alert={alert} />
 
                     <div className='cradle-border-t pt-5 mt-5'>
-                        <div className='flex gap-3'>
-                            <button
-                                type='button'
-                                className='cradle-btn cradle-btn-ghost flex-1'
-                                onClick={closeModal}
-                                disabled={loading}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type='button'
-                                className='cradle-btn cradle-btn-primary flex-1'
-                                onClick={handleGenerate}
-                                disabled={loading}
-                            >
-                                {loading ? 'Generating...' : 'Generate API Key'}
-                            </button>
-                        </div>
+                        <button
+                            type='button'
+                            className='cradle-btn cradle-btn-primary w-full'
+                            onClick={handleGenerate}
+                            disabled={loading}
+                        >
+                            {loading ? 'Generating...' : 'Generate API Key'}
+                        </button>
                     </div>
                 </>
             ) : (
@@ -167,16 +165,6 @@ export default function ApiKeyGenerateModal({
                                 )}
                             </div>
                         </div>
-                    </div>
-
-                    <div className='cradle-border-t pt-5 mt-5'>
-                        <button
-                            type='button'
-                            className='cradle-btn cradle-btn-primary w-full'
-                            onClick={closeModal}
-                        >
-                            Done
-                        </button>
                     </div>
                 </>
             )}

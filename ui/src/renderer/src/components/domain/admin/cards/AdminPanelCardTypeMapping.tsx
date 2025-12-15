@@ -34,7 +34,7 @@ export default function AdminPanelCardTypeMapping({
                 title={capitalizeString(name)}
                 actions={actions}
                 onClick={handleEditClick}
-                className='bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg'
+                className='bg-cradle3 bg-opacity-20'
             />
         </>
     );

@@ -2,6 +2,7 @@ import Tooltip from '@components/base/Tooltip/Tooltip';
 import { TreeView } from '@phosphor-icons/react';
 import { Check, CloudUpload, MoreVert, RefreshCircle, StatsReport } from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
+import { InputOutput, Search } from 'iconoir-react';
 import { ViewMode } from './constants';
 
 interface ActionsDropdownProps {
@@ -21,6 +22,8 @@ interface ActionsDropdownProps {
     handlePublish: () => void;
     handleDelete: () => void;
     handleUploadFiles: () => void;
+    handleFind: () => void;
+    handleReplace: () => void;
 }
 
 /**
@@ -43,7 +46,14 @@ export default function ActionsDropdown({
     handlePublish,
     handleDelete,
     handleUploadFiles,
+    handleFind,
+    handleReplace,
 }: ActionsDropdownProps) {
+    const menuButtonClasses =
+        'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:border-[#FF8C00] rounded-xl flex items-center gap-2';
+    const destructiveMenuButtonClasses =
+        'w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:border-[#FF8C00] rounded-xl flex items-center gap-2';
+
     return (
         <div className='relative'>
             <Tooltip content='Actions'>
@@ -61,15 +71,42 @@ export default function ActionsDropdown({
                         className='fixed inset-0 z-10'
                         onClick={() => setShowActionsMenu(false)}
                     />
-                    <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20'>
+                    <div className='absolute right-0 mt-2 w-48 cradle-bg-elevated cradle-border z-20 rounded-xl overflow-hidden py-1 px-1'>
                         <div role='menu'>
+                            {activeView === ViewMode.CONTENT && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            handleFind();
+                                        }}
+                                    className={menuButtonClasses}
+                                        data-testid='find-menu-item'
+                                    >
+                                        <Search width='16' height='16' />
+                                        <span className='flex-1'>Find</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            handleReplace();
+                                        }}
+                                    className={menuButtonClasses}
+                                        data-testid='replace-menu-item'
+                                    >
+                                        <InputOutput width='16' height='16' />
+                                        <span className='flex-1'>Replace...</span>
+                                    </button>
+                                    <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
+                                </>
+                            )}
                             {activeView === ViewMode.CONTENT && (
                                 <button
                                     onClick={() => {
                                         setShowActionsMenu(false);
                                         toggleOutline();
                                     }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    className={menuButtonClasses}
                                     data-testid='toggle-outline-menu-item'
                                 >
                                     <TreeView width='16' height='16' />
@@ -85,7 +122,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             smartLink(false);
                                         }}
-                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    className={menuButtonClasses}
                                         data-testid='auto-link-menu-item'
                                     >
                                         <LightBulb width='16' height='16' />
@@ -100,7 +137,7 @@ export default function ActionsDropdown({
                                             setShowActionsMenu(false);
                                             smartLink(true);
                                         }}
-                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    className={menuButtonClasses}
                                         data-testid='add-timestamps-menu-item'
                                     >
                                         <LightBulb width='16' height='16' />
@@ -108,24 +145,28 @@ export default function ActionsDropdown({
                                     </button>
                                 )}
                             {isAdmin && !isFleeting && (
-                                <button
-                                    onClick={() => {
-                                        setShowActionsMenu(false);
-                                        handleRelinkNote();
-                                    }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
-                                    data-testid='relink-note-menu-item'
-                                >
-                                    <RefreshCircle width='16' height='16' />
-                                    <span className='flex-1'>Relink Note</span>
-                                </button>
+                                <>
+                                    <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            handleRelinkNote();
+                                        }}
+                                    className={menuButtonClasses}
+                                        data-testid='relink-note-menu-item'
+                                    >
+                                        <RefreshCircle width='16' height='16' />
+                                        <span className='flex-1'>Relink Note</span>
+                                    </button>
+                                </>
                             )}
+                            <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
                             <button
                                 onClick={() => {
                                     setShowActionsMenu(false);
                                     handleUploadFiles();
                                 }}
-                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                className={menuButtonClasses}
                                 data-testid='manage-files-menu-item'
                             >
                                 <CloudUpload width='16' height='16' />
@@ -137,7 +178,7 @@ export default function ActionsDropdown({
                                         setShowActionsMenu(false);
                                         handleSaveAsFinal();
                                     }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    className={menuButtonClasses}
                                     data-testid='save-as-final-menu-item'
                                 >
                                     <FloppyDisk width='16' height='16' />
@@ -152,18 +193,19 @@ export default function ActionsDropdown({
                                     setShowActionsMenu(false);
                                     handlePublish();
                                 }}
-                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                className={menuButtonClasses}
                                 data-testid='publish-menu-item'
                             >
                                 <StatsReport width='16' height='16' />
                                 <span className='flex-1'>Publish</span>
                             </button>
+                            <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
                             <button
                                 onClick={() => {
                                     setShowActionsMenu(false);
                                     handleDelete();
                                 }}
-                                className='w-full text-left px-4 py-2 text-sm text-red-500 cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                className={destructiveMenuButtonClasses}
                                 data-testid='delete-note-menu-item'
                             >
                                 <Trash width='16' height='16' />

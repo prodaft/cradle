@@ -160,6 +160,9 @@ declare module 'iconoir-react' {
     export const WarningTriangle: ComponentType<SVGProps<SVGSVGElement>>;
     export const WarningTriangleSolid: ComponentType<SVGProps<SVGSVGElement>>;
     export const WarningCircleSolid: ComponentType<SVGProps<SVGSVGElement>>;
+    export const GridMinus: ComponentType<SVGProps<SVGSVGElement>>;
+    export const List: ComponentType<SVGProps<SVGSVGElement>>;
+    export const Download: ComponentType<SVGProps<SVGSVGElement>>;
 }
 
 // ============================================================================

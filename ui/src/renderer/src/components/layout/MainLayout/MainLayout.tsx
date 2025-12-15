@@ -26,7 +26,7 @@ export default function MainLayout(): JSX.Element {
     };
 
     return (
-        <div className='h-screen w-screen flex flex-col overflow-hidden'>
+        <div className='h-screen w-screen flex flex-col overflow-hidden fixed inset-0'>
             {/* Navbar - Top of screen */}
             <Navbar contents={[]} />
 

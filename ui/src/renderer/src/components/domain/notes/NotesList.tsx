@@ -8,12 +8,14 @@ import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/mode
 import {
     DesignNib,
     InfoCircleSolid,
+    PlusCircle,
     Search,
+    Trash,
     WarningCircleSolid,
     WarningTriangleSolid,
     Xmark,
 } from 'iconoir-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import TableCard from '../../base/Card/TableCard';
 import ListView, { DateRangeFilter, SortDirection } from '../../base/ListView/ListView';
@@ -21,7 +23,6 @@ import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import Tooltip from '../../base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
-import ActionsTable from '../activity/ActionsTable';
 import { NotePreviewContent } from './NotePreviewContent';
 
 interface Alert {
@@ -67,6 +68,8 @@ interface NotesListProps {
     references?: unknown;
     onFilterChange?: ((column: string, value: string | DateRangeFilter) => void) | null;
     contentSearch?: ContentSearch | null;
+    onCreateNote?: (() => void) | null;
+    onTotalCountChange?: ((count: { current: number; total: number }) => void) | null;
 }
 
 export default function NotesList({
@@ -77,6 +80,8 @@ export default function NotesList({
     references = null,
     onFilterChange = null,
     contentSearch = null,
+    onCreateNote = null,
+    onTotalCountChange = null,
 }: NotesListProps) {
     const [searchParams, setSearchParams] = useSearchParams();
     const [notes, setNotes] = useState<NoteRetrieve[]>([]);
@@ -116,6 +121,12 @@ export default function NotesList({
     const [searchInputValue, setSearchInputValue] = useState(
         contentSearch?.value || '',
     );
+    const [isSearchExpanded, setIsSearchExpanded] = useState(
+        !!contentSearch?.value,
+    );
+    const searchInputRef = useRef<HTMLInputElement>(null);
+    const [totalCount, setTotalCount] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -231,8 +242,68 @@ export default function NotesList({
     useEffect(() => {
         if (contentSearch?.value !== undefined) {
             setSearchInputValue(contentSearch.value);
+            setIsSearchExpanded(!!contentSearch.value);
         }
     }, [contentSearch]);
+
+    useEffect(() => {
+        if (isSearchExpanded && searchInputRef.current) {
+            searchInputRef.current.focus();
+        }
+    }, [isSearchExpanded]);
+
+    // Notes to display (same as fetched notes since filters were removed)
+    const displayedNotes = notes;
+
+    // Notify parent of count changes
+    useEffect(() => {
+        if (onTotalCountChange) {
+            onTotalCountChange({
+                current: notes.length,
+                total: totalCount,
+            });
+        }
+    }, [notes.length, totalCount, onTotalCountChange]);
+
+    // Select all visible notes
+    const handleSelectAll = () => {
+        if (selectedNotes.length === displayedNotes.length) {
+            setSelectedNotes([]);
+        } else {
+            setSelectedNotes(displayedNotes.map((n) => n.id!));
+        }
+    };
+
+
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only handle if focus is in this component
+            if (!containerRef.current?.contains(document.activeElement) && 
+                document.activeElement !== document.body) return;
+            
+            // Ctrl+A / Cmd+A - Select all
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !hideActionBar) {
+                e.preventDefault();
+                handleSelectAll();
+            }
+            
+            // Delete key - Delete selected
+            if (e.key === 'Delete' && selectedNotes.length > 0 && !hideActionBar) {
+                e.preventDefault();
+                actions[0].handler(selectedNotes);
+            }
+            
+            // Ctrl+F / Cmd+F - Focus search
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f' && contentSearch) {
+                e.preventDefault();
+                setIsSearchExpanded(true);
+            }
+        };
+        
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedNotes, displayedNotes, hideActionBar, contentSearch]);
 
     const fetchNotes = useCallback(async () => {
         if (query == null) return;
@@ -261,6 +332,7 @@ export default function NotesList({
             const response = await notesApi.notesList(params as any);
             setNotes(response.results as NoteRetrieve[]);
             setTotalPages(response.totalPages || 1);
+            setTotalCount(response.count || 0);
             setLoading(false);
         } catch (error) {
             setAlert({
@@ -457,32 +529,90 @@ export default function NotesList({
 
     return (
         <PreviewTipProvider delayDuration={800}>
-            <div className='flex flex-col space-y-4'>
+            <div ref={containerRef} className='flex flex-col space-y-4'>
                 {!loading && (
                     <TableCard>
                         <div className='flex flex-wrap items-center justify-between gap-4'>
-                            <div className='flex items-center gap-4 flex-shrink-0'>
+                            <div className='flex items-center gap-2 flex-shrink-0'>
+                                {/* Create Note */}
+                                {onCreateNote && (
+                                    <Tooltip content='Create new note (Ctrl+N)'>
+                                        <button
+                                            className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
+                                            onClick={onCreateNote}
+                                        >
+                                            <PlusCircle 
+                                                className='text-[#FF8C00]'
+                                                width={18} 
+                                                height={18} 
+                                            />
+                                        </button>
+                                    </Tooltip>
+                                )}
+
                                 {!hideActionBar && (
-                                    <ActionsTable
-                                        actions={actions}
-                                        selectedItems={selectedNotes}
-                                        itemLabel='note'
-                                        disabled={notes.length === 0}
-                                    />
+                                    <>
+                                        <div className='h-8 w-px bg-cradle-border-accent' />
+
+                                        {/* Delete */}
+                                        <Tooltip content={selectedNotes.length > 0 ? `Delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''} (Del)` : 'Select notes to delete'}>
+                                            <button
+                                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                                onClick={() => {
+                                                    if (selectedNotes.length > 0) {
+                                                        actions[0].handler(selectedNotes);
+                                                    }
+                                                }}
+                                                disabled={selectedNotes.length === 0 || notes.length === 0}
+                                            >
+                                                <Trash 
+                                                    className={selectedNotes.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                                    width={18} 
+                                                    height={18} 
+                                                />
+                                                {selectedNotes.length > 0 && (
+                                                    <span className='text-sm text-cradle-text-secondary font-mono'>
+                                                        {selectedNotes.length}
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </Tooltip>
+
+                                        <div className='h-8 w-px bg-cradle-border-accent' />
+                                    </>
                                 )}
 
                                 {contentSearch && (
-                                    <div className='flex items-stretch gap-2 min-w-[280px]'>
-                                        <div className='relative flex-1'>
+                                    <>
+                                        {!isSearchExpanded ? (
+                                            <button
+                                                onClick={() => setIsSearchExpanded(true)}
+                                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
+                                                title='Search'
+                                            >
+                                                <Search className='w-4 h-4' />
+                                            </button>
+                                        ) : (
+                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                                        <button
+                                            onClick={() => {
+                                                if (contentSearch?.onSubmit) {
+                                                    contentSearch.onSubmit();
+                                                }
+                                            }}
+                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                            title='Search'
+                                        >
+                                            <Search className='w-4 h-4' />
+                                        </button>
                                             <input
+                                                    ref={searchInputRef}
                                                 type='text'
                                                 value={searchInputValue}
                                                 onChange={(e) => {
                                                     setSearchInputValue(e.target.value);
                                                     if (contentSearch?.onChange) {
-                                                        contentSearch.onChange(
-                                                            e.target.value,
-                                                        );
+                                                    contentSearch.onChange(e.target.value);
                                                     }
                                                 }}
                                                 onKeyDown={(e) => {
@@ -492,9 +622,19 @@ export default function NotesList({
                                                     ) {
                                                         contentSearch.onSubmit();
                                                     }
+                                                        if (e.key === 'Escape') {
+                                                            if (!searchInputValue) {
+                                                                setIsSearchExpanded(false);
+                                                            }
+                                                        }
+                                                    }}
+                                                    onBlur={() => {
+                                                        if (!searchInputValue) {
+                                                            setIsSearchExpanded(false);
+                                                        }
                                                 }}
                                                 placeholder='Search content...'
-                                                className='cradle-search text-sm py-2 px-3 w-full pr-8 h-full'
+                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
                                             />
                                             {searchInputValue && (
                                                 <button
@@ -507,27 +647,20 @@ export default function NotesList({
                                                             contentSearch.onSubmit();
                                                         }
                                                     }}
-                                                    className='absolute right-2 top-1/2 -translate-y-1/2 p-1 cradle-btn cradle-btn-secondary rounded '
+                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
                                                     title='Clear search'
                                                 >
-                                                    <Xmark className='w-4 h-4 cradle-text-tertiary' />
+                                                <Xmark className='w-4 h-4' />
                                                 </button>
                                             )}
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                if (contentSearch?.onSubmit) {
-                                                    contentSearch.onSubmit();
-                                                }
-                                            }}
-                                            className='cradle-btn cradle-btn-secondary px-3 py-2 hover:cradle-bg-secondary rounded  flex items-center justify-center'
-                                            title='Search'
-                                        >
-                                            <Search className='w-4 h-4' />
-                                        </button>
                                     </div>
                                 )}
+                                    </>
+                                )}
                             </div>
+
+                            {/* Right side controls */}
+                            <div className='flex items-center gap-2'>
 
                             <PaginationWrapper
                                 currentPage={page}
@@ -544,12 +677,13 @@ export default function NotesList({
                                 }}
                                 disabled={notes.length === 0}
                             />
+                            </div>
                         </div>
                     </TableCard>
                 )}
 
                 <ListView
-                    data={notes}
+                    data={displayedNotes}
                     columns={columns}
                     renderRow={renderRow}
                     loading={loading}

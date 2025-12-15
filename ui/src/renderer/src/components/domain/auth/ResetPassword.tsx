@@ -36,7 +36,7 @@ export default function ResetPassword() {
 
     return (
         <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
-            <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-filter backdrop-blur-lg rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
+            <div className='bg-cradle3 p-8 bg-opacity-20 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
                 <div className='flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8 text-gray-500'>
                     <div className='sm:mx-auto sm:w-full sm:max-w-sm'>
                         <h3 className='mt-10 text-center text-2xl font-bold leading-9 tracking-tight'>

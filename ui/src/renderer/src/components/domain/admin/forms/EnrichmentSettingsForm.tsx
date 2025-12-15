@@ -284,7 +284,7 @@ export default function EnrichmentSettingsForm({
                 <h1 className='text-center text-xl font-bold text-primary mb-4'>
                     {displayName} Settings
                 </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 backdrop-blur-sm rounded-md'>
+                <div className='bg-cradle3 p-8 bg-opacity-20 rounded-md'>
                     <FormProvider {...methods}>
                         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                             <FormAlert

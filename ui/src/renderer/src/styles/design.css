@@ -1,10 +1,65 @@
 /* ============================================
-   CRADLE MINIMAL DESIGN SYSTEM
-   Inspired by terminal/technical aesthetics
-   Clean, Professional, Data-Focused
+   CRADLE DESIGN SYSTEM
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&display=swap');
+/* Note: Font imports are in main.css for correct CSS ordering */
+
+/* ============================================
+   TAILWIND V4 THEME CONFIGURATION
+   Bridges design tokens to Tailwind utilities
+   ============================================ */
+@theme {
+    /* Primary color for bg-primary, fill-primary, etc. */
+    --color-primary: #ff8c00;
+
+    /* Extended Colors */
+    --color-cradle1: #151515;
+    --color-cradle2: #FF8C00;
+    --color-cradle3: #151515;
+
+    /* Cradle Gray Scale */
+    --color-cradle-gray-50: #FAFAFA;
+    --color-cradle-gray-100: #F5F5F5;
+    --color-cradle-gray-200: #EFEFEF;
+    --color-cradle-gray-300: #D4D4D4;
+    --color-cradle-gray-400: #A0A0A0;
+    --color-cradle-gray-500: #808080;
+    --color-cradle-gray-600: #6A6A6A;
+    --color-cradle-gray-700: #5A5A5A;
+    --color-cradle-gray-800: #3A3A3A;
+    --color-cradle-gray-900: #1A1A1A;
+
+    /* Design System Colors - CSS Custom Properties References */
+    --color-cradle-bg-primary: var(--cradle-bg-primary);
+    --color-cradle-bg-secondary: var(--cradle-bg-secondary);
+    --color-cradle-bg-tertiary: var(--cradle-bg-tertiary);
+    --color-cradle-bg-elevated: var(--cradle-bg-elevated);
+    --color-cradle-bg-sidebar: var(--cradle-bg-sidebar);
+    --color-cradle-bg-topbar: var(--cradle-bg-topbar);
+
+    --color-cradle-sidebar-text: var(--cradle-sidebar-text);
+    --color-cradle-sidebar-icon: var(--cradle-sidebar-icon);
+    --color-cradle-sidebar-hoverBg: var(--cradle-sidebar-hover-bg);
+
+    --color-cradle-border-primary: var(--cradle-border-primary);
+    --color-cradle-border-accent: var(--cradle-border-accent);
+    --color-cradle-border-interactive: var(--cradle-border-interactive);
+
+    --color-cradle-text-primary: var(--cradle-text-primary);
+    --color-cradle-text-secondary: var(--cradle-text-secondary);
+    --color-cradle-text-tertiary: var(--cradle-text-tertiary);
+    --color-cradle-text-muted: var(--cradle-text-muted);
+
+    --color-cradle-accent-primary: var(--cradle-accent-primary);
+    --color-cradle-accent-secondary: var(--cradle-accent-secondary);
+    --color-cradle-accent-info: var(--cradle-accent-info);
+    --color-cradle-accent-success: var(--cradle-accent-success);
+    --color-cradle-accent-warning: var(--cradle-accent-warning);
+    --color-cradle-accent-error: var(--cradle-accent-error);
+
+    --color-cradle-glow-primary: var(--cradle-glow-primary);
+    --color-cradle-glow-accent: var(--cradle-glow-accent);
+}
 
 /* ============================================
    DESIGN TOKENS - MINIMAL TECH PALETTE
@@ -53,14 +108,15 @@
 
         /* Spacing System */
         --cradle-space-unit: 0.25rem;
-        --cradle-radius-sm: 0px;
-        --cradle-radius-md: 0px;
-        --cradle-radius-lg: 0px;
+        --cradle-radius-sm: 0.375rem;
+        --cradle-radius-md: 0.5rem;
+        --cradle-radius-lg: 0.75rem;
+        --cradle-radius-xl: 1rem;
     }
 
     /* ============================================
-   DARK MODE - TECHNICAL DARK THEME
-   ============================================ */
+       DARK MODE - TECHNICAL DARK THEME
+       ============================================ */
     [data-theme='dark'] {
         /* Backgrounds - Dark Greys (not pure black) */
         --cradle-bg-primary: #1a1a1a;
@@ -101,7 +157,33 @@
         --cradle-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.6);
         --cradle-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.7);
     }
+
+    /* Base Element Styles */
+    body {
+        font-family: 'Roboto', sans-serif;
+        background: var(--cradle-bg-primary);
+        color: var(--cradle-text-primary);
+    }
+
+    /* Apply mono font to specific elements */
+    code,
+    pre,
+    .mono {
+        font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', monospace;
+        letter-spacing: 0.025em;
+    }
 } /* End @layer base */
+
+/* ============================================
+   CUSTOM UTILITIES
+   ============================================ */
+@utility no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
 
 /* ============================================
    TYPOGRAPHY SYSTEM
@@ -135,7 +217,7 @@
     }
 
     /* ============================================
-   CARD SYSTEM - TERMINAL AESTHETIC
+   CARD SYSTEM
    ============================================ */
     .cradle-card {
         position: relative;
@@ -200,6 +282,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        padding: 0.75rem 1rem;
     }
 
     .cradle-card-title {
@@ -468,6 +551,16 @@
         letter-spacing: 1px;
     }
 
+    /* Button circle variant */
+    .btn-circle {
+        width: 2rem;
+        height: 2rem;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
     /* ============================================
    MODAL/DIALOG SYSTEM - TECHNICAL INTERFACE
    ============================================ */
@@ -494,7 +587,6 @@
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(4px);
         cursor: pointer;
     }
 
@@ -695,15 +787,13 @@
         background: rgba(255, 140, 0, 0.05);
     }
 
-    /* Table hover text color kept as original */
-
     /* ============================================
    COSMOGRAPH SEARCH - OVERRIDE MDC STYLES
    ============================================ */
     .search .mdc-text-field {
         background: var(--cradle-bg-elevated) !important;
         border: 1px solid var(--cradle-border-primary) !important;
-        border-radius: 0 !important;
+        border-radius: var(--cradle-radius-md) !important;
         height: 2rem !important;
         min-height: 2rem !important;
     }
@@ -740,7 +830,7 @@
     .search .mdc-menu {
         background: var(--cradle-bg-elevated) !important;
         border: 1px solid var(--cradle-border-primary) !important;
-        border-radius: 0 !important;
+        border-radius: var(--cradle-radius-md) !important;
         box-shadow: var(--cradle-shadow-md) !important;
     }
 
@@ -764,7 +854,7 @@
     }
 
     /* ============================================
-   ACTIVITY LOG - TERMINAL STYLE
+   ACTIVITY LOG
    ============================================ */
     .cradle-activity {
         max-height: 400px;
@@ -988,6 +1078,7 @@
         position: absolute;
         top: 100%;
         left: 0;
+        min-width: 100%;
         margin-top: 0.25rem;
         background: var(--cradle-bg-elevated);
         border: 1px solid var(--cradle-border-accent);
@@ -1077,7 +1168,7 @@
 
     .cradle-scrollbar::-webkit-scrollbar-thumb {
         background: var(--cradle-bg-tertiary);
-        border-radius: 0;
+        border-radius: var(--cradle-radius-sm);
     }
 
     .cradle-scrollbar::-webkit-scrollbar-thumb:hover {
@@ -1096,7 +1187,7 @@
 
     .cradle-scrollbar-thin::-webkit-scrollbar-thumb {
         background: var(--cradle-bg-tertiary);
-        border-radius: 0;
+        border-radius: var(--cradle-radius-sm);
     }
 
     .cradle-scrollbar-thin::-webkit-scrollbar-thumb:hover {
@@ -1186,8 +1277,6 @@
         cursor: pointer;
     }
 
-    /* Interactive hover and active effects can be added to .cradle-interactive when needed */
-
     /* Circuit Connector Lines */
     .cradle-connector {
         position: relative;
@@ -1261,6 +1350,11 @@
         fill: none !important;
     }
 
+    /* Lists */
+    ul.menu {
+        list-style: none;
+    }
+
     /* ============================================
    SONNER TOAST NOTIFICATIONS - CRADLE STYLE
    ============================================ */
@@ -1288,7 +1382,7 @@
     [data-sonner-toast] {
         background: var(--cradle-bg-elevated) !important;
         border: 1px solid var(--cradle-border-accent) !important;
-        border-radius: 0 !important;
+        border-radius: var(--cradle-radius-lg) !important;
         box-shadow: var(--cradle-shadow-lg) !important;
         padding: 1rem 1.25rem !important;
         font-family: 'JetBrains Mono', monospace !important;
@@ -1421,4 +1515,360 @@
             max-width: 90% !important;
         }
     }
+
+    /* ============================================
+   ROUNDED CORNERS - CONSISTENT BORDER RADIUS
+   Applied globally for a softer, modern look
+   ============================================ */
+
+    /* Buttons get rounded corners */
+    button,
+    .btn,
+    .cradle-btn {
+        border-radius: var(--cradle-radius-md);
+    }
+
+    /* Inputs get rounded corners */
+    input,
+    textarea,
+    select,
+    .cradle-input,
+    .cradle-textarea,
+    .cradle-select {
+        border-radius: var(--cradle-radius-md);
+    }
+
+    /* Cards get rounded corners */
+    .card,
+    .cradle-card {
+        border-radius: var(--cradle-radius-lg);
+    }
+
+    /* Modals get rounded corners */
+    .modal-content,
+    .dialog {
+        border-radius: var(--cradle-radius-lg);
+    }
+
+    /* Dropdowns get rounded corners */
+    .dropdown-content,
+    .cradle-dropdown-menu {
+        border-radius: var(--cradle-radius-md);
+    }
+
+    /* Badges and status indicators get rounded corners */
+    .badge,
+    .cradle-status {
+        border-radius: var(--cradle-radius-sm);
+    }
+
+    /* Switches get rounded toggle elements */
+    .switch::before,
+    .switch::after,
+    input.switch::before,
+    input.switch::after,
+    input[type='checkbox'].switch::before,
+    input[type='checkbox'].switch::after {
+        border-radius: var(--cradle-radius-sm);
+    }
+
+    /* Tables get rounded corners */
+    .cradle-table {
+        border-radius: var(--cradle-radius-md);
+        overflow: hidden;
+    }
+
+    /* Progress bars get rounded corners */
+    .cradle-progress {
+        border-radius: var(--cradle-radius-sm);
+    }
+
+    .cradle-progress-fill {
+        border-radius: var(--cradle-radius-sm);
+    }
+
+    /* Code blocks get rounded corners */
+    .cradle-code {
+        border-radius: var(--cradle-radius-sm);
+    }
+
+    /* Activity log gets rounded corners */
+    .cradle-activity {
+        border-radius: var(--cradle-radius-md);
+    }
+
+    /* Search input gets rounded corners */
+    .cradle-search {
+        border-radius: var(--cradle-radius-md);
+    }
+
+    /* Node grid gets rounded corners */
+    .cradle-node-grid {
+        border-radius: var(--cradle-radius-md);
+        overflow: hidden;
+    }
+
+    /* Outline boxes get rounded corners */
+    .cradle-outline {
+        border-radius: var(--cradle-radius-md);
+    }
+
+    /* ============================================
+   ICON COLORS - ORANGE PRIMARY
+   ============================================ */
+
+    /* All icons use orange as primary color */
+    svg:not(.sidebar svg) {
+        color: var(--cradle-accent-primary);
+    }
+
+    /* Icon links and buttons */
+    a svg,
+    button svg {
+        /* No transitions for strict square style */
+    }
+
+    a:hover svg,
+    button:hover svg {
+        color: var(--cradle-accent-secondary);
+    }
+
+    /* Icons in text */
+    .text-primary svg,
+    .cradle-text-primary svg {
+        color: var(--cradle-accent-primary);
+    }
+
+    /* ============================================
+   SPINNER SYSTEM - LOADING INDICATORS
+   ============================================ */
+    .spinner-ring {
+        display: inline-block;
+        width: 2rem;
+        height: 2rem;
+        animation: spinner-rotate 1s linear infinite;
+    }
+
+    .spinner-ring circle {
+        fill: none;
+        stroke: var(--spinner-color, var(--cradle-accent-primary));
+        stroke-linecap: round;
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: 0;
+        animation: spinner-dash 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        transform-origin: center;
+    }
+
+    /* Spinner ring sizes */
+    .spinner-ring.spinner-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .spinner-ring.spinner-md {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    .spinner-ring.spinner-lg {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .spinner-ring.spinner-xl {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    @keyframes spinner-rotate {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    @keyframes spinner-dash {
+        0% {
+            stroke-dasharray: 1, 150;
+            stroke-dashoffset: 0;
+        }
+        50% {
+            stroke-dasharray: 90, 150;
+            stroke-dashoffset: -40px;
+        }
+        100% {
+            stroke-dasharray: 90, 150;
+            stroke-dashoffset: -130px;
+        }
+    }
+
+    /* Spinner colors */
+    .spinner-primary {
+        --spinner-color: var(--cradle-accent-primary);
+    }
+
+    .spinner-secondary {
+        --spinner-color: var(--cradle-text-secondary);
+    }
+
+    /* Generic spinner sizes (for dot-pulse etc) */
+    .spinner-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .spinner-md {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+
+    .spinner-lg {
+        width: 2rem;
+        height: 2rem;
+    }
+
+    .spinner-xl {
+        width: 3rem;
+        height: 3rem;
+    }
+
+    /* Dot pulse spinner */
+    .spinner-dot-pulse {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .spinner-dot-pulse .spinner-pulse-dot {
+        position: relative;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--cradle-accent-primary);
+        animation: spinner-dot-pulse-animation 1.5s infinite linear;
+    }
+
+    .spinner-dot-pulse .spinner-pulse-dot::before,
+    .spinner-dot-pulse .spinner-pulse-dot::after {
+        content: '';
+        display: inline-block;
+        position: absolute;
+        top: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--cradle-accent-primary);
+    }
+
+    .spinner-dot-pulse .spinner-pulse-dot::before {
+        left: -15px;
+        animation: spinner-dot-pulse-before 1.5s infinite linear;
+    }
+
+    .spinner-dot-pulse .spinner-pulse-dot::after {
+        left: 15px;
+        animation: spinner-dot-pulse-after 1.5s infinite linear;
+    }
+
+    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot,
+    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::before,
+    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::after {
+        width: 6px;
+        height: 6px;
+    }
+
+    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::before {
+        left: -10px;
+    }
+
+    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::after {
+        left: 10px;
+    }
+
+    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot,
+    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::before,
+    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::after {
+        width: 14px;
+        height: 14px;
+    }
+
+    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::before {
+        left: -20px;
+    }
+
+    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::after {
+        left: 20px;
+    }
+
+    @keyframes spinner-dot-pulse-before {
+        0% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+        25% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        50% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+        75% {
+            transform: scale(0.7);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+    }
+
+    @keyframes spinner-dot-pulse-animation {
+        0% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+        25% {
+            transform: scale(0.7);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+        75% {
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+    }
+
+    @keyframes spinner-dot-pulse-after {
+        0% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+        25% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scale(0.7);
+            opacity: 0.5;
+        }
+        75% {
+            transform: scale(1);
+            opacity: 0.75;
+        }
+        100% {
+            transform: scale(1);
+            opacity: 1;
+        }
+    }
 } /* End @layer components */
+

@@ -98,7 +98,7 @@ export default function AdminPanelCardUser({
                 title={name}
                 actions={actions}
                 onClick={handleUserClick}
-                className='bg-cradle3 bg-opacity-20 backdrop-filter backdrop-blur-lg'
+                className='bg-cradle3 bg-opacity-20'
             />
         </>
     );

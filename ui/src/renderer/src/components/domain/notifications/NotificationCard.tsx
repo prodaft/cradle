@@ -134,7 +134,7 @@ export default function NotificationCard({
     };
 
     return (
-        <div className='bg-cradle3 bg-opacity-20 p-4 backdrop-blur-lg rounded-xl m-3 shadow-md flex flex-col space-y-1'>
+        <div className='bg-cradle3 bg-opacity-20 p-4 rounded-xl m-3 shadow-md flex flex-col space-y-1'>
             <div className='flex flex-row justify-between'>
                 <div className='text-zinc-500 text-xs w-full'>
                     {formatDate(timestamp)}

@@ -1,5 +1,5 @@
+import { NavArrowRight } from 'iconoir-react';
 import React, { ReactNode } from 'react';
-import Card from '../Card/Card';
 
 /**
  * Action for search result
@@ -54,19 +54,50 @@ export default function SearchResult({
     actions = [],
     depth,
 }: SearchResultProps): JSX.Element {
-    // Convert actions from old format to new Card format
-    const cardActions = actions.map((action) => ({
-        icon: action.icon,
-        onClick: action.callback,
-    }));
-
     return (
-        <Card
-            onClick={() => onClick({} as React.MouseEvent)}
-            actions={cardActions}
-            title={name}
-            prefix={subtype ? `${subtype}:` : undefined}
-            badge={depth != null ? `Depth: ${depth}` : undefined}
-        />
+        <button
+            onClick={onClick}
+            className='w-full px-4 py-3 flex items-center gap-3 text-left cursor-pointer group'
+        >
+            {/* Type indicator */}
+            {subtype && (
+                <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
+                    {subtype}
+                </span>
+            )}
+
+            {/* Name */}
+            <span className='flex-1 text-sm text-cradle-text-primary truncate group-hover:text-cradle-accent-primary transition-colors'>
+                {name}
+            </span>
+
+            {/* Depth badge */}
+            {depth != null && (
+                <span className='text-[10px] font-mono text-cradle-text-muted'>
+                    depth:{depth}
+                </span>
+            )}
+
+            {/* Actions */}
+            {actions.length > 0 && (
+                <div
+                    className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {actions.map((action, index) => (
+                        <button
+                            key={index}
+                            onClick={action.callback}
+                            className='p-1 hover:bg-cradle-bg-tertiary transition-colors'
+                        >
+                            {action.icon}
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {/* Arrow indicator */}
+            <NavArrowRight className='w-4 h-4 text-cradle-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all' />
+        </button>
     );
 }

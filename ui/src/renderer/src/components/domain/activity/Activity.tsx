@@ -159,7 +159,7 @@ export default function Activity({ log }: ActivityProps) {
 
     return (
         <Card
-            className='dark:bg-opacity-70 backdrop-blur-lg mt-3'
+            className='dark:bg-opacity-70 mt-3'
             badge={log.type}
             badgeClass='badge-outline-primary'
             details={{
