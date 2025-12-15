@@ -70,13 +70,13 @@ export default function RelationsList({ query }: RelationsListProps) {
     return (
         <div className='p-4'>
             {loading ? (
-                <div className='flex items-center justify-center min-h-screen'>
-                    <div className='spinner-dot-pulse'>
+                <div className='flex items-center justify-center min-h-[200px]'>
+                    <div className='spinner-dot-pulse spinner-xl'>
                         <div className='spinner-pulse-dot'></div>
                     </div>
                 </div>
             ) : relations.length === 0 ? (
-                <p className='text-center text-gray-500 dark:text-gray-400'>
+                <p className='text-center text-cradle-text-muted text-sm'>
                     No relations found.
                 </p>
             ) : (
@@ -94,11 +94,13 @@ export default function RelationsList({ query }: RelationsListProps) {
             )}
 
             {totalPages > 1 && (
-                <Pagination
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={(newPage) => setPage(newPage)}
-                />
+                <div className='mt-4'>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={(newPage) => setPage(newPage)}
+                    />
+                </div>
             )}
         </div>
     );

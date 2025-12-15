@@ -400,6 +400,7 @@ class EnrichmentRestartAPIView(APIView):
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = EnrichmentRequestDetailSerializer
 
     def get_object(self, pk):
         try:

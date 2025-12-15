@@ -55,6 +55,12 @@ export interface AccessRequestNotification {
      * @memberof AccessRequestNotification
      */
     readonly timestamp?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof AccessRequestNotification
+     */
+    readonly notificationType?: string;
 }
 
 /**
@@ -81,6 +87,7 @@ export function AccessRequestNotificationFromJSONTyped(json: any, ignoreDiscrimi
         'entityId': json['entity_id'] == null ? undefined : json['entity_id'],
         'requestingUserId': json['requesting_user_id'] == null ? undefined : json['requesting_user_id'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
+        'notificationType': json['notification_type'] == null ? undefined : json['notification_type'],
     };
 }
 
@@ -88,7 +95,7 @@ export function AccessRequestNotificationToJSON(json: any): AccessRequestNotific
     return AccessRequestNotificationToJSONTyped(json, false);
 }
 
-export function AccessRequestNotificationToJSONTyped(value?: Omit<AccessRequestNotification, 'id'|'entity_id'|'requesting_user_id'|'timestamp'> | null, ignoreDiscriminator: boolean = false): any {
+export function AccessRequestNotificationToJSONTyped(value?: Omit<AccessRequestNotification, 'id'|'entity_id'|'requesting_user_id'|'timestamp'|'notification_type'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

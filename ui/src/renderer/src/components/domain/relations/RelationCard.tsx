@@ -69,11 +69,11 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
             slug={`ID: ${relation.id}`}
             details={cardDetails}
         >
-            <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1 mx-2 -mt-1 mb-2'>
+            <div className='text-cradle-text-secondary text-sm space-y-1 mx-2 -mt-1 mb-2'>
                 <InfoRow label='Entity 1'>
                     <span
-                        className='underline cursor-pointer'
-                        style={{ color: relation.e1?.color || '#2563eb' }}
+                        className='underline cursor-pointer hover:opacity-80 transition-opacity'
+                        style={{ color: relation.e1?.color || '#FF8C00' }}
                         onClick={handleEntryClick(
                             relation.e1?.name || '',
                             relation.e1?.subtype || '',
@@ -84,8 +84,8 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                 </InfoRow>
                 <InfoRow label='Entity 2'>
                     <span
-                        className='underline cursor-pointer'
-                        style={{ color: relation.e2?.color || '#2563eb' }}
+                        className='underline cursor-pointer hover:opacity-80 transition-opacity'
+                        style={{ color: relation.e2?.color || '#FF8C00' }}
                         onClick={handleEntryClick(
                             relation.e2?.name || '',
                             relation.e2?.subtype || '',
@@ -107,7 +107,7 @@ interface InfoRowProps {
 function InfoRow({ label, children }: InfoRowProps) {
     return (
         <div className='grid grid-cols-[100px_1fr] items-start gap-2'>
-            <strong className='text-gray-800 dark:text-gray-200'>{label}</strong>
+            <strong className='text-cradle-text-primary'>{label}</strong>
             <div>{children}</div>
         </div>
     );

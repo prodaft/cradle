@@ -55,6 +55,12 @@ export interface ReportProcessingErrorNotification {
      * @memberof ReportProcessingErrorNotification
      */
     errorMessage?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof ReportProcessingErrorNotification
+     */
+    readonly notificationType?: string;
 }
 
 /**
@@ -82,6 +88,7 @@ export function ReportProcessingErrorNotificationFromJSONTyped(json: any, ignore
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
         'publishedReportId': json['published_report_id'],
         'errorMessage': json['error_message'] == null ? undefined : json['error_message'],
+        'notificationType': json['notification_type'] == null ? undefined : json['notification_type'],
     };
 }
 
@@ -89,7 +96,7 @@ export function ReportProcessingErrorNotificationToJSON(json: any): ReportProces
     return ReportProcessingErrorNotificationToJSONTyped(json, false);
 }
 
-export function ReportProcessingErrorNotificationToJSONTyped(value?: Omit<ReportProcessingErrorNotification, 'id'|'timestamp'> | null, ignoreDiscriminator: boolean = false): any {
+export function ReportProcessingErrorNotificationToJSONTyped(value?: Omit<ReportProcessingErrorNotification, 'id'|'timestamp'|'notification_type'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

@@ -43,6 +43,12 @@ export interface MessageNotification {
      * @memberof MessageNotification
      */
     readonly timestamp?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof MessageNotification
+     */
+    readonly notificationType?: string;
 }
 
 /**
@@ -67,6 +73,7 @@ export function MessageNotificationFromJSONTyped(json: any, ignoreDiscriminator:
         'message': json['message'],
         'isMarkedUnread': json['is_marked_unread'] == null ? undefined : json['is_marked_unread'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
+        'notificationType': json['notification_type'] == null ? undefined : json['notification_type'],
     };
 }
 
@@ -74,7 +81,7 @@ export function MessageNotificationToJSON(json: any): MessageNotification {
     return MessageNotificationToJSONTyped(json, false);
 }
 
-export function MessageNotificationToJSONTyped(value?: Omit<MessageNotification, 'id'|'timestamp'> | null, ignoreDiscriminator: boolean = false): any {
+export function MessageNotificationToJSONTyped(value?: Omit<MessageNotification, 'id'|'timestamp'|'notification_type'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

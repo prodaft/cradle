@@ -3,8 +3,8 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Form, FormInput } from '@components/forms';
-import { Link, useLocation } from 'react-router-dom';
 import { Undo } from 'iconoir-react';
+import { Link, useLocation } from 'react-router-dom';
 import * as Yup from 'yup';
 
 interface FormData {
@@ -54,14 +54,14 @@ export default function Register() {
 
         if (!user.isActive) {
             notify({
-                type: 'success',
+                type: 'info',
                 text: 'Your account must be activated by an administrator before you can login.',
             });
         }
 
         if (user.emailConfirmed && user.isActive) {
             notify({
-                type: 'success',
+                type: 'info',
                 text: 'Account created successfully.',
             });
         }

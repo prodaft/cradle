@@ -24,7 +24,7 @@ import { ReportRenderNotification, ReportRenderNotificationFromJSONTyped, Report
  * 
  * @export
  */
-export type Notification = { notificationType: 'AccessRequestNotification' } & AccessRequestNotification | { notificationType: 'MessageNotification' } & MessageNotification | { notificationType: 'NewUserNotification' } & NewUserNotification | { notificationType: 'ReportProcessingErrorNotification' } & ReportProcessingErrorNotification | { notificationType: 'ReportRenderNotification' } & ReportRenderNotification;
+export type Notification = { notificationType: 'message_notification' } & MessageNotification | { notificationType: 'new_user_notification' } & NewUserNotification | { notificationType: 'report_processing_error_notification' } & ReportProcessingErrorNotification | { notificationType: 'report_render_notification' } & ReportRenderNotification | { notificationType: 'request_access_notification' } & AccessRequestNotification;
 
 export function NotificationFromJSON(json: any): Notification {
     return NotificationFromJSONTyped(json, false);
@@ -35,16 +35,16 @@ export function NotificationFromJSONTyped(json: any, ignoreDiscriminator: boolea
         return json;
     }
     switch (json['notification_type']) {
-        case 'AccessRequestNotification':
-            return Object.assign({}, AccessRequestNotificationFromJSONTyped(json, true), { notificationType: 'AccessRequestNotification' } as const);
-        case 'MessageNotification':
-            return Object.assign({}, MessageNotificationFromJSONTyped(json, true), { notificationType: 'MessageNotification' } as const);
-        case 'NewUserNotification':
-            return Object.assign({}, NewUserNotificationFromJSONTyped(json, true), { notificationType: 'NewUserNotification' } as const);
-        case 'ReportProcessingErrorNotification':
-            return Object.assign({}, ReportProcessingErrorNotificationFromJSONTyped(json, true), { notificationType: 'ReportProcessingErrorNotification' } as const);
-        case 'ReportRenderNotification':
-            return Object.assign({}, ReportRenderNotificationFromJSONTyped(json, true), { notificationType: 'ReportRenderNotification' } as const);
+        case 'message_notification':
+            return Object.assign({}, MessageNotificationFromJSONTyped(json, true), { notificationType: 'message_notification' } as const);
+        case 'new_user_notification':
+            return Object.assign({}, NewUserNotificationFromJSONTyped(json, true), { notificationType: 'new_user_notification' } as const);
+        case 'report_processing_error_notification':
+            return Object.assign({}, ReportProcessingErrorNotificationFromJSONTyped(json, true), { notificationType: 'report_processing_error_notification' } as const);
+        case 'report_render_notification':
+            return Object.assign({}, ReportRenderNotificationFromJSONTyped(json, true), { notificationType: 'report_render_notification' } as const);
+        case 'request_access_notification':
+            return Object.assign({}, AccessRequestNotificationFromJSONTyped(json, true), { notificationType: 'request_access_notification' } as const);
         default:
             return json;
     }
@@ -59,16 +59,16 @@ export function NotificationToJSONTyped(value?: Notification | null, ignoreDiscr
         return value;
     }
     switch (value['notificationType']) {
-        case 'AccessRequestNotification':
-            return Object.assign({}, AccessRequestNotificationToJSON(value), { notificationType: 'AccessRequestNotification' } as const);
-        case 'MessageNotification':
-            return Object.assign({}, MessageNotificationToJSON(value), { notificationType: 'MessageNotification' } as const);
-        case 'NewUserNotification':
-            return Object.assign({}, NewUserNotificationToJSON(value), { notificationType: 'NewUserNotification' } as const);
-        case 'ReportProcessingErrorNotification':
-            return Object.assign({}, ReportProcessingErrorNotificationToJSON(value), { notificationType: 'ReportProcessingErrorNotification' } as const);
-        case 'ReportRenderNotification':
-            return Object.assign({}, ReportRenderNotificationToJSON(value), { notificationType: 'ReportRenderNotification' } as const);
+        case 'message_notification':
+            return Object.assign({}, MessageNotificationToJSON(value), { notificationType: 'message_notification' } as const);
+        case 'new_user_notification':
+            return Object.assign({}, NewUserNotificationToJSON(value), { notificationType: 'new_user_notification' } as const);
+        case 'report_processing_error_notification':
+            return Object.assign({}, ReportProcessingErrorNotificationToJSON(value), { notificationType: 'report_processing_error_notification' } as const);
+        case 'report_render_notification':
+            return Object.assign({}, ReportRenderNotificationToJSON(value), { notificationType: 'report_render_notification' } as const);
+        case 'request_access_notification':
+            return Object.assign({}, AccessRequestNotificationToJSON(value), { notificationType: 'request_access_notification' } as const);
         default: return value;
     }
 }

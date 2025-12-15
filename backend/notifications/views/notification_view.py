@@ -48,7 +48,7 @@ class NotificationList(APIView):
                 resource_type_field_name="notification_type",
                 many=True,
             ),
-            401: "Unauthorized",
+            401: {"description": "Unauthorized"},
         },
     )
     def get(self, request: Request) -> Response:

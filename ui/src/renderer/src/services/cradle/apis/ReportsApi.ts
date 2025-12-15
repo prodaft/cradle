@@ -21,6 +21,7 @@ import type {
   PublishReportRequest,
   PublishStrategiesResponse,
   Report,
+  ReportRequest,
 } from '../models/index';
 import {
     AccessEntityList404ResponseFromJSON,
@@ -35,6 +36,8 @@ import {
     PublishStrategiesResponseToJSON,
     ReportFromJSON,
     ReportToJSON,
+    ReportRequestFromJSON,
+    ReportRequestToJSON,
 } from '../models/index';
 
 export interface ReportsDestroyRequest {
@@ -58,6 +61,7 @@ export interface ReportsRetrieveRequest {
 
 export interface ReportsRetryCreateRequest {
     id: string;
+    reportRequest: ReportRequest;
 }
 
 export interface ReportsUpdateRequest {
@@ -323,9 +327,18 @@ export class ReportsApi extends runtime.BaseAPI {
             );
         }
 
+        if (requestParameters['reportRequest'] == null) {
+            throw new runtime.RequiredError(
+                'reportRequest',
+                'Required parameter "reportRequest" was null or undefined when calling reportsRetryCreate().'
+            );
+        }
+
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
 
         if (this.configuration && this.configuration.accessToken) {
             const token = this.configuration.accessToken;
@@ -344,6 +357,7 @@ export class ReportsApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
+            body: ReportRequestToJSON(requestParameters['reportRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ReportFromJSON(jsonValue));

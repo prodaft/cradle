@@ -14,30 +14,37 @@ from .models import (
 
 
 class MessageNotificationSerializer(serializers.ModelSerializer):
-    notification_type = "message_notification"
+    notification_type = serializers.SerializerMethodField()
 
     class Meta:
         model = MessageNotification
-        fields = ["id", "message", "is_marked_unread", "timestamp"]
+        fields = ["id", "message", "is_marked_unread", "timestamp", "notification_type"]
+
+    def get_notification_type(self, obj: MessageNotification) -> str:
+        return "message_notification"
 
 
 class NewUserNotificationSerializer(serializers.ModelSerializer):
-    notification_type = "new_user_notification"
+    notification_type = serializers.SerializerMethodField()
     new_user = EssentialUserRetrieveSerializer()
 
     class Meta:
-        model = AccessRequestNotification
+        model = NewUserNotification
         fields = [
             "id",
             "message",
             "is_marked_unread",
             "timestamp",
             "new_user",
+            "notification_type",
         ]
+
+    def get_notification_type(self, obj: NewUserNotification) -> str:
+        return "new_user_notification"
 
 
 class AccessRequestNotificationSerializer(serializers.ModelSerializer):
-    notification_type = "request_access_notification"
+    notification_type = serializers.SerializerMethodField()
 
     class Meta:
         model = AccessRequestNotification
@@ -48,11 +55,15 @@ class AccessRequestNotificationSerializer(serializers.ModelSerializer):
             "entity_id",
             "requesting_user_id",
             "timestamp",
+            "notification_type",
         ]
+
+    def get_notification_type(self, obj: AccessRequestNotification) -> str:
+        return "request_access_notification"
 
 
 class ReportRenderNotificationSerializer(serializers.ModelSerializer):
-    notification_type = "report_render_notification"
+    notification_type = serializers.SerializerMethodField()
     published_report_id = serializers.UUIDField(source="published_report.id")
 
     class Meta:
@@ -63,11 +74,15 @@ class ReportRenderNotificationSerializer(serializers.ModelSerializer):
             "is_marked_unread",
             "timestamp",
             "published_report_id",
+            "notification_type",
         ]
+
+    def get_notification_type(self, obj: ReportRenderNotification) -> str:
+        return "report_render_notification"
 
 
 class ReportProcessingErrorNotificationSerializer(serializers.ModelSerializer):
-    notification_type = "report_processing_error_notification"
+    notification_type = serializers.SerializerMethodField()
     published_report_id = serializers.UUIDField(source="published_report.id")
 
     class Meta:
@@ -79,7 +94,11 @@ class ReportProcessingErrorNotificationSerializer(serializers.ModelSerializer):
             "timestamp",
             "published_report_id",
             "error_message",
+            "notification_type",
         ]
+
+    def get_notification_type(self, obj: ReportProcessingErrorNotification) -> str:
+        return "report_processing_error_notification"
 
 
 NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
@@ -108,7 +127,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         )
 
         data = serializer_class(instance, context=self.context).data
-        data["notification_type"] = serializer_class.notification_type
+        return data
 
 
 class UpdateNotificationSerializer(serializers.ModelSerializer):

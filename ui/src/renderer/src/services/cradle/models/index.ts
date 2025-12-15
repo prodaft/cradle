@@ -87,6 +87,7 @@ export * from './Relation';
 export * from './Report';
 export * from './ReportProcessingErrorNotification';
 export * from './ReportRenderNotification';
+export * from './ReportRequest';
 export * from './RequestAccessRequest';
 export * from './Snippet';
 export * from './SnippetRequest';

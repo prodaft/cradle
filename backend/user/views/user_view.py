@@ -167,6 +167,7 @@ class UserList(APIView):
 class UserDetail(APIView):
     authentication_classes = [JWTAuthentication, APIKeyAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = UserRetrieveSerializer
 
     def get(self, request, user_id):
         initiator = cast(CradleUser, request.user)

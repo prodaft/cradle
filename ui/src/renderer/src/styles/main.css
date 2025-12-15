@@ -122,6 +122,21 @@ h6:hover .header-anchor-icon {
 }
 
 /* ============================================
+   NOTIFICATION ACTION STYLES
+   ============================================ */
+.notification-action {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    color: var(--cradle-text-muted);
+    border-radius: 0.375rem;
+}
+
+.notification-action:hover {
+    color: #FF8C00;
+    background-color: var(--cradle-bg-tertiary);
+}
+
+/* ============================================
    PREVIEW PANE WORD BREAKING
    ============================================ */
 #preview-pane {

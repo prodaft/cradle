@@ -103,6 +103,7 @@ models/Relation.ts
 models/Report.ts
 models/ReportProcessingErrorNotification.ts
 models/ReportRenderNotification.ts
+models/ReportRequest.ts
 models/RequestAccessRequest.ts
 models/Snippet.ts
 models/SnippetRequest.ts

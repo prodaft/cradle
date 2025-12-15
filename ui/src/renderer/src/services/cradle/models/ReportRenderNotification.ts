@@ -49,6 +49,12 @@ export interface ReportRenderNotification {
      * @memberof ReportRenderNotification
      */
     publishedReportId: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof ReportRenderNotification
+     */
+    readonly notificationType?: string;
 }
 
 /**
@@ -75,6 +81,7 @@ export function ReportRenderNotificationFromJSONTyped(json: any, ignoreDiscrimin
         'isMarkedUnread': json['is_marked_unread'] == null ? undefined : json['is_marked_unread'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
         'publishedReportId': json['published_report_id'],
+        'notificationType': json['notification_type'] == null ? undefined : json['notification_type'],
     };
 }
 
@@ -82,7 +89,7 @@ export function ReportRenderNotificationToJSON(json: any): ReportRenderNotificat
     return ReportRenderNotificationToJSONTyped(json, false);
 }
 
-export function ReportRenderNotificationToJSONTyped(value?: Omit<ReportRenderNotification, 'id'|'timestamp'> | null, ignoreDiscriminator: boolean = false): any {
+export function ReportRenderNotificationToJSONTyped(value?: Omit<ReportRenderNotification, 'id'|'timestamp'|'notification_type'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

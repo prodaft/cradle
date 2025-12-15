@@ -57,6 +57,12 @@ export interface NewUserNotification {
      * @memberof NewUserNotification
      */
     newUser: EssentialUserRetrieve;
+    /**
+     * 
+     * @type {string}
+     * @memberof NewUserNotification
+     */
+    readonly notificationType?: string;
 }
 
 /**
@@ -83,6 +89,7 @@ export function NewUserNotificationFromJSONTyped(json: any, ignoreDiscriminator:
         'isMarkedUnread': json['is_marked_unread'] == null ? undefined : json['is_marked_unread'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
         'newUser': EssentialUserRetrieveFromJSON(json['new_user']),
+        'notificationType': json['notification_type'] == null ? undefined : json['notification_type'],
     };
 }
 
@@ -90,7 +97,7 @@ export function NewUserNotificationToJSON(json: any): NewUserNotification {
     return NewUserNotificationToJSONTyped(json, false);
 }
 
-export function NewUserNotificationToJSONTyped(value?: Omit<NewUserNotification, 'id'|'timestamp'> | null, ignoreDiscriminator: boolean = false): any {
+export function NewUserNotificationToJSONTyped(value?: Omit<NewUserNotification, 'id'|'timestamp'|'notification_type'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

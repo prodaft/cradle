@@ -3,8 +3,6 @@ import { useAuth, useCradleNavigate } from '@hooks';
 import { Graph } from '@phosphor-icons/react';
 import {
     Archive,
-    Bell,
-    BellNotification,
     DatabaseBackup,
     LogOut,
     Notes,
@@ -21,12 +19,6 @@ import SidebarSection from './SidebarSection';
  * Sidebar component props
  */
 export interface SidebarProps {
-    /** Whether to show the notifications panel */
-    showNotifications: boolean;
-    /** Number of unread notifications */
-    unreadNotificationsCount: number;
-    /** Handler for notifications action */
-    handleNotifications: () => void;
     /** Whether dark mode is currently enabled */
     isDarkMode: boolean;
     /** Handler for toggling theme */
@@ -50,9 +42,6 @@ export interface SidebarProps {
  * ```
  */
 export default function Sidebar({
-    showNotifications,
-    unreadNotificationsCount,
-    handleNotifications,
     isDarkMode,
     onThemeToggle,
 }: SidebarProps): JSX.Element {
@@ -108,10 +97,6 @@ export default function Sidebar({
     const handleLogout = useCallback(() => {
         auth.logOut();
     }, [auth]);
-
-    const notificationIconStyle = showNotifications
-        ? { color: '#FF8C00' }
-        : { color: 'var(--cradle-sidebar-icon)' };
 
     return (
         <div className='h-full shrink-0' data-testid='sidebar-test'>
@@ -184,25 +169,6 @@ export default function Sidebar({
                                 highlightedLocation={adminLocation}
                             />
                         )}
-                        <SidebarItem
-                            handleClick={handleNotifications}
-                            icon={
-                                unreadNotificationsCount > 0 ? (
-                                    <BellNotification
-                                        height={24}
-                                        width={24}
-                                        style={notificationIconStyle}
-                                    />
-                                ) : (
-                                    <Bell
-                                        height={24}
-                                        width={24}
-                                        style={notificationIconStyle}
-                                    />
-                                )
-                            }
-                            text={`${unreadNotificationsCount} Notifications`}
-                        />
                         <SidebarItem
                             handleClick={handleLogout}
                             icon={<LogOut />}

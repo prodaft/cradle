@@ -4,14 +4,10 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import {
     AccessRequestAccessTypeEnum,
     AccessRequestNotification,
-    instanceOfAccessRequestNotification,
-    instanceOfNewUserNotification,
-    instanceOfReportProcessingErrorNotification,
-    instanceOfReportRenderNotification,
     NewUserNotification,
     Notification,
     ReportProcessingErrorNotification,
-    ReportRenderNotification,
+    ReportRenderNotification
 } from '@/services/cradle';
 import { formatDate } from '@/utils/dates';
 import Tooltip from '@components/base/Tooltip/Tooltip';
@@ -23,6 +19,17 @@ interface NotificationCardProps {
     updateFlaggedNotificationsCount: (updater: (prevCount: number) => number) => void;
 }
 
+const ActionBar = ({ children }: { children: React.ReactNode }) => {
+    if (!children) return null;
+
+    return (
+        <div className='flex justify-end gap-2 mt-1'>
+            {children}
+        </div>
+    );
+};
+
+
 export default function NotificationCard({
     notification,
     updateFlaggedNotificationsCount,
@@ -32,6 +39,7 @@ export default function NotificationCard({
     const { reportsApi, notificationsApi, accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { notify } = useNotif();
+    console.log(notification);
 
     const handleMarkUnread = (id: string) => {
         notificationsApi
@@ -133,88 +141,96 @@ export default function NotificationCard({
             });
     };
 
+    const formattedDate = timestamp ? formatDate(new Date(timestamp)) : 'N/A';
+
     return (
-        <div className='bg-cradle3 bg-opacity-20 p-4 rounded-xl m-3 shadow-md flex flex-col space-y-1'>
-            <div className='flex flex-row justify-between'>
-                <div className='text-zinc-500 text-xs w-full'>
-                    {formatDate(timestamp)}
-                </div>
-                <Tooltip content={unreadStatus ? 'Mark as read' : 'Mark as unread'}>
-                    <span className='pb-1 space-x-1 flex flex-row'>
-                        {unreadStatus ? (
-                            <Mail
-                                width='1.2em'
-                                height='1.2em'
-                                className='text-cradle2 cursor-pointer'
-                                data-testid='mark-read'
-                                onClick={() => handleMarkUnread(id!)}
-                            />
-                        ) : (
-                            <MailOpen
-                                width='1.2em'
-                                height='1.2em'
-                                className='text-zinc-500 cursor-pointer'
-                                data-testid='mark-unread'
-                                onClick={() => handleMarkUnread(id!)}
-                            />
-                        )}
+        <div className='cradle-card p-3'>
+            {/* Content */}
+            <div className='flex-1 min-w-0'>
+                {/* Meta row: date + read/unread */}
+                <div className='flex items-center justify-between'>
+                    <span className='text-cradle-text-muted text-xs'>
+                        {formattedDate}
                     </span>
-                </Tooltip>
-            </div>
-            <p>{message}</p>
-            {instanceOfAccessRequestNotification(notification) && (
-                <div className='flex flex-row justify-between items-center flex-wrap'>
-                    <div className='text-sm text-zinc-400'>Give access:</div>
-                    <div className='flex flex-row justify-end items-center space-x-2'>
+
+                    <Tooltip content={unreadStatus ? 'Mark as read' : 'Mark as unread'}>
                         <button
-                            className='btn btn-solid-warning btn-sm'
+                            className='p-1.5 hover:bg-cradle-bg-tertiary rounded transition-colors'
+                            onClick={() => handleMarkUnread(id!)}
+                        >
+                            {unreadStatus ? (
+                                <Mail
+                                    width='16'
+                                    height='16'
+                                    className='text-[#FF8C00]'
+                                    data-testid='mark-read'
+                                />
+                            ) : (
+                                <MailOpen
+                                    width='16'
+                                    height='16'
+                                    className='text-cradle-text-muted hover:text-cradle-text-primary'
+                                    data-testid='mark-unread'
+                                />
+                            )}
+                        </button>
+                    </Tooltip>
+                </div>
+
+                {/* Message */}
+                <p className='text-cradle-text-primary text-sm leading-relaxed mt-1'>
+                    {message}
+                </p>
+            </div>
+            <ActionBar>
+                {notification.notificationType === 'request_access_notification' && (
+                    <>
+                        <button
+                            className='px-2.5 py-1 text-xs font-medium text-amber-400 border border-amber-400/30 hover:bg-amber-400/10 rounded transition-colors'
                             onClick={handleChangeAccess('read')}
                         >
                             Read
                         </button>
                         <button
-                            className='btn btn-solid-success btn-sm'
+                            className='px-2.5 py-1 text-xs font-medium text-green-400 border border-green-400/30 hover:bg-green-400/10 rounded transition-colors'
                             onClick={handleChangeAccess('read-write')}
                         >
                             Read/Write
                         </button>
-                    </div>
-                </div>
-            )}
-            {instanceOfNewUserNotification(notification) && (
-                <div className='flex flex-row justify-end items-center flex-wrap'>
+                    </>
+                )}
+
+                {notification.notificationType === 'new_user_notification' && (
                     <button
-                        className='btn btn-solid-success btn-sm'
+                        className='px-2.5 py-1 text-xs font-medium text-green-400 border border-green-400/30 hover:bg-green-400/10 rounded transition-colors'
                         onClick={handleActivateUser}
                     >
-                        Activate
+                        Activate User
                     </button>
-                </div>
-            )}
-            {instanceOfReportRenderNotification(notification) && (
-                <div className='flex flex-row justify-end items-center flex-wrap'>
+                )}
+
+                {notification.notificationType === 'report_render_notification' && (
                     <button
-                        className='btn btn-solid-secondary btn-sm'
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
                         onClick={handleViewReport}
                     >
                         View Report
                     </button>
-                </div>
-            )}
-            {instanceOfReportProcessingErrorNotification(notification) && (
-                <div className='flex flex-row justify-end items-center flex-wrap'>
+                )}
+
+                {notification.notificationType === 'report_processing_error_notification' && (
                     <button
-                        className='btn btn-solid-secondary btn-sm'
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
                         onClick={(e) => {
-                            const notif =
-                                notification as ReportProcessingErrorNotification;
+                            const notif = notification as ReportProcessingErrorNotification;
                             navigateLink(`/reports/${notif.publishedReportId}`)(e);
                         }}
                     >
                         View Details
                     </button>
-                </div>
-            )}
+                )}
+            </ActionBar>
+
         </div>
     );
 }
