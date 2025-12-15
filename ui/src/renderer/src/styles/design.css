@@ -1127,6 +1127,14 @@
     /* ============================================
    SEPARATOR & DIVIDERS
    ============================================ */
+    .cradle-separator-minimal {
+        width: 100%;
+        height: 1px;
+        background: var(--cradle-border-primary);
+        margin: 0.5rem 0;
+        position: relative;
+    }
+
     .cradle-separator {
         width: 100%;
         height: 1px;

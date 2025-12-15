@@ -1,7 +1,8 @@
-from django.db import models
-from rest_framework.response import Response
-from rest_framework import status
 from typing import List, Optional, Tuple
+
+from django.db import models
+from rest_framework import status
+from rest_framework.response import Response
 
 
 def flatten(items):
@@ -30,9 +31,15 @@ def fields_to_form(fields):
         else:
             continue
 
+        if hasattr(field, "help_text"):
+            description = field.help_text
+        else:
+            description = None
+
         field_mapping[name] = {
             "type": field_type,
             "options": options,
+            "description": description,
             "required": not field.null and not field.blank,
             "default": (
                 field.default if field.default != models.fields.NOT_PROVIDED else None

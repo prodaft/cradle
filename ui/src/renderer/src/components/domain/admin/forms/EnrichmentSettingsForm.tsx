@@ -1,12 +1,18 @@
-import { Tab, Tabs } from '@/components/layout/Tabs/Tabs';
-import { TabClasses } from '@/components/layout/Tabs/types';
 import useApi from '@/hooks/api/useApi';
 import { capitalizeString } from '@/utils/dashboard';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
-import { Controller, FormProvider, useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
-import { FormAlert, FormAlertState, SelectOption } from '../../../forms';
+import {
+    FormAlert,
+    FormAlertState,
+    SelectOption,
+    SettingsCard,
+    SettingsField,
+    SettingsSeparator,
+    SettingsToggle,
+} from '../../../forms';
 import Selector from '../../../forms/Selector';
 
 interface EnrichmentSettingsFormProps {
@@ -77,7 +83,14 @@ export default function EnrichmentSettingsForm({
         createEnrichmentSchema({}),
     );
 
-    const methods = useForm<FormData>({
+    const {
+        handleSubmit,
+        control,
+        reset,
+        register,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm<FormData>({
         resolver: yupResolver(validationSchema) as any,
         defaultValues: {
             for_eclasses: [],
@@ -86,21 +99,13 @@ export default function EnrichmentSettingsForm({
         },
     });
 
-    const {
-        handleSubmit,
-        control,
-        reset,
-        register,
-        formState: { errors },
-    } = methods;
-
     // Fetch all entry classes for the for_eclasses selector
     const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
         try {
             const response = await entriesApi.entryClassesList({});
             if (response) {
                 return response
-                    .filter((x) => x.subtype.startsWith(q))
+                    .filter((x) => x.subtype.toLowerCase().startsWith(q.toLowerCase()))
                     .map((entry) => ({
                         value: entry.subtype,
                         label: entry.subtype,
@@ -185,92 +190,68 @@ export default function EnrichmentSettingsForm({
 
     // Render form fields based on form_fields configuration
     const renderSettingsFields = () => {
-        return Object.entries(formFields).map(([key, field]) => {
-            if (field.type === 'choice') {
-                return (
-                    <div className='w-full' key={key}>
-                        <label
-                            htmlFor={`settings.${key}`}
-                            className='block text-sm font-medium cradle-text-tertiary mb-1'
-                        >
-                            {capitalizeString(key)}
-                            {field.required && (
-                                <span className='text-red-500 ml-1'>*</span>
+        const entries = Object.entries(formFields);
+        return entries.map(([key, field], index) => {
+            const isLast = index === entries.length - 1;
+            const content = (
+                <div key={key}>
+                    {field.type === 'choice' ? (
+                        <div className='py-2'>
+                            <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                {capitalizeString(key)}
+                                {field.required && (
+                                    <span className='text-red-500 ml-1'>*</span>
+                                )}
+                            </label>
+                            <Controller
+                                control={control}
+                                name={`settings.${key}`}
+                                render={({ field: { onChange, value } }) => (
+                                    <Selector
+                                        value={
+                                            field.options?.map(o => ({ label: o, value: o })).find(
+                                                (o) => o.value === value,
+                                            ) || null
+                                        }
+                                        onChange={(option: any) =>
+                                            onChange(option?.value)
+                                        }
+                                        staticOptions={
+                                            field.options?.map((option) => ({
+                                                value: option,
+                                                label: option,
+                                            })) || []
+                                        }
+                                        placeholder={`Select ${capitalizeString(key)}...`}
+                                    />
+                                )}
+                            />
+                            {errors.settings?.[key] && (
+                                <p className='text-red-600 text-sm mt-1'>
+                                    {errors.settings[key]?.message?.toString() || ''}
+                                </p>
                             )}
-                        </label>
-                        <select
-                            className='form-select select select-ghost-primary select-block focus:ring-0'
+                        </div>
+                    ) : (
+                        <SettingsField
+                            label={capitalizeString(key)}
+                            description={field.description}
+                            type={field.type === 'number' ? 'number' : 'text'}
                             {...register(`settings.${key}`)}
-                        >
-                            {field.options?.map((option) => (
-                                <option key={option} value={option}>
-                                    {option}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.settings?.[key] && (
-                            <p className='text-red-600 text-sm mt-1'>
-                                {errors.settings[key]?.message?.toString() || ''}
-                            </p>
-                        )}
-                    </div>
-                );
-            } else if (field.type === 'number') {
-                return (
-                    <div className='w-full' key={key}>
-                        <label
-                            htmlFor={`settings.${key}`}
-                            className='block text-sm font-medium cradle-text-tertiary mb-1'
-                        >
-                            {capitalizeString(key)}
-                            {field.required && (
-                                <span className='text-red-500 ml-1'>*</span>
-                            )}
-                        </label>
-                        <input
-                            type='number'
-                            className='cradle-search w-full'
-                            {...register(`settings.${key}`)}
+                            error={errors.settings?.[key]}
+                            required={field.required}
                         />
-                        {errors.settings?.[key] && (
-                            <p className='text-red-600 text-sm mt-1'>
-                                {errors.settings[key]?.message?.toString() || ''}
-                            </p>
-                        )}
-                    </div>
-                );
-            } else {
-                // Default to string input
-                return (
-                    <div className='w-full' key={key}>
-                        <label
-                            htmlFor={`settings.${key}`}
-                            className='block text-sm font-medium cradle-text-tertiary mb-1'
-                        >
-                            {capitalizeString(key)}
-                            {field.required && (
-                                <span className='text-red-500 ml-1'>*</span>
-                            )}
-                        </label>
-                        <input
-                            type='text'
-                            className='cradle-search w-full'
-                            {...register(`settings.${key}`)}
-                        />
-                        {errors.settings?.[key] && (
-                            <p className='text-red-600 text-sm mt-1'>
-                                {errors.settings[key]?.message?.toString() || ''}
-                            </p>
-                        )}
-                    </div>
-                );
-            }
+                    )}
+                    {!isLast && <SettingsSeparator minimal={true} />}
+                </div>
+            );
+            return content;
         });
     };
 
     if (loading) {
         return (
-            <div className='flex justify-center items-center min-h-screen'>
+            <div className='flex items-center justify-center min-h-screen'>
                 <div className='animate-pulse cradle-text-secondary'>
                     Loading enrichment settings...
                 </div>
@@ -279,78 +260,113 @@ export default function EnrichmentSettingsForm({
     }
 
     return (
-        <div className='flex items-center justify-center min-h-screen'>
-            <div className='w-full max-w-2xl px-4'>
-                <h1 className='text-center text-xl font-bold text-primary mb-4'>
-                    {displayName} Settings
-                </h1>
-                <div className='bg-cradle3 p-8 bg-opacity-20 rounded-md'>
-                    <FormProvider {...methods}>
-                        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-                            <FormAlert
-                                alert={alert}
-                                onDismiss={() => setAlert({ type: null, message: '' })}
-                            />
+        <div className='w-full h-full overflow-auto'>
+            {/* Page Header */}
+            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+                <div>
+                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                        {displayName} Settings
+                    </h1>
+                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                        Manage configuration for {displayName}
+                    </p>
+                </div>
+            </div>
 
-                            <Tabs tabClass={TabClasses.PILL}>
-                                <Tab title='General' classes='space-y-4 pt-4'>
-                                    <div className='w-full'>
-                                        <label className='flex items-center justify-between gap-4 cursor-pointer'>
-                                            <span className='cradle-label cradle-text-tertiary'>
-                                                Enabled
-                                            </span>
-                                            <input
-                                                type='checkbox'
-                                                className='switch switch-ghost-primary'
-                                                {...register('enabled')}
-                                            />
-                                        </label>
-                                    </div>
+            {/* Content Area */}
+            <div className='p-5'>
+                <div className='w-full'> {/* Removed max-w-4xl here */}
+                    <form onSubmit={handleSubmit(onSubmit)}>
+                        <FormAlert
+                            alert={alert}
+                            onDismiss={() => setAlert({ type: null, message: '' })}
+                        />
 
-                                    <div className='w-full'>
-                                        <label className='block text-sm font-medium cradle-text-tertiary mb-1'>
-                                            Entry Classes
-                                        </label>
-                                        <Controller
-                                            name='for_eclasses'
-                                            control={control}
-                                            render={({
-                                                field: { onChange, value },
-                                            }) => (
-                                                <Selector
-                                                    value={value}
-                                                    onChange={onChange}
-                                                    fetchOptions={fetchEntryClasses}
-                                                    isMulti={true}
-                                                    placeholder='Select entry classes...'
+                        {/* General Section */}
+                        <section id='general' className='pb-8'>
+                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                General Information
+                            </h2>
+                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                Core configuration for this enrichment
+                            </p>
+
+                            <div className='space-y-4'>
+                                <SettingsCard>
+                                    <SettingsToggle
+                                        label='Enabled'
+                                        description='Enable or disable this enrichment source'
+                                        {...register('enabled')}
+                                        watch={watch}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'> {/* Added flex container */}
+                                            <div className='flex-1'>
+                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Entry Classes
+                                                </label>
+                                                <p className='text-sm cradle-text-muted'>
+                                                    Entry classes to apply this enrichment to
+                                                </p>
+                                                {errors.for_eclasses && (
+                                                    <p className='text-red-600 text-sm mt-1'>
+                                                        {errors.for_eclasses.message}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <div className='w-auto flex-1'> {/* Wrapped Selector in this div */}
+                                                <Controller
+                                                    name='for_eclasses'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Selector
+                                                            {...field}
+                                                            fetchOptions={fetchEntryClasses}
+                                                            isMulti={true}
+                                                            placeholder='Select entry classes...'
+                                                        />
+                                                    )}
                                                 />
-                                            )}
-                                        />
-                                        {errors.for_eclasses && (
-                                            <p className='text-red-600 text-sm mt-1'>
-                                                {errors.for_eclasses.message}
-                                            </p>
-                                        )}
+                                            </div>
+                                        </div>
                                     </div>
-                                </Tab>
-
-                                {Object.keys(formFields).length > 0 && (
-                                    <Tab title='Settings' classes='space-y-4 pt-4'>
-                                        {renderSettingsFields()}
-                                    </Tab>
-                                )}
-                            </Tabs>
-
-                            <div className='flex gap-2 pt-4'>
-                                <button
-                                    type='submit'
-                                    className='btn btn-primary btn-block'
-                                >
-                                    Save
-                                </button>
+                                </SettingsCard>
                             </div>
-                        </form>
-                    </FormProvider>
+                        </section>
+
+                        {/* Settings Section */}
+                        {Object.keys(formFields).length > 0 && (
+                            <section
+                                id='settings'
+                                className='border-t border-white/5 pt-5 pb-8'
+                            >
+                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                    Enrichment Parameters
+                                </h2>
+                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                    Specific settings for the enrichment provider
+                                </p>
+
+                                <div className='space-y-4'>
+                                    <SettingsCard>{renderSettingsFields()}</SettingsCard>
+                                </div>
+                            </section>
+                        )}
+
+                        {/* Save Button */}
+                        <div className='border-t border-white/5 pt-5 flex justify-end'>
+                            <button
+                                type='submit'
+                                className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Saving...' : 'Save Changes'}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
