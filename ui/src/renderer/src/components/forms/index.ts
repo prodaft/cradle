@@ -39,6 +39,24 @@ export type {
 export { default as FormFieldWrapper } from './shared/FormFieldWrapper';
 export type { FormFieldWrapperProps } from './shared/FormFieldWrapper';
 
+// Settings components (AccountSettings style)
+export { default as SettingsCard } from './SettingsCard';
+export type { SettingsCardProps } from './SettingsCard';
+
+export { default as SettingsSeparator } from './SettingsSeparator';
+
+export { default as SettingsField } from './SettingsField';
+export type { SettingsFieldProps } from './SettingsField';
+
+export { default as SettingsToggle } from './SettingsToggle';
+export type { SettingsToggleProps } from './SettingsToggle';
+
+export { default as SettingsSelect } from './SettingsSelect';
+export type { SettingsSelectProps } from './SettingsSelect';
+
+export { default as SettingsButton } from './SettingsButton';
+export type { SettingsButtonProps } from './SettingsButton';
+
 // Legacy components (kept for backwards compatibility)
 /** @deprecated Use FormInput instead */
 export { default as FormField } from './FormField';
