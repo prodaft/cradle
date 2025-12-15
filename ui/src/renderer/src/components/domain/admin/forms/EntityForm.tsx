@@ -284,42 +284,30 @@ export default function EntityForm({
 
                                     <SettingsSeparator />
 
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
-                                                    Subtype
-                                                    <span className='text-red-500 ml-1'>*</span>
-                                                </label>
-                                                <p className='text-sm cradle-text-muted'>
-                                                    Entity class type
-                                                </p>
-                                                {errors.subtype?.message && (
-                                                    <p className='text-sm text-red-500 mt-1'>
-                                                        {errors.subtype.message}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className='w-fit flex-1'>
-                                                <Controller
-                                                    name='subtype'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Selector
-                                                            {...field}
-                                                            staticOptions={subtypeOptions}
-                                                            placeholder='Select subtype'
-                                                            isDisabled={isEdit}
-                                                            onChange={(newValue) => {
-                                                                field.onChange(newValue);
-                                                                handleSubtypeChange(newValue as SubtypeOption | null);
-                                                            }}
-                                                        />
-                                                    )}
+                                    <SettingsField
+                                        label='Subtype'
+                                        description='Entity class type'
+                                        required
+                                        error={errors.subtype}
+                                        inputWidth='w-72'
+                                    >
+                                        <Controller
+                                            name='subtype'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Selector
+                                                    {...field}
+                                                    staticOptions={subtypeOptions}
+                                                    placeholder='Select subtype'
+                                                    isDisabled={isEdit}
+                                                    onChange={(newValue) => {
+                                                        field.onChange(newValue);
+                                                        handleSubtypeChange(newValue as SubtypeOption | null);
+                                                    }}
                                                 />
-                                            </div>
-                                        </div>
-                                    </div>
+                                            )}
+                                        />
+                                    </SettingsField>
 
                                     <SettingsSeparator />
 

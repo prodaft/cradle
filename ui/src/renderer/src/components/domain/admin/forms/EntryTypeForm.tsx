@@ -280,37 +280,25 @@ export default function EntryTypeForm({
 
                             <div className='space-y-4'>
                                 <SettingsCard>
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
-                                                    Class Type
-                                                    <span className='text-red-500 ml-1'>*</span>
-                                                </label>
-                                                <p className='text-sm cradle-text-muted'>
-                                                    Artifact or Entity classification
-                                                </p>
-                                                {errors.type?.message && (
-                                                    <p className='text-sm text-red-500 mt-1'>
-                                                        {errors.type.message}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className='w-auto flex-1'>
-                                                <Controller
-                                                    name='type'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Selector
-                                                            {...field}
-                                                            staticOptions={typeOptions}
-                                                            placeholder='Select type'
-                                                        />
-                                                    )}
+                                    <SettingsField
+                                        label='Class Type'
+                                        description='Artifact or Entity classification'
+                                        required
+                                        error={errors.type}
+                                        inputWidth='w-72'
+                                    >
+                                        <Controller
+                                            name='type'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Selector
+                                                    {...field}
+                                                    staticOptions={typeOptions}
+                                                    placeholder='Select type'
                                                 />
-                                            </div>
-                                        </div>
-                                    </div>
+                                            )}
+                                        />
+                                    </SettingsField>
 
                                     <SettingsSeparator />
 
@@ -436,32 +424,24 @@ export default function EntryTypeForm({
 
                                     {isArtifact && (
                                         <>
-                                            <div className='py-2'>
-                                                <div className='flex items-center justify-between gap-4'>
-                                                    <div className='flex-1'>
-                                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
-                                                            Format
-                                                        </label>
-                                                        <p className='text-sm cradle-text-muted'>
-                                                            Validation format for artifact values
-                                                        </p>
-                                                    </div>
-                                                    <div className='w-auto flex-1'>
-                                                        <Controller
-                                                            name='typeFormat'
-                                                            control={control}
-                                                            render={({ field }) => (
-                                                                <Selector
-                                                                    {...field}
-                                                                    staticOptions={formatOptions}
-                                                                    placeholder='Select format'
-                                                                    isClearable
-                                                                />
-                                                            )}
+                                            <SettingsField
+                                                label='Format'
+                                                description='Validation format for artifact values'
+                                                inputWidth='w-72'
+                                            >
+                                                <Controller
+                                                    name='typeFormat'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Selector
+                                                            {...field}
+                                                            staticOptions={formatOptions}
+                                                            placeholder='Select format'
+                                                            isClearable
                                                         />
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                    )}
+                                                />
+                                            </SettingsField>
 
                                             {isOptions && (
                                                 <>

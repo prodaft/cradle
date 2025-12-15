@@ -106,6 +106,15 @@
         --cradle-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.08);
         --cradle-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.12);
 
+        /* Markdown/Editor Colors - Light Mode (non-ProseMark) */
+        --cradle-md-text: #1f2328;
+        --cradle-md-border: #d1d9e0;
+        --cradle-md-border-light: #d1d9e0b3;
+        --cradle-md-table-row: #ffffff;
+        --cradle-md-table-row-alt: #f6f8fa;
+        --cradle-md-kbd-bg: #f6f8fa;
+        --cradle-md-selection: rgba(255, 140, 0, 0.2);
+
         /* Spacing System */
         --cradle-space-unit: 0.25rem;
         --cradle-radius-sm: 0.375rem;
@@ -156,6 +165,15 @@
         --cradle-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
         --cradle-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.6);
         --cradle-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.7);
+
+        /* Markdown/Editor Colors - Dark Mode (non-ProseMark) */
+        --cradle-md-text: #f0f6fc;
+        --cradle-md-border: #3d444d;
+        --cradle-md-border-light: #3d444db3;
+        --cradle-md-table-row: #0d1117;
+        --cradle-md-table-row-alt: #151b23;
+        --cradle-md-kbd-bg: #151b23;
+        --cradle-md-selection: rgba(255, 140, 0, 0.3);
     }
 
     /* Base Element Styles */

@@ -87,6 +87,7 @@ export default function NoteViewer() {
     const [lspLoaded, setLspLoaded] = useState(false);
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
+    const lastLoadedNoteIdRef = useRef<string | null>(null);
     const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
@@ -125,10 +126,25 @@ export default function NoteViewer() {
     }, [showOutline]);
 
     const toggleEditing = useCallback(() => {
-        const newValue = !enableEditing;
-        setEnableEditing(newValue);
-        // setSearchParams({ enableEditing: newValue.toString() }, { replace: true });
-    }, [enableEditing]);
+        // Use functional update to avoid closure issues
+        setEnableEditing((prev) => {
+            const newValue = !prev;
+
+            // Update URL using React Router's setSearchParams to keep things in sync
+            // Use replace: true to avoid adding to history
+            setSearchParams((prevParams) => {
+                const newParams = new URLSearchParams(prevParams);
+                if (newValue) {
+                    newParams.set('enableEditing', 'true');
+                } else {
+                    newParams.delete('enableEditing');
+                }
+                return newParams;
+            }, { replace: true });
+
+            return newValue;
+        });
+    }, [setSearchParams]);
 
     const smartLink = useCallback(
         async (onlyTimestamps: boolean) => {
@@ -177,10 +193,18 @@ export default function NoteViewer() {
         if (!id) {
             console.warn('NoteViewer - No note ID provided');
             setIsLoading(false);
+            lastLoadedNoteIdRef.current = null;
+            return;
+        }
+
+        // Skip loading if we've already loaded this exact note ID
+        // This prevents re-fetching when only search params change
+        if (lastLoadedNoteIdRef.current === id) {
             return;
         }
 
         setIsLoading(true);
+        lastLoadedNoteIdRef.current = id;
 
         // Try to load as regular note first, then fallback to fleeting note if it fails
         const loadNote = async () => {
@@ -475,6 +499,14 @@ export default function NoteViewer() {
     useEffect(() => {
         localStorage.setItem('richEditor', richEditor.toString());
     }, [richEditor]);
+
+    // Sync enableEditing with URL params when URL changes externally (browser navigation)
+    useEffect(() => {
+        const urlEnableEditing = searchParams.get('enableEditing') === 'true';
+        if (urlEnableEditing !== enableEditing) {
+            setEnableEditing(urlEnableEditing);
+        }
+    }, [searchParams, enableEditing]);
 
     // Compute note outline from markdown content
     useEffect(() => {

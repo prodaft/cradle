@@ -1,7 +1,8 @@
 import { EditorView } from '@codemirror/view';
 
 /**
- * Creates a custom CodeMirror theme for the Cradle editor
+ * Creates a custom CodeMirror theme for the Cradle editor.
+ * Uses CSS variables from design.css for automatic light/dark switching.
  */
 export function createCradleTheme(isDarkMode: boolean) {
     return EditorView.theme(
@@ -12,19 +13,12 @@ export function createCradleTheme(isDarkMode: boolean) {
             },
             '.cm-content': {
                 color: 'inherit',
-                '--pm-cursor-color': isDarkMode ? 'white' : 'black',
             },
-            '.cm-editor': {
-                backgroundColor: 'var(--cradle-bg-primary)',
-            },
-            '.cm-scroller': {
+            '.cm-editor, .cm-scroller': {
                 backgroundColor: 'var(--cradle-bg-primary)',
             },
             '.cm-selectionBackground': {
-                backgroundColor: isDarkMode
-                    ? 'rgba(255, 140, 0, 0.3) !important'
-                    : 'rgba(255, 140, 0, 0.2) !important',
-
+                backgroundColor: 'var(--cradle-md-selection) !important',
                 zIndex: 3,
             },
             '.cm-selectionLayer': {
@@ -40,17 +34,11 @@ export function createCradleTheme(isDarkMode: boolean) {
                 minWidth: '40px',
                 textAlign: 'right',
             },
-            '.cm-gutter': {
-                backgroundColor: 'var(--cradle-bg-primary)',
-            },
-            '.cm-gutters': {
+            '.cm-gutter, .cm-gutters': {
                 backgroundColor: 'var(--cradle-bg-primary)',
                 borderRight: '1px solid var(--cradle-border-primary)',
             },
-            '.cm-activeLine': {
-                backgroundColor: 'transparent !important',
-            },
-            '.cm-activeLineGutter': {
+            '.cm-activeLine, .cm-activeLineGutter': {
                 backgroundColor: 'transparent !important',
             },
             // Search panel styling
@@ -62,12 +50,7 @@ export function createCradleTheme(isDarkMode: boolean) {
                 boxShadow: 'var(--cradle-shadow-lg)',
                 fontSize: '13px',
             },
-            '.cm-panel.cm-search': {
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-            },
-            '.cm-search': {
+            '.cm-panel.cm-search, .cm-search': {
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '6px',
@@ -88,11 +71,11 @@ export function createCradleTheme(isDarkMode: boolean) {
                 fontSize: '13px',
                 color: 'var(--cradle-text-primary)',
                 outline: 'none',
-                transition: 'all 0.2s ease',
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
             },
             '.cm-textfield:focus': {
-                borderColor: '#FF8C00',
-                boxShadow: '0 0 0 2px rgba(255, 140, 0, 0.1)',
+                borderColor: 'var(--cradle-accent-primary)',
+                boxShadow: '0 0 0 2px var(--cradle-glow-primary)',
             },
             '.cm-button': {
                 backgroundColor: 'var(--cradle-bg-secondary)',
@@ -102,31 +85,26 @@ export function createCradleTheme(isDarkMode: boolean) {
                 fontSize: '12px',
                 color: 'var(--cradle-text-primary)',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'background-color 0.2s ease, border-color 0.2s ease',
                 fontWeight: '500',
             },
             '.cm-button:hover': {
                 backgroundColor: 'var(--cradle-bg-tertiary)',
-                borderColor: '#FF8C00',
+                borderColor: 'var(--cradle-accent-primary)',
             },
             '.cm-button:active': {
                 transform: 'scale(0.98)',
             },
             '.cm-searchMatch': {
-                backgroundColor: isDarkMode
-                    ? 'rgba(255, 140, 0, 0.4)'
-                    : 'rgba(255, 140, 0, 0.3)',
-                outline: `1px solid ${isDarkMode ? 'rgba(255, 140, 0, 0.6)' : 'rgba(255, 140, 0, 0.5)'}`,
+                backgroundColor: 'var(--cradle-md-selection)',
+                outline: '1px solid var(--cradle-accent-primary)',
             },
             '.cm-searchMatch-selected': {
-                backgroundColor: isDarkMode
-                    ? 'rgba(255, 140, 0, 0.6)'
-                    : 'rgba(255, 140, 0, 0.5)',
-                outline: `2px solid ${isDarkMode ? 'rgba(255, 140, 0, 0.8)' : 'rgba(255, 140, 0, 0.7)'}`,
+                backgroundColor: 'var(--cradle-glow-primary)',
+                outline: '2px solid var(--cradle-accent-primary)',
             },
         },
-        {
-            dark: isDarkMode,
-        },
+        { dark: isDarkMode },
     );
 }
+

@@ -196,13 +196,12 @@ export default function EnrichmentSettingsForm({
             const content = (
                 <div key={key}>
                     {field.type === 'choice' ? (
-                        <div className='py-2'>
-                            <label className='text-sm cradle-text-tertiary block mb-0.5'>
-                                {capitalizeString(key)}
-                                {field.required && (
-                                    <span className='text-red-500 ml-1'>*</span>
-                                )}
-                            </label>
+                        <SettingsField
+                            label={capitalizeString(key)}
+                            required={field.required}
+                            error={errors.settings?.[key]?.message?.toString()}
+                            inputWidth='w-72'
+                        >
                             <Controller
                                 control={control}
                                 name={`settings.${key}`}
@@ -226,12 +225,7 @@ export default function EnrichmentSettingsForm({
                                     />
                                 )}
                             />
-                            {errors.settings?.[key] && (
-                                <p className='text-red-600 text-sm mt-1'>
-                                    {errors.settings[key]?.message?.toString() || ''}
-                                </p>
-                            )}
-                        </div>
+                        </SettingsField>
                     ) : (
                         <SettingsField
                             label={capitalizeString(key)}

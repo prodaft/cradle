@@ -14,6 +14,7 @@ import {
     SelectOption,
     SettingsButton,
     SettingsCard,
+    SettingsField,
     SettingsSeparator,
     SettingsTextArea,
     SettingsToggle,
@@ -254,102 +255,66 @@ export default function FileSettingsForm() {
 
                                     <SettingsSeparator />
 
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
-                                                    MD5 Subtype
-                                                </label>
-                                                <p className='text-sm cradle-text-muted'>
-                                                    Entry class for MD5 hash artifacts
-                                                </p>
-                                                {errors.md5Subtype && (
-                                                    <p className='text-sm text-red-500 mt-1'>
-                                                        {errors.md5Subtype.message}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className='w-auto flex-1'>
-                                                <Controller
-                                                    name='md5Subtype'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Selector
-                                                            {...field}
-                                                            staticOptions={subtypes}
-                                                            placeholder='Select MD5 subtype'
-                                                        />
-                                                    )}
+                                    <SettingsField
+                                        label='MD5 Subtype'
+                                        description='Entry class for MD5 hash artifacts'
+                                        error={errors.md5Subtype}
+                                        inputWidth='w-72'
+                                    >
+                                        <Controller
+                                            name='md5Subtype'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Selector
+                                                    {...field}
+                                                    staticOptions={subtypes}
+                                                    placeholder='Select MD5 subtype'
                                                 />
-                                            </div>
-                                        </div>
-                                    </div>
+                                            )}
+                                        />
+                                    </SettingsField>
 
                                     <SettingsSeparator />
 
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
-                                                    SHA1 Subtype
-                                                </label>
-                                                <p className='text-sm cradle-text-muted'>
-                                                    Entry class for SHA1 hash artifacts
-                                                </p>
-                                                {errors.sha1Subtype && (
-                                                    <p className='text-sm text-red-500 mt-1'>
-                                                        {errors.sha1Subtype.message}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className='w-auto flex-1'>
-                                                <Controller
-                                                    name='sha1Subtype'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Selector
-                                                            {...field}
-                                                            staticOptions={subtypes}
-                                                            placeholder='Select SHA1 subtype'
-                                                        />
-                                                    )}
+                                    <SettingsField
+                                        label='SHA1 Subtype'
+                                        description='Entry class for SHA1 hash artifacts'
+                                        error={errors.sha1Subtype}
+                                        inputWidth='w-72'
+                                    >
+                                        <Controller
+                                            name='sha1Subtype'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Selector
+                                                    {...field}
+                                                    staticOptions={subtypes}
+                                                    placeholder='Select SHA1 subtype'
                                                 />
-                                            </div>
-                                        </div>
-                                    </div>
+                                            )}
+                                        />
+                                    </SettingsField>
 
                                     <SettingsSeparator />
 
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
-                                                    SHA256 Subtype
-                                                </label>
-                                                <p className='text-sm cradle-text-muted'>
-                                                    Entry class for SHA256 hash artifacts
-                                                </p>
-                                                {errors.sha256Subtype && (
-                                                    <p className='text-sm text-red-500 mt-1'>
-                                                        {errors.sha256Subtype.message}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className='w-auto flex-1'>
-                                                <Controller
-                                                    name='sha256Subtype'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Selector
-                                                            {...field}
-                                                            staticOptions={subtypes}
-                                                            placeholder='Select SHA256 subtype'
-                                                        />
-                                                    )}
+                                    <SettingsField
+                                        label='SHA256 Subtype'
+                                        description='Entry class for SHA256 hash artifacts'
+                                        error={errors.sha256Subtype}
+                                        inputWidth='w-72'
+                                    >
+                                        <Controller
+                                            name='sha256Subtype'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Selector
+                                                    {...field}
+                                                    staticOptions={subtypes}
+                                                    placeholder='Select SHA256 subtype'
                                                 />
-                                            </div>
-                                        </div>
-                                    </div>
+                                            )}
+                                        />
+                                    </SettingsField>
 
                                     <SettingsSeparator />
 

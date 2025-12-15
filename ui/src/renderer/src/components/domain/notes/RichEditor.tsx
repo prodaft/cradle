@@ -5,7 +5,6 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { CradleEditor } from '@/utils/editor/enhancements';
-import { classHighlightStyle } from '@/utils/editor/highlighting';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import { referenceLinksPlugin, referenceLinkSyntax } from '@/utils/editor/referenceLinks';
 import { createCradleTheme } from '@/utils/editor/theme';
@@ -22,7 +21,7 @@ import {
     indentWithTab,
 } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
-import { indentOnInput, syntaxHighlighting } from '@codemirror/language';
+import { indentOnInput } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
@@ -79,7 +78,6 @@ export interface RichEditorRef {
 
 /**
  * RichEditor component that uses CodeMirror for markdown editing
- * This component provides a markdown editor with syntax highlighting
  */
 const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEditor(
     {
@@ -109,6 +107,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const { executor } = useAPICall();
     const { notify } = useNotif();
 
+    // Memoize the file download function to prevent recreation on every render
+    const fileDownloadFn = useMemo(
+        () => executor(fileTransferApi.fileTransferDownloadRetrieve.bind(fileTransferApi)),
+        [executor, fileTransferApi],
+    );
+
+    // Fetch entry colors once on mount
     useEffect(() => {
         let isMounted = true;
         const fetchEntryColors = async () => {
@@ -134,42 +139,19 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         };
     }, [entriesApi]);
 
+    // Theme uses CSS variables, so we only need to update when isDarkMode changes for the dark flag
     const cradleTheme = useMemo(() => createCradleTheme(isDarkMode), [isDarkMode]);
 
-    useImperativeHandle(
-        ref,
-        () => ({
-            get view() {
-                return editorViewRef.current;
-            },
-        }),
-        [],
-    );
+    useImperativeHandle(ref, () => ({ get view() { return editorViewRef.current; } }), []);
 
     useEffect(() => {
         markdownContentRef.current = markdownContent;
     }, [markdownContent]);
 
-    const handleCodeBlockCopy = useCallback(
-        (lang: string, code: string, event: MouseEvent) => {
-            if (event && event.target) {
-                const target = event.target as HTMLElement;
-                const originalText = target.innerText;
-                target.innerText = 'Copied!';
-                setTimeout(() => {
-                    target.innerText = originalText;
-                }, 900);
-            }
-            if (typeof code === 'string') {
-                navigator.clipboard.writeText(code);
-            }
-        },
-        [],
-    );
-
+    // Memoize code block copy handler
     const codeBlockCopyExtension = useMemo(() => {
         return EditorView.domEventHandlers({
-            click: (event, view) => {
+            click: (event) => {
                 const target = event.target;
                 if (
                     target instanceof HTMLElement &&
@@ -178,20 +160,21 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     const codeBlock = target.closest('pre');
                     if (codeBlock) {
                         const code = codeBlock.textContent || '';
-                        handleCodeBlockCopy('', code, event);
+                        const originalText = target.innerText;
+                        target.innerText = 'Copied!';
+                        setTimeout(() => { target.innerText = originalText; }, 900);
+                        navigator.clipboard.writeText(code);
                     }
                     return true;
                 }
                 return false;
             },
         });
-    }, [handleCodeBlockCopy]);
+    }, []);
 
     // Use prop referenceMappings if provided, otherwise compute from fileData
     const referenceMappings = useMemo(() => {
-        if (propReferenceMappings) {
-            return propReferenceMappings;
-        }
+        if (propReferenceMappings) return propReferenceMappings;
         const mappings: Record<string, FileReference> = {};
         for (const file of fileData) {
             mappings[file.minioFileName] = file;
@@ -199,28 +182,24 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         return mappings;
     }, [fileData, propReferenceMappings]);
 
+    // Build extensions - only rebuild when actually necessary
     const extensions = useMemo(() => {
-        // Don't return empty array - allow editor to initialize with basic extensions
-        // entryColors will be populated asynchronously and extensions will be reconfigured
         let exts: Extension[] = [
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
-            referenceLinksPlugin(referenceMappings, navigate, executor(fileTransferApi.fileTransferDownloadRetrieve.bind(fileTransferApi))),
-            // Markdown language support
+            referenceLinksPlugin(referenceMappings, navigate, fileDownloadFn),
             markdown({
                 codeLanguages: languages,
                 extensions: [
-                    // GitHub Flavored Markdown (support for autolinks, strikethroughs)
                     GFM,
-                    // ProseMark parsing only in Rich Editor mode
-                    ...(!source ? [prosemarkMarkdownSyntaxExtensions] : []),
-                    // Cradle editor extension
+                    prosemarkMarkdownSyntaxExtensions,
                     editorUtils.extension(),
                     referenceLinkSyntax(referenceMappings || {}),
                 ],
             }),
-            syntaxHighlighting(classHighlightStyle),
-            // ProseMark setup only for Rich Editor (non-source) mode
+            // Syntax highlighting for both modes
+            baseSyntaxHighlights,
+            // ProseMark rendering only for Rich Editor mode (hides syntax markers)
             ...(!source
                 ? [
                     prosemarkBasicSetup(),
@@ -230,7 +209,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     clickLinkHandler.of((url: string) => {
                         window.open(url, '_blank', 'noopener,noreferrer');
                     }),
-                    baseSyntaxHighlights,
                 ]
                 : []),
             EditorView.contentAttributes.of({
@@ -249,10 +227,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             Prec.highest(
                 keymap.of([
                     ...completionKeymap,
-                    {
-                        key: 'Tab',
-                        run: acceptCompletion,
-                    },
+                    { key: 'Tab', run: acceptCompletion },
                 ]),
             ),
             keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap, ...searchKeymap]),
@@ -262,9 +237,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 {
                     key: 'Ctrl-s',
                     run: (cm: EditorView) => {
-                        if (!enableEditing) {
-                            return false;
-                        }
+                        if (!enableEditing) return false;
                         setMarkdownContent(cm.state.doc.toString());
                         saveNote(true);
                         return true;
@@ -279,10 +252,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
         if (source) {
             exts.push(lineNumbers());
-        }
-
-        // Hide gutters (e.g., fold gutter) in Rich Editor mode
-        if (!source) {
+        } else {
+            // Hide gutters in Rich Editor mode
             exts.push(
                 EditorView.theme({
                     '.cm-gutters': { display: 'none' },
@@ -292,8 +263,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
 
         if (profile?.vimMode) {
-            // Vim types from @replit/codemirror-vim are not fully compatible with CodeMirror 6 types
-            // The cm parameter is actually a CodeMirror instance with vim state, not a pure EditorView
             Vim.defineEx('write', 'w', (cm: any) => {
                 setMarkdownContent(cm.state.doc.toString());
                 saveNote(true);
@@ -307,7 +276,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         editorUtils,
         profile?.vimMode,
         additionalExtensions,
-        isDarkMode,
         entryColors,
         navigate,
         source,
@@ -317,8 +285,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         setMarkdownContent,
         codeBlockCopyExtension,
         referenceMappings,
+        fileDownloadFn,
     ]);
 
+    // Reconfigure extensions when they change
     useEffect(() => {
         if (editorViewRef.current) {
             editorViewRef.current.dispatch({
@@ -327,12 +297,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
     }, [extensions]);
 
+    // Initialize editor
     useEffect(() => {
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             try {
                 const state = EditorState.create({
                     doc: markdownContent,
-                    extensions: extensions,
+                    extensions,
                 });
 
                 const view = new EditorView({
@@ -356,17 +327,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 editorViewRef.current = view;
             } catch (error) {
                 console.error('Failed to initialize RichEditor:', error);
-                const errorMessage =
-                    error instanceof Error ? error.message : 'Unknown error occurred';
                 notify({
                     type: 'error',
-                    text: `Failed to initialize editor: ${errorMessage}. Please refresh the page.`,
+                    text: `Failed to initialize editor: ${error instanceof Error ? error.message : 'Unknown error'}. Please refresh the page.`,
                 });
             }
         }
     }, [extensions, notify]);
 
-    // Cleanup: destroy editor view on unmount only
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             if (editorViewRef.current) {
@@ -376,145 +345,98 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         };
     }, []);
 
+    // Sync external content changes
     useEffect(() => {
-        if (
-            editorViewRef.current &&
-            markdownContent !== editorViewRef.current.state.doc.toString()
-        ) {
-            // Preserve cursor position when updating from external source
-            const view = editorViewRef.current;
-            const state = view.state;
-            const selection = state.selection.main;
-            const cursorPos = selection.head;
+        const view = editorViewRef.current;
+        if (!view) return;
 
-            // Only update if content actually changed (not just a re-render)
-            const currentContent = state.doc.toString();
-            if (currentContent !== markdownContent) {
-                view.dispatch({
-                    changes: {
-                        from: 0,
-                        to: state.doc.length,
-                        insert: markdownContent,
-                    },
-                    // Try to preserve cursor position, but clamp to new document length
-                    selection: {
-                        anchor: Math.min(cursorPos, markdownContent.length),
-                        head: Math.min(cursorPos, markdownContent.length),
-                    },
-                });
-            }
-        }
+        const currentContent = view.state.doc.toString();
+        if (currentContent === markdownContent) return;
+
+        const cursorPos = view.state.selection.main.head;
+        view.dispatch({
+            changes: { from: 0, to: view.state.doc.length, insert: markdownContent },
+            selection: {
+                anchor: Math.min(cursorPos, markdownContent.length),
+                head: Math.min(cursorPos, markdownContent.length),
+            },
+        });
     }, [markdownContent]);
 
-    // Update search panel labels when it opens
+    // Update search panel labels - only observe when editor exists
     useEffect(() => {
-        if (!editorViewRef.current) return;
-
         const view = editorViewRef.current;
+        if (!view) return;
+
         const updateLabels = () => {
             const panel = view.dom.querySelector('.cm-search');
             if (!panel) return;
 
-            const labels = panel.querySelectorAll('label');
-            labels.forEach((label) => {
+            const labelMap: Record<string, string> = {
+                'match case': 'Match Case',
+                'by word': 'Match Whole Word',
+                'regexp': 'Use Regular Expression',
+            };
+
+            panel.querySelectorAll('label').forEach((label) => {
                 const textNode = Array.from(label.childNodes).find(
                     (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
                 );
                 if (textNode) {
-                    const text = textNode.textContent?.trim() || '';
-                    if (text === 'match case') {
-                        textNode.textContent = 'Match Case';
-                    } else if (text === 'by word') {
-                        textNode.textContent = 'Match Whole Word';
-                    } else if (text === 'regexp') {
-                        textNode.textContent = 'Use Regular Expression';
-                    }
+                    const newText = labelMap[textNode.textContent?.trim() || ''];
+                    if (newText) textNode.textContent = newText;
                 }
             });
         };
 
-        // Watch for panel opening via MutationObserver
         const observer = new MutationObserver(() => {
-            const panel = view.dom.querySelector('.cm-search');
-            if (panel) {
-                // Use requestAnimationFrame to ensure DOM is ready
-                requestAnimationFrame(() => {
-                    updateLabels();
-                });
+            if (view.dom.querySelector('.cm-search')) {
+                requestAnimationFrame(updateLabels);
             }
         });
 
-        observer.observe(view.dom, {
-            childList: true,
-            subtree: true,
-        });
+        observer.observe(view.dom, { childList: true, subtree: true });
+        requestAnimationFrame(updateLabels);
 
-        // Initial check
-        requestAnimationFrame(() => {
-            updateLabels();
-        });
-
-        return () => {
-            observer.disconnect();
-        };
+        return () => observer.disconnect();
     }, []);
 
     const insertTextToCodeMirror = useCallback((text: string) => {
-        if (editorViewRef.current) {
-            // CodeMirror 6 way to replace selection
-            const state = editorViewRef.current.state;
-            const transaction = state.update(state.replaceSelection(text));
-            editorViewRef.current.dispatch(transaction);
+        const view = editorViewRef.current;
+        if (view) {
+            view.dispatch(view.state.update(view.state.replaceSelection(text)));
         }
     }, []);
 
-    const toggleFileList = useCallback(() => {
-        setShowFileList((prev) => !prev);
-    }, []);
+    const toggleFileList = useCallback(() => setShowFileList((prev) => !prev), []);
 
     return (
-        <div
-            className={`${!source ? 'rich-editor markdown-body' : ''} h-full w-full flex flex-col flex-1`}
-        >
-            <div className='h-full w-full flex flex-col overflow-auto'>
-                <div className='flex h-full overflow-y-hidden'>
+        <div className={`${!source ? 'rich-editor markdown-body' : ''} h-full w-full flex flex-col flex-1`}>
+            <div className="h-full w-full flex flex-col overflow-auto">
+                <div className="flex h-full overflow-y-hidden">
                     <div
                         ref={editorRef}
-                        className='w-full overflow-y-auto rounded-lg rich-editor markdown-body'
-                        role='textbox'
-                        aria-label='Rich text editor'
-                        aria-multiline='true'
+                        className="w-full overflow-y-auto rounded-lg rich-editor markdown-body"
+                        role="textbox"
+                        aria-label="Rich text editor"
+                        aria-multiline="true"
                         tabIndex={0}
-                        style={{
-                            minHeight: '400px',
-                            backgroundColor: 'transparent',
-                            color: isDarkMode ? '#FFFFFF' : '#000000',
-                        }}
+                        style={{ minHeight: '400px', backgroundColor: 'transparent' }}
                     />
                 </div>
             </div>
             {fileData && fileData.length > 0 && (
-                <div className='max-h-[25%] rounded-md flex flex-col justify-end z-30'>
+                <div className="max-h-[25%] rounded-md flex flex-col justify-end z-30">
                     <div
-                        className='bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] mt-1 hover:cursor-pointer flex flex-row space-x-2'
+                        className="bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] mt-1 hover:cursor-pointer flex flex-row space-x-2"
                         onClick={toggleFileList}
                     >
                         <span>
-                            {showFileList ? (
-                                <NavArrowDown width='20px' />
-                            ) : (
-                                <NavArrowUp width='20px' />
-                            )}
+                            {showFileList ? <NavArrowDown width="20px" /> : <NavArrowUp width="20px" />}
                         </span>
-                        <span>
-                            {showFileList
-                                ? 'Hide Uploaded Files'
-                                : 'Show Uploaded Files'}
-                        </span>
+                        <span>{showFileList ? 'Hide Uploaded Files' : 'Show Uploaded Files'}</span>
                     </div>
-                    <div
-                        className={`overflow-auto h-full rounded-md ${showFileList && 'min-h-24'}`}
-                    >
+                    <div className={`overflow-auto h-full rounded-md ${showFileList && 'min-h-24'}`}>
                         {showFileList && (
                             <FileTable
                                 fileData={fileData}
