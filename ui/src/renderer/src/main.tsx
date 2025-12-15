@@ -8,9 +8,13 @@ import App from './App.jsx';
 import './styles/fonts.css';
 import './styles/main.css';
 
-Sentry.init({
-    dsn: 'https://da023724f698011d4e2280daccd1a492@apm.prodaft.com/37',
-});
+const sentryDsn = import.meta.env.VITE_SENTRY_DSN;
+
+if (sentryDsn) {
+    Sentry.init({
+        dsn: sentryDsn,
+    });
+}
 
 const container = document.getElementById('root')!;
 const root = createRoot(container);

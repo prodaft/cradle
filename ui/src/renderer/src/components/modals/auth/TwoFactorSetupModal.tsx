@@ -97,49 +97,53 @@ export default function TwoFactorSetupModal({
 
     if (loading) {
         return (
-            <div className='w-full min-w-[28rem]'>
-                <div className='flex items-end justify-between mb-6'>
-                    <h2 className='text-xl font-semibold cradle-text-primary cradle-mono'>
-                        Setting up Two-Factor Auth
-                    </h2>
+            <div className='min-w-[450px] max-w-lg'>
+                <div className='flex items-end justify-between mb-4'>
+                    <div className='flex items-center gap-3'>
+                        <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                            Setting up Two-Factor Auth
+                        </h2>
+                    </div>
                 </div>
-                <div className='flex justify-center py-8'>
-                    <div className='loading loading-spinner loading-lg'></div>
+                <div className='flex justify-center py-12'>
+                    <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-cradle-accent-primary'></div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className='w-full min-w-[28rem]'>
+        <div className='min-w-[450px] max-w-lg'>
             {/* Header */}
-            <div className='flex items-end justify-between mb-6'>
-                <h2 className='text-xl font-semibold cradle-text-primary cradle-mono'>
-                    {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
-                </h2>
+            <div className='flex items-end justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                        {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
+                    </h2>
+                </div>
             </div>
 
             {!isDisabling && (
                 <>
                     {/* QR Code Section */}
-                    <div className='flex justify-center mb-4'>
-                        <div className='p-4 bg-white'>
-                            <QRCodeSVG value={otpAuthUrl} size={200} level='H' />
+                    <div className='flex justify-center mb-6'>
+                        <div className='p-4 bg-white rounded-lg border border-cradle-border-accent'>
+                            <QRCodeSVG value={otpAuthUrl} size={180} level='H' />
                         </div>
                     </div>
 
-                    <div className='mb-6 p-4 cradle-border cradle-bg-secondary'>
+                    <div className='mb-6 p-4 border border-cradle-border-accent bg-cradle-bg-secondary/30 rounded-lg'>
                         <div className='flex items-start gap-3'>
-                            <div className='cradle-status-light cradle-status-info mt-1 flex-shrink-0'></div>
+                            <div className='w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0'></div>
                             <div className='flex-1'>
-                                <h3 className='text-sm font-semibold cradle-text-primary cradle-mono mb-2'>
+                                <h3 className='text-sm font-semibold text-cradle-text-primary mb-2'>
                                     Manual Entry
                                 </h3>
-                                <p className='text-xs cradle-text-tertiary cradle-mono mb-3'>
+                                <p className='text-xs text-cradle-text-tertiary mb-3'>
                                     Can't scan the QR code? Enter this secret key
                                     manually in your authenticator app:
                                 </p>
-                                <code className='block cradle-bg-primary p-2 text-center select-all cradle-mono text-sm'>
+                                <code className='block bg-cradle-bg-primary p-2 text-center select-all font-mono text-sm border border-cradle-border-accent rounded text-cradle-text-primary'>
                                     {secret}
                                 </code>
                             </div>
@@ -151,7 +155,7 @@ export default function TwoFactorSetupModal({
             {/* Form */}
             <form onSubmit={handleSubmit} className='space-y-5'>
                 <div>
-                    <div className='flex gap-2 justify-start w-full'>
+                    <div className='flex gap-2 justify-center w-full'>
                         {[0, 1, 2, 3, 4, 5].map((index) => (
                             <input
                                 key={index}
@@ -159,7 +163,7 @@ export default function TwoFactorSetupModal({
                                 name={`twoFactorToken-${index}`}
                                 type='text'
                                 autoComplete='twoFactorToken'
-                                className='cradle-search w-12 h-12 text-center text-lg font-mono disabled:opacity-50 disabled:cursor-not-allowed'
+                                className='w-12 h-12 text-center text-lg font-mono rounded-lg border border-cradle-border-accent bg-cradle-bg-secondary/50 text-cradle-text-primary focus:border-cradle-accent-primary focus:ring-1 focus:ring-cradle-accent-primary outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
                                 placeholder='0'
                                 pattern='[0-9]*'
                                 maxLength={1}
@@ -209,7 +213,7 @@ export default function TwoFactorSetupModal({
                             />
                         ))}
                     </div>
-                    <p className='text-xs cradle-text-muted cradle-mono mt-2'>
+                    <p className='text-xs text-cradle-text-tertiary text-center mt-3'>
                         {isDisabling
                             ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
                             : 'Enter the 6-digit code from your authenticator app'}
@@ -218,27 +222,25 @@ export default function TwoFactorSetupModal({
 
                 <AlertBox alert={alert} />
 
-                <div className='cradle-border-t pt-4 mt-5'>
-                    <div className='flex justify-end gap-2'>
-                        <button
-                            type='button'
-                            className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
-                            onClick={closeModal}
-                        >
-                            <span>Cancel</span>
-                        </button>
-                        <button
-                            type='submit'
-                            className={`rounded-full border bg-transparent transition-colors text-sm px-3 py-1.5 flex items-center gap-1.5 ${
-                                isDisabling
-                                    ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10'
-                                    : 'border-cradle-border-accent hover:border-cradle-accent-primary text-cradle-accent-primary hover:bg-cradle-accent-primary/10'
-                            }`}
-                            disabled={verificationCode.length !== 6}
-                        >
-                            <span>{isDisabling ? 'Disable 2FA' : 'Enable'}</span>
-                        </button>
-                    </div>
+                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
+                    <button
+                        type='button'
+                        className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                        onClick={closeModal}
+                    >
+                        <span>Cancel</span>
+                    </button>
+                    <button
+                        type='submit'
+                        className={`rounded-full border bg-transparent transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5 ${
+                            isDisabling
+                                ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10'
+                                : 'border-cradle-accent-primary hover:bg-cradle-accent-primary/10 text-cradle-accent-primary'
+                        }`}
+                        disabled={verificationCode.length !== 6}
+                    >
+                        <span>{isDisabling ? 'Disable 2FA' : 'Enable'}</span>
+                    </button>
                 </div>
             </form>
         </div>

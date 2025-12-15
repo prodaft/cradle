@@ -86,25 +86,33 @@ export default function ReportGenerationModal({
     };
 
     return (
-        <div className='p-2 space-y-6'>
+        <div className='min-w-[400px] max-w-lg'>
+             <div className='flex items-end justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                        Generate Report
+                    </h2>
+                </div>
+            </div>
+
             {/* Title Input */}
-            <div>
-                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2'>
+            <div className='mb-5'>
+                <label className='cradle-label mb-2 block'>
                     Report Title
                 </label>
                 <input
                     type='text'
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-cradle2 focus:border-yellow-500 dark:bg-gray-700 dark:text-white'
+                    className='cradle-input w-full'
                     placeholder='Enter report title...'
                     disabled={isGenerating}
                 />
             </div>
 
             {/* Format Selection */}
-            <div>
-                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3'>
+            <div className='mb-5'>
+                <label className='cradle-label mb-2 block'>
                     Format
                 </label>
                 <div className='grid grid-cols-3 gap-3'>
@@ -112,10 +120,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('html')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
                             format === 'html'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
+                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
                         } disabled:opacity-50`}
                     >
                         <Page width='20' height='20' />
@@ -125,10 +133,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('json')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
                             format === 'json'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
+                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
                         } disabled:opacity-50`}
                     >
                         <Code width='20' height='20' />
@@ -138,10 +146,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('plain')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex flex-col items-center gap-2 transition-colors ${
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
                             format === 'plain'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
+                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
                         } disabled:opacity-50`}
                     >
                         <Download width='20' height='20' />
@@ -151,8 +159,8 @@ export default function ReportGenerationModal({
             </div>
 
             {/* Mode Selection */}
-            <div>
-                <label className='block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3'>
+            <div className='mb-6'>
+                <label className='cradle-label mb-2 block'>
                     Mode
                 </label>
                 <div className='grid grid-cols-2 gap-3'>
@@ -160,10 +168,10 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('anonymized')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
                             mode === 'anonymized'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
+                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
                         } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Anonymized</span>
@@ -172,10 +180,10 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('transparent')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-lg flex items-center justify-center gap-2 transition-colors ${
+                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
                             mode === 'transparent'
-                                ? 'border-cradle2 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-cradle2'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300'
+                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
+                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
                         } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Transparent</span>
@@ -184,12 +192,12 @@ export default function ReportGenerationModal({
             </div>
 
             {/* Footer */}
-            <div className='flex items-center justify-end gap-3'>
+            <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                 <button
                     onClick={closeModal}
                     disabled={isGenerating}
                     type='button'
-                    className='flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50'
+                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
                 >
                     Cancel
                 </button>
@@ -197,10 +205,10 @@ export default function ReportGenerationModal({
                     onClick={handleGenerate}
                     disabled={isGenerating || !title.trim()}
                     type='button'
-                    className='flex-1 px-4 py-2 text-sm font-medium text-white bg-cradle2 border border-transparent rounded-md hover:bg-cradle2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2'
+                    className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
                 >
                     {isGenerating && (
-                        <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-white' />
+                        <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
                     )}
                     {isGenerating ? 'Generating...' : 'Generate Report'}
                 </button>

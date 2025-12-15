@@ -8,12 +8,11 @@
  * - tabs/ - Tab management hooks (useTabContext, TabContextProvider)
  * - theme/ - Theme hooks (useTheme)
  * - search/ - Search hooks (useFrontendSearch)
- * - Root level - General utility hooks (useInterval)
  *
  * Usage:
  * ```typescript
  * // Import from main index
- * import { useApi, useAuth, useInterval } from '@hooks';
+ * import { useApi, useAuth } from '@hooks';
  *
  * // Or import from group
  * import { useApi, useAPICall } from '@hooks/api';
@@ -38,6 +37,3 @@ export * from './theme';
 
 // Search hooks
 export * from './search';
-
-// General utility hooks
-export { default as useInterval } from './useInterval';

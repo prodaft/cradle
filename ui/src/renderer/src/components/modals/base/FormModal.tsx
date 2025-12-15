@@ -76,17 +76,19 @@ export default function FormModal({
     };
 
     return (
-        <div className='min-w-[320px] max-w-lg'>
+        <div className='min-w-[400px] max-w-lg'>
             {/* Header with title */}
             <div className='flex items-end justify-between mb-5'>
-                <h2 className='text-lg font-semibold text-cradle-text-primary tracking-wide'>
-                    {title}
-                </h2>
+                <div className='flex items-center gap-3'>
+                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                        {title}
+                    </h2>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit}>
                 {fields.map((field, index) => (
-                    <div key={index} className='mb-4'>
+                    <div key={index} className='mb-5'>
                         <label
                             htmlFor={field.name}
                             className='cradle-label mb-2 block'
@@ -97,7 +99,7 @@ export default function FormModal({
                             <textarea
                                 id={field.name}
                                 name={field.name}
-                                className='cradle-textarea'
+                                className='cradle-input w-full min-h-[100px] py-2'
                                 placeholder={field.placeholder || ''}
                                 value={formData[field.name]}
                                 onChange={handleChange}
@@ -107,7 +109,7 @@ export default function FormModal({
                                 id={field.name}
                                 name={field.name}
                                 type={field.type}
-                                className='cradle-input'
+                                className='cradle-input w-full'
                                 placeholder={field.placeholder || ''}
                                 value={formData[field.name]}
                                 onChange={handleChange}
@@ -117,17 +119,17 @@ export default function FormModal({
                 ))}
 
                 {/* Action buttons */}
-                <div className='flex gap-3 pt-3'>
+                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                     <button
                         type='button'
-                        className='cradle-btn flex-1'
+                        className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
                         onClick={closeModal}
                     >
                         Cancel
                     </button>
                     <button
                         type='submit'
-                        className='cradle-btn cradle-btn-primary flex-1'
+                        className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
                     >
                         Submit
                     </button>

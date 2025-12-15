@@ -1,3 +1,4 @@
+import { useNotif } from '@/contexts';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import Selector from '@components/forms/Selector';
@@ -84,6 +85,7 @@ export default function EnrichmentRequestModal({
     const [loading, setLoading] = useState(false);
     const [enricherTypes, setEnricherTypes] = useState<EnricherOption[]>([]);
     const [loadingEnrichers, setLoadingEnrichers] = useState(true);
+    const { notify } = useNotif();
     const [selectedEntities, setSelectedEntities] = useState<Array<{ value: number, label: string }>>([]);
     const [initialDataLoading, setInitialDataLoading] = useState(false);
 
@@ -256,16 +258,20 @@ export default function EnrichmentRequestModal({
         try {
             // Validate form data
             if (!formData.title.trim()) {
-                throw new Error('Title is required');
+                notify({ type: 'error', text: 'Title is required' });
+                return;
             }
             if (!formData.enricherNames || formData.enricherNames.length === 0) {
-                throw new Error('At least one enrichment technique must be selected');
+                notify({ type: 'error', text: 'At least one enrichment technique must be selected' });
+                return;
             }
             if (!formData.entities || formData.entities.length === 0) {
-                throw new Error('At least one entity must be selected');
+                notify({ type: 'error', text: 'At least one entity must be selected' });
+                return;
             }
             if (!formData.request.trim()) {
-                throw new Error('Request artifacts are required');
+                notify({ type: 'error', text: 'Request artifacts are required' });
+                return;
             }
 
             // Parse the request text
@@ -306,16 +312,21 @@ export default function EnrichmentRequestModal({
     };
 
     return (
-        <div className='w-full max-w-2xl p-6'>
-            <h2 className='text-2xl font-bold mb-4 cradle-text-primary'>
-                Create Enrichment Request
-            </h2>
+        <div className='min-w-[500px] max-w-2xl'>
+            <div className='flex items-end justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                        Create Enrichment Request
+                    </h2>
+                </div>
+            </div>
+
             <form onSubmit={handleSubmit}>
                 {/* Title */}
-                <div className='mb-4'>
+                <div className='mb-5'>
                     <label
                         htmlFor='title'
-                        className='block text-sm font-medium cradle-text-secondary mb-1'
+                        className='cradle-label mb-2 block'
                     >
                         Title <span className='text-red-500'>*</span>
                     </label>
@@ -323,7 +334,7 @@ export default function EnrichmentRequestModal({
                         id='title'
                         name='title'
                         type='text'
-                        className='input input-block input-bordered w-full'
+                        className='cradle-input w-full'
                         placeholder='Enter request title'
                         value={formData.title}
                         onChange={handleChange}
@@ -332,10 +343,10 @@ export default function EnrichmentRequestModal({
                 </div>
 
                 {/* Enrichment Techniques */}
-                <div className='mb-4'>
+                <div className='mb-5'>
                     <label
                         htmlFor='enricherNames'
-                        className='block text-sm font-medium cradle-text-secondary mb-1'
+                        className='cradle-label mb-2 block'
                     >
                         Enrichment Techniques <span className='text-red-500'>*</span>
                     </label>
@@ -347,16 +358,16 @@ export default function EnrichmentRequestModal({
                         menuPosition='absolute'
                         onChange={handleEnricherChange}
                     />
-                    <p className='text-xs cradle-text-tertiary mt-1'>
+                    <p className='text-xs text-cradle-text-tertiary mt-1'>
                         Select one or more enrichment techniques to apply
                     </p>
                 </div>
 
                 {/* Entities */}
-                <div className='mb-4'>
+                <div className='mb-5'>
                     <label
                         htmlFor='entity'
-                        className='block text-sm font-medium cradle-text-secondary mb-1'
+                        className='cradle-label mb-2 block'
                     >
                         Entities <span className='text-red-500'>*</span>
                     </label>
@@ -373,17 +384,17 @@ export default function EnrichmentRequestModal({
                 </div>
 
                 {/* Request Artifacts */}
-                <div className='mb-4 w-full'>
+                <div className='mb-5 w-full'>
                     <label
                         htmlFor='request'
-                        className='block text-sm font-medium cradle-text-secondary mb-1'
+                        className='cradle-label mb-2 block'
                     >
                         Request Artifacts <span className='text-red-500'>*</span>
                     </label>
                     <textarea
                         id='request'
                         name='request'
-                        className='textarea textarea-block w-full h-32'
+                        className='cradle-input w-full h-32 py-2'
                         placeholder='Enter artifacts in format:&#10;type:artifact&#10;type:artifact'
                         value={formData.request}
                         onChange={handleChange}
@@ -392,10 +403,10 @@ export default function EnrichmentRequestModal({
                 </div>
 
                 {/* Actions */}
-                <div className='flex justify-end gap-2 mt-6'>
+                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                     <button
                         type='button'
-                        className='btn'
+                        className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
                         onClick={closeModal}
                         disabled={loading || initialDataLoading}
                     >
@@ -403,7 +414,7 @@ export default function EnrichmentRequestModal({
                     </button>
                     <button
                         type='submit'
-                        className='btn btn-primary'
+                        className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
                         disabled={loading || initialDataLoading}
                     >
                         {loading ? 'Creating...' : initialDataLoading ? 'Loading...' : 'Create Request'}

@@ -60,15 +60,19 @@ export default function FileUploadModal({
     };
 
     return (
-        <div className='w-full max-w-2xl'>
+        <div className='min-w-[400px] max-w-2xl'>
             {/* Header */}
-            <h2 className='text-xl font-semibold cradle-text-primary cradle-mono mb-4 text-center'>
-                Upload Files
-            </h2>
+            <div className='flex items-end justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                        Upload Files
+                    </h2>
+                </div>
+            </div>
 
             {/* File Upload Section */}
             <div className='mb-6 w-full flex justify-center'>
-                <div>
+                <div className='w-full'>
                     <FileInput
                         fileData={fileData}
                         setFileData={handleFileDataChange}
@@ -81,14 +85,14 @@ export default function FileUploadModal({
             {/* Queued Files List */}
             {pendingFiles.length > 0 && (
                 <div className='mb-6'>
-                    <h3 className='text-sm font-medium cradle-text-secondary cradle-mono mb-2'>
+                    <h3 className='cradle-label mb-2 block'>
                         Queued for Upload ({pendingFiles.length})
                     </h3>
-                    <ul className='cradle-border max-h-48 overflow-y-auto'>
+                    <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
                         {pendingFiles.map((file, index) => (
                             <li
                                 key={index}
-                                className='px-4 py-2 cradle-text-primary text-sm cradle-border-b last:border-b-0 hover:cradle-bg-secondary transition-colors'
+                                className='px-4 py-2 text-cradle-text-primary text-sm border-b border-cradle-border-accent last:border-b-0 hover:bg-cradle-bg-secondary/50 transition-colors'
                             >
                                 {file.name}
                             </li>
@@ -98,16 +102,14 @@ export default function FileUploadModal({
             )}
 
             {/* Actions */}
-            <div className='cradle-border-t pt-4 mt-4'>
-                <div className='flex gap-3 justify-center'>
-                    <button
-                        type='button'
-                        className='cradle-btn cradle-btn-primary px-6'
-                        onClick={closeModal}
-                    >
-                        Done
-                    </button>
-                </div>
+            <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
+                <button
+                    type='button'
+                    className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                    onClick={closeModal}
+                >
+                    Done
+                </button>
             </div>
         </div>
     );
