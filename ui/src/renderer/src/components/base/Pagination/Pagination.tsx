@@ -76,70 +76,104 @@ export default function Pagination({
         }
     };
 
+    const handlePageSizeChange = (e: ChangeEvent<HTMLSelectElement>) => {
+        if (!onPageSizeChange) return;
+
+        const newSize = parseInt(e.target.value, 10);
+        if (!isNaN(newSize) && newSize > 0) {
+            onPageSizeChange(newSize);
+        }
+    };
+
+    const pageSizeOptions = [10, 20, 50, 100];
+
     return (
-        <div className='pagination flex justify-end items-center text-sm w-full min-w-0'>
-            {/* First */}
-            {totalPages > 1 && currentPage !== 1 && (
-                <span
-                    onClick={() => onPageChange(1)}
-                    className='cursor-pointer px-1 hover:opacity-70'
-                    title='First page'
-                >
-                    &lt;&lt;
-                </span>
+        <div className='pagination flex justify-end items-center text-sm w-full min-w-0 gap-3'>
+            {/* Page size selector (items per page) */}
+            {pageSize !== null && onPageSizeChange && (
+                <div className='flex items-center text-xs whitespace-nowrap'>
+                    <select
+                        className='cradle-select h-7 py-0 px-1 text-xs text-center'
+                        value={pageSize}
+                        onChange={handlePageSizeChange}
+                        aria-label='Rows per page'
+                    >
+                        {pageSizeOptions.map((size) => (
+                            <option key={size} value={size}>
+                                {size}
+                            </option>
+                        ))}
+                        {!pageSizeOptions.includes(pageSize) && (
+                            <option value={pageSize}>{pageSize}</option>
+                        )}
+                    </select>
+                </div>
             )}
 
-            {/* Previous */}
-            {totalPages > 1 && currentPage !== 1 && (
-                <span
-                    onClick={() => onPageChange(currentPage - 1)}
-                    className='cursor-pointer px-1 hover:opacity-70'
-                    title='Previous page'
-                >
-                    &lt;
-                </span>
-            )}
+            <div className='flex items-center text-sm min-w-0'>
+                {/* First */}
+                {totalPages > 1 && currentPage !== 1 && (
+                    <span
+                        onClick={() => onPageChange(1)}
+                        className='cursor-pointer px-1 hover:opacity-70'
+                        title='First page'
+                    >
+                        &lt;&lt;
+                    </span>
+                )}
 
-            {/* Current Page / Total */}
-            <div className='flex items-center font-medium text-sm flex-shrink-0 px-1'>
-                <input
-                    type='text'
-                    value={inputValue}
-                    onChange={handlePageInputChange}
-                    onBlur={handlePageInputBlur}
-                    onKeyDown={handlePageInputKeyDown}
-                    className='border border-cradle-border-accent rounded-full text-center text-sm bg-transparent focus:outline-none focus:border-cradle-accent-primary'
-                    style={{
-                        width: `${String(inputValue).length * 0.6 + 0.8}em`,
-                        padding: '0 2px',
-                    }}
-                    title='Enter page number'
-                />
-                <span className='mx-0.5'>/</span>
-                <span>{totalPages}</span>
+                {/* Previous */}
+                {totalPages > 1 && currentPage !== 1 && (
+                    <span
+                        onClick={() => onPageChange(currentPage - 1)}
+                        className='cursor-pointer px-1 hover:opacity-70'
+                        title='Previous page'
+                    >
+                        &lt;
+                    </span>
+                )}
+
+                {/* Current Page / Total */}
+                <div className='flex items-center font-medium text-sm flex-shrink-0 px-1'>
+                    <input
+                        type='text'
+                        value={inputValue}
+                        onChange={handlePageInputChange}
+                        onBlur={handlePageInputBlur}
+                        onKeyDown={handlePageInputKeyDown}
+                        className='border border-cradle-border-accent rounded-full text-center text-sm bg-transparent focus:outline-none focus:border-cradle-accent-primary'
+                        style={{
+                            width: `${String(inputValue).length * 0.6 + 0.8}em`,
+                            padding: '0 2px',
+                        }}
+                        title='Enter page number'
+                    />
+                    <span className='mx-0.5'>/</span>
+                    <span>{totalPages}</span>
+                </div>
+
+                {/* Next */}
+                {totalPages > 1 && currentPage !== totalPages && (
+                    <span
+                        onClick={() => onPageChange(currentPage + 1)}
+                        className='cursor-pointer px-1 hover:opacity-70'
+                        title='Next page'
+                    >
+                        &gt;
+                    </span>
+                )}
+
+                {/* Last */}
+                {totalPages > 1 && currentPage !== totalPages && (
+                    <span
+                        onClick={() => onPageChange(totalPages)}
+                        className='cursor-pointer px-1 hover:opacity-70'
+                        title='Last page'
+                    >
+                        &gt;&gt;
+                    </span>
+                )}
             </div>
-
-            {/* Next */}
-            {totalPages > 1 && currentPage !== totalPages && (
-                <span
-                    onClick={() => onPageChange(currentPage + 1)}
-                    className='cursor-pointer px-1 hover:opacity-70'
-                    title='Next page'
-                >
-                    &gt;
-                </span>
-            )}
-
-            {/* Last */}
-            {totalPages > 1 && currentPage !== totalPages && (
-                <span
-                    onClick={() => onPageChange(totalPages)}
-                    className='cursor-pointer px-1 hover:opacity-70'
-                    title='Last page'
-                >
-                    &gt;&gt;
-                </span>
-            )}
         </div>
     );
 }
