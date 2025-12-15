@@ -1,7 +1,7 @@
 import useFrontendSearch from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
 import Tooltip from '@components/base/Tooltip/Tooltip';
-import { PlusCircle } from 'iconoir-react';
+import { PlusCircle, Search, Xmark } from 'iconoir-react';
 import { ReactElement, useMemo, useState } from 'react';
 
 interface AdminPanelSectionProps {
@@ -48,18 +48,36 @@ export default function AdminPanelSection({
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>
-            <div className='w-full flex flex-row items-center justify-between pt-3 pr-3 pb-3'>
-                <input
-                    type='text'
-                    placeholder='Search'
-                    className='input input-md input-block w-full'
-                    onChange={(e) => setSearchVal(e.target.value)}
-                />
+            <div className='w-full flex flex-row items-center justify-between pt-3 pr-3 pb-3 gap-3'>
+                <div className='flex items-center gap-2 flex-grow bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                    <button
+                        className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                        title='Search'
+                    >
+                        <Search className='w-4 h-4' />
+                    </button>
+                    <input
+                        type='text'
+                        placeholder='Search'
+                        className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                        onChange={(e) => setSearchVal(e.target.value)}
+                        value={searchVal}
+                    />
+                    {searchVal && (
+                        <button
+                            onClick={() => setSearchVal('')}
+                            className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                            title='Clear search'
+                        >
+                            <Xmark className='w-4 h-4' />
+                        </button>
+                    )}
+                </div>
                 {addEnabled && (
                     <Tooltip content={addTooltipText}>
                         <span>
                             <button
-                                className='h-fit ml-4 pt-1'
+                                className='h-fit pt-1'
                                 onClick={() =>
                                     handleAdd((x) =>
                                         setAddedItems((prev) => [...prev, x]),

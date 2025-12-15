@@ -7,17 +7,18 @@ import {
 } from '@services/cradle/models';
 import { useEffect, useMemo, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import {
-    Form,
-    FormInput,
-    FormSelect,
-    FormTextArea,
     SelectOption,
+    SettingsCard,
+    SettingsField,
+    SettingsSeparator,
+    SettingsTextArea,
 } from '../../../forms';
-import { Tab, Tabs } from '../../../layout/Tabs/Tabs';
-import { TabClasses } from '../../../layout/Tabs/types';
+import { useNotif } from '@/contexts/ui/NotificationContext';
+import Selector from '../../../forms/Selector';
 
 interface EntryTypeFormProps {
     id?: string | null;
@@ -91,84 +92,6 @@ const entryTypeSchema: Yup.ObjectSchema<EntryTypeFormValues> = Yup.object().shap
     children: Yup.array().default([]),
 });
 
-// Color picker component that uses form context
-function ColorPickerField() {
-    const { control, watch, setValue } = useFormContext<EntryTypeFormValues>();
-    const [showColorPicker, setShowColorPicker] = useState(false);
-    const watchColor = watch('color');
-    const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
-
-    const generateRandomColor = () => {
-        setValue('color', colorGenerator.nextHexColor());
-    };
-
-    return (
-        <div className='w-full'>
-            <label
-                htmlFor='color'
-                className='block text-sm font-medium cradle-text-tertiary'
-            >
-                Color
-            </label>
-            <div className='mt-1 flex items-center space-x-2'>
-                <Controller
-                    name='color'
-                    control={control}
-                    render={({ field }) => (
-                        <input
-                            type='text'
-                            className='cradle-search w-full'
-                            {...field}
-                        />
-                    )}
-                />
-                <div
-                    className='h-8 w-12 rounded cursor-pointer border border-gray-300'
-                    style={{ backgroundColor: watchColor }}
-                    onClick={() => setShowColorPicker(!showColorPicker)}
-                />
-                <button
-                    type='button'
-                    className='btn btn-sm btn-outline'
-                    onClick={generateRandomColor}
-                >
-                    <svg
-                        xmlns='http://www.w3.org/2000/svg'
-                        className='h-4 w-4'
-                        fill='none'
-                        viewBox='0 0 24 24'
-                        stroke='currentColor'
-                    >
-                        <path
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            strokeWidth={2}
-                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-                        />
-                    </svg>
-                </button>
-            </div>
-            {showColorPicker && (
-                <div className='absolute z-10 mt-2'>
-                    <div
-                        className='fixed inset-0'
-                        onClick={() => setShowColorPicker(false)}
-                    />
-                    <Controller
-                        name='color'
-                        control={control}
-                        render={({ field }) => (
-                            <HexColorPicker
-                                color={field.value}
-                                onChange={field.onChange}
-                            />
-                        )}
-                    />
-                </div>
-            )}
-        </div>
-    );
-}
 
 export default function EntryTypeForm({
     id = null,
@@ -176,20 +99,34 @@ export default function EntryTypeForm({
     onAdd,
 }: EntryTypeFormProps) {
     const { entriesApi } = useApi();
+    const { notify } = useNotif();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [initialData, setInitialData] = useState<EntryTypeFormValues>({
-        type: typeOptions[0],
-        subtype: '',
-        description: '',
-        prefix: '',
-        typeFormat: null,
-        regex: '',
-        options: '',
-        generativeRegex: '',
-        color: colorGenerator.nextHexColor(),
-        children: [],
+    const [showColorPicker, setShowColorPicker] = useState(false);
+
+    const {
+        register,
+        handleSubmit: handleFormSubmit,
+        reset,
+        watch,
+        setValue,
+        control,
+        formState: { errors, isSubmitting },
+    } = useForm<EntryTypeFormValues>({
+        resolver: yupResolver(entryTypeSchema),
+        defaultValues: {
+            type: typeOptions[0],
+            subtype: '',
+            description: '',
+            prefix: '',
+            typeFormat: null,
+            regex: '',
+            options: '',
+            generativeRegex: '',
+            color: colorGenerator.nextHexColor(),
+            children: [],
+        },
     });
 
     // Fetch all entry types for the Children selector
@@ -217,7 +154,7 @@ export default function EntryTypeForm({
                     const entrytype = await entriesApi.entryClassesRetrieve({
                         classSubtype: id,
                     });
-                    setInitialData({
+                    reset({
                         type:
                             typeOptions.find((o) => o.value === entrytype.type) ||
                             typeOptions[0],
@@ -245,38 +182,65 @@ export default function EntryTypeForm({
         };
 
         loadData();
-    }, [isEdit, id, entriesApi, colorGenerator]);
+    }, [isEdit, id, entriesApi, colorGenerator, reset]);
 
-    const handleSubmit = async (data: EntryTypeFormValues) => {
-        const payload: EntryClassRequest = {
-            generativeRegex: data.generativeRegex,
-            format:
-                data.typeFormat?.value === 'any'
-                    ? null
-                    : data.typeFormat?.value ?? null,
-            type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
-            subtype: data.subtype,
-            description: data.description,
-            prefix: data.prefix,
-            color: data.color,
-            regex: data.regex,
-            options: data.options,
-            children: data.children?.map((child) => child.value) ?? [],
-        };
+    const onSubmit = async (data: EntryTypeFormValues) => {
+        try {
+            const payload: EntryClassRequest = {
+                generativeRegex: data.generativeRegex,
+                format:
+                    data.typeFormat?.value === 'any'
+                        ? null
+                        : data.typeFormat?.value ?? null,
+                type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
+                subtype: data.subtype,
+                description: data.description,
+                prefix: data.prefix,
+                color: data.color,
+                regex: data.regex,
+                options: data.options,
+                children: data.children?.map((child) => child.value) ?? [],
+            };
 
-        let result: EntryClass;
-        if (isEdit && id) {
-            result = await entriesApi.entryClassesUpdate({
-                classSubtype: id,
-                entryClassRequest: payload,
-            });
-        } else {
-            result = await entriesApi.entryClassesCreate({
-                entryClassRequest: payload,
+            let result: EntryClass;
+            if (isEdit && id) {
+                result = await entriesApi.entryClassesUpdate({
+                    classSubtype: id,
+                    entryClassRequest: payload,
+                });
+                notify({
+                    type: 'success',
+                    text: 'Entry type updated successfully!',
+                });
+            } else {
+                result = await entriesApi.entryClassesCreate({
+                    entryClassRequest: payload,
+                });
+                notify({
+                    type: 'success',
+                    text: 'Entry type created successfully!',
+                });
+            }
+
+            if (!isEdit && onAdd) onAdd(result);
+        } catch (error) {
+            notify({
+                type: 'error',
+                text: `Failed to ${isEdit ? 'update' : 'create'} entry type`,
             });
         }
+    };
 
-        if (!isEdit && onAdd) onAdd(result);
+    const watchType = watch('type');
+    const watchTypeFormat = watch('typeFormat');
+    const watchColor = watch('color');
+    const isEntity = watchType?.value === 'entity';
+    const isArtifact = watchType?.value === 'artifact';
+    const isOptions = watchTypeFormat?.value === 'options';
+    const isRegex = watchTypeFormat?.value === 'regex';
+
+    const generateRandomColor = () => {
+        setValue('color', colorGenerator.nextHexColor());
     };
 
     if (isLoading) {

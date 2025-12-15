@@ -82,16 +82,16 @@ export default function Card({
     // Filter actions based on 'show' property (defaults to true if not specified)
     const visibleActions = actions.filter((action) => action.show !== false);
     const baseClasses =
-        'px-1 pb-1 rounded-lg transition-colors duration-200 flex items-center justify-center w-7 h-7';
+        'px-1 pb-1 rounded-lg transition-colors duration-200 flex items-center justify-center w-7 h-7 hover:bg-cradle-bg-tertiary';
 
     return (
         <div
-            className={`card-container p-2 ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''} ${className}`}
+            className={`cradle-card ${onClick ? 'cursor-pointer hover:shadow-lg transition-shadow' : ''} ${className}`}
             onClick={onClick}
         >
             {/* Badge on top right */}
             {badge && (
-                <div className={`absolute top-2 right-2 badge ${badgeClass}`}>
+                <div className={`absolute top-2 right-2 cradle-status cradle-status-info ${badgeClass}`}>
                     {badge}
                 </div>
             )}
@@ -99,10 +99,10 @@ export default function Card({
             {/* Title section with prefix and actions */}
             {title && (
                 <div
-                    className={`card-header flex items-center justify-between ${details || children ? 'mb-2 border-b-1' : ''}`}
+                    className={`cradle-card-header ${details || children ? 'mb-2 border-b-1' : ''}`}
                 >
-                    <h2 className='card-title mx-2 px-1 break-all'>
-                        {prefix && <span className='text-zinc-500'>{prefix}</span>}
+                    <h2 className='cradle-card-title mx-2 px-1 break-all'>
+                        {prefix && <span className='text-cradle-text-muted mr-2'>{prefix}</span>}
                         <span>{title}</span>
                     </h2>
 
@@ -129,7 +129,7 @@ export default function Card({
             )}
 
             {!title && visibleActions.length > 0 && (
-                <div className='flex items-center justify-between mb-2'>
+                <div className='flex items-center justify-between mb-2 p-2'>
                     <div
                         className='flex gap-1 flex-shrink-0'
                         onClick={(e) => e.stopPropagation()} // Prevent card onClick from firing
@@ -151,10 +151,10 @@ export default function Card({
 
             {/* Details list */}
             {details && Object.keys(details).length > 0 && (
-                <div className='text-gray-700 dark:text-gray-300 text-sm space-y-1 mx-2'>
+                <div className='text-cradle-text-secondary text-sm space-y-1 mx-2 p-2'>
                     {Object.entries(details).map(([key, value]) => (
                         <div key={key} className='items-start gap-2'>
-                            <strong className='text-cradle2'>{key}:</strong>
+                            <strong className='text-cradle-accent-primary mr-1'>{key}:</strong>
                             {value}
                         </div>
                     ))}
@@ -162,11 +162,11 @@ export default function Card({
             )}
 
             {/* Children content */}
-            {children && <div className={details ? 'mt-3' : ''}>{children}</div>}
+            {children && <div className={details ? 'mt-3 cradle-card-body' : 'cradle-card-body'}>{children}</div>}
 
             {/* Slug at bottom left */}
             {slug && (
-                <div className='text-[10px] text-gray-400 dark:text-gray-600 select-text mt-2'>
+                <div className='text-[10px] text-cradle-text-muted select-text mt-2 mx-2 mb-2'>
                     {slug}
                 </div>
             )}
