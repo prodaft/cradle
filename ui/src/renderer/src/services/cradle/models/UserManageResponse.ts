@@ -37,6 +37,24 @@ export interface UserManageResponse {
      * @memberof UserManageResponse
      */
     message?: string;
+    /**
+     * 
+     * @type {Date}
+     * @memberof UserManageResponse
+     */
+    accessExpiresAt?: Date;
+    /**
+     * 
+     * @type {Date}
+     * @memberof UserManageResponse
+     */
+    refreshExpiresAt?: Date;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserManageResponse
+     */
+    role?: string;
 }
 
 /**
@@ -59,6 +77,9 @@ export function UserManageResponseFromJSONTyped(json: any, ignoreDiscriminator: 
         'refresh': json['refresh'] == null ? undefined : json['refresh'],
         'access': json['access'] == null ? undefined : json['access'],
         'message': json['message'] == null ? undefined : json['message'],
+        'accessExpiresAt': json['access_expires_at'] == null ? undefined : (new Date(json['access_expires_at'])),
+        'refreshExpiresAt': json['refresh_expires_at'] == null ? undefined : (new Date(json['refresh_expires_at'])),
+        'role': json['role'] == null ? undefined : json['role'],
     };
 }
 
@@ -76,6 +97,9 @@ export function UserManageResponseToJSONTyped(value?: UserManageResponse | null,
         'refresh': value['refresh'],
         'access': value['access'],
         'message': value['message'],
+        'access_expires_at': value['accessExpiresAt'] == null ? undefined : ((value['accessExpiresAt']).toISOString()),
+        'refresh_expires_at': value['refreshExpiresAt'] == null ? undefined : ((value['refreshExpiresAt']).toISOString()),
+        'role': value['role'],
     };
 }
 

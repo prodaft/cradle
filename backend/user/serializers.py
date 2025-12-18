@@ -320,6 +320,9 @@ class UserManageResponseSerializer(serializers.Serializer):
     message = serializers.CharField(
         required=False, help_text="Success message for other actions"
     )
+    access_expires_at = serializers.DateTimeField(required=False)
+    refresh_expires_at = serializers.DateTimeField(required=False)
+    role = serializers.CharField(required=False)
 
     class Meta:
         ref_name = "UserManageResponse"

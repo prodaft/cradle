@@ -70,6 +70,7 @@ const useCradleNavigate = () => {
 
     return {
         navigate: smartNavigate,
+        nativeNavigate: navigate,
         navigateLink:
             (to: string | { pathname: string }, options: NavigateOptions = {}) =>
                 (e: React.MouseEvent) => {

@@ -114,7 +114,7 @@ function ProfileProvider({ children }: ProfileProviderProps): JSX.Element {
  * @returns Profile context value
  * @throws Error if used outside ProfileProvider
  */
-function useProfile(): ProfileContextValue {
+export function useProfile(): ProfileContextValue {
     const context = useContext(ProfileContext);
     if (context === undefined) {
         throw new Error('useProfile must be used within ProfileProvider');
@@ -122,4 +122,4 @@ function useProfile(): ProfileContextValue {
     return context;
 }
 
-export { ProfileProvider, useProfile };
+export { ProfileProvider };

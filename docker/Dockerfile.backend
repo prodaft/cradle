@@ -12,7 +12,7 @@ RUN apt-get update && \
         libgdal-dev \
         gcc \
         python3-dev \
-        && \
+        libmagic-dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN pip install uv

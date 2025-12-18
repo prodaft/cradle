@@ -21,8 +21,8 @@ const getBaseUrl = (): string => {
 interface TokenData {
     access: string;
     refresh: string;
-    access_expires_at: string;
-    refresh_expires_at: string;
+    accessExpiresAt: Date;
+    refreshExpiresAt: Date;
     role: string;
     user_id?: string;
 }
@@ -124,13 +124,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const storeTokens = useCallback((data: TokenData) => {
         accessTokenRef.current = data.access;
         refreshTokenRef.current = data.refresh;
-        accessExpiresAtRef.current = data.access_expires_at;
-        refreshExpiresAtRef.current = data.refresh_expires_at;
+        accessExpiresAtRef.current = data.accessExpiresAt.toISOString();
+        refreshExpiresAtRef.current = data.refreshExpiresAt.toISOString();
 
         localStorage.setItem('access_token', data.access);
         localStorage.setItem('refresh_token', data.refresh);
-        localStorage.setItem('access_expires_at', data.access_expires_at);
-        localStorage.setItem('refresh_expires_at', data.refresh_expires_at);
+        localStorage.setItem('access_expires_at', data.accessExpiresAt.toISOString());
+        localStorage.setItem('refresh_expires_at', data.refreshExpiresAt.toISOString());
         localStorage.setItem('role', data.role);
 
         setRole(data.role);
@@ -296,6 +296,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
                 if (response.ok) {
                     const data = await response.json();
+                    data.accessExpiresAt = new Date(data.access_expires_at);
+                    data.refreshExpiresAt = new Date(data.refresh_expires_at);
                     storeTokens(data);
                     localStorage.setItem('user_id', data.user_id || '');
                     setUserId(data.user_id || null);

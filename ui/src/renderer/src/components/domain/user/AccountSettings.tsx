@@ -74,7 +74,7 @@ export default function AccountSettings({
     isEdit = true,
     onAdd,
 }: AccountSettingsProps) {
-    const { navigate, navigateLink } = useCradleNavigate();
+    const { navigate, nativeNavigate } = useCradleNavigate();
     const { usersApi } = useApi();
     const auth = useAuth();
     const { execute } = useAPICall();
@@ -396,26 +396,22 @@ export default function AccountSettings({
                     }
                 },
             });
-        } catch (err) {
-            displayError(setAlert)(err);
         } finally {
             setNoteTemplateLoading(false);
         }
     };
 
     // Admin-only actions
-    const simulateSession = () => {
-        execute(() =>
+    const simulateSession = async () => {
+        const res = await execute(() =>
             usersApi.usersManageRetrieve({
                 userId: target,
                 actionName: 'simulate',
             }),
         )
-            .then((res) => {
-                auth.setTokensDirectly(res as any);
-                navigate('/', { replace: true });
-            })
-            .catch(() => { });
+        console.log(res);
+        auth.setTokensDirectly(res as any);
+        nativeNavigate('/', { replace: true });
     };
 
     const sendEmailConfirmation = () => {

@@ -1,4 +1,6 @@
 import secrets
+from datetime import datetime
+from datetime import timezone as dt_timezone
 from typing import cast
 
 import bcrypt
@@ -338,9 +340,20 @@ class ManageUser(APIView):
 
     def get_tokens_for_user(self, user: CradleUser):
         refresh = RefreshToken.for_user(user)
+        # Decode access token to get expiry time
+        access_expires_at = datetime.fromtimestamp(
+            refresh.access_token["exp"], tz=dt_timezone.utc
+        )
+
+        # Decode refresh token to get expiry time
+        refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
+
         return {
             "refresh": str(refresh),
+            "refresh_expires_at": refresh_expires_at,
             "access": str(refresh.access_token),
+            "access_expires_at": access_expires_at,
+            "role": user.role,
         }
 
     def get(self, request, user_id, action_name, *args, **kwargs):
