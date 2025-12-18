@@ -14,7 +14,7 @@ import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import ActionsTable, { Action } from '@components/domain/activity/ActionsTable';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import { Edit, Eye, PlusCircle, RefreshCircle, Trash } from 'iconoir-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface Column {
@@ -73,11 +73,7 @@ export default function ReportList() {
         setSearchParams(newParams, { replace: true });
     };
 
-    useEffect(() => {
-        fetchReports();
-    }, [report_id, page, sortField, sortDirection, pageSize]);
-
-    const fetchReports = async () => {
+    const fetchReports = useCallback(async () => {
         setLoading(true);
         try {
             if (report_id) {
@@ -100,7 +96,11 @@ export default function ReportList() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [report_id, page, sortField, sortDirection, pageSize, execute, reportsApi]);
+
+    useEffect(() => {
+        fetchReports();
+    }, [fetchReports]);
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
@@ -194,13 +194,12 @@ export default function ReportList() {
                 )}
                 <td className='w-8'>
                     <span
-                        className={`badge text-white ${
-                            report.status === 'done'
-                                ? 'bg-green-500'
-                                : report.status === 'error'
-                                  ? 'bg-red-500'
-                                  : 'bg-yellow-500'
-                        }`}
+                        className={`badge text-white ${report.status === 'done'
+                            ? 'bg-green-500'
+                            : report.status === 'error'
+                                ? 'bg-red-500'
+                                : 'bg-yellow-500'
+                            }`}
                     >
                         {capitalizeString(report.status || '')}
                     </span>
@@ -374,7 +373,7 @@ export default function ReportList() {
                         onSort={handleSort}
                         sortFieldMapping={sortFieldMapping}
                         emptyMessage='No reports found.'
-                        tableClassName='table table-zebra'
+                        tableClassName='table table-hover'
                         enableMultiSelect={true}
                         setSelected={setSelectedReports}
                     />

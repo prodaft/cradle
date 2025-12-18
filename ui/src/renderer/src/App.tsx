@@ -52,7 +52,7 @@ import GlobalTabPortals from './components/layout/GlobalTabPortals/GlobalTabPort
 
 // Context providers
 import { ProfileProvider } from '@/contexts';
-import Loading from './components/base/Loading/Loading';
+import CradleLoading from './components/base/Loading/CradleLoading';
 import { TooltipProvider } from './components/base/Tooltip/Tooltip';
 import { AuthProvider } from './components/domain/auth/AuthProvider';
 import { ApiProvider } from './contexts/api/ApiProvider';
@@ -79,7 +79,7 @@ function App() {
                                                 <PaneTabsProvider>
                                                     <ModalProvider>
                                                         <Suspense
-                                                            fallback={<Loading logo={true} />}
+                                                            fallback={<CradleLoading />}
                                                         >
                                                             <GlobalTabPortals />
                                                             <Routes>

@@ -88,7 +88,7 @@ const normalizeColor = (color: string): string => {
  */
 export default function AlertBox({
     alert,
-    timeout,
+    timeout = 1000,
 }: AlertBoxProps): JSX.Element | null {
     // Local state to manage visibility (initially based on alert.show)
     const [visible, setVisible] = useState(alert.show);
@@ -122,10 +122,10 @@ export default function AlertBox({
             normalizedColor === 'green'
                 ? 'var(--cradle-accent-success)'
                 : normalizedColor === 'red'
-                  ? 'var(--cradle-accent-error)'
-                  : normalizedColor === 'yellow'
-                    ? 'var(--cradle-accent-warning)'
-                    : 'var(--cradle-accent-primary)';
+                    ? 'var(--cradle-accent-error)'
+                    : normalizedColor === 'yellow'
+                        ? 'var(--cradle-accent-warning)'
+                        : 'var(--cradle-accent-primary)';
 
         switch (normalizedColor) {
             case 'green':

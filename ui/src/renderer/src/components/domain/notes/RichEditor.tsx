@@ -39,7 +39,7 @@ import {
     clickLinkHandler,
     prosemarkBaseThemeSetup,
     prosemarkBasicSetup,
-    prosemarkMarkdownSyntaxExtensions,
+    prosemarkMarkdownSyntaxExtensions
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { vim, Vim } from '@replit/codemirror-vim';
@@ -194,13 +194,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 codeLanguages: languages,
                 extensions: [
                     GFM,
-                    prosemarkMarkdownSyntaxExtensions,
                     editorUtils.extension(),
                     referenceLinkSyntax(referenceMappings || {}),
+                    ...((source) ? [] : [prosemarkMarkdownSyntaxExtensions]),
                 ],
             }),
-            // Syntax highlighting for both modes
-            baseSyntaxHighlights,
             // ProseMark rendering only for Rich Editor mode (hides syntax markers)
             ...(!source
                 ? [
@@ -211,6 +209,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     clickLinkHandler.of((url: string) => {
                         window.open(url, '_blank', 'noopener,noreferrer');
                     }),
+                    // Syntax highlighting for both modes
+                    baseSyntaxHighlights,
                 ]
                 : []),
             Prec.high(cradleTheme),

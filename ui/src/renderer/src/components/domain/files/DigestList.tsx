@@ -10,7 +10,7 @@ import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { BaseDigest } from '@services/cradle/models';
-import { Bin, Search, Xmark } from 'iconoir-react';
+import { Search, Trash, Xmark } from 'iconoir-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface DigestListProps {
@@ -29,8 +29,8 @@ interface DigestListProps {
     pageSize?: number;
     setPageSize?: (size: number) => void;
     onColumnFilterChange?:
-        | ((column: string, value: string | DateRangeFilter) => void)
-        | null;
+    | ((column: string, value: string | DateRangeFilter) => void)
+    | null;
     columnFilters?: Record<string, any>;
     searchFilters?: Record<string, string>;
     onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -49,14 +49,14 @@ function DigestList({
     sortDirection = 'desc',
     onSort,
     selectedDigests = [],
-    setSelectedDigests = () => {},
+    setSelectedDigests = () => { },
     pageSize = 10,
-    setPageSize = () => {},
+    setPageSize = () => { },
     onColumnFilterChange = null,
     columnFilters = {},
     searchFilters = {},
-    onSearchChange = () => {},
-    onSearchSubmit = () => {},
+    onSearchChange = () => { },
+    onSearchSubmit = () => { },
 }: DigestListProps) {
     const { setModal } = useModal();
     const { intelioApi } = useApi();
@@ -117,17 +117,17 @@ function DigestList({
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
         onColumnFilterChange
             ? {
-                  user: (value) => {
-                      if (typeof value === 'string') {
-                          onColumnFilterChange('user', value);
-                      }
-                  },
-                  createdAt: (value) => {
-                      if (typeof value !== 'string') {
-                          onColumnFilterChange('createdAt', value);
-                      }
-                  },
-              }
+                user: (value) => {
+                    if (typeof value === 'string') {
+                        onColumnFilterChange('user', value);
+                    }
+                },
+                createdAt: (value) => {
+                    if (typeof value !== 'string') {
+                        onColumnFilterChange('createdAt', value);
+                    }
+                },
+            }
             : {};
 
     interface SelectProps {
@@ -191,7 +191,7 @@ function DigestList({
                     >
                         {digest.status
                             ? digest.status.charAt(0).toUpperCase() +
-                              digest.status.slice(1)
+                            digest.status.slice(1)
                             : ''}
                     </span>
                 </td>
@@ -206,7 +206,7 @@ function DigestList({
                         content={
                             digest.warnings?.length > 0
                                 ? digest.warnings.slice(0, 10).join('\n') +
-                                  (digest.warnings.length > 10 ? '...' : '')
+                                (digest.warnings.length > 10 ? '...' : '')
                                 : undefined
                         }
                         side='left'
@@ -224,7 +224,7 @@ function DigestList({
                         content={
                             digest.errors?.length > 0
                                 ? digest.errors.slice(0, 10).join('\n') +
-                                  (digest.errors.length > 10 ? '\n...' : '')
+                                (digest.errors.length > 10 ? '\n...' : '')
                                 : undefined
                         }
                         side='left'
@@ -251,7 +251,7 @@ function DigestList({
                             })
                         }
                     >
-                        <Bin className='w-4 h-4' />
+                        <Trash className='w-4 h-4' />
                     </button>
                 </td>
             </tr>

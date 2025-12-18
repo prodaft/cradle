@@ -279,28 +279,28 @@ export default function NotesList({
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Only handle if focus is in this component
-            if (!containerRef.current?.contains(document.activeElement) && 
+            if (!containerRef.current?.contains(document.activeElement) &&
                 document.activeElement !== document.body) return;
-            
+
             // Ctrl+A / Cmd+A - Select all
             if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !hideActionBar) {
                 e.preventDefault();
                 handleSelectAll();
             }
-            
+
             // Delete key - Delete selected
             if (e.key === 'Delete' && selectedNotes.length > 0 && !hideActionBar) {
                 e.preventDefault();
                 actions[0].handler(selectedNotes);
             }
-            
+
             // Ctrl+F / Cmd+F - Focus search
             if ((e.ctrlKey || e.metaKey) && e.key === 'f' && contentSearch) {
                 e.preventDefault();
                 setIsSearchExpanded(true);
             }
         };
-        
+
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [selectedNotes, displayedNotes, hideActionBar, contentSearch]);
@@ -312,7 +312,7 @@ export default function NotesList({
         try {
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
-            const params: Record<string, unknown> = {
+            const params = {
                 page,
                 pageSize: pageSize,
                 orderBy: orderBy,
@@ -345,16 +345,15 @@ export default function NotesList({
     }, [page, pageSize, sortField, sortDirection, query, notesApi]);
 
     useEffect(() => {
-        setPage(Number(searchParams.get('notes_page')) || 1);
+        const pageFromParams = Number(searchParams.get('notes_page')) || 1;
+        setPage(pageFromParams);
         fetchNotes();
-    }, [fetchNotes, pageSize]);
+    }, [searchParams.get('notes_page'), fetchNotes, pageSize]);
 
     const handlePageChange = (newPage: number) => {
         const newParams = new URLSearchParams(searchParams);
         newParams.set('notes_page', String(newPage));
         setSearchParams(newParams);
-
-        setPage(newPage);
     };
 
     const actions = [
@@ -541,10 +540,10 @@ export default function NotesList({
                                             className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
                                             onClick={onCreateNote}
                                         >
-                                            <PlusCircle 
+                                            <PlusCircle
                                                 className='text-[#FF8C00]'
-                                                width={18} 
-                                                height={18} 
+                                                width={18}
+                                                height={18}
                                             />
                                         </button>
                                     </Tooltip>
@@ -565,10 +564,10 @@ export default function NotesList({
                                                 }}
                                                 disabled={selectedNotes.length === 0 || notes.length === 0}
                                             >
-                                                <Trash 
+                                                <Trash
                                                     className={selectedNotes.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                                    width={18} 
-                                                    height={18} 
+                                                    width={18}
+                                                    height={18}
                                                 />
                                                 {selectedNotes.length > 0 && (
                                                     <span className='text-sm text-cradle-text-secondary font-mono'>
@@ -593,35 +592,35 @@ export default function NotesList({
                                                 <Search className='w-4 h-4' />
                                             </button>
                                         ) : (
-                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                        <button
-                                            onClick={() => {
-                                                if (contentSearch?.onSubmit) {
-                                                    contentSearch.onSubmit();
-                                                }
-                                            }}
-                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                                            title='Search'
-                                        >
-                                            <Search className='w-4 h-4' />
-                                        </button>
-                                            <input
+                                            <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                                                <button
+                                                    onClick={() => {
+                                                        if (contentSearch?.onSubmit) {
+                                                            contentSearch.onSubmit();
+                                                        }
+                                                    }}
+                                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                                    title='Search'
+                                                >
+                                                    <Search className='w-4 h-4' />
+                                                </button>
+                                                <input
                                                     ref={searchInputRef}
-                                                type='text'
-                                                value={searchInputValue}
-                                                onChange={(e) => {
-                                                    setSearchInputValue(e.target.value);
-                                                    if (contentSearch?.onChange) {
-                                                    contentSearch.onChange(e.target.value);
-                                                    }
-                                                }}
-                                                onKeyDown={(e) => {
-                                                    if (
-                                                        e.key === 'Enter' &&
-                                                        contentSearch?.onSubmit
-                                                    ) {
-                                                        contentSearch.onSubmit();
-                                                    }
+                                                    type='text'
+                                                    value={searchInputValue}
+                                                    onChange={(e) => {
+                                                        setSearchInputValue(e.target.value);
+                                                        if (contentSearch?.onChange) {
+                                                            contentSearch.onChange(e.target.value);
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (
+                                                            e.key === 'Enter' &&
+                                                            contentSearch?.onSubmit
+                                                        ) {
+                                                            contentSearch.onSubmit();
+                                                        }
                                                         if (e.key === 'Escape') {
                                                             if (!searchInputValue) {
                                                                 setIsSearchExpanded(false);
@@ -632,29 +631,29 @@ export default function NotesList({
                                                         if (!searchInputValue) {
                                                             setIsSearchExpanded(false);
                                                         }
-                                                }}
-                                                placeholder='Search content...'
-                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                                            />
-                                            {searchInputValue && (
-                                                <button
-                                                    onClick={() => {
-                                                        setSearchInputValue('');
-                                                        if (contentSearch?.onChange) {
-                                                            contentSearch.onChange('');
-                                                        }
-                                                        if (contentSearch?.onSubmit) {
-                                                            contentSearch.onSubmit();
-                                                        }
                                                     }}
-                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                                                    title='Clear search'
-                                                >
-                                                <Xmark className='w-4 h-4' />
-                                                </button>
-                                            )}
-                                    </div>
-                                )}
+                                                    placeholder='Search content...'
+                                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                                />
+                                                {searchInputValue && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSearchInputValue('');
+                                                            if (contentSearch?.onChange) {
+                                                                contentSearch.onChange('');
+                                                            }
+                                                            if (contentSearch?.onSubmit) {
+                                                                contentSearch.onSubmit();
+                                                            }
+                                                        }}
+                                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                                        title='Clear search'
+                                                    >
+                                                        <Xmark className='w-4 h-4' />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -662,21 +661,21 @@ export default function NotesList({
                             {/* Right side controls */}
                             <div className='flex items-center gap-2'>
 
-                            <PaginationWrapper
-                                currentPage={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                                pageSize={pageSize}
-                                onPageSizeChange={(newSize) => {
-                                    setPageSize(newSize);
-                                    setPage(1);
-                                    const newParams = new URLSearchParams(searchParams);
-                                    newParams.set('notes_page', '1');
-                                    newParams.set('notes_pagesize', String(newSize));
-                                    setSearchParams(newParams, { replace: true });
-                                }}
-                                disabled={notes.length === 0}
-                            />
+                                <PaginationWrapper
+                                    currentPage={page}
+                                    totalPages={totalPages}
+                                    onPageChange={handlePageChange}
+                                    pageSize={pageSize}
+                                    onPageSizeChange={(newSize) => {
+                                        setPageSize(newSize);
+                                        setPage(1);
+                                        const newParams = new URLSearchParams(searchParams);
+                                        newParams.set('notes_page', '1');
+                                        newParams.set('notes_pagesize', String(newSize));
+                                        setSearchParams(newParams, { replace: true });
+                                    }}
+                                    disabled={notes.length === 0}
+                                />
                             </div>
                         </div>
                     </TableCard>

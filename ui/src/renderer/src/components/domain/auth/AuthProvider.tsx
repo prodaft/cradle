@@ -192,6 +192,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
             if (response.ok) {
                 const data = await response.json();
+                data.accessExpiresAt = new Date(data.access_expires_at);
+                data.refreshExpiresAt = new Date(data.refresh_expires_at);
                 storeTokens(data);
                 scheduleTokenRefresh();
                 return true;

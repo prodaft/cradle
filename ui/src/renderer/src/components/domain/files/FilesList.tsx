@@ -1,3 +1,4 @@
+import { useNotif } from '@/contexts';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
@@ -9,7 +10,7 @@ import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { Download, Search, Xmark } from 'iconoir-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface FilesListQuery {
@@ -42,10 +43,22 @@ interface FilesListProps {
     onCountChange?: (count: { current: number; total: number }) => void;
 }
 
+// Mapping of table columns to API field names - moved outside component to prevent recreation
+const SORT_FIELD_MAPPING: Record<string, string> = {
+    name: 'file_name',
+    uploadedAt: 'timestamp',
+    mimetype: 'mimetype',
+};
+
+// Empty defaults to prevent new object creation on each render
+const EMPTY_QUERY = {};
+const EMPTY_FILTERED_FILES: FileReferenceWithNote[] = [];
+const EMPTY_FILE_ACTIONS: any[] = [];
+
 export default function FilesList({
-    query = {},
-    filteredFiles = [],
-    fileActions = [],
+    query = EMPTY_QUERY,
+    filteredFiles = EMPTY_FILTERED_FILES,
+    fileActions = EMPTY_FILE_ACTIONS,
     references = null,
     setAlert: externalSetAlert = null,
     onError = null,
@@ -59,8 +72,12 @@ export default function FilesList({
         color: 'red',
     });
 
-    // Use external setAlert if provided, otherwise use internal
-    const setAlert = externalSetAlert || setInternalAlert;
+    // Use external setAlert if provided, otherwise use internal - memoized to prevent recreation
+    const setAlert = useMemo(
+        () => externalSetAlert || setInternalAlert,
+        [externalSetAlert],
+    );
+    const { notify } = useNotif();
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [page, setPage] = useState(Number(searchParams.get('files_page')) || 1);
@@ -79,29 +96,25 @@ export default function FilesList({
     const searchInputRef = useRef<HTMLInputElement>(null);
     const { notesApi, fileTransferApi } = useApi();
 
-    // Mapping of table columns to API field names
-    const sortFieldMapping: Record<string, string> = {
-        name: 'file_name',
-        uploadedAt: 'timestamp',
-        mimetype: 'mimetype',
-    };
-
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
     });
 
-    const handleSort = (field: string, direction: 'asc' | 'desc') => {
-        setSortField(field);
-        setSortDirection(direction);
+    const handleSort = useCallback(
+        (field: string, direction: 'asc' | 'desc') => {
+            setSortField(field);
+            setSortDirection(direction);
 
-        // Reset to first page when sorting changes
-        setPage(1);
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('files_page', '1');
-        newParams.set('files_sort_field', field);
-        newParams.set('files_sort_direction', direction);
-        setSearchParams(newParams, { replace: true });
-    };
+            // Reset to first page when sorting changes
+            setPage(1);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('files_page', '1');
+            newParams.set('files_sort_field', field);
+            newParams.set('files_sort_direction', direction);
+            setSearchParams(newParams, { replace: true });
+        },
+        [searchParams, setSearchParams],
+    );
 
     const fetchFiles = useCallback(async () => {
         setLoading(true);
@@ -151,25 +164,39 @@ export default function FilesList({
             }
             setLoading(false);
         }
-    }, [page, pageSize, sortField, sortDirection, query, searchQuery, notesApi]);
+    }, [
+        page,
+        pageSize,
+        sortField,
+        sortDirection,
+        query,
+        searchQuery,
+        notesApi,
+        onCountChange,
+        onError,
+        setAlert,
+    ]);
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard
-            .writeText(text)
-            .catch((error) => {
-                console.error('Failed to copy text: ', error);
-            })
-            .then(() => {
-                setAlert({
-                    show: true,
-                    message: 'Copied to clipboard',
-                    color: 'green',
+    const copyToClipboard = useCallback(
+        (text: string) => {
+            navigator.clipboard
+                .writeText(text)
+                .catch((error) => {
+                    console.error('Failed to copy text: ', error);
+                })
+                .then(() => {
+                    setAlert({
+                        show: true,
+                        message: 'Copied to clipboard',
+                        color: 'green',
+                    });
                 });
-            });
-    };
+        },
+        [setAlert],
+    );
 
     // Download a single file
-    const handleDownloadFile = async (file: FileReferenceWithNote) => {
+    const handleDownloadFile = useCallback(async (file: FileReferenceWithNote) => {
         if (!file.bucketName || !file.minioFileName) {
             setAlert({
                 show: true,
@@ -191,10 +218,10 @@ export default function FilesList({
                 color: 'red',
             });
         }
-    };
+    }, [fileTransferApi, setAlert]);
 
     // Download selected files
-    const handleDownloadSelected = async () => {
+    const handleDownloadSelected = useCallback(async () => {
         if (selectedFiles.length === 0) return;
 
         try {
@@ -218,11 +245,11 @@ export default function FilesList({
                     document.body.removeChild(link);
                 }
             }
-            setAlert({
-                show: true,
-                message: `Downloaded ${selectedFiles.length} file(s)`,
-                color: 'green',
+            notify({
+                type: 'success',
+                text: `Downloaded ${selectedFiles.length} file(s)`,
             });
+
         } catch (error) {
             setAlert({
                 show: true,
@@ -230,14 +257,14 @@ export default function FilesList({
                 color: 'red',
             });
         }
-    };
+    }, [selectedFiles, files, fileTransferApi, setAlert]);
 
-    const handleSearchSubmit = () => {
+    const handleSearchSubmit = useCallback(() => {
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('files_page', '1');
         setSearchParams(newParams, { replace: true });
-    };
+    }, [searchParams, setSearchParams]);
 
     useEffect(() => {
         if (isSearchExpanded && searchInputRef.current) {
@@ -245,27 +272,39 @@ export default function FilesList({
         }
     }, [isSearchExpanded]);
 
+    // Memoize the files_page value to prevent unnecessary rerenders
+    const filesPage = useMemo(
+        () => searchParams.get('files_page'),
+        [searchParams],
+    );
+
     useEffect(() => {
-        setPage(Number(searchParams.get('files_page')) || 1);
+        const pageFromParams = Number(filesPage) || 1;
+        setPage(pageFromParams);
         fetchFiles();
-    }, [pageSize]);
+    }, [filesPage, fetchFiles, pageSize]);
 
-    const handlePageChange = (newPage: number) => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('files_page', String(newPage));
-        setSearchParams(newParams);
+    const handlePageChange = useCallback(
+        (newPage: number) => {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('files_page', String(newPage));
+            setSearchParams(newParams);
+        },
+        [searchParams, setSearchParams],
+    );
 
-        setPage(newPage);
-    };
-
-    const columns = [
-        { key: 'name', label: 'Name', className: 'w-64' },
-        { key: 'entities', label: 'Entities', className: 'w-32' },
-        { key: 'mimetype', label: 'MimeType', className: 'w-32' },
-        { key: 'sha256', label: 'SHA256', className: 'w-48' },
-        { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
-        { key: 'actions', label: '', className: 'w-4' },
-    ];
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo(
+        () => [
+            { key: 'name', label: 'Name', className: 'w-64' },
+            { key: 'entities', label: 'Entities', className: 'w-32' },
+            { key: 'mimetype', label: 'MimeType', className: 'w-32' },
+            { key: 'sha256', label: 'SHA256', className: 'w-48' },
+            { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
+            { key: 'actions', label: '', className: 'w-4' },
+        ],
+        [],
+    );
 
     interface SelectProps {
         enableMultiSelect?: boolean;
@@ -273,80 +312,102 @@ export default function FilesList({
         onSelect?: () => void;
     }
 
-    const renderRow = (
-        file: FileReferenceWithNote,
-        index: number,
-        selectProps: SelectProps = {},
-    ) => {
-        for (const f of filteredFiles) {
-            if (f.id === file.id) return null;
-        }
+    const renderRow = useCallback(
+        (
+            file: FileReferenceWithNote,
+            index: number,
+            selectProps: SelectProps = {},
+        ) => {
+            for (const f of filteredFiles) {
+                if (f.id === file.id) return null;
+            }
 
-        const { enableMultiSelect, isSelected, onSelect } = selectProps;
+            const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
-        return (
-            <tr key={file.id || index}>
-                {enableMultiSelect && (
-                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                        <div className='flex items-center'>
-                            <input
-                                type='checkbox'
-                                className='cradle-checkbox'
-                                checked={isSelected}
-                                onChange={onSelect}
-                            />
+            return (
+                <tr key={file.id || index}>
+                    {enableMultiSelect && (
+                        <td className='w-12' onClick={(e) => e.stopPropagation()}>
+                            <div className='flex items-center'>
+                                <input
+                                    type='checkbox'
+                                    className='cradle-checkbox'
+                                    checked={isSelected}
+                                    onChange={onSelect}
+                                />
+                            </div>
+                        </td>
+                    )}
+                    <td className='truncate w-32'>{truncateText(file.fileName, 32)}</td>
+                    <td className=''>
+                        <div className='flex flex-wrap gap-1'>
+                            {file.entities?.slice(0, 3).map((entity) => (
+                                <span
+                                    key={entity.name}
+                                    className='badge badge-xs px-1 text-white'
+                                    style={{
+                                        backgroundColor: entity.color || '#ccc',
+                                        borderColor: entity.color || '#ccc',
+                                    }}
+                                >
+                                    {entity.name}
+                                </span>
+                            ))}
                         </div>
                     </td>
-                )}
-                <td className='truncate w-32'>{truncateText(file.fileName, 32)}</td>
-                <td className=''>
-                    <div className='flex flex-wrap gap-1'>
-                        {file.entities?.slice(0, 3).map((entity) => (
+                    <td className='truncate w-32'>{truncateText(file.mimetype, 32)}</td>
+                    <td className='w-48'>
+                        {file.sha256Hash ? (
                             <span
-                                key={entity.name}
-                                className='badge badge-xs px-1 text-white'
-                                style={{
-                                    backgroundColor: entity.color || '#ccc',
-                                    borderColor: entity.color || '#ccc',
-                                }}
+                                className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded truncate block'
+                                onClick={() => copyToClipboard(file.sha256Hash!)}
+                                title='Click to copy'
                             >
-                                {entity.name}
+                                {file.sha256Hash!.substring(0, 21)}...
                             </span>
-                        ))}
-                    </div>
-                </td>
-                <td className='truncate w-32'>{truncateText(file.mimetype, 32)}</td>
-                <td className='w-48'>
-                    {file.sha256Hash ? (
-                        <span
-                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded truncate block'
-                            onClick={() => copyToClipboard(file.sha256Hash!)}
-                            title='Click to copy'
+                        ) : (
+                            '-'
+                        )}
+                    </td>
+                    <td className=''>
+                        {file.timestamp ? formatDate(file.timestamp) : '-'}
+                    </td>
+                    <td className='w-4 action'>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadFile(file);
+                            }}
+                            className='cursor-pointer rounded flex items-center justify-center p-0.5'
+                            title='Download file'
                         >
-                            {file.sha256Hash!.substring(0, 21)}...
-                        </span>
-                    ) : (
-                        '-'
-                    )}
-                </td>
-                <td className=''>
-                    {file.timestamp ? formatDate(file.timestamp) : '-'}
-                </td>
-                <td className='w-4 action'>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleDownloadFile(file);
-                        }}
-                        className='cursor-pointer rounded flex items-center justify-center p-0.5'
-                        title='Download file'
-                    >
-                        <Download className='w-4' />
-                    </button>
-                </td>
-            </tr>
+                            <Download className='w-4' />
+                        </button>
+                    </td>
+                </tr>
+            );
+        },
+        [filteredFiles, copyToClipboard, handleDownloadFile],
+    );
+
+    // Memoize the setSelected callback to prevent recreation on every render
+    const handleSetSelected = useCallback((ids: (string | number)[]) => {
+        setSelectedFiles(
+            ids.filter((id): id is string => typeof id === 'string'),
         );
-    };
+    }, []);
+
+    const handlePageSizeChange = useCallback(
+        (newSize: number) => {
+            setPageSize(newSize);
+            setPage(1);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('files_page', '1');
+            newParams.set('files_pagesize', String(newSize));
+            setSearchParams(newParams, { replace: true });
+        },
+        [searchParams, setSearchParams],
+    );
 
     return (
         <>
@@ -481,14 +542,7 @@ export default function FilesList({
                                 totalPages={totalPages}
                                 onPageChange={handlePageChange}
                                 pageSize={pageSize}
-                                onPageSizeChange={(newSize) => {
-                                    setPageSize(newSize);
-                                    setPage(1);
-                                    const newParams = new URLSearchParams(searchParams);
-                                    newParams.set('files_page', '1');
-                                    newParams.set('files_pagesize', String(newSize));
-                                    setSearchParams(newParams, { replace: true });
-                                }}
+                                onPageSizeChange={handlePageSizeChange}
                                 disabled={files.length === 0}
                             />
                         </div>
@@ -504,17 +558,11 @@ export default function FilesList({
                         sortField={sortField}
                         sortDirection={sortDirection}
                         onSort={handleSort}
-                        sortFieldMapping={sortFieldMapping}
+                        sortFieldMapping={SORT_FIELD_MAPPING}
                         emptyMessage='No files found!'
                         tableClassName='table'
                         enableMultiSelect={true}
-                        setSelected={(ids) =>
-                            setSelectedFiles(
-                                ids.filter(
-                                    (id): id is string => typeof id === 'string',
-                                ),
-                            )
-                        }
+                        setSelected={handleSetSelected}
                     />
                 </div>
             </div>

@@ -17,6 +17,20 @@ import { useProfile } from '../user';
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 /**
+ * Hook to access theme context
+ *
+ * @returns Theme context value
+ * @throws Error if used outside ThemeProvider
+ */
+export function useTheme(): ThemeContextValue {
+    const context = useContext(ThemeContext);
+    if (context === undefined) {
+        throw new Error('useTheme must be used within ThemeProvider');
+    }
+    return context;
+}
+
+/**
  * Props for ThemeProvider component
  */
 export interface ThemeProviderProps {
@@ -107,12 +121,4 @@ export function ThemeProvider({ children }: ThemeProviderProps): JSX.Element {
     );
 
     return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
-}
-
-export function useTheme() {
-    const context = useContext(ThemeContext);
-    if (context === undefined) {
-        throw new Error('useTheme must be used within ThemeProvider');
-    }
-    return context;
 }
