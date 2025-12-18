@@ -85,6 +85,7 @@ export interface NotesListRequest {
     page?: number;
     pageSize?: number;
     references?: Array<string>;
+    status?: NotesListStatusEnum;
     timestampGte?: string;
     timestampLte?: string;
     truncate?: number;
@@ -396,6 +397,10 @@ export class NotesApi extends runtime.BaseAPI {
 
         if (requestParameters['references'] != null) {
             queryParameters['references'] = requestParameters['references'];
+        }
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
         }
 
         if (requestParameters['timestampGte'] != null) {
@@ -915,3 +920,15 @@ export class NotesApi extends runtime.BaseAPI {
     }
 
 }
+
+/**
+ * @export
+ */
+export const NotesListStatusEnum = {
+    Fleeting: 'fleeting',
+    Healthy: 'healthy',
+    Invalid: 'invalid',
+    Processing: 'processing',
+    Warning: 'warning'
+} as const;
+export type NotesListStatusEnum = typeof NotesListStatusEnum[keyof typeof NotesListStatusEnum];

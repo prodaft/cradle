@@ -24,6 +24,7 @@ from entries.enums import EntryType
 from entries.models import Entry
 from file_transfer.models import FileReference
 from knowledge_graph.serializers import SubGraphSerializer
+from notes.enums import NoteStatus
 from user.models import CradleUser
 
 from ..exceptions import (
@@ -79,6 +80,13 @@ from ..serializers import (
                 type=int,
                 location=OpenApiParameter.QUERY,
                 description="Page number for pagination",
+            ),
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by note status",
+                enum=list(map(lambda x: x[0], NoteStatus.choices)) + ["fleeting"],
             ),
             OpenApiParameter(
                 name="date",
@@ -210,6 +218,14 @@ class NoteList(APIView):
             else:
                 aliasset = entry.aliasqs(user)
                 queryset = queryset.filter(entries__in=aliasset).distinct()
+
+        if "status" in request.query_params:
+            if request.query_params.get("status") == "fleeting":
+                queryset = queryset.filter(fleeting=True)
+            else:
+                queryset = queryset.filter(
+                    status=request.query_params.get("status"), fleeting=False
+                )
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 

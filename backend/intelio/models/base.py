@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
+from django.db.models import Q
 from django.utils import timezone
 from django_lifecycle import (
     AFTER_DELETE,
@@ -22,6 +23,7 @@ from entries.models import Entry, EntryClass, Relation
 from user.models import CradleUser
 
 from ..enums import DigestStatus, EnrichmentStatus
+from ..managers import EnrichmentRequestManager
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 

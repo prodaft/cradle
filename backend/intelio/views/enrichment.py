@@ -222,7 +222,7 @@ class EnrichmentAPIView(APIView):
         if request.user.is_cradle_admin:
             queryset = EnrichmentRequest.objects.all()
         else:
-            queryset = EnrichmentRequest.objects.filter(user=request.user)
+            queryset = EnrichmentRequest.objects.get_accessible_by(request.user)
 
         # Handle page_size parameter
         try:

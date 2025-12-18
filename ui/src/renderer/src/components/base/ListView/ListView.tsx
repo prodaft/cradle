@@ -4,7 +4,7 @@ import { ReactNode, useEffect, useRef, useState } from 'react';
 
 interface Column {
     key: string;
-    label: string;
+    label: string | React.ReactNode;
     className?: string;
     filterType?: 'text' | 'date';
 }
