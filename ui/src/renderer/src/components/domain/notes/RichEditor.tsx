@@ -46,6 +46,7 @@ import {
     prosemarkMarkdownSyntaxExtensions
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
+import { indentationMarkers } from '@replit/codemirror-indentation-markers';
 import { vim, Vim } from '@replit/codemirror-vim';
 import { FileReference } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
@@ -244,6 +245,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         ...(source ? [additionalMarkdownSyntaxTags] : [prosemarkMarkdownSyntaxExtensions]),
                     ],
                 }),
+            }),
+            ...indentationMarkers({
+                highlightActiveBlock: true,
+                hideFirstIndent: false,
+                markerType: 'codeOnly',
+                thickness: 0.5,
+                colors: {
+                    light: 'rgba(100, 100, 100, 0.2)',
+                    dark: 'rgba(200, 200, 200, 0.15)',
+                },
             }),
             ...(!source
                 ? [

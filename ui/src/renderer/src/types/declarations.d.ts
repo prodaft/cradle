@@ -1,25 +1,6 @@
 // Type declarations for third-party libraries and module extensions
 
 // ============================================================================
-// Markdown-it plugins without types
-// ============================================================================
-
-declare module 'markdown-it-inject-linenumbers' {
-    const plugin: MarkdownIt.PluginSimple;
-    export default plugin;
-}
-
-declare module 'markdown-it-source-map' {
-    const plugin: MarkdownIt.PluginSimple;
-    export default plugin;
-}
-
-declare module 'markdown-it-task-lists' {
-    const plugin: MarkdownIt.PluginSimple;
-    export default plugin;
-}
-
-// ============================================================================
 // Image and asset imports
 // ============================================================================
 
