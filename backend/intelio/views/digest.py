@@ -10,11 +10,23 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
+from intelio.enums import DigestStatus
 from user.authentication import APIKeyAuthentication
 
+from ..exceptions import (
+    IntelioErrorCodes,
+    InvalidPageSizeException,
+    MissingDigestIdException,
+    MissingFileException,
+    PageSizeTooLargeException,
+)
 from ..filters import BaseDigestFilter
 from ..models.base import BaseDigest
 from ..serializers import (
@@ -23,13 +35,6 @@ from ..serializers import (
     DigestSubclassSerializer,
 )
 from ..tasks import start_digest
-from ..exceptions import (
-    InvalidPageSizeException,
-    PageSizeTooLargeException,
-    MissingFileException,
-    MissingDigestIdException,
-    IntelioErrorCodes,
-)
 
 
 @extend_schema(
@@ -83,6 +88,13 @@ class DigestSubclassesAPIView(APIView):
             type=str,
         ),
         OpenApiParameter(
+            name="status",
+            description="Filter by status",
+            required=False,
+            type=str,
+            enum=list(map(lambda x: x[0], DigestStatus.choices)),
+        ),
+        OpenApiParameter(
             name="created_date",
             description="Filter by creation date (YYYY-MM-DD format)",
             required=False,
@@ -127,8 +139,7 @@ class DigestSubclassesAPIView(APIView):
             BaseDigestSerializer
         ),
         **get_error_responses(
-            IntelioErrorCodes.INVALID_PAGE_SIZE,
-            IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
+            IntelioErrorCodes.INVALID_PAGE_SIZE, IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
         ),
         **get_common_error_responses(),
     },
@@ -167,14 +178,21 @@ class DigestAPIView(GenericAPIView):
         if filterset.is_valid():
             queryset = filterset.qs
 
+        if request.query_params.get("status"):
+            queryset = queryset.filter(status=request.query_params.get("status"))
+
         # Handle page_size parameter
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
+            raise InvalidPageSizeException(
+                detail="Invalid page_size value. Must be an integer."
+            )
 
         if page_size > 200:
-            raise PageSizeTooLargeException(detail="page_size cannot be greater than 200.")
+            raise PageSizeTooLargeException(
+                detail="page_size cannot be greater than 200."
+            )
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -245,8 +263,7 @@ class DigestAPIView(GenericAPIView):
         responses={
             204: {"description": "Digest deleted successfully"},
             **get_error_responses(
-                IntelioErrorCodes.MISSING_DIGEST_ID,
-                IntelioErrorCodes.DIGEST_NOT_FOUND
+                IntelioErrorCodes.MISSING_DIGEST_ID, IntelioErrorCodes.DIGEST_NOT_FOUND
             ),
             **get_common_error_responses(),
         },

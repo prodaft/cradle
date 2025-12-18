@@ -9,16 +9,13 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from core.openapi import (
     get_common_error_responses,
     get_error_responses,
-    get_validation_error_response,
 )
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
-from notes.models import Note
 from publish.strategies import PUBLISH_STRATEGIES
 
 from ..exceptions import (
     InvalidPageSizeException,
-    NotesNotFoundException,
     PageSizeTooLargeException,
     PublishErrorCodes,
     ReportAlreadyCompletedException,
@@ -29,10 +26,9 @@ from ..exceptions import (
 )
 from ..models import PublishedReport, ReportStatus
 from ..serializers import (
-    EditReportSerializer,
     ReportSerializer,
 )
-from ..tasks import edit_report, generate_report
+from ..tasks import generate_report
 
 
 @extend_schema_view(
@@ -146,6 +142,7 @@ class ReportListDeleteAPIView(generics.ListAPIView):
     post=extend_schema(
         summary="Retry failed report generation",
         description="Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.",  # noqa: E501
+        request=None,
         responses={
             200: ReportSerializer,
             **get_error_responses(
@@ -160,7 +157,6 @@ class ReportListDeleteAPIView(generics.ListAPIView):
 class ReportRetryAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = ReportSerializer
 
     def post(self, request, pk):
         """
@@ -202,26 +198,11 @@ class ReportRetryAPIView(APIView):
             **get_common_error_responses(),
         },
     ),
-    put=extend_schema(
-        summary="Update report",
-        description="Updates an existing report with new notes and title.",
-        request=EditReportSerializer,
-        responses={
-            202: {"description": "Edit task queued"},
-            **get_error_responses(
-                PublishErrorCodes.REPORT_NOT_FOUND,
-                PublishErrorCodes.NOTES_NOT_FOUND,
-                PublishErrorCodes.REPORT_ALREADY_GENERATING,
-            ),
-            **get_validation_error_response(),
-            **get_common_error_responses(),
-        },
-    ),
     delete=extend_schema(
         summary="Delete report",
         description="Deletes a specific report belonging to the authenticated user.",
         responses={
-            204: {"description": "Report deleted successfully"},
+            200: {"description": "Report deleted successfully"},
             **get_error_responses(
                 PublishErrorCodes.REPORT_NOT_FOUND,
                 PublishErrorCodes.REPORT_ID_REQUIRED,
@@ -245,41 +226,6 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
             "-created_at"
         )
 
-    def put(self, request, pk):
-        try:
-            report = PublishedReport.objects.for_user(request.user).get(id=pk)
-        except PublishedReport.DoesNotExist:
-            raise ReportNotFoundException(detail="Report not found.")
-
-        serializer = EditReportSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        data = serializer.validated_data
-        note_ids = data["note_ids"]
-        title = data["title"]
-
-        notes = Note.objects.filter(id__in=note_ids)
-        if notes.count() != len(note_ids):
-            raise NotesNotFoundException(detail="One or more notes not found.")
-
-        if report.status == ReportStatus.WORKING:
-            raise ReportAlreadyGeneratingException(
-                detail="Report is already being generated."
-            )
-
-        report.status = ReportStatus.WORKING
-        report.title = title
-        report.error_message = ""
-
-        report.save()
-        report.notes.set(notes)
-
-        edit_report.delay(str(report.id))
-
-        return Response(
-            {"detail": "Edit task queued."}, status=status.HTTP_202_ACCEPTED
-        )
-
     def delete(self, request, pk):
         if not pk:
             raise ReportIdRequiredException(detail="Report id required.")
@@ -299,6 +245,4 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
                 raise ReportDeleteErrorException(detail="Error deleting report.")
 
         report.delete()
-        return Response(
-            {"detail": "Report deleted."}, status=status.HTTP_204_NO_CONTENT
-        )
+        return Response({"detail": "Report deleted."}, status=status.HTTP_200_OK)

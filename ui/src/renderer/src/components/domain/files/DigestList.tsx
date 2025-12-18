@@ -7,11 +7,12 @@ import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
+import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
-import { PlusCircle, Search, Trash, Xmark } from 'iconoir-react';
+import { InfoCircleSolid, PlusCircle, Search, Trash, WarningCircleSolid, WarningTriangleSolid, Xmark } from 'iconoir-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 interface DataTypeOption {
@@ -112,10 +113,24 @@ function DigestList({
         },
     );
 
-    const columns: Array<{ key: string; label: string; filterType?: 'text' | 'date' }> =
+    const handleStatusChange = (status: string) => {
+        if (onColumnFilterChange) {
+            onColumnFilterChange('status', status);
+        }
+    };
+
+    const columns: Array<{ key: string; label: string | React.ReactNode; filterType?: 'text' | 'date'; sortable?: boolean }> =
         [
+            {
+                key: 'status',
+                label: <StatusHeaderDropdown
+                    onStatusChange={handleStatusChange}
+                    status={columnFilters.status || 'all'}
+                    statusOptions={['all', 'done', 'working', 'error']}
+                />,
+                sortable: false
+            },
             { key: 'type', label: 'Type' },
-            { key: 'status', label: 'Status' },
             { key: 'title', label: 'Title' },
             { key: 'user', label: 'User', filterType: 'text' as const },
             { key: 'warnings', label: 'Warnings' },
@@ -147,29 +162,74 @@ function DigestList({
         onSelect?: () => void;
     }
 
-    const getStatusBadgeClasses = (status: string) => {
-        const baseClasses =
-            'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white shadow-sm';
-        let colorClass = 'bg-zinc-500';
+    const getStatusIcon = (status?: string, errorMessage?: string) => {
+        if (!status) return null;
 
-        switch (status) {
-            case 'done':
-                colorClass = 'bg-green-600';
-                break;
-            case 'error':
-                colorClass = 'bg-red-600';
-                break;
-            case 'waiting':
-                colorClass = 'bg-yellow-600';
-                break;
-            case 'info':
-                colorClass = 'bg-blue-600';
-                break;
-            default:
-                colorClass = 'bg-zinc-500';
-                break;
+        const icon = (() => {
+            switch (status) {
+                case 'done':
+                    return (
+                        <svg
+                            width='18'
+                            height='18'
+                            viewBox='0 0 24 24'
+                            fill='none'
+                            xmlns='http://www.w3.org/2000/svg'
+                            className='text-green-500'
+                        >
+                            <path
+                                d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
+                                stroke='currentColor'
+                                strokeWidth='2'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                            />
+                        </svg>
+                    );
+                case 'waiting':
+                    return (
+                        <WarningTriangleSolid
+                            className='text-amber-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
+                case 'error':
+                    return (
+                        <WarningCircleSolid
+                            className='text-red-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
+                case 'working':
+                    return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
+                default:
+                    return null;
+            }
+        })();
+
+        const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
+        const tooltipContent = errorMessage || statusCapitalized;
+        const tooltipColor = status === 'error' ? 'error' : status === 'waiting' ? 'warning' : 'primary';
+
+        if ((status === 'error' || status === 'waiting') && errorMessage) {
+            return (
+                <Tooltip content={tooltipContent} color={tooltipColor} showArrow={false}>
+                    <span className='inline-flex items-center align-middle flex-shrink-0'>
+                        {icon}
+                    </span>
+                </Tooltip>
+            );
         }
-        return `${baseClasses} ${colorClass}`;
+
+        return (
+            <Tooltip content={tooltipContent} showArrow={false}>
+                <span className='inline-flex items-center align-middle flex-shrink-0'>
+                    {icon}
+                </span>
+            </Tooltip>
+        );
     };
 
     const renderRow = (
@@ -193,18 +253,13 @@ function DigestList({
                         </div>
                     </td>
                 )}
+                <td className='w-20'>
+                    <div className='flex items-center'>
+                        {getStatusIcon(digest.status, (digest as any).errorMessage)}
+                    </div>
+                </td>
                 <td className='truncate w-24' title={digest.displayName}>
                     {truncateText(digest.displayName || '', 24)}
-                </td>
-                <td className='w-16'>
-                    <span
-                        className={getStatusBadgeClasses(digest.status || '')}
-                    >
-                        {digest.status
-                            ? digest.status.charAt(0).toUpperCase() +
-                            digest.status.slice(1)
-                            : ''}
-                    </span>
                 </td>
                 <td className='truncate max-w-xs' title={digest.title}>
                     {digest.title}

@@ -269,7 +269,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         let exts: Extension[] = [
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
-            referenceLinksPlugin(referenceMappings, navigate, fileDownloadFn),
+            referenceLinksPlugin(referenceMappings, navigate, fileDownloadFn, source),
             yamlFrontmatter({
                 content: markdown({
                     codeLanguages: languages,

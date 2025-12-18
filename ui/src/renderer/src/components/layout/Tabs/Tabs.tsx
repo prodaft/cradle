@@ -156,7 +156,7 @@ const Tabs = ({
 };
 
 const Tab = ({ children }: TabProps) => {
-    return <div>{children}</div>;
+    return <div className='h-full'>{children}</div>;
 };
 
 Tab.displayName = 'Tab';

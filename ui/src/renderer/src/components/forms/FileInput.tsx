@@ -161,14 +161,16 @@ export default function FileInput({
 
     return (
         <>
-            <div className='flex flex-row gap-2' onPaste={handlePaste}>
+            <div className='flex flex-row gap-2 items-stretch' onPaste={handlePaste}>
                 <input
                     type='file'
                     className='flex-1 text-sm text-cradle-text-primary cursor-pointer
-                        file:mr-4 file:py-1.5 file:px-3
-                        file:rounded-full file:border file:border-cradle-accent-primary
+                        border border-cradle-border-accent rounded-xl bg-cradle-bg-secondary/5 p-0
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-l-[11px] file:rounded-r-none
+                        file:border-0 file:border-r file:border-cradle-border-accent
                         file:bg-cradle-accent-primary/10 file:text-cradle-accent-primary
-                        file:text-sm file:font-normal
+                        file:text-sm file:font-medium
                         file:cursor-pointer file:transition-colors
                         hover:file:bg-cradle-accent-primary/20
                     '
@@ -178,7 +180,7 @@ export default function FileInput({
                 />
                 <button
                     type='button'
-                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                    className='rounded-xl border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
                     onClick={handleUpload}
                     disabled={isUploading || pendingFiles.length === 0}
                 >

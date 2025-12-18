@@ -11,9 +11,10 @@ import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
 import ListView, { SortDirection } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
+import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { Edit, Eye, PlusCircle, RefreshCircle, Trash } from 'iconoir-react';
+import { Edit, Eye, InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -27,6 +28,12 @@ interface SelectProps {
     enableMultiSelect?: boolean;
     isSelected?: boolean;
     onSelect?: () => void;
+}
+
+interface Action {
+    value: string;
+    label: string;
+    handler: (selectedIds: string[]) => Promise<void>;
 }
 
 export default function ReportList() {
@@ -52,6 +59,7 @@ export default function ReportList() {
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('reports_pagesize')) || 10,
     );
+    const [statusFilter, setStatusFilter] = useState('all');
     const { execute } = useAPICall();
 
     // Mapping of table columns to API field names
@@ -88,7 +96,16 @@ export default function ReportList() {
                     pageSize: pageSize,
                     orderBy,
                 });
-                setReports(response.results);
+
+                // Client-side status filtering
+                let filteredResults = response.results;
+                if (statusFilter && statusFilter !== 'all') {
+                    filteredResults = response.results.filter(
+                        (report) => report.status === statusFilter
+                    );
+                }
+
+                setReports(filteredResults);
                 setTotalPages(response.totalPages);
             }
         } catch (error) {
@@ -96,7 +113,7 @@ export default function ReportList() {
         } finally {
             setLoading(false);
         }
-    }, [report_id, page, sortField, sortDirection, pageSize, execute, reportsApi]);
+    }, [report_id, page, sortField, sortDirection, pageSize, statusFilter, execute, reportsApi]);
 
     useEffect(() => {
         fetchReports();
@@ -104,6 +121,11 @@ export default function ReportList() {
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
+    };
+
+    const handleStatusChange = (status: string) => {
+        setStatusFilter(status);
+        setPage(1);
     };
 
     // Define actions for the ActionBar
@@ -162,14 +184,96 @@ export default function ReportList() {
         },
     ];
 
-    const columns: Column[] = [
-        { key: 'status', label: 'Status' },
-        { key: 'title', label: 'Title', className: 'truncate font-medium' },
-        { key: 'strategy', label: 'Strategy', className: 'truncate w-24' },
-        { key: 'createdAt', label: 'Created At', className: 'w-36' },
-        { key: 'anonymized', label: 'Anonymized' },
-        { key: 'actions', label: 'Actions' },
-    ];
+    const columns: Array<{
+        key: string;
+        label: string | React.ReactNode;
+        className?: string;
+        sortable?: boolean;
+    }> = [
+            {
+                key: 'status',
+                label: <StatusHeaderDropdown
+                    onStatusChange={handleStatusChange}
+                    status={statusFilter}
+                    statusOptions={['all', 'done', 'working', 'error']}
+                />,
+                sortable: false
+            },
+            { key: 'title', label: 'Title', className: 'truncate font-medium' },
+            { key: 'strategy', label: 'Strategy', className: 'truncate w-24' },
+            { key: 'createdAt', label: 'Created At', className: 'w-36' },
+            { key: 'anonymized', label: 'Anonymized' },
+            { key: 'actions', label: 'Actions' },
+        ];
+
+    const getStatusIcon = (status?: string, errorMessage?: string) => {
+        if (!status) return null;
+
+        const icon = (() => {
+            switch (status) {
+                case 'done':
+                    return (
+                        <svg
+                            width='18'
+                            height='18'
+                            viewBox='0 0 24 24'
+                            fill='none'
+                            xmlns='http://www.w3.org/2000/svg'
+                            className='text-green-500'
+                        >
+                            <path
+                                d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
+                                stroke='currentColor'
+                                strokeWidth='2'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                            />
+                        </svg>
+                    );
+                case 'working':
+                    return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
+                case 'warning':
+                    return (
+                        <WarningTriangleSolid
+                            className='text-amber-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
+                case 'error':
+                    return (
+                        <WarningCircleSolid
+                            className='text-red-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
+                default:
+                    return null;
+            }
+        })();
+
+        const tooltipContent = errorMessage || capitalizeString(status);
+        const tooltipColor = status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'primary';
+
+        if ((status === 'error' || status === 'warning') && errorMessage) {
+            return (
+                <Tooltip content={tooltipContent} color={tooltipColor} showArrow={false}>
+                    <span className='inline-flex items-center align-middle flex-shrink-0'>
+                        {icon}
+                    </span>
+                </Tooltip>
+            );
+        }
+
+        return (
+            <Tooltip content={tooltipContent} showArrow={false}>
+                <span className='inline-flex items-center align-middle flex-shrink-0'>
+                    {icon}
+                </span>
+            </Tooltip>
+        );
+    };
 
     const renderRow = (
         report: Report,
@@ -192,17 +296,10 @@ export default function ReportList() {
                         </div>
                     </td>
                 )}
-                <td className='w-8'>
-                    <span
-                        className={`badge text-white ${report.status === 'done'
-                            ? 'bg-green-500'
-                            : report.status === 'error'
-                                ? 'bg-red-500'
-                                : 'bg-yellow-500'
-                            }`}
-                    >
-                        {capitalizeString(report.status || '')}
-                    </span>
+                <td className='w-20'>
+                    <div className='flex items-center'>
+                        {getStatusIcon(report.status, report.errorMessage || undefined)}
+                    </div>
                 </td>
                 <td className='truncate max-w-xs font-medium' title={report.title}>
                     {report.title}

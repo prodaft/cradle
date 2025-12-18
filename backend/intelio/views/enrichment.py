@@ -163,6 +163,14 @@ class EnrichmentSettingsAPIView(GenericAPIView):
                 default=10,
             ),
             OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by status",
+                enum=list(map(lambda x: x[0], EnrichmentStatus.choices)),
+                required=False,
+            ),
+            OpenApiParameter(
                 name="page",
                 type=int,
                 location=OpenApiParameter.QUERY,
@@ -265,6 +273,9 @@ class EnrichmentAPIView(APIView):
             queryset = queryset.order_by(*order_fields)
         else:
             queryset = queryset.order_by("-created_at")
+
+        if request.query_params.get("status"):
+            queryset = queryset.filter(status=request.query_params.get("status"))
 
         queryset = queryset.select_related("user").prefetch_related(
             "enrichers_settings"

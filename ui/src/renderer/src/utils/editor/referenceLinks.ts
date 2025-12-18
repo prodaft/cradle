@@ -399,6 +399,7 @@ export function referenceLinksPlugin(
     resolveMinioLink: (
         file: FileTransferDownloadRetrieveRequest,
     ) => Promise<FileDownload>,
+    sourceMode: boolean,
 ) {
     return ViewPlugin.fromClass(
         class {
@@ -453,6 +454,7 @@ export function referenceLinksPlugin(
                                 this.mappings,
                                 this.navigate,
                                 this.resolveMinioLink,
+                                sourceMode,
                             );
                             if (decoration) {
                                 widgets.push(decoration);
@@ -479,7 +481,11 @@ function createReferenceDecoration(
     resolveMinioLink: (
         file: FileTransferDownloadRetrieveRequest,
     ) => Promise<FileDownload>,
+    sourceMode: boolean,
 ): Range<Decoration> | null {
+    if (sourceMode) {
+        return null;
+    }
     const from = node.from;
     const to = node.to;
 

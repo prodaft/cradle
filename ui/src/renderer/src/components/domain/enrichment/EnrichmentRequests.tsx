@@ -16,6 +16,7 @@ interface SearchFilters {
 
 interface ColumnFilters {
     [key: string]: string | DateRangeFilter | undefined;
+    status: string;
     user: string;
 }
 
@@ -54,17 +55,16 @@ export default function EnrichmentRequests() {
         user: searchParams.get('user__username') || '',
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters>({
-        title: searchParams.get('title') || '',
-        user: searchParams.get('user__username') || '',
-    });
+    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(null);
 
     // Column filters for table header
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
+        status: searchParams.get('status') || 'all',
         user: searchParams.get('user__username') || '',
     });
 
     const fetchEnrichmentRequests = useCallback(async () => {
+        if (!submittedFilters) return;
         setLoading(true);
         try {
             const searchQueryParams: any = {
@@ -81,11 +81,8 @@ export default function EnrichmentRequests() {
 
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
             searchQueryParams.orderBy = orderBy;
+            searchQueryParams.status = columnFilters.status == "all" ? undefined : columnFilters.status;
 
-            console.log(
-                'Calling enrichmentRequestList with params:',
-                searchQueryParams,
-            );
             const response = await intelioApi.enrichmentRequestList(searchQueryParams);
             console.log('API response:', response);
 
@@ -110,13 +107,12 @@ export default function EnrichmentRequests() {
         columnFilters,
         sortField,
         sortDirection,
-        intelioApi,
         notify,
     ]);
 
     useEffect(() => {
         fetchEnrichmentRequests();
-    }, []);
+    }, [page, pageSize, submittedFilters, columnFilters, sortField, sortDirection]);
 
     // Initialize filters from URL parameters
     useEffect(() => {

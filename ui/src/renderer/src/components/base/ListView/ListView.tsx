@@ -1,6 +1,8 @@
 import { useProfile } from '@contexts/user/ProfileContext';
 import { Sort, SortDown, SortUp } from 'iconoir-react/regular';
 import { ReactNode, useEffect, useRef, useState } from 'react';
+import Datepicker from '@components/base/Datepicker/Datepicker';
+import { format } from 'date-fns';
 
 interface Column {
     key: string;
@@ -187,9 +189,12 @@ export default function ListView<T extends { id?: string | number }>({
             }
         };
 
-        const handleDateRangeChange = (field: 'from' | 'to', value: string) => {
-            const currentValue = (filterValues[column] as DateRangeFilter) || {};
-            const newValue = { ...currentValue, [field]: value };
+        const handleDateRangeChange = (dates: [Date | null, Date | null]) => {
+            const [start, end] = dates;
+            const newValue: DateRangeFilter = {
+                from: start ? format(start, 'yyyy-MM-dd') : undefined,
+                to: end ? format(end, 'yyyy-MM-dd') : undefined,
+            };
             handleFilterChange(column, newValue);
         };
 
@@ -210,35 +215,20 @@ export default function ListView<T extends { id?: string | number }>({
                         className='p-1'
                     >
                         {filterType === 'date' ? (
-                            <div className='flex flex-col gap-1'>
-                                <input
-                                    type='date'
-                                    value={
-                                        (filterValues[column] as DateRangeFilter)
-                                            ?.from || ''
-                                    }
-                                    onChange={(e) =>
-                                        handleDateRangeChange('from', e.target.value)
-                                    }
-                                    onKeyDown={(e) => handleFilterKeyDown(e, column)}
-                                    className='cradle-search text-xs py-1 px-2 w-full'
-                                    placeholder='From'
-                                    autoFocus
-                                />
-                                <input
-                                    type='date'
-                                    value={
-                                        (filterValues[column] as DateRangeFilter)?.to ||
-                                        ''
-                                    }
-                                    onChange={(e) =>
-                                        handleDateRangeChange('to', e.target.value)
-                                    }
-                                    onKeyDown={(e) => handleFilterKeyDown(e, column)}
-                                    className='cradle-search text-xs py-1 px-2 w-full'
-                                    placeholder='To'
-                                />
-                            </div>
+                            <Datepicker
+                                startDate={
+                                    (filterValues[column] as DateRangeFilter)?.from
+                                        ? new Date((filterValues[column] as DateRangeFilter).from!)
+                                        : null
+                                }
+                                endDate={
+                                    (filterValues[column] as DateRangeFilter)?.to
+                                        ? new Date((filterValues[column] as DateRangeFilter).to!)
+                                        : null
+                                }
+                                onChange={handleDateRangeChange}
+                                className='cradle-search text-xs py-0.5 px-1.5 w-48'
+                            />
                         ) : (
                             <input
                                 type='text'

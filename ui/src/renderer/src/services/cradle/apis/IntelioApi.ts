@@ -83,6 +83,7 @@ export interface EnrichmentRequestListRequest {
     orderBy?: string;
     page?: number;
     pageSize?: number;
+    status?: EnrichmentRequestListStatusEnum;
     title?: string;
     userUsername?: string;
 }
@@ -119,6 +120,7 @@ export interface IntelioDigestRetrieveRequest {
     orderBy?: string;
     page?: number;
     pageSize?: number;
+    status?: IntelioDigestRetrieveStatusEnum;
     title?: string;
 }
 
@@ -375,6 +377,10 @@ export class IntelioApi extends runtime.BaseAPI {
 
         if (requestParameters['pageSize'] != null) {
             queryParameters['page_size'] = requestParameters['pageSize'];
+        }
+
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
         }
 
         if (requestParameters['title'] != null) {
@@ -826,6 +832,10 @@ export class IntelioApi extends runtime.BaseAPI {
             queryParameters['page_size'] = requestParameters['pageSize'];
         }
 
+        if (requestParameters['status'] != null) {
+            queryParameters['status'] = requestParameters['status'];
+        }
+
         if (requestParameters['title'] != null) {
             queryParameters['title'] = requestParameters['title'];
         }
@@ -1121,3 +1131,24 @@ export class IntelioApi extends runtime.BaseAPI {
     }
 
 }
+
+/**
+ * @export
+ */
+export const EnrichmentRequestListStatusEnum = {
+    Done: 'done',
+    Error: 'error',
+    Waiting: 'waiting',
+    Warning: 'warning',
+    Working: 'working'
+} as const;
+export type EnrichmentRequestListStatusEnum = typeof EnrichmentRequestListStatusEnum[keyof typeof EnrichmentRequestListStatusEnum];
+/**
+ * @export
+ */
+export const IntelioDigestRetrieveStatusEnum = {
+    Done: 'done',
+    Error: 'error',
+    Working: 'working'
+} as const;
+export type IntelioDigestRetrieveStatusEnum = typeof IntelioDigestRetrieveStatusEnum[keyof typeof IntelioDigestRetrieveStatusEnum];

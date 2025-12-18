@@ -268,6 +268,11 @@ export default function Relations({ obj }: RelationsProps) {
     }, [page]);
 
     useEffect(() => {
+        setPage(1);
+        performSearch(depth, 1);
+    }, [pageSize]);
+
+    useEffect(() => {
         if (isSearchExpanded && inputRef.current) {
             inputRef.current.focus();
         }

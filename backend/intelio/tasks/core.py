@@ -38,6 +38,7 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
 @shared_task
 def start_digest(digest_id):
     EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="digest")
+    print(f"Starting digest {digest_id}")
     digest = BaseDigest.objects.get(id=digest_id)
     digest.digest()
 

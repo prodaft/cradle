@@ -23,6 +23,7 @@ interface DateRange {
 }
 
 interface ColumnFilters {
+    status: string;
     user: string;
     createdAt: {
         from: string;
@@ -75,17 +76,18 @@ export default function DigestData() {
 
     // Column filters for table header
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
+        status: searchParams.get('status') || 'all',
         user: searchParams.get('author') || '',
         createdAt: {
             from: searchParams.get('created_at_gte')
                 ? new Date(searchParams.get('created_at_gte')!)
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : '',
             to: searchParams.get('created_at_lte')
                 ? new Date(searchParams.get('created_at_lte')!)
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : '',
         },
     });
@@ -111,13 +113,13 @@ export default function DigestData() {
         const initialDateRange: DateRange = {
             startDate: searchParams.get('created_at_gte')
                 ? new Date(searchParams.get('created_at_gte')!)
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
             endDate: searchParams.get('created_at_lte')
                 ? new Date(searchParams.get('created_at_lte')!)
-                      .toISOString()
-                      .split('T')[0]
+                    .toISOString()
+                    .split('T')[0]
                 : null,
         };
 
@@ -180,10 +182,10 @@ export default function DigestData() {
                 : '',
             created_at_lte: dateRangeValue.endDate
                 ? (() => {
-                      const endDate = new Date(dateRangeValue.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(dateRangeValue.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : '',
         });
     };
@@ -225,6 +227,11 @@ export default function DigestData() {
             if (columnFilters.user) {
                 searchQueryParams.author = columnFilters.user;
             }
+
+            if (columnFilters.status != 'all') {
+                searchQueryParams.status = columnFilters.status;
+            }
+
             if (columnFilters.createdAt.from) {
                 searchQueryParams.createdAtGte = new Date(
                     columnFilters.createdAt.from,

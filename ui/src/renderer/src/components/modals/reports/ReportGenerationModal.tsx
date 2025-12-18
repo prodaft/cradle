@@ -2,7 +2,7 @@ import { useNotif } from '@/contexts';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import { Code, Download, Page } from 'iconoir-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Report format types
@@ -58,6 +58,24 @@ export default function ReportGenerationModal({
 
     const targets = selectedNotes || (noteId ? [{ id: noteId, title: noteTitle || 'Untitled' }] : []);
 
+    // Track selected note IDs
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(targets.map(t => t.id)));
+
+    // Update selection if targets change (e.g. initial load)
+    useEffect(() => {
+        setSelectedIds(new Set(targets.map((t) => t.id)));
+    }, [targets]);
+
+    const toggleSelection = (id: string) => {
+        const newSelected = new Set(selectedIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedIds(newSelected);
+    };
+
     const handleGenerate = async () => {
         if (!title.trim()) {
             notify({
@@ -67,7 +85,9 @@ export default function ReportGenerationModal({
             return;
         }
 
-        if (targets.length === 0) {
+        const validTargets = targets.filter((t) => selectedIds.has(t.id));
+
+        if (validTargets.length === 0) {
             notify({
                 type: 'error',
                 text: 'No notes selected for report generation.',
@@ -82,7 +102,7 @@ export default function ReportGenerationModal({
                     reportsApi.reportsPublishCreate({
                         publishReportRequest: {
                             strategy: format,
-                            noteIds: targets.map((t) => t.id),
+                            noteIds: validTargets.map((t) => t.id),
                             title: title.trim(),
                             anonymized: mode === 'anonymized',
                         },
@@ -100,7 +120,7 @@ export default function ReportGenerationModal({
 
     return (
         <div className='min-w-[400px] max-w-lg'>
-             <div className='flex items-end justify-between mb-4'>
+            <div className='flex items-end justify-between mb-4'>
                 <div className='flex items-center gap-3'>
                     <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
                         Generate Report
@@ -111,18 +131,37 @@ export default function ReportGenerationModal({
             {/* Selected Notes List */}
             {targets.length > 0 && (
                 <div className='mb-5'>
-                    <h3 className='cradle-label mb-2 block'>
-                        Selected Notes ({targets.length})
-                    </h3>
+                    <label className='cradle-label mb-2 block'>
+                        Selected Notes ({selectedIds.size})
+                    </label>
                     <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
-                        {targets.map((note) => (
-                            <li
-                                key={note.id}
-                                className='px-4 py-2 text-cradle-text-primary text-sm border-b border-cradle-border-accent last:border-b-0 hover:bg-cradle-bg-secondary/50 transition-colors truncate'
-                            >
-                                {note.title || 'Untitled'}
-                            </li>
-                        ))}
+                        {targets.map((note) => {
+                            const isSelected = selectedIds.has(note.id);
+                            return (
+                                <li
+                                    key={note.id}
+                                    className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${isSelected
+                                            ? 'hover:bg-cradle-bg-secondary/50'
+                                            : 'bg-cradle-bg-secondary/10'
+                                        }`}
+                                >
+                                    <input
+                                        type='checkbox'
+                                        className='cradle-checkbox'
+                                        checked={isSelected}
+                                        onChange={() => toggleSelection(note.id)}
+                                    />
+                                    <span
+                                        className={`text-sm truncate flex-1 ${isSelected
+                                                ? 'text-cradle-text-primary'
+                                                : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
+                                            }`}
+                                    >
+                                        {note.title || 'Untitled'}
+                                    </span>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             )}
@@ -152,11 +191,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('html')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
-                            format === 'html'
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'html'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
-                        } disabled:opacity-50`}
+                            } disabled:opacity-50`}
                     >
                         <Page width='20' height='20' />
                         <span className='text-sm font-medium'>HTML</span>
@@ -165,11 +203,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('json')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
-                            format === 'json'
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'json'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
-                        } disabled:opacity-50`}
+                            } disabled:opacity-50`}
                     >
                         <Code width='20' height='20' />
                         <span className='text-sm font-medium'>JSON</span>
@@ -178,11 +215,10 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('plain')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
-                            format === 'plain'
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'plain'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
-                        } disabled:opacity-50`}
+                            } disabled:opacity-50`}
                     >
                         <Download width='20' height='20' />
                         <span className='text-sm font-medium'>Plain Text</span>
@@ -200,11 +236,10 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('anonymized')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
-                            mode === 'anonymized'
+                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${mode === 'anonymized'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
-                        } disabled:opacity-50`}
+                            } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Anonymized</span>
                     </button>
@@ -212,11 +247,10 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('transparent')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
-                            mode === 'transparent'
+                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${mode === 'transparent'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
-                        } disabled:opacity-50`}
+                            } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Transparent</span>
                     </button>

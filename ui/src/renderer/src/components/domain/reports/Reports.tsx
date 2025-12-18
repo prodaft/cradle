@@ -2,6 +2,7 @@ import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
+import useAPICall from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Report } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
@@ -12,13 +13,16 @@ import ListView, {
     SortDirection,
 } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
+import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
+import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { Search, Xmark } from 'iconoir-react';
+import { Download, InfoCircleSolid, RefreshCircle, Search, Trash, WarningCircleSolid, WarningTriangleSolid, Xmark } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface ColumnFilters {
     [key: string]: string | DateRangeFilter | undefined;
+    status: string;
     user: string;
     createdAt: DateRangeFilter;
 }
@@ -41,7 +45,7 @@ export default function Reports() {
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
     const { setModal } = useModal();
-
+    const { execute } = useAPICall();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(Number(searchParams.get('reports_page')) || 1);
@@ -61,13 +65,13 @@ export default function Reports() {
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
+        status: 'all',
         user: '',
         createdAt: { from: '', to: '' },
     });
 
     const sortFieldMapping: Record<string, string> = {
         title: 'title',
-        status: 'status',
         strategy: 'strategy',
         anonymized: 'anonymized',
         createdAt: 'created_at',
@@ -110,8 +114,18 @@ export default function Reports() {
                 pageSize: queryParams.page_size,
                 orderBy: queryParams.order_by,
                 search: searchQuery || undefined,
+                // Note: Status filtering happens client-side until backend supports it
             });
-            setReports(response.results);
+
+            // Client-side status filtering
+            let filteredResults = response.results;
+            if (columnFilters.status && columnFilters.status !== 'all') {
+                filteredResults = response.results.filter(
+                    (report) => report.status === columnFilters.status
+                );
+            }
+
+            setReports(filteredResults);
             setTotalPages(response.totalPages);
             setTotalCount(response.count || 0);
         } catch (error: any) {
@@ -172,19 +186,42 @@ export default function Reports() {
         });
     };
 
-    const handleRetry = async (reportId: string) => {
+    const handleRetry = async (reportIds: string | string[]) => {
+        const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
+
         try {
-            await reportsApi.reportsRetryCreate({ id: reportId });
-            notify({
-                type: 'success',
-                text: 'Retrying to build report!',
-            });
+            const retryPromises = idsArray.map((id) =>
+                execute(() => reportsApi.reportsRetryCreate({ id }))
+            );
+            const results = await Promise.allSettled(retryPromises);
+
+            const successes = results.filter((r) => r.status === 'fulfilled').length;
+            const failures = results.filter((r) => r.status === 'rejected').length;
+
+            if (failures === 0) {
+                notify({
+                    type: 'success',
+                    text: `Successfully retrying ${successes} report${successes > 1 ? 's' : ''}!`,
+                });
+            } else if (successes === 0) {
+                notify({
+                    type: 'error',
+                    text: `Failed to retry ${failures} report${failures > 1 ? 's' : ''}`,
+                });
+            } else {
+                notify({
+                    type: 'info',
+                    text: `Retrying ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`,
+                });
+            }
+
+            setSelectedReports([]);
             fetchReports();
         } catch (error) {
             console.error('Retry failed:', error);
             notify({
                 type: 'error',
-                text: 'Failed to retry report',
+                text: 'Failed to retry report(s)',
             });
         }
     };
@@ -200,30 +237,46 @@ export default function Reports() {
         setPage(1); // Reset to first page when filters change
     };
 
+    const handleStatusChange = (status: string) => {
+        setColumnFilters((prev) => ({
+            ...prev,
+            status,
+        }));
+        setPage(1);
+    };
+
     const columns: Array<{
         key: string;
-        label: string;
+        label: string | React.ReactNode;
         sortable?: boolean;
         filterType?: 'text' | 'date';
     }> = [
-        { key: 'status', label: 'Status', sortable: true },
-        { key: 'title', label: 'Title', sortable: true },
-        { key: 'strategy', label: 'Strategy', sortable: true },
-        { key: 'anonymized', label: 'Anonymized', sortable: true },
-        {
-            key: 'createdAt',
-            label: 'Created At',
-            sortable: true,
-            filterType: 'date' as const,
-        },
-    ];
+            {
+                key: 'status',
+                label: <StatusHeaderDropdown
+                    onStatusChange={handleStatusChange}
+                    status={columnFilters.status}
+                    statusOptions={['all', 'done', 'working', 'error']}
+                />,
+                sortable: false
+            },
+            { key: 'title', label: 'Title', sortable: true },
+            { key: 'strategy', label: 'Strategy', sortable: true },
+            { key: 'anonymized', label: 'Anonymized', sortable: true },
+            {
+                key: 'createdAt',
+                label: 'Created At',
+                sortable: true,
+                filterType: 'date' as const,
+            },
+        ];
 
     // Define filterable columns with their handlers
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        {
-            user: (value) => handleColumnFilterChange('user', value),
-            createdAt: (value) => handleColumnFilterChange('createdAt', value),
-        };
+    {
+        user: (value) => handleColumnFilterChange('user', value),
+        createdAt: (value) => handleColumnFilterChange('createdAt', value),
+    };
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
@@ -234,37 +287,7 @@ export default function Reports() {
                 const report = reports.find((r) => r.id === id);
                 if (report && report.reportUrl) {
                     // Fetch the file content
-                    const response = await fetch(report.reportUrl);
-                    if (!response.ok) {
-                        throw new Error(
-                            `Failed to fetch report: ${response.statusText}`,
-                        );
-                    }
-
-                    // Get the file content as blob
-                    const blob = await response.blob();
-
-                    // Create download link
-                    const url = window.URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-
-                    // Set filename with proper extension
-                    const extension =
-                        report.strategy === 'json'
-                            ? 'json'
-                            : report.strategy === 'plain'
-                              ? 'txt'
-                              : 'html';
-                    link.download = `${report.title || 'report'}.${extension}`;
-
-                    // Trigger download
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-
-                    // Clean up the object URL
-                    window.URL.revokeObjectURL(url);
+                    window.open(report.reportUrl, '_blank', 'noopener');
                 }
             }
 
@@ -288,17 +311,81 @@ export default function Reports() {
         setSearchParams(newParams, { replace: true });
     };
 
+    const getStatusIcon = (status?: string, errorMessage?: string) => {
+        if (!status) return null;
+
+        const icon = (() => {
+            switch (status) {
+                case 'done':
+                    return (
+                        <svg
+                            width='18'
+                            height='18'
+                            viewBox='0 0 24 24'
+                            fill='none'
+                            xmlns='http://www.w3.org/2000/svg'
+                            className='text-green-500'
+                        >
+                            <path
+                                d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
+                                stroke='currentColor'
+                                strokeWidth='2'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                            />
+                        </svg>
+                    );
+                case 'working':
+                    return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
+                case 'warning':
+                    return (
+                        <WarningTriangleSolid
+                            className='text-amber-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
+                case 'error':
+                    return (
+                        <WarningCircleSolid
+                            className='text-red-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
+                default:
+                    return null;
+            }
+        })();
+
+        const tooltipContent = errorMessage || capitalizeString(status);
+        const tooltipColor = status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'primary';
+
+        if ((status === 'error' || status === 'warning') && errorMessage) {
+            return (
+                <Tooltip content={tooltipContent} color={tooltipColor} showArrow={true} side="right">
+                    <span className='inline-flex items-center align-middle flex-shrink-0'>
+                        {icon}
+                    </span>
+                </Tooltip>
+            );
+        }
+
+        return (
+            <Tooltip content={tooltipContent} showArrow={true} side="right">
+                <span className='inline-flex items-center align-middle flex-shrink-0'>
+                    {icon}
+                </span>
+            </Tooltip>
+        );
+    };
+
     const renderRow = (
         report: Report,
         index: number,
         selectProps: SelectProps = {},
     ) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
-        const statusColors: Record<string, string> = {
-            completed: 'text-green-500',
-            working: 'text-blue-500',
-            failed: 'text-red-500',
-        };
 
         const handleRowClick = () => {
             if (report.reportUrl) {
@@ -309,7 +396,7 @@ export default function Reports() {
         return (
             <tr
                 key={report.id}
-                className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${report.reportUrl ? 'hover:cursor-pointer' : 'cursor-default'}`}
+                className={`cursor-pointer ${report.reportUrl ? 'hover:cursor-pointer' : 'cursor-default'}`}
                 onClick={handleRowClick}
             >
                 {enableMultiSelect && onSelect && (
@@ -324,14 +411,10 @@ export default function Reports() {
                         </div>
                     </td>
                 )}
-                <td
-                    className={
-                        report.status
-                            ? statusColors[report.status]
-                            : 'cradle-text-secondary'
-                    }
-                >
-                    {capitalizeString(report.status || '')}
+                <td className='w-20'>
+                    <div className='flex items-center'>
+                        {getStatusIcon(report.status, report.errorMessage || undefined)}
+                    </div>
                 </td>
                 <td className='cradle-text-primary'>
                     {truncateText(report.title, 50)}
@@ -378,64 +461,60 @@ export default function Reports() {
                         <div className='flex flex-wrap items-center justify-between gap-4'>
                             {/* Left: Actions */}
                             <div className='flex items-center gap-2 flex-shrink-0'>
-                                <button
-                                    onClick={() => handleDownload(selectedReports)}
-                                    disabled={reports.length === 0 || selectedReports.length === 0}
-                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                >
-                                    <svg
-                                        width='18'
-                                        height='18'
-                                        viewBox='0 0 24 24'
-                                        strokeWidth='1.5'
-                                        fill='none'
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        color='currentColor'
-                                        className='text-cradle-text-secondary'
+                                <Tooltip content={selectedReports.length > 0 ? `Download ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to download'}>
+                                    <button
+                                        onClick={() => handleDownload(selectedReports)}
+                                        disabled={reports.length === 0 || selectedReports.length === 0}
+                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                     >
-                                        <path
-                                            d='M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                        <path
-                                            d='M12 3V16M12 16L16 11.625M12 16L8 11.625'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                    </svg>
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(selectedReports)}
-                                    disabled={reports.length === 0 || selectedReports.length === 0}
-                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                >
-                                    <svg
-                                        width='18'
-                                        height='18'
-                                        viewBox='0 0 24 24'
-                                        strokeWidth='1.5'
-                                        fill='none'
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        color='currentColor'
-                                        className='text-cradle-text-secondary'
+                                        <Download
+                                            className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                            width={20}
+                                            height={20}
+                                        />
+                                        {selectedReports.length > 0 && (
+                                            <span className='text-sm text-cradle-text-secondary font-mono'>
+                                                {selectedReports.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content={selectedReports.length > 0 ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to delete'}>
+                                    <button
+                                        onClick={() => handleDelete(selectedReports)}
+                                        disabled={reports.length === 0 || selectedReports.length === 0}
+                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                     >
-                                        <path
-                                            d='M20 9L18.005 20.3463C17.8369 21.3026 17.0062 22 16.0353 22H7.96474C6.99379 22 6.1631 21.3026 5.99496 20.3463L4 9'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                        <path
-                                            d='M21 6L15.375 6M3 6L8.625 6M8.625 6V4C8.625 2.89543 9.52043 2 10.625 2H13.375C14.4796 2 15.375 2.89543 15.375 4V6M8.625 6L15.375 6'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                    </svg>
-                                </button>
+                                        <Trash
+                                            className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                            width={20}
+                                            height={20}
+                                        />
+                                        {selectedReports.length > 0 && (
+                                            <span className='text-sm text-cradle-text-secondary font-mono'>
+                                                {selectedReports.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content={selectedReports.length > 0 ? `Retry ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to retry'}>
+                                    <button
+                                        onClick={() => handleRetry(selectedReports)}
+                                        disabled={reports.length === 0 || selectedReports.length === 0}
+                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                    >
+                                        <RefreshCircle
+                                            className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                            width={20}
+                                            height={20}
+                                        />
+                                        {selectedReports.length > 0 && (
+                                            <span className='text-sm text-cradle-text-secondary font-mono'>
+                                                {selectedReports.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </Tooltip>
                                 <div className='h-8 w-px bg-cradle-border-accent'></div>
                                 {!isSearchExpanded ? (
                                     <button
@@ -525,7 +604,7 @@ export default function Reports() {
                     onSort={handleSort}
                     sortFieldMapping={sortFieldMapping}
                     emptyMessage='No reports found.'
-                    tableClassName='table table-zebra'
+                    tableClassName='table table-hover'
                     enableMultiSelect={true}
                     setSelected={setSelectedReports}
                     filterableColumns={filterableColumns}

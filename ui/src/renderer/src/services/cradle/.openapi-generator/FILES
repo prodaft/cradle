@@ -29,7 +29,6 @@ models/DefaultNoteTemplateRequest.ts
 models/DefaultNoteTemplateResponse.ts
 models/DigestSubclass.ts
 models/EdgeRelation.ts
-models/EditReportRequest.ts
 models/EmailConfirmRequest.ts
 models/Enable2FA.ts
 models/EnrichmentRelation.ts
@@ -104,7 +103,6 @@ models/Relation.ts
 models/Report.ts
 models/ReportProcessingErrorNotification.ts
 models/ReportRenderNotification.ts
-models/ReportRequest.ts
 models/RequestAccessRequest.ts
 models/Snippet.ts
 models/SnippetRequest.ts

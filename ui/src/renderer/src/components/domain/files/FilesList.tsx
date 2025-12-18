@@ -1,5 +1,6 @@
 import Tooltip from '@/components/base/Tooltip/Tooltip';
 import { useNotif } from '@/contexts';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
@@ -10,7 +11,7 @@ import TableCard from '@components/base/Card/TableCard';
 import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { useDroppable } from '@dnd-kit/core';
-import type { FileReferenceWithNote } from '@services/cradle/models';
+import type { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import bytes from 'bytes';
 import { Download, Search, Trash, Xmark } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -90,6 +91,7 @@ export default function FilesList({
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('files_pagesize')) || 10,
     );
+    const { execute } = useAPICall();
     const [selectedFiles, setSelectedFiles] = useState<(string | number)[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -208,6 +210,7 @@ export default function FilesList({
                 minioFileName: file.minioFileName,
             });
         } catch (error) {
+            console.error('Failed to download file: ', error);
             notify({
                 type: 'error',
                 text: 'Failed to download file. Please try again.',
@@ -220,32 +223,30 @@ export default function FilesList({
         if (selectedFiles.length === 0) return;
 
         try {
-            for (const fileId of selectedFiles) {
-                const file = files.find((f) => f.id == fileId);
-                if (file && file.bucketName && file.minioFileName) {
-                    const response = await fileTransferApi.fileTransferDownloadRetrieve(
-                        {
-                            bucketName: file.bucketName,
-                            minioFileName: file.minioFileName,
-                        },
-                    );
-                    const { presigned } = response;
-                    const link = document.createElement('a');
-                    link.href = presigned;
-                    const fileName =
-                        file.minioFileName.split('/').pop() || file.minioFileName;
-                    link.download = fileName;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                }
-            }
+            const downloads = await Promise.all(
+                selectedFiles.map((fileId) => {
+                    const file = files.find((f) => f.id === fileId);
+                    if (!file?.bucketName || !file?.minioFileName) return null;
+
+                    return execute(() => fileTransferApi.fileTransferDownloadRetrieve({
+                        bucketName: file.bucketName,
+                        minioFileName: file.minioFileName,
+                    }));
+                })
+            );
+            downloads
+                .filter((download): download is FileDownload => download !== null)
+                .forEach(({ presigned }, index) => {
+                    window.open(presigned, '_blank', 'noopener');
+                });
+
             notify({
-                type: 'success',
-                text: `Downloaded ${selectedFiles.length} file(s)`,
+                type: 'info',
+                text: `Attempted to download ${downloads.length} file(s). Your browser may block some.`,
             });
 
         } catch (error) {
+            console.error('Failed to download files: ', error);
             notify({
                 type: 'error',
                 text: 'Failed to download files. Please try again.',

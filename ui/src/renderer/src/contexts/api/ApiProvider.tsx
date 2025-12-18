@@ -42,9 +42,9 @@ export function ApiProvider({ children }: ApiProviderProps) {
                     return token;
                 }
                 : undefined,
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            // Note: Don't set Content-Type as a default header here.
+            // Individual API methods set it as needed (e.g., 'application/json' for JSON requests).
+            // For file uploads, the browser must set 'multipart/form-data' with the boundary automatically.
         });
     }, [tokenVersion, basePath, getAccessToken, isLoggedIn]);
 

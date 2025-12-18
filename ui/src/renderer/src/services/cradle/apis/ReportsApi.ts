@@ -16,18 +16,14 @@
 import * as runtime from '../runtime';
 import type {
   AccessEntityList404Response,
-  EditReportRequest,
   PaginatedReportList,
   PublishReportRequest,
   PublishStrategiesResponse,
   Report,
-  ReportRequest,
 } from '../models/index';
 import {
     AccessEntityList404ResponseFromJSON,
     AccessEntityList404ResponseToJSON,
-    EditReportRequestFromJSON,
-    EditReportRequestToJSON,
     PaginatedReportListFromJSON,
     PaginatedReportListToJSON,
     PublishReportRequestFromJSON,
@@ -36,8 +32,6 @@ import {
     PublishStrategiesResponseToJSON,
     ReportFromJSON,
     ReportToJSON,
-    ReportRequestFromJSON,
-    ReportRequestToJSON,
 } from '../models/index';
 
 export interface ReportsDestroyRequest {
@@ -61,12 +55,6 @@ export interface ReportsRetrieveRequest {
 
 export interface ReportsRetryCreateRequest {
     id: string;
-    reportRequest: ReportRequest;
-}
-
-export interface ReportsUpdateRequest {
-    id: string;
-    editReportRequest: EditReportRequest;
 }
 
 /**
@@ -327,18 +315,9 @@ export class ReportsApi extends runtime.BaseAPI {
             );
         }
 
-        if (requestParameters['reportRequest'] == null) {
-            throw new runtime.RequiredError(
-                'reportRequest',
-                'Required parameter "reportRequest" was null or undefined when calling reportsRetryCreate().'
-            );
-        }
-
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
 
         if (this.configuration && this.configuration.accessToken) {
             const token = this.configuration.accessToken;
@@ -357,7 +336,6 @@ export class ReportsApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ReportRequestToJSON(requestParameters['reportRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ReportFromJSON(jsonValue));
@@ -369,67 +347,6 @@ export class ReportsApi extends runtime.BaseAPI {
      */
     async reportsRetryCreate(requestParameters: ReportsRetryCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Report> {
         const response = await this.reportsRetryCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Updates an existing report with new notes and title.
-     * Update report
-     */
-    async reportsUpdateRaw(requestParameters: ReportsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['id'] == null) {
-            throw new runtime.RequiredError(
-                'id',
-                'Required parameter "id" was null or undefined when calling reportsUpdate().'
-            );
-        }
-
-        if (requestParameters['editReportRequest'] == null) {
-            throw new runtime.RequiredError(
-                'editReportRequest',
-                'Required parameter "editReportRequest" was null or undefined when calling reportsUpdate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("jwtAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-
-        let urlPath = `/reports/{id}/`;
-        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'PUT',
-            headers: headerParameters,
-            query: queryParameters,
-            body: EditReportRequestToJSON(requestParameters['editReportRequest']),
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Updates an existing report with new notes and title.
-     * Update report
-     */
-    async reportsUpdate(requestParameters: ReportsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.reportsUpdateRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

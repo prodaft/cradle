@@ -1,4 +1,5 @@
 import { useNotif } from '@/contexts/ui/NotificationContext';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import {
@@ -38,6 +39,7 @@ export default function NotificationCard({
     const [unreadStatus, setUnreadStatus] = useState(isMarkedUnread);
     const { reportsApi, notificationsApi, accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
+    const { execute } = useAPICall();
     const { notify } = useNotif();
     console.log(notification);
 
@@ -117,28 +119,20 @@ export default function NotificationCard({
             });
     };
 
-    const handleViewReport = () => {
+    const handleViewReport = async () => {
         const notif = notification as ReportRenderNotification;
         if (!notif.publishedReportId) return;
 
-        reportsApi
-            .reportsRetrieve({ id: notif.publishedReportId })
-            .then((report) => {
-                if (report.reportUrl) {
-                    window.open(report.reportUrl, '_blank');
-                } else {
-                    notify({
-                        type: 'error',
-                        text: 'Report URL not found',
-                    });
-                }
-            })
-            .catch((error: any) => {
-                notify({
-                    type: 'error',
-                    text: error.response?.data?.detail || 'Failed to view report',
-                });
+        let report = await execute(() => reportsApi.reportsRetrieve({ id: notif.publishedReportId }));
+
+        if (report.reportUrl) {
+            window.open(report.reportUrl, '_blank');
+        } else {
+            notify({
+                type: 'error',
+                text: 'Report URL not found',
             });
+        }
     };
 
     const formattedDate = timestamp ? formatDate(new Date(timestamp)) : 'N/A';

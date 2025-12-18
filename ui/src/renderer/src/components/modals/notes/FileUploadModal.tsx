@@ -1,5 +1,5 @@
 import type { FileReference, FileReferenceWithNote } from '@services/cradle/models';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import FileInput from '../../forms/FileInput';
 
 /**
@@ -38,6 +38,22 @@ export default function FileUploadModal({
 }: FileUploadModalProps): JSX.Element {
     const [pendingFiles, setPendingFiles] = useState<File[]>(initialFiles);
     const [fileData, setFileData] = useState<FileReference[]>([]);
+    const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+
+    // Auto-select all pending files when the list changes
+    useEffect(() => {
+        setSelectedIndices(new Set(pendingFiles.map((_, i) => i)));
+    }, [pendingFiles]);
+
+    const toggleSelection = (index: number) => {
+        const newSelected = new Set(selectedIndices);
+        if (newSelected.has(index)) {
+            newSelected.delete(index);
+        } else {
+            newSelected.add(index);
+        }
+        setSelectedIndices(newSelected);
+    };
 
     // When new files are uploaded via FileInput, add them to the files list
     const handleFileDataChange: React.Dispatch<React.SetStateAction<FileReference[]>> = (
@@ -88,18 +104,37 @@ export default function FileUploadModal({
             {/* Queued Files List */}
             {pendingFiles.length > 0 && (
                 <div className='mb-6'>
-                    <h3 className='cradle-label mb-2 block'>
-                        Queued for Upload ({pendingFiles.length})
-                    </h3>
+                    <label className='cradle-label mb-2 block'>
+                        Queued for Upload ({selectedIndices.size})
+                    </label>
                     <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
-                        {pendingFiles.map((file, index) => (
-                            <li
-                                key={index}
-                                className='px-4 py-2 text-cradle-text-primary text-sm border-b border-cradle-border-accent last:border-b-0 hover:bg-cradle-bg-secondary/50 transition-colors'
-                            >
-                                {file.name}
-                            </li>
-                        ))}
+                        {pendingFiles.map((file, index) => {
+                            const isSelected = selectedIndices.has(index);
+                            return (
+                                <li
+                                    key={index}
+                                    className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${isSelected
+                                        ? 'hover:bg-cradle-bg-secondary/50'
+                                        : 'bg-cradle-bg-secondary/10'
+                                        }`}
+                                >
+                                    <input
+                                        type='checkbox'
+                                        className='cradle-checkbox'
+                                        checked={isSelected}
+                                        onChange={() => toggleSelection(index)}
+                                    />
+                                    <span
+                                        className={`text-sm truncate flex-1 ${isSelected
+                                            ? 'text-cradle-text-primary'
+                                            : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
+                                            }`}
+                                    >
+                                        {file.name}
+                                    </span>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             )}

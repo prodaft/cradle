@@ -925,6 +925,7 @@ export class NotesApi extends runtime.BaseAPI {
  * @export
  */
 export const NotesListStatusEnum = {
+    Finalized: 'finalized',
     Fleeting: 'fleeting',
     Healthy: 'healthy',
     Invalid: 'invalid',

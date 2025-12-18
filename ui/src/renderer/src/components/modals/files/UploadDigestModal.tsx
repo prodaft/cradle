@@ -1,8 +1,11 @@
+import { useNotif } from '@/contexts';
+import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
+import { DigestSubclass } from '@/services/cradle/models/DigestSubclass';
 import type { Alert } from '@/types';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
-import { CloudUpload, Upload } from 'iconoir-react';
+import { Upload } from 'iconoir-react';
 import { useCallback, useRef, useState } from 'react';
 import { MultiValue } from 'react-select';
 import * as Yup from 'yup';
@@ -21,7 +24,7 @@ interface AssociatedEntryOption {
 interface FormValues {
     title: string;
     dataType: DataTypeOption | null;
-    associatedEntry: AssociatedEntryOption | AssociatedEntryOption[];
+    associatedEntry: AssociatedEntryOption[];
     files: File[];
 }
 
@@ -54,12 +57,13 @@ const UploadSchema = Yup.object().shape({
     associatedEntry: Yup.mixed().when('dataType', {
         is: (dataType: DataTypeOption | null) => dataType && !dataType.inferEntities,
         then: () =>
-            Yup.object()
-                .shape({
-                    value: Yup.string().required(),
-                    label: Yup.string().required(),
-                })
-                .notRequired(),
+            Yup.array().of(
+                Yup.object()
+                    .shape({
+                        value: Yup.string().required(),
+                        label: Yup.string().required(),
+                    })
+            ).notRequired(),
         otherwise: () => Yup.array(),
     }),
     files: Yup.array()
@@ -99,7 +103,6 @@ const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({
 
 export default function UploadDigestModal({
     closeModal,
-    dataTypeOptions,
     onUpload,
 }: UploadDigestModalProps): JSX.Element {
     const [entriesLoading, setEntriesLoading] = useState(false);
@@ -108,6 +111,8 @@ export default function UploadDigestModal({
     const [touched, setTouched] = useState<TouchedFields>({});
     const [errors, setErrors] = useState<FormErrors>({});
     const { queryApi, intelioApi } = useApi();
+    const { execute } = useAPICall();
+    const { notify } = useNotif();
     const [formValues, setFormValues] = useState<FormValues>({
         title: '',
         dataType: null,
@@ -147,19 +152,13 @@ export default function UploadDigestModal({
                     label: `${entry.subtype}:${entry.name}`,
                 }));
             } else {
-                setAlert({
-                    color: 'red',
-                    message: 'Failed to load associated entries',
-                    show: true,
+                notify({
+                    type: 'error',
+                    text: 'Failed to load associated entries',
                 });
                 return [];
             }
         } catch (error) {
-            setAlert({
-                color: 'red',
-                message: `Error fetching entries: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                show: true,
-            });
             return [];
         } finally {
             setEntriesLoading(false);
@@ -229,13 +228,8 @@ export default function UploadDigestModal({
                 requestParams.entity = associatedEntry.value;
             }
 
-            await intelioApi.intelioDigestCreate(requestParams);
+            await execute(() => intelioApi.intelioDigestCreate(requestParams), { successMessage: 'File uploaded successfully' });
 
-            setAlert({
-                color: 'green',
-                message: 'File uploaded successfully',
-                show: true,
-            });
             resetForm();
             if (onUpload) {
                 onUpload();
@@ -246,10 +240,9 @@ export default function UploadDigestModal({
                 closeModal();
             }, 1000);
         } catch (error) {
-            setAlert({
-                color: 'red',
-                message: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                show: true,
+            notify({
+                type: 'error',
+                text: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
             });
         } finally {
             setIsUploading(false);
@@ -274,14 +267,8 @@ export default function UploadDigestModal({
                     formErrors[err.path] = err.message;
                 }
             }
+            console.error(formErrors);
 
-            setAlert({
-                color: 'red',
-                message: Object.values(formErrors)
-                    .map((msg) => `- ${msg}`)
-                    .join('\n'),
-                show: true,
-            });
             return false;
         }
     };
@@ -302,6 +289,15 @@ export default function UploadDigestModal({
             await handleUpload(formValues);
         }
     };
+
+    const fetchDigestTypes = async (query: string): Promise<DataTypeOption[]> => {
+        const response = await execute(() => intelioApi.intelioDigestOptionsList(), { errorMessage: 'Failed to fetch digest types' });
+        return response.map((type: DigestSubclass) => ({
+            value: type.className,
+            label: type.name,
+            inferEntities: type.inferEntities,
+        }));
+    }
 
     // Check if form has errors for styling
     const titleError = touched.title && errors.title;
@@ -363,9 +359,10 @@ export default function UploadDigestModal({
                         <Selector
                             value={formValues.dataType}
                             onChange={handleDataTypeChange}
-                            staticOptions={dataTypeOptions}
+                            fetchOptions={fetchDigestTypes}
                             placeholder='Select digest type'
                             className='w-full'
+                            usePortal={false}
                             isMulti={false}
                             aria-invalid={dataTypeError ? 'true' : 'false'}
                             aria-describedby={
@@ -388,19 +385,21 @@ export default function UploadDigestModal({
                     >
                         Upload File *
                     </label>
-                    <div className='flex gap-2'>
+                    <div className='flex gap-2 items-stretch'>
                         <input
                             ref={fileInputRef}
                             type='file'
                             onChange={handleFileChange}
                             className={`flex-1 text-sm text-cradle-text-primary cursor-pointer
-                                file:mr-4 file:py-1.5 file:px-3
-                                file:rounded-full file:border file:border-cradle-accent-primary
+                                border rounded-xl bg-cradle-bg-secondary/5 p-0
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-l-[11px] file:rounded-r-none
+                                file:border-0 file:border-r file:border-cradle-border-accent
                                 file:bg-cradle-accent-primary/10 file:text-cradle-accent-primary
-                                file:text-sm file:font-normal
+                                file:text-sm file:font-medium
                                 file:cursor-pointer file:transition-colors
                                 hover:file:bg-cradle-accent-primary/20
-                                ${filesError ? 'border-red-300' : ''}
+                                ${filesError ? 'border-red-300' : 'border-cradle-border-accent'}
                             `}
                             disabled={isUploading}
                             aria-invalid={filesError ? 'true' : 'false'}
@@ -409,11 +408,6 @@ export default function UploadDigestModal({
                     </div>
                     {filesError && (
                         <ErrorMessage id='files-error'>{errors.files}</ErrorMessage>
-                    )}
-                    {formValues.files.length > 0 && (
-                        <p className='mt-2 text-xs text-cradle-text-secondary'>
-                            Selected: {formValues.files[0].name} ({(formValues.files[0].size / 1024).toFixed(1)} KB)
-                        </p>
                     )}
                 </div>
 
@@ -437,6 +431,7 @@ export default function UploadDigestModal({
                             fetchOptions={fetchRelatedEntries}
                             isLoading={entriesLoading}
                             isMulti={true}
+                            usePortal={false}
                             placeholder={
                                 formValues.dataType?.inferEntities
                                     ? 'Select entries (disabled)'
