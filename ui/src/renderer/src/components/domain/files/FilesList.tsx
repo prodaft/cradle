@@ -12,7 +12,7 @@ import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import bytes from 'bytes';
-import { Search, Xmark } from 'iconoir-react';
+import { Download, Search, Trash, Xmark } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -77,11 +77,6 @@ export default function FilesList({
         color: 'red',
     });
 
-    // Use external setAlert if provided, otherwise use internal - memoized to prevent recreation
-    const setAlert = useMemo(
-        () => externalSetAlert || setInternalAlert,
-        [externalSetAlert],
-    );
     const { notify } = useNotif();
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
@@ -95,7 +90,7 @@ export default function FilesList({
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('files_pagesize')) || 10,
     );
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<(string | number)[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -161,10 +156,9 @@ export default function FilesList({
             if (onError) {
                 onError(error);
             } else {
-                setAlert({
-                    show: true,
-                    message: 'Failed to fetch files. Please try again.',
-                    color: 'red',
+                notify({
+                    type: 'error',
+                    text: 'Failed to fetch files. Please try again.',
                 });
             }
             setLoading(false);
@@ -179,7 +173,6 @@ export default function FilesList({
         notesApi,
         onCountChange,
         onError,
-        setAlert,
     ]);
 
     const copyToClipboard = useCallback(
@@ -196,16 +189,15 @@ export default function FilesList({
                     });
                 });
         },
-        [setAlert],
+        [notify],
     );
 
     // Download a single file
     const handleDownloadFile = useCallback(async (file: FileReferenceWithNote) => {
         if (!file.bucketName || !file.minioFileName) {
-            setAlert({
-                show: true,
-                message: 'File download information is missing.',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'File download information is missing.',
             });
             return;
         }
@@ -216,13 +208,12 @@ export default function FilesList({
                 minioFileName: file.minioFileName,
             });
         } catch (error) {
-            setAlert({
-                show: true,
-                message: 'Failed to download file. Please try again.',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Failed to download file. Please try again.',
             });
         }
-    }, [fileTransferApi, setAlert]);
+    }, [fileTransferApi, notify]);
 
     // Download selected files
     const handleDownloadSelected = useCallback(async () => {
@@ -230,7 +221,7 @@ export default function FilesList({
 
         try {
             for (const fileId of selectedFiles) {
-                const file = files.find((f) => f.id === fileId);
+                const file = files.find((f) => f.id == fileId);
                 if (file && file.bucketName && file.minioFileName) {
                     const response = await fileTransferApi.fileTransferDownloadRetrieve(
                         {
@@ -255,13 +246,12 @@ export default function FilesList({
             });
 
         } catch (error) {
-            setAlert({
-                show: true,
-                message: 'Failed to download files. Please try again.',
-                color: 'red',
+            notify({
+                type: 'error',
+                text: 'Failed to download files. Please try again.',
             });
         }
-    }, [selectedFiles, files, fileTransferApi, setAlert]);
+    }, [selectedFiles, files, fileTransferApi, notify]);
 
     const handleSearchSubmit = useCallback(() => {
         setPage(1);
@@ -395,9 +385,7 @@ export default function FilesList({
 
     // Memoize the setSelected callback to prevent recreation on every render
     const handleSetSelected = useCallback((ids: (string | number)[]) => {
-        setSelectedFiles(
-            ids.filter((id): id is string => typeof id === 'string'),
-        );
+        setSelectedFiles(ids);
     }, []);
 
     const handlePageSizeChange = useCallback(
@@ -423,63 +411,36 @@ export default function FilesList({
                         <div className='flex flex-wrap items-center justify-between gap-4'>
                             {/* Left: Actions */}
                             <div className='flex items-center gap-2 flex-shrink-0'>
-                                <button
-                                    onClick={handleDownloadSelected}
-                                    disabled={files.length === 0 || selectedFiles.length === 0}
-                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                >
-                                    <svg
-                                        width='18'
-                                        height='18'
-                                        viewBox='0 0 24 24'
-                                        strokeWidth='1.5'
-                                        fill='none'
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        color='currentColor'
-                                        className='text-cradle-text-secondary'
+                                <Tooltip content={selectedFiles.length > 0 ? `Download ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}` : 'Select files to download'}>
+                                    <button
+                                        onClick={handleDownloadSelected}
+                                        disabled={files.length === 0 || selectedFiles.length === 0}
+                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                     >
-                                        <path
-                                            d='M3 15C3 17.8284 3 19.2426 3.87868 20.1213C4.75736 21 6.17157 21 9 21H15C17.8284 21 19.2426 21 20.1213 20.1213C21 19.2426 21 17.8284 21 15'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                        <path
-                                            d='M12 3V16M12 16L16 11.625M12 16L8 11.625'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                    </svg>
-                                </button>
-                                <button
-                                    disabled={true}
-                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                >
-                                    <svg
-                                        width='18'
-                                        height='18'
-                                        viewBox='0 0 24 24'
-                                        strokeWidth='1.5'
-                                        fill='none'
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        color='currentColor'
-                                        className='text-cradle-text-secondary'
+                                        <Download
+                                            className={selectedFiles.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                            width={20}
+                                            height={20}
+                                        />
+                                        {selectedFiles.length > 0 && (
+                                            <span className='text-sm text-cradle-text-secondary font-mono'>
+                                                {selectedFiles.length}
+                                            </span>
+                                        )}
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content='Delete selected files (Coming soon)'>
+                                    <button
+                                        disabled={true}
+                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                     >
-                                        <path
-                                            d='M20 9L18.005 20.3463C17.8369 21.3026 17.0062 22 16.0353 22H7.96474C6.99379 22 6.1631 21.3026 5.99496 20.3463L4 9'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                        <path
-                                            d='M21 6L15.375 6M3 6L8.625 6M8.625 6V4C8.625 2.89543 9.52043 2 10.625 2H13.375C14.4796 2 15.375 2.89543 15.375 4V6M8.625 6L15.375 6'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                    </svg>
-                                </button>
+                                        <Trash
+                                            className={selectedFiles.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                            width={20}
+                                            height={20}
+                                        />
+                                    </button>
+                                </Tooltip>
                                 <div className='h-8 w-px bg-cradle-border-accent'></div>
                                 {!isSearchExpanded ? (
                                     <button

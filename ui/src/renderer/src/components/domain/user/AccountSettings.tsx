@@ -535,7 +535,7 @@ export default function AccountSettings({
                         {/* Account Section */}
                         <section
                             id='account'
-                            className='pb-8 pt-5'
+                            className={`pb-8 ${(isEdit && isAdminAndNotOwn) ? 'pt-5' : ''}`}
                         >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 Account

@@ -85,8 +85,9 @@ from ..serializers import (
                 name="status",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter by note status",
-                enum=list(map(lambda x: x[0], NoteStatus.choices)) + ["fleeting"],
+                description="Filter by note status, finalized covers all statuses except for fleeting",
+                enum=list(map(lambda x: x[0], NoteStatus.choices))
+                + ["fleeting", "finalized"],
             ),
             OpenApiParameter(
                 name="date",
@@ -222,6 +223,8 @@ class NoteList(APIView):
         if "status" in request.query_params:
             if request.query_params.get("status") == "fleeting":
                 queryset = queryset.filter(fleeting=True)
+            elif request.query_params.get("status") == "finalized":
+                queryset = queryset.filter(fleeting=False)
             else:
                 queryset = queryset.filter(
                     status=request.query_params.get("status"), fleeting=False

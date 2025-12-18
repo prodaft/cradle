@@ -1,0 +1,500 @@
+import useApi from '@/hooks/api/useApi';
+import type { Alert } from '@/types';
+import AlertBox from '@components/base/Alert/AlertBox';
+import Selector from '@components/forms/Selector';
+import { CloudUpload, Upload } from 'iconoir-react';
+import { useCallback, useRef, useState } from 'react';
+import { MultiValue } from 'react-select';
+import * as Yup from 'yup';
+
+interface DataTypeOption {
+    value: string;
+    label: string;
+    inferEntities: boolean;
+}
+
+interface AssociatedEntryOption {
+    value: number; // Entry ID (BigAutoField)
+    label: string;
+}
+
+interface FormValues {
+    title: string;
+    dataType: DataTypeOption | null;
+    associatedEntry: AssociatedEntryOption | AssociatedEntryOption[];
+    files: File[];
+}
+
+interface TouchedFields {
+    title?: boolean;
+    dataType?: boolean;
+    associatedEntry?: boolean;
+    files?: boolean;
+}
+
+interface FormErrors {
+    [key: string]: string;
+}
+
+export interface UploadDigestModalProps {
+    closeModal: () => void;
+    dataTypeOptions: DataTypeOption[];
+    onUpload?: () => void;
+}
+
+const UploadSchema = Yup.object().shape({
+    title: Yup.string().required('Digest title is required'),
+    dataType: Yup.object()
+        .shape({
+            value: Yup.string().required('Data type is required'),
+            label: Yup.string().required(),
+            inferEntities: Yup.boolean(),
+        })
+        .required('Please select a data type'),
+    associatedEntry: Yup.mixed().when('dataType', {
+        is: (dataType: DataTypeOption | null) => dataType && !dataType.inferEntities,
+        then: () =>
+            Yup.object()
+                .shape({
+                    value: Yup.string().required(),
+                    label: Yup.string().required(),
+                })
+                .notRequired(),
+        otherwise: () => Yup.array(),
+    }),
+    files: Yup.array()
+        .min(1, 'Please upload a file')
+        .max(1, 'Only a single file is allowed')
+        .required('File is required'),
+});
+
+// Utility function to get error styling classes
+const getFieldErrorClasses = (hasError: boolean, baseClasses: string = ''): string => {
+    if (hasError) {
+        return `${baseClasses} border-red-300`.trim();
+    }
+    return `${baseClasses}`.trim();
+};
+
+// Error message component
+const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({
+    children,
+    id,
+}) => (
+    <p id={id} className='mt-1 text-xs text-red-600 flex items-center'>
+        <svg
+            className='w-3 h-3 mr-1 flex-shrink-0'
+            fill='currentColor'
+            viewBox='0 0 20 20'
+        >
+            <path
+                fillRule='evenodd'
+                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                clipRule='evenodd'
+            />
+        </svg>
+        {children}
+    </p>
+);
+
+export default function UploadDigestModal({
+    closeModal,
+    dataTypeOptions,
+    onUpload,
+}: UploadDigestModalProps): JSX.Element {
+    const [entriesLoading, setEntriesLoading] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: '' });
+    const [touched, setTouched] = useState<TouchedFields>({});
+    const [errors, setErrors] = useState<FormErrors>({});
+    const { queryApi, intelioApi } = useApi();
+    const [formValues, setFormValues] = useState<FormValues>({
+        title: '',
+        dataType: null,
+        associatedEntry: [],
+        files: [],
+    });
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Helper function to update form values
+    const updateFormValue = useCallback(
+        <K extends keyof FormValues>(field: K, value: FormValues[K]) => {
+            setFormValues((prev) => ({ ...prev, [field]: value }));
+        },
+        [setFormValues],
+    );
+
+    // Helper function to mark field as touched
+    const markFieldTouched = useCallback(
+        (field: keyof TouchedFields) => {
+            setTouched((prev) => ({ ...prev, [field]: true }));
+        },
+        [setTouched],
+    );
+
+    const fetchRelatedEntries = async (
+        query: string,
+    ): Promise<AssociatedEntryOption[]> => {
+        setEntriesLoading(true);
+        try {
+            const response = await queryApi.queryList({
+                name: [query],
+                type: 'entity',
+            });
+            if (response && response.results) {
+                return response.results.map((entry) => ({
+                    value: entry.id!,
+                    label: `${entry.subtype}:${entry.name}`,
+                }));
+            } else {
+                setAlert({
+                    color: 'red',
+                    message: 'Failed to load associated entries',
+                    show: true,
+                });
+                return [];
+            }
+        } catch (error) {
+            setAlert({
+                color: 'red',
+                message: `Error fetching entries: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                show: true,
+            });
+            return [];
+        } finally {
+            setEntriesLoading(false);
+        }
+    };
+
+    const handleDataTypeChange = (value: DataTypeOption | null) => {
+        updateFormValue('dataType', value);
+        // Clear associated entries if inferEntities is true
+        if (value?.inferEntities) {
+            updateFormValue('associatedEntry', []);
+        }
+        markFieldTouched('dataType');
+    };
+
+    const handleAssociatedEntriesChange = (
+        value: MultiValue<AssociatedEntryOption>,
+    ) => {
+        updateFormValue('associatedEntry', Array.from(value));
+        markFieldTouched('associatedEntry');
+    };
+
+    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        updateFormValue('title', e.target.value);
+        markFieldTouched('title');
+    };
+
+    const handleFileChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (e.target.files && e.target.files.length > 0) {
+                updateFormValue('files', [e.target.files[0]]);
+                markFieldTouched('files');
+            }
+        },
+        [updateFormValue, markFieldTouched],
+    );
+
+    const resetForm = () => {
+        setFormValues({
+            title: '',
+            dataType: null,
+            associatedEntry: [],
+            files: [],
+        });
+        setTouched({});
+        setErrors({});
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const handleUpload = async (values: FormValues) => {
+        setIsUploading(true);
+        try {
+            const requestParams: any = {
+                digestType: values.dataType!.value,
+                title: values.title,
+                file: values.files[0], // API expects single file, not array
+            };
+
+            // Handle associatedEntry which could be a single value or array
+            const associatedEntry = Array.isArray(values.associatedEntry)
+                ? values.associatedEntry[0]
+                : values.associatedEntry;
+
+            if (associatedEntry?.value) {
+                requestParams.entity = associatedEntry.value;
+            }
+
+            await intelioApi.intelioDigestCreate(requestParams);
+
+            setAlert({
+                color: 'green',
+                message: 'File uploaded successfully',
+                show: true,
+            });
+            resetForm();
+            if (onUpload) {
+                onUpload();
+            }
+
+            // Close modal after successful upload
+            setTimeout(() => {
+                closeModal();
+            }, 1000);
+        } catch (error) {
+            setAlert({
+                color: 'red',
+                message: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                show: true,
+            });
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    const validateForm = async (): Promise<boolean> => {
+        try {
+            await UploadSchema.validate(formValues, { abortEarly: false });
+            setErrors({});
+            return true;
+        } catch (err) {
+            const formErrors: FormErrors = {};
+            if (err instanceof Yup.ValidationError) {
+                if (err.inner) {
+                    err.inner.forEach((error) => {
+                        if (error.path) {
+                            formErrors[error.path] = error.message;
+                        }
+                    });
+                } else if (err.path) {
+                    formErrors[err.path] = err.message;
+                }
+            }
+
+            setAlert({
+                color: 'red',
+                message: Object.values(formErrors)
+                    .map((msg) => `- ${msg}`)
+                    .join('\n'),
+                show: true,
+            });
+            return false;
+        }
+    };
+
+    const onSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Mark all fields as touched for validation display
+        setTouched({
+            title: true,
+            dataType: true,
+            associatedEntry: true,
+            files: true,
+        });
+
+        const isValid = await validateForm();
+        if (isValid) {
+            await handleUpload(formValues);
+        }
+    };
+
+    // Check if form has errors for styling
+    const titleError = touched.title && errors.title;
+    const dataTypeError = touched.dataType && errors.dataType;
+    const filesError = touched.files && errors.files;
+    const associatedEntryError = touched.associatedEntry && errors.associatedEntry;
+
+    return (
+        <div className='w-[500px]'>
+            {/* Header */}
+            <div className='flex items-end justify-between mb-4'>
+                <div className='flex items-center gap-3'>
+                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                        Upload Digest
+                    </h2>
+                </div>
+            </div>
+
+            <form onSubmit={onSubmit} className='w-full'>
+                {/* Digest Title Field */}
+                <div className='mb-5'>
+                    <label
+                        className={`cradle-label mb-2 block ${titleError ? 'text-red-700' : ''}`}
+                    >
+                        Digest Title *
+                    </label>
+                    <input
+                        type='text'
+                        value={formValues.title}
+                        onChange={handleTitleChange}
+                        className={getFieldErrorClasses(
+                            !!titleError,
+                            'cradle-input w-full',
+                        )}
+                        placeholder='Enter digest title'
+                        aria-invalid={titleError ? 'true' : 'false'}
+                        aria-describedby={titleError ? 'title-error' : undefined}
+                        disabled={isUploading}
+                    />
+                    {titleError && (
+                        <ErrorMessage id='title-error'>{errors.title}</ErrorMessage>
+                    )}
+                </div>
+
+                {/* Data Type Selector */}
+                <div className='mb-5'>
+                    <label
+                        className={`cradle-label mb-2 block ${dataTypeError ? 'text-red-700' : ''}`}
+                    >
+                        Data Type *
+                    </label>
+                    <div
+                        className={
+                            dataTypeError
+                                ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
+                                : ''
+                        }
+                    >
+                        <Selector
+                            value={formValues.dataType}
+                            onChange={handleDataTypeChange}
+                            staticOptions={dataTypeOptions}
+                            placeholder='Select digest type'
+                            className='w-full'
+                            isMulti={false}
+                            aria-invalid={dataTypeError ? 'true' : 'false'}
+                            aria-describedby={
+                                dataTypeError ? 'dataType-error' : undefined
+                            }
+                            isDisabled={isUploading}
+                        />
+                    </div>
+                    {dataTypeError && (
+                        <ErrorMessage id='dataType-error'>
+                            {errors.dataType}
+                        </ErrorMessage>
+                    )}
+                </div>
+
+                {/* File Upload Area */}
+                <div className='mb-5'>
+                    <label
+                        className={`cradle-label mb-2 block ${filesError ? 'text-red-700' : ''}`}
+                    >
+                        Upload File *
+                    </label>
+                    <div className='flex gap-2'>
+                        <input
+                            ref={fileInputRef}
+                            type='file'
+                            onChange={handleFileChange}
+                            className={`flex-1 text-sm text-cradle-text-primary cursor-pointer
+                                file:mr-4 file:py-1.5 file:px-3
+                                file:rounded-full file:border file:border-cradle-accent-primary
+                                file:bg-cradle-accent-primary/10 file:text-cradle-accent-primary
+                                file:text-sm file:font-normal
+                                file:cursor-pointer file:transition-colors
+                                hover:file:bg-cradle-accent-primary/20
+                                ${filesError ? 'border-red-300' : ''}
+                            `}
+                            disabled={isUploading}
+                            aria-invalid={filesError ? 'true' : 'false'}
+                            aria-describedby={filesError ? 'files-error' : undefined}
+                        />
+                    </div>
+                    {filesError && (
+                        <ErrorMessage id='files-error'>{errors.files}</ErrorMessage>
+                    )}
+                    {formValues.files.length > 0 && (
+                        <p className='mt-2 text-xs text-cradle-text-secondary'>
+                            Selected: {formValues.files[0].name} ({(formValues.files[0].size / 1024).toFixed(1)} KB)
+                        </p>
+                    )}
+                </div>
+
+                {/* Associated Entries Selector */}
+                <div className='mb-5'>
+                    <label
+                        className={`cradle-label mb-2 block ${associatedEntryError ? 'text-red-700' : ''}`}
+                    >
+                        Associated Entries
+                    </label>
+                    <div
+                        className={
+                            associatedEntryError
+                                ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
+                                : ''
+                        }
+                    >
+                        <Selector
+                            value={formValues.associatedEntry}
+                            onChange={handleAssociatedEntriesChange}
+                            fetchOptions={fetchRelatedEntries}
+                            isLoading={entriesLoading}
+                            isMulti={true}
+                            placeholder={
+                                formValues.dataType?.inferEntities
+                                    ? 'Select entries (disabled)'
+                                    : 'Select entries'
+                            }
+                            className='w-full'
+                            isDisabled={
+                                !formValues.dataType ||
+                                formValues.dataType.inferEntities ||
+                                isUploading
+                            }
+                            aria-invalid={associatedEntryError ? 'true' : 'false'}
+                            aria-describedby={
+                                associatedEntryError
+                                    ? 'associatedEntry-error'
+                                    : undefined
+                            }
+                        />
+                    </div>
+                    {associatedEntryError && (
+                        <ErrorMessage id='associatedEntry-error'>
+                            {errors.associatedEntry}
+                        </ErrorMessage>
+                    )}
+                </div>
+
+                <AlertBox alert={alert} />
+
+                {/* Footer */}
+                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
+                    <button
+                        onClick={closeModal}
+                        disabled={isUploading}
+                        type='button'
+                        className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type='submit'
+                        disabled={isUploading}
+                        className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                        aria-label={isUploading ? 'Uploading file' : 'Upload file'}
+                    >
+                        {isUploading ? (
+                            <>
+                                <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
+                                <span>Uploading...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Upload width={16} height={16} />
+                                Upload
+                            </>
+                        )}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+}

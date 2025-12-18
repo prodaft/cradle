@@ -4,8 +4,9 @@ import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
+import Tooltip from '@components/base/Tooltip/Tooltip';
 import { EnrichmentRequestList } from '@services/cradle/models';
-import { Search, Xmark } from 'iconoir-react';
+import { PlusCircle, Search, Trash, Xmark } from 'iconoir-react';
 import { capitalize } from 'lodash';
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 
@@ -203,65 +204,39 @@ function EnrichmentRequestsList({
                     <div className='flex flex-wrap items-center justify-between gap-4'>
                         {/* Left: Actions */}
                         <div className='flex items-center gap-2 flex-shrink-0'>
-                            <button
-                                onClick={onCreateRequest}
-                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
-                                data-state='closed'
-                            >
-                                <svg
-                                    width='18'
-                                    height='18'
-                                    strokeWidth='1.5'
-                                    viewBox='0 0 24 24'
-                                    fill='none'
-                                    xmlns='http://www.w3.org/2000/svg'
-                                    color='currentColor'
-                                    className='text-[#FF8C00]'
+                            <Tooltip content='Create new enrichment request'>
+                                <button
+                                    onClick={onCreateRequest}
+                                    className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
                                 >
-                                    <path
-                                        d='M8 12H12M16 12H12M12 12V8M12 12V16'
-                                        stroke='currentColor'
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                    ></path>
-                                    <path
-                                        d='M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z'
-                                        stroke='currentColor'
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                    ></path>
-                                </svg>
-                            </button>
+                                    <PlusCircle
+                                        className='text-[#FF8C00]'
+                                        width={20}
+                                        height={20}
+                                    />
+                                </button>
+                            </Tooltip>
+
                             <div className='h-8 w-px bg-cradle-border-accent'></div>
-                            <button
-                                onClick={onDeleteSelected}
-                                disabled={enrichmentRequests.length === 0 || selectedRequests.length === 0}
-                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                            >
-                                <svg
-                                    width='18'
-                                    height='18'
-                                    viewBox='0 0 24 24'
-                                    strokeWidth='1.5'
-                                    fill='none'
-                                    xmlns='http://www.w3.org/2000/svg'
-                                    color='currentColor'
-                                    className='text-cradle-text-secondary'
+
+                            <Tooltip content={selectedRequests.length > 0 ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}` : 'Select requests to delete'}>
+                                <button
+                                    onClick={onDeleteSelected}
+                                    disabled={enrichmentRequests.length === 0 || selectedRequests.length === 0}
+                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                 >
-                                    <path
-                                        d='M20 9L18.005 20.3463C17.8369 21.3026 17.0062 22 16.0353 22H7.96474C6.99379 22 6.1631 21.3026 5.99496 20.3463L4 9'
-                                        stroke='currentColor'
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                    ></path>
-                                    <path
-                                        d='M21 6L15.375 6M3 6L8.625 6M8.625 6V4C8.625 2.89543 9.52043 2 10.625 2H13.375C14.4796 2 15.375 2.89543 15.375 4V6M8.625 6L15.375 6'
-                                        stroke='currentColor'
-                                        strokeLinecap='round'
-                                        strokeLinejoin='round'
-                                    ></path>
-                                </svg>
-                            </button>
+                                    <Trash
+                                        className={selectedRequests.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                        width={20}
+                                        height={20}
+                                    />
+                                    {selectedRequests.length > 0 && (
+                                        <span className='text-sm text-cradle-text-secondary font-mono'>
+                                            {selectedRequests.length}
+                                        </span>
+                                    )}
+                                </button>
+                            </Tooltip>
                             <div className='h-8 w-px bg-cradle-border-accent'></div>
                             {!isSearchExpanded ? (
                                 <button

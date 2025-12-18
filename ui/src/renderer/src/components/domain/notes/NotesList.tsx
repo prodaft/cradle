@@ -10,6 +10,7 @@ import {
     InfoCircleSolid,
     PlusCircle,
     Search,
+    StatsReport,
     Trash,
     WarningCircleSolid,
     WarningTriangleSolid,
@@ -24,6 +25,7 @@ import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import Tooltip from '../../base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
+import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
 import { NotePreviewContent } from './NotePreviewContent';
 
 interface Alert {
@@ -65,6 +67,7 @@ interface ContentSearch {
 interface NotesListProps {
     query: Query | null;
     filteredNotes?: NoteRetrieve[];
+    hideFleetingNotes?: boolean;
     noteActions?: unknown[];
     hideActionBar?: boolean;
     references?: unknown;
@@ -74,14 +77,14 @@ interface NotesListProps {
     onTotalCountChange?: ((count: { current: number; total: number }) => void) | null;
 }
 
-function StatusHeaderCircle({ onStatusChange, status = null }: { onStatusChange: (status: string) => void, status: string | null }) {
+function StatusHeaderCircle({ onStatusChange, status = null, hideFleetingNotes = false }: { onStatusChange: (status: string) => void, status: string | null, hideFleetingNotes: boolean }) {
     const [currentStatus, setCurrentStatus] = useState(status || 'all');
     const [isOpen, setIsOpen] = useState(false);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const statusOptions = ['all', 'fleeting', 'healthy', 'warning', 'invalid', 'processing'];
+    const statusOptions = ['all', 'healthy', 'warning', 'invalid', 'processing'].concat(hideFleetingNotes ? [] : ['fleeting']);
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -215,9 +218,8 @@ function StatusHeaderCircle({ onStatusChange, status = null }: { onStatusChange:
                         <Tooltip key={statusOption} content={getStatusLabel(statusOption)} side='right'>
                             <button
                                 onClick={() => handleStatusSelect(statusOption)}
-                                className={`flex items-center justify-center w-9 h-9 rounded-md hover:bg-cradle-bg-secondary transition-colors ${
-                                    currentStatus === statusOption ? 'bg-cradle-bg-secondary ring-1 ring-cradle-accent-primary' : ''
-                                }`}
+                                className={`flex items-center justify-center w-9 h-9 rounded-md hover:bg-cradle-bg-secondary transition-colors ${currentStatus === statusOption ? 'bg-cradle-bg-secondary ring-1 ring-cradle-accent-primary' : ''
+                                    }`}
                             >
                                 {getStatusIcon(statusOption)}
                             </button>
@@ -233,6 +235,7 @@ function StatusHeaderCircle({ onStatusChange, status = null }: { onStatusChange:
 export default function NotesList({
     query,
     filteredNotes = [],
+    hideFleetingNotes = false,
     noteActions = [],
     hideActionBar = false,
     references = null,
@@ -484,7 +487,7 @@ export default function NotesList({
                 page,
                 pageSize: pageSize,
                 orderBy: orderBy,
-                status: columnFilters.status === 'all' ? null : columnFilters.status,
+                status: columnFilters.status === 'all' ? (hideFleetingNotes ? 'finalized' : null) : columnFilters.status,
                 content: query.content,
                 authorUsername: query.author__username,
                 date: query.date,
@@ -594,7 +597,7 @@ export default function NotesList({
         label: string | React.ReactNode;
         filterType?: 'text' | 'date'
     }> = [
-            { key: 'status', label: <StatusHeaderCircle onStatusChange={handleStatusChange} status={columnFilters.status} /> },
+            { key: 'status', label: <StatusHeaderCircle onStatusChange={handleStatusChange} status={columnFilters.status} hideFleetingNotes={hideFleetingNotes} /> },
             { key: 'title', label: 'Title' },
             { key: 'description', label: 'Description' },
             { key: 'author', label: 'Author', filterType: 'text' as const },
@@ -747,6 +750,34 @@ export default function NotesList({
                                                         {selectedNotes.length}
                                                     </span>
                                                 )}
+                                            </button>
+                                        </Tooltip>
+
+                                        {/* Generate Report */}
+                                        <Tooltip content={selectedNotes.length > 0 ? `Generate report for ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}` : 'Select notes to generate report'}>
+                                            <button
+                                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                                onClick={() => {
+                                                    if (selectedNotes.length > 0) {
+                                                        const selectedNoteObjects = notes
+                                                            .filter((n) => n.id && selectedNotes.includes(n.id))
+                                                            .map((n) => ({
+                                                                id: n.id!,
+                                                                title: n.metadata?.title || n.title || 'Untitled',
+                                                            }));
+
+                                                        setModal(ReportGenerationModal, {
+                                                            selectedNotes: selectedNoteObjects,
+                                                        });
+                                                    }
+                                                }}
+                                                disabled={selectedNotes.length === 0 || notes.length === 0}
+                                            >
+                                                <StatsReport
+                                                    className={selectedNotes.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                                    width={18}
+                                                    height={18}
+                                                />
                                             </button>
                                         </Tooltip>
 

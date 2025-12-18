@@ -1,12 +1,13 @@
 import base64
+import datetime
 from io import BytesIO
-from typing import Any, Dict, Optional, Tuple, Callable
+from typing import Any, Callable, Dict, Optional, Tuple
+
+import frontmatter
 import mistune
 from mistune.renderers.html import HTMLRenderer as BaseHTMLRenderer
-import frontmatter
-import datetime
 
-from .common import cradle_link_plugin, footnote_plugin, ErrorBypassYAMLHandler
+from .common import ErrorBypassYAMLHandler, cradle_link_plugin, footnote_plugin
 from .table import table
 
 
@@ -40,6 +41,7 @@ class HTMLRenderer(BaseHTMLRenderer):
         self,
         key: str,
         value: str,
+        hidden: bool = False,
         alias: Optional[str] = None,
         date: Optional[datetime.datetime] = None,
         time: Optional[datetime.datetime] = None,

@@ -21,7 +21,9 @@ export interface ReportGenerationModalProps {
     /** Function to close the modal */
     closeModal: () => void;
     /** ID of the note to generate report from */
-    noteId: string;
+    noteId?: string;
+    /** List of selected notes to generate report from */
+    selectedNotes?: { id: string; title: string }[];
     /** Title of the note */
     noteTitle?: string;
 }
@@ -43,6 +45,7 @@ export interface ReportGenerationModalProps {
 export default function ReportGenerationModal({
     closeModal,
     noteId,
+    selectedNotes,
     noteTitle,
 }: ReportGenerationModalProps): JSX.Element {
     const { reportsApi } = useApi();
@@ -53,11 +56,21 @@ export default function ReportGenerationModal({
     const { notify } = useNotif();
     const { execute } = useAPICall();
 
+    const targets = selectedNotes || (noteId ? [{ id: noteId, title: noteTitle || 'Untitled' }] : []);
+
     const handleGenerate = async () => {
         if (!title.trim()) {
             notify({
                 type: 'error',
                 text: 'Please enter a report title.',
+            });
+            return;
+        }
+
+        if (targets.length === 0) {
+            notify({
+                type: 'error',
+                text: 'No notes selected for report generation.',
             });
             return;
         }
@@ -69,7 +82,7 @@ export default function ReportGenerationModal({
                     reportsApi.reportsPublishCreate({
                         publishReportRequest: {
                             strategy: format,
-                            noteIds: [noteId],
+                            noteIds: targets.map((t) => t.id),
                             title: title.trim(),
                             anonymized: mode === 'anonymized',
                         },
@@ -94,6 +107,25 @@ export default function ReportGenerationModal({
                     </h2>
                 </div>
             </div>
+
+            {/* Selected Notes List */}
+            {targets.length > 0 && (
+                <div className='mb-5'>
+                    <h3 className='cradle-label mb-2 block'>
+                        Selected Notes ({targets.length})
+                    </h3>
+                    <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
+                        {targets.map((note) => (
+                            <li
+                                key={note.id}
+                                className='px-4 py-2 text-cradle-text-primary text-sm border-b border-cradle-border-accent last:border-b-0 hover:bg-cradle-bg-secondary/50 transition-colors truncate'
+                            >
+                                {note.title || 'Untitled'}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             {/* Title Input */}
             <div className='mb-5'>

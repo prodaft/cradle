@@ -4,12 +4,11 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import { useProfile } from '@/hooks/auth/useProfile';
 import type { Alert } from '@/types';
 import type { BaseDigest, DigestSubclass } from '@services/cradle/models';
-import { NavArrowDown, NavArrowUp, Search } from 'iconoir-react';
+import { Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Datepicker from '@components/base/Datepicker/Datepicker';
 import DigestList from './DigestList';
-import UploadForm from './UploadForm';
 
 interface DataTypeOption {
     value: string;
@@ -39,7 +38,6 @@ export default function UploadExternal() {
     const { notify } = useNotif();
     const { profile } = useProfile();
     const { intelioApi } = useApi();
-    const [isUploadFormVisible, setIsUploadFormVisible] = useState(false);
     const { execute } = useAPICall();
 
     // Digest list state
@@ -84,10 +82,6 @@ export default function UploadExternal() {
             ? new Date(searchParams.get('created_at_lte')!)
             : null,
     });
-
-    const toggleUploadForm = () => {
-        setIsUploadFormVisible(!isUploadFormVisible);
-    };
 
     useEffect(() => {
         execute(() => intelioApi.intelioDigestOptionsList())
@@ -293,32 +287,8 @@ export default function UploadExternal() {
                 <div className='flex items-center mb-4'>
                     <h2 className='text-xl font-semibold flex items-center gap-2 ml-4'>
                         Upload External Data
-                        <button
-                            className='btn btn-sm btn-ghost p-1'
-                            onClick={toggleUploadForm}
-                            aria-expanded={isUploadFormVisible}
-                            aria-controls='upload-form-section'
-                        >
-                            {isUploadFormVisible ? (
-                                <NavArrowUp width={16} height={16} />
-                            ) : (
-                                <NavArrowDown width={16} height={16} />
-                            )}
-                        </button>
                     </h2>
                 </div>
-
-                {isUploadFormVisible && (
-                    <div
-                        id='upload-form-section'
-                        className='max-h-[1000px] opacity-100 mb-4  border-b border-gray-700 '
-                    >
-                        <UploadForm
-                            dataTypeOptions={dataTypeOptions}
-                            onUpload={fetchDigests}
-                        />
-                    </div>
-                )}
 
                 {/* Search Section */}
                 <div>
@@ -375,6 +345,8 @@ export default function UploadExternal() {
                         onSort={handleSort}
                         pageSize={pageSize}
                         setPageSize={handlePageSizeChange}
+                        dataTypeOptions={dataTypeOptions}
+                        onUpload={fetchDigests}
                     />
                 </div>
             </div>

@@ -11,7 +11,7 @@ import { formatDate } from '@/utils/dates';
 import TableCard from '@components/base/Card/TableCard';
 import ListView, { SortDirection } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
-import ActionsTable, { Action } from '@components/domain/activity/ActionsTable';
+import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import { Edit, Eye, PlusCircle, RefreshCircle, Trash } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
@@ -229,7 +229,7 @@ export default function ReportList() {
                                 className='btn btn-ghost btn-xs text-blue-600 hover:text-blue-500'
                                 title='View Report'
                             >
-                                <Eye className='w-4 h-4' />
+                                <Eye width={18} height={18} />
                             </button>
                         )}
                         {report.status !== 'working' && (
@@ -238,7 +238,7 @@ export default function ReportList() {
                                 className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
                                 title='Edit Report'
                             >
-                                <Edit className='w-4 h-4' />
+                                <Edit width={18} height={18} />
                             </button>
                         )}
                         {report.status === 'error' && (
@@ -264,7 +264,7 @@ export default function ReportList() {
                                 className='btn btn-ghost btn-xs text-yellow-600 hover:text-yellow-500'
                                 title='Retry Report'
                             >
-                                <RefreshCircle className='w-4 h-4' />
+                                <RefreshCircle width={18} height={18} />
                             </button>
                         )}
                         <button
@@ -297,7 +297,7 @@ export default function ReportList() {
                             className='btn btn-ghost btn-xs text-red-600 hover:text-red-500'
                             title='Delete Report'
                         >
-                            <Trash className='w-4 h-4' />
+                            <Trash width={18} height={18} />
                         </button>
                     </div>
                 </td>
@@ -314,10 +314,10 @@ export default function ReportList() {
                     <div className='flex items-center'>
                         Reports
                         <button
-                            className='justify-center ml-2'
+                            className='justify-center ml-2 text-[#FF8C00] hover:opacity-80 transition-opacity'
                             onClick={navigateLink('/publish')}
                         >
-                            <PlusCircle width={24} />
+                            <PlusCircle width={24} height={24} />
                         </button>
                     </div>
                 )}
@@ -329,13 +329,44 @@ export default function ReportList() {
                         <TableCard>
                             <div className='flex flex-wrap items-center justify-between gap-4'>
                                 {/* Left: Actions */}
-                                <div className='flex items-center gap-4 flex-shrink-0'>
-                                    <ActionsTable
-                                        actions={actions}
-                                        selectedItems={selectedReports}
-                                        itemLabel='row'
-                                        disabled={reports.length === 0}
-                                    />
+                                <div className='flex items-center gap-2 flex-shrink-0'>
+                                    <Tooltip content='Create new report'>
+                                        <button
+                                            className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
+                                            onClick={() => navigate('/publish')}
+                                        >
+                                            <PlusCircle
+                                                className='text-[#FF8C00]'
+                                                width={20}
+                                                height={20}
+                                            />
+                                        </button>
+                                    </Tooltip>
+
+                                    <div className='h-8 w-px bg-cradle-border-accent' />
+
+                                    <Tooltip content={selectedReports.length > 0 ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to delete'}>
+                                        <button
+                                            className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                            onClick={() => {
+                                                if (selectedReports.length > 0) {
+                                                    actions[0].handler(selectedReports);
+                                                }
+                                            }}
+                                            disabled={selectedReports.length === 0 || reports.length === 0}
+                                        >
+                                            <Trash
+                                                className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                                width={20}
+                                                height={20}
+                                            />
+                                            {selectedReports.length > 0 && (
+                                                <span className='text-sm text-cradle-text-secondary font-mono'>
+                                                    {selectedReports.length}
+                                                </span>
+                                            )}
+                                        </button>
+                                    </Tooltip>
                                 </div>
 
                                 {/* Right: Pagination */}

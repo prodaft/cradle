@@ -52,6 +52,7 @@ export default function Notes({ obj }: NotesProps) {
                 <NotesList
                     query={submittedFilters}
                     noteActions={[{ Component: DeleteNote, props: {} }]}
+                    hideFleetingNotes={true}
                     contentSearch={{
                         value: searchFilters.content,
                         onChange: handleSearchChange,
