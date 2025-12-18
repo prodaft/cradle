@@ -274,6 +274,54 @@ class EnrichmentRequestListSerializer(serializers.ModelSerializer):
         return None
 
 
+class EnrichmentRequestEnricherSerializer(serializers.Serializer):
+    """Serializer for enrichment request enricher information."""
+
+    enricher_type = serializers.CharField(read_only=True)
+    display_name = serializers.SerializerMethodField(read_only=True)
+    enabled = serializers.BooleanField(read_only=True)
+    status = serializers.CharField(read_only=True)
+    errors = serializers.DictField(read_only=True)
+    warnings = serializers.DictField(read_only=True)
+    artifacts = serializers.ListField(read_only=True)
+
+    @classmethod
+    def for_enrichment(cls, request: EnrichmentRequest, enricher_type: str):
+        enricher_cls = BaseEnricher.get_subclass(enricher_type)
+        enricher_settings = request.enrichers_settings.get(enricher_type=enricher_type)
+        errors = request.errors.get(enricher_type, [])
+        warnings = request.warnings.get(enricher_type, [])
+
+        if enricher_settings is None:
+            raise serializers.ValidationError(
+                f"Enricher type {enricher_type} not found"
+            )
+
+        artifacts = []
+        enabled_eclasses = set(enricher_settings.for_eclasses.all())
+
+        for req in request.entries:
+            if req["entry_class"] in enabled_eclasses:
+                artifacts.append(req)
+
+        return cls(
+            enricher_type=enricher_type,
+            display_name=enricher_cls.display_name,
+            enabled=enricher_settings.enabled,
+            status=enricher_settings.status,
+            errors=errors,
+            warnings=warnings,
+        )
+
+
+class EnrichmentRequestEnricherMinimal(serializers.ModelSerializer):
+    """Serializer for minimal enrichment request enricher information."""
+
+    class Meta:
+        model = None
+        fields = ["enricher_type", "display_name", "enabled"]
+
+
 class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
     """Serializer for detailed enrichment request information."""
 

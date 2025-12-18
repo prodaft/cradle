@@ -2,16 +2,16 @@ import { useCradleNavigate } from '@/hooks';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import TableCard from '@components/base/Card/TableCard';
+import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import { EnrichmentRequestList } from '@services/cradle/models';
-import { InfoCircleSolid, PlusCircle, Search, Trash, WarningCircleSolid, WarningTriangleSolid, Xmark } from 'iconoir-react';
+import { InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
 import { capitalize } from 'lodash';
-import { ChangeEvent, FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, MouseEvent } from 'react';
 
 type EnrichmentRequest = EnrichmentRequestList;
 
@@ -83,25 +83,6 @@ function EnrichmentRequestsList({
 }: EnrichmentRequestsListProps) {
     const { navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
-    const [isSearchExpanded, setIsSearchExpanded] = useState(!!searchFilters?.title);
-    const [searchQuery, setSearchQuery] = useState(searchFilters?.title || '');
-    const searchInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (isSearchExpanded && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
-    }, [isSearchExpanded]);
-
-    const handleSearchSubmit = () => {
-        const event = {
-            target: { name: 'title', value: searchQuery },
-        } as ChangeEvent<HTMLInputElement>;
-        onSearchChange(event);
-        if (onSearchSubmit) {
-            onSearchSubmit(event);
-        }
-    };
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -261,132 +242,89 @@ function EnrichmentRequestsList({
     return (
         <div className='flex flex-col space-y-4'>
             {/* Compact Control Bar - Actions and Pagination */}
-            {!loading && (
-                <TableCard>
-                    <div className='flex flex-wrap items-center justify-between gap-4'>
-                        {/* Left: Actions */}
-                        <div className='flex items-center gap-2 flex-shrink-0'>
-                            <Tooltip content='Create new enrichment request'>
-                                <button
-                                    onClick={onCreateRequest}
-                                    className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
-                                >
-                                    <PlusCircle
-                                        className='text-[#FF8C00]'
-                                        width={20}
-                                        height={20}
-                                    />
-                                </button>
-                            </Tooltip>
-
-                            <div className='h-8 w-px bg-cradle-border-accent'></div>
-
-                            <Tooltip content={selectedRequests.length > 0 ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}` : 'Select requests to delete'}>
-                                <button
-                                    onClick={() => {
-                                        if (selectedRequests.length > 0) {
-                                            setModal(ConfirmDeletionModal, {
-                                                onConfirm: onDeleteSelected,
-                                                text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
-                                            });
-                                        }
-                                    }}
-                                    disabled={enrichmentRequests.length === 0 || selectedRequests.length === 0}
-                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                >
-                                    <Trash
-                                        className={selectedRequests.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                        width={20}
-                                        height={20}
-                                    />
-                                    {selectedRequests.length > 0 && (
-                                        <span className='text-sm text-cradle-text-secondary font-mono'>
-                                            {selectedRequests.length}
-                                        </span>
-                                    )}
-                                </button>
-                            </Tooltip>
-                            <div className='h-8 w-px bg-cradle-border-accent'></div>
-                            {!isSearchExpanded ? (
-                                <button
-                                    onClick={() => setIsSearchExpanded(true)}
-                                    className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
-                                    title='Search'
-                                >
-                                    <Search className='w-4 h-4' />
-                                </button>
-                            ) : (
-                                <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                    <button
-                                        onClick={() => {
-                                            handleSearchSubmit();
-                                        }}
-                                        className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                                        title='Search'
-                                    >
-                                        <Search className='w-4 h-4' />
-                                    </button>
-                                    <input
-                                        ref={searchInputRef}
-                                        type='text'
-                                        name='title'
-                                        value={searchQuery}
-                                        onChange={(e) => {
-                                            setSearchQuery(e.target.value);
-                                            onSearchChange(e);
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                handleSearchSubmit();
-                                            }
-                                            if (e.key === 'Escape') {
-                                                if (!searchQuery) {
-                                                    setIsSearchExpanded(false);
-                                                }
-                                            }
-                                        }}
-                                        onBlur={() => {
-                                            if (!searchQuery) {
-                                                setIsSearchExpanded(false);
-                                            }
-                                        }}
-                                        placeholder='Search requests...'
-                                        className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                                    />
-                                    {searchQuery && (
-                                        <button
-                                            onClick={() => {
-                                                setSearchQuery('');
-                                                const event = {
-                                                    target: { name: 'title', value: '' },
-                                                } as ChangeEvent<HTMLInputElement>;
-                                                onSearchChange(event);
-                                                if (onSearchSubmit) {
-                                                    onSearchSubmit(event);
-                                                }
-                                            }}
-                                            className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                                            title='Clear search'
-                                        >
-                                            <Xmark className='w-4 h-4' />
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right: Pagination */}
-                        <PaginationWrapper
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={setPageSize}
-                            disabled={enrichmentRequests.length === 0}
+            <ActionBar
+                left={
+                    <>
+                        <ActionBarButton
+                            tooltip='Create new enrichment request'
+                            variant='circle'
+                            icon={<PlusCircle width={20} height={20} />}
+                            iconActive={true}
+                            disabled={loading}
+                            onClick={onCreateRequest}
                         />
-                    </div>
-                </TableCard>
-            )}
+
+                        <ActionBarDivider />
+
+                        <ActionBarButton
+                            tooltip={
+                                selectedRequests.length > 0
+                                    ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
+                                    : 'Select requests to delete'
+                            }
+                            onClick={() => {
+                                if (selectedRequests.length === 0) return;
+                                setModal(ConfirmDeletionModal, {
+                                    onConfirm: onDeleteSelected,
+                                    text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
+                                });
+                            }}
+                            disabled={loading || enrichmentRequests.length === 0 || selectedRequests.length === 0}
+                            icon={<Trash width={20} height={20} />}
+                            iconActive={selectedRequests.length > 0}
+                            count={selectedRequests.length}
+                        />
+
+                        <ActionBarButton
+                            tooltip={
+                                selectedRequests.length > 0
+                                    ? `Retry ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
+                                    : 'Select requests to retry'
+                            }
+                            onClick={onRetrySelected}
+                            disabled={loading || enrichmentRequests.length === 0 || selectedRequests.length === 0}
+                            icon={<RefreshCircle width={20} height={20} />}
+                            iconActive={selectedRequests.length > 0}
+                            count={selectedRequests.length}
+                        />
+
+                        <ActionBarDivider />
+
+                        <ActionBarSearch
+                            placeholder='Search requests...'
+                            initialValue={searchFilters?.title || ''}
+                            defaultExpanded={Boolean(searchFilters?.title)}
+                            debounceMs={300}
+                            onDebouncedChange={(value) => {
+                                const event = {
+                                    preventDefault: () => {},
+                                    target: { name: 'title', value },
+                                } as ChangeEvent<HTMLInputElement>;
+                                onSearchChange(event);
+                                // Some parents only fetch on submit; trigger submit on debounce too.
+                                onSearchSubmit(event as any);
+                            }}
+                            onSubmit={(value) => {
+                                const event = {
+                                    preventDefault: () => {},
+                                    target: { name: 'title', value },
+                                } as any;
+                                onSearchSubmit(event);
+                            }}
+                        />
+                    </>
+                }
+                right={
+                    <PaginationWrapper
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={setPageSize}
+                        disabled={enrichmentRequests.length === 0}
+                    />
+                }
+            />
 
             {/* Table */}
             <ListView

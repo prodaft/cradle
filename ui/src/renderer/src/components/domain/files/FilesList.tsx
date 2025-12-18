@@ -6,14 +6,14 @@ import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import AlertBox from '@components/base/Alert/AlertBox';
+import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import Badge from '@components/base/Badge/Badge';
-import TableCard from '@components/base/Card/TableCard';
 import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import bytes from 'bytes';
-import { Download, Search, Trash, Xmark } from 'iconoir-react';
+import { Download, Trash } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -94,8 +94,6 @@ export default function FilesList({
     const { execute } = useAPICall();
     const [selectedFiles, setSelectedFiles] = useState<(string)[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-    const searchInputRef = useRef<HTMLInputElement>(null);
     const { notesApi, fileTransferApi } = useApi();
 
     const { setNodeRef } = useDroppable({
@@ -270,18 +268,12 @@ export default function FilesList({
         fetchFiles();
     }, [selectedFiles, files, notesApi, notify]);
 
-    const handleSearchSubmit = useCallback(() => {
+    const resetToFirstPage = useCallback(() => {
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('files_page', '1');
         setSearchParams(newParams, { replace: true });
     }, [searchParams, setSearchParams]);
-
-    useEffect(() => {
-        if (isSearchExpanded && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
-    }, [isSearchExpanded]);
 
     // Memoize the files_page value to prevent unnecessary rerenders
     const filesPage = useMemo(
@@ -428,118 +420,53 @@ export default function FilesList({
                 <AlertBox alert={alert} />
 
                 {/* Compact Control Bar - Actions and Pagination */}
-                {!loading && (
-                    <TableCard>
-                        <div className='flex flex-wrap items-center justify-between gap-4'>
-                            {/* Left: Actions */}
-                            <div className='flex items-center gap-2 flex-shrink-0'>
-                                <Tooltip content={selectedFiles.length > 0 ? `Download ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}` : 'Select files to download'}>
-                                    <button
-                                        onClick={handleDownloadSelected}
-                                        disabled={files.length === 0 || selectedFiles.length === 0}
-                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                    >
-                                        <Download
-                                            className={selectedFiles.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                            width={20}
-                                            height={20}
-                                        />
-                                        {selectedFiles.length > 0 && (
-                                            <span className='text-sm text-cradle-text-secondary font-mono'>
-                                                {selectedFiles.length}
-                                            </span>
-                                        )}
-                                    </button>
-                                </Tooltip>
-                                <Tooltip content='Delete selected files (Coming soon)'>
-                                    <button
-                                        disabled={files.length === 0 || selectedFiles.length === 0}
-                                        onClick={handleDeleteSelected}
-                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                    >
-                                        <Trash
-                                            className={selectedFiles.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                            width={20}
-                                            height={20}
-                                        />
-                                        {selectedFiles.length > 0 && (
-                                            <span className='text-sm text-cradle-text-secondary font-mono'>
-                                                {selectedFiles.length}
-                                            </span>
-                                        )}
-                                    </button>
-                                </Tooltip>
-                                <div className='h-8 w-px bg-cradle-border-accent'></div>
-                                {!isSearchExpanded ? (
-                                    <button
-                                        onClick={() => setIsSearchExpanded(true)}
-                                        className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
-                                        title='Search'
-                                    >
-                                        <Search className='w-4 h-4' />
-                                    </button>
-                                ) : (
-                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                        <button
-                                            onClick={() => {
-                                                handleSearchSubmit();
-                                            }}
-                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                                            title='Search'
-                                        >
-                                            <Search className='w-4 h-4' />
-                                        </button>
-                                        <input
-                                            ref={searchInputRef}
-                                            type='text'
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handleSearchSubmit();
-                                                }
-                                                if (e.key === 'Escape') {
-                                                    if (!searchQuery) {
-                                                        setIsSearchExpanded(false);
-                                                    }
-                                                }
-                                            }}
-                                            onBlur={() => {
-                                                if (!searchQuery) {
-                                                    setIsSearchExpanded(false);
-                                                }
-                                            }}
-                                            placeholder='Search files...'
-                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                                        />
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => {
-                                                    setSearchQuery('');
-                                                    handleSearchSubmit();
-                                                }}
-                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                                                title='Clear search'
-                                            >
-                                                <Xmark className='w-4 h-4' />
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Right: Pagination */}
-                            <PaginationWrapper
-                                currentPage={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                                pageSize={pageSize}
-                                onPageSizeChange={handlePageSizeChange}
-                                disabled={files.length === 0}
+                <ActionBar
+                    left={
+                        <>
+                            <ActionBarButton
+                                tooltip={
+                                    selectedFiles.length > 0
+                                        ? `Download ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+                                        : 'Select files to download'
+                                }
+                                onClick={handleDownloadSelected}
+                                disabled={loading || files.length === 0 || selectedFiles.length === 0}
+                                icon={<Download width={20} height={20} />}
+                                iconActive={selectedFiles.length > 0}
+                                count={selectedFiles.length}
                             />
-                        </div>
-                    </TableCard>
-                )}
+                            <ActionBarButton
+                                tooltip='Delete selected files (Coming soon)'
+                                onClick={handleDeleteSelected}
+                                disabled={loading || files.length === 0 || selectedFiles.length === 0}
+                                icon={<Trash width={20} height={20} />}
+                                iconActive={selectedFiles.length > 0}
+                                count={selectedFiles.length}
+                            />
+                            <ActionBarDivider />
+                            <ActionBarSearch
+                                placeholder='Search files...'
+                                debounceMs={300}
+                                onDebouncedChange={(v) => {
+                                    setSearchQuery(v);
+                                    resetToFirstPage();
+                                }}
+                                onSubmit={() => resetToFirstPage()}
+                                onClear={() => resetToFirstPage()}
+                            />
+                        </>
+                    }
+                    right={
+                        <PaginationWrapper
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={handlePageSizeChange}
+                            disabled={files.length === 0}
+                        />
+                    }
+                />
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
                     <ListView

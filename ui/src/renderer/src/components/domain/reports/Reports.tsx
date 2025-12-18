@@ -7,7 +7,7 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Report } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import TableCard from '@components/base/Card/TableCard';
+import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import ListView, {
     DateRangeFilter,
     SortDirection,
@@ -16,8 +16,8 @@ import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { Download, InfoCircleSolid, RefreshCircle, Search, Trash, WarningCircleSolid, WarningTriangleSolid, Xmark } from 'iconoir-react';
-import { useEffect, useRef, useState } from 'react';
+import { Download, InfoCircleSolid, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface ColumnFilters {
@@ -62,8 +62,6 @@ export default function Reports() {
     );
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-    const searchInputRef = useRef<HTMLInputElement>(null);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
         user: '',
@@ -96,11 +94,11 @@ export default function Reports() {
         fetchReports();
     }, [page, sortField, sortDirection, pageSize, columnFilters.status, columnFilters.user, columnFilters.createdAt.from, columnFilters.createdAt.to, searchQuery]);
 
-    useEffect(() => {
-        if (isSearchExpanded && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
-    }, [isSearchExpanded]);
+    const resetToFirstPage = useCallback(() => {
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('reports_page', '1');
+        setSearchParams(newParams, { replace: true });
+    }, [searchParams, setSearchParams]);
 
     const fetchReports = async () => {
         setLoading(true);
@@ -198,9 +196,11 @@ export default function Reports() {
     const handleRetry = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
 
+        if (idsArray.length === 0) return;
+
         try {
             const retryPromises = idsArray.map((id) =>
-                execute(() => reportsApi.reportsRetryCreate({ id }))
+                execute(() => reportsApi.reportsRetryCreate({ id })),
             );
             const results = await Promise.allSettled(retryPromises);
 
@@ -210,27 +210,27 @@ export default function Reports() {
             if (failures === 0) {
                 notify({
                     type: 'success',
-                    text: `Successfully retrying ${successes} report${successes > 1 ? 's' : ''}!`,
+                    text: `Retry requested for ${successes} report${successes > 1 ? 's' : ''}.`,
                 });
             } else if (successes === 0) {
                 notify({
                     type: 'error',
-                    text: `Failed to retry ${failures} report${failures > 1 ? 's' : ''}`,
+                    text: `Failed to retry ${failures} report${failures > 1 ? 's' : ''}.`,
                 });
             } else {
                 notify({
                     type: 'info',
-                    text: `Retrying ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`,
+                    text: `Retry requested for ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed.`,
                 });
             }
 
+            // Important: do NOT refetch here; retry is async and refetching causes a full table rerender.
             setSelectedReports([]);
-            fetchReports();
         } catch (error) {
             console.error('Retry failed:', error);
             notify({
                 type: 'error',
-                text: 'Failed to retry report(s)',
+                text: 'Failed to retry report(s).',
             });
         }
     };
@@ -321,12 +321,6 @@ export default function Reports() {
                 text: 'Failed to download report(s)',
             });
         }
-    };
-
-    const handleSearchSubmit = () => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('reports_page', '1');
-        setSearchParams(newParams, { replace: true });
     };
 
     const getStatusIcon = (status?: string, errorMessage?: string) => {
@@ -480,141 +474,74 @@ export default function Reports() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 p-4'>
-                {!loading && (
-                    <TableCard>
-                        <div className='flex flex-wrap items-center justify-between gap-4'>
-                            {/* Left: Actions */}
-                            <div className='flex items-center gap-2 flex-shrink-0'>
-                                <Tooltip content={selectedReports.length > 0 ? `Download ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to download'}>
-                                    <button
-                                        onClick={() => handleDownload(selectedReports)}
-                                        disabled={reports.length === 0 || selectedReports.length === 0}
-                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                    >
-                                        <Download
-                                            className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                            width={20}
-                                            height={20}
-                                        />
-                                        {selectedReports.length > 0 && (
-                                            <span className='text-sm text-cradle-text-secondary font-mono'>
-                                                {selectedReports.length}
-                                            </span>
-                                        )}
-                                    </button>
-                                </Tooltip>
-                                <Tooltip content={selectedReports.length > 0 ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to delete'}>
-                                    <button
-                                        onClick={() => handleDelete(selectedReports)}
-                                        disabled={reports.length === 0 || selectedReports.length === 0}
-                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                    >
-                                        <Trash
-                                            className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                            width={20}
-                                            height={20}
-                                        />
-                                        {selectedReports.length > 0 && (
-                                            <span className='text-sm text-cradle-text-secondary font-mono'>
-                                                {selectedReports.length}
-                                            </span>
-                                        )}
-                                    </button>
-                                </Tooltip>
-                                <Tooltip content={selectedReports.length > 0 ? `Retry ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to retry'}>
-                                    <button
-                                        onClick={() => handleRetry(selectedReports)}
-                                        disabled={reports.length === 0 || selectedReports.length === 0}
-                                        className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                    >
-                                        <RefreshCircle
-                                            className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                            width={20}
-                                            height={20}
-                                        />
-                                        {selectedReports.length > 0 && (
-                                            <span className='text-sm text-cradle-text-secondary font-mono'>
-                                                {selectedReports.length}
-                                            </span>
-                                        )}
-                                    </button>
-                                </Tooltip>
-                                <div className='h-8 w-px bg-cradle-border-accent'></div>
-                                {!isSearchExpanded ? (
-                                    <button
-                                        onClick={() => setIsSearchExpanded(true)}
-                                        className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
-                                        title='Search'
-                                    >
-                                        <Search className='w-4 h-4' />
-                                    </button>
-                                ) : (
-                                    <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                        <button
-                                            onClick={() => {
-                                                handleSearchSubmit();
-                                            }}
-                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                                            title='Search'
-                                        >
-                                            <Search className='w-4 h-4' />
-                                        </button>
-                                        <input
-                                            ref={searchInputRef}
-                                            type='text'
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    handleSearchSubmit();
-                                                }
-                                                if (e.key === 'Escape') {
-                                                    if (!searchQuery) {
-                                                        setIsSearchExpanded(false);
-                                                    }
-                                                }
-                                            }}
-                                            onBlur={() => {
-                                                if (!searchQuery) {
-                                                    setIsSearchExpanded(false);
-                                                }
-                                            }}
-                                            placeholder='Search reports...'
-                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                                        />
-                                        {searchQuery && (
-                                            <button
-                                                onClick={() => {
-                                                    setSearchQuery('');
-                                                    handleSearchSubmit();
-                                                }}
-                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                                                title='Clear search'
-                                            >
-                                                <Xmark className='w-4 h-4' />
-                                            </button>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Right: Pagination */}
-                            <PaginationWrapper
-                                currentPage={page}
-                                totalPages={totalPages}
-                                onPageChange={handlePageChange}
-                                pageSize={pageSize}
-                                onPageSizeChange={(newSize) => {
-                                    const newParams = new URLSearchParams(searchParams);
-                                    newParams.set('reports_page', '1');
-                                    newParams.set('reports_pagesize', String(newSize));
-                                    setSearchParams(newParams, { replace: true });
-                                }}
-                                disabled={reports.length === 0}
+                <ActionBar
+                    left={
+                        <>
+                            <ActionBarButton
+                                tooltip={
+                                    selectedReports.length > 0
+                                        ? `Download ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                        : 'Select reports to download'
+                                }
+                                onClick={() => handleDownload(selectedReports)}
+                                disabled={loading || reports.length === 0 || selectedReports.length === 0}
+                                icon={<Download width={20} height={20} />}
+                                iconActive={selectedReports.length > 0}
+                                count={selectedReports.length}
                             />
-                        </div>
-                    </TableCard>
-                )}
+                            <ActionBarButton
+                                tooltip={
+                                    selectedReports.length > 0
+                                        ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                        : 'Select reports to delete'
+                                }
+                                onClick={() => handleDelete(selectedReports)}
+                                disabled={loading || reports.length === 0 || selectedReports.length === 0}
+                                icon={<Trash width={20} height={20} />}
+                                iconActive={selectedReports.length > 0}
+                                count={selectedReports.length}
+                            />
+                            <ActionBarButton
+                                tooltip={
+                                    selectedReports.length > 0
+                                        ? `Retry ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                        : 'Select reports to retry'
+                                }
+                                onClick={() => handleRetry(selectedReports)}
+                                disabled={loading || reports.length === 0 || selectedReports.length === 0}
+                                icon={<RefreshCircle width={20} height={20} />}
+                                iconActive={selectedReports.length > 0}
+                                count={selectedReports.length}
+                            />
+                            <ActionBarDivider />
+                            <ActionBarSearch
+                                placeholder='Search reports...'
+                                debounceMs={300}
+                                onDebouncedChange={(v) => {
+                                    setSearchQuery(v);
+                                    resetToFirstPage();
+                                }}
+                                onSubmit={() => resetToFirstPage()}
+                                onClear={() => resetToFirstPage()}
+                            />
+                        </>
+                    }
+                    right={
+                        <PaginationWrapper
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.set('reports_page', '1');
+                                newParams.set('reports_pagesize', String(newSize));
+                                setSearchParams(newParams, { replace: true });
+                            }}
+                            disabled={reports.length === 0}
+                        />
+                    }
+                />
 
                 <ListView
                     data={reports}

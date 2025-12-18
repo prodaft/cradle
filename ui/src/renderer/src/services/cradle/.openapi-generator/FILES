@@ -34,6 +34,7 @@ models/Enable2FA.ts
 models/EnrichmentRelation.ts
 models/EnrichmentRequest.ts
 models/EnrichmentRequestDetail.ts
+models/EnrichmentRequestEnricher.ts
 models/EnrichmentRequestList.ts
 models/EnrichmentRequestRequest.ts
 models/EnrichmentSettings.ts

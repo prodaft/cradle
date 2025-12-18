@@ -1,6 +1,6 @@
 import DeleteNote from '@components/domain/notes/DeleteNote';
 import NotesList from '@components/domain/notes/NotesList';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface SearchFilters {
     content: string;
@@ -23,6 +23,10 @@ export default function Notes({ obj }: NotesProps) {
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
         null,
     );
+    const searchFiltersRef = useRef(searchFilters);
+    useEffect(() => {
+        searchFiltersRef.current = searchFilters;
+    }, [searchFilters]);
 
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
@@ -38,8 +42,12 @@ export default function Notes({ obj }: NotesProps) {
         });
     }, [obj]);
 
-    const handleSearchSubmit = () => {
-        setSubmittedFilters(searchFilters);
+    const handleSearchSubmit = (value?: string) => {
+        const next = {
+            ...searchFiltersRef.current,
+            content: value ?? searchFiltersRef.current.content,
+        };
+        setSubmittedFilters(next);
     };
 
     const handleSearchChange = (value: string) => {

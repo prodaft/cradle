@@ -18,6 +18,7 @@ export * from './Enable2FA';
 export * from './EnrichmentRelation';
 export * from './EnrichmentRequest';
 export * from './EnrichmentRequestDetail';
+export * from './EnrichmentRequestEnricher';
 export * from './EnrichmentRequestList';
 export * from './EnrichmentRequestRequest';
 export * from './EnrichmentSettings';

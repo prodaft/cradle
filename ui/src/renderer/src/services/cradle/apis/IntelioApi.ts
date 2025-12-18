@@ -20,6 +20,7 @@ import type {
   DigestSubclass,
   EnrichmentRequest,
   EnrichmentRequestDetail,
+  EnrichmentRequestEnricher,
   EnrichmentRequestRequest,
   EnrichmentSettings,
   EnrichmentSettingsRequest,
@@ -40,6 +41,8 @@ import {
     EnrichmentRequestToJSON,
     EnrichmentRequestDetailFromJSON,
     EnrichmentRequestDetailToJSON,
+    EnrichmentRequestEnricherFromJSON,
+    EnrichmentRequestEnricherToJSON,
     EnrichmentRequestRequestFromJSON,
     EnrichmentRequestRequestToJSON,
     EnrichmentSettingsFromJSON,
@@ -77,6 +80,11 @@ export interface EnrichmentRelationsRetrieveRequest {
 
 export interface EnrichmentRequestCreateRequest {
     enrichmentRequestRequest: EnrichmentRequestRequest;
+}
+
+export interface EnrichmentRequestEnricherRetrieveRequest {
+    enricherType: string;
+    id: number;
 }
 
 export interface EnrichmentRequestListRequest {
@@ -288,7 +296,7 @@ export class IntelioApi extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/intelio/enrich/{id}/{enricher_type}/`;
+        let urlPath = `/intelio/enrich/{id}/{enricher_type}/relations/`;
         urlPath = urlPath.replace(`{${"enricher_type"}}`, encodeURIComponent(String(requestParameters['enricherType'])));
         urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
 
@@ -357,6 +365,61 @@ export class IntelioApi extends runtime.BaseAPI {
      */
     async enrichmentRequestCreate(requestParameters: EnrichmentRequestCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<EnrichmentRequest> {
         const response = await this.enrichmentRequestCreateRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Retrieve detailed information about a specific enrichment request enricher.
+     * Retrieve enrichment request enricher information
+     */
+    async enrichmentRequestEnricherRetrieveRaw(requestParameters: EnrichmentRequestEnricherRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<EnrichmentRequestEnricher>> {
+        if (requestParameters['enricherType'] == null) {
+            throw new runtime.RequiredError(
+                'enricherType',
+                'Required parameter "enricherType" was null or undefined when calling enrichmentRequestEnricherRetrieve().'
+            );
+        }
+
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling enrichmentRequestEnricherRetrieve().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/intelio/enrich/{id}/{enricher_type}/`;
+        urlPath = urlPath.replace(`{${"enricher_type"}}`, encodeURIComponent(String(requestParameters['enricherType'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => EnrichmentRequestEnricherFromJSON(jsonValue));
+    }
+
+    /**
+     * Retrieve detailed information about a specific enrichment request enricher.
+     * Retrieve enrichment request enricher information
+     */
+    async enrichmentRequestEnricherRetrieve(requestParameters: EnrichmentRequestEnricherRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<EnrichmentRequestEnricher> {
+        const response = await this.enrichmentRequestEnricherRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

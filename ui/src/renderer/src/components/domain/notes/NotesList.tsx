@@ -9,16 +9,15 @@ import {
     DesignNib,
     InfoCircleSolid,
     PlusCircle,
-    Search,
+    RefreshCircle,
     StatsReport,
     Trash,
     WarningCircleSolid,
     WarningTriangleSolid,
-    Xmark,
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import TableCard from '../../base/Card/TableCard';
+import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '../../base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter, SortDirection } from '../../base/ListView/ListView';
 import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
@@ -61,7 +60,7 @@ interface ColumnFilters {
 interface ContentSearch {
     value: string;
     onChange?: (value: string) => void;
-    onSubmit?: () => void;
+    onSubmit?: (value?: string) => void;
 }
 
 interface NotesListProps {
@@ -126,13 +125,6 @@ export default function NotesList({
             to: query?.updated_date_to || '',
         },
     });
-    const [searchInputValue, setSearchInputValue] = useState(
-        contentSearch?.value || '',
-    );
-    const [isSearchExpanded, setIsSearchExpanded] = useState(
-        !!contentSearch?.value,
-    );
-    const searchInputRef = useRef<HTMLInputElement>(null);
     const [totalCount, setTotalCount] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -256,18 +248,9 @@ export default function NotesList({
         query?.updated_date_to,
     ]);
 
-    useEffect(() => {
-        if (contentSearch?.value !== undefined) {
-            setSearchInputValue(contentSearch.value);
-            setIsSearchExpanded(!!contentSearch.value);
-        }
-    }, [contentSearch]);
-
-    useEffect(() => {
-        if (isSearchExpanded && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
-    }, [isSearchExpanded]);
+    const handleRetrySelected = useCallback((_selectedIds: string[]) => {
+        // Intentionally left blank for now (UI only).
+    }, []);
 
     // Notes to display (same as fetched notes since filters were removed)
     const displayedNotes = notes;
@@ -291,36 +274,6 @@ export default function NotesList({
         }
     };
 
-
-    // Keyboard shortcuts
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            // Only handle if focus is in this component
-            if (!containerRef.current?.contains(document.activeElement) &&
-                document.activeElement !== document.body) return;
-
-            // Ctrl+A / Cmd+A - Select all
-            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !hideActionBar) {
-                e.preventDefault();
-                handleSelectAll();
-            }
-
-            // Delete key - Delete selected
-            if (e.key === 'Delete' && selectedNotes.length > 0 && !hideActionBar) {
-                e.preventDefault();
-                actions[0].handler(selectedNotes);
-            }
-
-            // Ctrl+F / Cmd+F - Focus search
-            if ((e.ctrlKey || e.metaKey) && e.key === 'f' && contentSearch) {
-                e.preventDefault();
-                setIsSearchExpanded(true);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [selectedNotes, displayedNotes, hideActionBar, contentSearch]);
 
     const fetchNotes = useCallback(async () => {
         if (query == null) return;
@@ -558,185 +511,114 @@ export default function NotesList({
     return (
         <PreviewTipProvider delayDuration={800}>
             <div ref={containerRef} className='flex flex-col space-y-4'>
-                {!loading && (
-                    <TableCard>
-                        <div className='flex flex-wrap items-center justify-between gap-4'>
-                            <div className='flex items-center gap-2 flex-shrink-0'>
-                                {/* Create Note */}
-                                {onCreateNote && (
-                                    <Tooltip content='Create new note (Ctrl+N)'>
-                                        <button
-                                            className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
-                                            onClick={onCreateNote}
-                                        >
-                                            <PlusCircle
-                                                className='text-[#FF8C00]'
-                                                width={18}
-                                                height={18}
-                                            />
-                                        </button>
-                                    </Tooltip>
-                                )}
-
-                                {!hideActionBar && (
-                                    <>
-                                        <div className='h-8 w-px bg-cradle-border-accent' />
-
-                                        {/* Delete */}
-                                        <Tooltip content={selectedNotes.length > 0 ? `Delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''} (Del)` : 'Select notes to delete'}>
-                                            <button
-                                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                                onClick={() => {
-                                                    if (selectedNotes.length > 0) {
-                                                        actions[0].handler(selectedNotes);
-                                                    }
-                                                }}
-                                                disabled={selectedNotes.length === 0 || notes.length === 0}
-                                            >
-                                                <Trash
-                                                    className={selectedNotes.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                                    width={18}
-                                                    height={18}
-                                                />
-                                                {selectedNotes.length > 0 && (
-                                                    <span className='text-sm text-cradle-text-secondary font-mono'>
-                                                        {selectedNotes.length}
-                                                    </span>
-                                                )}
-                                            </button>
-                                        </Tooltip>
-
-                                        {/* Generate Report */}
-                                        <Tooltip content={selectedNotes.length > 0 ? `Generate report for ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}` : 'Select notes to generate report'}>
-                                            <button
-                                                className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                                onClick={() => {
-                                                    if (selectedNotes.length > 0) {
-                                                        const selectedNoteObjects = notes
-                                                            .filter((n) => n.id && selectedNotes.includes(n.id))
-                                                            .map((n) => ({
-                                                                id: n.id!,
-                                                                title: n.metadata?.title || n.title || 'Untitled',
-                                                            }));
-
-                                                        setModal(ReportGenerationModal, {
-                                                            selectedNotes: selectedNoteObjects,
-                                                        });
-                                                    }
-                                                }}
-                                                disabled={selectedNotes.length === 0 || notes.length === 0}
-                                            >
-                                                <StatsReport
-                                                    className={selectedNotes.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                                    width={18}
-                                                    height={18}
-                                                />
-                                            </button>
-                                        </Tooltip>
-
-                                        <div className='h-8 w-px bg-cradle-border-accent' />
-                                    </>
-                                )}
-
-                                {contentSearch && (
-                                    <>
-                                        {!isSearchExpanded ? (
-                                            <button
-                                                onClick={() => setIsSearchExpanded(true)}
-                                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
-                                                title='Search'
-                                            >
-                                                <Search className='w-4 h-4' />
-                                            </button>
-                                        ) : (
-                                            <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                                <button
-                                                    onClick={() => {
-                                                        if (contentSearch?.onSubmit) {
-                                                            contentSearch.onSubmit();
-                                                        }
-                                                    }}
-                                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                                                    title='Search'
-                                                >
-                                                    <Search className='w-4 h-4' />
-                                                </button>
-                                                <input
-                                                    ref={searchInputRef}
-                                                    type='text'
-                                                    value={searchInputValue}
-                                                    onChange={(e) => {
-                                                        setSearchInputValue(e.target.value);
-                                                        if (contentSearch?.onChange) {
-                                                            contentSearch.onChange(e.target.value);
-                                                        }
-                                                    }}
-                                                    onKeyDown={(e) => {
-                                                        if (
-                                                            e.key === 'Enter' &&
-                                                            contentSearch?.onSubmit
-                                                        ) {
-                                                            contentSearch.onSubmit();
-                                                        }
-                                                        if (e.key === 'Escape') {
-                                                            if (!searchInputValue) {
-                                                                setIsSearchExpanded(false);
-                                                            }
-                                                        }
-                                                    }}
-                                                    onBlur={() => {
-                                                        if (!searchInputValue) {
-                                                            setIsSearchExpanded(false);
-                                                        }
-                                                    }}
-                                                    placeholder='Search content...'
-                                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                                                />
-                                                {searchInputValue && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setSearchInputValue('');
-                                                            if (contentSearch?.onChange) {
-                                                                contentSearch.onChange('');
-                                                            }
-                                                            if (contentSearch?.onSubmit) {
-                                                                contentSearch.onSubmit();
-                                                            }
-                                                        }}
-                                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                                                        title='Clear search'
-                                                    >
-                                                        <Xmark className='w-4 h-4' />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-
-                            {/* Right side controls */}
-                            <div className='flex items-center gap-2'>
-
-                                <PaginationWrapper
-                                    currentPage={page}
-                                    totalPages={totalPages}
-                                    onPageChange={handlePageChange}
-                                    pageSize={pageSize}
-                                    onPageSizeChange={(newSize) => {
-                                        setPageSize(newSize);
-                                        setPage(1);
-                                        const newParams = new URLSearchParams(searchParams);
-                                        newParams.set('notes_page', '1');
-                                        newParams.set('notes_pagesize', String(newSize));
-                                        setSearchParams(newParams, { replace: true });
-                                    }}
-                                    disabled={notes.length === 0}
+                <ActionBar
+                    left={
+                        <>
+                            {onCreateNote && (
+                                <ActionBarButton
+                                    tooltip='Create new note (Ctrl+N)'
+                                    variant='circle'
+                                    icon={<PlusCircle width={18} height={18} />}
+                                    iconActive={true}
+                                    onClick={onCreateNote}
+                                    disabled={loading}
                                 />
-                            </div>
-                        </div>
-                    </TableCard>
-                )}
+                            )}
+
+                            {!hideActionBar && (
+                                <>
+                                    <ActionBarDivider />
+
+                                    <ActionBarButton
+                                        tooltip={
+                                            selectedNotes.length > 0
+                                                ? `Delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''} (Del)`
+                                                : 'Select notes to delete'
+                                        }
+                                        icon={<Trash width={18} height={18} />}
+                                        iconActive={selectedNotes.length > 0}
+                                        count={selectedNotes.length}
+                                        disabled={loading || selectedNotes.length === 0 || notes.length === 0}
+                                        onClick={() => {
+                                            if (selectedNotes.length > 0) actions[0].handler(selectedNotes);
+                                        }}
+                                    />
+
+                                    <ActionBarButton
+                                        tooltip={
+                                            selectedNotes.length > 0
+                                                ? `Retry ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
+                                                : 'Select notes to retry'
+                                        }
+                                        icon={<RefreshCircle width={18} height={18} />}
+                                        iconActive={selectedNotes.length > 0}
+                                        count={selectedNotes.length}
+                                        disabled={loading || selectedNotes.length === 0 || notes.length === 0}
+                                        onClick={() => handleRetrySelected(selectedNotes)}
+                                    />
+
+                                    <ActionBarButton
+                                        tooltip={
+                                            selectedNotes.length > 0
+                                                ? `Generate report for ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
+                                                : 'Select notes to generate report'
+                                        }
+                                        icon={<StatsReport width={18} height={18} />}
+                                        iconActive={selectedNotes.length > 0}
+                                        disabled={loading || selectedNotes.length === 0 || notes.length === 0}
+                                        onClick={() => {
+                                            if (selectedNotes.length === 0) return;
+                                            const selectedNoteObjects = notes
+                                                .filter((n) => n.id && selectedNotes.includes(n.id))
+                                                .map((n) => ({
+                                                    id: n.id!,
+                                                    title: n.metadata?.title || n.title || 'Untitled',
+                                                }));
+
+                                            setModal(ReportGenerationModal, {
+                                                selectedNotes: selectedNoteObjects,
+                                            });
+                                        }}
+                                    />
+
+                                    <ActionBarDivider />
+                                </>
+                            )}
+
+                            {contentSearch && (
+                                <ActionBarSearch
+                                    placeholder='Search content...'
+                                    value={contentSearch.value || ''}
+                                    defaultExpanded={Boolean(contentSearch.value)}
+                                    debounceMs={300}
+                                    onDebouncedChange={(v) => {
+                                        contentSearch.onChange?.(v);
+                                        // Many parents execute the search on submit; provide the value so they don't rely on potentially-stale state.
+                                        contentSearch.onSubmit?.(v);
+                                    }}
+                                    onSubmit={(v) => contentSearch.onSubmit?.(v)}
+                                />
+                            )}
+                        </>
+                    }
+                    right={
+                        <PaginationWrapper
+                            currentPage={page}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                setPageSize(newSize);
+                                setPage(1);
+                                const newParams = new URLSearchParams(searchParams);
+                                newParams.set('notes_page', '1');
+                                newParams.set('notes_pagesize', String(newSize));
+                                setSearchParams(newParams, { replace: true });
+                            }}
+                            disabled={notes.length === 0}
+                        />
+                    }
+                />
 
                 <ListView
                     data={displayedNotes}

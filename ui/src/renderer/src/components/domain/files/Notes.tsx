@@ -6,7 +6,7 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { DateRangeFilter } from '@components/base/ListView/ListView';
 import DeleteNote from '@components/domain/notes/DeleteNote';
 import NotesList from '@components/domain/notes/NotesList';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface SearchFilters {
@@ -46,6 +46,10 @@ export default function Notes() {
         updated_date_from: searchParams.get('updated_date_from') || '',
         updated_date_to: searchParams.get('updated_date_to') || '',
     });
+    const searchFiltersRef = useRef(searchFilters);
+    useEffect(() => {
+        searchFiltersRef.current = searchFilters;
+    }, [searchFilters]);
 
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
         null,
@@ -197,8 +201,12 @@ export default function Notes() {
                                 };
                                 setSearchFilters(updatedFilters);
                             },
-                            onSubmit: () => {
-                                updateSearchParams(searchFilters);
+                            onSubmit: (value?: string) => {
+                                const next = {
+                                    ...searchFiltersRef.current,
+                                    content: value ?? searchFiltersRef.current.content,
+                                };
+                                updateSearchParams(next);
                             },
                         }}
                     />

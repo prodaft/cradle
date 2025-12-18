@@ -6,6 +6,7 @@ from .views.enrichment import (
     EnrichmentAPIView,
     EnrichmentDetailAPIView,
     EnrichmentRelationsAPIView,
+    EnrichmentRequestEnricherAPIView,
     EnrichmentRestartAPIView,
     EnrichmentSettingsAPIView,
     EnrichmentSubclassesAPIView,
@@ -69,6 +70,11 @@ urlpatterns = [
     ),
     path(
         "enrich/<int:pk>/<str:enricher_type>/",
+        EnrichmentRequestEnricherAPIView.as_view(),
+        name="enrichment-enricher",
+    ),
+    path(
+        "enrich/<int:pk>/<str:enricher_type>/relations/",
         EnrichmentRelationsAPIView.as_view(),
         name="enrichment-relations",
     ),

@@ -32,6 +32,7 @@ from ..models.base import BaseEnricher, EnricherSettings, EnrichmentRequest
 from ..serializers import (
     EnrichmentRelationSerializer,
     EnrichmentRequestDetailSerializer,
+    EnrichmentRequestEnricherSerializer,
     EnrichmentRequestListSerializer,
     EnrichmentRequestSerializer,
     EnrichmentSettingsSerializer,
@@ -459,6 +460,72 @@ class EnrichmentRestartAPIView(APIView):
 
         # Return the updated enrichment request
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
+        return Response(serializer.data)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="enrichment_request_enricher_retrieve",
+        summary="Retrieve enrichment request enricher information",
+        description="Retrieve detailed information about a specific enrichment request enricher.",
+        responses={
+            200: EnrichmentRequestEnricherSerializer,
+            **get_error_responses(
+                IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
+                IntelioErrorCodes.PERMISSION_DENIED,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class EnrichmentRequestEnricherAPIView(APIView):
+    """
+    API view for retrieving enrichment request enricher information.
+
+    GET: Retrieve enrichment request enricher information.
+    """
+
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = EnrichmentRequestEnricherSerializer
+
+    def get_object(self, pk):
+        try:
+            return EnrichmentRequest.objects.prefetch_related("enrichers_settings").get(
+                pk=pk
+            )
+        except EnrichmentRequest.DoesNotExist:
+            return None
+
+    def get(self, request, pk, enricher_type):
+        """Retrieve enrichment request enricher information"""
+        enrichment_request = self.get_object(pk)
+
+        if enrichment_request is None:
+            raise EnrichmentRequestNotFoundException(
+                detail="Enrichment request not found."
+            )
+
+        # Check if user has access to this request
+        if enrichment_request.user != request.user and not request.user.is_staff:
+            raise PermissionDeniedException(
+                detail="You don't have permission to view this enrichment request."
+            )
+
+        # Verify enricher_type is valid for this enrichment request
+        enricher_types = [
+            settings.enricher_type
+            for settings in enrichment_request.enrichers_settings.all()
+        ]
+        if enricher_type not in enricher_types:
+            raise EnricherTypeNotFoundException(
+                detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
+            )
+
+        # Get enricher information
+        enricher = enrichment_request.enrichers.get(enricher_type)
+
+        serializer = EnrichmentRequestEnricherSerializer.for_enrichment(enricher)
         return Response(serializer.data)
 
 

@@ -4,7 +4,7 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import TableCard from '@components/base/Card/TableCard';
+import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -12,8 +12,8 @@ import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
-import { InfoCircleSolid, PlusCircle, Search, Trash, WarningCircleSolid, WarningTriangleSolid, Xmark } from 'iconoir-react';
-import React, { useEffect, useRef, useState } from 'react';
+import { InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import React, { useCallback, useState } from 'react';
 
 interface DataTypeOption {
     value: string;
@@ -73,15 +73,9 @@ function DigestList({
     const { setModal } = useModal();
     const { intelioApi } = useApi();
     const { executor } = useAPICall();
-    const [isSearchExpanded, setIsSearchExpanded] = useState(!!searchFilters.title);
-    const [searchQuery, setSearchQuery] = useState(searchFilters.title || '');
-    const searchInputRef = useRef<HTMLInputElement>(null);
-
-    useEffect(() => {
-        if (isSearchExpanded && searchInputRef.current) {
-            searchInputRef.current.focus();
-        }
-    }, [isSearchExpanded]);
+    const handleRetrySelected = useCallback((_selectedIds: string[]) => {
+        // Intentionally left blank for now (UI only).
+    }, []);
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -379,150 +373,91 @@ function DigestList({
         });
     };
 
-    const handleSearchSubmit = () => {
-        const event = {
-            target: { name: 'title', value: searchQuery },
-        } as React.ChangeEvent<HTMLInputElement>;
-        onSearchChange(event);
-        if (onSearchSubmit) {
-            onSearchSubmit(event);
-        }
-    };
-
     return (
         <>
-            {!loading && (
-                <TableCard>
-                    <div className='flex flex-wrap items-center justify-between gap-4'>
-                        {/* Left: Actions */}
-                        <div className='flex items-center gap-2 flex-shrink-0'>
-                            {/* Upload Digest */}
-                            <Tooltip content='Upload new digest'>
-                                <button
-                                    className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
-                                    onClick={() => {
-                                        setModal(UploadDigestModal, {
-                                            dataTypeOptions,
-                                            onUpload: onUpload || onDigestDelete,
-                                        });
-                                    }}
-                                >
-                                    <PlusCircle
-                                        className='text-[#FF8C00]'
-                                        width={20}
-                                        height={20}
-                                    />
-                                </button>
-                            </Tooltip>
-
-                            <div className='h-8 w-px bg-cradle-border-accent'></div>
-
-                            <Tooltip content={selectedDigests.length > 0 ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}` : 'Select digests to delete'}>
-                                <button
-                                    onClick={() => handleDeleteSelected(selectedDigests)}
-                                    disabled={digests.length === 0 || selectedDigests.length === 0}
-                                    className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                >
-                                    <Trash
-                                        className={selectedDigests.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                        width={20}
-                                        height={20}
-                                    />
-                                    {selectedDigests.length > 0 && (
-                                        <span className='text-sm text-cradle-text-secondary font-mono'>
-                                            {selectedDigests.length}
-                                        </span>
-                                    )}
-                                </button>
-                            </Tooltip>
-
-                            <div className='h-8 w-px bg-cradle-border-accent'></div>
-                            {!isSearchExpanded ? (
-                                <button
-                                    onClick={() => setIsSearchExpanded(true)}
-                                    className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
-                                    title='Search'
-                                >
-                                    <Search className='w-4 h-4' />
-                                </button>
-                            ) : (
-                                <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                    <button
-                                        onClick={() => {
-                                            handleSearchSubmit();
-                                        }}
-                                        className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                                        title='Search'
-                                    >
-                                        <Search className='w-4 h-4' />
-                                    </button>
-                                    <input
-                                        ref={searchInputRef}
-                                        type='text'
-                                        name='title'
-                                        value={searchQuery}
-                                        onChange={(e) => {
-                                            setSearchQuery(e.target.value);
-                                            const event = {
-                                                target: { name: 'title', value: e.target.value },
-                                            } as React.ChangeEvent<HTMLInputElement>;
-                                            onSearchChange(event);
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter') {
-                                                handleSearchSubmit();
-                                            }
-                                            if (e.key === 'Escape') {
-                                                if (!searchQuery) {
-                                                    setIsSearchExpanded(false);
-                                                }
-                                            }
-                                        }}
-                                        onBlur={() => {
-                                            if (!searchQuery) {
-                                                setIsSearchExpanded(false);
-                                            }
-                                        }}
-                                        placeholder='Search by title...'
-                                        className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                                    />
-                                    {searchQuery && (
-                                        <button
-                                            onClick={() => {
-                                                setSearchQuery('');
-                                                const event = {
-                                                    target: { name: 'title', value: '' },
-                                                } as React.ChangeEvent<HTMLInputElement>;
-                                                onSearchChange(event);
-                                                if (onSearchSubmit) {
-                                                    onSearchSubmit(event);
-                                                }
-                                            }}
-                                            className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                                            title='Clear search'
-                                        >
-                                            <Xmark className='w-4 h-4' />
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Right: Pagination */}
-                        <PaginationWrapper
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={(newSize) => {
-                                setPageSize(newSize);
-                                handlePageChange(1);
+            <ActionBar
+                left={
+                    <>
+                        <ActionBarButton
+                            tooltip='Upload new digest'
+                            variant='circle'
+                            icon={<PlusCircle width={20} height={20} />}
+                            iconActive={true}
+                            disabled={loading}
+                            onClick={() => {
+                                setModal(UploadDigestModal, {
+                                    dataTypeOptions,
+                                    onUpload: onUpload || onDigestDelete,
+                                });
                             }}
-                            disabled={digests.length === 0}
                         />
-                    </div>
-                </TableCard>
-            )}
+
+                        <ActionBarDivider />
+
+                        <ActionBarButton
+                            tooltip={
+                                selectedDigests.length > 0
+                                    ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
+                                    : 'Select digests to delete'
+                            }
+                            onClick={() => handleDeleteSelected(selectedDigests)}
+                            disabled={loading || digests.length === 0 || selectedDigests.length === 0}
+                            icon={<Trash width={20} height={20} />}
+                            iconActive={selectedDigests.length > 0}
+                            count={selectedDigests.length}
+                        />
+
+                        <ActionBarButton
+                            tooltip={
+                                selectedDigests.length > 0
+                                    ? `Retry ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
+                                    : 'Select digests to retry'
+                            }
+                            onClick={() => handleRetrySelected(selectedDigests)}
+                            disabled={loading || digests.length === 0 || selectedDigests.length === 0}
+                            icon={<RefreshCircle width={20} height={20} />}
+                            iconActive={selectedDigests.length > 0}
+                            count={selectedDigests.length}
+                        />
+
+                        <ActionBarDivider />
+
+                        <ActionBarSearch
+                            placeholder='Search by title...'
+                            initialValue={searchFilters.title || ''}
+                            defaultExpanded={Boolean(searchFilters.title)}
+                            debounceMs={300}
+                            onDebouncedChange={(value) => {
+                                const event = {
+                                    preventDefault: () => {},
+                                    target: { name: 'title', value },
+                                } as React.ChangeEvent<HTMLInputElement>;
+                                onSearchChange(event);
+                            }}
+                            onSubmit={(value) => {
+                                const event = {
+                                    preventDefault: () => {},
+                                    target: { name: 'title', value },
+                                } as any;
+                                onSearchSubmit(event);
+                            }}
+                        />
+                    </>
+                }
+                right={
+                    <PaginationWrapper
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        pageSize={pageSize}
+                        onPageSizeChange={(newSize) => {
+                            setPageSize(newSize);
+                            handlePageChange(1);
+                        }}
+                        disabled={digests.length === 0}
+                    />
+                }
+            />
 
             <ListView
                 data={digests}

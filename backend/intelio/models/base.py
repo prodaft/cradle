@@ -7,7 +7,6 @@ from django.conf import settings
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
-from django.db.models import Q
 from django.utils import timezone
 from django_lifecycle import (
     AFTER_DELETE,
@@ -23,7 +22,6 @@ from entries.models import Entry, EntryClass, Relation
 from user.models import CradleUser
 
 from ..enums import DigestStatus, EnrichmentStatus
-from ..managers import EnrichmentRequestManager
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
@@ -375,9 +373,9 @@ class EnrichmentRequest(LifecycleModel):
     enricher_status = models.JSONField(default=dict, blank=True)
 
     relations = GenericRelation(Relation, related_query_name="enrichment")
-    request = models.JSONField(default=list, blank=False)
-    errors = models.JSONField(default=list, blank=True)
-    warnings = models.JSONField(default=list, blank=True)
+    request = models.JSONField(default=dict, blank=False)
+    errors = models.JSONField(default=dict, blank=True)
+    warnings = models.JSONField(default=dict, blank=True)
 
     def clean(self):
         if self.pk:
@@ -495,6 +493,7 @@ class EnrichmentRequest(LifecycleModel):
         with transaction.atomic():
             instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
             instance.enricher_status = instance.enricher_status or {}
+
             if enricher_type not in instance.enricher_status:
                 instance.enricher_status[enricher_type] = status.value
 
@@ -530,26 +529,31 @@ class EnrichmentRequest(LifecycleModel):
                 else:
                     instance.save(update_fields=["enricher_status"])
 
-    def _append_error(self, error):
-        if error in self.errors:
+    def _append_error(self, error, enricher_type: str):
+        if error in self.errors.get(enricher_type, []):
             return
         with transaction.atomic():
             # Use select_for_update to lock the row and prevent race conditions
             instance = BaseDigest.objects.select_for_update().get(pk=self.pk)
-            if error not in instance.errors:
-                instance.errors.append(error)
+            instance.errors = instance.errors or {}
+            instance.errors[enricher_type] = instance.errors.get(enricher_type, [])
+
+            if error not in instance.errors[enricher_type]:
+                instance.errors[enricher_type].append(error)
                 instance.save(update_fields=["errors"])
             # Update the current instance to reflect the change
             self.errors = instance.errors
 
-    def _append_warning(self, warning):
-        if warning in self.warnings:
+    def _append_warning(self, warning, enricher_type: str):
+        if warning in self.warnings.get(enricher_type, []):
             return
         with transaction.atomic():
             # Use select_for_update to lock the row and prevent race conditions
             instance = BaseDigest.objects.select_for_update().get(pk=self.pk)
-            if warning not in instance.warnings:
-                instance.warnings.append(warning)
+            instance.warnings = instance.warnings or {}
+            instance.warnings[enricher_type] = instance.warnings.get(enricher_type, [])
+            if warning not in instance.warnings[enricher_type]:
+                instance.warnings[enricher_type].append(warning)
                 instance.save(update_fields=["warnings"])
             # Update the current instance to reflect the change
             self.warnings = instance.warnings

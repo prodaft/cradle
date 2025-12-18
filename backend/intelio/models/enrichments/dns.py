@@ -81,7 +81,6 @@ class DNSEnricher(BaseEnricher):
                         details={
                             "record": "A",
                             "ip": i.name,
-                            "ttl": i.ttl,
                             "domain": hostname,
                         },
                     )
@@ -102,7 +101,6 @@ class DNSEnricher(BaseEnricher):
                         details={
                             "record": "AAAA",
                             "ip": i.name,
-                            "ttl": i.ttl,
                             "domain": hostname,
                         },
                     )

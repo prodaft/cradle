@@ -4,7 +4,8 @@ import useApi from '@/hooks/api/useApi';
 import type { Alert } from '@/types';
 import DigestList from '@components/domain/files/DigestList';
 import type { BaseDigest } from '@services/cradle/models';
-import { useEffect, useState } from 'react';
+import { debounce } from 'lodash';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface SearchFilters {
@@ -99,9 +100,14 @@ export default function DigestData() {
         color: 'info',
     });
 
+    const searchParamsRef = useRef(searchParams);
+    useEffect(() => {
+        searchParamsRef.current = searchParams;
+    }, [searchParams]);
+
     useEffect(() => {
         fetchDigests();
-    }, [page, sortField, sortDirection, pageSize, columnFilters, intelioApi]);
+    }, [page, sortField, sortDirection, pageSize, columnFilters, submittedFilters, intelioApi]);
 
     // Initialize filters from URL parameters
     useEffect(() => {
@@ -141,8 +147,8 @@ export default function DigestData() {
         fetchDigests();
     }, []);
 
-    const updateSearchParams = (filters: SearchFilters, dateRangeValue: DateRange) => {
-        const newParams = new URLSearchParams(searchParams);
+    const updateSearchParams = useCallback((filters: SearchFilters, dateRangeValue: DateRange) => {
+        const newParams = new URLSearchParams(searchParamsRef.current);
 
         if (filters.title) {
             newParams.set('title', filters.title);
@@ -188,15 +194,39 @@ export default function DigestData() {
                 })()
                 : '',
         });
-    };
+    }, [setSearchParams]);
+
+    const debouncedUpdateSearchParams = useMemo(
+        () => debounce(updateSearchParams, 300),
+        [updateSearchParams],
+    );
 
     useEffect(() => {
-        const timeoutId = setTimeout(() => {
-            updateSearchParams(searchFilters, dateRange);
-        }, 500);
+        // If the current UI filters already match what we've "submitted" (i.e. what drives fetching),
+        // don't schedule another URL/submittedFilters update. This avoids duplicate fetches when a submit
+        // and a debounced update happen back-to-back with the same values.
+        const expectedCreatedAtGte = dateRange.startDate
+            ? new Date(dateRange.startDate).toISOString()
+            : '';
+        const expectedCreatedAtLte = dateRange.endDate
+            ? (() => {
+                const endDate = new Date(dateRange.endDate);
+                endDate.setHours(23, 59, 59, 999);
+                return endDate.toISOString();
+            })()
+            : '';
 
-        return () => clearTimeout(timeoutId);
-    }, [searchFilters, dateRange]);
+        const matchesSubmitted =
+            submittedFilters.title === (searchFilters.title || '') &&
+            submittedFilters.author === (searchFilters.author || '') &&
+            submittedFilters.created_at_gte === expectedCreatedAtGte &&
+            (submittedFilters.created_at_lte || '') === expectedCreatedAtLte;
+
+        if (matchesSubmitted) return;
+
+        debouncedUpdateSearchParams(searchFilters, dateRange);
+        return () => debouncedUpdateSearchParams.cancel();
+    }, [searchFilters, dateRange, debouncedUpdateSearchParams, submittedFilters]);
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -206,9 +236,26 @@ export default function DigestData() {
         }));
     };
 
-    const handleSearchSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        updateSearchParams(searchFilters, dateRange);
+    const handleSearchSubmit = (e: React.FormEvent | React.MouseEvent) => {
+        (e as any).preventDefault?.();
+
+        // If we're being called from ActionBarSearch (or other non-form submit), we may get a synthetic
+        // event with a { target: { name, value } } shape. Prefer that value so submit doesn't depend
+        // on any debounced/lagging state updates.
+        const target = (e as any).target as { name?: string; value?: string } | undefined;
+        const hasOverride = Boolean(target?.name && typeof target?.value === 'string');
+
+        const nextFilters = hasOverride
+            ? { ...searchFilters, [target!.name!]: target!.value! }
+            : searchFilters;
+
+        if (hasOverride) {
+            setSearchFilters(nextFilters);
+        }
+
+        // Prevent "double search": user submits (Enter) while a debounced update is still pending.
+        debouncedUpdateSearchParams.cancel();
+        updateSearchParams(nextFilters, dateRange);
     };
 
     const fetchDigests = async () => {

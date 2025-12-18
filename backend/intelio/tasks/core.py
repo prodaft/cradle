@@ -25,7 +25,7 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
         enricher.pre_enrich(entries)
         enricher.enrich(entries)
     except Exception as e:
-        request._append_error(f"Enricher {settings.name} failed: {str(e)}")
+        request._append_error(f"Enricher {settings.enricher_type} failed: {str(e)}")
         request._set_enricher_status(enricher.name, EnrichmentStatus.ERROR)
         return
 
