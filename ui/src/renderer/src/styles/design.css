@@ -29,6 +29,58 @@
     --color-cradle-gray-800: #3A3A3A;
     --color-cradle-gray-900: #1A1A1A;
 
+    /* Green Color Scale */
+    --color-green-50: #f0fdf4;
+    --color-green-100: #dcfce7;
+    --color-green-200: #bbf7d0;
+    --color-green-300: #86efac;
+    --color-green-400: #4ade80;
+    --color-green-500: #22c55e;
+    --color-green-600: #16a34a;
+    --color-green-700: #15803d;
+    --color-green-800: #166534;
+    --color-green-900: #14532d;
+    --color-green: var(--color-green-500);
+
+    /* Blue Color Scale */
+    --color-blue-50: #eff6ff;
+    --color-blue-100: #dbeafe;
+    --color-blue-200: #bfdbfe;
+    --color-blue-300: #93c5fd;
+    --color-blue-400: #60a5fa;
+    --color-blue-500: #3b82f6;
+    --color-blue-600: #2563eb;
+    --color-blue-700: #1d4ed8;
+    --color-blue-800: #1e40af;
+    --color-blue-900: #1e3a8a;
+    --color-blue: var(--color-blue-500);
+
+    /* Red Color Scale */
+    --color-red-50: #fef2f2;
+    --color-red-100: #fee2e2;
+    --color-red-200: #fecaca;
+    --color-red-300: #fca5a5;
+    --color-red-400: #f87171;
+    --color-red-500: #ef4444;
+    --color-red-600: #dc2626;
+    --color-red-700: #b91c1c;
+    --color-red-800: #991b1b;
+    --color-red-900: #7f1d1d;
+    --color-red: var(--color-red-500);
+
+    /* Purple Color Scale */
+    --color-purple-50: #faf5ff;
+    --color-purple-100: #f3e8ff;
+    --color-purple-200: #e9d5ff;
+    --color-purple-300: #d8b4fe;
+    --color-purple-400: #c084fc;
+    --color-purple-500: #a855f7;
+    --color-purple-600: #9333ea;
+    --color-purple-700: #7e22ce;
+    --color-purple-800: #6b21a8;
+    --color-purple-900: #581c87;
+    --color-purple: var(--color-purple-500);
+
     /* Design System Colors - CSS Custom Properties References */
     --color-cradle-bg-primary: var(--cradle-bg-primary);
     --color-cradle-bg-secondary: var(--cradle-bg-secondary);
@@ -59,6 +111,54 @@
 
     --color-cradle-glow-primary: var(--cradle-glow-primary);
     --color-cradle-glow-accent: var(--cradle-glow-accent);
+
+    /* Color Palette - Green */
+    --color-green-50: var(--cradle-green-50);
+    --color-green-100: var(--cradle-green-100);
+    --color-green-200: var(--cradle-green-200);
+    --color-green-300: var(--cradle-green-300);
+    --color-green-400: var(--cradle-green-400);
+    --color-green-500: var(--cradle-green-500);
+    --color-green-600: var(--cradle-green-600);
+    --color-green-700: var(--cradle-green-700);
+    --color-green-800: var(--cradle-green-800);
+    --color-green-900: var(--cradle-green-900);
+
+    /* Color Palette - Blue */
+    --color-blue-50: var(--cradle-blue-50);
+    --color-blue-100: var(--cradle-blue-100);
+    --color-blue-200: var(--cradle-blue-200);
+    --color-blue-300: var(--cradle-blue-300);
+    --color-blue-400: var(--cradle-blue-400);
+    --color-blue-500: var(--cradle-blue-500);
+    --color-blue-600: var(--cradle-blue-600);
+    --color-blue-700: var(--cradle-blue-700);
+    --color-blue-800: var(--cradle-blue-800);
+    --color-blue-900: var(--cradle-blue-900);
+
+    /* Color Palette - Red */
+    --color-red-50: var(--cradle-red-50);
+    --color-red-100: var(--cradle-red-100);
+    --color-red-200: var(--cradle-red-200);
+    --color-red-300: var(--cradle-red-300);
+    --color-red-400: var(--cradle-red-400);
+    --color-red-500: var(--cradle-red-500);
+    --color-red-600: var(--cradle-red-600);
+    --color-red-700: var(--cradle-red-700);
+    --color-red-800: var(--cradle-red-800);
+    --color-red-900: var(--cradle-red-900);
+
+    /* Color Palette - Purple */
+    --color-purple-50: var(--cradle-purple-50);
+    --color-purple-100: var(--cradle-purple-100);
+    --color-purple-200: var(--cradle-purple-200);
+    --color-purple-300: var(--cradle-purple-300);
+    --color-purple-400: var(--cradle-purple-400);
+    --color-purple-500: var(--cradle-purple-500);
+    --color-purple-600: var(--cradle-purple-600);
+    --color-purple-700: var(--cradle-purple-700);
+    --color-purple-800: var(--cradle-purple-800);
+    --color-purple-900: var(--cradle-purple-900);
 }
 
 /* ============================================
@@ -98,6 +198,54 @@
         --cradle-accent-success: #ff8c00;
         --cradle-accent-warning: #ffa500;
         --cradle-accent-error: #ff6b00;
+
+        /* Color Palette - Green */
+        --cradle-green-50: #f0fdf4;
+        --cradle-green-100: #dcfce7;
+        --cradle-green-200: #bbf7d0;
+        --cradle-green-300: #86efac;
+        --cradle-green-400: #4ade80;
+        --cradle-green-500: #22c55e;
+        --cradle-green-600: #16a34a;
+        --cradle-green-700: #15803d;
+        --cradle-green-800: #166534;
+        --cradle-green-900: #14532d;
+
+        /* Color Palette - Blue */
+        --cradle-blue-50: #eff6ff;
+        --cradle-blue-100: #dbeafe;
+        --cradle-blue-200: #bfdbfe;
+        --cradle-blue-300: #93c5fd;
+        --cradle-blue-400: #60a5fa;
+        --cradle-blue-500: #3b82f6;
+        --cradle-blue-600: #2563eb;
+        --cradle-blue-700: #1d4ed8;
+        --cradle-blue-800: #1e40af;
+        --cradle-blue-900: #1e3a8a;
+
+        /* Color Palette - Red */
+        --cradle-red-50: #fef2f2;
+        --cradle-red-100: #fee2e2;
+        --cradle-red-200: #fecaca;
+        --cradle-red-300: #fca5a5;
+        --cradle-red-400: #f87171;
+        --cradle-red-500: #ef4444;
+        --cradle-red-600: #dc2626;
+        --cradle-red-700: #b91c1c;
+        --cradle-red-800: #991b1b;
+        --cradle-red-900: #7f1d1d;
+
+        /* Color Palette - Purple */
+        --cradle-purple-50: #faf5ff;
+        --cradle-purple-100: #f3e8ff;
+        --cradle-purple-200: #e9d5ff;
+        --cradle-purple-300: #d8b4fe;
+        --cradle-purple-400: #c084fc;
+        --cradle-purple-500: #a855f7;
+        --cradle-purple-600: #9333ea;
+        --cradle-purple-700: #7e22ce;
+        --cradle-purple-800: #6b21a8;
+        --cradle-purple-900: #581c87;
 
         /* Glows & Shadows - Orange Glows */
         --cradle-glow-primary: rgba(255, 140, 0, 0.2);
@@ -158,6 +306,54 @@
         --cradle-accent-success: #ff8c00;
         --cradle-accent-warning: #ffa500;
         --cradle-accent-error: #ff6b00;
+
+        /* Color Palette - Green (same in dark mode) */
+        --cradle-green-50: #f0fdf4;
+        --cradle-green-100: #dcfce7;
+        --cradle-green-200: #bbf7d0;
+        --cradle-green-300: #86efac;
+        --cradle-green-400: #4ade80;
+        --cradle-green-500: #22c55e;
+        --cradle-green-600: #16a34a;
+        --cradle-green-700: #15803d;
+        --cradle-green-800: #166534;
+        --cradle-green-900: #14532d;
+
+        /* Color Palette - Blue (same in dark mode) */
+        --cradle-blue-50: #eff6ff;
+        --cradle-blue-100: #dbeafe;
+        --cradle-blue-200: #bfdbfe;
+        --cradle-blue-300: #93c5fd;
+        --cradle-blue-400: #60a5fa;
+        --cradle-blue-500: #3b82f6;
+        --cradle-blue-600: #2563eb;
+        --cradle-blue-700: #1d4ed8;
+        --cradle-blue-800: #1e40af;
+        --cradle-blue-900: #1e3a8a;
+
+        /* Color Palette - Red (same in dark mode) */
+        --cradle-red-50: #fef2f2;
+        --cradle-red-100: #fee2e2;
+        --cradle-red-200: #fecaca;
+        --cradle-red-300: #fca5a5;
+        --cradle-red-400: #f87171;
+        --cradle-red-500: #ef4444;
+        --cradle-red-600: #dc2626;
+        --cradle-red-700: #b91c1c;
+        --cradle-red-800: #991b1b;
+        --cradle-red-900: #7f1d1d;
+
+        /* Color Palette - Purple (same in dark mode) */
+        --cradle-purple-50: #faf5ff;
+        --cradle-purple-100: #f3e8ff;
+        --cradle-purple-200: #e9d5ff;
+        --cradle-purple-300: #d8b4fe;
+        --cradle-purple-400: #c084fc;
+        --cradle-purple-500: #a855f7;
+        --cradle-purple-600: #9333ea;
+        --cradle-purple-700: #7e22ce;
+        --cradle-purple-800: #6b21a8;
+        --cradle-purple-900: #581c87;
 
         /* Glows & Shadows */
         --cradle-glow-primary: rgba(255, 140, 0, 0.3);

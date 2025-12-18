@@ -21,6 +21,7 @@ import {
     indentWithTab,
 } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
+import { yamlFrontmatter } from '@codemirror/lang-yaml';
 import { HighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
@@ -233,14 +234,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
             referenceLinksPlugin(referenceMappings, navigate, fileDownloadFn),
-            markdown({
-                codeLanguages: languages,
-                extensions: [
-                    GFM,
-                    editorUtils.extension(),
-                    referenceLinkSyntax(referenceMappings || {}),
-                    ...(source ? [additionalMarkdownSyntaxTags] : [prosemarkMarkdownSyntaxExtensions]),
-                ],
+            yamlFrontmatter({
+                content: markdown({
+                    codeLanguages: languages,
+                    extensions: [
+                        GFM,
+                        editorUtils.extension(),
+                        referenceLinkSyntax(referenceMappings || {}),
+                        ...(source ? [additionalMarkdownSyntaxTags] : [prosemarkMarkdownSyntaxExtensions]),
+                    ],
+                }),
             }),
             ...(!source
                 ? [

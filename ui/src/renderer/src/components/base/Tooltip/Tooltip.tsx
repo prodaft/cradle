@@ -91,12 +91,12 @@ const Tooltip = ({
 
     // Color variants
     const colorClasses: Record<TooltipColor, string> = {
-        primary: 'bg-primary text-white fill-primary',
-        secondary: 'bg-secondary text-white fill-secondary',
-        success: 'bg-success text-white fill-success',
-        error: 'bg-error text-white fill-error',
-        warning: 'bg-warning text-white fill-warning',
-        info: 'bg-info text-white fill-info',
+        primary: 'bg-cradle-accent-primary text-white fill-primary',
+        secondary: 'bg-cradle-accent-secondary text-white fill-secondary',
+        success: 'bg-green-500 text-white fill-success',
+        error: 'bg-red-500 text-white fill-error',
+        warning: 'bg-yellow-500 text-white fill-warning',
+        info: 'bg-blue-500 text-white fill-info',
     };
 
     // Size variants
