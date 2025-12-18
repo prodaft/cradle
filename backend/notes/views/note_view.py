@@ -670,7 +670,13 @@ class NoteFiles(APIView):
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-timestamp")
-        valid_order_fields = ["timestamp", "file_name", "mimetype", "note__timestamp"]
+        valid_order_fields = [
+            "timestamp",
+            "file_name",
+            "mimetype",
+            "note__timestamp",
+            "file_size",
+        ]
 
         # Parse and validate order_by parameter
         order_fields, error_response = validate_order_by(order_by, valid_order_fields)

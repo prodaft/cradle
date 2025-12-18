@@ -53,6 +53,12 @@ export interface FileReferenceWithNote {
     readonly entities?: Array<OptimizedEntryResponse>;
     /**
      * 
+     * @type {number}
+     * @memberof FileReferenceWithNote
+     */
+    fileSize?: number | null;
+    /**
+     * 
      * @type {string}
      * @memberof FileReferenceWithNote
      */
@@ -119,6 +125,7 @@ export function FileReferenceWithNoteFromJSONTyped(json: any, ignoreDiscriminato
         'minioFileName': json['minio_file_name'],
         'mimetype': json['mimetype'] == null ? undefined : json['mimetype'],
         'entities': json['entities'] == null ? undefined : ((json['entities'] as Array<any>).map(OptimizedEntryResponseFromJSON)),
+        'fileSize': json['file_size'] == null ? undefined : json['file_size'],
         'fileName': json['file_name'],
         'bucketName': json['bucket_name'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
@@ -142,6 +149,7 @@ export function FileReferenceWithNoteToJSONTyped(value?: Omit<FileReferenceWithN
         
         'minio_file_name': value['minioFileName'],
         'mimetype': value['mimetype'],
+        'file_size': value['fileSize'],
         'file_name': value['fileName'],
         'bucket_name': value['bucketName'],
         'md5_hash': value['md5Hash'],

@@ -11,7 +11,8 @@ import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileReferenceWithNote } from '@services/cradle/models';
-import { Download, Search, Xmark } from 'iconoir-react';
+import bytes from 'bytes';
+import { Search, Xmark } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
@@ -50,6 +51,7 @@ const SORT_FIELD_MAPPING: Record<string, string> = {
     name: 'file_name',
     uploadedAt: 'timestamp',
     mimetype: 'mimetype',
+    fileSize: 'file_size',
 };
 
 // Empty defaults to prevent new object creation on each render
@@ -301,9 +303,9 @@ export default function FilesList({
             { key: 'name', label: 'Name', className: 'w-64' },
             { key: 'entities', label: 'Entities', className: 'w-32' },
             { key: 'mimetype', label: 'MimeType', className: 'w-32' },
+            { key: 'fileSize', label: 'Size', className: 'w-24' },
             { key: 'sha256', label: 'SHA256', className: 'w-48' },
             { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
-            { key: 'actions', label: '', className: 'w-4' },
         ],
         [],
     );
@@ -363,6 +365,11 @@ export default function FilesList({
                         </div>
                     </td>
                     <td className='truncate w-32'>{truncateText(file.mimetype, 32)}</td>
+                    <td className='w-24'>
+                        {file.fileSize != null
+                            ? bytes.format(file.fileSize, { unitSeparator: ' ' })
+                            : '-'}
+                    </td>
                     <td className='w-48'>
                         {file.sha256Hash ? (
                             <Tooltip content='Click to copy'>
@@ -370,27 +377,15 @@ export default function FilesList({
                                     className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded truncate block'
                                     onClick={() => copyToClipboard(file.sha256Hash!)}
                                 >
-                                    {file.sha256Hash!.substring(0, 21)}...
+                                    {file.sha256Hash!.substring(0, 48)}...
                                 </span>
                             </Tooltip>
                         ) : (
                             '-'
                         )}
                     </td>
-                    <td className=''>
+                    <td className='w-32'>
                         {file.timestamp ? formatDate(file.timestamp) : '-'}
-                    </td>
-                    <td className='w-4 action'>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownloadFile(file);
-                            }}
-                            className='cursor-pointer rounded flex items-center justify-center p-0.5'
-                            title='Download file'
-                        >
-                            <Download className='w-4' />
-                        </button>
                     </td>
                 </tr>
             );

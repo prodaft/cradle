@@ -48,7 +48,7 @@ import {
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
-import { FileReference } from '@services/cradle/models';
+import { FileReference, FileReferenceWithNote } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import {
@@ -61,6 +61,7 @@ import {
     useRef,
     useState,
 } from 'react';
+import FileUploadModal from '../../modals/notes/FileUploadModal';
 import FileTable from '../files/FileTable';
 
 interface RichEditorProps {
@@ -143,6 +144,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     ref,
 ) {
     const [showFileList, setShowFileList] = useState(false);
+    const [showFileUploadModal, setShowFileUploadModal] = useState(false);
+    const [clipboardFiles, setClipboardFiles] = useState<File[]>([]);
     const { profile } = useProfile();
     const { isDarkMode } = useTheme();
     const { entriesApi, fileTransferApi } = useApi();
@@ -219,6 +222,38 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         });
     }, []);
 
+    // Handle paste events to detect files
+    const pasteHandler = useMemo(() => {
+        return Prec.high(
+            EditorView.domEventHandlers({
+                paste: (event) => {
+                    const items = event.clipboardData?.items;
+                    if (!items) return false;
+
+                    const files: File[] = [];
+                    for (let i = 0; i < items.length; i++) {
+                        const item = items[i];
+                        if (item.kind === 'file') {
+                            const file = item.getAsFile();
+                            if (file) {
+                                files.push(file);
+                            }
+                        }
+                    }
+
+                    if (files.length > 0) {
+                        event.preventDefault();
+                        setClipboardFiles(files);
+                        setShowFileUploadModal(true);
+                        return true;
+                    }
+
+                    return false;
+                },
+            }),
+        );
+    }, []);
+
     // Use prop referenceMappings if provided, otherwise compute from fileData
     const referenceMappings = useMemo(() => {
         if (propReferenceMappings) return propReferenceMappings;
@@ -269,6 +304,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     baseSyntaxHighlights,
                 ]
                 : [sourceModeSyntaxHighlighting]),
+            pasteHandler,
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
             history(),
@@ -351,8 +387,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         saveNote,
         setMarkdownContent,
         codeBlockCopyExtension,
+        pasteHandler,
         referenceMappings,
         fileDownloadFn,
+        notify,
     ]);
 
     // Reconfigure extensions when they change
@@ -470,6 +508,18 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const toggleFileList = useCallback(() => setShowFileList((prev) => !prev), []);
 
+    const handleFileUploadModalClose = useCallback(() => {
+        setShowFileUploadModal(false);
+        setClipboardFiles([]);
+    }, []);
+
+    const handleFilesChange = useCallback(
+        (files: FileReferenceWithNote[]) => {
+            setFileData(files as FileReference[]);
+        },
+        [setFileData],
+    );
+
     return (
         <div className="h-full w-full flex flex-col overflow-hidden">
             <div className="flex-1 min-h-0 relative">
@@ -502,6 +552,26 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                                 insertTextCallback={insertTextToCodeMirror}
                             />
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* File Upload Modal */}
+            {showFileUploadModal && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                    onClick={handleFileUploadModalClose}
+                >
+                    <div
+                        className="bg-cradle-bg-primary rounded-lg shadow-xl p-6"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <FileUploadModal
+                            files={fileData as FileReferenceWithNote[]}
+                            onFilesChange={handleFilesChange}
+                            closeModal={handleFileUploadModalClose}
+                            initialFiles={clipboardFiles}
+                        />
                     </div>
                 </div>
             )}

@@ -12,6 +12,8 @@ export interface FileUploadModalProps {
     onFilesChange: (files: FileReferenceWithNote[]) => void;
     /** Function to close the modal */
     closeModal: () => void;
+    /** Optional initial files from clipboard or other sources */
+    initialFiles?: File[];
 }
 
 /**
@@ -32,8 +34,9 @@ export default function FileUploadModal({
     files,
     onFilesChange,
     closeModal,
+    initialFiles = [],
 }: FileUploadModalProps): JSX.Element {
-    const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+    const [pendingFiles, setPendingFiles] = useState<File[]>(initialFiles);
     const [fileData, setFileData] = useState<FileReference[]>([]);
 
     // When new files are uploaded via FileInput, add them to the files list
