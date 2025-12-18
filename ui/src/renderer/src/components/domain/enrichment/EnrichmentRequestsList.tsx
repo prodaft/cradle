@@ -6,6 +6,7 @@ import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { EnrichmentRequestList } from '@services/cradle/models';
 import { Search, Xmark } from 'iconoir-react';
+import { capitalize } from 'lodash';
 import { ChangeEvent, FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 
 type EnrichmentRequest = EnrichmentRequestList;
@@ -181,7 +182,7 @@ function EnrichmentRequestsList({
                     <span
                         className={getStatusBadgeClasses(request.status || '')}
                     >
-                        {request.status}
+                        {capitalize(request.status || '')}
                     </span>
                 </td>
                 <td className='w-32'>{request.userDetail?.username || 'N/A'}</td>

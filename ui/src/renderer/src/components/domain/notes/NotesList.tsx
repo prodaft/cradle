@@ -16,6 +16,7 @@ import {
     Xmark,
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import TableCard from '../../base/Card/TableCard';
 import ListView, { DateRangeFilter, SortDirection } from '../../base/ListView/ListView';
@@ -75,8 +76,12 @@ interface NotesListProps {
 
 function StatusHeaderCircle({ onStatusChange, status = null }: { onStatusChange: (status: string) => void, status: string | null }) {
     const [currentStatus, setCurrentStatus] = useState(status || 'all');
+    const [isOpen, setIsOpen] = useState(false);
+    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+    const buttonRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const statusOrder = ['all', 'fleeting', 'healthy', 'warning', 'invalid', 'processing'];
+    const statusOptions = ['all', 'fleeting', 'healthy', 'warning', 'invalid', 'processing'];
 
     const getStatusIcon = (status: string) => {
         switch (status) {
@@ -145,23 +150,83 @@ function StatusHeaderCircle({ onStatusChange, status = null }: { onStatusChange:
         }
     };
 
-    const cycleStatus = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const currentIndex = statusOrder.indexOf(currentStatus);
-        const nextIndex = (currentIndex + 1) % statusOrder.length;
-        setCurrentStatus(statusOrder[nextIndex]);
-        onStatusChange(statusOrder[nextIndex]);
+    const handleStatusSelect = (selectedStatus: string) => {
+        setCurrentStatus(selectedStatus);
+        onStatusChange(selectedStatus);
+        setIsOpen(false);
     };
 
+    const toggleDropdown = (e: React.MouseEvent) => {
+        e.stopPropagation();
+
+        if (!isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setDropdownPosition({
+                top: rect.bottom + 8,
+                left: rect.left + rect.width / 2,
+            });
+        }
+
+        setIsOpen(!isOpen);
+    };
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                buttonRef.current &&
+                !dropdownRef.current.contains(event.target as Node) &&
+                !buttonRef.current.contains(event.target as Node)
+            ) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+
     return (
-        <Tooltip content={getStatusLabel(currentStatus)}>
+        <>
             <button
-                onClick={cycleStatus}
-                className='inline-flex items-center justify-center'
+                ref={buttonRef}
+                onClick={toggleDropdown}
+                className='inline-flex items-center justify-center hover:opacity-70 transition-opacity'
             >
                 {getStatusIcon(currentStatus)}
             </button>
-        </Tooltip>
+
+            {isOpen && createPortal(
+                <div
+                    ref={dropdownRef}
+                    className='fixed bg-cradle-bg-elevated border border-cradle-border-accent rounded-lg shadow-lg p-2 z-[9999] flex flex-col gap-1'
+                    style={{
+                        top: `${dropdownPosition.top}px`,
+                        left: `${dropdownPosition.left}px`,
+                        transform: 'translateX(-50%)',
+                    }}
+                >
+                    {statusOptions.map((statusOption) => (
+                        <Tooltip key={statusOption} content={getStatusLabel(statusOption)} side='right'>
+                            <button
+                                onClick={() => handleStatusSelect(statusOption)}
+                                className={`flex items-center justify-center w-9 h-9 rounded-md hover:bg-cradle-bg-secondary transition-colors ${
+                                    currentStatus === statusOption ? 'bg-cradle-bg-secondary ring-1 ring-cradle-accent-primary' : ''
+                                }`}
+                            >
+                                {getStatusIcon(statusOption)}
+                            </button>
+                        </Tooltip>
+                    ))}
+                </div>,
+                document.body
+            )}
+        </>
     );
 }
 
@@ -603,14 +668,12 @@ export default function NotesList({
                         </div>
                     </td>
                     <td className={`truncate w-64`}>
-                        <Tooltip content={note.metadata?.title}>
-                            <span className='truncate'>
-                                {truncateText(
-                                    parseMarkdownInline(note.metadata?.title || ''),
-                                    64,
-                                )}
-                            </span>
-                        </Tooltip>
+                        <span className='truncate'>
+                            {truncateText(
+                                parseMarkdownInline(note.metadata?.title || ''),
+                                64,
+                            )}
+                        </span>
                     </td>
                     <td className='truncate max-w-xs'>
                         {note.metadata?.description
