@@ -3,6 +3,7 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { formatDate } from '@/utils/dates';
 import AlertBox from '@components/base/Alert/AlertBox';
+import Badge from '@components/base/Badge/Badge';
 import Pagination from '@components/base/Pagination/Pagination';
 import ReactJson from '@microlink/react-json-view';
 import {
@@ -243,15 +244,9 @@ export default function EnrichmentResults(): JSX.Element {
         }
 
         return (
-            <span
-                className='badge badge-xs px-1 text-white text-[10px]'
-                style={{
-                    backgroundColor: entry.color || '#ccc',
-                    borderColor: entry.color || '#ccc',
-                }}
-            >
+            <Badge color={entry.color || '#ccc'} shape='pill'>
                 {entry.subtype}: {entry.name}
-            </span>
+            </Badge>
         );
     };
 

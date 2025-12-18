@@ -219,8 +219,10 @@ class EnrichmentAPIView(APIView):
         """List enrichment requests with optional filters, sorting, and pagination"""
         from core.utils import validate_order_by
 
-        # Start with user's enrichment requests
-        queryset = EnrichmentRequest.objects.filter(user=request.user)
+        if request.user.is_cradle_admin:
+            queryset = EnrichmentRequest.objects.all()
+        else:
+            queryset = EnrichmentRequest.objects.filter(user=request.user)
 
         # Handle page_size parameter
         try:

@@ -7,7 +7,7 @@ import {
     EntryClassRequest,
     EntryClassRequestTypeEnum,
 } from '@services/cradle/models';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -104,6 +104,7 @@ export default function EntryTypeForm({
     const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const colorButtonRef = useRef<HTMLDivElement>(null);
 
     const {
         register,
@@ -345,6 +346,7 @@ export default function EntryTypeForm({
                                                 )}
                                             />
                                             <div
+                                                ref={colorButtonRef}
                                                 className='h-10 w-12 rounded cursor-pointer border border-gray-300 flex-shrink-0'
                                                 style={{ backgroundColor: watchColor }}
                                                 onClick={() => setShowColorPicker(!showColorPicker)}
@@ -370,26 +372,50 @@ export default function EntryTypeForm({
                                                 </svg>
                                             </button>
                                         </div>
-                                        {showColorPicker && (
-                                            <div className='relative mt-2'>
-                                                <div
-                                                    className='fixed inset-0 z-10'
-                                                    onClick={() => setShowColorPicker(false)}
-                                                />
-                                                <div className='absolute z-20'>
-                                                    <Controller
-                                                        name='color'
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <HexColorPicker
-                                                                color={field.value}
-                                                                onChange={field.onChange}
-                                                            />
-                                                        )}
+                                        {showColorPicker && colorButtonRef.current && (() => {
+                                            const buttonRect = colorButtonRef.current!.getBoundingClientRect();
+                                            const pickerWidth = 200; // Approximate width of HexColorPicker
+                                            const pickerHeight = 200; // Approximate height of HexColorPicker
+
+                                            // Calculate horizontal position
+                                            let leftPos = buttonRect.left;
+                                            // If picker would go off the right edge, align it to the right of the button
+                                            if (leftPos + pickerWidth > window.innerWidth) {
+                                                leftPos = buttonRect.right - pickerWidth;
+                                            }
+                                            // Ensure it doesn't go off the left edge either
+                                            leftPos = Math.max(8, leftPos);
+
+                                            // Calculate vertical position (above the button)
+                                            const bottomPos = window.innerHeight - buttonRect.top + 8;
+
+                                            return (
+                                                <>
+                                                    <div
+                                                        className='fixed inset-0 z-10'
+                                                        onClick={() => setShowColorPicker(false)}
                                                     />
-                                                </div>
-                                            </div>
-                                        )}
+                                                    <div
+                                                        className='fixed z-20'
+                                                        style={{
+                                                            left: `${leftPos}px`,
+                                                            bottom: `${bottomPos}px`,
+                                                        }}
+                                                    >
+                                                        <Controller
+                                                            name='color'
+                                                            control={control}
+                                                            render={({ field }) => (
+                                                                <HexColorPicker
+                                                                    color={field.value}
+                                                                    onChange={field.onChange}
+                                                                />
+                                                            )}
+                                                        />
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
                                         {errors.color && (
                                             <p className='text-sm text-red-500 mt-1'>
                                                 {errors.color.message}

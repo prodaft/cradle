@@ -47,7 +47,7 @@ import {
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
-import { vim, Vim } from '@replit/codemirror-vim';
+import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
 import { FileReference } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
@@ -322,9 +322,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
 
         if (profile?.vimMode) {
-            Vim.defineEx('write', 'w', (cm: any) => {
-                setMarkdownContent(cm.state.doc.toString());
-                saveNote(true);
+            Vim.defineEx('write', 'w', (cm: CodeMirror) => {
+                try {
+                    setMarkdownContent(cm.cm6.state.doc.toString());
+                    saveNote(true);
+                } catch (error) {
+                    notify({
+                        type: 'error',
+                        text: "Failed to save note. Please try again with Ctrl-S.",
+                    });
+                    console.error('Failed to save note:', error);
+                }
                 return true;
             });
             exts = exts.concat(vim());
@@ -369,7 +377,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     state,
                     parent: editorRef.current,
                     dispatch: (tr: Transaction) => {
-                        console.log(tr);
                         view.update([tr]);
                         if (tr.docChanged) {
                             const newContent = tr.state.doc.toString();

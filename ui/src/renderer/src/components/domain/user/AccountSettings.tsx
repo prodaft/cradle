@@ -212,10 +212,10 @@ export default function AccountSettings({
             payload.password = data.password;
         }
         if (data.catalystApiKey !== 'apikey' && data.catalystApiKey !== previousData?.catalystApiKey) {
-            payload.catalyst_api_key = data.catalystApiKey;
+            payload.catalystApiKey = data.catalystApiKey;
         }
         if (data.vimMode !== previousData?.vimMode) {
-            payload.vim_mode = data.vimMode;
+            payload.vimMode = data.vimMode;
         }
         if (data.theme !== previousData?.theme) {
             payload.theme = data.theme;
@@ -409,7 +409,6 @@ export default function AccountSettings({
                 actionName: 'simulate',
             }),
         )
-        console.log(res);
         auth.setTokensDirectly(res as any);
         nativeNavigate('/', { replace: true });
     };
