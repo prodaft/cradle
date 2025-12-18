@@ -21,7 +21,7 @@ import {
     indentWithTab,
 } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
-import { indentOnInput } from '@codemirror/language';
+import { HighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
@@ -33,10 +33,13 @@ import {
     lineNumbers,
     rectangularSelection,
 } from '@codemirror/view';
+import { tags } from '@lezer/highlight';
 import { GFM } from '@lezer/markdown';
 import {
+    additionalMarkdownSyntaxTags,
     baseSyntaxHighlights,
     clickLinkHandler,
+    markdownTags,
     prosemarkBaseThemeSetup,
     prosemarkBasicSetup,
     prosemarkMarkdownSyntaxExtensions
@@ -76,6 +79,46 @@ interface RichEditorProps {
 export interface RichEditorRef {
     view: EditorView | null;
 }
+
+// Custom syntax highlighting for source mode - colors and text decorations
+const sourceModeSyntaxHighlighting = syntaxHighlighting(
+    HighlightStyle.define([
+        // Markdown syntax elements
+        { tag: markdownTags.headerMark, color: 'var(--pm-header-mark-color)' },
+        { tag: markdownTags.listMark, color: 'var(--pm-header-mark-color)' },
+        { tag: tags.strong, fontWeight: 'bold' },
+        { tag: tags.emphasis, fontStyle: 'italic' },
+        { tag: tags.strikethrough, textDecoration: 'line-through' },
+        { tag: tags.meta, color: 'var(--pm-muted-color)' },
+        { tag: tags.comment, color: 'var(--pm-muted-color)' },
+        { tag: markdownTags.escapeMark, color: 'var(--pm-muted-color)' },
+        { tag: markdownTags.inlineCode, color: 'var(--pm-syntax-keyword)' },
+        { tag: markdownTags.linkURL, color: 'var(--pm-link-color)', textDecoration: 'underline' },
+        // Code block syntax highlighting
+        { tag: tags.link, color: 'var(--pm-syntax-link)' },
+        { tag: tags.keyword, color: 'var(--pm-syntax-keyword)' },
+        {
+            tag: [tags.atom, tags.bool, tags.url, tags.contentSeparator, tags.labelName],
+            color: 'var(--pm-syntax-atom)',
+        },
+        { tag: [tags.literal, tags.inserted], color: 'var(--pm-syntax-literal)' },
+        { tag: [tags.string, tags.deleted], color: 'var(--pm-syntax-string)' },
+        {
+            tag: [tags.regexp, tags.escape, tags.special(tags.string)],
+            color: 'var(--pm-syntax-regexp)',
+        },
+        { tag: tags.definition(tags.variableName), color: 'var(--pm-syntax-definition-variable)' },
+        { tag: tags.local(tags.variableName), color: 'var(--pm-syntax-local-variable)' },
+        { tag: [tags.typeName, tags.namespace], color: 'var(--pm-syntax-type-namespace)' },
+        { tag: tags.className, color: 'var(--pm-syntax-class-name)' },
+        {
+            tag: [tags.special(tags.variableName), tags.macroName],
+            color: 'var(--pm-syntax-special-variable-macro)',
+        },
+        { tag: tags.definition(tags.propertyName), color: 'var(--pm-syntax-definition-property)' },
+        { tag: tags.invalid, color: 'var(--pm-syntax-invalid)' },
+    ])
+);
 
 /**
  * RichEditor component that uses CodeMirror for markdown editing
@@ -196,10 +239,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     GFM,
                     editorUtils.extension(),
                     referenceLinkSyntax(referenceMappings || {}),
-                    ...((source) ? [] : [prosemarkMarkdownSyntaxExtensions]),
+                    ...(source ? [additionalMarkdownSyntaxTags] : [prosemarkMarkdownSyntaxExtensions]),
                 ],
             }),
-            // ProseMark rendering only for Rich Editor mode (hides syntax markers)
             ...(!source
                 ? [
                     prosemarkBasicSetup(),
@@ -212,7 +254,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     // Syntax highlighting for both modes
                     baseSyntaxHighlights,
                 ]
-                : []),
+                : [sourceModeSyntaxHighlighting]),
             Prec.high(cradleTheme),
             EditorView.lineWrapping,
             history(),

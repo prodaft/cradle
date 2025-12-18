@@ -122,7 +122,7 @@ export default function ActionsDropdown({
                                 data-testid='markdown-editor-menu-item'
                             >
                                 <Code width='16' height='16' />
-                                <span className='flex-1'>Markdown Editor</span>
+                                <span className='flex-1'>Source Editor</span>
                                 {activeView === ViewMode.CONTENT && !richEditor && (
                                     <Check width='16' height='16' />
                                 )}
