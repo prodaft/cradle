@@ -43,6 +43,12 @@ export interface FileReferenceRequest {
      * @memberof FileReferenceRequest
      */
     bucketName: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof FileReferenceRequest
+     */
+    fileSize?: number | null;
 }
 
 /**
@@ -69,6 +75,7 @@ export function FileReferenceRequestFromJSONTyped(json: any, ignoreDiscriminator
         'minioFileName': json['minio_file_name'],
         'fileName': json['file_name'],
         'bucketName': json['bucket_name'],
+        'fileSize': json['file_size'] == null ? undefined : json['file_size'],
     };
 }
 
@@ -87,6 +94,7 @@ export function FileReferenceRequestToJSONTyped(value?: FileReferenceRequest | n
         'minio_file_name': value['minioFileName'],
         'file_name': value['fileName'],
         'bucket_name': value['bucketName'],
+        'file_size': value['fileSize'],
     };
 }
 

@@ -45,6 +45,7 @@ models/EntityRequest.ts
 models/Entry.ts
 models/EntryClass.ts
 models/EntryClassRequest.ts
+models/EntryClassSerializerCount.ts
 models/EntryClassSerializerMinimal.ts
 models/EntryClassSerializerNoChildren.ts
 models/EntryClassSerializerNoChildrenRequest.ts

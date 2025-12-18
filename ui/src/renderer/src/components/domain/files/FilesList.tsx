@@ -1,9 +1,11 @@
+import Tooltip from '@/components/base/Tooltip/Tooltip';
 import { useNotif } from '@/contexts';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import AlertBox from '@components/base/Alert/AlertBox';
+import Badge from '@components/base/Badge/Badge';
 import TableCard from '@components/base/Card/TableCard';
 import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
@@ -11,7 +13,7 @@ import { useDroppable } from '@dnd-kit/core';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { Download, Search, Xmark } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface FilesListQuery {
     date?: string;
@@ -65,6 +67,7 @@ export default function FilesList({
     onCountChange,
 }: FilesListProps) {
     const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
     const [files, setFiles] = useState<FileReferenceWithNote[]>([]);
     const [alert, setInternalAlert] = useState<Alert>({
         show: false,
@@ -185,10 +188,9 @@ export default function FilesList({
                     console.error('Failed to copy text: ', error);
                 })
                 .then(() => {
-                    setAlert({
-                        show: true,
-                        message: 'Copied to clipboard',
-                        color: 'green',
+                    notify({
+                        type: 'success',
+                        text: 'Copied to clipboard',
                     });
                 });
         },
@@ -342,29 +344,35 @@ export default function FilesList({
                     <td className=''>
                         <div className='flex flex-wrap gap-1'>
                             {file.entities?.slice(0, 3).map((entity) => (
-                                <span
+                                <div
                                     key={entity.name}
-                                    className='badge badge-xs px-1 text-white'
-                                    style={{
-                                        backgroundColor: entity.color || '#ccc',
-                                        borderColor: entity.color || '#ccc',
+                                    className='cursor-pointer'
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(
+                                            `/dashboards/${entity.subtype || 'unknown'}/${encodeURIComponent(entity.name)}`,
+                                        );
                                     }}
+                                    title={`View ${entity.subtype || 'entity'}: ${entity.name}`}
                                 >
-                                    {entity.name}
-                                </span>
+                                    <Badge color={entity.color || '#ccc'} shape='pill'>
+                                        {entity.name}
+                                    </Badge>
+                                </div>
                             ))}
                         </div>
                     </td>
                     <td className='truncate w-32'>{truncateText(file.mimetype, 32)}</td>
                     <td className='w-48'>
                         {file.sha256Hash ? (
-                            <span
-                                className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded truncate block'
-                                onClick={() => copyToClipboard(file.sha256Hash!)}
-                                title='Click to copy'
-                            >
-                                {file.sha256Hash!.substring(0, 21)}...
-                            </span>
+                            <Tooltip content='Click to copy'>
+                                <span
+                                    className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded truncate block'
+                                    onClick={() => copyToClipboard(file.sha256Hash!)}
+                                >
+                                    {file.sha256Hash!.substring(0, 21)}...
+                                </span>
+                            </Tooltip>
                         ) : (
                             '-'
                         )}

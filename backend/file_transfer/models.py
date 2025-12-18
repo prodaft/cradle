@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from django.db import models
 from django_lifecycle import AFTER_CREATE, AFTER_DELETE, LifecycleModelMixin, hook
+
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from management.settings import cradle_settings
@@ -51,6 +52,9 @@ class FileReference(models.Model, LifecycleModelMixin):
         max_length=64, null=True, blank=True
     )
     mimetype: models.CharField = models.CharField(max_length=255, null=True, blank=True)
+    file_size: models.BigIntegerField = models.PositiveBigIntegerField(
+        null=True, blank=True
+    )
 
     def to_dict(self) -> dict[str, str]:
         return {

@@ -49,6 +49,12 @@ export interface FileReference {
      * @memberof FileReference
      */
     readonly timestamp?: Date;
+    /**
+     * 
+     * @type {number}
+     * @memberof FileReference
+     */
+    fileSize?: number | null;
 }
 
 /**
@@ -76,6 +82,7 @@ export function FileReferenceFromJSONTyped(json: any, ignoreDiscriminator: boole
         'fileName': json['file_name'],
         'bucketName': json['bucket_name'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
+        'fileSize': json['file_size'] == null ? undefined : json['file_size'],
     };
 }
 
@@ -94,6 +101,7 @@ export function FileReferenceToJSONTyped(value?: Omit<FileReference, 'timestamp'
         'minio_file_name': value['minioFileName'],
         'file_name': value['fileName'],
         'bucket_name': value['bucketName'],
+        'file_size': value['fileSize'],
     };
 }
 

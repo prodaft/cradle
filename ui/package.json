@@ -78,6 +78,7 @@
         "@uiw/codemirror-theme-vscode": "^4.25.3",
         "@uiw/react-codemirror": "^4.25.3",
         "axios-cache-interceptor": "^1.8.3",
+        "bytes": "^3.1.2",
         "cytoscape": "^3.33.1",
         "d3": "^7.9.0",
         "date-fns": "^4.1.0",

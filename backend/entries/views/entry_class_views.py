@@ -11,24 +11,28 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import get_error_responses, get_validation_error_response, get_common_error_responses
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasEntryManagerRole
 
+from ..exceptions import (
+    AdminOnlyEntryClassDeleteException,
+    AdminOnlyEntryClassTypeChangeException,
+    AdminOnlyViewCountException,
+    CannotDeleteAliasClassException,
+    CannotEditAliasClassException,
+    EntriesErrorCodes,
+    EntryClassNotFoundException,
+)
 from ..models import Entry, EntryClass
 from ..serializers import (
     EntryClassSerializer,
     EntryClassSerializerCount,
     NextNameResponseSerializer,
-)
-from ..exceptions import (
-    EntryClassNotFoundException,
-    CannotDeleteAliasClassException,
-    CannotEditAliasClassException,
-    AdminOnlyEntryClassDeleteException,
-    AdminOnlyEntryClassTypeChangeException,
-    AdminOnlyViewCountException,
-    EntriesErrorCodes,
 )
 
 
@@ -46,7 +50,7 @@ from ..exceptions import (
             )
         ],
         responses={
-            200: EntryClassSerializer(many=True),
+            200: EntryClassSerializerCount(many=True),
             **get_error_responses(
                 EntriesErrorCodes.ADMIN_ONLY_VIEW_COUNT,
             ),

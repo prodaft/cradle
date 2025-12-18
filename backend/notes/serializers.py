@@ -207,6 +207,7 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
             "minio_file_name",
             "mimetype",
             "entities",
+            "file_size",
             "file_name",
             "bucket_name",
             "timestamp",
@@ -250,6 +251,7 @@ class FileReferenceListSerializer:
             "md5_hash": file_ref.md5_hash,
             "sha1_hash": file_ref.sha1_hash,
             "sha256_hash": file_ref.sha256_hash,
+            "file_size": file_ref.file_size,
             "entities": self._get_entities_optimized(file_ref),
         }
         return data

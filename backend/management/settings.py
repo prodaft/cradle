@@ -57,20 +57,8 @@ class FileSettings(BaseSettingsSection):
         return self.get("sha256_subtype", "hash/sha256")
 
     @property
-    def mimetype_patterns(self):
-        default_patterns = [
-            "application/x-pie-executable",
-            "application/vnd.microsoft.portable-executable",
-            "application/x-dosexec",
-            "application/x-msdownload",
-            "application/x-executable",
-            "application/pdf",
-            "application/msword",
-            "application/msword",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
-        ]
-        return self.get("mimetype_patterns", default_patterns)
+    def max_file_size_for_hashing(self):
+        return self.get("max_file_size_for_hashing", 10 * 1024 * 1024)  # 10MB
 
 
 class CradleSettings:

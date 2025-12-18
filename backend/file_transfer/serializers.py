@@ -1,8 +1,10 @@
+from typing import Any
+
 from rest_framework import serializers
+
 from .exceptions import MinioObjectNotFound
 from .models import FileReference
 from .utils import MinioClient
-from typing import Any
 
 
 class FileUploadSerializer(serializers.Serializer):
@@ -22,7 +24,14 @@ class FileReferenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FileReference
-        fields = ["id", "minio_file_name", "file_name", "bucket_name", "timestamp"]
+        fields = [
+            "id",
+            "minio_file_name",
+            "file_name",
+            "bucket_name",
+            "timestamp",
+            "file_size",
+        ]
 
     def validate(self, data: Any) -> Any:
         """This method validates the file reference entry. Firstly, it checks

@@ -3,7 +3,8 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
-import { EntryClass, EntryClassTypeEnum } from '@services/cradle/models';
+import { EntryClassTypeEnum } from '@services/cradle/models';
+import bytes from 'bytes';
 import { Refresh } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -16,8 +17,7 @@ import {
     SettingsCard,
     SettingsField,
     SettingsSeparator,
-    SettingsTextArea,
-    SettingsToggle,
+    SettingsToggle
 } from '../../../forms';
 import Selector from '../../../forms/Selector';
 
@@ -31,7 +31,7 @@ interface FileSettingsFormValues {
     md5Subtype: SubtypeOption | null;
     sha1Subtype: SubtypeOption | null;
     sha256Subtype: SubtypeOption | null;
-    mimetypePatterns: string;
+    maxFileSizeForHashing: string;
 }
 
 interface FileSettingsResponse {
@@ -40,7 +40,7 @@ interface FileSettingsResponse {
         md5_subtype?: string;
         sha1_subtype?: string;
         sha256_subtype?: string;
-        mimetype_patterns?: string[] | string;
+        max_file_size_for_hashing?: number;
     };
 }
 
@@ -58,7 +58,16 @@ const fileSettingsSchema: Yup.ObjectSchema<FileSettingsFormValues> = Yup.object(
         .shape({ value: Yup.string().required(), label: Yup.string().required() })
         .nullable()
         .required('SHA256 hash subtype is required'),
-    mimetypePatterns: Yup.string().required('MIME type patterns are required'),
+    maxFileSizeForHashing: Yup.string()
+        .required('Maximum file size for hashing is required')
+        .test(
+            'is-valid-bytes',
+            'Enter a valid size (e.g. 10MB, 1GB)',
+            (value) => {
+                if (!value) return false;
+                return typeof bytes(value) === 'number';
+            },
+        ),
 });
 
 export default function FileSettingsForm() {
@@ -87,8 +96,7 @@ export default function FileSettingsForm() {
             md5Subtype: null,
             sha1Subtype: null,
             sha256Subtype: null,
-            mimetypePatterns:
-                'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            maxFileSizeForHashing: "10 MB",
         },
     });
 
@@ -119,10 +127,10 @@ export default function FileSettingsForm() {
                 const entryClasses = await entriesApi.entryClassesList({});
                 const artifactSubtypes = entryClasses
                     .filter(
-                        (entry: EntryClass) =>
+                        (entry) =>
                             entry.type === EntryClassTypeEnum.Artifact,
                     )
-                    .map((entry: EntryClass) => ({
+                    .map((entry) => ({
                         value: entry.subtype,
                         label: entry.subtype,
                     }));
@@ -140,13 +148,6 @@ export default function FileSettingsForm() {
                 const settings =
                     (await managementApi.managementSettingsRetrieve()) as FileSettingsResponse;
                 if (settings.files) {
-                    const mimetypePatternsString = Array.isArray(
-                        settings.files.mimetype_patterns,
-                    )
-                        ? settings.files.mimetype_patterns.join('\n')
-                        : settings.files.mimetype_patterns ||
-                        'image/*\napplication/pdf\napplication/msword\napplication/vnd.openxmlformats-officedocument.wordprocessingml.document';
-
                     reset({
                         autoprocessFiles: settings.files.autoprocess_files ?? true,
                         md5Subtype: settings.files.md5_subtype
@@ -167,7 +168,10 @@ export default function FileSettingsForm() {
                                 label: settings.files.sha256_subtype,
                             }
                             : null,
-                        mimetypePatterns: mimetypePatternsString,
+                        maxFileSizeForHashing: settings.files.max_file_size_for_hashing
+                            ? bytes.format(settings.files.max_file_size_for_hashing, { unitSeparator: ' ' })
+                            : '10 MB',
+
                     });
                 }
             } catch (error) {
@@ -181,10 +185,6 @@ export default function FileSettingsForm() {
 
     const onSubmit = async (data: FileSettingsFormValues) => {
         try {
-            const mimetypePatternsArray = data.mimetypePatterns
-                .split('\n')
-                .filter((pattern) => pattern.trim() !== '');
-
             await managementApi.managementSettingsCreate({
                 requestBody: {
                     files: {
@@ -192,7 +192,7 @@ export default function FileSettingsForm() {
                         md5_subtype: data.md5Subtype?.value || '',
                         sha1_subtype: data.sha1Subtype?.value || '',
                         sha256_subtype: data.sha256Subtype?.value || '',
-                        mimetype_patterns: mimetypePatternsArray,
+                        max_file_size_for_hashing: bytes.parse(data.maxFileSizeForHashing),
                     },
                 },
             });
@@ -318,14 +318,11 @@ export default function FileSettingsForm() {
 
                                     <SettingsSeparator />
 
-                                    <SettingsTextArea
-                                        label='MIME Type Patterns'
-                                        description='File types to generate hashes for (one per line)'
-                                        rows={6}
-                                        placeholder='image/*&#10;application/pdf&#10;application/msword'
-                                        {...register('mimetypePatterns')}
-                                        error={errors.mimetypePatterns}
-                                        layout='vertical'
+                                    <SettingsField
+                                        label='Maximum File Size for Hashing'
+                                        description='Maximum file size for hashing'
+                                        {...register('maxFileSizeForHashing')}
+                                        error={errors.maxFileSizeForHashing}
                                     />
                                 </SettingsCard>
                             </div>

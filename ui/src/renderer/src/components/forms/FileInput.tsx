@@ -161,25 +161,32 @@ export default function FileInput({
 
     return (
         <>
-            <div className='flex flex-row space-x-2' onPaste={handlePaste}>
+            <div className='flex flex-row gap-2' onPaste={handlePaste}>
                 <input
                     type='file'
-                    className={`input-file input-file-sm ${pendingFiles.length > 0 && 'input-file-primary'} hover:border-cradle2`}
+                    className='flex-1 text-sm text-cradle-text-primary cursor-pointer
+                        file:mr-4 file:py-1.5 file:px-3
+                        file:rounded-full file:border file:border-cradle-accent-primary
+                        file:bg-cradle-accent-primary/10 file:text-cradle-accent-primary
+                        file:text-sm file:font-normal
+                        file:cursor-pointer file:transition-colors
+                        hover:file:bg-cradle-accent-primary/20
+                    '
                     multiple
                     onChange={handleFileChange}
                     ref={inputRef}
                 />
-                <div
-                    className={`${pendingFiles.length === 0 && 'hover:cursor-not-allowed opacity-50'}`}
+                <button
+                    type='button'
+                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                    onClick={handleUpload}
+                    disabled={isUploading || pendingFiles.length === 0}
                 >
-                    <button
-                        className={`btn btn-sm ${isUploading && 'btn-loading'}`}
-                        onClick={handleUpload}
-                        disabled={isUploading || pendingFiles.length === 0}
-                    >
-                        <CloudUpload width={'25px'} />
-                    </button>
-                </div>
+                    {isUploading && (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    )}
+                    <CloudUpload className='w-5 h-5' strokeWidth={2} />
+                </button>
             </div>
         </>
     );

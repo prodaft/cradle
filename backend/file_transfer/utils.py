@@ -1,11 +1,14 @@
 import io
-from typing import Optional
-from minio import Minio
 import uuid
 from datetime import timedelta
-from .exceptions import MinioObjectNotFound
-from cradle.settings import MINIO_CONFIG, MINIO_BACKEND_URL
+from typing import Optional
+
 import urllib3
+from minio import Minio
+
+from cradle.settings import MINIO_BACKEND_URL, MINIO_CONFIG
+
+from .exceptions import MinioObjectNotFound
 
 
 class MinioClient:
@@ -143,6 +146,41 @@ class MinioClient:
 
         try:
             return self.client.get_object(bucket_name, object_name=path)
+        except Exception:
+            return None
+
+    def fetch_file_size(self, bucket_name: str, path: str) -> Optional[int]:
+        """Fetches the size of a file from the MinIO instance.
+        Args:
+            bucket_name: The name of the bucket where the file is stored
+            path: The path to the file inside the bucket
+
+        Returns:
+            The size of the file
+        """
+        assert self.client is not None
+
+        try:
+            return self.client.stat_object(bucket_name, object_name=path).size
+        except Exception:
+            return None
+
+    def read_bytes(
+        self, bucket_name: str, path: str, offset: int = 0, length: int = 0
+    ) -> Optional[bytes]:
+        """Reads the bytes of a file from the MinIO instance.
+        Args:
+            bucket_name: The name of the bucket where the file is stored
+            path: The path to the file inside the bucket
+        Returns:
+            The bytes of the file
+        """
+        assert self.client is not None
+
+        try:
+            return self.client.get_object(
+                bucket_name, object_name=path, offset=offset, length=length
+            ).read()
         except Exception:
             return None
 

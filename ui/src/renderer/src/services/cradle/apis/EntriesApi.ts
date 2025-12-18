@@ -21,6 +21,7 @@ import type {
   Entry,
   EntryClass,
   EntryClassRequest,
+  EntryClassSerializerCount,
   EntryRequest,
   EntryResponse,
   NextNameResponse,
@@ -39,6 +40,8 @@ import {
     EntryClassToJSON,
     EntryClassRequestFromJSON,
     EntryClassRequestToJSON,
+    EntryClassSerializerCountFromJSON,
+    EntryClassSerializerCountToJSON,
     EntryRequestFromJSON,
     EntryRequestToJSON,
     EntryResponseFromJSON,
@@ -721,7 +724,7 @@ export class EntriesApi extends runtime.BaseAPI {
      * Retrieve a list of all entry classes.
      * List Entry Classes
      */
-    async entryClassesListRaw(requestParameters: EntryClassesListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<EntryClass>>> {
+    async entryClassesListRaw(requestParameters: EntryClassesListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<EntryClassSerializerCount>>> {
         const queryParameters: any = {};
 
         if (requestParameters['showCount'] != null) {
@@ -748,14 +751,14 @@ export class EntriesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(EntryClassFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(EntryClassSerializerCountFromJSON));
     }
 
     /**
      * Retrieve a list of all entry classes.
      * List Entry Classes
      */
-    async entryClassesList(requestParameters: EntryClassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<EntryClass>> {
+    async entryClassesList(requestParameters: EntryClassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<EntryClassSerializerCount>> {
         const response = await this.entryClassesListRaw(requestParameters, initOverrides);
         return await response.value();
     }

@@ -713,7 +713,7 @@ class NoteFiles(APIView):
                 name="page_size",
                 type=int,
                 location=OpenApiParameter.QUERY,
-                description="Number of files to return per page. Max 1000.",
+                description="Number of nodes to return per page. Max 1000.",
                 default=250,
             ),
         ],

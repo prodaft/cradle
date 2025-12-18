@@ -29,6 +29,7 @@ export * from './EntityRequest';
 export * from './Entry';
 export * from './EntryClass';
 export * from './EntryClassRequest';
+export * from './EntryClassSerializerCount';
 export * from './EntryClassSerializerMinimal';
 export * from './EntryClassSerializerNoChildren';
 export * from './EntryClassSerializerNoChildrenRequest';
