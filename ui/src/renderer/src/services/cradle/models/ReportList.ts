@@ -16,19 +16,19 @@ import { mapValues } from '../runtime';
 /**
  * 
  * @export
- * @interface Report
+ * @interface ReportList
  */
-export interface Report {
+export interface ReportList {
     /**
      * 
      * @type {string}
-     * @memberof Report
+     * @memberof ReportList
      */
     readonly id?: string;
     /**
      * 
      * @type {string}
-     * @memberof Report
+     * @memberof ReportList
      */
     title?: string;
     /**
@@ -36,19 +36,19 @@ export interface Report {
      * * `done` - Done
      * * `error` - Error
      * @type {string}
-     * @memberof Report
+     * @memberof ReportList
      */
-    status?: ReportStatusEnum;
+    status?: ReportListStatusEnum;
     /**
      * 
      * @type {boolean}
-     * @memberof Report
+     * @memberof ReportList
      */
     anonymized?: boolean;
     /**
      * 
      * @type {Date}
-     * @memberof Report
+     * @memberof ReportList
      */
     readonly createdAt?: Date;
     /**
@@ -57,37 +57,25 @@ export interface Report {
      * * `plain` - Plain Text
      * * `json` - JSON
      * @type {string}
-     * @memberof Report
+     * @memberof ReportList
      */
-    strategy: ReportStrategyEnum;
+    strategy: ReportListStrategyEnum;
     /**
      * 
      * @type {string}
-     * @memberof Report
+     * @memberof ReportList
      */
     readonly strategyLabel?: string;
     /**
      * 
      * @type {string}
-     * @memberof Report
-     */
-    readonly reportUrl?: string | null;
-    /**
-     * 
-     * @type {string}
-     * @memberof Report
+     * @memberof ReportList
      */
     errorMessage?: string | null;
     /**
      * 
-     * @type {Array<string>}
-     * @memberof Report
-     */
-    readonly noteIds?: Array<string>;
-    /**
-     * 
      * @type {any}
-     * @memberof Report
+     * @memberof ReportList
      */
     extraData?: any | null;
 }
@@ -96,38 +84,38 @@ export interface Report {
 /**
  * @export
  */
-export const ReportStatusEnum = {
+export const ReportListStatusEnum = {
     Working: 'working',
     Done: 'done',
     Error: 'error'
 } as const;
-export type ReportStatusEnum = typeof ReportStatusEnum[keyof typeof ReportStatusEnum];
+export type ReportListStatusEnum = typeof ReportListStatusEnum[keyof typeof ReportListStatusEnum];
 
 /**
  * @export
  */
-export const ReportStrategyEnum = {
+export const ReportListStrategyEnum = {
     Catalyst: 'catalyst',
     Html: 'html',
     Plain: 'plain',
     Json: 'json'
 } as const;
-export type ReportStrategyEnum = typeof ReportStrategyEnum[keyof typeof ReportStrategyEnum];
+export type ReportListStrategyEnum = typeof ReportListStrategyEnum[keyof typeof ReportListStrategyEnum];
 
 
 /**
- * Check if a given object implements the Report interface.
+ * Check if a given object implements the ReportList interface.
  */
-export function instanceOfReport(value: object): value is Report {
+export function instanceOfReportList(value: object): value is ReportList {
     if (!('strategy' in value) || value['strategy'] === undefined) return false;
     return true;
 }
 
-export function ReportFromJSON(json: any): Report {
-    return ReportFromJSONTyped(json, false);
+export function ReportListFromJSON(json: any): ReportList {
+    return ReportListFromJSONTyped(json, false);
 }
 
-export function ReportFromJSONTyped(json: any, ignoreDiscriminator: boolean): Report {
+export function ReportListFromJSONTyped(json: any, ignoreDiscriminator: boolean): ReportList {
     if (json == null) {
         return json;
     }
@@ -140,18 +128,16 @@ export function ReportFromJSONTyped(json: any, ignoreDiscriminator: boolean): Re
         'createdAt': json['created_at'] == null ? undefined : (new Date(json['created_at'])),
         'strategy': json['strategy'],
         'strategyLabel': json['strategy_label'] == null ? undefined : json['strategy_label'],
-        'reportUrl': json['report_url'] == null ? undefined : json['report_url'],
         'errorMessage': json['error_message'] == null ? undefined : json['error_message'],
-        'noteIds': json['note_ids'] == null ? undefined : json['note_ids'],
         'extraData': json['extra_data'] == null ? undefined : json['extra_data'],
     };
 }
 
-export function ReportToJSON(json: any): Report {
-    return ReportToJSONTyped(json, false);
+export function ReportListToJSON(json: any): ReportList {
+    return ReportListToJSONTyped(json, false);
 }
 
-export function ReportToJSONTyped(value?: Omit<Report, 'id'|'created_at'|'strategy_label'|'report_url'|'note_ids'> | null, ignoreDiscriminator: boolean = false): any {
+export function ReportListToJSONTyped(value?: Omit<ReportList, 'id'|'created_at'|'strategy_label'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

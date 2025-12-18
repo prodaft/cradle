@@ -1,14 +1,16 @@
 from datetime import timedelta
-from .strategies import PUBLISH_STRATEGIES
-from rest_framework import serializers
+
 from drf_spectacular.utils import extend_schema_field
+from rest_framework import serializers
+
+from file_transfer.models import FileReference
+from file_transfer.utils import MinioClient
 
 from .models import PublishedReport, ReportStatus
-from file_transfer.utils import MinioClient
-from file_transfer.models import FileReference
+from .strategies import PUBLISH_STRATEGIES
 
 
-class ReportSerializer(serializers.ModelSerializer):
+class ReportDetailSerializer(serializers.ModelSerializer):
     note_ids = serializers.SerializerMethodField()
     report_url = serializers.SerializerMethodField()
     strategy_label = serializers.SerializerMethodField()
@@ -35,6 +37,15 @@ class ReportSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_report_url(self, obj):
+        download_url = self.context.get("download_url", False)
+        print(download_url)
+        if download_url:
+            extra_headers = {
+                "Response-Content-Disposition": f"attachment; filename={obj.title}.{obj.strategy.lower()}",
+            }
+        else:
+            extra_headers = {}
+
         if obj.status != ReportStatus.DONE:
             return None
 
@@ -44,12 +55,14 @@ class ReportSerializer(serializers.ModelSerializer):
                 return strategy(False).get_remote_url(obj)
 
         if FileReference.objects.filter(report=obj).exists():
-            headers = None
+            headers = extra_headers
             strategy = PUBLISH_STRATEGIES.get(obj.strategy.lower())
             if strategy:
-                headers = {
-                    "Response-Content-Type": strategy(False).content_type,
-                }
+                headers.update(
+                    {
+                        "Response-Content-Type": strategy(False).content_type,
+                    }
+                )
 
             client = MinioClient()
             return client.create_presigned_get(
@@ -66,13 +79,26 @@ class ReportSerializer(serializers.ModelSerializer):
         return obj.get_strategy_display()
 
 
-class EditReportSerializer(serializers.Serializer):
-    note_ids = serializers.ListField(
-        child=serializers.CharField(),
-        allow_empty=False,
-        help_text="List of note IDs to update the report with.",
-    )
-    title = serializers.CharField(help_text="New title for the published report.")
+class ReportListSerializer(serializers.ModelSerializer):
+    strategy_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PublishedReport
+        fields = [
+            "id",
+            "title",
+            "status",
+            "anonymized",
+            "created_at",
+            "strategy",
+            "strategy_label",
+            "error_message",
+            "extra_data",
+        ]
+
+    @extend_schema_field(serializers.CharField())
+    def get_strategy_label(self, obj):
+        return obj.get_strategy_display()
 
 
 class PublishReportSerializer(serializers.Serializer):
@@ -88,7 +114,7 @@ class PublishReportSerializer(serializers.Serializer):
     )
 
     def validate_strategy(self, value):
-        from .models import UploadStrategies, DownloadStrategies
+        from .models import DownloadStrategies, UploadStrategies
 
         allowed = [choice[0] for choice in UploadStrategies.choices] + [
             choice[0] for choice in DownloadStrategies.choices

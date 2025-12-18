@@ -16,22 +16,25 @@
 import * as runtime from '../runtime';
 import type {
   AccessEntityList404Response,
-  PaginatedReportList,
+  PaginatedReportListList,
   PublishReportRequest,
   PublishStrategiesResponse,
-  Report,
+  ReportDetail,
+  ReportList,
 } from '../models/index';
 import {
     AccessEntityList404ResponseFromJSON,
     AccessEntityList404ResponseToJSON,
-    PaginatedReportListFromJSON,
-    PaginatedReportListToJSON,
+    PaginatedReportListListFromJSON,
+    PaginatedReportListListToJSON,
     PublishReportRequestFromJSON,
     PublishReportRequestToJSON,
     PublishStrategiesResponseFromJSON,
     PublishStrategiesResponseToJSON,
-    ReportFromJSON,
-    ReportToJSON,
+    ReportDetailFromJSON,
+    ReportDetailToJSON,
+    ReportListFromJSON,
+    ReportListToJSON,
 } from '../models/index';
 
 export interface ReportsDestroyRequest {
@@ -51,6 +54,7 @@ export interface ReportsPublishCreateRequest {
 
 export interface ReportsRetrieveRequest {
     id: string;
+    downloadUrl?: boolean;
 }
 
 export interface ReportsRetryCreateRequest {
@@ -117,7 +121,7 @@ export class ReportsApi extends runtime.BaseAPI {
      * Returns a paginated list of published reports for the authenticated user, ordered by creation date descending. Can be filtered by search term matching report ID or title.
      * Get published reports
      */
-    async reportsListRaw(requestParameters: ReportsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedReportList>> {
+    async reportsListRaw(requestParameters: ReportsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedReportListList>> {
         const queryParameters: any = {};
 
         if (requestParameters['orderBy'] != null) {
@@ -156,14 +160,14 @@ export class ReportsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedReportListFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedReportListListFromJSON(jsonValue));
     }
 
     /**
      * Returns a paginated list of published reports for the authenticated user, ordered by creation date descending. Can be filtered by search term matching report ID or title.
      * Get published reports
      */
-    async reportsList(requestParameters: ReportsListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedReportList> {
+    async reportsList(requestParameters: ReportsListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedReportListList> {
         const response = await this.reportsListRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -172,7 +176,7 @@ export class ReportsApi extends runtime.BaseAPI {
      * Creates a new published report from selected notes using specified strategy.
      * Create published report
      */
-    async reportsPublishCreateRaw(requestParameters: ReportsPublishCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Report>> {
+    async reportsPublishCreateRaw(requestParameters: ReportsPublishCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReportList>> {
         if (requestParameters['publishReportRequest'] == null) {
             throw new runtime.RequiredError(
                 'publishReportRequest',
@@ -205,14 +209,14 @@ export class ReportsApi extends runtime.BaseAPI {
             body: PublishReportRequestToJSON(requestParameters['publishReportRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => ReportFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ReportListFromJSON(jsonValue));
     }
 
     /**
      * Creates a new published report from selected notes using specified strategy.
      * Create published report
      */
-    async reportsPublishCreate(requestParameters: ReportsPublishCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Report> {
+    async reportsPublishCreate(requestParameters: ReportsPublishCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReportList> {
         const response = await this.reportsPublishCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -260,7 +264,7 @@ export class ReportsApi extends runtime.BaseAPI {
      * Returns the details of a specific report belonging to the authenticated user.
      * Get report details
      */
-    async reportsRetrieveRaw(requestParameters: ReportsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Report>> {
+    async reportsRetrieveRaw(requestParameters: ReportsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReportDetail>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
@@ -269,6 +273,10 @@ export class ReportsApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
+
+        if (requestParameters['downloadUrl'] != null) {
+            queryParameters['download_url'] = requestParameters['downloadUrl'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -291,14 +299,14 @@ export class ReportsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => ReportFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ReportDetailFromJSON(jsonValue));
     }
 
     /**
      * Returns the details of a specific report belonging to the authenticated user.
      * Get report details
      */
-    async reportsRetrieve(requestParameters: ReportsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Report> {
+    async reportsRetrieve(requestParameters: ReportsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReportDetail> {
         const response = await this.reportsRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -307,7 +315,7 @@ export class ReportsApi extends runtime.BaseAPI {
      * Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.
      * Retry failed report generation
      */
-    async reportsRetryCreateRaw(requestParameters: ReportsRetryCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Report>> {
+    async reportsRetryCreateRaw(requestParameters: ReportsRetryCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ReportList>> {
         if (requestParameters['id'] == null) {
             throw new runtime.RequiredError(
                 'id',
@@ -338,14 +346,14 @@ export class ReportsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => ReportFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => ReportListFromJSON(jsonValue));
     }
 
     /**
      * Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.
      * Retry failed report generation
      */
-    async reportsRetryCreate(requestParameters: ReportsRetryCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Report> {
+    async reportsRetryCreate(requestParameters: ReportsRetryCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ReportList> {
         const response = await this.reportsRetryCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }

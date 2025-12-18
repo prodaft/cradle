@@ -1,10 +1,12 @@
 from typing import Optional
 
+import dns.resolver
 from django.db import models
+
 from entries.enums import RelationReason
 from entries.models import Entry, EntryClass, Relation
+
 from ..base import BaseEnricher
-import dns.resolver
 
 
 class DNSEnricher(BaseEnricher):
@@ -76,7 +78,12 @@ class DNSEnricher(BaseEnricher):
                         access_vector=av,
                         reason=RelationReason.ENRICHMENT,
                         reason_context=self.name,
-                        details={"record": "A"},
+                        details={
+                            "record": "A",
+                            "ip": i.name,
+                            "ttl": i.ttl,
+                            "domain": hostname,
+                        },
                     )
                     for i in ipv4s
                 ]
@@ -92,7 +99,12 @@ class DNSEnricher(BaseEnricher):
                         access_vector=av,
                         reason=RelationReason.ENRICHMENT,
                         reason_context=self.name,
-                        details={"record": "AAAA"},
+                        details={
+                            "record": "AAAA",
+                            "ip": i.name,
+                            "ttl": i.ttl,
+                            "domain": hostname,
+                        },
                     )
                     for i in ipv6s
                 ]

@@ -572,7 +572,7 @@ class EnrichmentRelationsAPIView(APIView):
                 detail="page_size cannot be greater than 100."
             )
 
-        query_str = request.query_params.get("query")
+        query_str = request.query_params.get("query") + "*"
         if query_str:
             try:
                 query_filter = parse_query(query_str)

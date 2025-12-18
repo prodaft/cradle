@@ -5,22 +5,26 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from core.openapi import get_error_responses, get_common_error_responses, get_validation_error_response
+from core.openapi import (
+    get_common_error_responses,
+    get_error_responses,
+    get_validation_error_response,
+)
 from notes.models import Note
 
+from ..exceptions import (
+    NotesNotFoundException,
+    PublishErrorCodes,
+    StrategyNotFoundException,
+)
 from ..models import DownloadStrategies, PublishedReport, UploadStrategies
 from ..serializers import (
     PublishReportSerializer,
     PublishStrategiesResponseSerializer,
-    ReportSerializer,
+    ReportListSerializer,
 )
 from ..strategies import PUBLISH_STRATEGIES
 from ..tasks import generate_report
-from ..exceptions import (
-    NotesNotFoundException,
-    StrategyNotFoundException,
-    PublishErrorCodes,
-)
 
 
 @extend_schema_view(
@@ -37,10 +41,9 @@ from ..exceptions import (
         description="Creates a new published report from selected notes using specified strategy.",  # noqa: E501
         request=PublishReportSerializer,
         responses={
-            201: ReportSerializer,
+            201: ReportListSerializer,
             **get_error_responses(
-                PublishErrorCodes.NOTES_NOT_FOUND,
-                PublishErrorCodes.STRATEGY_NOT_FOUND
+                PublishErrorCodes.NOTES_NOT_FOUND, PublishErrorCodes.STRATEGY_NOT_FOUND
             ),
             **get_validation_error_response(),
             **get_common_error_responses(),
@@ -96,4 +99,6 @@ class PublishReportAPIView(APIView):
 
         generate_report.delay(report.id)
 
-        return Response(ReportSerializer(report).data, status=status.HTTP_201_CREATED)
+        return Response(
+            ReportListSerializer(report).data, status=status.HTTP_201_CREATED
+        )

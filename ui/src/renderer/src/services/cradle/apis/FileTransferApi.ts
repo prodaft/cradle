@@ -28,6 +28,10 @@ import {
     FileUploadToJSON,
 } from '../models/index';
 
+export interface FileTransferDeleteDestroyRequest {
+    fileId: string;
+}
+
 export interface FileTransferDownloadRetrieveRequest {
     bucketName: string;
     minioFileName: string;
@@ -41,6 +45,60 @@ export interface FileTransferUploadRetrieveRequest {
  * 
  */
 export class FileTransferApi extends runtime.BaseAPI {
+
+    /**
+     * Deletes a file reference and removes the associated file from MinIO storage.
+     * Delete a file reference
+     */
+    async fileTransferDeleteDestroyRaw(requestParameters: FileTransferDeleteDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['fileId'] == null) {
+            throw new runtime.RequiredError(
+                'fileId',
+                'Required parameter "fileId" was null or undefined when calling fileTransferDeleteDestroy().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['fileId'] != null) {
+            queryParameters['fileId'] = requestParameters['fileId'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/file-transfer/delete/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Deletes a file reference and removes the associated file from MinIO storage.
+     * Delete a file reference
+     */
+    async fileTransferDeleteDestroy(requestParameters: FileTransferDeleteDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.fileTransferDeleteDestroyRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Generates a presigned URL that allows clients to download files from Minio without requiring credentials. The URL expires after 7 days.

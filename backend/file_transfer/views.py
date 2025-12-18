@@ -1,26 +1,29 @@
+import time
 from datetime import timedelta
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.request import Request
-from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated
+
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
-from .utils import MinioClient
-from .serializers import (
-    FileUploadSerializer,
-    FileDownloadSerializer,
-    FileProcessSerializer,
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+from core.openapi import get_common_error_responses, get_error_responses
+
+from .exceptions import (
+    FileReferenceNotFoundException,
+    FileTransferErrorCodes,
+    InvalidFileNameException,
+    InvalidRequestBodyException,
 )
 from .models import FileReference
-from .exceptions import (
-    InvalidFileNameException,
-    FileReferenceNotFoundException,
-    InvalidRequestBodyException,
-    FileTransferErrorCodes,
+from .serializers import (
+    FileDownloadSerializer,
+    FileProcessSerializer,
+    FileUploadSerializer,
 )
-import time
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-from core.openapi import get_error_responses, get_common_error_responses
+from .utils import MinioClient
 
 
 @extend_schema_view(
@@ -70,7 +73,9 @@ class FileUpload(APIView):
 
         file_name = request.query_params.get("fileName")
         if not file_name:
-            raise InvalidFileNameException(detail="The 'fileName' query parameter is required.")
+            raise InvalidFileNameException(
+                detail="The 'fileName' query parameter is required."
+            )
 
         response_data = {}
         response_data["bucket_name"] = str(request.user.id)
@@ -110,7 +115,7 @@ class FileUpload(APIView):
             200: FileDownloadSerializer,
             **get_error_responses(
                 FileTransferErrorCodes.INVALID_FILE_NAME,
-                FileTransferErrorCodes.MINIO_OBJECT_NOT_FOUND
+                FileTransferErrorCodes.MINIO_OBJECT_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
@@ -168,7 +173,7 @@ class FileDownload(APIView):
             200: {"description": "File processing started successfully"},
             **get_error_responses(
                 FileTransferErrorCodes.INVALID_REQUEST_BODY,
-                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND
+                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },
@@ -209,4 +214,67 @@ class FileProcess(APIView):
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(
                 detail=f"File reference with ID {serializer.validated_data['file_id']} not found."
+            )
+
+
+@extend_schema_view(
+    delete=extend_schema(
+        summary="Delete a file reference",
+        description="Deletes a file reference and removes the associated file from MinIO storage.",
+        parameters=[
+            OpenApiParameter(
+                name="fileId",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="UUID of the file reference to delete",
+                required=True,
+            )
+        ],
+        responses={
+            200: {"description": "File reference deleted successfully"},
+            **get_error_responses(
+                FileTransferErrorCodes.INVALID_FILE_NAME,
+                FileTransferErrorCodes.FILE_REFERENCE_NOT_FOUND,
+            ),
+            **get_common_error_responses(),
+        },
+    )
+)
+class FileDelete(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request: Request) -> Response:
+        """Deletes a file reference and the associated file from MinIO storage.
+
+        Args:
+            request: The request that was sent. It expects the query parameter
+            `fileId` containing the UUID of the FileReference to delete.
+
+        Returns:
+            Response({"message": "File deleted successfully"}, status=200): if deletion was successful
+            Response({"error": "Invalid file ID"}, status=400): if the fileId parameter is missing or invalid
+            Response({"error": "File reference not found"}, status=404): if the file reference doesn't exist
+        """
+        file_id = request.query_params.get("fileId")
+
+        if not file_id:
+            raise InvalidFileNameException(
+                detail="The 'fileId' query parameter is required."
+            )
+
+        try:
+            file_reference = FileReference.objects.get(id=file_id)
+            file_reference.delete()
+
+            return Response(
+                {"message": "File deleted successfully"}, status=status.HTTP_200_OK
+            )
+        except FileReference.DoesNotExist:
+            raise FileReferenceNotFoundException(
+                detail=f"File reference with ID {file_id} not found."
+            )
+        except ValueError:
+            raise InvalidFileNameException(
+                detail="The 'fileId' parameter must be a valid UUID."
             )

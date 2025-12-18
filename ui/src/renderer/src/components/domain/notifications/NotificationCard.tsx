@@ -123,7 +123,7 @@ export default function NotificationCard({
         const notif = notification as ReportRenderNotification;
         if (!notif.publishedReportId) return;
 
-        let report = await execute(() => reportsApi.reportsRetrieve({ id: notif.publishedReportId }));
+        let report = await execute(() => reportsApi.reportsRetrieve({ id: notif.publishedReportId, downloadUrl: false }));
 
         if (report.reportUrl) {
             window.open(report.reportUrl, '_blank');

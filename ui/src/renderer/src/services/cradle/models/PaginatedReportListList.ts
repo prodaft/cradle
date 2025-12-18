@@ -13,50 +13,50 @@
  */
 
 import { mapValues } from '../runtime';
-import type { Report } from './Report';
+import type { ReportList } from './ReportList';
 import {
-    ReportFromJSON,
-    ReportFromJSONTyped,
-    ReportToJSON,
-    ReportToJSONTyped,
-} from './Report';
+    ReportListFromJSON,
+    ReportListFromJSONTyped,
+    ReportListToJSON,
+    ReportListToJSONTyped,
+} from './ReportList';
 
 /**
  * 
  * @export
- * @interface PaginatedReportList
+ * @interface PaginatedReportListList
  */
-export interface PaginatedReportList {
+export interface PaginatedReportListList {
     /**
      * Current page number
      * @type {number}
-     * @memberof PaginatedReportList
+     * @memberof PaginatedReportListList
      */
     page: number;
     /**
      * Total number of items
      * @type {number}
-     * @memberof PaginatedReportList
+     * @memberof PaginatedReportListList
      */
     count: number;
     /**
      * Total number of pages
      * @type {number}
-     * @memberof PaginatedReportList
+     * @memberof PaginatedReportListList
      */
     totalPages: number;
     /**
      * 
-     * @type {Array<Report>}
-     * @memberof PaginatedReportList
+     * @type {Array<ReportList>}
+     * @memberof PaginatedReportListList
      */
-    results: Array<Report>;
+    results: Array<ReportList>;
 }
 
 /**
- * Check if a given object implements the PaginatedReportList interface.
+ * Check if a given object implements the PaginatedReportListList interface.
  */
-export function instanceOfPaginatedReportList(value: object): value is PaginatedReportList {
+export function instanceOfPaginatedReportListList(value: object): value is PaginatedReportListList {
     if (!('page' in value) || value['page'] === undefined) return false;
     if (!('count' in value) || value['count'] === undefined) return false;
     if (!('totalPages' in value) || value['totalPages'] === undefined) return false;
@@ -64,11 +64,11 @@ export function instanceOfPaginatedReportList(value: object): value is Paginated
     return true;
 }
 
-export function PaginatedReportListFromJSON(json: any): PaginatedReportList {
-    return PaginatedReportListFromJSONTyped(json, false);
+export function PaginatedReportListListFromJSON(json: any): PaginatedReportListList {
+    return PaginatedReportListListFromJSONTyped(json, false);
 }
 
-export function PaginatedReportListFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedReportList {
+export function PaginatedReportListListFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedReportListList {
     if (json == null) {
         return json;
     }
@@ -77,15 +77,15 @@ export function PaginatedReportListFromJSONTyped(json: any, ignoreDiscriminator:
         'page': json['page'],
         'count': json['count'],
         'totalPages': json['total_pages'],
-        'results': ((json['results'] as Array<any>).map(ReportFromJSON)),
+        'results': ((json['results'] as Array<any>).map(ReportListFromJSON)),
     };
 }
 
-export function PaginatedReportListToJSON(json: any): PaginatedReportList {
-    return PaginatedReportListToJSONTyped(json, false);
+export function PaginatedReportListListToJSON(json: any): PaginatedReportListList {
+    return PaginatedReportListListToJSONTyped(json, false);
 }
 
-export function PaginatedReportListToJSONTyped(value?: PaginatedReportList | null, ignoreDiscriminator: boolean = false): any {
+export function PaginatedReportListListToJSONTyped(value?: PaginatedReportListList | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -95,7 +95,7 @@ export function PaginatedReportListToJSONTyped(value?: PaginatedReportList | nul
         'page': value['page'],
         'count': value['count'],
         'total_pages': value['totalPages'],
-        'results': ((value['results'] as Array<any>).map(ReportToJSON)),
+        'results': ((value['results'] as Array<any>).map(ReportListToJSON)),
     };
 }
 

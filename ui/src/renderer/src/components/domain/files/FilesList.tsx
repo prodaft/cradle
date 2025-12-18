@@ -92,7 +92,7 @@ export default function FilesList({
         Number(searchParams.get('files_pagesize')) || 10,
     );
     const { execute } = useAPICall();
-    const [selectedFiles, setSelectedFiles] = useState<(string | number)[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<(string)[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const searchInputRef = useRef<HTMLInputElement>(null);
@@ -254,6 +254,22 @@ export default function FilesList({
         }
     }, [selectedFiles, files, fileTransferApi, notify]);
 
+    const handleDeleteSelected = useCallback(async () => {
+        if (selectedFiles.length === 0) return;
+
+        let promises = selectedFiles.map((fileId) => execute(() => fileTransferApi.fileTransferDeleteDestroy({
+            fileId: fileId.toString(),
+        })));
+
+        await Promise.all(promises);
+        notify({
+            type: 'success',
+            text: `Deleted ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`,
+        });
+        setSelectedFiles([]);
+        fetchFiles();
+    }, [selectedFiles, files, notesApi, notify]);
+
     const handleSearchSubmit = useCallback(() => {
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
@@ -275,9 +291,14 @@ export default function FilesList({
 
     useEffect(() => {
         const pageFromParams = Number(filesPage) || 1;
-        setPage(pageFromParams);
+        if (pageFromParams !== page) {
+            setPage(pageFromParams);
+        }
+    }, [filesPage, page]);
+
+    useEffect(() => {
         fetchFiles();
-    }, [filesPage, fetchFiles, pageSize]);
+    }, [page, pageSize, sortField, sortDirection, query.date, query.keyword, query.linked_to, query.linked_to_exact_match, query.mimetype, query.references, query.timestamp_gte, query.timestamp_lte, searchQuery]);
 
     const handlePageChange = useCallback(
         (newPage: number) => {
@@ -385,7 +406,7 @@ export default function FilesList({
     );
 
     // Memoize the setSelected callback to prevent recreation on every render
-    const handleSetSelected = useCallback((ids: (string | number)[]) => {
+    const handleSetSelected = useCallback((ids: (string)[]) => {
         setSelectedFiles(ids);
     }, []);
 
@@ -432,7 +453,8 @@ export default function FilesList({
                                 </Tooltip>
                                 <Tooltip content='Delete selected files (Coming soon)'>
                                     <button
-                                        disabled={true}
+                                        disabled={files.length === 0 || selectedFiles.length === 0}
+                                        onClick={handleDeleteSelected}
                                         className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                     >
                                         <Trash
@@ -440,6 +462,11 @@ export default function FilesList({
                                             width={20}
                                             height={20}
                                         />
+                                        {selectedFiles.length > 0 && (
+                                            <span className='text-sm text-cradle-text-secondary font-mono'>
+                                                {selectedFiles.length}
+                                            </span>
+                                        )}
                                     </button>
                                 </Tooltip>
                                 <div className='h-8 w-px bg-cradle-border-accent'></div>

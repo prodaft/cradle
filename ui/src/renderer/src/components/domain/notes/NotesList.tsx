@@ -362,11 +362,18 @@ export default function NotesList({
         }
     }, [page, pageSize, sortField, sortDirection, query, notesApi, columnFilters.status]);
 
+    // Sync URL params to page state
     useEffect(() => {
         const pageFromParams = Number(searchParams.get('notes_page')) || 1;
-        setPage(pageFromParams);
+        if (pageFromParams !== page) {
+            setPage(pageFromParams);
+        }
+    }, [searchParams.get('notes_page'), page]);
+
+    // Fetch notes when dependencies change
+    useEffect(() => {
         fetchNotes();
-    }, [searchParams.get('notes_page'), fetchNotes, pageSize]);
+    }, [page, pageSize, sortField, sortDirection, query?.content, query?.author__username, query?.date, query?.references, query?.created_date_from, query?.created_date_to, query?.timestamp_gte, query?.timestamp_lte, query?.truncate, columnFilters.status]);
 
     const handlePageChange = (newPage: number) => {
         const newParams = new URLSearchParams(searchParams);

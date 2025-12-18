@@ -26,7 +26,8 @@ from ..exceptions import (
 )
 from ..models import PublishedReport, ReportStatus
 from ..serializers import (
-    ReportSerializer,
+    ReportDetailSerializer,
+    ReportListSerializer,
 )
 from ..tasks import generate_report
 
@@ -65,7 +66,7 @@ from ..tasks import generate_report
             ),
         ],
         responses={
-            200: ReportSerializer,
+            200: ReportListSerializer,
             **get_error_responses(
                 PublishErrorCodes.INVALID_PAGE_SIZE,
                 PublishErrorCodes.PAGE_SIZE_TOO_LARGE,
@@ -75,7 +76,7 @@ from ..tasks import generate_report
     )
 )
 class ReportListDeleteAPIView(generics.ListAPIView):
-    serializer_class = ReportSerializer
+    serializer_class = ReportListSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     pagination_class = TotalPagesPagination
@@ -144,7 +145,7 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         description="Resets the report status, re-queues the generation task, and returns the updated report. Only works for failed reports - cannot retry reports that are currently processing or already completed.",  # noqa: E501
         request=None,
         responses={
-            200: ReportSerializer,
+            200: ReportListSerializer,
             **get_error_responses(
                 PublishErrorCodes.REPORT_NOT_FOUND,
                 PublishErrorCodes.REPORT_ALREADY_GENERATING,
@@ -185,15 +186,24 @@ class ReportRetryAPIView(APIView):
         # Re-run the generation Celery task
         generate_report.delay(report.id)
 
-        return Response(ReportSerializer(report).data, status=status.HTTP_200_OK)
+        return Response(ReportListSerializer(report).data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
     get=extend_schema(
         summary="Get report details",
         description="Returns the details of a specific report belonging to the authenticated user.",
+        parameters=[
+            OpenApiParameter(
+                name="download_url",
+                type=bool,
+                location=OpenApiParameter.QUERY,
+                description="Whether to return the download URL for the report",
+                default=False,
+            ),
+        ],
         responses={
-            200: ReportSerializer,
+            200: ReportDetailSerializer,
             **get_error_responses(PublishErrorCodes.REPORT_NOT_FOUND),
             **get_common_error_responses(),
         },
@@ -217,9 +227,18 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
     GET /reports/<id>/ returns the details of a specific report.
     """
 
-    serializer_class = ReportSerializer
+    serializer_class = ReportDetailSerializer
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        download_url = request.query_params.get("download_url", False)
+        return Response(
+            ReportDetailSerializer(
+                self.get_object(), context={"download_url": download_url}
+            ).data,
+            status=status.HTTP_200_OK,
+        )
 
     def get_queryset(self):
         return PublishedReport.objects.filter(user=self.request.user).order_by(

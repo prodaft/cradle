@@ -78,9 +78,23 @@ export default function Reports() {
         user: 'user__username',
     };
 
+    // Sync URL params to state (for browser back/forward)
+    useEffect(() => {
+        const pageFromParams = Number(searchParams.get('reports_page')) || 1;
+        const sortFieldFromParams = searchParams.get('reports_sort_field') || 'created_at';
+        const sortDirectionFromParams = (searchParams.get('reports_sort_direction') as SortDirection) || 'desc';
+        const pageSizeFromParams = Number(searchParams.get('reports_pagesize')) || 10;
+
+        if (pageFromParams !== page) setPage(pageFromParams);
+        if (sortFieldFromParams !== sortField) setSortField(sortFieldFromParams);
+        if (sortDirectionFromParams !== sortDirection) setSortDirection(sortDirectionFromParams);
+        if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
+    }, [searchParams]);
+
+    // Fetch reports when dependencies change
     useEffect(() => {
         fetchReports();
-    }, [page, sortField, sortDirection, pageSize, columnFilters, searchQuery]);
+    }, [page, sortField, sortDirection, pageSize, columnFilters.status, columnFilters.user, columnFilters.createdAt.from, columnFilters.createdAt.to, searchQuery]);
 
     useEffect(() => {
         if (isSearchExpanded && searchInputRef.current) {
@@ -141,17 +155,12 @@ export default function Reports() {
     };
 
     const handlePageChange = (newPage: number) => {
-        setPage(newPage);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('reports_page', String(newPage));
         setSearchParams(newParams, { replace: true });
     };
 
     const handleSort = (newSortField: string, newSortDirection: SortDirection) => {
-        setSortField(newSortField);
-        setSortDirection(newSortDirection);
-        setPage(1);
-
         const newParams = new URLSearchParams(searchParams);
         newParams.set('reports_sort_field', newSortField);
         newParams.set('reports_sort_direction', newSortDirection);
@@ -234,7 +243,10 @@ export default function Reports() {
             ...prev,
             [column]: value,
         }));
-        setPage(1); // Reset to first page when filters change
+        // Reset to first page when filters change
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('reports_page', '1');
+        setSearchParams(newParams, { replace: true });
     };
 
     const handleStatusChange = (status: string) => {
@@ -242,7 +254,10 @@ export default function Reports() {
             ...prev,
             status,
         }));
-        setPage(1);
+        // Reset to first page when status filter changes
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('reports_page', '1');
+        setSearchParams(newParams, { replace: true });
     };
 
     const columns: Array<{
@@ -280,16 +295,20 @@ export default function Reports() {
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
+        const promises = idsArray.map((id) => execute(() => reportsApi.reportsRetrieve({ id, downloadUrl: true })));
+        const reports = await Promise.all(promises);
 
         try {
-            // Download each report
-            for (const id of idsArray) {
-                const report = reports.find((r) => r.id === id);
-                if (report && report.reportUrl) {
-                    // Fetch the file content
+            reports.forEach((report) => {
+                if (report.reportUrl) {
                     window.open(report.reportUrl, '_blank', 'noopener');
+                } else {
+                    notify({
+                        type: 'error',
+                        text: 'Report URL not found for report ' + report.title,
+                    });
                 }
-            }
+            });
 
             notify({
                 type: 'success',
@@ -305,7 +324,6 @@ export default function Reports() {
     };
 
     const handleSearchSubmit = () => {
-        setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('reports_page', '1');
         setSearchParams(newParams, { replace: true });
@@ -387,9 +405,15 @@ export default function Reports() {
     ) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
-        const handleRowClick = () => {
-            if (report.reportUrl) {
-                window.open(report.reportUrl, '_blank');
+        const handleRowClick = async () => {
+            let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id, downloadUrl: false }));
+            if (details.reportUrl) {
+                window.open(details.reportUrl, '_blank');
+            } else {
+                notify({
+                    type: 'error',
+                    text: 'Report URL not found for report ' + details.title,
+                });
             }
         };
 
@@ -581,8 +605,6 @@ export default function Reports() {
                                 onPageChange={handlePageChange}
                                 pageSize={pageSize}
                                 onPageSizeChange={(newSize) => {
-                                    setPageSize(newSize);
-                                    setPage(1);
                                     const newParams = new URLSearchParams(searchParams);
                                     newParams.set('reports_page', '1');
                                     newParams.set('reports_pagesize', String(newSize));

@@ -90,7 +90,7 @@ models/PaginatedEventLogList.ts
 models/PaginatedFileReferenceWithNoteSerializerResponse.ts
 models/PaginatedNoteRetrieveSerializerResponse.ts
 models/PaginatedRelationSerializerResponse.ts
-models/PaginatedReportList.ts
+models/PaginatedReportListList.ts
 models/PaginatedSubGraphSerializerResponse.ts
 models/PasswordResetConfirmRequest.ts
 models/PasswordResetRequestRequest.ts
@@ -100,7 +100,8 @@ models/PublishReportRequest.ts
 models/PublishStrategiesResponse.ts
 models/PublishStrategy.ts
 models/Relation.ts
-models/Report.ts
+models/ReportDetail.ts
+models/ReportList.ts
 models/ReportProcessingErrorNotification.ts
 models/ReportRenderNotification.ts
 models/RequestAccessRequest.ts
