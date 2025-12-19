@@ -88,8 +88,4 @@ app.conf.beat_schedule = {
         "task": "entries.tasks.delete_hanging_artifacts",
         "schedule": crontab(hour=2, minute=0),
     },
-    "enrich_periodic-check-minutely": {
-        "task": "intelio.tasks.core.enrich_periodic",
-        "schedule": crontab(minute="*/1"),
-    },
 }

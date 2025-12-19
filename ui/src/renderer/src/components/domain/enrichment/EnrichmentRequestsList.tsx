@@ -2,7 +2,7 @@ import { useModal } from '@/contexts/ui/ModalContext';
 import { useCradleNavigate } from '@/hooks';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -100,15 +100,18 @@ function EnrichmentRequestsList({
     const columns: Array<{ key: string; label: string | React.ReactNode; filterType?: 'text' | 'date'; sortable?: boolean }> =
         [
             {
-                key: 'status',
-                label: <StatusHeaderDropdown
-                    onStatusChange={handleStatusChange}
-                    status={columnFilters.status}
-                    statusOptions={['all', 'done', 'waiting', 'error', 'info']}
-                />,
-                sortable: false
+                key: 'title',
+                label: (
+                    <div className='flex items-center gap-2'>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status}
+                            statusOptions={['all', 'done', 'waiting', 'error', 'info']}
+                        />
+                        <span>Title</span>
+                    </div>
+                ),
             },
-            { key: 'title', label: 'Title' },
             { key: 'user', label: 'User', filterType: 'text' as const },
             { key: 'createdAt', label: 'Created At' },
         ];
@@ -238,13 +241,13 @@ function EnrichmentRequestsList({
                         />
                     </td>
                 )}
-                <td className='w-20'>
-                    <div className='flex items-center'>
-                        {getStatusIcon(request.status, errorMsg(request))}
-                    </div>
-                </td>
                 <td className='truncate max-w-xs' title={request.title}>
-                    {truncateText(request.title, 50)}
+                    <div className='flex items-center gap-2 min-w-0'>
+                        <span className='inline-flex items-center flex-shrink-0'>
+                            {getStatusIcon(request.status, errorMsg(request))}
+                        </span>
+                        <span className='truncate'>{truncateText(request.title, 50)}</span>
+                    </div>
                 </td>
                 <td className='w-32'>{request.userDetail?.username || 'N/A'}</td>
                 <td className='w-40'>
@@ -262,47 +265,48 @@ function EnrichmentRequestsList({
             <ActionBar
                 left={
                     <>
-                        <ActionBarButton
-                            tooltip='Create new enrichment request'
-                            variant='circle'
-                            icon={<PlusCircle width={20} height={20} />}
-                            iconActive={true}
-                            disabled={loading}
-                            onClick={onCreateRequest}
-                        />
-
-                        <ActionBarDivider />
-
-                        <ActionBarButton
-                            tooltip={
-                                selectedRequests.length > 0
-                                    ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
-                                    : 'Select requests to delete'
-                            }
-                            onClick={() => {
-                                if (selectedRequests.length === 0) return;
-                                setModal(ConfirmDeletionModal, {
-                                    onConfirm: onDeleteSelected,
-                                    text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
-                                });
-                            }}
-                            disabled={loading || enrichmentRequests.length === 0 || selectedRequests.length === 0}
-                            icon={<Trash width={20} height={20} />}
-                            iconActive={selectedRequests.length > 0}
-                            count={selectedRequests.length}
-                        />
-
-                        <ActionBarButton
-                            tooltip={
-                                selectedRequests.length > 0
-                                    ? `Retry ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
-                                    : 'Select requests to retry'
-                            }
-                            onClick={onRetrySelected}
-                            disabled={loading || enrichmentRequests.length === 0 || selectedRequests.length === 0}
-                            icon={<RefreshCircle width={20} height={20} />}
-                            iconActive={selectedRequests.length > 0}
-                            count={selectedRequests.length}
+                        <CollapsibleActionGroup
+                            selectedCount={selectedRequests.length}
+                            itemLabel='request'
+                            actions={[
+                                {
+                                    id: 'create',
+                                    tooltip: 'Create new enrichment request',
+                                    icon: <PlusCircle width={20} height={20} />,
+                                    onClick: onCreateRequest,
+                                    disabled: loading,
+                                    iconActive: true,
+                                    alwaysVisible: true,
+                                },
+                                {
+                                    id: 'delete',
+                                    tooltip: selectedRequests.length > 0
+                                        ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
+                                        : 'Select requests to delete',
+                                    icon: <Trash width={20} height={20} />,
+                                    onClick: () => {
+                                        if (selectedRequests.length === 0) return;
+                                        setModal(ConfirmDeletionModal, {
+                                            onConfirm: onDeleteSelected,
+                                            text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
+                                        });
+                                    },
+                                    disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                                    iconActive: selectedRequests.length > 0,
+                                    
+                                },
+                                {
+                                    id: 'retry',
+                                    tooltip: selectedRequests.length > 0
+                                        ? `Retry ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
+                                        : 'Select requests to retry',
+                                    icon: <RefreshCircle width={20} height={20} />,
+                                    onClick: onRetrySelected,
+                                    disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                                    iconActive: selectedRequests.length > 0,
+                                    
+                                },
+                            ]}
                         />
 
                         <ActionBarDivider />

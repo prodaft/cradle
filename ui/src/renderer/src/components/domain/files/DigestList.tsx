@@ -4,7 +4,7 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -13,7 +13,7 @@ import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
 import { InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 interface DataTypeOption {
     value: string;
@@ -58,8 +58,8 @@ function DigestList({
     sortField = 'created_at',
     sortDirection = 'desc',
     onSort,
-    selectedDigests = [],
-    setSelectedDigests = () => { },
+    selectedDigests: externalSelectedDigests,
+    setSelectedDigests: externalSetSelectedDigests,
     pageSize = 10,
     setPageSize = () => { },
     onColumnFilterChange = null,
@@ -73,6 +73,17 @@ function DigestList({
     const { setModal } = useModal();
     const { intelioApi } = useApi();
     const { executor } = useAPICall();
+
+    // Internal state for selection when no external state is provided
+    const [internalSelectedDigests, setInternalSelectedDigests] = useState<string[]>([]);
+
+    // Use external state if provided, otherwise use internal state
+    const selectedDigests = externalSelectedDigests ?? internalSelectedDigests;
+    const setSelectedDigests = useMemo(
+        () => externalSetSelectedDigests ?? setInternalSelectedDigests,
+        [externalSetSelectedDigests]
+    );
+
     const handleRetrySelected = useCallback((_selectedIds: string[]) => {
         // Intentionally left blank for now (UI only).
     }, []);
@@ -116,16 +127,22 @@ function DigestList({
     const columns: Array<{ key: string; label: string | React.ReactNode; filterType?: 'text' | 'date'; sortable?: boolean }> =
         [
             {
-                key: 'status',
-                label: <StatusHeaderDropdown
-                    onStatusChange={handleStatusChange}
-                    status={columnFilters.status || 'all'}
-                    statusOptions={['all', 'done', 'working', 'error']}
-                />,
-                sortable: false
+                key: 'type',
+                label: 'Type',
             },
-            { key: 'type', label: 'Type' },
-            { key: 'title', label: 'Title' },
+            {
+                key: 'title',
+                label: (
+                    <div className='flex items-center gap-2'>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status || 'all'}
+                            statusOptions={['all', 'done', 'working', 'error']}
+                        />
+                        <span>Title</span>
+                    </div>
+                ),
+            },
             { key: 'user', label: 'User', filterType: 'text' as const },
             { key: 'warnings', label: 'Warnings' },
             { key: 'errors', label: 'Errors' },
@@ -247,16 +264,16 @@ function DigestList({
                         </div>
                     </td>
                 )}
-                <td className='w-20'>
-                    <div className='flex items-center'>
-                        {getStatusIcon(digest.status, (digest as any).errorMessage)}
-                    </div>
-                </td>
                 <td className='truncate w-24' title={digest.displayName}>
                     {truncateText(digest.displayName || '', 24)}
                 </td>
                 <td className='truncate max-w-xs' title={digest.title}>
-                    {digest.title}
+                    <div className='flex items-center gap-2 min-w-0'>
+                        <span className='inline-flex items-center flex-shrink-0'>
+                            {getStatusIcon(digest.status, (digest as any).errorMessage)}
+                        </span>
+                        <span className='truncate'>{digest.title}</span>
+                    </div>
                 </td>
                 <td className='truncate w-32' title={digest.userDetail?.username}>
                     {truncateText(digest.userDetail?.username || '', 16)}
@@ -378,46 +395,47 @@ function DigestList({
             <ActionBar
                 left={
                     <>
-                        <ActionBarButton
-                            tooltip='Upload new digest'
-                            variant='circle'
-                            icon={<PlusCircle width={20} height={20} />}
-                            iconActive={true}
-                            disabled={loading}
-                            onClick={() => {
-                                setModal(UploadDigestModal, {
-                                    dataTypeOptions,
-                                    onUpload: onUpload || onDigestDelete,
-                                });
-                            }}
-                        />
-
-                        <ActionBarDivider />
-
-                        <ActionBarButton
-                            tooltip={
-                                selectedDigests.length > 0
-                                    ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
-                                    : 'Select digests to delete'
-                            }
-                            onClick={() => handleDeleteSelected(selectedDigests)}
-                            disabled={loading || digests.length === 0 || selectedDigests.length === 0}
-                            icon={<Trash width={20} height={20} />}
-                            iconActive={selectedDigests.length > 0}
-                            count={selectedDigests.length}
-                        />
-
-                        <ActionBarButton
-                            tooltip={
-                                selectedDigests.length > 0
-                                    ? `Retry ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
-                                    : 'Select digests to retry'
-                            }
-                            onClick={() => handleRetrySelected(selectedDigests)}
-                            disabled={loading || digests.length === 0 || selectedDigests.length === 0}
-                            icon={<RefreshCircle width={20} height={20} />}
-                            iconActive={selectedDigests.length > 0}
-                            count={selectedDigests.length}
+                        <CollapsibleActionGroup
+                            selectedCount={selectedDigests.length}
+                            itemLabel='digest'
+                            actions={[
+                                {
+                                    id: 'upload',
+                                    tooltip: 'Upload new digest',
+                                    icon: <PlusCircle width={20} height={20} />,
+                                    onClick: () => {
+                                        setModal(UploadDigestModal, {
+                                            dataTypeOptions,
+                                            onUpload: onUpload || onDigestDelete,
+                                        });
+                                    },
+                                    disabled: loading,
+                                    iconActive: true,
+                                    alwaysVisible: true,
+                                },
+                                {
+                                    id: 'delete',
+                                    tooltip: selectedDigests.length > 0
+                                        ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
+                                        : 'Select digests to delete',
+                                    icon: <Trash width={20} height={20} />,
+                                    onClick: () => handleDeleteSelected(selectedDigests),
+                                    disabled: loading || digests.length === 0 || selectedDigests.length === 0,
+                                    iconActive: selectedDigests.length > 0,
+                                    
+                                },
+                                {
+                                    id: 'retry',
+                                    tooltip: selectedDigests.length > 0
+                                        ? `Retry ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
+                                        : 'Select digests to retry',
+                                    icon: <RefreshCircle width={20} height={20} />,
+                                    onClick: () => handleRetrySelected(selectedDigests),
+                                    disabled: loading || digests.length === 0 || selectedDigests.length === 0,
+                                    iconActive: selectedDigests.length > 0,
+                                    
+                                },
+                            ]}
                         />
 
                         <ActionBarDivider />

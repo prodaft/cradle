@@ -46,6 +46,7 @@ export * from './EssentialUserRetrieve';
 export * from './EssentialUserRetrieveRequest';
 export * from './EventLog';
 export * from './FileDownload';
+export * from './FileProcessRequest';
 export * from './FileReference';
 export * from './FileReferenceRequest';
 export * from './FileReferenceWithNote';

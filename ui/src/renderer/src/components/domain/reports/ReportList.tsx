@@ -8,7 +8,7 @@ import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { Report } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import TableCard from '@components/base/Card/TableCard';
+import { ActionBar, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
 import ListView, { SortDirection } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -423,50 +423,39 @@ export default function ReportList() {
             {!report_id ? (
                 <>
                     {!loading && (
-                        <TableCard>
-                            <div className='flex flex-wrap items-center justify-between gap-4'>
-                                {/* Left: Actions */}
-                                <div className='flex items-center gap-2 flex-shrink-0'>
-                                    <Tooltip content='Create new report'>
-                                        <button
-                                            className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
-                                            onClick={() => navigate('/publish')}
-                                        >
-                                            <PlusCircle
-                                                className='text-[#FF8C00]'
-                                                width={20}
-                                                height={20}
-                                            />
-                                        </button>
-                                    </Tooltip>
-
-                                    <div className='h-8 w-px bg-cradle-border-accent' />
-
-                                    <Tooltip content={selectedReports.length > 0 ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}` : 'Select reports to delete'}>
-                                        <button
-                                            className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                            onClick={() => {
+                        <ActionBar
+                            left={
+                                <CollapsibleActionGroup
+                                    selectedCount={selectedReports.length}
+                                    itemLabel='report'
+                                    actions={[
+                                        {
+                                            id: 'create',
+                                            tooltip: 'Create new report',
+                                            icon: <PlusCircle width={20} height={20} />,
+                                            onClick: () => navigate('/publish'),
+                                            iconActive: true,
+                                            alwaysVisible: true,
+                                        },
+                                        {
+                                            id: 'delete',
+                                            tooltip: selectedReports.length > 0
+                                                ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                                : 'Select reports to delete',
+                                            icon: <Trash width={20} height={20} />,
+                                            onClick: () => {
                                                 if (selectedReports.length > 0) {
                                                     actions[0].handler(selectedReports);
                                                 }
-                                            }}
-                                            disabled={selectedReports.length === 0 || reports.length === 0}
-                                        >
-                                            <Trash
-                                                className={selectedReports.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                                width={20}
-                                                height={20}
-                                            />
-                                            {selectedReports.length > 0 && (
-                                                <span className='text-sm text-cradle-text-secondary font-mono'>
-                                                    {selectedReports.length}
-                                                </span>
-                                            )}
-                                        </button>
-                                    </Tooltip>
-                                </div>
-
-                                {/* Right: Pagination */}
+                                            },
+                                            disabled: selectedReports.length === 0 || reports.length === 0,
+                                            iconActive: selectedReports.length > 0,
+                                            
+                                        },
+                                    ]}
+                                />
+                            }
+                            right={
                                 <PaginationWrapper
                                     currentPage={page}
                                     totalPages={totalPages}
@@ -487,8 +476,8 @@ export default function ReportList() {
                                     }}
                                     disabled={reports.length === 0}
                                 />
-                            </div>
-                        </TableCard>
+                            }
+                        />
                     )}
 
                     <ListView

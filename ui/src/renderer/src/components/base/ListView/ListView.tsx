@@ -1,8 +1,8 @@
-import { useProfile } from '@contexts/user/ProfileContext';
-import { Sort, SortDown, SortUp } from 'iconoir-react/regular';
-import { ReactNode, useEffect, useRef, useState } from 'react';
 import Datepicker from '@components/base/Datepicker/Datepicker';
+import { useProfile } from '@contexts/user/ProfileContext';
 import { format } from 'date-fns';
+import { Sort, SortDown, SortUp } from 'iconoir-react/regular';
+import { ReactNode, useRef, useState } from 'react';
 
 interface Column {
     key: string;
@@ -70,6 +70,48 @@ export default function ListView<T extends { id?: string | number }>({
     const [selectedIds, setSelectedIds] = useState<NonNullable<T['id']>[]>([]);
     const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
     const filterInputRefs = useRef<Record<string, HTMLDivElement | null>>({});
+    const [draftDateRanges, setDraftDateRanges] = useState<
+        Record<string, { start: Date | null; end: Date | null }>
+    >({});
+    const [draftTextFilters, setDraftTextFilters] = useState<Record<string, string>>(
+        {},
+    );
+    const [openDatePickers, setOpenDatePickers] = useState<Record<string, boolean>>(
+        {},
+    );
+
+    const safeParseDate = (value?: string) => {
+        if (!value) return null;
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d;
+    };
+
+    const clearDraftDateRange = (column: string) => {
+        setDraftDateRanges((prev) => {
+            if (!prev[column]) return prev;
+            const next = { ...prev };
+            delete next[column];
+            return next;
+        });
+    };
+
+    const clearOpenDatePicker = (column: string) => {
+        setOpenDatePickers((prev) => {
+            if (!(column in prev)) return prev;
+            const next = { ...prev };
+            delete next[column];
+            return next;
+        });
+    };
+
+    const clearDraftTextFilter = (column: string) => {
+        setDraftTextFilters((prev) => {
+            if (!(column in prev)) return prev;
+            const next = { ...prev };
+            delete next[column];
+            return next;
+        });
+    };
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -124,37 +166,10 @@ export default function ListView<T extends { id?: string | number }>({
         );
     };
 
-    // Handle clicks outside filter inputs to close them
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (activeFilterColumn && filterInputRefs.current[activeFilterColumn]) {
-                if (
-                    !filterInputRefs.current[activeFilterColumn]?.contains(
-                        event.target as Node,
-                    )
-                ) {
-                    setActiveFilterColumn(null);
-                }
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [activeFilterColumn]);
 
     const handleFilterChange = (column: string, value: string | DateRangeFilter) => {
         if (filterableColumns[column]) {
             filterableColumns[column](value);
-        }
-    };
-
-    const handleFilterKeyDown = (e: React.KeyboardEvent, column: string) => {
-        if (e.key === 'Enter') {
-            setActiveFilterColumn(null);
-        } else if (e.key === 'Escape') {
-            setActiveFilterColumn(null);
         }
     };
 
@@ -180,6 +195,37 @@ export default function ListView<T extends { id?: string | number }>({
             if (isFilterable && (e.target as HTMLElement).closest('.header-text')) {
                 e.stopPropagation();
                 setActiveFilterColumn(column);
+
+                // Buffer text input locally; only commit on Enter (or blur if desired later).
+                if (filterType !== 'date') {
+                    const existing =
+                        typeof filterValues[column] === 'string'
+                            ? (filterValues[column] as string)
+                            : '';
+                    setDraftTextFilters((prev) => ({
+                        ...prev,
+                        [column]: existing ?? '',
+                    }));
+                } else {
+                    // Keep calendar open while selecting a range.
+                    setOpenDatePickers((prev) => ({ ...prev, [column]: true }));
+
+                    // If caller provided an incomplete/invalid committed range (e.g. only `from` from
+                    // URL params), don't let it "stick" as the start of the next selection.
+                    // Prefill draft only when the committed range is complete and parseable.
+                    const committed = filterValues[column] as DateRangeFilter | undefined;
+                    const committedStart = safeParseDate(committed?.from);
+                    const committedEnd = safeParseDate(committed?.to);
+                    if (committedStart && committedEnd) {
+                        setDraftDateRanges((prev) => ({
+                            ...prev,
+                            [column]: { start: committedStart, end: committedEnd },
+                        }));
+                    } else {
+                        clearDraftDateRange(column);
+                    }
+                }
+
                 setTimeout(() => {
                     filterInputRefs.current[column]?.querySelector('input')?.focus();
                 }, 0);
@@ -191,18 +237,28 @@ export default function ListView<T extends { id?: string | number }>({
 
         const handleDateRangeChange = (dates: [Date | null, Date | null]) => {
             const [start, end] = dates;
-            const newValue: DateRangeFilter = {
-                from: start ? format(start, 'yyyy-MM-dd') : undefined,
-                to: end ? format(end, 'yyyy-MM-dd') : undefined,
-            };
-            handleFilterChange(column, newValue);
+            setDraftDateRanges((prev) => ({
+                ...prev,
+                [column]: { start, end },
+            }));
+
+            if (start && end) {
+                const newValue: DateRangeFilter = {
+                    from: format(start, 'yyyy-MM-dd'),
+                    to: format(end, 'yyyy-MM-dd'),
+                };
+                handleFilterChange(column, newValue);
+                clearDraftDateRange(column);
+                clearOpenDatePicker(column);
+                setActiveFilterColumn(null);
+            }
         };
 
-        const hasDateRangeFilter =
+        const hasCompleteDateRangeFilter =
             filterType === 'date' &&
             filterValues[column] &&
-            ((filterValues[column] as DateRangeFilter).from ||
-                (filterValues[column] as DateRangeFilter).to);
+            Boolean((filterValues[column] as DateRangeFilter).from) &&
+            Boolean((filterValues[column] as DateRangeFilter).to);
 
         return (
             <th
@@ -215,28 +271,71 @@ export default function ListView<T extends { id?: string | number }>({
                         className='p-1'
                     >
                         {filterType === 'date' ? (
-                            <Datepicker
-                                startDate={
-                                    (filterValues[column] as DateRangeFilter)?.from
-                                        ? new Date((filterValues[column] as DateRangeFilter).from!)
-                                        : null
-                                }
-                                endDate={
-                                    (filterValues[column] as DateRangeFilter)?.to
-                                        ? new Date((filterValues[column] as DateRangeFilter).to!)
-                                        : null
-                                }
-                                onChange={handleDateRangeChange}
-                                className='cradle-search text-xs py-0.5 px-1.5 w-48'
-                            />
+                            (() => {
+                                const committed = filterValues[column] as DateRangeFilter | undefined;
+                                const committedStart = safeParseDate(committed?.from);
+                                const committedEnd = safeParseDate(committed?.to);
+                                const committedHasCompleteRange = Boolean(committedStart) && Boolean(committedEnd);
+
+                                const draftStart = draftDateRanges[column]?.start ?? null;
+                                const draftEnd = draftDateRanges[column]?.end ?? null;
+
+                                return (
+                                    <Datepicker
+                                        startDate={
+                                            draftStart ?? (committedHasCompleteRange ? committedStart : null)
+                                        }
+                                        endDate={
+                                            draftEnd ?? (committedHasCompleteRange ? committedEnd : null)
+                                        }
+                                        onChange={handleDateRangeChange}
+                                        className='cradle-search cradle-search-with-icon-left text-xs !py-1 w-48'
+                                        open={openDatePickers[column] ?? true}
+                                        onClickOutside={() => {
+                                            // Close the filter UI. If the selection isn't complete, do not apply anything.
+                                            const draft = draftDateRanges[column];
+                                            if (draft && !(draft.start && draft.end)) {
+                                                clearDraftDateRange(column);
+                                            }
+                                            clearOpenDatePicker(column);
+                                            setActiveFilterColumn(null);
+                                        }}
+                                        onCalendarClose={() => {
+                                            // If the calendar closes while the selection is incomplete, discard the draft.
+                                            const draft = draftDateRanges[column];
+                                            if (draft && !(draft.start && draft.end)) {
+                                                clearDraftDateRange(column);
+                                            }
+                                            clearOpenDatePicker(column);
+                                        }}
+                                    />
+                                );
+                            })()
                         ) : (
                             <input
                                 type='text'
-                                value={(filterValues[column] as string) || ''}
-                                onChange={(e) =>
-                                    handleFilterChange(column, e.target.value)
+                                value={
+                                    draftTextFilters[column] ??
+                                    ((filterValues[column] as string) || '')
                                 }
-                                onKeyDown={(e) => handleFilterKeyDown(e, column)}
+                                onChange={(e) => {
+                                    const next = e.target.value;
+                                    setDraftTextFilters((prev) => ({
+                                        ...prev,
+                                        [column]: next,
+                                    }));
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        const value = draftTextFilters[column] ?? '';
+                                        handleFilterChange(column, value);
+                                        clearDraftTextFilter(column);
+                                        setActiveFilterColumn(null);
+                                    } else if (e.key === 'Escape') {
+                                        clearDraftTextFilter(column);
+                                        setActiveFilterColumn(null);
+                                    }
+                                }}
                                 className='cradle-search text-xs py-1 px-2 w-full'
                                 placeholder={`Filter ${children}...`}
                                 autoFocus
@@ -253,7 +352,7 @@ export default function ListView<T extends { id?: string | number }>({
                             {!!filterValues[column] &&
                                 (typeof filterValues[column] === 'string'
                                     ? !!filterValues[column]
-                                    : hasDateRangeFilter) && (
+                                    : hasCompleteDateRangeFilter) && (
                                     <span className='ml-1 text-xs text-orange-600 dark:text-orange-400'>
                                         ●
                                     </span>

@@ -17,6 +17,7 @@ import * as runtime from '../runtime';
 import type {
   AccessEntityList404Response,
   FileDownload,
+  FileProcessRequest,
   FileUpload,
 } from '../models/index';
 import {
@@ -24,6 +25,8 @@ import {
     AccessEntityList404ResponseToJSON,
     FileDownloadFromJSON,
     FileDownloadToJSON,
+    FileProcessRequestFromJSON,
+    FileProcessRequestToJSON,
     FileUploadFromJSON,
     FileUploadToJSON,
 } from '../models/index';
@@ -35,6 +38,10 @@ export interface FileTransferDeleteDestroyRequest {
 export interface FileTransferDownloadRetrieveRequest {
     bucketName: string;
     minioFileName: string;
+}
+
+export interface FileTransferProcessCreateRequest {
+    fileProcessRequest: FileProcessRequest;
 }
 
 export interface FileTransferUploadRetrieveRequest {
@@ -158,6 +165,59 @@ export class FileTransferApi extends runtime.BaseAPI {
      */
     async fileTransferDownloadRetrieve(requestParameters: FileTransferDownloadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FileDownload> {
         const response = await this.fileTransferDownloadRetrieveRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Triggers processing for a file that has been uploaded to MinIO.
+     * Process an uploaded file
+     */
+    async fileTransferProcessCreateRaw(requestParameters: FileTransferProcessCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['fileProcessRequest'] == null) {
+            throw new runtime.RequiredError(
+                'fileProcessRequest',
+                'Required parameter "fileProcessRequest" was null or undefined when calling fileTransferProcessCreate().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/file-transfer/process/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: FileProcessRequestToJSON(requestParameters['fileProcessRequest']),
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Triggers processing for a file that has been uploaded to MinIO.
+     * Process an uploaded file
+     */
+    async fileTransferProcessCreate(requestParameters: FileTransferProcessCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.fileTransferProcessCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

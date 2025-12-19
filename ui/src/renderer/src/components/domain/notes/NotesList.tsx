@@ -1,5 +1,7 @@
 import { useModal } from '@/contexts/ui/ModalContext';
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
+import useAPICall from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
@@ -17,7 +19,7 @@ import {
 } from 'iconoir-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '../../base/ActionBar/ActionBar';
+import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '../../base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter, SortDirection } from '../../base/ListView/ListView';
 import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
@@ -107,7 +109,9 @@ export default function NotesList({
     );
     const { navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
-    const { fleetingNotesApi, notesApi } = useApi();
+    const { notify } = useNotif();
+    const { fleetingNotesApi, notesApi, managementApi } = useApi();
+    const { execute } = useAPICall();
     const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
     const [pageSize, setPageSize] = useState(
         Number(searchParams.get('notes_pagesize')) || 10,
@@ -117,12 +121,25 @@ export default function NotesList({
         author: query?.author__username || '',
         editor: query?.editor__username || '',
         createdAt: {
-            from: query?.created_date_from || '',
-            to: query?.created_date_to || '',
+            // Only treat date filters as active when the range is complete.
+            from:
+                query?.created_date_from && query?.created_date_to
+                    ? query.created_date_from
+                    : '',
+            to:
+                query?.created_date_from && query?.created_date_to
+                    ? query.created_date_to
+                    : '',
         },
         lastChanged: {
-            from: query?.updated_date_from || '',
-            to: query?.updated_date_to || '',
+            from:
+                query?.updated_date_from && query?.updated_date_to
+                    ? query.updated_date_from
+                    : '',
+            to:
+                query?.updated_date_from && query?.updated_date_to
+                    ? query.updated_date_to
+                    : '',
         },
     });
     const [totalCount, setTotalCount] = useState(0);
@@ -230,12 +247,24 @@ export default function NotesList({
             author: query?.author__username || '',
             editor: query?.editor__username || '',
             createdAt: {
-                from: query?.created_date_from || '',
-                to: query?.created_date_to || '',
+                from:
+                    query?.created_date_from && query?.created_date_to
+                        ? query.created_date_from
+                        : '',
+                to:
+                    query?.created_date_from && query?.created_date_to
+                        ? query.created_date_to
+                        : '',
             },
             lastChanged: {
-                from: query?.updated_date_from || '',
-                to: query?.updated_date_to || '',
+                from:
+                    query?.updated_date_from && query?.updated_date_to
+                        ? query.updated_date_from
+                        : '',
+                to:
+                    query?.updated_date_from && query?.updated_date_to
+                        ? query.updated_date_to
+                        : '',
             },
             status: 'all',
         });
@@ -248,9 +277,26 @@ export default function NotesList({
         query?.updated_date_to,
     ]);
 
-    const handleRetrySelected = useCallback((_selectedIds: string[]) => {
-        // Intentionally left blank for now (UI only).
-    }, []);
+    const handleRetrySelected = useCallback(async (selectedIds: string[]) => {
+        if (selectedIds.length === 0) return;
+
+        const promises = selectedIds.map((id) =>
+            execute(() => managementApi.managementActionsCreate({
+                actionName: 'relinkNotes',
+                requestBody: {
+                    note_id: id,
+                },
+            }))
+        );
+
+        await Promise.all(promises);
+
+        notify({
+            type: 'success',
+            text: `Retrying ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}...`,
+        });
+        setSelectedNotes([]);
+    }, [managementApi, execute, notify]);
 
     // Notes to display (same as fetched notes since filters were removed)
     const displayedNotes = notes;
@@ -282,6 +328,9 @@ export default function NotesList({
         try {
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
+            const hasCompleteCreatedRange =
+                Boolean(columnFilters.createdAt?.from) && Boolean(columnFilters.createdAt?.to);
+
             const params = {
                 page,
                 pageSize: pageSize,
@@ -291,8 +340,10 @@ export default function NotesList({
                 authorUsername: query.author__username,
                 date: query.date,
                 references: query.references,
-                timestampGte: query.created_date_from || query.timestamp_gte,
-                timestampLte: query.created_date_to || query.timestamp_lte,
+                // Only apply timestamp filters when the range is complete.
+                // This prevents "stuck" start dates when loading with only a `*_from` param.
+                timestampGte: hasCompleteCreatedRange ? columnFilters.createdAt.from : undefined,
+                timestampLte: hasCompleteCreatedRange ? columnFilters.createdAt.to : undefined,
                 truncate: query.truncate,
             };
 
@@ -403,8 +454,19 @@ export default function NotesList({
         label: string | React.ReactNode;
         filterType?: 'text' | 'date'
     }> = [
-            { key: 'status', label: <StatusHeaderDropdown onStatusChange={handleStatusChange} status={columnFilters.status} statusOptions={['all', 'fleeting', 'healthy', 'warning', 'invalid', 'processing']} /> },
-            { key: 'title', label: 'Title' },
+            {
+                key: 'title',
+                label: (
+                    <div className='flex items-center gap-2'>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status}
+                            statusOptions={['all', 'fleeting', 'healthy', 'warning', 'invalid', 'processing']}
+                        />
+                        <span>Title</span>
+                    </div>
+                ),
+            },
             { key: 'description', label: 'Description' },
             { key: 'author', label: 'Author', filterType: 'text' as const },
             { key: 'editor', label: 'Editor', filterType: 'text' as const },
@@ -448,8 +510,8 @@ export default function NotesList({
                             </div>
                         </td>
                     )}
-                    <td className='w-20'>
-                        <div className='flex items-center'>
+                    <td className='truncate w-64'>
+                        <div className='flex items-center gap-2 min-w-0'>
                             {note.fleeting ? (
                                 <Tooltip content='Fleeting Note'>
                                     <span className='inline-flex items-center align-middle flex-shrink-0'>
@@ -474,15 +536,14 @@ export default function NotesList({
                                     </Tooltip>
                                 )
                             )}
+
+                            <span className='truncate'>
+                                {truncateText(
+                                    parseMarkdownInline(note.metadata?.title || ''),
+                                    64,
+                                )}
+                            </span>
                         </div>
-                    </td>
-                    <td className={`truncate w-64`}>
-                        <span className='truncate'>
-                            {truncateText(
-                                parseMarkdownInline(note.metadata?.title || ''),
-                                64,
-                            )}
-                        </span>
                     </td>
                     <td className='truncate max-w-xs'>
                         {note.metadata?.description
@@ -514,7 +575,74 @@ export default function NotesList({
                 <ActionBar
                     left={
                         <>
-                            {onCreateNote && (
+                            {!hideActionBar && (
+                                <>
+                                    <CollapsibleActionGroup
+                                        selectedCount={selectedNotes.length}
+                                        itemLabel='note'
+                                        actions={[
+                                            ...(onCreateNote ? [{
+                                                id: 'create',
+                                                tooltip: 'Create new note (Ctrl+N)',
+                                                icon: <PlusCircle width={18} height={18} />,
+                                                onClick: onCreateNote,
+                                                disabled: loading,
+                                                iconActive: true,
+                                                alwaysVisible: true,
+                                            }] : []),
+                                            {
+                                                id: 'delete',
+                                                tooltip: selectedNotes.length > 0
+                                                    ? `Delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''} (Del)`
+                                                    : 'Select notes to delete',
+                                                icon: <Trash width={18} height={18} />,
+                                                onClick: () => {
+                                                    if (selectedNotes.length > 0) actions[0].handler(selectedNotes);
+                                                },
+                                                disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                                                iconActive: selectedNotes.length > 0,
+
+                                            },
+                                            {
+                                                id: 'retry',
+                                                tooltip: selectedNotes.length > 0
+                                                    ? `Retry ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
+                                                    : 'Select notes to retry',
+                                                icon: <RefreshCircle width={18} height={18} />,
+                                                onClick: () => handleRetrySelected(selectedNotes),
+                                                disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                                                iconActive: selectedNotes.length > 0,
+
+                                            },
+                                            {
+                                                id: 'report',
+                                                tooltip: selectedNotes.length > 0
+                                                    ? `Generate report for ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
+                                                    : 'Select notes to generate report',
+                                                icon: <StatsReport width={18} height={18} />,
+                                                onClick: () => {
+                                                    if (selectedNotes.length === 0) return;
+                                                    const selectedNoteObjects = notes
+                                                        .filter((n) => n.id && selectedNotes.includes(n.id))
+                                                        .map((n) => ({
+                                                            id: n.id!,
+                                                            title: n.metadata?.title || n.title || 'Untitled',
+                                                        }));
+                                                    setModal(ReportGenerationModal, {
+                                                        selectedNotes: selectedNoteObjects,
+                                                    });
+                                                },
+                                                disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                                                iconActive: selectedNotes.length > 0,
+                                            },
+                                        ]}
+                                    />
+
+                                    <ActionBarDivider />
+                                </>
+                            )}
+
+                            {onCreateNote && hideActionBar && (
                                 <ActionBarButton
                                     tooltip='Create new note (Ctrl+N)'
                                     variant='circle'
@@ -523,66 +651,6 @@ export default function NotesList({
                                     onClick={onCreateNote}
                                     disabled={loading}
                                 />
-                            )}
-
-                            {!hideActionBar && (
-                                <>
-                                    <ActionBarDivider />
-
-                                    <ActionBarButton
-                                        tooltip={
-                                            selectedNotes.length > 0
-                                                ? `Delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''} (Del)`
-                                                : 'Select notes to delete'
-                                        }
-                                        icon={<Trash width={18} height={18} />}
-                                        iconActive={selectedNotes.length > 0}
-                                        count={selectedNotes.length}
-                                        disabled={loading || selectedNotes.length === 0 || notes.length === 0}
-                                        onClick={() => {
-                                            if (selectedNotes.length > 0) actions[0].handler(selectedNotes);
-                                        }}
-                                    />
-
-                                    <ActionBarButton
-                                        tooltip={
-                                            selectedNotes.length > 0
-                                                ? `Retry ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
-                                                : 'Select notes to retry'
-                                        }
-                                        icon={<RefreshCircle width={18} height={18} />}
-                                        iconActive={selectedNotes.length > 0}
-                                        count={selectedNotes.length}
-                                        disabled={loading || selectedNotes.length === 0 || notes.length === 0}
-                                        onClick={() => handleRetrySelected(selectedNotes)}
-                                    />
-
-                                    <ActionBarButton
-                                        tooltip={
-                                            selectedNotes.length > 0
-                                                ? `Generate report for ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
-                                                : 'Select notes to generate report'
-                                        }
-                                        icon={<StatsReport width={18} height={18} />}
-                                        iconActive={selectedNotes.length > 0}
-                                        disabled={loading || selectedNotes.length === 0 || notes.length === 0}
-                                        onClick={() => {
-                                            if (selectedNotes.length === 0) return;
-                                            const selectedNoteObjects = notes
-                                                .filter((n) => n.id && selectedNotes.includes(n.id))
-                                                .map((n) => ({
-                                                    id: n.id!,
-                                                    title: n.metadata?.title || n.title || 'Untitled',
-                                                }));
-
-                                            setModal(ReportGenerationModal, {
-                                                selectedNotes: selectedNoteObjects,
-                                            });
-                                        }}
-                                    />
-
-                                    <ActionBarDivider />
-                                </>
                             )}
 
                             {contentSearch && (

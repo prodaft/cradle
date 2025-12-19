@@ -62,6 +62,7 @@ models/EssentialUserRetrieve.ts
 models/EssentialUserRetrieveRequest.ts
 models/EventLog.ts
 models/FileDownload.ts
+models/FileProcessRequest.ts
 models/FileReference.ts
 models/FileReferenceRequest.ts
 models/FileReferenceWithNote.ts

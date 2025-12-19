@@ -7,7 +7,7 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Report } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
 import ListView, {
     DateRangeFilter,
     SortDirection,
@@ -267,15 +267,19 @@ export default function Reports() {
         filterType?: 'text' | 'date';
     }> = [
             {
-                key: 'status',
-                label: <StatusHeaderDropdown
-                    onStatusChange={handleStatusChange}
-                    status={columnFilters.status}
-                    statusOptions={['all', 'done', 'working', 'error']}
-                />,
-                sortable: false
+                key: 'title',
+                label: (
+                    <div className='flex items-center gap-2'>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status}
+                            statusOptions={['all', 'done', 'working', 'error']}
+                        />
+                        <span>Title</span>
+                    </div>
+                ),
+                sortable: true,
             },
-            { key: 'title', label: 'Title', sortable: true },
             { key: 'strategy', label: 'Strategy', sortable: true },
             { key: 'anonymized', label: 'Anonymized', sortable: true },
             {
@@ -429,13 +433,13 @@ export default function Reports() {
                         </div>
                     </td>
                 )}
-                <td className='w-20'>
-                    <div className='flex items-center'>
-                        {getStatusIcon(report.status, report.errorMessage || undefined)}
-                    </div>
-                </td>
                 <td className='cradle-text-primary'>
-                    {truncateText(report.title, 50)}
+                    <div className='flex items-center gap-2 min-w-0'>
+                        <span className='inline-flex items-center flex-shrink-0'>
+                            {getStatusIcon(report.status, report.errorMessage || undefined)}
+                        </span>
+                        <span className='truncate'>{truncateText(report.title, 50)}</span>
+                    </div>
                 </td>
                 <td className='cradle-text-secondary'>
                     {capitalizeString(report.strategy || 'N/A')}
@@ -477,41 +481,41 @@ export default function Reports() {
                 <ActionBar
                     left={
                         <>
-                            <ActionBarButton
-                                tooltip={
-                                    selectedReports.length > 0
-                                        ? `Download ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                        : 'Select reports to download'
-                                }
-                                onClick={() => handleDownload(selectedReports)}
-                                disabled={loading || reports.length === 0 || selectedReports.length === 0}
-                                icon={<Download width={20} height={20} />}
-                                iconActive={selectedReports.length > 0}
-                                count={selectedReports.length}
-                            />
-                            <ActionBarButton
-                                tooltip={
-                                    selectedReports.length > 0
-                                        ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                        : 'Select reports to delete'
-                                }
-                                onClick={() => handleDelete(selectedReports)}
-                                disabled={loading || reports.length === 0 || selectedReports.length === 0}
-                                icon={<Trash width={20} height={20} />}
-                                iconActive={selectedReports.length > 0}
-                                count={selectedReports.length}
-                            />
-                            <ActionBarButton
-                                tooltip={
-                                    selectedReports.length > 0
-                                        ? `Retry ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                        : 'Select reports to retry'
-                                }
-                                onClick={() => handleRetry(selectedReports)}
-                                disabled={loading || reports.length === 0 || selectedReports.length === 0}
-                                icon={<RefreshCircle width={20} height={20} />}
-                                iconActive={selectedReports.length > 0}
-                                count={selectedReports.length}
+                            <CollapsibleActionGroup
+                                selectedCount={selectedReports.length}
+                                itemLabel='report'
+                                actions={[
+                                    {
+                                        id: 'download',
+                                        tooltip: selectedReports.length > 0
+                                            ? `Download ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                            : 'Select reports to download',
+                                        icon: <Download width={20} height={20} />,
+                                        onClick: () => handleDownload(selectedReports),
+                                        disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                                        iconActive: selectedReports.length > 0,
+                                    },
+                                    {
+                                        id: 'delete',
+                                        tooltip: selectedReports.length > 0
+                                            ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                            : 'Select reports to delete',
+                                        icon: <Trash width={20} height={20} />,
+                                        onClick: () => handleDelete(selectedReports),
+                                        disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                                        iconActive: selectedReports.length > 0,
+                                    },
+                                    {
+                                        id: 'retry',
+                                        tooltip: selectedReports.length > 0
+                                            ? `Retry ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                            : 'Select reports to retry',
+                                        icon: <RefreshCircle width={20} height={20} />,
+                                        onClick: () => handleRetry(selectedReports),
+                                        disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                                        iconActive: selectedReports.length > 0,
+                                    },
+                                ]}
                             />
                             <ActionBarDivider />
                             <ActionBarSearch

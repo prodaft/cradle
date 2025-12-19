@@ -1,6 +1,7 @@
 import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
+import useAPICall from '@/hooks/api/useAPICall';
 import InProgress from '@components/feedback/InProgress';
 import EnrichmentRequestModal from '@components/modals/enrichment/EnrichmentRequestModal';
 import { EnrichmentRequestList } from '@services/cradle';
@@ -28,6 +29,7 @@ export default function EnrichmentRequests() {
     const [searchParams, setSearchParams] = useSearchParams();
     const { notify } = useNotif();
     const { intelioApi } = useApi();
+    const { execute } = useAPICall();
     const { setModal } = useModal();
 
     // Enrichment requests list state
@@ -253,24 +255,17 @@ export default function EnrichmentRequests() {
     const handleRetrySelected = async () => {
         if (selectedRequests.length === 0) return;
 
-        try {
-            // Retry all selected requests
-            await Promise.all(
-                selectedRequests.map((id) => intelioApi.enrichmentRestart({ id: id })),
-            );
+        // Retry all selected requests
+        await Promise.all(
+            selectedRequests.map((id) => execute(() => intelioApi.enrichmentRestart({ id: id }))),
+        );
 
-            notify({
-                type: 'success',
-                text: `Retried ${selectedRequests.length} enrichment request(s)`,
-            });
-            setSelectedRequests([]);
-            fetchEnrichmentRequests();
-        } catch (error: any) {
-            notify({
-                type: 'error',
-                text: `Error retrying enrichment requests: ${error.message}`,
-            });
-        }
+        notify({
+            type: 'success',
+            text: `Retried ${selectedRequests.length} enrichment request(s)`,
+        });
+        setSelectedRequests([]);
+        fetchEnrichmentRequests();
     };
 
     return (

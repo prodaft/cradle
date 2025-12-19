@@ -5,16 +5,16 @@ import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
+import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
 import AlertBox from '@components/base/Alert/AlertBox';
-import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import Badge from '@components/base/Badge/Badge';
 import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import bytes from 'bytes';
-import { Download, Trash } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Download, RefreshCircle, Trash } from 'iconoir-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 interface FilesListQuery {
@@ -95,6 +95,7 @@ export default function FilesList({
     const [selectedFiles, setSelectedFiles] = useState<(string)[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const { notesApi, fileTransferApi } = useApi();
+    const [statusFilter, setStatusFilter] = useState<'all' | 'healthy' | 'warning'>('all');
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
@@ -192,6 +193,10 @@ export default function FilesList({
         [notify],
     );
 
+    const getFileStatus = useCallback((file: FileReferenceWithNote): 'healthy' | 'warning' => {
+        return file.sha256Hash ? 'healthy' : 'warning';
+    }, []);
+
     // Download a single file
     const handleDownloadFile = useCallback(async (file: FileReferenceWithNote) => {
         if (!file.bucketName || !file.minioFileName) {
@@ -252,6 +257,23 @@ export default function FilesList({
         }
     }, [selectedFiles, files, fileTransferApi, notify]);
 
+    const handleRetrySelected = useCallback(async () => {
+        if (selectedFiles.length === 0) return;
+
+        const promises = selectedFiles.map((fileId) => execute(() => fileTransferApi.fileTransferProcessCreate({
+            fileProcessRequest: {
+                fileId: fileId,
+            },
+        })));
+
+        await Promise.all(promises);
+        notify({
+            type: 'success',
+            text: `Retried ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`,
+        });
+        setSelectedFiles([]);
+    }, [selectedFiles, fileTransferApi, execute, notify]);
+
     const handleDeleteSelected = useCallback(async () => {
         if (selectedFiles.length === 0) return;
 
@@ -304,14 +326,18 @@ export default function FilesList({
     // Memoize columns to prevent recreation on every render
     const columns = useMemo(
         () => [
-            { key: 'name', label: 'Name', className: 'w-64' },
+            {
+                key: 'name',
+                label: 'Name',
+                className: 'w-64',
+            },
             { key: 'entities', label: 'Entities', className: 'w-32' },
             { key: 'mimetype', label: 'MimeType', className: 'w-32' },
             { key: 'fileSize', label: 'Size', className: 'w-24' },
             { key: 'sha256', label: 'SHA256', className: 'w-48' },
             { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
         ],
-        [],
+        [resetToFirstPage, statusFilter],
     );
 
     interface SelectProps {
@@ -326,6 +352,8 @@ export default function FilesList({
             index: number,
             selectProps: SelectProps = {},
         ) => {
+            if (statusFilter !== 'all' && getFileStatus(file) !== statusFilter) return null;
+
             for (const f of filteredFiles) {
                 if (f.id === file.id) return null;
             }
@@ -346,7 +374,9 @@ export default function FilesList({
                             </div>
                         </td>
                     )}
-                    <td className='truncate w-32'>{truncateText(file.fileName, 32)}</td>
+                    <td className='truncate w-32'>
+                        <span className='truncate'>{truncateText(file.fileName, 32)}</span>
+                    </td>
                     <td className=''>
                         <div className='flex flex-wrap gap-1'>
                             {file.entities?.slice(0, 3).map((entity) => (
@@ -423,25 +453,42 @@ export default function FilesList({
                 <ActionBar
                     left={
                         <>
-                            <ActionBarButton
-                                tooltip={
-                                    selectedFiles.length > 0
-                                        ? `Download ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
-                                        : 'Select files to download'
-                                }
-                                onClick={handleDownloadSelected}
-                                disabled={loading || files.length === 0 || selectedFiles.length === 0}
-                                icon={<Download width={20} height={20} />}
-                                iconActive={selectedFiles.length > 0}
-                                count={selectedFiles.length}
-                            />
-                            <ActionBarButton
-                                tooltip='Delete selected files (Coming soon)'
-                                onClick={handleDeleteSelected}
-                                disabled={loading || files.length === 0 || selectedFiles.length === 0}
-                                icon={<Trash width={20} height={20} />}
-                                iconActive={selectedFiles.length > 0}
-                                count={selectedFiles.length}
+                            <CollapsibleActionGroup
+                                selectedCount={selectedFiles.length}
+                                itemLabel='file'
+                                actions={[
+                                    {
+                                        id: 'download',
+                                        tooltip: selectedFiles.length > 0
+                                            ? `Download ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+                                            : 'Select files to download',
+                                        icon: <Download width={20} height={20} />,
+                                        onClick: handleDownloadSelected,
+                                        disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                        iconActive: selectedFiles.length > 0,
+                                        
+                                    },
+                                    {
+                                        id: 'delete',
+                                        tooltip: 'Delete selected files (Coming soon)',
+                                        icon: <Trash width={20} height={20} />,
+                                        onClick: handleDeleteSelected,
+                                        disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                        iconActive: selectedFiles.length > 0,
+                                        
+                                    },
+                                    {
+                                        id: 'retry',
+                                        tooltip: selectedFiles.length > 0
+                                            ? `Retry ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+                                            : 'Select files to retry',
+                                        icon: <RefreshCircle width={20} height={20} />,
+                                        onClick: handleRetrySelected,
+                                        disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                        iconActive: selectedFiles.length > 0,
+                                        
+                                    },
+                                ]}
                             />
                             <ActionBarDivider />
                             <ActionBarSearch

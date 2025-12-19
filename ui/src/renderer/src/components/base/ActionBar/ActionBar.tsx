@@ -1,6 +1,6 @@
 import TableCard from '@components/base/Card/TableCard';
 import Tooltip from '@components/base/Tooltip/Tooltip';
-import { Search, Xmark } from 'iconoir-react';
+import { MoreHoriz, Search, Xmark } from 'iconoir-react';
 import { debounce } from 'lodash';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -212,6 +212,184 @@ export const ActionBar = memo(function ActionBar({ left, right }: ActionBarProps
         <div className='flex items-center gap-2'>{right}</div>
       </div>
     </TableCard>
+  );
+});
+
+export interface CollapsibleAction {
+  /** Unique identifier for the action */
+  id: string;
+  /** Tooltip text */
+  tooltip: React.ReactNode;
+  /** Icon to display */
+  icon: React.ReactNode;
+  /** Click handler */
+  onClick: () => void;
+  /** Whether the action is disabled */
+  disabled?: boolean;
+  /** Whether the icon should be highlighted as active */
+  iconActive?: boolean;
+  /** If true, this action is never collapsed (e.g., "add" actions) */
+  alwaysVisible?: boolean;
+}
+
+export interface CollapsibleActionGroupProps {
+  /** Array of action configurations */
+  actions: CollapsibleAction[];
+  /** Number of currently selected items (used for display and enabling expand) */
+  selectedCount: number;
+  /** Label for items (e.g., "note", "file") */
+  itemLabel?: string;
+}
+
+/**
+ * CollapsibleActionGroup - A group of action buttons that collapses into a MoreHoriz button
+ *
+ * Features:
+ * - Shows MoreHoriz button when collapsed (with selected count)
+ * - Expands to show all actions when clicked
+ * - Collapse enabled when there are 2+ collapsible actions
+ * - Only allows opening if more than 1 item is selected
+ * - Actions marked with `alwaysVisible` are never collapsed
+ * - MoreHoriz button stays visible when expanded (click to collapse)
+ * - Animated expand/collapse transitions
+ */
+export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
+  actions,
+  selectedCount,
+  itemLabel = 'item',
+}: CollapsibleActionGroupProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Separate always-visible actions from collapsible ones
+  const alwaysVisibleActions = actions.filter((a) => a.alwaysVisible);
+  const collapsibleActions = actions.filter((a) => !a.alwaysVisible);
+
+  // Collapse is available when there are 2+ collapsible actions
+  const shouldCollapse = collapsibleActions.length >= 2;
+  // Can expand if at least 1 item is selected
+  const canExpand = selectedCount >= 1 && shouldCollapse;
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const handleActionClick = (action: CollapsibleAction) => {
+    setIsExpanded(false);
+    action.onClick();
+  };
+
+  // Circle button style (perfect circle)
+  const circleButtonClass =
+    'flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed rounded-full';
+
+  // Pill button style (for MoreHoriz with count)
+  const pillButtonClass =
+    'flex items-center justify-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed rounded-full';
+
+  const renderActionButton = (action: CollapsibleAction, animated = false, animationIndex = 0) => {
+    const button = (
+      <Tooltip key={action.id} content={action.tooltip}>
+        <button
+          type='button'
+          onClick={() => handleActionClick(action)}
+          disabled={action.disabled}
+          className={circleButtonClass}
+        >
+          <span className={action.iconActive ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}>
+            {action.icon}
+          </span>
+        </button>
+      </Tooltip>
+    );
+
+    if (animated) {
+      return (
+        <div
+          key={action.id}
+          className='animate-actions-fade-in-right'
+          style={{ animationDelay: `${animationIndex * 30}ms` }}
+        >
+          {button}
+        </div>
+      );
+    }
+
+    return button;
+  };
+
+  const renderCollapsibleActions = () => {
+    if (!shouldCollapse) {
+      // No collapse needed - show all actions directly
+      return collapsibleActions.map((action) => renderActionButton(action));
+    }
+
+    // MoreHoriz button (always visible when collapsible)
+    const moreButton = (
+      <Tooltip
+        content={
+          !canExpand
+            ? `Select ${itemLabel}s to see actions`
+            : isExpanded
+              ? 'Collapse actions'
+              : `${collapsibleActions.length} actions available`
+        }
+      >
+        <button
+          type='button'
+          onClick={() => {
+            if (canExpand) {
+              setIsExpanded(!isExpanded);
+            }
+          }}
+          disabled={!canExpand}
+          className={selectedCount > 0 ? pillButtonClass : circleButtonClass}
+        >
+          <MoreHoriz className={`w-5 h-5 ${selectedCount > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}`} />
+          {selectedCount > 0 && (
+            <span className='text-sm text-cradle-text-secondary font-mono'>
+              {selectedCount}
+            </span>
+          )}
+        </button>
+      </Tooltip>
+    );
+
+    if (!isExpanded) {
+      // Collapsed state: show only MoreHoriz button
+      return moreButton;
+    }
+
+    // Expanded state: show MoreHoriz + all action buttons with animation
+    return (
+      <>
+        {moreButton}
+        {collapsibleActions.map((action, index) => renderActionButton(action, true, index))}
+      </>
+    );
+  };
+
+  return (
+    <div ref={containerRef} className='flex items-center gap-2'>
+      {/* Always-visible actions come first */}
+      {alwaysVisibleActions.map((action) => renderActionButton(action))}
+
+      {/* Collapsible actions */}
+      {renderCollapsibleActions()}
+    </div>
   );
 });
 
