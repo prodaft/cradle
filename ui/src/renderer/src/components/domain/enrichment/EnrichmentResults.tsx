@@ -1,10 +1,10 @@
+import PaginationWrapper from '@/components/base/Pagination/PaginationWrapper';
 import Tooltip from '@/components/base/Tooltip/Tooltip';
 import { useTabContext } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { formatDate } from '@/utils/dates';
 import Badge from '@components/base/Badge/Badge';
-import Pagination from '@components/base/Pagination/Pagination';
 import ReactJson from '@microlink/react-json-view';
 import {
     EnrichmentRelation,
@@ -512,51 +512,6 @@ export default function EnrichmentResults(): JSX.Element {
                                     </div>
                                 ) : (
                                     <Tabs defaultTab={0} queryParam='enricherTab'>
-                                        {/* Artifacts Tab */}
-                                        <Tab title='Artifacts'>
-                                            <div className='px-3 pt-3 h-full overflow-y-auto'>
-                                                {!enricherDetails?.artifacts ||
-                                                    enricherDetails.artifacts.length === 0 ? (
-                                                    <div className='flex flex-col items-center justify-center min-h-[200px]'>
-                                                        <p className='text-sm cradle-text-tertiary'>
-                                                            No artifacts found.
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div className='space-y-2'>
-                                                        {enricherDetails.artifacts.map(
-                                                            (artifact: any, index: number) => (
-                                                                <div
-                                                                    key={index}
-                                                                    className='p-3 bg-cradle-bg-elevated border cradle-border rounded-md'
-                                                                >
-                                                                    {typeof artifact === 'string' ? (
-                                                                        <span className='text-sm text-cradle-text-primary font-mono'>
-                                                                            {artifact}
-                                                                        </span>
-                                                                    ) : (
-                                                                        <ReactJson
-                                                                            src={artifact}
-                                                                            theme='monokai'
-                                                                            collapsed={1}
-                                                                            displayDataTypes={false}
-                                                                            displayObjectSize={false}
-                                                                            enableClipboard={true}
-                                                                            style={{
-                                                                                backgroundColor:
-                                                                                    'transparent',
-                                                                                fontSize: '12px',
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </Tab>
-
                                         {/* Relations Tab */}
                                         <Tab title='Relations'>
                                             <div className='px-3 pt-3 h-full flex flex-col overflow-hidden'>
@@ -652,6 +607,21 @@ export default function EnrichmentResults(): JSX.Element {
                                                     >
                                                         <Download width='18' height='18' />
                                                     </button>
+
+
+                                                    {/* Pagination */}
+                                                    <PaginationWrapper
+                                                        currentPage={page}
+                                                        totalPages={totalPages}
+                                                        onPageChange={(newPage) =>
+                                                            setPage(newPage)
+                                                        }
+                                                        pageSize={pageSize}
+                                                        onPageSizeChange={(newSize) => {
+                                                            setPageSize(newSize);
+                                                            setPage(1);
+                                                        }}
+                                                    />
                                                 </div>
 
                                                 {/* Results */}
@@ -709,27 +679,50 @@ export default function EnrichmentResults(): JSX.Element {
                                                                     </div>
                                                                 ))}
                                                             </div>
-
-                                                            {/* Pagination */}
-                                                            {totalPages > 1 && (
-                                                                <div className='pb-4'>
-                                                                    <Pagination
-                                                                        currentPage={page}
-                                                                        totalPages={totalPages}
-                                                                        onPageChange={(newPage) =>
-                                                                            setPage(newPage)
-                                                                        }
-                                                                        pageSize={pageSize}
-                                                                        onPageSizeChange={(newSize) => {
-                                                                            setPageSize(newSize);
-                                                                            setPage(1);
-                                                                        }}
-                                                                    />
-                                                                </div>
-                                                            )}
                                                         </>
                                                     )}
                                                 </div>
+                                            </div>
+                                        </Tab>
+
+                                        {/* Artifacts Tab */}
+                                        <Tab title='Artifacts'>
+                                            <div className='h-full flex flex-col overflow-hidden'>
+                                                {!enricherDetails?.artifacts ||
+                                                    enricherDetails.artifacts.length === 0 ? (
+                                                    <div className='flex flex-col items-center justify-center h-full'>
+                                                        <p className='text-sm cradle-text-tertiary'>
+                                                            No artifacts found.
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className='flex-1 overflow-y-auto min-h-0'>
+                                                        <div className='divide-y divide-cradle-border-primary'>
+                                                            {enricherDetails.artifacts.map(
+                                                                (artifact: any, index: number) => (
+                                                                    <div
+                                                                        key={index}
+                                                                        className='px-4 py-3 flex items-center gap-3'
+                                                                    >
+                                                                        {/* Entry class indicator */}
+                                                                        {artifact.entry_class && (
+                                                                            <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
+                                                                                {artifact.entry_class}
+                                                                            </span>
+                                                                        )}
+
+                                                                        {/* Name */}
+                                                                        <span className='flex-1 text-sm text-cradle-text-primary truncate'>
+                                                                            {typeof artifact === 'string'
+                                                                                ? artifact
+                                                                                : artifact.name || JSON.stringify(artifact)}
+                                                                        </span>
+                                                                    </div>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         </Tab>
 

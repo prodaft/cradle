@@ -479,7 +479,6 @@ class EnrichmentRequest(LifecycleModel):
         )
 
         ignored = {}
-        print(all_eclasses)
         for req in self.request:
             if req["entry_class"] not in all_eclasses:
                 ignored[(req["entry_class"], req["name"])] = req
@@ -540,7 +539,10 @@ class EnrichmentRequest(LifecycleModel):
                         instance.status = EnrichmentStatus.ERROR
                     elif err_count > 0:
                         instance.status = EnrichmentStatus.WARNING
-                    elif instance.status == EnrichmentStatus.WAITING:
+                    elif (
+                        instance.status != EnrichmentStatus.WARNING
+                        and instance.status != EnrichmentStatus.ERROR
+                    ):
                         instance.status = EnrichmentStatus.DONE
 
                     instance.save(

@@ -1,6 +1,6 @@
 import Tooltip from '@/components/base/Tooltip/Tooltip';
 import { useNotif } from '@/contexts';
-import { useAPICall } from '@/hooks';
+import { useAPICall, useCradleNavigate } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
@@ -15,7 +15,7 @@ import type { FileDownload, FileReferenceWithNote } from '@services/cradle/model
 import bytes from 'bytes';
 import { Download, RefreshCircle, Trash } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 
 interface FilesListQuery {
     date?: string;
@@ -70,7 +70,7 @@ export default function FilesList({
     onCountChange,
 }: FilesListProps) {
     const [searchParams, setSearchParams] = useSearchParams();
-    const navigate = useNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const [files, setFiles] = useState<FileReferenceWithNote[]>([]);
     const [alert, setInternalAlert] = useState<Alert>({
         show: false,
@@ -361,7 +361,7 @@ export default function FilesList({
             const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
             return (
-                <tr key={file.id || index}>
+                <tr key={file.id || index} className='cursor-pointer' onClick={navigateLink(`/notes/${file.noteId}`)}>
                     {enableMultiSelect && (
                         <td className='w-12' onClick={(e) => e.stopPropagation()}>
                             <div className='flex items-center'>

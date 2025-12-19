@@ -186,7 +186,7 @@ function EnrichmentRequestsList({
                             height='18'
                         />
                     );
-                case 'waiting':
+                case 'working':
                     return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
                 default:
                     return null;

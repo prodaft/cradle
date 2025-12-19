@@ -535,9 +535,9 @@ class EnrichmentRequestEnricherAPIView(APIView):
             )
 
         # Get enricher information
-        enricher = enrichment_request.enrichers.get(enricher_type)
-
-        serializer = EnrichmentRequestEnricherSerializer.for_enrichment(enricher)
+        serializer = EnrichmentRequestEnricherSerializer.for_enrichment(
+            enrichment_request, enricher_type
+        )
         return Response(serializer.data)
 
 

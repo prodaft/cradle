@@ -288,7 +288,9 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
             )
 
         artifacts = []
-        enabled_eclasses = set(enricher_settings.for_eclasses.all())
+        enabled_eclasses = set(
+            enricher_settings.for_eclasses.values_list("subtype", flat=True)
+        )
 
         for req in request.request:
             if req["entry_class"] in enabled_eclasses:
