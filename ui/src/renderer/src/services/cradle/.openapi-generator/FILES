@@ -35,6 +35,7 @@ models/EnrichmentRelation.ts
 models/EnrichmentRequest.ts
 models/EnrichmentRequestDetail.ts
 models/EnrichmentRequestEnricher.ts
+models/EnrichmentRequestEnricherMinimal.ts
 models/EnrichmentRequestList.ts
 models/EnrichmentRequestRequest.ts
 models/EnrichmentSettings.ts

@@ -345,17 +345,21 @@ class EnrichmentDetailAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
+    def get_object(self, pk, user):
+        if user.is_cradle_admin:
+            queryset = EnrichmentRequest.objects.all()
+        else:
+            queryset = EnrichmentRequest.objects.get_accessible_by(user)
         try:
-            return EnrichmentRequest.objects.prefetch_related(
-                "enrichers_settings", "entities"
-            ).get(pk=pk)
+            return queryset.prefetch_related("enrichers_settings", "entities").get(
+                pk=pk
+            )
         except EnrichmentRequest.DoesNotExist:
             return None
 
     def get(self, request, pk):
         """Retrieve enrichment request details"""
-        enrichment_request = self.get_object(pk)
+        enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(
@@ -373,7 +377,7 @@ class EnrichmentDetailAPIView(APIView):
 
     def delete(self, request, pk):
         """Delete an enrichment request"""
-        enrichment_request = self.get_object(pk)
+        enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(
@@ -416,17 +420,22 @@ class EnrichmentRestartAPIView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestDetailSerializer
 
-    def get_object(self, pk):
+    def get_object(self, pk, user):
+        if user.is_cradle_admin:
+            queryset = EnrichmentRequest.objects.all()
+        else:
+            queryset = EnrichmentRequest.objects.get_accessible_by(user)
+
         try:
-            return EnrichmentRequest.objects.prefetch_related(
-                "enrichers_settings", "entities"
-            ).get(pk=pk)
+            return queryset.prefetch_related("enrichers_settings", "entities").get(
+                pk=pk
+            )
         except EnrichmentRequest.DoesNotExist:
             return None
 
     def post(self, request, pk):
         """Restart an enrichment request"""
-        enrichment_request = self.get_object(pk)
+        enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(
@@ -489,17 +498,20 @@ class EnrichmentRequestEnricherAPIView(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = EnrichmentRequestEnricherSerializer
 
-    def get_object(self, pk):
+    def get_object(self, pk, user):
+        if user.is_cradle_admin:
+            queryset = EnrichmentRequest.objects.all()
+        else:
+            queryset = EnrichmentRequest.objects.get_accessible_by(user)
+
         try:
-            return EnrichmentRequest.objects.prefetch_related("enrichers_settings").get(
-                pk=pk
-            )
+            return queryset.prefetch_related("enrichers_settings").get(pk=pk)
         except EnrichmentRequest.DoesNotExist:
             return None
 
     def get(self, request, pk, enricher_type):
         """Retrieve enrichment request enricher information"""
-        enrichment_request = self.get_object(pk)
+        enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(
@@ -589,18 +601,21 @@ class EnrichmentRelationsAPIView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get_object(self, pk):
+    def get_object(self, pk, user):
+        if user.is_cradle_admin:
+            queryset = EnrichmentRequest.objects.all()
+        else:
+            queryset = EnrichmentRequest.objects.get_accessible_by(user)
+
         try:
-            return EnrichmentRequest.objects.prefetch_related("enrichers_settings").get(
-                pk=pk
-            )
+            return queryset.prefetch_related("enrichers_settings").get(pk=pk)
         except EnrichmentRequest.DoesNotExist:
             return None
 
     def get(self, request, pk, enricher_type):
         """Retrieve relations created by an enrichment request filtered by enricher type"""
 
-        enrichment_request = self.get_object(pk)
+        enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
             raise EnrichmentRequestNotFoundException(
@@ -639,10 +654,10 @@ class EnrichmentRelationsAPIView(APIView):
                 detail="page_size cannot be greater than 100."
             )
 
-        query_str = request.query_params.get("query") + "*"
+        query_str = request.query_params.get("query")
         if query_str:
             try:
-                query_filter = parse_query(query_str)
+                query_filter = parse_query(query_str + "*")
             except Exception as e:
                 raise InvalidQuerySyntaxException(
                     detail=f"Invalid query syntax: {str(e)}"

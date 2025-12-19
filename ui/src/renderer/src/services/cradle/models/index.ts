@@ -19,6 +19,7 @@ export * from './EnrichmentRelation';
 export * from './EnrichmentRequest';
 export * from './EnrichmentRequestDetail';
 export * from './EnrichmentRequestEnricher';
+export * from './EnrichmentRequestEnricherMinimal';
 export * from './EnrichmentRequestList';
 export * from './EnrichmentRequestRequest';
 export * from './EnrichmentSettings';

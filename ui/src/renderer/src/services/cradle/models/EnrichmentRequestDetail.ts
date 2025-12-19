@@ -20,6 +20,13 @@ import {
     EssentialUserRetrieveToJSON,
     EssentialUserRetrieveToJSONTyped,
 } from './EssentialUserRetrieve';
+import type { EnrichmentRequestEnricherMinimal } from './EnrichmentRequestEnricherMinimal';
+import {
+    EnrichmentRequestEnricherMinimalFromJSON,
+    EnrichmentRequestEnricherMinimalFromJSONTyped,
+    EnrichmentRequestEnricherMinimalToJSON,
+    EnrichmentRequestEnricherMinimalToJSONTyped,
+} from './EnrichmentRequestEnricherMinimal';
 
 /**
  * Serializer for detailed enrichment request information.
@@ -39,6 +46,12 @@ export interface EnrichmentRequestDetail {
      * @memberof EnrichmentRequestDetail
      */
     readonly title?: string;
+    /**
+     * 
+     * @type {any}
+     * @memberof EnrichmentRequestDetail
+     */
+    readonly ignored?: any | null;
     /**
      * 
      * @type {Date}
@@ -69,40 +82,16 @@ export interface EnrichmentRequestDetail {
     readonly userDetail?: EssentialUserRetrieve;
     /**
      * 
-     * @type {Array<string>}
+     * @type {Array<EnrichmentRequestEnricherMinimal>}
      * @memberof EnrichmentRequestDetail
      */
-    readonly enricherTypes?: Array<string>;
-    /**
-     * 
-     * @type {Array<{ [key: string]: string; }>}
-     * @memberof EnrichmentRequestDetail
-     */
-    readonly enrichersDetail?: Array<{ [key: string]: string; }>;
+    readonly enrichers?: Array<EnrichmentRequestEnricherMinimal>;
     /**
      * 
      * @type {any}
      * @memberof EnrichmentRequestDetail
      */
     readonly request?: any | null;
-    /**
-     * 
-     * @type {any}
-     * @memberof EnrichmentRequestDetail
-     */
-    readonly errors?: any | null;
-    /**
-     * 
-     * @type {any}
-     * @memberof EnrichmentRequestDetail
-     */
-    readonly warnings?: any | null;
-    /**
-     * 
-     * @type {any}
-     * @memberof EnrichmentRequestDetail
-     */
-    readonly enricherStatus?: any | null;
 }
 
 
@@ -138,16 +127,13 @@ export function EnrichmentRequestDetailFromJSONTyped(json: any, ignoreDiscrimina
         
         'id': json['id'] == null ? undefined : json['id'],
         'title': json['title'] == null ? undefined : json['title'],
+        'ignored': json['ignored'] == null ? undefined : json['ignored'],
         'createdAt': json['created_at'] == null ? undefined : (new Date(json['created_at'])),
         'completedAt': json['completed_at'] == null ? undefined : (new Date(json['completed_at'])),
         'status': json['status'] == null ? undefined : json['status'],
         'userDetail': json['user_detail'] == null ? undefined : EssentialUserRetrieveFromJSON(json['user_detail']),
-        'enricherTypes': json['enricher_types'] == null ? undefined : json['enricher_types'],
-        'enrichersDetail': json['enrichers_detail'] == null ? undefined : json['enrichers_detail'],
+        'enrichers': json['enrichers'] == null ? undefined : ((json['enrichers'] as Array<any>).map(EnrichmentRequestEnricherMinimalFromJSON)),
         'request': json['request'] == null ? undefined : json['request'],
-        'errors': json['errors'] == null ? undefined : json['errors'],
-        'warnings': json['warnings'] == null ? undefined : json['warnings'],
-        'enricherStatus': json['enricher_status'] == null ? undefined : json['enricher_status'],
     };
 }
 
@@ -155,7 +141,7 @@ export function EnrichmentRequestDetailToJSON(json: any): EnrichmentRequestDetai
     return EnrichmentRequestDetailToJSONTyped(json, false);
 }
 
-export function EnrichmentRequestDetailToJSONTyped(value?: Omit<EnrichmentRequestDetail, 'id'|'title'|'created_at'|'completed_at'|'status'|'user_detail'|'enricher_types'|'enrichers_detail'|'request'|'errors'|'warnings'|'enricher_status'> | null, ignoreDiscriminator: boolean = false): any {
+export function EnrichmentRequestDetailToJSONTyped(value?: Omit<EnrichmentRequestDetail, 'id'|'title'|'ignored'|'created_at'|'completed_at'|'status'|'user_detail'|'enrichers'|'request'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

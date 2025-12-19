@@ -45,7 +45,7 @@ export default function EnrichmentRequests() {
         (searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc',
     );
     const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('pagesize')) || 25,
+        Number(searchParams.get('pagesize')) || 10,
     );
     const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
 

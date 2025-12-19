@@ -13,6 +13,7 @@ from entries.serializers import (
     EntrySerializer,
     EntrySerializerMinimal,
 )
+from intelio.enums import EnrichmentStatus
 from intelio.models.base import BaseDigest, EnrichmentRequest
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
@@ -231,66 +232,55 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
-class EnrichmentRequestListSerializer(serializers.ModelSerializer):
-    """Serializer for listing enrichment requests with limited details."""
+class EnrichmentRequestEnricherMinimal(serializers.Serializer):
+    """Serializer for minimal enrichment request enricher information."""
 
-    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
-    enricher_class = serializers.SerializerMethodField(read_only=True)
-    enricher_name = serializers.SerializerMethodField(read_only=True)
+    enricher_type = serializers.CharField(read_only=True)
+    display_name = serializers.CharField(read_only=True)
+    enabled = serializers.BooleanField(read_only=True)
+    status = serializers.CharField(read_only=True)
 
-    class Meta:
-        model = EnrichmentRequest
-        fields = [
-            "id",
-            "title",
-            "created_at",
-            "completed_at",
-            "status",
-            "user_detail",
-            "enricher_class",
-            "enricher_name",
-        ]
-        read_only_fields = fields
+    @classmethod
+    def for_enrichment(cls, request: EnrichmentRequest, enricher_type: str):
+        enricher_cls = BaseEnricher.get_subclass(enricher_type)
+        enricher_settings = request.enrichers_settings.get(enricher_type=enricher_type)
+        if enricher_settings is None:
+            raise serializers.ValidationError(
+                f"Enricher type {enricher_type} not found"
+            )
 
-    @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_enricher_class(self, obj):
-        """Return the class name of the enricher"""
-        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
-        # We get the first one for backward compatibility with single enricher display
-        first_setting = obj.enrichers_settings.first()
-        if first_setting:
-            return first_setting.enricher_type
-        return None
-
-    @extend_schema_field(serializers.CharField(allow_null=True))
-    def get_enricher_name(self, obj):
-        """Return the display name of the enricher"""
-        # Note: EnrichmentRequest uses enrichers_settings (plural) ManyToMany field
-        # We get the first one for backward compatibility with single enricher display
-        first_setting = obj.enrichers_settings.first()
-        if first_setting:
-            config = BaseEnricher.get_subclass(first_setting.enricher_type)
-            return config.display_name if config else first_setting.enricher_type
-        return None
+        return cls(
+            {
+                "enricher_type": enricher_type,
+                "display_name": enricher_cls.display_name,
+                "enabled": enricher_settings.enabled,
+                "status": request.enricher_status.get(
+                    enricher_type, EnrichmentStatus.WAITING
+                ),
+            }
+        )
 
 
 class EnrichmentRequestEnricherSerializer(serializers.Serializer):
     """Serializer for enrichment request enricher information."""
 
     enricher_type = serializers.CharField(read_only=True)
-    display_name = serializers.SerializerMethodField(read_only=True)
+    display_name = serializers.CharField(read_only=True)
     enabled = serializers.BooleanField(read_only=True)
     status = serializers.CharField(read_only=True)
-    errors = serializers.DictField(read_only=True)
-    warnings = serializers.DictField(read_only=True)
+    errors = serializers.ListField(read_only=True)
+    warnings = serializers.ListField(read_only=True)
     artifacts = serializers.ListField(read_only=True)
 
     @classmethod
     def for_enrichment(cls, request: EnrichmentRequest, enricher_type: str):
         enricher_cls = BaseEnricher.get_subclass(enricher_type)
         enricher_settings = request.enrichers_settings.get(enricher_type=enricher_type)
-        errors = request.errors.get(enricher_type, [])
-        warnings = request.warnings.get(enricher_type, [])
+
+        # errors = request.errors.get(enricher_type, [])
+        # warnings = request.warnings.get(enricher_type, [])
+        errors = []
+        warnings = []
 
         if enricher_settings is None:
             raise serializers.ValidationError(
@@ -300,78 +290,89 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
         artifacts = []
         enabled_eclasses = set(enricher_settings.for_eclasses.all())
 
-        for req in request.entries:
+        for req in request.request:
             if req["entry_class"] in enabled_eclasses:
                 artifacts.append(req)
 
         return cls(
-            enricher_type=enricher_type,
-            display_name=enricher_cls.display_name,
-            enabled=enricher_settings.enabled,
-            status=enricher_settings.status,
-            errors=errors,
-            warnings=warnings,
+            {
+                "enricher_type": enricher_type,
+                "display_name": enricher_cls.display_name,
+                "enabled": enricher_settings.enabled,
+                "status": request.enricher_status.get(
+                    enricher_type, EnrichmentStatus.WAITING
+                ),
+                "errors": errors,
+                "warnings": warnings,
+                "artifacts": artifacts,
+            }
         )
 
 
-class EnrichmentRequestEnricherMinimal(serializers.ModelSerializer):
-    """Serializer for minimal enrichment request enricher information."""
-
-    class Meta:
-        model = None
-        fields = ["enricher_type", "display_name", "enabled"]
-
-
-class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
+class EnrichmentRequestListSerializer(serializers.ModelSerializer):
     """Serializer for detailed enrichment request information."""
 
     user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
-    enricher_types = serializers.SerializerMethodField(read_only=True)
-    enrichers_detail = serializers.SerializerMethodField(read_only=True)
+    enrichers = serializers.SerializerMethodField(read_only=True)
+    ignored_count = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = EnrichmentRequest
         fields = [
             "id",
             "title",
+            "ignored_count",
             "created_at",
             "completed_at",
             "status",
             "user_detail",
-            "enricher_types",
-            "enrichers_detail",
+            "enrichers",
             "request",
-            "errors",
-            "warnings",
-            "enricher_status",
         ]
         read_only_fields = fields
 
-    @extend_schema_field(serializers.ListField(child=serializers.CharField()))
-    def get_enricher_types(self, obj):
-        """Return list of enricher class names"""
-        return [settings.enricher_type for settings in obj.enrichers_settings.all()]
-
-    @extend_schema_field(
-        serializers.ListField(
-            child=serializers.DictField(child=serializers.CharField())
-        )
-    )
-    def get_enrichers_detail(self, obj):
+    @extend_schema_field(EnrichmentRequestEnricherMinimal(many=True))
+    def get_enrichers(self, obj: EnrichmentRequest):
         """Return detailed information about each enricher"""
-        enrichers = []
-        for settings in obj.enrichers_settings.all():
-            config = BaseEnricher.get_subclass(settings.enricher_type)
-            enrichers.append(
-                {
-                    "enricher_type": settings.enricher_type,
-                    "display_name": config.display_name
-                    if config
-                    else settings.enricher_type,
-                    "enabled": settings.enabled,
-                }
-            )
-        return enrichers
+        return [
+            EnrichmentRequestEnricherMinimal.for_enrichment(obj, e.enricher_type).data
+            for e in obj.enrichers_settings.all()
+        ]
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_ignored_count(self, obj: EnrichmentRequest):
+        """Return the number of ignored artifacts"""
+        return len(obj.ignored)
+
+
+class EnrichmentRequestDetailSerializer(serializers.ModelSerializer):
+    """Serializer for detailed enrichment request information."""
+
+    user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
+    enrichers = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = EnrichmentRequest
+        fields = [
+            "id",
+            "title",
+            "ignored",
+            "created_at",
+            "completed_at",
+            "status",
+            "user_detail",
+            "enrichers",
+            "request",
+        ]
+        read_only_fields = fields
+
+    @extend_schema_field(EnrichmentRequestEnricherMinimal(many=True))
+    def get_enrichers(self, obj: EnrichmentRequest):
+        """Return detailed information about each enricher"""
+        return [
+            EnrichmentRequestEnricherMinimal.for_enrichment(obj, e.enricher_type).data
+            for e in obj.enrichers_settings.all()
+        ]
 
 
 class EnrichmentRequestSerializer(serializers.ModelSerializer):

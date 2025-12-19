@@ -20,9 +20,16 @@ import {
     EssentialUserRetrieveToJSON,
     EssentialUserRetrieveToJSONTyped,
 } from './EssentialUserRetrieve';
+import type { EnrichmentRequestEnricherMinimal } from './EnrichmentRequestEnricherMinimal';
+import {
+    EnrichmentRequestEnricherMinimalFromJSON,
+    EnrichmentRequestEnricherMinimalFromJSONTyped,
+    EnrichmentRequestEnricherMinimalToJSON,
+    EnrichmentRequestEnricherMinimalToJSONTyped,
+} from './EnrichmentRequestEnricherMinimal';
 
 /**
- * Serializer for listing enrichment requests with limited details.
+ * Serializer for detailed enrichment request information.
  * @export
  * @interface EnrichmentRequestList
  */
@@ -39,6 +46,12 @@ export interface EnrichmentRequestList {
      * @memberof EnrichmentRequestList
      */
     readonly title?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof EnrichmentRequestList
+     */
+    readonly ignoredCount?: number;
     /**
      * 
      * @type {Date}
@@ -69,16 +82,16 @@ export interface EnrichmentRequestList {
     readonly userDetail?: EssentialUserRetrieve;
     /**
      * 
-     * @type {string}
+     * @type {Array<EnrichmentRequestEnricherMinimal>}
      * @memberof EnrichmentRequestList
      */
-    readonly enricherClass?: string | null;
+    readonly enrichers?: Array<EnrichmentRequestEnricherMinimal>;
     /**
      * 
-     * @type {string}
+     * @type {any}
      * @memberof EnrichmentRequestList
      */
-    readonly enricherName?: string | null;
+    readonly request?: any | null;
 }
 
 
@@ -114,12 +127,13 @@ export function EnrichmentRequestListFromJSONTyped(json: any, ignoreDiscriminato
         
         'id': json['id'] == null ? undefined : json['id'],
         'title': json['title'] == null ? undefined : json['title'],
+        'ignoredCount': json['ignored_count'] == null ? undefined : json['ignored_count'],
         'createdAt': json['created_at'] == null ? undefined : (new Date(json['created_at'])),
         'completedAt': json['completed_at'] == null ? undefined : (new Date(json['completed_at'])),
         'status': json['status'] == null ? undefined : json['status'],
         'userDetail': json['user_detail'] == null ? undefined : EssentialUserRetrieveFromJSON(json['user_detail']),
-        'enricherClass': json['enricher_class'] == null ? undefined : json['enricher_class'],
-        'enricherName': json['enricher_name'] == null ? undefined : json['enricher_name'],
+        'enrichers': json['enrichers'] == null ? undefined : ((json['enrichers'] as Array<any>).map(EnrichmentRequestEnricherMinimalFromJSON)),
+        'request': json['request'] == null ? undefined : json['request'],
     };
 }
 
@@ -127,7 +141,7 @@ export function EnrichmentRequestListToJSON(json: any): EnrichmentRequestList {
     return EnrichmentRequestListToJSONTyped(json, false);
 }
 
-export function EnrichmentRequestListToJSONTyped(value?: Omit<EnrichmentRequestList, 'id'|'title'|'created_at'|'completed_at'|'status'|'user_detail'|'enricher_class'|'enricher_name'> | null, ignoreDiscriminator: boolean = false): any {
+export function EnrichmentRequestListToJSONTyped(value?: Omit<EnrichmentRequestList, 'id'|'title'|'ignored_count'|'created_at'|'completed_at'|'status'|'user_detail'|'enrichers'|'request'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }

@@ -9,7 +9,7 @@ interface StatusHeaderDropdownProps {
   onStatusChange: (status: string) => void;
   status?: string | null;
   hideFleetingNotes?: boolean;
-  statusOptions?: StatusOption[];
+  statusOptions: StatusOption[];
 }
 
 export default function StatusHeaderDropdown({
@@ -72,7 +72,6 @@ export default function StatusHeaderDropdown({
         );
       case 'processing':
       case 'working':
-      case 'processing':
       case 'info':
         return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
       default:

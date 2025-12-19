@@ -376,6 +376,7 @@ class EnrichmentRequest(LifecycleModel):
     request = models.JSONField(default=dict, blank=False)
     errors = models.JSONField(default=dict, blank=True)
     warnings = models.JSONField(default=dict, blank=True)
+    ignored = models.JSONField(default=list, blank=True)
 
     def clean(self):
         if self.pk:
@@ -471,8 +472,27 @@ class EnrichmentRequest(LifecycleModel):
 
         # Trigger the enrichment process
         # This could be handled by a background task or Celery
-        self.status = EnrichmentStatus.WORKING
-        self.save(update_fields=["status"])
+        all_eclasses = set(
+            self.enrichers_settings.all().values_list(
+                "for_eclasses__subtype", flat=True
+            )
+        )
+
+        ignored = {}
+        print(all_eclasses)
+        for req in self.request:
+            if req["entry_class"] not in all_eclasses:
+                ignored[(req["entry_class"], req["name"])] = req
+
+        self.ignored = list(ignored.values())
+
+        if len(ignored) > 0:
+            self.status = EnrichmentStatus.WARNING
+            print(f"Enrichment request {self.id} has {len(ignored)} ignored artifacts")
+        else:
+            self.status = EnrichmentStatus.WORKING
+
+        self.save(update_fields=["status", "ignored"])
         start_enrich.apply_async((self.id,))
 
     @property
@@ -520,7 +540,7 @@ class EnrichmentRequest(LifecycleModel):
                         instance.status = EnrichmentStatus.ERROR
                     elif err_count > 0:
                         instance.status = EnrichmentStatus.WARNING
-                    else:
+                    elif instance.status == EnrichmentStatus.WAITING:
                         instance.status = EnrichmentStatus.DONE
 
                     instance.save(

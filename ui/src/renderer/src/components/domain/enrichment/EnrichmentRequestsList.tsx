@@ -1,5 +1,5 @@
-import { useCradleNavigate } from '@/hooks';
 import { useModal } from '@/contexts/ui/ModalContext';
+import { useCradleNavigate } from '@/hooks';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarButton, ActionBarDivider, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
@@ -126,6 +126,23 @@ function EnrichmentRequestsList({
                 status: (value: string | DateRangeFilter) => { },
             };
 
+    const errorMsg = (request: EnrichmentRequest) => {
+        let msgs: string[] = [];
+        if (request.ignoredCount && request.ignoredCount > 0) {
+            msgs.push(`Ignored ${request.ignoredCount} artifact${request.ignoredCount > 1 ? 's' : ''}`);
+        }
+        let warn_count = request.enrichers?.filter((enricher) => enricher.status === 'warning').length || 0;
+        if (warn_count > 0) {
+            msgs.push(`Warnings in ${warn_count} enricher${warn_count > 1 ? 's' : ''}`);
+        }
+        let error_count = request.enrichers?.filter((enricher) => enricher.status === 'error').length || 0;
+        if (error_count > 0) {
+            msgs.push(`Errors in ${error_count} enricher${error_count > 1 ? 's' : ''}`);
+        }
+
+        return msgs.join(', ');
+    };
+
     const getStatusIcon = (status?: string, errorMessage?: string) => {
         if (!status) return null;
 
@@ -150,7 +167,7 @@ function EnrichmentRequestsList({
                             />
                         </svg>
                     );
-                case 'waiting':
+                case 'warning':
                     return (
                         <WarningTriangleSolid
                             className='text-amber-500'
@@ -166,7 +183,7 @@ function EnrichmentRequestsList({
                             height='18'
                         />
                     );
-                case 'info':
+                case 'waiting':
                     return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
                 default:
                     return null;
@@ -223,7 +240,7 @@ function EnrichmentRequestsList({
                 )}
                 <td className='w-20'>
                     <div className='flex items-center'>
-                        {getStatusIcon(request.status, (request as any).errorMessage)}
+                        {getStatusIcon(request.status, errorMsg(request))}
                     </div>
                 </td>
                 <td className='truncate max-w-xs' title={request.title}>
@@ -297,7 +314,7 @@ function EnrichmentRequestsList({
                             debounceMs={300}
                             onDebouncedChange={(value) => {
                                 const event = {
-                                    preventDefault: () => {},
+                                    preventDefault: () => { },
                                     target: { name: 'title', value },
                                 } as ChangeEvent<HTMLInputElement>;
                                 onSearchChange(event);
@@ -306,7 +323,7 @@ function EnrichmentRequestsList({
                             }}
                             onSubmit={(value) => {
                                 const event = {
-                                    preventDefault: () => {},
+                                    preventDefault: () => { },
                                     target: { name: 'title', value },
                                 } as any;
                                 onSearchSubmit(event);

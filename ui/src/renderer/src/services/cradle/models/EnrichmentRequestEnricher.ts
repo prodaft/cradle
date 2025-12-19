@@ -45,16 +45,16 @@ export interface EnrichmentRequestEnricher {
     readonly status?: string;
     /**
      * 
-     * @type {{ [key: string]: any; }}
+     * @type {Array<any>}
      * @memberof EnrichmentRequestEnricher
      */
-    readonly errors?: { [key: string]: any; };
+    readonly errors?: Array<any>;
     /**
      * 
-     * @type {{ [key: string]: any; }}
+     * @type {Array<any>}
      * @memberof EnrichmentRequestEnricher
      */
-    readonly warnings?: { [key: string]: any; };
+    readonly warnings?: Array<any>;
     /**
      * 
      * @type {Array<any>}
