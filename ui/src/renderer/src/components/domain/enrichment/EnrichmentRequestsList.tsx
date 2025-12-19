@@ -53,7 +53,7 @@ interface EnrichmentRequestsListProps {
     selectedRequests?: number[];
     setSelectedRequests?: (ids: number[]) => void;
     onDeleteSelected?: () => void;
-    onRetrySelected?: () => void;
+    onRerunSelected?: () => void;
     onCreateRequest?: () => void;
 }
 
@@ -78,7 +78,7 @@ function EnrichmentRequestsList({
     selectedRequests = [],
     setSelectedRequests = () => { },
     onDeleteSelected = () => { },
-    onRetrySelected = () => { },
+    onRerunSelected = () => { },
     onCreateRequest = () => { },
 }: EnrichmentRequestsListProps) {
     const { navigateLink } = useCradleNavigate();
@@ -293,18 +293,18 @@ function EnrichmentRequestsList({
                                     },
                                     disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
                                     iconActive: selectedRequests.length > 0,
-                                    
+
                                 },
                                 {
-                                    id: 'retry',
+                                    id: 'rerun',
                                     tooltip: selectedRequests.length > 0
-                                        ? `Retry ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
-                                        : 'Select requests to retry',
+                                        ? `Rerun ${selectedRequests.length} enrichment${selectedRequests.length > 1 ? 's' : ''}`
+                                        : 'Select requests to rerun',
                                     icon: <RefreshCircle width={20} height={20} />,
-                                    onClick: onRetrySelected,
+                                    onClick: onRerunSelected,
                                     disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
                                     iconActive: selectedRequests.length > 0,
-                                    
+
                                 },
                             ]}
                         />

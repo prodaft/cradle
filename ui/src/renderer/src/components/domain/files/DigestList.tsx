@@ -84,8 +84,8 @@ function DigestList({
         [externalSetSelectedDigests]
     );
 
-    const handleRetrySelected = useCallback((_selectedIds: string[]) => {
-        // Intentionally left blank for now (UI only).
+    const handleReingestSelected = useCallback((_selectedIds: string[]) => {
+        console.error('handleReingestSelected not implemented');
     }, []);
 
     // Mapping of table columns to API field names
@@ -422,18 +422,18 @@ function DigestList({
                                     onClick: () => handleDeleteSelected(selectedDigests),
                                     disabled: loading || digests.length === 0 || selectedDigests.length === 0,
                                     iconActive: selectedDigests.length > 0,
-                                    
+
                                 },
                                 {
-                                    id: 'retry',
+                                    id: 'reingest',
                                     tooltip: selectedDigests.length > 0
-                                        ? `Retry ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
-                                        : 'Select digests to retry',
+                                        ? `Re-ingest ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
+                                        : 'Select digests to re-ingest',
                                     icon: <RefreshCircle width={20} height={20} />,
-                                    onClick: () => handleRetrySelected(selectedDigests),
+                                    onClick: () => handleReingestSelected(selectedDigests),
                                     disabled: loading || digests.length === 0 || selectedDigests.length === 0,
                                     iconActive: selectedDigests.length > 0,
-                                    
+
                                 },
                             ]}
                         />
@@ -447,14 +447,14 @@ function DigestList({
                             debounceMs={300}
                             onDebouncedChange={(value) => {
                                 const event = {
-                                    preventDefault: () => {},
+                                    preventDefault: () => { },
                                     target: { name: 'title', value },
                                 } as React.ChangeEvent<HTMLInputElement>;
                                 onSearchChange(event);
                             }}
                             onSubmit={(value) => {
                                 const event = {
-                                    preventDefault: () => {},
+                                    preventDefault: () => { },
                                     target: { name: 'title', value },
                                 } as any;
                                 onSearchSubmit(event);

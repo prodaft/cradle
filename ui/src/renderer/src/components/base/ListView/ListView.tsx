@@ -76,9 +76,6 @@ export default function ListView<T extends { id?: string | number }>({
     const [draftTextFilters, setDraftTextFilters] = useState<Record<string, string>>(
         {},
     );
-    const [openDatePickers, setOpenDatePickers] = useState<Record<string, boolean>>(
-        {},
-    );
 
     const safeParseDate = (value?: string) => {
         if (!value) return null;
@@ -89,15 +86,6 @@ export default function ListView<T extends { id?: string | number }>({
     const clearDraftDateRange = (column: string) => {
         setDraftDateRanges((prev) => {
             if (!prev[column]) return prev;
-            const next = { ...prev };
-            delete next[column];
-            return next;
-        });
-    };
-
-    const clearOpenDatePicker = (column: string) => {
-        setOpenDatePickers((prev) => {
-            if (!(column in prev)) return prev;
             const next = { ...prev };
             delete next[column];
             return next;
@@ -196,7 +184,6 @@ export default function ListView<T extends { id?: string | number }>({
                 e.stopPropagation();
                 setActiveFilterColumn(column);
 
-                // Buffer text input locally; only commit on Enter (or blur if desired later).
                 if (filterType !== 'date') {
                     const existing =
                         typeof filterValues[column] === 'string'
@@ -207,12 +194,6 @@ export default function ListView<T extends { id?: string | number }>({
                         [column]: existing ?? '',
                     }));
                 } else {
-                    // Keep calendar open while selecting a range.
-                    setOpenDatePickers((prev) => ({ ...prev, [column]: true }));
-
-                    // If caller provided an incomplete/invalid committed range (e.g. only `from` from
-                    // URL params), don't let it "stick" as the start of the next selection.
-                    // Prefill draft only when the committed range is complete and parseable.
                     const committed = filterValues[column] as DateRangeFilter | undefined;
                     const committedStart = safeParseDate(committed?.from);
                     const committedEnd = safeParseDate(committed?.to);
@@ -249,7 +230,6 @@ export default function ListView<T extends { id?: string | number }>({
                 };
                 handleFilterChange(column, newValue);
                 clearDraftDateRange(column);
-                clearOpenDatePicker(column);
                 setActiveFilterColumn(null);
             }
         };
@@ -277,36 +257,31 @@ export default function ListView<T extends { id?: string | number }>({
                                 const committedEnd = safeParseDate(committed?.to);
                                 const committedHasCompleteRange = Boolean(committedStart) && Boolean(committedEnd);
 
-                                const draftStart = draftDateRanges[column]?.start ?? null;
-                                const draftEnd = draftDateRanges[column]?.end ?? null;
+                                const draft = draftDateRanges[column];
+                                // IMPORTANT: if a draft exists, it must fully override committed values,
+                                // even if `draft.end` is null. Otherwise we'd incorrectly fall back to the
+                                // committed end date and make range selection feel "stuck".
+                                const effectiveStart = draft ? draft.start : (committedHasCompleteRange ? committedStart : null);
+                                const effectiveEnd = draft ? draft.end : (committedHasCompleteRange ? committedEnd : null);
 
                                 return (
                                     <Datepicker
                                         startDate={
-                                            draftStart ?? (committedHasCompleteRange ? committedStart : null)
+                                            effectiveStart
                                         }
                                         endDate={
-                                            draftEnd ?? (committedHasCompleteRange ? committedEnd : null)
+                                            effectiveEnd
                                         }
                                         onChange={handleDateRangeChange}
                                         className='cradle-search cradle-search-with-icon-left text-xs !py-1 w-48'
-                                        open={openDatePickers[column] ?? true}
+                                        open={true}
                                         onClickOutside={() => {
                                             // Close the filter UI. If the selection isn't complete, do not apply anything.
                                             const draft = draftDateRanges[column];
                                             if (draft && !(draft.start && draft.end)) {
                                                 clearDraftDateRange(column);
                                             }
-                                            clearOpenDatePicker(column);
                                             setActiveFilterColumn(null);
-                                        }}
-                                        onCalendarClose={() => {
-                                            // If the calendar closes while the selection is incomplete, discard the draft.
-                                            const draft = draftDateRanges[column];
-                                            if (draft && !(draft.start && draft.end)) {
-                                                clearDraftDateRange(column);
-                                            }
-                                            clearOpenDatePicker(column);
                                         }}
                                     />
                                 );

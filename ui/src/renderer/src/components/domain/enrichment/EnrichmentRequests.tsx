@@ -252,7 +252,7 @@ export default function EnrichmentRequests() {
         }
     };
 
-    const handleRetrySelected = async () => {
+    const handleRerunSelected = async () => {
         if (selectedRequests.length === 0) return;
 
         // Retry all selected requests
@@ -262,7 +262,7 @@ export default function EnrichmentRequests() {
 
         notify({
             type: 'success',
-            text: `Retried ${selectedRequests.length} enrichment request(s)`,
+            text: `Retrying ${selectedRequests.length} enrichment request${selectedRequests.length > 1 ? 's' : ''}`,
         });
         setSelectedRequests([]);
         fetchEnrichmentRequests();
@@ -313,7 +313,7 @@ export default function EnrichmentRequests() {
                     selectedRequests={selectedRequests}
                     setSelectedRequests={setSelectedRequests}
                     onDeleteSelected={handleDeleteSelected}
-                    onRetrySelected={handleRetrySelected}
+                    onRerunSelected={handleRerunSelected}
                     onCreateRequest={handleCreateRequest}
                 />
             </div>

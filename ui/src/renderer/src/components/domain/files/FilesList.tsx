@@ -257,7 +257,7 @@ export default function FilesList({
         }
     }, [selectedFiles, files, fileTransferApi, notify]);
 
-    const handleRetrySelected = useCallback(async () => {
+    const handleReprocessSelected = useCallback(async () => {
         if (selectedFiles.length === 0) return;
 
         const promises = selectedFiles.map((fileId) => execute(() => fileTransferApi.fileTransferProcessCreate({
@@ -269,7 +269,7 @@ export default function FilesList({
         await Promise.all(promises);
         notify({
             type: 'success',
-            text: `Retried ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`,
+            text: `Queued ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} for reprocessing`,
         });
         setSelectedFiles([]);
     }, [selectedFiles, fileTransferApi, execute, notify]);
@@ -466,7 +466,7 @@ export default function FilesList({
                                         onClick: handleDownloadSelected,
                                         disabled: loading || files.length === 0 || selectedFiles.length === 0,
                                         iconActive: selectedFiles.length > 0,
-                                        
+
                                     },
                                     {
                                         id: 'delete',
@@ -475,18 +475,18 @@ export default function FilesList({
                                         onClick: handleDeleteSelected,
                                         disabled: loading || files.length === 0 || selectedFiles.length === 0,
                                         iconActive: selectedFiles.length > 0,
-                                        
+
                                     },
                                     {
-                                        id: 'retry',
+                                        id: 'reprocess',
                                         tooltip: selectedFiles.length > 0
-                                            ? `Retry ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
-                                            : 'Select files to retry',
+                                            ? `Reprocess ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+                                            : 'Select files to reprocess',
                                         icon: <RefreshCircle width={20} height={20} />,
-                                        onClick: handleRetrySelected,
+                                        onClick: handleReprocessSelected,
                                         disabled: loading || files.length === 0 || selectedFiles.length === 0,
                                         iconActive: selectedFiles.length > 0,
-                                        
+
                                     },
                                 ]}
                             />
