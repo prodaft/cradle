@@ -528,6 +528,7 @@ export default function FilesList({
                         emptyMessage='No files found!'
                         tableClassName='table'
                         enableMultiSelect={true}
+                        selectedIds={selectedFiles}
                         setSelected={handleSetSelected}
                     />
                 </div>

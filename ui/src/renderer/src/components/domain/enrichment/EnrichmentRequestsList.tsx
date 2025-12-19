@@ -8,7 +8,7 @@ import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { EnrichmentRequestList } from '@services/cradle/models';
+import type { EnrichmentRequestList } from '@services/cradle/models';
 import { InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
 import { capitalize } from 'lodash';
 import { ChangeEvent, FormEvent, MouseEvent } from 'react';
@@ -361,6 +361,7 @@ function EnrichmentRequestsList({
                 filterValues={columnFilters}
                 emptyMessage='No enrichment requests found'
                 enableMultiSelect={true}
+                selectedIds={selectedRequests}
                 setSelected={(ids) => setSelectedRequests(ids)}
             />
         </div>

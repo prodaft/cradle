@@ -2,7 +2,6 @@ import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { capitalizeString } from '@/utils/dashboard';
-import { EntryClass } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
 import Selector from '../../forms/Selector';
 
@@ -54,11 +53,11 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
 
     const allColumns = columnDefinitions
         ? [
-              'internal_class',
-              ...Object.keys(columnDefinitions).filter(
-                  (col) => col !== 'internal_class',
-              ),
-          ]
+            'internal_class',
+            ...Object.keys(columnDefinitions).filter(
+                (col) => col !== 'internal_class',
+            ),
+        ]
         : [];
 
     // Create a new empty row using defaults if provided; note id is null by default.
@@ -94,7 +93,7 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                     ...mappingKeys,
                     internal_class: {
                         type: 'options',
-                        options: entryClasses.map((x: EntryClass) => ({
+                        options: entryClasses.map((x) => ({
                             value: x.subtype,
                             label: x.subtype,
                         })),
@@ -286,7 +285,7 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                         mappingId: row.id ?? undefined,
                     }),
                 { successMessage: 'Mapping deleted successfully' },
-            ).catch(() => {});
+            ).catch(() => { });
         }
     };
 
@@ -357,7 +356,7 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                     ),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     const handleSaveAll = () => {
@@ -432,7 +431,7 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                     prevRows.map((r) => (r.edited ? { ...r, edited: false } : r)),
                 );
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     // Get used internal_class values to filter options
@@ -472,10 +471,9 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                         <button
                             onClick={handleSaveAll}
                             disabled={!rows.some((row) => row.edited)}
-                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-full px-6 hover:bg-cradle-bg-tertiary ${
-                                !rows.some((row) => row.edited) &&
+                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-full px-6 hover:bg-cradle-bg-tertiary ${!rows.some((row) => row.edited) &&
                                 'opacity-50 cursor-not-allowed'
-                            }`}
+                                }`}
                         >
                             Save All
                         </button>
@@ -507,151 +505,148 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                                 {rows.map((row, index) => (
                                     <tr
                                         key={index}
-                                        className={`border-b border-cradle-border-primary/50 ${
-                                            index < rows.length - 1 && !row.edited
+                                        className={`border-b border-cradle-border-primary/50 ${index < rows.length - 1 && !row.edited
                                                 ? 'bg-transparent'
                                                 : ''
-                                        } hover:bg-cradle-bg-tertiary/20 transition-colors`}
+                                            } hover:bg-cradle-bg-tertiary/20 transition-colors`}
                                     >
                                         {/* Actions cell with Delete and Save buttons */}
                                         <td className='px-4 py-2 whitespace-nowrap'>
                                             <div className='flex space-x-2'>
-                                            {index !== rows.length - 1 && (
-                                                <button
-                                                    onClick={() =>
-                                                        handleDeleteRow(index)
-                                                    }
-                                                    className='text-red-600 hover:text-red-900'
-                                                >
-                                                    Delete
-                                                </button>
-                                            )}
-                                            {row.edited && (
-                                                <button
-                                                    onClick={() => handleSaveRow(index)}
-                                                    className='text-green-600 hover:text-green-900'
-                                                >
-                                                    Save
-                                                </button>
-                                            )}
-                                        </div>
-                                    </td>
-                                    {allColumns.map((column) => {
-                                        const colDef = columnDefinitions[column];
-                                        const colType = colDef?.type;
-                                        const errorKey = `${index}-${column}`;
-                                        const hasError = validationErrors[errorKey];
+                                                {index !== rows.length - 1 && (
+                                                    <button
+                                                        onClick={() =>
+                                                            handleDeleteRow(index)
+                                                        }
+                                                        className='text-red-600 hover:text-red-900'
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                )}
+                                                {row.edited && (
+                                                    <button
+                                                        onClick={() => handleSaveRow(index)}
+                                                        className='text-green-600 hover:text-green-900'
+                                                    >
+                                                        Save
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                        {allColumns.map((column) => {
+                                            const colDef = columnDefinitions[column];
+                                            const colType = colDef?.type;
+                                            const errorKey = `${index}-${column}`;
+                                            const hasError = validationErrors[errorKey];
 
-                                        if (colType === 'options') {
-                                            return (
-                                                <td
-                                                    key={`${index}-${column}`}
-                                                    className='px-2 py-2'
-                                                >
-                                                    <Selector
-                                                        value={row[column]}
-                                                        onChange={(option) =>
-                                                            handleCellChange(
-                                                                index,
-                                                                column,
-                                                                option,
-                                                            )
-                                                        }
-                                                        staticOptions={
-                                                            column === 'internal_class'
-                                                                ? getAvailableInternalClassOptions(
-                                                                      index,
-                                                                  )
-                                                                : colDef.options
-                                                        }
-                                                        placeholder={
-                                                            colDef.required
-                                                                ? 'Required...'
-                                                                : 'Select...'
-                                                        }
-                                                        isClearable={!colDef.required}
-                                                        classNames={{
-                                                            control: () =>
-                                                                hasError
+                                            if (colType === 'options') {
+                                                return (
+                                                    <td
+                                                        key={`${index}-${column}`}
+                                                        className='px-2 py-2'
+                                                    >
+                                                        <Selector
+                                                            value={row[column]}
+                                                            onChange={(option) =>
+                                                                handleCellChange(
+                                                                    index,
+                                                                    column,
+                                                                    option,
+                                                                )
+                                                            }
+                                                            staticOptions={
+                                                                column === 'internal_class'
+                                                                    ? getAvailableInternalClassOptions(
+                                                                        index,
+                                                                    )
+                                                                    : colDef.options
+                                                            }
+                                                            placeholder={
+                                                                colDef.required
+                                                                    ? 'Required...'
+                                                                    : 'Select...'
+                                                            }
+                                                            isClearable={!colDef.required}
+                                                            classNames={{
+                                                                control: () =>
+                                                                    hasError
+                                                                        ? 'border-red-500'
+                                                                        : '',
+                                                            }}
+                                                            menuPosition='fixed'
+                                                        />
+                                                    </td>
+                                                );
+                                            } else if (colType === 'number') {
+                                                return (
+                                                    <td
+                                                        key={`${index}-${column}`}
+                                                        className='px-2 py-2'
+                                                    >
+                                                        <input
+                                                            type='number'
+                                                            value={row[column]}
+                                                            onChange={(e) =>
+                                                                handleCellChange(
+                                                                    index,
+                                                                    column,
+                                                                    e.target.value,
+                                                                )
+                                                            }
+                                                            className={`cradle-input w-full ${hasError
                                                                     ? 'border-red-500'
-                                                                    : '',
-                                                        }}
-                                                        menuPosition='fixed'
-                                                    />
-                                                </td>
-                                            );
-                                        } else if (colType === 'number') {
-                                            return (
-                                                <td
-                                                    key={`${index}-${column}`}
-                                                    className='px-2 py-2'
-                                                >
-                                                    <input
-                                                        type='number'
-                                                        value={row[column]}
-                                                        onChange={(e) =>
-                                                            handleCellChange(
-                                                                index,
-                                                                column,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className={`cradle-input w-full ${
-                                                            hasError
-                                                                ? 'border-red-500'
-                                                                : ''
-                                                        }`}
-                                                        min={colDef.min}
-                                                        max={colDef.max}
-                                                        placeholder={
-                                                            colDef.required
-                                                                ? 'Required'
-                                                                : ''
-                                                        }
-                                                    />
-                                                </td>
-                                            );
-                                        } else {
-                                            return (
-                                                <td
-                                                    key={`${index}-${column}`}
-                                                    className='px-2 py-2'
-                                                >
-                                                    <input
-                                                        type='text'
-                                                        value={row[column]}
-                                                        onChange={(e) =>
-                                                            handleCellChange(
-                                                                index,
-                                                                column,
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                        className={`cradle-input w-full ${
-                                                            hasError
-                                                                ? 'border-red-500'
-                                                                : ''
-                                                        }`}
-                                                        minLength={colDef.minLength}
-                                                        maxLength={colDef.maxLength}
-                                                        pattern={colDef.pattern}
-                                                        placeholder={
-                                                            colDef.required
-                                                                ? 'Required'
-                                                                : ''
-                                                        }
-                                                    />
-                                                </td>
-                                            );
-                                        }
-                                    })}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                                                                    : ''
+                                                                }`}
+                                                            min={colDef.min}
+                                                            max={colDef.max}
+                                                            placeholder={
+                                                                colDef.required
+                                                                    ? 'Required'
+                                                                    : ''
+                                                            }
+                                                        />
+                                                    </td>
+                                                );
+                                            } else {
+                                                return (
+                                                    <td
+                                                        key={`${index}-${column}`}
+                                                        className='px-2 py-2'
+                                                    >
+                                                        <input
+                                                            type='text'
+                                                            value={row[column]}
+                                                            onChange={(e) =>
+                                                                handleCellChange(
+                                                                    index,
+                                                                    column,
+                                                                    e.target.value,
+                                                                )
+                                                            }
+                                                            className={`cradle-input w-full ${hasError
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                                }`}
+                                                            minLength={colDef.minLength}
+                                                            maxLength={colDef.maxLength}
+                                                            pattern={colDef.pattern}
+                                                            placeholder={
+                                                                colDef.required
+                                                                    ? 'Required'
+                                                                    : ''
+                                                            }
+                                                        />
+                                                    </td>
+                                                );
+                                            }
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
         </div>
     );
 };

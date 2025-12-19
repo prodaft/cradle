@@ -38,6 +38,11 @@ interface ListViewProps<T extends { id?: string | number }> {
     | null;
     tableClassName?: string;
     enableMultiSelect?: boolean;
+    /**
+     * Controlled selection (source of truth lives in the parent).
+     * If provided, the checkbox UI will reflect these ids instead of internal state.
+     */
+    selectedIds?: NonNullable<T['id']>[];
     setSelected?: (ids: NonNullable<T['id']>[]) => void;
     filterableColumns?: Record<string, (value: string | DateRangeFilter) => void>;
     filterValues?: Record<string, string | DateRangeFilter | undefined>;
@@ -62,12 +67,16 @@ export default function ListView<T extends { id?: string | number }>({
     renderRow = null,
     tableClassName = 'table table-hover',
     enableMultiSelect = false,
+    selectedIds: controlledSelectedIds,
     setSelected = () => { },
     filterableColumns = {},
     filterValues = {},
 }: ListViewProps<T>) {
     const { profile } = useProfile();
-    const [selectedIds, setSelectedIds] = useState<NonNullable<T['id']>[]>([]);
+    const [internalSelectedIds, setInternalSelectedIds] = useState<
+        NonNullable<T['id']>[]
+    >([]);
+    const selectedIds = controlledSelectedIds ?? internalSelectedIds;
     const [activeFilterColumn, setActiveFilterColumn] = useState<string | null>(null);
     const filterInputRefs = useRef<Record<string, HTMLDivElement | null>>({});
     const [draftDateRanges, setDraftDateRanges] = useState<
@@ -104,10 +113,14 @@ export default function ListView<T extends { id?: string | number }>({
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
             const allIds = data.map((item) => item.id!) as NonNullable<T['id']>[];
-            setSelectedIds(allIds);
+            if (controlledSelectedIds == null) {
+                setInternalSelectedIds(allIds);
+            }
             setSelected(allIds);
         } else {
-            setSelectedIds([]);
+            if (controlledSelectedIds == null) {
+                setInternalSelectedIds([]);
+            }
             setSelected([]);
         }
     };
@@ -117,7 +130,9 @@ export default function ListView<T extends { id?: string | number }>({
             ? selectedIds.filter((selectedId) => selectedId !== id)
             : [...selectedIds, id];
 
-        setSelectedIds(newSelectedIds);
+        if (controlledSelectedIds == null) {
+            setInternalSelectedIds(newSelectedIds);
+        }
         setSelected(newSelectedIds);
     };
 

@@ -135,7 +135,7 @@ export default function EntryTypeForm({
         try {
             const entries = await entriesApi.entryClassesList({});
             setEntryTypes(
-                entries.map((entry: EntryClass) => ({
+                entries.map((entry) => ({
                     value: entry.subtype,
                     label: entry.subtype,
                 })),

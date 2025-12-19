@@ -4,7 +4,7 @@ import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import useAPICall from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { Report } from '@/services/cradle';
+import { ReportList } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
@@ -30,7 +30,7 @@ interface ColumnFilters {
 interface SelectProps {
     enableMultiSelect?: boolean;
     isSelected?: boolean;
-    onSelect?: (report: Report) => void;
+    onSelect?: (report: ReportList) => void;
 }
 
 /**
@@ -46,7 +46,7 @@ export default function Reports() {
     const { profile } = useProfile();
     const { setModal } = useModal();
     const { execute } = useAPICall();
-    const [reports, setReports] = useState<Report[]>([]);
+    const [reports, setReports] = useState<ReportList[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(Number(searchParams.get('reports_page')) || 1);
     const [totalPages, setTotalPages] = useState(1);
@@ -397,14 +397,14 @@ export default function Reports() {
     };
 
     const renderRow = (
-        report: Report,
+        report: ReportList,
         index: number,
         selectProps: SelectProps = {},
     ) => {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         const handleRowClick = async () => {
-            let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id, downloadUrl: false }));
+            let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }));
             if (details.reportUrl) {
                 window.open(details.reportUrl, '_blank');
             } else {
@@ -418,7 +418,7 @@ export default function Reports() {
         return (
             <tr
                 key={report.id}
-                className={`cursor-pointer ${report.reportUrl ? 'hover:cursor-pointer' : 'cursor-default'}`}
+                className={`cursor-pointer`}
                 onClick={handleRowClick}
             >
                 {enableMultiSelect && onSelect && (
@@ -559,6 +559,7 @@ export default function Reports() {
                     emptyMessage='No reports found.'
                     tableClassName='table table-hover'
                     enableMultiSelect={true}
+                    selectedIds={selectedReports}
                     setSelected={setSelectedReports}
                     filterableColumns={filterableColumns}
                     filterValues={columnFilters}

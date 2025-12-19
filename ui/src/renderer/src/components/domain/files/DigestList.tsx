@@ -489,6 +489,7 @@ function DigestList({
                 emptyMessage='No digests found!'
                 tableClassName='table table-zebra'
                 enableMultiSelect={true}
+                selectedIds={selectedDigests}
                 setSelected={(ids) =>
                     setSelectedDigests(
                         ids.filter((id): id is string => typeof id === 'string'),

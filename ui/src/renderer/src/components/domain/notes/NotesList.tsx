@@ -700,6 +700,7 @@ export default function NotesList({
                     emptyMessage='No notes found!'
                     tableClassName='table table-hover'
                     enableMultiSelect={true}
+                    selectedIds={selectedNotes}
                     setSelected={setSelectedNotes}
                     filterableColumns={filterableColumns}
                     filterValues={columnFilters}

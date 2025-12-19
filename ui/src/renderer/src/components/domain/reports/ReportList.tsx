@@ -5,7 +5,7 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { useTabContext } from '@/hooks/tabs/useTabContext';
-import { Report } from '@/services/cradle';
+import { ReportList as ReportListModel } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
@@ -41,7 +41,7 @@ export default function ReportList() {
     const report_id = params.report_id;
     const [searchParams, setSearchParams] = useSearchParams();
     const { notify } = useNotif();
-    const [reports, setReports] = useState<Report[]>([]);
+    const [reports, setReports] = useState<ReportListModel[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
@@ -276,7 +276,7 @@ export default function ReportList() {
     };
 
     const renderRow = (
-        report: Report,
+        report: ReportListModel,
         index: number,
         selectProps: SelectProps = {},
     ) => {
@@ -313,9 +313,10 @@ export default function ReportList() {
                     <div className='flex space-x-1'>
                         {report.status === 'done' && (
                             <button
-                                onClick={() => {
-                                    if (report?.reportUrl) {
-                                        window.open(report?.reportUrl, '_blank');
+                                onClick={async () => {
+                                    let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }));
+                                    if (details.reportUrl) {
+                                        window.open(details.reportUrl, '_blank');
                                     } else {
                                         notify({
                                             type: 'error',
@@ -450,7 +451,7 @@ export default function ReportList() {
                                             },
                                             disabled: selectedReports.length === 0 || reports.length === 0,
                                             iconActive: selectedReports.length > 0,
-                                            
+
                                         },
                                     ]}
                                 />
