@@ -410,23 +410,6 @@ export default function EnrichmentResults(): JSX.Element {
                                 </div>
                             ) : (
                                 <div className='space-y-1 pr-2'>
-                                    {/* Enricher list */}
-                                    {enrichmentDetails?.enrichers?.map((enricher) => (
-                                        <div
-                                            key={enricher.enricherType}
-                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${selectedEnricher === enricher.enricherType && !showIgnored
-                                                ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
-                                                : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
-                                                }`}
-                                            onClick={() => handleEnricherSelect(enricher.enricherType!)}
-                                        >
-                                            {getEnricherStatusIcon(enricher.status!)}
-                                            <span className='text-sm font-medium truncate text-cradle-text-primary'>
-                                                {enricher.displayName!}
-                                            </span>
-                                        </div>
-                                    ))}
-
                                     {/* Ignored Artifacts - only show if there are any */}
                                     {ignoredArtifacts.length > 0 && (
                                         <>
@@ -456,6 +439,23 @@ export default function EnrichmentResults(): JSX.Element {
                                             </div>
                                         </>
                                     )}
+
+                                    {/* Enricher list */}
+                                    {enrichmentDetails?.enrichers?.map((enricher) => (
+                                        <div
+                                            key={enricher.enricherType}
+                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${selectedEnricher === enricher.enricherType && !showIgnored
+                                                ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
+                                                : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
+                                                }`}
+                                            onClick={() => handleEnricherSelect(enricher.enricherType!)}
+                                        >
+                                            {getEnricherStatusIcon(enricher.status!)}
+                                            <span className='text-sm font-medium truncate text-cradle-text-primary'>
+                                                {enricher.displayName!}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>
