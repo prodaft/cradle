@@ -1,7 +1,7 @@
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Cosmograph } from '@cosmograph/react';
-import { PauseSolid, PlaySolid, Search } from 'iconoir-react';
+import { PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
 
@@ -160,8 +160,7 @@ export default function GraphViewer({
     const internalCosmographRef = useRef<any>(null);
     const cosmographRef = externalCosmographRef || internalCosmographRef;
     const { navigate, navigateLink } = useCradleNavigate();
-    const [disableSimulation, setDisableSimulation] = useState(true); // Simulation disabled - button kept for future use
-    const [graphInstanceKey, setGraphInstanceKey] = useState(0);
+    const [disableSimulation, setDisableSimulation] = useState(true); // Non-functional - kept for future use
 
     // Filter out invalid nodes first
     const validNodes = useMemo(() => {
@@ -334,48 +333,37 @@ export default function GraphViewer({
         [linksData, indexToNode, setSelectedNodes, onTogglePanel, activePanel],
     );
 
-    useEffect(() => {
-        try {
-            if (!cosmographRef.current) return;
-            if (selectedNodes.size === 0) {
-                cosmographRef.current.unselectAllPoints();
-            } else {
-                // Convert selected nodes to indices
-                const selectedIndices = Array.from(selectedNodes)
-                    .map((node) => nodeIdToIndex.get(node.id))
-                    .filter((index): index is number => index !== undefined);
-                cosmographRef.current.selectPoints(selectedIndices);
-            }
-        } catch (error) {
-            console.error('[Graph] Error updating selected nodes:', error);
-        }
-    }, [selectedNodes, nodeIdToIndex]);
 
-    // Refresh graph when layout mode changes
-    useEffect(() => {
-        setGraphInstanceKey((k) => k + 1);
-    }, [config.layoutMode]);
-
-    // Cosmograph handles fit view automatically with fitViewDelay
-    // This effect is just for manual refresh if needed
+    // Fit view when data changes (Cosmograph handles data updates automatically via props)
     useEffect(() => {
         if (!cosmographRef.current || pointsData.length === 0) return;
         
-        // Optional: manually trigger fit view on graph refresh
-        if (graphInstanceKey > 0) {
-            const fitTimer = setTimeout(() => {
-                try {
-                    if (typeof cosmographRef.current?.fitView === 'function') {
-                        cosmographRef.current.fitView(500, 0.1);
-                    }
-                } catch (e) {
-                    console.warn('Could not fit view:', e);
+        // Debounce fit view to avoid excessive calls
+        const fitTimer = setTimeout(() => {
+            try {
+                if (typeof cosmographRef.current?.fitView === 'function') {
+                    cosmographRef.current.fitView(500, 0.1);
                 }
-            }, 600);
-            
-            return () => clearTimeout(fitTimer);
-        }
-    }, [pointsData.length, graphInstanceKey]);
+            } catch (e) {
+                console.warn('[Graph] Could not fit view:', e);
+            }
+        }, 300);
+        
+        return () => clearTimeout(fitTimer);
+    }, [pointsData.length, config.layoutMode]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            try {
+                if (cosmographRef.current && typeof cosmographRef.current.destroy === 'function') {
+                    cosmographRef.current.destroy();
+                }
+            } catch (e) {
+                console.warn('[Graph] Error during cleanup:', e);
+            }
+        };
+    }, []);
 
     // Only render Cosmograph when we have valid data
     const hasValidData = pointsData.length > 0;
@@ -422,38 +410,21 @@ export default function GraphViewer({
                                 title='Toggle display panel'
                                 onClick={() => onTogglePanel('display')}
                             >
-                                <svg width="16" height="16" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
-                                    <path d="M3 7.4V3.6C3 3.26863 3.26863 3 3.6 3H9.4C9.73137 3 10 3.26863 10 3.6V7.4C10 7.73137 9.73137 8 9.4 8H3.6C3.26863 8 3 7.73137 3 7.4Z" stroke="currentColor" stroke-width="1.5"></path>
-                                    <path d="M14 20.4V16.6C14 16.2686 14.2686 16 14.6 16H20.4C20.7314 16 21 16.2686 21 16.6V20.4C21 20.7314 20.7314 21 20.4 21H14.6C14.2686 21 14 20.7314 14 20.4Z" stroke="currentColor" stroke-width="1.5"></path>
-                                    <path d="M14 12.4V3.6C14 3.26863 14.2686 3 14.6 3H20.4C20.7314 3 21 3.26863 21 3.6V12.4C21 12.7314 20.7314 13 20.4 13H14.6C14.2686 13 14 12.7314 14 12.4Z" stroke="currentColor" stroke-width="1.5"></path>
-                                    <path d="M3 20.4V11.6C3 11.2686 3.26863 11 3.6 11H9.4C9.73137 11 10 11.2686 10 11.6V20.4C10 20.7314 9.73137 21 9.4 21H3.6C3.26863 21 3 20.7314 3 20.4Z" stroke="currentColor" stroke-width="1.5"></path>
-                                </svg>
+                                <Settings width={16} height={16} />
                             </button>
                         )}
                         
-                        {/* Simulation Toggle Button */}
+                        {/* Simulation Toggle Button - Non-functional, kept for future use */}
                         <button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center'
-                            title='Toggle simulation'
-                            onClick={() => setDisableSimulation(!disableSimulation)}
+                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center opacity-50 cursor-not-allowed'
+                            title='Toggle simulation (coming soon)'
+                            onClick={() => {
+                                // Non-functional - simulation is always disabled
+                                // Kept for future implementation
+                            }}
                         >
                             {disableSimulation ? <PlaySolid width="16" height="16" /> : <PauseSolid width="16" height="16" />}
-                        </button>
-                        
-                        {/* Refresh Button */}
-                        <button
-                            type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center'
-                            title='Refresh graph'
-                            onClick={() => setGraphInstanceKey((k) => k + 1)}
-                        >
-                            <svg width="16" height="16" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
-                                <path d="M21.1679 8C19.6247 4.46819 16.1006 2 11.9999 2C6.81459 2 2.55104 5.94668 2.04932 11" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-                                <path d="M17 8H21.4C21.7314 8 22 7.73137 22 7.4V3" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-                                <path d="M2.88146 16C4.42458 19.5318 7.94874 22 12.0494 22C17.2347 22 21.4983 18.0533 22 13" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-                                <path d="M7.04932 16H2.64932C2.31795 16 2.04932 16.2686 2.04932 16.6V21" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
-                            </svg>
                         </button>
                     </div>
                     
@@ -546,7 +517,6 @@ export default function GraphViewer({
                         </button>
                     </div>
                     <Cosmograph
-                        key={graphInstanceKey}
                         ref={cosmographRef}
                         points={pointsData}
                         links={linksData}
@@ -562,7 +532,7 @@ export default function GraphViewer({
                         linkSourceIndexBy='_sourceIndex'
                         linkTargetIndexBy='_targetIndex'
                         backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}
-                        pointGreyoutOpacity={0.1}
+                        pointGreyoutOpacity={0}
                         pointSizeRange={[
                             15 * (config.nodeRadiusCoefficient ?? 1),
                             40 * (config.nodeRadiusCoefficient ?? 1),
@@ -581,7 +551,7 @@ export default function GraphViewer({
                         curvedLinks={false}
                         onClick={onClick}
                         onLinkClick={onLinkClick}
-                        selectPointOnClick='single'
+                        selectPointOnClick={false}
                         focusPointOnClick={true}
                         scalePointsOnZoom={false}
                     />

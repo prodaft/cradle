@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
 
 interface ExplorerPanelProps {
@@ -10,6 +10,7 @@ interface ExplorerPanelProps {
 
 export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeClick }: ExplorerPanelProps) {
     const nodesArray = Array.from(selectedNodes);
+    const [expandedConnections, setExpandedConnections] = useState<Set<string>>(new Set());
 
     // Create a map from node id to node for quick lookup
     const nodeMap = useMemo(() => {
@@ -17,6 +18,18 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
         allNodes.forEach((node) => map.set(node.id, node));
         return map;
     }, [allNodes]);
+
+    const toggleConnections = (nodeId: string) => {
+        setExpandedConnections((prev) => {
+            const newSet = new Set(prev);
+            if (newSet.has(nodeId)) {
+                newSet.delete(nodeId);
+            } else {
+                newSet.add(nodeId);
+            }
+            return newSet;
+        });
+    };
 
     // Get connected nodes for a given node
     const getConnectedNodes = (nodeId: string): Node[] => {
@@ -100,15 +113,30 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                         {(() => {
                             const connectedNodes = getConnectedNodes(node.id);
                             if (connectedNodes.length === 0) return null;
+                            const isExpanded = expandedConnections.has(node.id);
+                            const showCollapse = connectedNodes.length > 5;
+                            const displayedNodes = showCollapse && !isExpanded 
+                                ? connectedNodes.slice(0, 5) 
+                                : connectedNodes;
+                            
                             return (
                                 <div className='space-y-2'>
                                     <div className='flex items-center gap-2'>
                                         <span className='text-xs text-gray-500 dark:text-gray-400'>
                                             Connections ({connectedNodes.length}):
                                         </span>
+                                        {showCollapse && (
+                                            <button
+                                                type='button'
+                                                onClick={() => toggleConnections(node.id)}
+                                                className='text-xs text-cradle-accent-primary hover:underline'
+                                            >
+                                                {isExpanded ? 'Show less' : `Show all (${connectedNodes.length})`}
+                                            </button>
+                                        )}
                                     </div>
                                     <div className='flex flex-wrap gap-1.5'>
-                                        {connectedNodes.map((connectedNode) => (
+                                        {displayedNodes.map((connectedNode) => (
                                             <button
                                                 key={connectedNode.id}
                                                 type='button'
