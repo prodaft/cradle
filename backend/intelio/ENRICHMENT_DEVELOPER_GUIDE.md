@@ -183,39 +183,6 @@ Add your enricher to `intelio/models/__init__.py`:
 from .enrichments.your_enricher import MyCustomEnricher as MyCustomEnricher  # noqa:F401
 ```
 
-### Step 3: Create Database Migration
-
-Run Django migrations to create the enricher settings table:
-
-```bash
-python manage.py makemigrations
-python manage.py migrate
-```
-
-### Step 4: Configure Your Enricher
-
-Create an `EnricherSettings` instance via Django admin or API:
-
-```python
-from intelio.models import EnricherSettings
-from entries.models import EntryClass
-
-# Create settings
-settings = EnricherSettings.objects.create(
-    enricher_type="MyCustomEnricher",
-    enabled=True,
-    settings={
-        "api_key": "your-api-key-here",
-        "timeout": 60,
-        "enabled_features": True
-    }
-)
-
-# Associate with entry classes this enricher applies to
-domain_class = EntryClass.objects.get(subtype="domain")
-settings.for_eclasses.add(domain_class)
-```
-
 ---
 
 ## Storing Enrichment Results
@@ -322,6 +289,53 @@ This approach:
 - Links metadata to the entry being analyzed
 - Allows querying via `enrichment_request.relations.all()`
 - Stores all results in the `details` field
+
+### Storing Non-Textual Information (Attachments)
+
+If your enrichment produces artifacts that are **not well-suited for JSON storage** (e.g., PCAPs, binaries, PDFs, screenshots, large reports), you should still create the **Relation** as described above and then persist the files using the `Attachment` model.
+
+Attachments are always scoped to a **Relation**, not directly to an `Entry` or `EnrichmentRequest`. This preserves provenance and ensures the attachment is contextualized by *why* it exists.
+
+```python
+# Relation has already been created as shown above
+relation = relation  # existing Relation instance
+
+from entries.models import Attachment
+
+with open("/tmp/report.pdf", "rb") as f:
+    attachment = Attachment.objects.create(
+        relation=relation,
+        name="reputation_report.pdf",
+        type="pdf"
+        file=f,
+        context={
+            "source": "VirusTotal",
+            "generated_at": "2025-01-10T14:32:00Z",
+            "content_type": "application/pdf",
+            "description": "Full reputation analysis report"
+        }
+    )
+```
+
+For binary or generated content, you may also use an in-memory file:
+
+```python
+from django.core.files.base import ContentFile
+
+pcap_data = generate_pcap()  # bytes
+
+attachment = Attachment.objects.create(
+    relation=relation,
+    name="traffic_capture.pcap",
+    file=ContentFile(pcap_data, name="traffic_capture.pcap"),
+    context={
+        "tool": "custom-sandbox",
+        "duration_seconds": 120,
+        "protocols": ["http", "dns"]
+    }
+)
+```
+Use the `context` field to store lightweight metadata about the attachment (origin, format, tool version), but avoid duplicating large structured results already present in the `Relation.details`.
 
 ---
 

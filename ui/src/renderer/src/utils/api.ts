@@ -70,6 +70,7 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
                 raw: error,
             };
         } else {
+            console.log(error);
             return {
                 code: 'UNKNOWN_ERROR',
                 detail: 'An unknown error occurred',

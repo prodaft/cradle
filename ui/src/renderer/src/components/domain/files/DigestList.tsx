@@ -12,8 +12,8 @@ import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
-import { InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import { InfoCircleSolid, PlusCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import React, { useMemo, useState } from 'react';
 
 interface DataTypeOption {
     value: string;
@@ -83,10 +83,6 @@ function DigestList({
         () => externalSetSelectedDigests ?? setInternalSelectedDigests,
         [externalSetSelectedDigests]
     );
-
-    const handleReingestSelected = useCallback((_selectedIds: string[]) => {
-        console.error('handleReingestSelected not implemented');
-    }, []);
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -420,17 +416,6 @@ function DigestList({
                                         : 'Select digests to delete',
                                     icon: <Trash width={20} height={20} />,
                                     onClick: () => handleDeleteSelected(selectedDigests),
-                                    disabled: loading || digests.length === 0 || selectedDigests.length === 0,
-                                    iconActive: selectedDigests.length > 0,
-
-                                },
-                                {
-                                    id: 'reingest',
-                                    tooltip: selectedDigests.length > 0
-                                        ? `Re-ingest ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
-                                        : 'Select digests to re-ingest',
-                                    icon: <RefreshCircle width={20} height={20} />,
-                                    onClick: () => handleReingestSelected(selectedDigests),
                                     disabled: loading || digests.length === 0 || selectedDigests.length === 0,
                                     iconActive: selectedDigests.length > 0,
 

@@ -192,3 +192,43 @@ class ReportErrorMail(TemplatedMail):
 
     def dispatch(self):
         self._dispatch_celery(self.user.email)
+
+
+class EnrichmentReadyMail(TemplatedMail):
+    def __init__(self, user, enrichment_request) -> None:
+        self.user = user
+        self.enrichment_request = enrichment_request
+        params = {
+            "user": user,
+            "enrichment": enrichment_request,
+            "enrichment_location": f"{settings.FRONTEND_URL}/#enrichments/{enrichment_request.id}",
+        }
+        super().__init__(
+            subject="CRADLE - Your Enrichment is Complete",
+            template_name="mail/enrichment_ready.html",
+            params=params,
+        )
+
+    def dispatch(self):
+        self._dispatch_celery(self.user.email)
+
+
+class EnrichmentErrorMail(TemplatedMail):
+    def __init__(self, user, enrichment_request, error_message=None) -> None:
+        self.user = user
+        self.enrichment_request = enrichment_request
+        self.error_message = error_message
+        params = {
+            "user": user,
+            "enrichment": enrichment_request,
+            "error_message": error_message
+            or "Unknown error occurred during enrichment processing.",
+        }
+        super().__init__(
+            subject="CRADLE - Error Processing Your Enrichment",
+            template_name="mail/enrichment_error.html",
+            params=params,
+        )
+
+    def dispatch(self):
+        self._dispatch_celery(self.user.email)

@@ -1,5 +1,6 @@
 import Tooltip from '@/components/base/Tooltip/Tooltip';
-import { useNotif } from '@/contexts';
+import { ConfirmDeletionModal } from '@/components/modals';
+import { useModal, useNotif } from '@/contexts';
 import { useAPICall, useCradleNavigate } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
@@ -92,6 +93,7 @@ export default function FilesList({
         Number(searchParams.get('files_pagesize')) || 10,
     );
     const { execute } = useAPICall();
+    const { setModal } = useModal();
     const [selectedFiles, setSelectedFiles] = useState<(string)[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const { notesApi, fileTransferApi } = useApi();
@@ -274,9 +276,8 @@ export default function FilesList({
         setSelectedFiles([]);
     }, [selectedFiles, fileTransferApi, execute, notify]);
 
-    const handleDeleteSelected = useCallback(async () => {
-        if (selectedFiles.length === 0) return;
 
+    const deleteFiles = async (fileIds: string[]) => {
         let promises = selectedFiles.map((fileId) => execute(() => fileTransferApi.fileTransferDeleteDestroy({
             fileId: fileId.toString(),
         })));
@@ -288,6 +289,16 @@ export default function FilesList({
         });
         setSelectedFiles([]);
         fetchFiles();
+    };
+
+    const handleDeleteSelected = useCallback(async () => {
+        if (selectedFiles.length === 0) return;
+
+        setModal(ConfirmDeletionModal, {
+            text: `Are you sure you want to delete ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}?`,
+            onConfirm: () => deleteFiles(selectedFiles),
+        });
+
     }, [selectedFiles, files, notesApi, notify]);
 
     const resetToFirstPage = useCallback(() => {

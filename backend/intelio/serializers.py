@@ -213,15 +213,17 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
         write_only=True, help_text="The file to be processed by the digest"
     )
 
-    entity = serializers.PrimaryKeyRelatedField(
-        queryset=Entry.objects.all(),
+    entities = serializers.ListField(
+        child=serializers.PrimaryKeyRelatedField(
+            queryset=Entry.objects.all(),
+        ),
         required=False,
-        help_text="Optional entity to associate with this digest",
+        help_text="Optional entities to associate with this digest",
     )
 
     class Meta:
         model = BaseDigest
-        fields = ["title", "digest_type", "entity", "file"]
+        fields = ["title", "digest_type", "entities", "file"]
 
     def to_internal_value(self, data):
         self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
@@ -547,8 +549,6 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         enrichers = validated_data.pop("enricher_names", [])
         entities = validated_data.pop("entities", [])
-        print(entities)
-        print(validated_data["request"])
         validated_data["user"] = self.context["request"].user
 
         instance = super().create(validated_data)

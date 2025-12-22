@@ -84,3 +84,30 @@ class ReportProcessingErrorNotification(MessageNotification):
     @property
     def get_mail(self):
         return ReportErrorMail(self.user, self.published_report, self.error_message)
+
+
+class EnrichmentCompleteNotification(MessageNotification):
+    enrichment_request = models.ForeignKey(
+        "intelio.EnrichmentRequest",
+        on_delete=models.CASCADE,
+        related_name="complete_notifications",
+    )
+
+    @property
+    def get_mail(self):
+        from mail.models import EnrichmentReadyMail
+        return EnrichmentReadyMail(self.user, self.enrichment_request)
+
+
+class EnrichmentErrorNotification(MessageNotification):
+    enrichment_request = models.ForeignKey(
+        "intelio.EnrichmentRequest",
+        on_delete=models.CASCADE,
+        related_name="error_notifications",
+    )
+    error_message = models.TextField(blank=True, null=True)
+
+    @property
+    def get_mail(self):
+        from mail.models import EnrichmentErrorMail
+        return EnrichmentErrorMail(self.user, self.enrichment_request, self.error_message)

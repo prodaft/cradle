@@ -112,10 +112,10 @@ export interface EnrichmentRequest {
     readonly enricherNamesDisplay?: Array<string>;
     /**
      * 
-     * @type {any}
+     * @type {Array<any>}
      * @memberof EnrichmentRequest
      */
-    request?: any | null;
+    request?: Array<any>;
     /**
      * 
      * @type {any}

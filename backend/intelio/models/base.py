@@ -58,6 +58,8 @@ class BaseDigest(LifecycleModel):
 
     relations = GenericRelation(Relation, related_query_name="digest")
 
+    summary = models.JSONField(default=dict, blank=True)
+
     class Meta:
         ordering = ["-created_at"]
 
@@ -142,10 +144,9 @@ class BaseDigest(LifecycleModel):
         Perform the actual digesting of the external data.
         """
         try:
-            if self._digest():
-                self.status = DigestStatus.WORKING
-            else:
-                self.status = DigestStatus.ERROR
+            self.status = DigestStatus.WORKING
+            self.save(update_fields=["status"])
+            self._digest()
         except Exception as e:
             self.status = DigestStatus.ERROR
             self.errors.append(
@@ -158,6 +159,16 @@ class BaseDigest(LifecycleModel):
 
     def _digest(self):
         raise NotImplementedError
+
+    def finalize(self):
+        if len(self.errors) > 0:
+            self.status = DigestStatus.ERROR
+        elif len(self.warnings) > 0:
+            self.status = DigestStatus.WARNING
+        else:
+            self.status = DigestStatus.DONE
+
+        self.save(update_fields=["status"])
 
     @hook(AFTER_DELETE)
     def delete_file(self):
@@ -549,6 +560,9 @@ class EnrichmentRequest(LifecycleModel):
                     instance.save(
                         update_fields=["enricher_status", "completed_at", "status"]
                     )
+
+                    # Send notification after all enrichers complete
+                    self._send_enrichment_notification(instance)
                 else:
                     instance.save(update_fields=["enricher_status"])
 
@@ -580,3 +594,29 @@ class EnrichmentRequest(LifecycleModel):
                 instance.save(update_fields=["warnings"])
             # Update the current instance to reflect the change
             self.warnings = instance.warnings
+
+    def _send_enrichment_notification(self, instance):
+        """
+        Send notification when enrichment completes or fails.
+        This should be called after all enrichers have finished processing.
+        """
+        from notifications.models import (
+            EnrichmentCompleteNotification,
+            EnrichmentErrorNotification,
+        )
+
+        if instance.status == EnrichmentStatus.ERROR:
+            # All enrichers failed
+            EnrichmentErrorNotification.objects.create(
+                user=instance.user,
+                message=f"There was an error processing your enrichment: {instance.title}",
+                enrichment_request=instance,
+                error_message=str(instance.errors),
+            )
+        elif instance.status in [EnrichmentStatus.DONE, EnrichmentStatus.WARNING]:
+            # At least some enrichers succeeded
+            EnrichmentCompleteNotification.objects.create(
+                user=instance.user,
+                message=f'Your enrichment "{instance.title}" is now complete.',
+                enrichment_request=instance,
+            )

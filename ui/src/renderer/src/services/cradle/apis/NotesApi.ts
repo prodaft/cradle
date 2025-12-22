@@ -21,10 +21,10 @@ import type {
   NoteRetrieve,
   PaginatedFileReferenceWithNoteSerializerResponse,
   PaginatedNoteRetrieveSerializerResponse,
-  PaginatedSubGraphSerializerResponse,
   PatchedSnippetRequest,
   Snippet,
   SnippetRequest,
+  SubGraph,
 } from '../models/index';
 import {
     AccessEntityList404ResponseFromJSON,
@@ -39,14 +39,14 @@ import {
     PaginatedFileReferenceWithNoteSerializerResponseToJSON,
     PaginatedNoteRetrieveSerializerResponseFromJSON,
     PaginatedNoteRetrieveSerializerResponseToJSON,
-    PaginatedSubGraphSerializerResponseFromJSON,
-    PaginatedSubGraphSerializerResponseToJSON,
     PatchedSnippetRequestFromJSON,
     PatchedSnippetRequestToJSON,
     SnippetFromJSON,
     SnippetToJSON,
     SnippetRequestFromJSON,
     SnippetRequestToJSON,
+    SubGraphFromJSON,
+    SubGraphToJSON,
 } from '../models/index';
 
 export interface NotesCreateRequest {
@@ -73,8 +73,6 @@ export interface NotesFilesRetrieveRequest {
 
 export interface NotesGraphRetrieveRequest {
     noteId: string;
-    page?: number;
-    pageSize?: number;
 }
 
 export interface NotesListRequest {
@@ -310,10 +308,10 @@ export class NotesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns paginated list of files that are linked to notes the user has access to. Can filter by references and other parameters. Results are ordered by note timestamp descending.
+     * Returns the full subgraph formed by a single note the user has access to.
      * Get subgraph formed by note
      */
-    async notesGraphRetrieveRaw(requestParameters: NotesGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedSubGraphSerializerResponse>> {
+    async notesGraphRetrieveRaw(requestParameters: NotesGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubGraph>> {
         if (requestParameters['noteId'] == null) {
             throw new runtime.RequiredError(
                 'noteId',
@@ -322,14 +320,6 @@ export class NotesApi extends runtime.BaseAPI {
         }
 
         const queryParameters: any = {};
-
-        if (requestParameters['page'] != null) {
-            queryParameters['page'] = requestParameters['page'];
-        }
-
-        if (requestParameters['pageSize'] != null) {
-            queryParameters['page_size'] = requestParameters['pageSize'];
-        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -352,14 +342,14 @@ export class NotesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedSubGraphSerializerResponseFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => SubGraphFromJSON(jsonValue));
     }
 
     /**
-     * Returns paginated list of files that are linked to notes the user has access to. Can filter by references and other parameters. Results are ordered by note timestamp descending.
+     * Returns the full subgraph formed by a single note the user has access to.
      * Get subgraph formed by note
      */
-    async notesGraphRetrieve(requestParameters: NotesGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedSubGraphSerializerResponse> {
+    async notesGraphRetrieve(requestParameters: NotesGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SubGraph> {
         const response = await this.notesGraphRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }

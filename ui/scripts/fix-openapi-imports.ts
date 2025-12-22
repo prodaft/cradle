@@ -74,6 +74,8 @@ import { MessageNotification, MessageNotificationFromJSONTyped, MessageNotificat
 import { NewUserNotification, NewUserNotificationFromJSONTyped, NewUserNotificationToJSON } from "./NewUserNotification";
 import { ReportProcessingErrorNotification, ReportProcessingErrorNotificationFromJSONTyped, ReportProcessingErrorNotificationToJSON } from "./ReportProcessingErrorNotification";
 import { ReportRenderNotification, ReportRenderNotificationFromJSONTyped, ReportRenderNotificationToJSON } from "./ReportRenderNotification";
+import { EnrichmentCompleteNotification, EnrichmentCompleteNotificationFromJSONTyped, EnrichmentCompleteNotificationToJSON } from "./EnrichmentCompleteNotification";
+import { EnrichmentErrorNotification, EnrichmentErrorNotificationFromJSONTyped, EnrichmentErrorNotificationToJSON } from "./EnrichmentErrorNotification";
 `;
 
         // Try to replace existing partial import first

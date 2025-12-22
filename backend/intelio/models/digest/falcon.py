@@ -1,21 +1,20 @@
+import json
 from datetime import datetime
-from django.utils import timezone
+
+from celery import chain
 from django.db import IntegrityError
+from django.utils import timezone
+
 from access.enums import AccessType
 from access.models import Access
-from entries.enums import EntryType
+from entries.enums import EntryType, RelationReason
 from entries.exceptions import InvalidEntryException
-from entries.models import Entry
+from entries.models import Entry, EntryClass, Relation
 from intelio.enums import DigestStatus
-from notes.utils import calculate_acvec
-from celery import chain
+
 from ...tasks.falcon import digest_chunk
-from ..mappings.falcon import FalconMapping
 from ..base import BaseDigest
-from entries.models import Relation
-from entries.enums import RelationReason
-from entries.models import EntryClass
-import json
+from ..mappings.falcon import FalconMapping
 
 CHUNK_SIZE = 1000  # Number of objects to process in each chunk
 REL_CHUNK_SIZE = 4000  # Number of relations to save in each chunk
@@ -39,7 +38,6 @@ class FalconDigest(BaseDigest):
         return report_data
 
     def _digest(self):
-        print(self.status)
         try:
             report_data = self.digest_data()
         except json.JSONDecodeError as e:
@@ -69,8 +67,6 @@ class FalconDigest(BaseDigest):
             self.save()
 
             chain(*chunks).apply_async()
-
-        return True
 
     def digest_chunk(self, start, end):
         rels = []

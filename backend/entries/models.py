@@ -2,16 +2,17 @@ import re
 import uuid
 from typing import Optional
 
-from core.fields import BitStringField
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.gis.db import models as gis_models
 from django.db import models
 from django.db.models import Q
 from django.utils import timezone
-from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, LifecycleModel, hook
+from django_lifecycle import AFTER_UPDATE, LifecycleModel, hook
 from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
+
+from core.fields import BitStringField
 from logs.models import LoggableModelMixin
 
 from .enums import EntryType, EntryTypeFormat, RelationReason
@@ -452,3 +453,14 @@ class Relation(LifecycleModel):
 
     def __str__(self):
         return f"Relation [{self.reason}]({self.e1}-{self.e2}) "
+
+
+class Attachment(LifecycleModel):
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+    relation: models.ForeignKey = models.ForeignKey(
+        Relation, on_delete=models.CASCADE, related_name="attachments"
+    )
+    name: models.CharField = models.CharField(max_length=255)
+    file: models.FileField = models.FileField(upload_to="attachments/")
+    type: models.CharField = models.CharField(max_length=255)
+    context: models.JSONField = models.JSONField(default=dict)

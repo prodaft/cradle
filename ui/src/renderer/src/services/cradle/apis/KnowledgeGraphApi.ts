@@ -17,8 +17,6 @@ import * as runtime from '../runtime';
 import type {
   GraphInaccessibleResponse,
   LazyPaginatedEntryWithDepthSerializerViewResponse,
-  LazyPaginatedSubGraphSerializerResponse,
-  PathfindQueryRequest,
   SubGraph,
 } from '../models/index';
 import {
@@ -26,21 +24,9 @@ import {
     GraphInaccessibleResponseToJSON,
     LazyPaginatedEntryWithDepthSerializerViewResponseFromJSON,
     LazyPaginatedEntryWithDepthSerializerViewResponseToJSON,
-    LazyPaginatedSubGraphSerializerResponseFromJSON,
-    LazyPaginatedSubGraphSerializerResponseToJSON,
-    PathfindQueryRequestFromJSON,
-    PathfindQueryRequestToJSON,
     SubGraphFromJSON,
     SubGraphToJSON,
 } from '../models/index';
-
-export interface KnowledgeGraphFetchRetrieveRequest {
-    endDate: Date;
-    src: number;
-    startDate: Date;
-    depth?: number;
-    pageSize?: number;
-}
 
 export interface KnowledgeGraphInaccessibleRetrieveRequest {
     src: string;
@@ -56,94 +42,10 @@ export interface KnowledgeGraphNeighborsRetrieveRequest {
     wildcard?: boolean;
 }
 
-export interface KnowledgeGraphPathfindCreateRequest {
-    pathfindQueryRequest: PathfindQueryRequest;
-}
-
 /**
  * 
  */
 export class KnowledgeGraphApi extends runtime.BaseAPI {
-
-    /**
-     * Fetch graph data with entries and edges for visualization.
-     * Fetch knowledge graph data
-     */
-    async knowledgeGraphFetchRetrieveRaw(requestParameters: KnowledgeGraphFetchRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<LazyPaginatedSubGraphSerializerResponse>> {
-        if (requestParameters['endDate'] == null) {
-            throw new runtime.RequiredError(
-                'endDate',
-                'Required parameter "endDate" was null or undefined when calling knowledgeGraphFetchRetrieve().'
-            );
-        }
-
-        if (requestParameters['src'] == null) {
-            throw new runtime.RequiredError(
-                'src',
-                'Required parameter "src" was null or undefined when calling knowledgeGraphFetchRetrieve().'
-            );
-        }
-
-        if (requestParameters['startDate'] == null) {
-            throw new runtime.RequiredError(
-                'startDate',
-                'Required parameter "startDate" was null or undefined when calling knowledgeGraphFetchRetrieve().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        if (requestParameters['depth'] != null) {
-            queryParameters['depth'] = requestParameters['depth'];
-        }
-
-        if (requestParameters['endDate'] != null) {
-            queryParameters['end_date'] = (requestParameters['endDate'] as any).toISOString();
-        }
-
-        if (requestParameters['pageSize'] != null) {
-            queryParameters['page_size'] = requestParameters['pageSize'];
-        }
-
-        if (requestParameters['src'] != null) {
-            queryParameters['src'] = requestParameters['src'];
-        }
-
-        if (requestParameters['startDate'] != null) {
-            queryParameters['start_date'] = (requestParameters['startDate'] as any).toISOString();
-        }
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("jwtAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-
-        let urlPath = `/knowledge-graph/fetch/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => LazyPaginatedSubGraphSerializerResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Fetch graph data with entries and edges for visualization.
-     * Fetch knowledge graph data
-     */
-    async knowledgeGraphFetchRetrieve(requestParameters: KnowledgeGraphFetchRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LazyPaginatedSubGraphSerializerResponse> {
-        const response = await this.knowledgeGraphFetchRetrieveRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
 
     /**
      * Get entries in the knowledge graph that are inaccessible to the current user.
@@ -270,22 +172,13 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
     }
 
     /**
-     * Find paths between source and destination entries in the knowledge graph.
-     * Find paths in knowledge graph
+     * Returns the full knowledge graph accessible to the user.
+     * Get knowledge graph
      */
-    async knowledgeGraphPathfindCreateRaw(requestParameters: KnowledgeGraphPathfindCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubGraph>> {
-        if (requestParameters['pathfindQueryRequest'] == null) {
-            throw new runtime.RequiredError(
-                'pathfindQueryRequest',
-                'Required parameter "pathfindQueryRequest" was null or undefined when calling knowledgeGraphPathfindCreate().'
-            );
-        }
-
+    async knowledgeGraphRetrieveRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubGraph>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
 
         if (this.configuration && this.configuration.accessToken) {
             const token = this.configuration.accessToken;
@@ -296,25 +189,24 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/knowledge-graph/pathfind/`;
+        let urlPath = `/knowledge-graph/`;
 
         const response = await this.request({
             path: urlPath,
-            method: 'POST',
+            method: 'GET',
             headers: headerParameters,
             query: queryParameters,
-            body: PathfindQueryRequestToJSON(requestParameters['pathfindQueryRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SubGraphFromJSON(jsonValue));
     }
 
     /**
-     * Find paths between source and destination entries in the knowledge graph.
-     * Find paths in knowledge graph
+     * Returns the full knowledge graph accessible to the user.
+     * Get knowledge graph
      */
-    async knowledgeGraphPathfindCreate(requestParameters: KnowledgeGraphPathfindCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SubGraph> {
-        const response = await this.knowledgeGraphPathfindCreateRaw(requestParameters, initOverrides);
+    async knowledgeGraphRetrieve(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SubGraph> {
+        const response = await this.knowledgeGraphRetrieveRaw(initOverrides);
         return await response.value();
     }
 

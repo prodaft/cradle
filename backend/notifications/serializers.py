@@ -6,6 +6,8 @@ from user.serializers import EssentialUserRetrieveSerializer
 
 from .models import (
     AccessRequestNotification,
+    EnrichmentCompleteNotification,
+    EnrichmentErrorNotification,
     MessageNotification,
     NewUserNotification,
     ReportProcessingErrorNotification,
@@ -101,12 +103,53 @@ class ReportProcessingErrorNotificationSerializer(serializers.ModelSerializer):
         return "report_processing_error_notification"
 
 
+class EnrichmentCompleteNotificationSerializer(serializers.ModelSerializer):
+    notification_type = serializers.SerializerMethodField()
+    enrichment_request_id = serializers.UUIDField(source="enrichment_request.id")
+
+    class Meta:
+        model = EnrichmentCompleteNotification
+        fields = [
+            "id",
+            "message",
+            "is_marked_unread",
+            "timestamp",
+            "enrichment_request_id",
+            "notification_type",
+        ]
+
+    def get_notification_type(self, obj: EnrichmentCompleteNotification) -> str:
+        return "enrichment_complete_notification"
+
+
+class EnrichmentErrorNotificationSerializer(serializers.ModelSerializer):
+    notification_type = serializers.SerializerMethodField()
+    enrichment_request_id = serializers.UUIDField(source="enrichment_request.id")
+
+    class Meta:
+        model = EnrichmentErrorNotification
+        fields = [
+            "id",
+            "message",
+            "is_marked_unread",
+            "timestamp",
+            "enrichment_request_id",
+            "error_message",
+            "notification_type",
+        ]
+
+    def get_notification_type(self, obj: EnrichmentErrorNotification) -> str:
+        return "enrichment_error_notification"
+
+
 NOTIFICATION_SERIALIZER_MAP: dict[type, type[serializers.ModelSerializer]] = {
     MessageNotification: MessageNotificationSerializer,
     NewUserNotification: NewUserNotificationSerializer,
     AccessRequestNotification: AccessRequestNotificationSerializer,
     ReportRenderNotification: ReportRenderNotificationSerializer,
     ReportProcessingErrorNotification: ReportProcessingErrorNotificationSerializer,
+    EnrichmentCompleteNotification: EnrichmentCompleteNotificationSerializer,
+    EnrichmentErrorNotification: EnrichmentErrorNotificationSerializer,
 }
 
 

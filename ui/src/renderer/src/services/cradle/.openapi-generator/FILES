@@ -31,6 +31,8 @@ models/DigestSubclass.ts
 models/EdgeRelation.ts
 models/EmailConfirmRequest.ts
 models/Enable2FA.ts
+models/EnrichmentCompleteNotification.ts
+models/EnrichmentErrorNotification.ts
 models/EnrichmentRelation.ts
 models/EnrichmentRequest.ts
 models/EnrichmentRequestDetail.ts
@@ -73,7 +75,6 @@ models/FleetingNoteRetrieve.ts
 models/GraphInaccessibleResponse.ts
 models/HomePageStatistics.ts
 models/LazyPaginatedEntryWithDepthSerializerViewResponse.ts
-models/LazyPaginatedSubGraphSerializerResponse.ts
 models/ManagementActionResponse.ts
 models/MappingSubclass.ts
 models/MessageNotification.ts
@@ -94,11 +95,9 @@ models/PaginatedFileReferenceWithNoteSerializerResponse.ts
 models/PaginatedNoteRetrieveSerializerResponse.ts
 models/PaginatedRelationSerializerResponse.ts
 models/PaginatedReportListList.ts
-models/PaginatedSubGraphSerializerResponse.ts
 models/PasswordResetConfirmRequest.ts
 models/PasswordResetRequestRequest.ts
 models/PatchedSnippetRequest.ts
-models/PathfindQueryRequest.ts
 models/PublishReportRequest.ts
 models/PublishStrategiesResponse.ts
 models/PublishStrategy.ts

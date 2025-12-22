@@ -176,7 +176,6 @@ export default function EnrichmentRequestModal({
                         errorMessage: 'Failed to fetch entities',
                     });
                     resolvedEntities = entities.map((entity) => allEntities.find((e) => e.name === entity.value && e.subtype === entity.type)?.id!);
-                    console.log(allEntities, entities, resolvedEntities);
                 }
 
                 // Resolve artifacts list if provided
@@ -334,8 +333,10 @@ export default function EnrichmentRequestModal({
                         notes: Array.from(selectedNoteIds),
                     },
                 }),
+                {
+                    successMessage: 'Enrichment request created successfully',
+                }
             );
-            console.log(result);
             if (onSuccess) {
                 onSuccess();
             }

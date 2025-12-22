@@ -4,6 +4,8 @@ import { MessageNotification, MessageNotificationFromJSONTyped, MessageNotificat
 import { NewUserNotification, NewUserNotificationFromJSONTyped, NewUserNotificationToJSON } from "./NewUserNotification";
 import { ReportProcessingErrorNotification, ReportProcessingErrorNotificationFromJSONTyped, ReportProcessingErrorNotificationToJSON } from "./ReportProcessingErrorNotification";
 import { ReportRenderNotification, ReportRenderNotificationFromJSONTyped, ReportRenderNotificationToJSON } from "./ReportRenderNotification";
+import { EnrichmentCompleteNotification, EnrichmentCompleteNotificationFromJSONTyped, EnrichmentCompleteNotificationToJSON } from "./EnrichmentCompleteNotification";
+import { EnrichmentErrorNotification, EnrichmentErrorNotificationFromJSONTyped, EnrichmentErrorNotificationToJSON } from "./EnrichmentErrorNotification";
 
 /* eslint-disable */
 /**
@@ -24,7 +26,7 @@ import { ReportRenderNotification, ReportRenderNotificationFromJSONTyped, Report
  * 
  * @export
  */
-export type Notification = { notificationType: 'message_notification' } & MessageNotification | { notificationType: 'new_user_notification' } & NewUserNotification | { notificationType: 'report_processing_error_notification' } & ReportProcessingErrorNotification | { notificationType: 'report_render_notification' } & ReportRenderNotification | { notificationType: 'request_access_notification' } & AccessRequestNotification;
+export type Notification = { notificationType: 'enrichment_complete_notification' } & EnrichmentCompleteNotification | { notificationType: 'enrichment_error_notification' } & EnrichmentErrorNotification | { notificationType: 'message_notification' } & MessageNotification | { notificationType: 'new_user_notification' } & NewUserNotification | { notificationType: 'report_processing_error_notification' } & ReportProcessingErrorNotification | { notificationType: 'report_render_notification' } & ReportRenderNotification | { notificationType: 'request_access_notification' } & AccessRequestNotification;
 
 export function NotificationFromJSON(json: any): Notification {
     return NotificationFromJSONTyped(json, false);
@@ -35,6 +37,10 @@ export function NotificationFromJSONTyped(json: any, ignoreDiscriminator: boolea
         return json;
     }
     switch (json['notification_type']) {
+        case 'enrichment_complete_notification':
+            return Object.assign({}, EnrichmentCompleteNotificationFromJSONTyped(json, true), { notificationType: 'enrichment_complete_notification' } as const);
+        case 'enrichment_error_notification':
+            return Object.assign({}, EnrichmentErrorNotificationFromJSONTyped(json, true), { notificationType: 'enrichment_error_notification' } as const);
         case 'message_notification':
             return Object.assign({}, MessageNotificationFromJSONTyped(json, true), { notificationType: 'message_notification' } as const);
         case 'new_user_notification':
@@ -59,6 +65,10 @@ export function NotificationToJSONTyped(value?: Notification | null, ignoreDiscr
         return value;
     }
     switch (value['notificationType']) {
+        case 'enrichment_complete_notification':
+            return Object.assign({}, EnrichmentCompleteNotificationToJSON(value), { notificationType: 'enrichment_complete_notification' } as const);
+        case 'enrichment_error_notification':
+            return Object.assign({}, EnrichmentErrorNotificationToJSON(value), { notificationType: 'enrichment_error_notification' } as const);
         case 'message_notification':
             return Object.assign({}, MessageNotificationToJSON(value), { notificationType: 'message_notification' } as const);
         case 'new_user_notification':

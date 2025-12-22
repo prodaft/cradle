@@ -113,7 +113,7 @@ export interface IntelioDigestCreateRequest {
     title: string;
     digestType: string;
     file: Blob;
-    entity?: number;
+    entities?: Array<number>;
 }
 
 export interface IntelioDigestDestroyRequest {
@@ -735,8 +735,8 @@ export class IntelioApi extends runtime.BaseAPI {
             formParams.append('digest_type', requestParameters['digestType'] as any);
         }
 
-        if (requestParameters['entity'] != null) {
-            formParams.append('entity', requestParameters['entity'] as any);
+        if (requestParameters['entities'] != null) {
+            formParams.append('entities', requestParameters['entities']!.join(runtime.COLLECTION_FORMATS["csv"]));
         }
 
         if (requestParameters['file'] != null) {
@@ -1212,6 +1212,7 @@ export type EnrichmentRequestListStatusEnum = typeof EnrichmentRequestListStatus
 export const IntelioDigestRetrieveStatusEnum = {
     Done: 'done',
     Error: 'error',
+    Warning: 'warning',
     Working: 'working'
 } as const;
 export type IntelioDigestRetrieveStatusEnum = typeof IntelioDigestRetrieveStatusEnum[keyof typeof IntelioDigestRetrieveStatusEnum];

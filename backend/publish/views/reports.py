@@ -232,7 +232,7 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, pk):
-        download_url = request.query_params.get("download_url", False)
+        download_url = request.query_params.get("download_url", False) == "true"
         return Response(
             ReportDetailSerializer(
                 self.get_object(), context={"download_url": download_url}

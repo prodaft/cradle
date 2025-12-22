@@ -60,6 +60,7 @@ export interface BaseDigest {
     readonly createdAt?: Date;
     /**
      * * `working` - Working
+     * * `warning` - Warning
      * * `done` - Done
      * * `error` - Error
      * @type {string}
@@ -104,6 +105,7 @@ export interface BaseDigest {
  */
 export const BaseDigestStatusEnum = {
     Working: 'working',
+    Warning: 'warning',
     Done: 'done',
     Error: 'error'
 } as const;

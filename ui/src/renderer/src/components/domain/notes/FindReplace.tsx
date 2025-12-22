@@ -76,38 +76,38 @@ export default function FindReplace({ view, onClose, initialReplace = false }: F
         );
 
         let match = rangeCursor.next();
-        let lastMatch = null;
+        let lastMatch: { from: number; to: number } | null = null;
         while (!match.done) {
-            lastMatch = match;
+            lastMatch = match.value;
             match = rangeCursor.next();
         }
 
         if (lastMatch) {
             view.dispatch({
                 selection: {
-                    anchor: lastMatch.value.from,
-                    head: lastMatch.value.to,
+                    anchor: lastMatch.from,
+                    head: lastMatch.to,
                 },
                 scrollIntoView: true,
                 effects: EditorView.announce.of(
-                    `Match ${lastMatch.value.from}-${lastMatch.value.to}`,
+                    `Match ${lastMatch.from}-${lastMatch.to}`,
                 ),
             });
         } else {
             // Wrap around: find the very last match in the document
             const allCursor = query.getCursor(view.state);
             let m = allCursor.next();
-            let last = null;
+            let last: { from: number; to: number } | null = null;
             while (!m.done) {
-                last = m;
+                last = m.value;
                 m = allCursor.next();
             }
             if (last) {
                 view.dispatch({
-                    selection: { anchor: last.value.from, head: last.value.to },
+                    selection: { anchor: last.from, head: last.to },
                     scrollIntoView: true,
                     effects: EditorView.announce.of(
-                        `Match ${last.value.from}-${last.value.to}`,
+                        `Match ${last.from}-${last.to}`,
                     ),
                 });
             }

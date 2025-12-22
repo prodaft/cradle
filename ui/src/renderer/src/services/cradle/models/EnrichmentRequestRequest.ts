@@ -45,10 +45,10 @@ export interface EnrichmentRequestRequest {
     enricherNames: Array<string>;
     /**
      * 
-     * @type {any}
+     * @type {Array<any>}
      * @memberof EnrichmentRequestRequest
      */
-    request?: any | null;
+    request?: Array<any>;
 }
 
 /**

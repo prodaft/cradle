@@ -25,7 +25,8 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
         enricher.pre_enrich(entries)
         enricher.enrich(entries)
     except Exception as e:
-        request._append_error(f"Enricher {settings.enricher_type} failed: {str(e)}")
+        error_message = f"Enricher {settings.enricher_type} failed: {str(e)}"
+        request._append_error(error_message, settings.enricher_type)
         request._set_enricher_status(enricher.name, EnrichmentStatus.ERROR)
         return
 
@@ -40,6 +41,7 @@ def start_digest(digest_id):
     EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="digest")
     print(f"Starting digest {digest_id}")
     digest = BaseDigest.objects.get(id=digest_id)
+    print(digest)
     digest.digest()
 
 

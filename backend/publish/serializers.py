@@ -38,13 +38,14 @@ class ReportDetailSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_report_url(self, obj):
         download_url = self.context.get("download_url", False)
-        print(download_url)
         if download_url:
             extra_headers = {
                 "Response-Content-Disposition": f"attachment; filename={obj.title}.{obj.strategy.lower()}",
             }
         else:
             extra_headers = {}
+
+        print(download_url, extra_headers)
 
         if obj.status != ReportStatus.DONE:
             return None

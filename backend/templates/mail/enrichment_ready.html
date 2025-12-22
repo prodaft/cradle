@@ -1,0 +1,16 @@
+{% extends "mail/base_email.html" %}
+
+{% block content %}
+<h2>Your Enrichment is Complete</h2>
+<p>Hello <strong>{{ user.username }}</strong>,</p>
+<p>Your enrichment request titled <strong>{{ enrichment.title }}</strong> has been successfully completed.</p>
+<p>You can view your enrichment results by clicking the button below:</p>
+<p style="text-align:center;">
+  <a class="button" href="{{ enrichment_location }}" target="_blank">
+    View Enrichment
+  </a>
+</p>
+<p>If the button above doesn't work, copy and paste the following link into your browser:</p>
+<p><a href="{{ enrichment_location }}">{{ enrichment_location }}</a></p>
+<p class="note">Thank you for using CRADLE for your enrichment needs.</p>
+{% endblock %}

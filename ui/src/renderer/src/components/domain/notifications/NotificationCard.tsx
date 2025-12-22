@@ -5,6 +5,8 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import {
     AccessRequestAccessTypeEnum,
     AccessRequestNotification,
+    EnrichmentCompleteNotification,
+    EnrichmentErrorNotification,
     NewUserNotification,
     Notification,
     ReportProcessingErrorNotification,
@@ -218,6 +220,30 @@ export default function NotificationCard({
                         onClick={(e) => {
                             const notif = notification as ReportProcessingErrorNotification;
                             navigateLink(`/reports/${notif.publishedReportId}`)(e);
+                        }}
+                    >
+                        View Details
+                    </button>
+                )}
+
+                {notification.notificationType === 'enrichment_complete_notification' && (
+                    <button
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
+                        onClick={(e) => {
+                            const notif = notification as EnrichmentCompleteNotification;
+                            navigateLink(`/enrichment/${notif.enrichmentRequestId}`)(e);
+                        }}
+                    >
+                        View Enrichment
+                    </button>
+                )}
+
+                {notification.notificationType === 'enrichment_error_notification' && (
+                    <button
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
+                        onClick={(e) => {
+                            const notif = notification as EnrichmentErrorNotification;
+                            navigateLink(`/enrichment/${notif.enrichmentRequestId}`)(e);
                         }}
                     >
                         View Details

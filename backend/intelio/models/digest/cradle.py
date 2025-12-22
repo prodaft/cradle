@@ -1,13 +1,20 @@
+import json
+
+from celery import group
+from django.db import transaction
+
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from intelio.enums import DigestStatus
+from intelio.tasks.cradle import download_file_for_note
 from notes.processor.task_scheduler import TaskScheduler
+
 from ..base import BaseDigest
-import json
 
 
 class CradleDigest(BaseDigest):
     display_name = "CRADLE Report"
+    infer_entities = True
 
     class Meta:
         proxy = True
@@ -58,32 +65,45 @@ class CradleDigest(BaseDigest):
                     )
 
             created_notes = []
-            # bucket_name = self.user.id
+            bucket_name = str(self.user.id)
             files_scheduled = 0
+            download_tasks = []
 
-            for note_data in report_data.get("notes", []):
+            for idx, note_data in enumerate(report_data.get("notes", [])):
                 scheduler = TaskScheduler(
                     self.user, content=note_data["content"], digest=self
                 )
-                created_note = scheduler.run_pipeline(validate=False)
+                try:
+                    created_note = scheduler.run_pipeline(validate=True)
+                except Exception:
+                    self._append_error(f"Failed to create note {idx}")
+                    continue
 
                 file_urls = note_data.get("file_urls", {})
                 for file_identifier, url in file_urls.items():
-                    # download_file_for_note.delay(
-                    #     created_note.id, file_identifier, url, bucket_name
-                    # )
-                    files_scheduled += 1
-
+                    download_tasks.append(
+                        download_file_for_note.si(
+                            created_note.id, file_identifier, url, bucket_name, self.id
+                        )
+                    )
                 created_note.save()
                 created_notes.append(created_note)
 
-            summary = {
+            self.summary = {
                 "notes_imported": len(created_notes),
                 "entry_classes_imported": len(report_data.get("entry_classes", [])),
-                "files_scheduled": files_scheduled,
+                "files_scheduled": len(download_tasks),
+                "files_failed": 0,
+                "files_downloaded": 0,
             }
+            self.save(update_fields=["summary"])
 
-            return summary
+            if files_scheduled > 0:
+                self.finalize()
+            else:
+                self.save()
+
+            transaction.on_commit(lambda: group(*download_tasks).apply_async())
         except Exception as e:
             self.status = DigestStatus.ERROR
             self.errors = [str(e)]

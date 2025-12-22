@@ -18,6 +18,8 @@ from user.models import CradleUser
 from ..models import MessageNotification
 from ..serializers import (
     AccessRequestNotificationSerializer,
+    EnrichmentCompleteNotificationSerializer,
+    EnrichmentErrorNotificationSerializer,
     MessageNotificationSerializer,
     NewUserNotificationSerializer,
     NotificationSerializer,
@@ -44,6 +46,8 @@ class NotificationList(APIView):
                     AccessRequestNotificationSerializer,
                     ReportRenderNotificationSerializer,
                     ReportProcessingErrorNotificationSerializer,
+                    EnrichmentCompleteNotificationSerializer,
+                    EnrichmentErrorNotificationSerializer,
                 ],
                 resource_type_field_name="notification_type",
                 many=True,
