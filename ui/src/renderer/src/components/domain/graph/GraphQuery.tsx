@@ -1,9 +1,6 @@
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { EdgeRelation } from '@/services/cradle';
-import NotesList from '@components/domain/notes/NotesList';
-import RelationsList from '@components/domain/relations/RelationsList';
-import { Tab, Tabs } from '@components/layout/Tabs/Tabs';
-import { ComponentType, useMemo } from 'react';
+import { ComponentType, MutableRefObject } from 'react';
+import { Edge, Node } from './graphFilterUtils';
 import GraphControl from './GraphControl';
 
 interface Entry {
@@ -11,11 +8,6 @@ interface Entry {
     label?: string;
     name?: string;
     value?: string;
-    [key: string]: any;
-}
-
-interface Node {
-    id: string;
     [key: string]: any;
 }
 
@@ -37,13 +29,15 @@ interface GraphQueryProps {
     SearchComponent: ComponentType<SearchComponentProps>;
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
+    addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
     nodes: Node[];
-    edges: EdgeRelation[];
+    edges: Edge[];
+    activePanel: 'explorer' | 'display';
+    onClosePanel: () => void;
+    cosmographRef: MutableRefObject<any>;
 }
 
 export default function GraphQuery({
-    selectedEntries,
-    setSelectedEntries,
     entryGraphColors,
     disabledTypes,
     setDisabledTypes,
@@ -52,128 +46,57 @@ export default function GraphQuery({
     SearchComponent,
     addEdges,
     addNodes,
+    addBoth,
     nodes,
     edges,
+    activePanel,
+    onClosePanel,
+    cosmographRef,
+    selectedEntries,
+    setSelectedEntries,
 }: GraphQueryProps) {
-    const { navigate, navigateLink } = useCradleNavigate();
-
     const settingsProps = {
         config,
         setConfig,
     };
 
-    const graphQuery = useMemo(() => {
-        return (
-            selectedEntries && {
-                references: Array.from(selectedEntries).map((entry) => entry.id),
-                references_at_least: 2,
-            }
-        );
-    }, [selectedEntries]);
-
-    const relationQuery = useMemo(() => {
-        return (
-            selectedEntries && {
-                relates: Array.from(selectedEntries).map((entry) => Number(entry.id)),
-            }
-        );
-    }, [selectedEntries]);
+    const panelTitle = activePanel === 'explorer' ? 'Explorer' : 'Display';
 
     return (
         <div className='h-full rounded-xl flex flex-col'>
-            <Tabs defaultTab={0} perTabClass=''>
-                <Tab title='Search'>
-                    <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>
-                        <GraphControl
-                            settingsProps={settingsProps}
-                            SearchComponent={SearchComponent}
-                            entryGraphColors={entryGraphColors}
-                            disabledTypes={disabledTypes}
-                            setDisabledTypes={setDisabledTypes}
-                            addEdges={addEdges}
-                            addNodes={addNodes}
-                            nodes={nodes}
-                            edges={edges}
-                        />
-                    </div>
-                </Tab>
-                <Tab title='Notes' classes='pt-2'>
-                    <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
-                        <div className='flex-1 overflow-y-auto mt-2 px-4'>
-                            {selectedEntries?.size >= 2 ? (
-                                <>
-                                    {/* Badges for selected entries */}
-                                    <div className='flex flex-wrap gap-2 mb-2'>
-                                        {Array.from(selectedEntries)
-                                            .slice(0, 3)
-                                            .map((entry) => (
-                                                <span
-                                                    key={
-                                                        entry.id ||
-                                                        entry.value ||
-                                                        String(entry)
-                                                    }
-                                                    className='badge badge-outline-primary text-sm'
-                                                >
-                                                    {entry.label ||
-                                                        entry.name ||
-                                                        entry.id ||
-                                                        String(entry)}
-                                                </span>
-                                            ))}
-                                    </div>
-
-                                    <NotesList
-                                        query={graphQuery}
-                                        hideActionBar={true}
-                                    />
-                                </>
-                            ) : (
-                                <div className='text-center text-sm text-gray-400 mt-10'>
-                                    Select at least two entries to see connected notes
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </Tab>
-                <Tab title='Relations' classes='pt-2'>
-                    <div className='mt-3 flex flex-col flex-1 overflow-hidden h-[85vh]'>
-                        <div className='flex-1 overflow-y-auto mt-2 px-4'>
-                            {selectedEntries?.size >= 2 ? (
-                                <>
-                                    {/* Badges for selected entries */}
-                                    <div className='flex flex-wrap gap-2 mb-2'>
-                                        {Array.from(selectedEntries)
-                                            .slice(0, 3)
-                                            .map((entry) => (
-                                                <span
-                                                    key={
-                                                        entry.id ||
-                                                        entry.value ||
-                                                        String(entry)
-                                                    }
-                                                    className='badge badge-outline-primary text-sm'
-                                                >
-                                                    {entry.label ||
-                                                        entry.name ||
-                                                        entry.id ||
-                                                        String(entry)}
-                                                </span>
-                                            ))}
-                                    </div>
-
-                                    <RelationsList query={relationQuery} />
-                                </>
-                            ) : (
-                                <div className='text-center text-sm text-gray-400 mt-10'>
-                                    Select at least two entries to see connected
-                                    relations
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </Tab>
-            </Tabs>
+            <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>
+                {/* Header with title and close button */}
+                <div className='flex justify-between items-center pl-4 pr-3 py-3'>
+                    <h2 className='text-lg font-semibold'>{panelTitle}</h2>
+                    <button
+                        type='button'
+                        className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center'
+                        title='Close panel'
+                        onClick={onClosePanel}
+                    >
+                        <svg width="16" height="16" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
+                            <path d="M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800' />
+                <GraphControl
+                    settingsProps={settingsProps}
+                    SearchComponent={SearchComponent}
+                    entryGraphColors={entryGraphColors}
+                    disabledTypes={disabledTypes}
+                    setDisabledTypes={setDisabledTypes}
+                    addEdges={addEdges}
+                    addNodes={addNodes}
+                    addBoth={addBoth}
+                    nodes={nodes}
+                    edges={edges}
+                    activePanel={activePanel}
+                    cosmographRef={cosmographRef}
+                    selectedEntries={selectedEntries}
+                    setSelectedEntries={setSelectedEntries}
+                />
+            </div>
         </div>
     );
 }

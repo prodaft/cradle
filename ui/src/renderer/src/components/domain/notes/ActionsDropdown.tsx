@@ -251,7 +251,7 @@ export default function ActionsDropdown({
                                         <span className='flex-1'>Add Timestamps</span>
                                     </button>
                                 )}
-                            {isAdmin && !isFleeting && (
+                            {isAdmin && !isFleeting && activeView !== ViewMode.GRAPH && (
                                 <>
                                     <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
                                     <button
@@ -267,18 +267,22 @@ export default function ActionsDropdown({
                                     </button>
                                 </>
                             )}
-                            <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
-                            <button
-                                onClick={() => {
-                                    setShowActionsMenu(false);
-                                    handleUploadFiles();
-                                }}
-                                className={menuButtonClasses}
-                                data-testid='manage-files-menu-item'
-                            >
-                                <CloudUpload width='16' height='16' />
-                                <span className='flex-1'>Upload Files</span>
-                            </button>
+                            {activeView !== ViewMode.GRAPH && (
+                                <>
+                                    <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            handleUploadFiles();
+                                        }}
+                                        className={menuButtonClasses}
+                                        data-testid='manage-files-menu-item'
+                                    >
+                                        <CloudUpload width='16' height='16' />
+                                        <span className='flex-1'>Upload Files</span>
+                                    </button>
+                                </>
+                            )}
                             {isFleeting && (
                                 <button
                                     onClick={() => {
@@ -295,28 +299,32 @@ export default function ActionsDropdown({
                                     )}
                                 </button>
                             )}
-                            <button
-                                onClick={() => {
-                                    setShowActionsMenu(false);
-                                    enrichData();
-                                }}
-                                className={menuButtonClasses}
-                                data-testid='enrich-data-menu-item'
-                            >
-                                <Sparks width='16' height='16' />
-                                <span className='flex-1'>Enrich Artifacts</span>
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setShowActionsMenu(false);
-                                    handlePublish();
-                                }}
-                                className={menuButtonClasses}
-                                data-testid='publish-menu-item'
-                            >
-                                <StatsReport width='16' height='16' />
-                                <span className='flex-1'>Publish</span>
-                            </button>
+                            {activeView !== ViewMode.GRAPH && (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            enrichData();
+                                        }}
+                                        className={menuButtonClasses}
+                                        data-testid='enrich-data-menu-item'
+                                    >
+                                        <Sparks width='16' height='16' />
+                                        <span className='flex-1'>Enrich Artifacts</span>
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowActionsMenu(false);
+                                            handlePublish();
+                                        }}
+                                        className={menuButtonClasses}
+                                        data-testid='publish-menu-item'
+                                    >
+                                        <StatsReport width='16' height='16' />
+                                        <span className='flex-1'>Publish</span>
+                                    </button>
+                                </>
+                            )}
                             <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
                             <button
                                 onClick={() => {

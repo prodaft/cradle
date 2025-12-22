@@ -13,6 +13,7 @@ from core.openapi import (
     get_validation_error_response,
 )
 from core.pagination import TotalPagesPagination
+from core.utils import validate_order_by
 from entries.models import Entry
 from query.exceptions import InvalidQuerySyntaxException
 from query.utils import parse_query
@@ -226,8 +227,6 @@ class EnrichmentAPIView(APIView):
 
     def get(self, request):
         """List enrichment requests with optional filters, sorting, and pagination"""
-        from core.utils import validate_order_by
-
         if request.user.is_cradle_admin:
             queryset = EnrichmentRequest.objects.all()
         else:

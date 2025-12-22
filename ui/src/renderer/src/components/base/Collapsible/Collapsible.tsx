@@ -54,26 +54,30 @@ export default function Collapsible({
             {/* Header with toggle and optional extra button */}
             <div className='flex justify-between items-center'>
                 <button
-                    className='flex items-center text-left dark:text-zinc-300'
+                    className='flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary transition-colors'
                     onClick={toggle}
                 >
                     {/* Arrow rotation */}
-                    {isOpen ? <NavArrowDown /> : <NavArrowRight />}
-                    {label}
+                    {isOpen ? (
+                        <NavArrowDown width='16' height='16' />
+                    ) : (
+                        <NavArrowRight width='16' height='16' />
+                    )}
+                    <span>{label}</span>
                 </button>
                 {/* Extra button rendered only if both text and callback are provided */}
                 {buttonText && onButtonClick && (
-                    <button onClick={onButtonClick} className='ml-4'>
+                    <button 
+                        onClick={onButtonClick} 
+                        className='text-xs px-2 py-1 rounded hover:bg-cradle-bg-elevated transition-colors'
+                    >
                         {buttonText}
                     </button>
                 )}
             </div>
 
-            {/* Underline */}
-            <div className='border-b border-zinc-700 mx-3' />
-
             {/* Collapsible content */}
-            {isOpen && <div className='pl-3 pt-1'>{children}</div>}
+            {isOpen && <div className='mt-4'>{children}</div>}
         </div>
     );
 }

@@ -228,12 +228,12 @@ def entry_class_creation_task(note_id, user_id=None):
     if user_id:
         user = CradleUser.objects.get(id=user_id)
 
-    virtual_class = EntryClass.objects.filter(subtype="virtual")
+    note_class = EntryClass.objects.filter(subtype="note")
 
-    if not virtual_class.exists():  # If alias type does not exist, create it
-        virtual_class = EntryClass.objects.create(
+    if not note_class.exists():  # If note type does not exist, create it
+        note_class = EntryClass.objects.create(
             type=EntryType.ARTIFACT,
-            subtype="virtual",
+            subtype="note",
             color="#7f8389",
         )
 

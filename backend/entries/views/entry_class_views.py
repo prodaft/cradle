@@ -1,6 +1,7 @@
 from typing import cast
 
 from django.conf import settings
+from django.db.models import Count
 from django.db.models.functions import Length
 from django_lifecycle.mixins import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
@@ -94,8 +95,6 @@ class EntryClassList(APIView):
                     detail="User must be an admin to see the count of entries in each class."
                 )
             # For count queries, we need to prefetch entry counts as well
-            from django.db.models import Count
-
             entities = entities.annotate(entry_count=Count("entries"))
             serializer = EntryClassSerializerCount(entities, many=True)
         else:
