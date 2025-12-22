@@ -6,7 +6,10 @@ from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, AFTER_UPDATE, hook
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
 
+from access.enums import AccessType
+from access.models import Access
 from core.fields import BitStringField
+from entries.enums import EntryType
 from entries.models import Entry, Relation
 from intelio.models.base import BaseDigest
 from logs.models import LoggableModelMixin
@@ -104,6 +107,13 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     def delete(self):
         super().delete()
+
+    def has_access(self, user: CradleUser) -> bool:
+        return Access.objects.has_access_to_entities(
+            user,
+            set(self.entries.filter(entry_class__type=EntryType.ENTITY)),
+            {AccessType.READ, AccessType.READ_WRITE},
+        )
 
     @hook(AFTER_CREATE)
     def after_create(self):

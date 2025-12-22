@@ -11,7 +11,8 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
-import { openSearchPanel } from '@codemirror/search';
+import { Prec } from '@codemirror/state';
+import { keymap } from '@codemirror/view';
 import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
 import { Book, EditPencil } from 'iconoir-react';
 import { debounce } from 'lodash';
@@ -31,6 +32,7 @@ import ReferenceTree from '../relations/ReferenceTree';
 import ActionsDropdown from './ActionsDropdown';
 import { ViewMode } from './constants';
 import FilesView from './FilesView';
+import FindReplace from './FindReplace';
 import NoteMetadata from './NoteMetadata';
 import NoteOutline from './NoteOutline';
 import RichEditor from './RichEditor';
@@ -77,6 +79,8 @@ export default function NoteViewer() {
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [showFileUpload, setShowFileUpload] = useState(false);
     const [showReportModal, setShowReportModal] = useState(false);
+    const [showFind, setShowFind] = useState(false);
+    const [findReplaceMode, setFindReplaceMode] = useState(false);
     const [showOutline, setShowOutline] = useState(() => {
         const saved = localStorage.getItem('showOutline');
         return saved === 'true';
@@ -489,25 +493,38 @@ export default function NoteViewer() {
     }, [fileData, setFileData, setModal]);
 
     const handleFind = useCallback(() => {
-        const view = editorRef.current?.view || editorRef.current;
-        if (!view) return;
-        openSearchPanel(view);
+        setShowFind(true);
+        setFindReplaceMode(false);
     }, []);
 
     const handleReplace = useCallback(() => {
-        const view = editorRef.current?.view || editorRef.current;
-        if (!view) return;
-        openSearchPanel(view);
-        requestAnimationFrame(() => {
-            const replaceInput = view.dom?.querySelector?.('input[name="replace"]') as
-                | HTMLInputElement
-                | null;
-            if (replaceInput) {
-                replaceInput.focus();
-                replaceInput.select();
-            }
-        });
+        setShowFind(true);
+        setFindReplaceMode(true);
     }, []);
+
+    const customKeymap = useMemo(
+        () => [
+            Prec.highest(
+                keymap.of([
+                    {
+                        key: 'Mod-f',
+                        run: () => {
+                            handleFind();
+                            return true;
+                        },
+                    },
+                    {
+                        key: 'Mod-h',
+                        run: () => {
+                            handleReplace();
+                            return true;
+                        },
+                    },
+                ]),
+            ),
+        ],
+        [handleFind, handleReplace],
+    );
 
     const debouncedSaveNote = useMemo(
         () => debounce(handleSaveNote, 1500),
@@ -694,13 +711,31 @@ export default function NoteViewer() {
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
                                         <Panel defaultSize={85} minSize={50}>
                                             <div
-                                                className='h-full flex flex-col border-l cradle-border'
+                                                className='h-full flex flex-col border-l cradle-border relative'
                                                 onDoubleClick={handleEnableEditingWithConfirmation}
                                             >
+                                                {showFind && (
+                                                    <FindReplace
+                                                        view={
+                                                            editorRef.current
+                                                                ?.view ||
+                                                            editorRef.current
+                                                        }
+                                                        onClose={() =>
+                                                            setShowFind(false)
+                                                        }
+                                                        initialReplace={
+                                                            findReplaceMode
+                                                        }
+                                                    />
+                                                )}
                                                 {/* Embedded Rich Editor */}
                                                 <div className='flex-1 min-h-0'>
                                                     <RichEditor
                                                         editorUtils={editorUtils}
+                                                        additionalExtensions={
+                                                            customKeymap
+                                                        }
                                                         key={
                                                             richEditor
                                                                 ? 'rich'
@@ -730,15 +765,34 @@ export default function NoteViewer() {
                                             </div>
                                         </Panel>
                                     </PanelGroup>
-                                ) : (
-                                    <div
-                                        className='h-full flex flex-col border-l cradle-border'
-                                        onDoubleClick={handleEnableEditingWithConfirmation}
-                                    >
-                                        {/* Embedded Rich Editor */}
-                                        <div className='flex-1 min-h-0'>
-                                            <RichEditor
-                                                key={richEditor ? 'rich' : 'source'}
+                                                                ) : (
+                                                                    <div
+                                                                        className='h-full flex flex-col border-l cradle-border relative'
+                                                                        onDoubleClick={handleEnableEditingWithConfirmation}
+                                                                    >
+                                                                        {showFind && (
+                                                                            <FindReplace
+                                                                                view={
+                                                                                    editorRef.current?.view ||
+                                                                                    editorRef.current
+                                                                                }
+                                                                                onClose={() =>
+                                                                                    setShowFind(false)
+                                                                                }
+                                                                                initialReplace={findReplaceMode}
+                                                                            />
+                                                                        )}
+                                                                        {/* Embedded Rich Editor */}
+                                                                        <div className='flex-1 min-h-0'>
+                                                                            <RichEditor
+                                                                                additionalExtensions={
+                                                                                    customKeymap
+                                                                                }
+                                                                                key={
+                                                                                    richEditor
+                                                                                        ? 'rich'
+                                                                                        : 'source'
+                                                                                }
                                                 ref={editorRef}
                                                 noteid={id}
                                                 markdownContent={markdownContent}

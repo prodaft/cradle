@@ -127,10 +127,6 @@ function DigestList({
     const columns: Array<{ key: string; label: string | React.ReactNode; filterType?: 'text' | 'date'; sortable?: boolean }> =
         [
             {
-                key: 'type',
-                label: 'Type',
-            },
-            {
                 key: 'title',
                 label: (
                     <div className='flex items-center gap-2'>
@@ -142,6 +138,10 @@ function DigestList({
                         <span>Title</span>
                     </div>
                 ),
+            },
+            {
+                key: 'type',
+                label: 'Type',
             },
             { key: 'user', label: 'User', filterType: 'text' as const },
             { key: 'warnings', label: 'Warnings' },
@@ -264,9 +264,6 @@ function DigestList({
                         </div>
                     </td>
                 )}
-                <td className='truncate w-24' title={digest.displayName}>
-                    {truncateText(digest.displayName || '', 24)}
-                </td>
                 <td className='truncate max-w-xs' title={digest.title}>
                     <div className='flex items-center gap-2 min-w-0'>
                         <span className='inline-flex items-center flex-shrink-0'>
@@ -274,6 +271,9 @@ function DigestList({
                         </span>
                         <span className='truncate'>{digest.title}</span>
                     </div>
+                </td>
+                <td className='truncate w-24' title={digest.displayName}>
+                    {truncateText(digest.displayName || '', 24)}
                 </td>
                 <td className='truncate w-32' title={digest.userDetail?.username}>
                     {truncateText(digest.userDetail?.username || '', 16)}

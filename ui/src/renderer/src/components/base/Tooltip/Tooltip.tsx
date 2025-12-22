@@ -50,6 +50,8 @@ export interface TooltipProps {
     sideOffset?: number;
     /** Whether to show arrow */
     showArrow?: boolean;
+    /** Whether to use portal */
+    usePortal?: boolean;
 }
 
 /**
@@ -84,6 +86,7 @@ const Tooltip = ({
     className = '',
     sideOffset = 4,
     showArrow = true,
+    usePortal = true,
 }: TooltipProps): JSX.Element => {
     const strippedContent =
         typeof content === 'string' ? strip(content || '') : content;
@@ -113,7 +116,7 @@ const Tooltip = ({
     return (
         <RadixTooltip.Root>
             <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
-            <RadixTooltip.Portal>
+            {usePortal && <RadixTooltip.Portal>
                 <RadixTooltip.Content
                     side={side}
                     align={align}
@@ -124,7 +127,7 @@ const Tooltip = ({
                     {strippedContent}
                     {showArrow && <RadixTooltip.Arrow className={fillClass} />}
                 </RadixTooltip.Content>
-            </RadixTooltip.Portal>
+            </RadixTooltip.Portal>}
         </RadixTooltip.Root>
     );
 };

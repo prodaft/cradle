@@ -4,6 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from cradle import settings
+from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from entries.serializers import (
     EntryResponseSerializer,
@@ -330,11 +331,22 @@ class NoteListSerializer:
         else:
             data["editor"] = None
 
-        entry_classes = set()
-        for entry in note.entries.all():
-            if hasattr(entry, "entry_class") and entry.entry_class:
-                entry_classes.add(entry.entry_class.subtype)
-        data["entry_classes"] = list(entry_classes)
+        entities = note.entries.filter(entry_class__type=EntryType.ENTITY)
+        data["entities"] = [
+            {
+                "id": str(entity.id),
+                "name": entity.name,
+                "type": entity.entry_class.type,
+                "subtype": entity.entry_class.subtype,
+                "color": entity.entry_class.color,
+            }
+            for entity in entities
+        ]
+
+        data["entry_classes"] = set(
+            note.entries.values_list("entry_class__subtype", flat=True)
+        )
+
         files_data = []
         for file_ref in note.files.all():
             file_data = {
@@ -401,11 +413,13 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
     author = EssentialUserRetrieveSerializer()
     editor = EssentialUserRetrieveSerializer()
     entries = EntryTypesCompressedTreeSerializer(exclude=settings.INTERNAL_SUBTYPES)
+    entities = OptimizedEntryResponseSerializer(many=True, read_only=True)
 
     class Meta:
         model = Note
         fields = [
             "id",
+            "entities",
             "fleeting",
             "status",
             "status_message",
@@ -437,9 +451,21 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
         Returns:
             Dict[str, Any]: The serialized note object.
         """
+        entities = obj.entries.filter(entry_class__type=EntryType.ENTITY)
+        print(entities)
         data = super().to_representation(obj)
 
         data["entry_classes"] = data.pop("entries")
+        data["entities"] = [
+            {
+                "id": str(entity.id),
+                "name": entity.name,
+                "type": entity.entry_class.type,
+                "subtype": entity.entry_class.subtype,
+                "color": entity.entry_class.color,
+            }
+            for entity in entities
+        ]
         content = data["content"]
 
         if self.truncate == -1 or len(content) - obj.content_offset <= self.truncate:

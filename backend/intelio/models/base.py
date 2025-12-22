@@ -477,6 +477,7 @@ class EnrichmentRequest(LifecycleModel):
                 "for_eclasses__subtype", flat=True
             )
         )
+        self.relations.clear()
 
         ignored = {}
         for req in self.request:

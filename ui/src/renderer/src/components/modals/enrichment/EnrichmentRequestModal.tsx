@@ -1,6 +1,8 @@
+import Tooltip from '@/components/base/Tooltip/Tooltip';
 import { useNotif } from '@/contexts';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
+import { OptimizedEntryResponse } from '@/services/cradle';
 import Selector from '@components/forms/Selector';
 import { useEffect, useState } from 'react';
 import { MultiValue } from 'react-select';
@@ -21,6 +23,7 @@ interface EnrichmentFormData {
     enricherNames: string[];
     entities: number[];
     request: string;
+    notes?: string[];
 }
 
 /**
@@ -45,6 +48,8 @@ export interface EnrichmentRequestModalProps {
     entitiesList?: number[] | Promise<Array<{ type: string; value: string }>>;
     /** Optional artifacts text or promise resolving to artifacts text */
     artifactsList?: string | Promise<string>;
+    /** Optional list of notes to include in the enrichment request */
+    notesList?: Array<{ id: string; title: string; entities: OptimizedEntryResponse[] }>;
 }
 
 /**
@@ -79,6 +84,7 @@ export default function EnrichmentRequestModal({
     onError,
     entitiesList,
     artifactsList,
+    notesList,
 }: EnrichmentRequestModalProps): JSX.Element {
     const { intelioApi, entriesApi } = useApi();
     const { execute } = useAPICall();
@@ -88,6 +94,7 @@ export default function EnrichmentRequestModal({
     const { notify } = useNotif();
     const [selectedEntities, setSelectedEntities] = useState<Array<{ value: number, label: string }>>([]);
     const [initialDataLoading, setInitialDataLoading] = useState(false);
+    const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(() => new Set(notesList?.map(n => n.id) || []));
 
     // Form state
     const [formData, setFormData] = useState<EnrichmentFormData>({
@@ -115,6 +122,42 @@ export default function EnrichmentRequestModal({
 
         fetchEnricherTypes();
     }, [intelioApi, onError]);
+
+    // Update selected note IDs if notesList changes
+    useEffect(() => {
+        if (notesList) {
+            setSelectedNoteIds(new Set(notesList.map(n => n.id)));
+        }
+    }, [notesList]);
+
+    const toggleNoteSelection = (id: string) => {
+        const newSelected = new Set(selectedNoteIds);
+        if (newSelected.has(id)) {
+            newSelected.delete(id);
+        } else {
+            newSelected.add(id);
+        }
+        setSelectedNoteIds(newSelected);
+    };
+
+    useEffect(() => {
+        let entities: { [key: number]: OptimizedEntryResponse } = {};
+        for (const note of notesList || []) {
+            for (const entity of note.entities) {
+                if (selectedNoteIds.has(note.id)) {
+                    entities[entity.id!] = entity;
+                }
+            }
+        }
+        setSelectedEntities(Object.values(entities).map((entity) => ({
+            value: entity.id!,
+            label: entity.name,
+        })));
+        setFormData((prev) => ({
+            ...prev,
+            entities: Object.values(entities).map((entity) => entity.id!),
+        }));
+    }, [selectedNoteIds]);
 
     // Load initial data from props (entities and artifacts lists)
     useEffect(() => {
@@ -269,25 +312,17 @@ export default function EnrichmentRequestModal({
                 notify({ type: 'error', text: 'At least one entity must be selected' });
                 return;
             }
-            if (!formData.request.trim()) {
+            if (!formData.request.trim() && selectedNoteIds.size === 0) {
                 notify({ type: 'error', text: 'Request artifacts are required' });
                 return;
             }
 
             // Parse the request text
             const parsedRequest = parseRequestText(formData.request);
-            if (parsedRequest.length === 0) {
-                throw new Error(
-                    'Request must contain at least one valid entry in format <type>:<artifact>',
-                );
+            if (parsedRequest.length === 0 && selectedNoteIds.size === 0) {
+                notify({ type: 'error', text: 'Request must contain at least one valid entry in format <type>:<artifact>' });
+                return;
             }
-
-            console.log({
-                title: formData.title,
-                enricherNames: formData.enricherNames,
-                entities: formData.entities,
-                request: parsedRequest,
-            });
 
             let result = await execute(() =>
                 intelioApi.enrichmentRequestCreate({
@@ -296,6 +331,7 @@ export default function EnrichmentRequestModal({
                         enricherNames: formData.enricherNames,
                         request: parsedRequest,
                         entities: formData.entities,
+                        notes: Array.from(selectedNoteIds),
                     },
                 }),
             );
@@ -322,6 +358,44 @@ export default function EnrichmentRequestModal({
             </div>
 
             <form onSubmit={handleSubmit}>
+                {/* Selected Notes List */}
+                {notesList && notesList.length > 0 && (
+                    <div className='mb-5'>
+                        <label className='cradle-label mb-2 block'>
+                            Selected Notes ({selectedNoteIds.size})
+                        </label>
+                        <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
+                            {notesList.map((note) => {
+                                const isSelected = selectedNoteIds.has(note.id);
+                                return (
+                                    <li
+                                        key={note.id}
+                                        className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${isSelected
+                                            ? 'hover:bg-cradle-bg-secondary/50'
+                                            : 'bg-cradle-bg-secondary/10'
+                                            }`}
+                                    >
+                                        <input
+                                            type='checkbox'
+                                            className='cradle-checkbox'
+                                            checked={isSelected}
+                                            onChange={() => toggleNoteSelection(note.id)}
+                                        />
+                                        <span
+                                            className={`text-sm truncate flex-1 ${isSelected
+                                                ? 'text-cradle-text-primary'
+                                                : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
+                                                }`}
+                                        >
+                                            {note.title || 'Untitled'}
+                                        </span>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                )}
+
                 {/* Title */}
                 <div className='mb-5'>
                     <label
@@ -371,16 +445,24 @@ export default function EnrichmentRequestModal({
                     >
                         Entities <span className='text-red-500'>*</span>
                     </label>
-                    <Selector
-                        isMulti={true}
-                        fetchOptions={fetchEntities}
-                        placeholder='Select entities to enrich...'
+                    <Tooltip
+                        content={selectedNoteIds.size > 0 ? "Entities will be selected from the selected notes" : undefined}
+                        color='info'
+                        showArrow={false}
                         usePortal={false}
-                        menuPosition='absolute'
-                        onChange={handleEntityChange}
-                        value={selectedEntities}
-                        isLoading={initialDataLoading}
-                    />
+                    >
+                        <Selector
+                            isMulti={true}
+                            fetchOptions={fetchEntities}
+                            placeholder='Select entities to enrich...'
+                            usePortal={false}
+                            menuPosition='absolute'
+                            onChange={handleEntityChange}
+                            value={selectedEntities}
+                            isLoading={initialDataLoading}
+                            isDisabled={selectedNoteIds.size > 0}
+                        />
+                    </Tooltip>
                 </div>
 
                 {/* Request Artifacts */}
@@ -398,7 +480,7 @@ export default function EnrichmentRequestModal({
                         placeholder='Enter artifacts in format:&#10;type:artifact&#10;type:artifact'
                         value={formData.request}
                         onChange={handleChange}
-                        required
+                        required={selectedNoteIds.size === 0}
                     />
                 </div>
 

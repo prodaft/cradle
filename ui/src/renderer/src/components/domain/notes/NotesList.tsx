@@ -12,6 +12,7 @@ import {
     InfoCircleSolid,
     PlusCircle,
     RefreshCircle,
+    Sparks,
     StatsReport,
     Trash,
     WarningCircleSolid,
@@ -26,6 +27,7 @@ import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
 import Tooltip from '../../base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
+import EnrichmentRequestModal from '../../modals/enrichment/EnrichmentRequestModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
 import { NotePreviewContent } from './NotePreviewContent';
 
@@ -630,6 +632,28 @@ export default function NotesList({
                                                         }));
                                                     setModal(ReportGenerationModal, {
                                                         selectedNotes: selectedNoteObjects,
+                                                    });
+                                                },
+                                                disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                                                iconActive: selectedNotes.length > 0,
+                                            },
+                                            {
+                                                id: 'enrich',
+                                                tooltip: selectedNotes.length > 0
+                                                    ? `Enrich ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
+                                                    : 'Select notes to enrich',
+                                                icon: <Sparks width={18} height={18} />,
+                                                onClick: () => {
+                                                    if (selectedNotes.length === 0) return;
+                                                    const selectedNoteObjects = notes
+                                                        .filter((n) => n.id && selectedNotes.includes(n.id))
+                                                        .map((n) => ({
+                                                            id: n.id!,
+                                                            title: n.metadata?.title || n.title || 'Untitled',
+                                                            entities: n.entities,
+                                                        }));
+                                                    setModal(EnrichmentRequestModal, {
+                                                        notesList: selectedNoteObjects,
                                                     });
                                                 },
                                                 disabled: loading || selectedNotes.length === 0 || notes.length === 0,

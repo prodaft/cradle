@@ -21,6 +21,12 @@ import { mapValues } from '../runtime';
 export interface EnrichmentRequestRequest {
     /**
      * 
+     * @type {Array<string>}
+     * @memberof EnrichmentRequestRequest
+     */
+    notes: Array<string>;
+    /**
+     * 
      * @type {string}
      * @memberof EnrichmentRequestRequest
      */
@@ -49,6 +55,7 @@ export interface EnrichmentRequestRequest {
  * Check if a given object implements the EnrichmentRequestRequest interface.
  */
 export function instanceOfEnrichmentRequestRequest(value: object): value is EnrichmentRequestRequest {
+    if (!('notes' in value) || value['notes'] === undefined) return false;
     if (!('title' in value) || value['title'] === undefined) return false;
     if (!('entities' in value) || value['entities'] === undefined) return false;
     if (!('enricherNames' in value) || value['enricherNames'] === undefined) return false;
@@ -65,6 +72,7 @@ export function EnrichmentRequestRequestFromJSONTyped(json: any, ignoreDiscrimin
     }
     return {
         
+        'notes': json['notes'],
         'title': json['title'],
         'entities': json['entities'],
         'enricherNames': json['enricher_names'],
@@ -83,6 +91,7 @@ export function EnrichmentRequestRequestToJSONTyped(value?: EnrichmentRequestReq
 
     return {
         
+        'notes': value['notes'],
         'title': value['title'],
         'entities': value['entities'],
         'enricher_names': value['enricherNames'],

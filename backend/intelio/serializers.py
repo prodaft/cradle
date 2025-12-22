@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -7,6 +8,8 @@ from access.enums import AccessType
 from access.exceptions import EntityNotFoundException
 from access.models import Access
 from core.utils import fields_to_form
+from cradle import settings
+from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
 from entries.serializers import (
     EntryClassSerializer,
@@ -15,6 +18,8 @@ from entries.serializers import (
 )
 from intelio.enums import EnrichmentStatus
 from intelio.models.base import BaseDigest, EnrichmentRequest
+from notes.exceptions import NoteDoesNotExistException
+from notes.models import Note
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer
 
@@ -408,11 +413,17 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
     # Return classes and display names for all enrichers
     enricher_classes = serializers.SerializerMethodField(read_only=True)
     enricher_names_display = serializers.SerializerMethodField(read_only=True)
+    request = serializers.ListField(default=[], required=False)
+    notes = serializers.ListSerializer(
+        write_only=True,
+        child=serializers.PrimaryKeyRelatedField(queryset=Note.objects.all()),
+    )
 
     class Meta:
         model = EnrichmentRequest
         fields = [
             "id",
+            "notes",
             "title",
             "created_at",
             "completed_at",
@@ -494,9 +505,50 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
         return list(values)
 
+    def validate_notes(self, values):
+        """Validate multiple note IDs"""
+        user = self.context["request"].user
+
+        for note in values:
+            if not note.has_access(user):
+                raise NoteDoesNotExistException(
+                    "One or more of the notes you selected do not exist or you don't have access to them"
+                )
+
+        return list(values)
+
+    def validate(self, data):
+        """Validate the request"""
+        data = super().validate(data)
+
+        if not data.get("request") and not data.get("notes"):
+            raise ValidationError({"request": "Request or notes must be provided"})
+
+        additional_request = []
+        entities = set(data.get("entities"))
+
+        for note in data.get("notes", []):
+            for e in note.entries.all():
+                if e.entry_class.type == EntryType.ENTITY:
+                    entities.add(e.id)
+                elif e.entry_class.subtype not in settings.INTERNAL_SUBTYPES:
+                    additional_request.append(
+                        {
+                            "entry_class": e.entry_class.subtype,
+                            "name": e.name,
+                        }
+                    )
+
+        data["entities"] = list(entities)
+        data["request"] = data.get("request", []) + additional_request
+        data.pop("notes", None)
+        return data
+
     def create(self, validated_data):
         enrichers = validated_data.pop("enricher_names", [])
         entities = validated_data.pop("entities", [])
+        print(entities)
+        print(validated_data["request"])
         validated_data["user"] = self.context["request"].user
 
         instance = super().create(validated_data)

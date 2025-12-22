@@ -20,6 +20,13 @@ import {
     EssentialUserRetrieveToJSON,
     EssentialUserRetrieveToJSONTyped,
 } from './EssentialUserRetrieve';
+import type { OptimizedEntryResponse } from './OptimizedEntryResponse';
+import {
+    OptimizedEntryResponseFromJSON,
+    OptimizedEntryResponseFromJSONTyped,
+    OptimizedEntryResponseToJSON,
+    OptimizedEntryResponseToJSONTyped,
+} from './OptimizedEntryResponse';
 import type { FileReferenceWithNote } from './FileReferenceWithNote';
 import {
     FileReferenceWithNoteFromJSON,
@@ -40,6 +47,12 @@ export interface NoteRetrieve {
      * @memberof NoteRetrieve
      */
     readonly id?: string;
+    /**
+     * 
+     * @type {Array<OptimizedEntryResponse>}
+     * @memberof NoteRetrieve
+     */
+    entities: Array<OptimizedEntryResponse>;
     /**
      * 
      * @type {boolean}
@@ -152,6 +165,7 @@ export type NoteRetrieveStatusEnum = typeof NoteRetrieveStatusEnum[keyof typeof 
  * Check if a given object implements the NoteRetrieve interface.
  */
 export function instanceOfNoteRetrieve(value: object): value is NoteRetrieve {
+    if (!('entities' in value) || value['entities'] === undefined) return false;
     if (!('content' in value) || value['content'] === undefined) return false;
     if (!('author' in value) || value['author'] === undefined) return false;
     if (!('entries' in value) || value['entries'] === undefined) return false;
@@ -171,6 +185,7 @@ export function NoteRetrieveFromJSONTyped(json: any, ignoreDiscriminator: boolea
     return {
         
         'id': json['id'] == null ? undefined : json['id'],
+        'entities': ((json['entities'] as Array<any>).map(OptimizedEntryResponseFromJSON)),
         'fleeting': json['fleeting'] == null ? undefined : json['fleeting'],
         'status': json['status'] == null ? undefined : json['status'],
         'statusMessage': json['status_message'] == null ? undefined : json['status_message'],
@@ -200,6 +215,7 @@ export function NoteRetrieveToJSONTyped(value?: Omit<NoteRetrieve, 'id'|'timesta
 
     return {
         
+        'entities': ((value['entities'] as Array<any>).map(OptimizedEntryResponseToJSON)),
         'fleeting': value['fleeting'],
         'status': value['status'],
         'status_message': value['statusMessage'],
