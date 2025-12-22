@@ -1,7 +1,7 @@
 from typing import cast
 from uuid import UUID
 
-from django.db.models import Count, Q
+from django.db.models import Count, Prefetch, Q
 from django.http import QueryDict
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
@@ -256,8 +256,6 @@ class NoteList(APIView):
                 notes = notes.order_by(*order_fields)
             else:
                 notes = notes.order_by("-timestamp")
-
-            from django.db.models import Prefetch
 
             entries_prefetch = Prefetch(
                 "entries", queryset=Entry.objects.select_related("entry_class")
@@ -636,8 +634,6 @@ class NoteFiles(APIView):
         if filterset.is_valid():
             queryset = filterset.qs
 
-        from django.db.models import Prefetch
-
         notes_prefetch = Prefetch(
             "files",
             queryset=FileReference.objects.select_related("note").prefetch_related(
@@ -704,7 +700,7 @@ class NoteFiles(APIView):
 @extend_schema_view(
     get=extend_schema(
         summary="Get subgraph formed by note",
-        description="Returns paginated list of files that are linked to notes the user has access to. Can filter by references and other parameters. Results are ordered by note timestamp descending.",  # noqa: E501
+        description="Returns the full subgraph formed by a single note the user has access to.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="note_id",
@@ -712,28 +708,10 @@ class NoteFiles(APIView):
                 location=OpenApiParameter.PATH,
                 description="The note's id",
             ),
-            OpenApiParameter(
-                name="page",
-                type=int,
-                location=OpenApiParameter.QUERY,
-                description="Page number to retrieve.",
-            ),
-            OpenApiParameter(
-                name="page_size",
-                type=int,
-                location=OpenApiParameter.QUERY,
-                description="Number of nodes to return per page. Max 1000.",
-                default=250,
-            ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                SubGraphSerializer, many=False
-            ),
-            **get_error_responses(
-                NotesErrorCodes.INVALID_PAGE_SIZE,
-                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
-            ),
+            200: SubGraphSerializer,
+            **get_error_responses(NotesErrorCodes.NOTE_DOES_NOT_EXIST),
             **get_common_error_responses(),
         },
     ),
@@ -744,31 +722,25 @@ class NoteGraph(APIView):
 
     def get(self, request: Request, note_id: UUID) -> Response:
         try:
-            page_size = int(request.query_params.get("page_size", 250))
-        except ValueError:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size value. Must be an integer."
-            )
-
-        if page_size > 1000:
-            raise InvalidPageSizeException(
-                detail="page_size cannot be greater than 1000."
-            )
-
-        try:
             note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
         except Note.DoesNotExist:
             raise NoteDoesNotExistException(detail="Note was not found.")
 
-        rels = note.relations.all()
+        # Get all relations for this note, filtered by user access
+        rels = note.relations.accessible(user=request.user)
 
-        paginator = TotalPagesPagination(page_size=page_size)
-        paginated_rels = paginator.paginate_queryset(rels, request)
-
-        if paginated_rels is not None:
-            serializer = SubGraphSerializer.from_relations(paginated_rels)
-
-            return paginator.get_paginated_response(serializer.data)
+        # Check if there are any relations
+        if not rels.exists():
+            # Return empty graph with helpful message
+            return Response(
+                {
+                    "entries": {},
+                    "relations": [],
+                    "colors": {},
+                    "message": "This note has no graph relations or all relations are inaccessible.",
+                },
+                status=status.HTTP_200_OK,
+            )
 
         serializer = SubGraphSerializer.from_relations(rels.all())
         return Response(serializer.data, status=status.HTTP_200_OK)

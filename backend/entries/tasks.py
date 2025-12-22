@@ -131,7 +131,7 @@ def refresh_edges_materialized_view():
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
-    entryids = Entry.objects.exclude(entry_class__subtype="virtual").values_list(
+    entryids = Entry.objects.exclude(entry_class__subtype="note").values_list(
         "id", flat=True
     )
     degrees = [None for _ in range(len(entryids))]
@@ -144,7 +144,7 @@ def refresh_edges_materialized_view():
         ["degree"],
     )
 
-    Entry.objects.filter(entry_class__subtype="virtual").update(degree=0)
+    Entry.objects.filter(entry_class__subtype="note").update(degree=0)
 
 
 @shared_task

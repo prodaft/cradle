@@ -212,10 +212,10 @@ class Node:
             return self.links
         elif not ignore_connectors:
             # Use deterministic ID instead of random UUID
-            virtual_link = Link(
-                key="virtual", value=self.get_deterministic_id(), virtual=True
+            note_link = Link(
+                key="note", value=self.get_deterministic_id(), virtual=True
             )
-            return {virtual_link}
+            return {note_link}
 
         return set()
 

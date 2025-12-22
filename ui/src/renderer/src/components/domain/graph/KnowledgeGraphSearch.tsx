@@ -1,4 +1,4 @@
-import { ComponentType, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { displayError } from '@/utils/api';
@@ -16,20 +16,17 @@ interface Alert {
     color: string;
 }
 
-interface NoteGraphSearchProps {
+interface KnowledgeGraphSearchProps {
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
 }
 
-export default function NoteGraphSearch(
-    noteId: string,
-): ComponentType<NoteGraphSearchProps> {
-    return function NoteGraphSearchComponent({
-        addEdges,
-        addNodes,
-        addBoth,
-    }: NoteGraphSearchProps) {
+export default function KnowledgeGraphSearch({
+    addEdges,
+    addNodes,
+    addBoth,
+}: KnowledgeGraphSearchProps) {
         const [isGraphFetching, setIsGraphFetching] = useState(false);
         const [loading, setLoading] = useState(false);
         const [alert, setAlert] = useState<Alert>({
@@ -47,9 +44,9 @@ export default function NoteGraphSearch(
             setIsGraphFetching(true);
 
             try {
-                // Make direct fetch call to bypass API client's incorrect parsing
+                // Make direct fetch call to get the full knowledge graph
                 const token = await getAccessToken();
-                const url = `${basePath}/notes/${noteId}/graph`;
+                const url = `${basePath}/knowledge-graph/`;
                 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -67,7 +64,7 @@ export default function NoteGraphSearch(
                 
                 const { entries, relations, colors } = graphData || {};
                 
-                console.log('[NoteGraphSearch] Colors from API:', colors);
+                console.log('[KnowledgeGraphSearch] Colors from API:', colors);
                 
                 // Process nodes and edges together to avoid race conditions
                 let nodes: any[] = [];
@@ -77,7 +74,7 @@ export default function NoteGraphSearch(
                     try {
                         const flattenedEntries = LinkTreeFlattener.flatten(entries);
                         
-                        console.log('[NoteGraphSearch] Flattened entries:', flattenedEntries);
+                        console.log('[KnowledgeGraphSearch] Flattened entries:', flattenedEntries);
                         
                         if (flattenedEntries && flattenedEntries.length > 0) {
                             nodes = flattenedEntries.map((e: any) => {
@@ -89,7 +86,7 @@ export default function NoteGraphSearch(
                                 }
                                 
                                 const nodeColor = colors?.[e.subtype] || '#4A90E2';
-                                console.log(`[NoteGraphSearch] Node ${e.id} (${e.subtype}): color=${nodeColor}`);
+                                console.log(`[KnowledgeGraphSearch] Node ${e.id} (${e.subtype}): color=${nodeColor}`);
                                 
                                 return {
                                     id: String(e.id),
@@ -104,7 +101,7 @@ export default function NoteGraphSearch(
                             hasData = true;
                         }
                     } catch (e) {
-                        console.error('[NoteGraphSearch] Error processing entries:', e);
+                        console.error('[KnowledgeGraphSearch] Error processing entries:', e);
                     }
                 }
                 
@@ -129,7 +126,7 @@ export default function NoteGraphSearch(
                 if (!hasData) {
                     setAlert({
                         show: true,
-                        message: 'No graph data available for this note.',
+                        message: 'No graph data available.',
                         color: 'yellow',
                     });
                 } else {
@@ -151,12 +148,12 @@ export default function NoteGraphSearch(
                 fetchGraph();
             }
             // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [noteId]);
+        }, []);
 
-        return (
-            <div className='px-2 mt-2 w-full'>
-                <AlertBox alert={alert} />
-            </div>
-        );
-    };
+    return (
+        <div className='px-2 mt-2 w-full'>
+            <AlertBox alert={alert} />
+        </div>
+    );
 }
+

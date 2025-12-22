@@ -1,3 +1,5 @@
+import re
+
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from rest_framework import serializers
 
@@ -11,44 +13,7 @@ from entries.serializers import (
     EntryListCompressedTreeSerializer,
     EntrySerializer,
 )
-
-
-class PathfindQuery(serializers.Serializer):
-    src = serializers.PrimaryKeyRelatedField(
-        queryset=Entry.objects.all(), required=True
-    )
-    dsts = serializers.PrimaryKeyRelatedField(
-        queryset=Entry.objects.all(), required=True, many=True
-    )
-    min_date = serializers.DateTimeField(required=True)
-    max_date = serializers.DateTimeField(required=True)
-
-    class Meta:
-        fields = ["src", "dsts", "min_date", "max_date"]
-
-    def __init__(self, *args, user=None, **kwargs):
-        self.user = user
-        super().__init__(*args, **kwargs)
-
-    def validate(self, data):
-        if (
-            data["src"].entry_class.type == EntryType.ENTITY
-            and not Access.objects.has_access_to_entities(
-                self.user, {data["src"]}, {AccessType.READ, AccessType.READ_WRITE}
-            )
-        ):
-            raise serializers.ValidationError("The source entity is not accessible.")
-
-        if not Access.objects.has_access_to_entities(
-            self.user,
-            set([x for x in data["dsts"] if x.entry_class.type == EntryType.ENTITY]),
-            {AccessType.READ, AccessType.READ_WRITE},
-        ):
-            raise serializers.ValidationError(
-                "One or more of the requested entity is not accessible."
-            )
-
-        return super().validate(data)
+from notes.models import Note
 
 
 class EdgeRelationSerializer(serializers.ModelSerializer):
@@ -71,7 +36,7 @@ class GraphInaccessibleResponseSerializer(serializers.Serializer):
 
 class SubGraphSerializer(serializers.Serializer):
     entries = EntryListCompressedTreeSerializer(
-        fields=("name", "id", "location", "degree")
+        fields=("name", "id", "location", "degree", "note_id")
     )
     relations = EdgeRelationSerializer(many=True)
     colors = serializers.DictField()
@@ -83,8 +48,43 @@ class SubGraphSerializer(serializers.Serializer):
     def from_relations(cls, relations: list[Relation]) -> "SubGraphSerializer":
         """
         Create a SubGraphSerializer instance from a Relation queryset.
+        Ensures consistent ID types (integers) for src and dst in edges.
+        Calculates node degrees based on actual connections.
         """
         entries = set(flatten([(r.e1, r.e2) for r in relations]))
+
+        # Calculate degree for each entry based on relations
+        degree_map = {}
+        for r in relations:
+            e1_id = int(r.e1.id)
+            e2_id = int(r.e2.id)
+            degree_map[e1_id] = degree_map.get(e1_id, 0) + 1
+            degree_map[e2_id] = degree_map.get(e2_id, 0) + 1
+
+        # Annotate entries with their calculated degree and enrich note entries with note titles and UUIDs
+        for entry in entries:
+            entry.degree = degree_map.get(int(entry.id), 0)
+            
+            # For note entries, replace the name with the note title and add note_id
+            if entry.entry_class.subtype == "note" and entry.name:
+                # Extract UUID from note entry name (format: "uuid-hash")
+                uuid_match = re.match(r'^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', entry.name, re.IGNORECASE)
+                if uuid_match:
+                    note_uuid = uuid_match.group(1)
+                    entry.note_id = note_uuid  # Add note UUID to entry
+                    try:
+                        note = Note.objects.get(id=note_uuid)
+                        # Use metadata title if available, otherwise fall back to title field
+                        note_title = (note.metadata or {}).get('title') or note.title or note_uuid
+                        entry.name = note_title
+                    except Note.DoesNotExist:
+                        # If note not found, keep the UUID
+                        entry.name = note_uuid
+                        entry.note_id = note_uuid
+                else:
+                    entry.note_id = None
+            else:
+                entry.note_id = None
 
         colors = {
             e.entry_class.subtype: e.entry_class.color
@@ -98,8 +98,9 @@ class SubGraphSerializer(serializers.Serializer):
                 "relations": [
                     Edge(
                         id=r.id,
-                        src=r.e1.id,
-                        dst=r.e2.id,
+                        # Ensure src and dst are integers for consistent frontend handling
+                        src=int(r.e1.id),
+                        dst=int(r.e2.id),
                         created_at=r.created_at,
                         last_seen=r.last_seen,
                     )

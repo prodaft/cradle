@@ -241,4 +241,4 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 200 * 1024 * 1024
 DEFAULT_SETTINGS = {}
 
 ## Internal Subtypes
-INTERNAL_SUBTYPES = set(["alias", "virtual", "file", "digest", "enrichment"])
+INTERNAL_SUBTYPES = set(["alias", "note", "file", "digest", "enrichment"])

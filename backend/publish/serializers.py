@@ -6,7 +6,7 @@ from rest_framework import serializers
 from file_transfer.models import FileReference
 from file_transfer.utils import MinioClient
 
-from .models import PublishedReport, ReportStatus
+from .models import DownloadStrategies, PublishedReport, ReportStatus, UploadStrategies
 from .strategies import PUBLISH_STRATEGIES
 
 
@@ -114,8 +114,6 @@ class PublishReportSerializer(serializers.Serializer):
     )
 
     def validate_strategy(self, value):
-        from .models import DownloadStrategies, UploadStrategies
-
         allowed = [choice[0] for choice in UploadStrategies.choices] + [
             choice[0] for choice in DownloadStrategies.choices
         ]

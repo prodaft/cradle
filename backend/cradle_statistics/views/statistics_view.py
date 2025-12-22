@@ -1,6 +1,7 @@
 from itertools import islice
 from typing import cast
 
+from django.db.models import Prefetch
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -48,8 +49,6 @@ class StatisticsList(APIView):
             request is not authenticated.
         """
 
-        from django.db.models import Prefetch
-
         entries_prefetch = Prefetch(
             "entries", queryset=Entry.objects.select_related("entry_class")
         )
@@ -77,7 +76,7 @@ class StatisticsList(APIView):
             Entry.objects.filter(
                 notes__in=accessible_notes, entry_class__type="artifact"
             )
-            .exclude(entry_class__subtype__in=("virtual", "file"))
+            .exclude(entry_class__subtype__in=("note", "file"))
             .select_related("entry_class")
             .distinct()
             .order_by("-notes__timestamp")[:3]
