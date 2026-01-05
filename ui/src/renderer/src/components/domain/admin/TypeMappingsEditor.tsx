@@ -471,7 +471,7 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                         <button
                             onClick={handleSaveAll}
                             disabled={!rows.some((row) => row.edited)}
-                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-full px-6 hover:bg-cradle-bg-tertiary ${!rows.some((row) => row.edited) &&
+                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-lg px-6 hover:bg-cradle-bg-secondary ${!rows.some((row) => row.edited) &&
                                 'opacity-50 cursor-not-allowed'
                                 }`}
                         >
@@ -508,7 +508,7 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                                         className={`border-b border-cradle-border-primary/50 ${index < rows.length - 1 && !row.edited
                                                 ? 'bg-transparent'
                                                 : ''
-                                            } hover:bg-cradle-bg-tertiary/20 transition-colors`}
+                                            } hover:bg-cradle-bg-secondary/20 transition-colors`}
                                     >
                                         {/* Actions cell with Delete and Save buttons */}
                                         <td className='px-4 py-2 whitespace-nowrap'>

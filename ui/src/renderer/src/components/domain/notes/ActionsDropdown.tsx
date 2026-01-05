@@ -73,16 +73,16 @@ export default function ActionsDropdown({
     enrichData,
 }: ActionsDropdownProps) {
     const menuButtonClasses =
-        'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:border-[#FF8C00] rounded-xl flex items-center gap-2';
+        'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
     const destructiveMenuButtonClasses =
-        'w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:border-[#FF8C00] rounded-xl flex items-center gap-2';
+        'w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
 
     return (
         <div className='relative'>
             <Tooltip content='Actions'>
                 <button
                     onClick={() => setShowActionsMenu(!showActionsMenu)}
-                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
+                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cradle-border'
                     data-testid='actions-dropdown-btn'
                 >
                     <MoreVert width='20' height='20' />

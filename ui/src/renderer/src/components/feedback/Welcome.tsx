@@ -84,7 +84,7 @@ function RecentItemsCard({
                         <div
                             key={index}
                             onClick={onItemClick(item)}
-                            className='cradle-card p-3 cursor-pointer hover:border-cradle-accent-primary'
+                            className='cradle-card p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
                         >
                             <div className='flex items-center justify-between'>
                                 <span className='cradle-text-primary font-medium truncate'>
@@ -132,7 +132,7 @@ function RecentNotesCard({
                         <div
                             key={index}
                             onClick={onNoteClick(note)}
-                            className='cradle-card p-3 cursor-pointer hover:border-cradle-accent-primary'
+                            className='cradle-card p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
                         >
                             <div className='space-y-1'>
                                 <div className='cradle-text-primary font-medium truncate'>
@@ -270,7 +270,7 @@ export default function Welcome() {
                                 <button
                                     key={index}
                                     onClick={action.onClick}
-                                    className='cradle-card p-6 text-left hover:border-cradle-accent-primary cursor-pointer'
+                                    className='cradle-card p-6 text-left hover:bg-cradle-bg-secondary transition-colors cursor-pointer'
                                 >
                                     <div className='flex items-center gap-3 mb-3'>
                                         <div

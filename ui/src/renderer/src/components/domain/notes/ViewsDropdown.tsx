@@ -54,7 +54,7 @@ export default function ViewsDropdown({
             <Tooltip content={getViewLabel()}>
                 <button
                     onClick={() => setShowViewsMenu(!showViewsMenu)}
-                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
+                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cradle-border'
                     data-testid='views-dropdown-btn'
                 >
                     {getViewIcon()}
@@ -74,7 +74,7 @@ export default function ViewsDropdown({
                                     setActiveView(ViewMode.CONTENT);
                                     setRichEditor(true);
                                 }}
-                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
                                 data-testid='rich-editor-menu-item'
                             >
                                 <Page width='16' height='16' />
@@ -89,7 +89,7 @@ export default function ViewsDropdown({
                                     setActiveView(ViewMode.CONTENT);
                                     setRichEditor(false);
                                 }}
-                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
                                 data-testid='markdown-editor-menu-item'
                             >
                                 <Code width='16' height='16' />
@@ -104,7 +104,7 @@ export default function ViewsDropdown({
                                         setShowViewsMenu(false);
                                         setActiveView(ViewMode.GRAPH);
                                     }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
                                     data-testid='graph-view-menu-item'
                                 >
                                     <Graph width='16' height='16' />
@@ -119,7 +119,7 @@ export default function ViewsDropdown({
                                             setShowViewsMenu(false);
                                             setActiveView(ViewMode.HISTORY);
                                         }}
-                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                        className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
                                         data-testid='history-view-menu-item'
                                     >
                                         <ClockRotateRight width='16' height='16' />
@@ -137,7 +137,7 @@ export default function ViewsDropdown({
                                         setShowViewsMenu(false);
                                         setActiveView(ViewMode.FILES);
                                     }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary cradle-border hover:border-[#FF8C00] flex items-center gap-2'
+                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
                                     data-testid='files-view-menu-item'
                                 >
                                     <Box width='16' height='16' />

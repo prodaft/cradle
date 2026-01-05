@@ -6,6 +6,7 @@ import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } 
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
+import TableActionsButton from '@components/base/TableActionsButton';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { EnrichmentRequestList } from '@services/cradle/models';
@@ -114,6 +115,7 @@ function EnrichmentRequestsList({
             },
             { key: 'user', label: 'User', filterType: 'text' as const },
             { key: 'createdAt', label: 'Created At' },
+            { key: 'actions', label: '', sortable: false },
         ];
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
@@ -215,6 +217,27 @@ function EnrichmentRequestsList({
         );
     };
 
+    // Row Actions Button Component
+    const RowActionsButton = ({ request }: { request: EnrichmentRequest }) => {
+        const handleDelete = () => {
+            if (onRequestDelete) {
+                onRequestDelete();
+            }
+        };
+
+        return (
+            <TableActionsButton>
+                            <button
+                                onClick={handleDelete}
+                                className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
+                            >
+                                <Trash width='18' height='18' className='text-red-500' />
+                                Delete
+                            </button>
+            </TableActionsButton>
+        );
+    };
+
     const renderRow = (
         request: EnrichmentRequest,
         index: number,
@@ -255,6 +278,11 @@ function EnrichmentRequestsList({
                         ? formatDate(new Date(request.createdAt))
                         : 'N/A'}
                 </td>
+                <td className='w-12 text-right'>
+                    <div className='flex justify-end'>
+                        <RowActionsButton request={request} />
+                    </div>
+                </td>
             </tr>
         );
     };
@@ -269,15 +297,6 @@ function EnrichmentRequestsList({
                             selectedCount={selectedRequests.length}
                             itemLabel='request'
                             actions={[
-                                {
-                                    id: 'create',
-                                    tooltip: 'Create new enrichment request',
-                                    icon: <PlusCircle width={20} height={20} />,
-                                    onClick: onCreateRequest,
-                                    disabled: loading,
-                                    iconActive: true,
-                                    alwaysVisible: true,
-                                },
                                 {
                                     id: 'delete',
                                     tooltip: selectedRequests.length > 0
@@ -336,14 +355,18 @@ function EnrichmentRequestsList({
                     </>
                 }
                 right={
-                    <PaginationWrapper
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={setPageSize}
-                        disabled={enrichmentRequests.length === 0}
-                    />
+                    <>
+                        <Tooltip content='Create new enrichment request'>
+                            <button
+                                type='button'
+                                onClick={onCreateRequest}
+                                disabled={loading}
+                                className='flex items-center gap-1.5 px-4 h-9 text-sm rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                            >
+                                New
+                            </button>
+                        </Tooltip>
+                    </>
                 }
             />
 
@@ -363,6 +386,17 @@ function EnrichmentRequestsList({
                 enableMultiSelect={true}
                 selectedIds={selectedRequests}
                 setSelected={(ids) => setSelectedRequests(ids)}
+            />
+
+            <PaginationWrapper
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                disabled={enrichmentRequests.length === 0}
+                selectedCount={selectedRequests.length}
+                totalRows={enrichmentRequests.length}
             />
         </div>
     );

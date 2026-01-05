@@ -9,6 +9,7 @@ interface Column {
     label: string | React.ReactNode;
     className?: string;
     filterType?: 'text' | 'date';
+    sortable?: boolean;
 }
 
 export interface DateRangeFilter {
@@ -189,7 +190,8 @@ export default function ListView<T extends { id?: string | number }>({
         className = '',
         filterType = 'text',
     }: SortableTableHeaderProps) => {
-        const isSortable = !!sortFieldMapping[column] && !!onSort;
+        const columnDef = columns.find(c => c.key === column);
+        const isSortable = !!sortFieldMapping[column] && !!onSort && columnDef?.sortable !== false;
         const isFilterable = !!filterableColumns[column];
         const isFilterActive = activeFilterColumn === column;
 
@@ -333,7 +335,7 @@ export default function ListView<T extends { id?: string | number }>({
                         )}
                     </div>
                 ) : (
-                    <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-1.5'>
                         <span
                             className={`cradle-label ${isFilterable ? 'cursor-text hover:underline decoration-dotted header-text' : ''}`}
                             title={isFilterable ? `Click to filter by ${children}` : ''}
@@ -376,7 +378,7 @@ export default function ListView<T extends { id?: string | number }>({
     }
 
     return (
-        <div className='overflow-x-auto w-full cradle-scrollbar pb-4'>
+        <div className='overflow-x-auto w-full cradle-scrollbar'>
             <table className='cradle-table'>
                 <thead>
                     <tr>

@@ -151,7 +151,7 @@ export default function NotificationCard({
 
                     <Tooltip content={unreadStatus ? 'Mark as read' : 'Mark as unread'}>
                         <button
-                            className='p-1.5 hover:bg-cradle-bg-tertiary rounded transition-colors'
+                            className='p-1.5 hover:bg-cradle-bg-secondary rounded transition-colors'
                             onClick={() => handleMarkUnread(id!)}
                         >
                             {unreadStatus ? (

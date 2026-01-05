@@ -180,7 +180,7 @@ export default function FileInput({
                 />
                 <button
                     type='button'
-                    className='rounded-xl border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                    className='rounded-xl border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
                     onClick={handleUpload}
                     disabled={isUploading || pendingFiles.length === 0}
                 >

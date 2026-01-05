@@ -143,7 +143,7 @@ export default function FileUploadModal({
             <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                 <button
                     type='button'
-                    className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                    className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
                     onClick={closeModal}
                 >
                     Done

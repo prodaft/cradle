@@ -594,13 +594,13 @@ export default function EnrichmentResults(): JSX.Element {
                                                     </div>
 
                                                     <button
-                                                        className='cradle-btn cradle-btn-primary h-10 px-6 rounded-full'
+                                                        className='h-10 px-6 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg text-cradle-text-secondary'
                                                         onClick={handleSearch}
                                                     >
                                                         Search
                                                     </button>
                                                     <button
-                                                        className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full text-cradle-accent-primary'
+                                                        className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg text-cradle-accent-primary'
                                                         onClick={handleDownloadResults}
                                                         disabled={!results || results.length === 0}
                                                         title='Download results as JSON'

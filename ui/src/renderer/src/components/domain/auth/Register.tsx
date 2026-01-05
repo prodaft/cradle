@@ -96,7 +96,7 @@ export default function Register() {
                                 <div className='flex items-center gap-2 -mr-1.5'>
                                     <button
                                         onClick={() => navigate('/login', { replace: true })}
-                                        className='cradle-btn p-2 rounded-full'
+                                        className='cradle-btn p-2 rounded-lg'
                                         data-testid='back-button'
                                         title='Back to Login'
                                     >

@@ -72,7 +72,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
             <div className='text-cradle-text-secondary text-sm space-y-1 mx-2 -mt-1 mb-2'>
                 <InfoRow label='Entity 1'>
                     <span
-                        className='underline cursor-pointer hover:opacity-80 transition-opacity'
+                        className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
                         style={{ color: relation.e1?.color || '#FF8C00' }}
                         onClick={handleEntryClick(
                             relation.e1?.name || '',
@@ -84,7 +84,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                 </InfoRow>
                 <InfoRow label='Entity 2'>
                     <span
-                        className='underline cursor-pointer hover:opacity-80 transition-opacity'
+                        className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
                         style={{ color: relation.e2?.color || '#FF8C00' }}
                         onClick={handleEntryClick(
                             relation.e2?.name || '',

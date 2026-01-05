@@ -70,7 +70,7 @@ export default function GraphQuery({
                     <h2 className='text-lg font-semibold'>{panelTitle}</h2>
                     <button
                         type='button'
-                        className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center'
+                        className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
                         title='Close panel'
                         onClick={onClosePanel}
                     >

@@ -52,9 +52,9 @@ export default function SettingsButton({
 }: SettingsButtonProps): JSX.Element {
     const variantClasses = {
         default:
-            'rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary',
+            'rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary',
         danger:
-            'rounded-full border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors',
+            'rounded-lg border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors',
     };
 
     return (

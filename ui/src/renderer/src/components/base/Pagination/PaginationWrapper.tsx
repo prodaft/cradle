@@ -9,6 +9,8 @@ interface PaginationWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
     onPageSizeChange?: (size: number) => void;
     disabled?: boolean;
     className?: string;
+    selectedCount?: number;
+    totalRows?: number;
 }
 
 /**
@@ -22,11 +24,13 @@ function PaginationWrapper({
     onPageSizeChange = (_size: number) => {},
     disabled = false,
     className = '',
+    selectedCount,
+    totalRows,
     ...props
 }: PaginationWrapperProps) {
     return (
         <div
-            className={`flex-shrink-0 ${disabled ? 'opacity-50 pointer-events-none' : ''} ${className}`}
+            className={`flex-shrink-0 -mt-3 py-2 ${disabled ? 'opacity-50 pointer-events-none' : ''} ${className}`}
             {...props}
         >
             <Pagination
@@ -35,6 +39,8 @@ function PaginationWrapper({
                 onPageChange={onPageChange}
                 pageSize={pageSize}
                 onPageSizeChange={onPageSizeChange}
+                selectedCount={selectedCount}
+                totalRows={totalRows}
             />
         </div>
     );

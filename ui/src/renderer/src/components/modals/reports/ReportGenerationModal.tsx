@@ -193,7 +193,7 @@ export default function ReportGenerationModal({
                         type='button'
                         className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'html'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
+                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
                             } disabled:opacity-50`}
                     >
                         <Page width='20' height='20' />
@@ -205,7 +205,7 @@ export default function ReportGenerationModal({
                         type='button'
                         className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'json'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
+                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
                             } disabled:opacity-50`}
                     >
                         <Code width='20' height='20' />
@@ -217,7 +217,7 @@ export default function ReportGenerationModal({
                         type='button'
                         className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'plain'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
+                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
                             } disabled:opacity-50`}
                     >
                         <Download width='20' height='20' />
@@ -238,7 +238,7 @@ export default function ReportGenerationModal({
                         type='button'
                         className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${mode === 'anonymized'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
+                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
                             } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Anonymized</span>
@@ -249,7 +249,7 @@ export default function ReportGenerationModal({
                         type='button'
                         className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${mode === 'transparent'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent hover:border-cradle-accent-primary/50 text-cradle-text-secondary hover:text-cradle-text-primary'
+                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
                             } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Transparent</span>
@@ -263,7 +263,7 @@ export default function ReportGenerationModal({
                     onClick={closeModal}
                     disabled={isGenerating}
                     type='button'
-                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
                 >
                     Cancel
                 </button>
@@ -271,7 +271,7 @@ export default function ReportGenerationModal({
                     onClick={handleGenerate}
                     disabled={isGenerating || !title.trim()}
                     type='button'
-                    className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                    className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
                 >
                     {isGenerating && (
                         <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />

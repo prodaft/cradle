@@ -43,6 +43,16 @@ urlpatterns = [
         user_view.ManageUser.as_view(),
         name="user_manage",
     ),
+    path(
+        "<str:user_id>/sessions/",
+        user_view.UserSessionsView.as_view(),
+        name="user_sessions_list",
+    ),
+    path(
+        "<str:user_id>/sessions/<uuid:session_id>/",
+        user_view.UserSessionsView.as_view(),
+        name="user_session_revoke",
+    ),
     path("2fa/enable/", Enable2FAView.as_view(), name="enable-2fa"),
     path("2fa/verify/", Verify2FASetupView.as_view(), name="verify-2fa"),
     path("2fa/disable/", Disable2FAView.as_view(), name="disable-2fa"),

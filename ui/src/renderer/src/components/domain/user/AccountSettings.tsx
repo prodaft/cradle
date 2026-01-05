@@ -2,6 +2,7 @@ import vimIcon from '@/assets/vim32x32.gif';
 import ApiKeyGenerateModal from '@/components/modals/auth/ApiKeyGenerateModal';
 import ChangePasswordModal from '@/components/modals/auth/ChangePasswordModal';
 import TwoFactorSetupModal from '@/components/modals/auth/TwoFactorSetupModal';
+import ActionConfirmationModal from '@/components/modals/base/ActionConfirmationModal';
 import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@/components/modals/notes/MarkdownEditorModal';
 import { useModal } from '@/contexts/ui/ModalContext';
@@ -17,7 +18,8 @@ import AlertBox from '@components/base/Alert/AlertBox';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { SettingsButton, SettingsCard, SettingsField, SettingsSelect, SettingsSeparator, SettingsToggle } from '@components/forms';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Edit, HalfMoon, Key, Lock, Mail, Plus, RefreshDouble, SunLight, Trash, User } from 'iconoir-react';
+import { Edit, HalfMoon, Key, Lock, LogOut, Mail, Plus, RefreshDouble, SunLight, Trash, User } from 'iconoir-react';
+import ActiveSessions from './ActiveSessions';
 import { debounce } from 'lodash'; // Import lodash debounce
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -359,6 +361,13 @@ export default function AccountSettings({
         });
     };
 
+    const openLogoutConfirmationModal = () => {
+        setModal(ActionConfirmationModal, {
+            onConfirm: () => auth.logOut(),
+            text: 'Are you sure you want to log out? You will need to sign in again to access your account.',
+        });
+    };
+
     const openNoteTemplateModal = async () => {
         setNoteTemplateLoading(true);
         try {
@@ -493,7 +502,6 @@ export default function AccountSettings({
                                         label='Simulate Session'
                                         description='Jump into a session for this user'
                                         buttonText='Simulate'
-                                        icon={<User className='w-3.5 h-3.5' />}
                                         onClick={simulateSession}
                                     />
 
@@ -503,7 +511,6 @@ export default function AccountSettings({
                                         label='Email Confirmation'
                                         description='Send email verification to user'
                                         buttonText='Send Email'
-                                        icon={<Mail className='w-3.5 h-3.5' />}
                                         onClick={sendEmailConfirmation}
                                     />
 
@@ -513,7 +520,6 @@ export default function AccountSettings({
                                         label='Password Reset'
                                         description='Send password reset email'
                                         buttonText='Send Reset'
-                                        icon={<RefreshDouble className='w-3.5 h-3.5' />}
                                         onClick={sendPasswordResetEmail}
                                     />
 
@@ -523,7 +529,6 @@ export default function AccountSettings({
                                         label='Delete User'
                                         description='Permanently remove this user and all their data'
                                         buttonText='Delete'
-                                        icon={<Trash className='w-3.5 h-3.5' />}
                                         variant='danger'
                                         onClick={openDeleteUserModal}
                                     />
@@ -537,7 +542,7 @@ export default function AccountSettings({
                             id='account'
                             className={`pb-8 ${(isEdit && isAdminAndNotOwn) ? 'pt-5' : ''}`}
                         >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg cradle-text-primary tracking-tight'>
                                 Account
                             </h2>
                             <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
@@ -692,7 +697,7 @@ export default function AccountSettings({
                                 id='security'
                                 className='border-t border-white/5 pt-5 pb-8'
                             >
-                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                <h2 className='text-lg cradle-text-primary tracking-tight'>
                                     Security
                                 </h2>
                                 <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
@@ -708,7 +713,6 @@ export default function AccountSettings({
                                                     label='Password'
                                                     description='Change your account password'
                                                     buttonText='Change'
-                                                    icon={<Lock className='w-3.5 h-3.5' />}
                                                     onClick={openChangePasswordModal}
                                                     title='Change Password'
                                                 />
@@ -719,7 +723,6 @@ export default function AccountSettings({
                                                     label='API Key'
                                                     description='Generate key for API access'
                                                     buttonText='Generate'
-                                                    icon={<Key className='w-3.5 h-3.5' />}
                                                     onClick={openApiKeyModal}
                                                     title='Generate API Key'
                                                 />
@@ -740,13 +743,12 @@ export default function AccountSettings({
                                                     </div>
                                                     <button
                                                         type='button'
-                                                        className={`text-sm px-3 py-1.5 rounded-full border transition-colors flex items-center gap-1.5 ${twoFactorEnabled
+                                                        className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${twoFactorEnabled
                                                             ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent'
-                                                            : 'border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent text-cradle-text-secondary hover:text-cradle-text-primary'
+                                                            : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
                                                             }`}
                                                         onClick={openTwoFactorModal}
                                                     >
-                                                        <Lock className='w-3.5 h-3.5' />
                                                         <span>{twoFactorEnabled ? 'Disable' : 'Enable'}</span>
                                                     </button>
                                                 </div>
@@ -760,13 +762,36 @@ export default function AccountSettings({
                                                     label='Delete Account'
                                                     description='Permanently remove account and data'
                                                     buttonText='Delete'
-                                                    icon={<Trash className='w-3.5 h-3.5' />}
                                                     variant='danger'
                                                     onClick={openDeleteAccountModal}
                                                 />
                                             </>
                                         )}
                                     </SettingsCard>
+
+                                    {/* Session Management - Only visible when viewing own account */}
+                                    {isOwnAccount && isEdit && (
+                                        <>
+                                            <div className='mb-3'>
+                                                <h3 className='text-sm font-medium cradle-text-tertiary'>
+                                                    Active Sessions
+                                                </h3>
+                                            </div>
+                                            <SettingsCard>
+                                                <ActiveSessions userId={target} />
+                                            </SettingsCard>
+
+                                            <SettingsCard>
+                                                <SettingsButton
+                                                    label='Logout'
+                                                    description='Sign out of your account'
+                                                    buttonText='Logout'
+                                                    variant='danger'
+                                                    onClick={openLogoutConfirmationModal}
+                                                />
+                                            </SettingsCard>
+                                        </>
+                                    )}
                                 </div>
                             </section>
                         )}
@@ -776,7 +801,7 @@ export default function AccountSettings({
                             id='interface'
                             className='border-t border-white/5 pt-5 pb-8'
                         >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg cradle-text-primary tracking-tight'>
                                 Interface
                             </h2>
                             <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
@@ -815,7 +840,6 @@ export default function AccountSettings({
                                         data-testid='vim-toggle'
                                         {...register('vimMode')}
                                         watch={watch}
-                                        icon={<img src={vimIcon} alt='Vim' className='w-4 h-4' />}
                                     />
 
                                     <SettingsSeparator />
@@ -824,7 +848,6 @@ export default function AccountSettings({
                                         label='Note Template'
                                         description='Preset structure for new notes you create'
                                         buttonText='Edit'
-                                        icon={<Edit className='w-3.5 h-3.5' />}
                                         onClick={openNoteTemplateModal}
                                         disabled={noteTemplateLoading}
                                         loading={noteTemplateLoading}
@@ -836,14 +859,11 @@ export default function AccountSettings({
                                         label='Note Snippets'
                                         description='Reusable text blocks you can insert with shortcuts'
                                         buttonText='New Snippet'
-                                        icon={<Plus className='w-3.5 h-3.5' />}
                                         onClick={() => {
                                             snippetListRef.current?.handleAddSnippet();
                                         }}
                                     />
-                                    <div className='mt-4'>
-                                        <SnippetList ref={snippetListRef} userId={target} showTitle={false} />
-                                    </div>
+                                    <SnippetList ref={snippetListRef} userId={target} showTitle={false} />
                                 </SettingsCard>
                             </div>
                         </section>
@@ -853,7 +873,7 @@ export default function AccountSettings({
                             <div className='border-t border-white/5 pt-5 flex justify-end'>
                                 <button
                                     type='submit'
-                                    className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                    className='cradle-btn cradle-btn-primary px-6 rounded-lg'
                                     disabled={!isDirty}
                                 >
                                     Create User

@@ -32,7 +32,6 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
     const ensureContainer = useCallback((tabId: string): HTMLDivElement => {
         let el = containersRef.current.get(tabId);
         if (!el) {
-            console.log('[TabHost] Creating new container for tab:', tabId);
             el = document.createElement('div');
             el.style.position = 'absolute';
             el.style.top = '0';
@@ -48,7 +47,6 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
             // Park it under body by default; panes will reparent it.
             document.body.appendChild(el);
         }
-        // Don't log reuse - too noisy
         return el;
     }, []);
 
@@ -56,14 +54,6 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
         (tabId: string, mountPoint: HTMLElement | null) => {
             const el = ensureContainer(tabId);
             if (mountPoint && el.parentNode !== mountPoint) {
-                console.log(
-                    '[TabHost] Reparenting tab:',
-                    tabId,
-                    'from',
-                    el.parentNode?.nodeName,
-                    'to',
-                    mountPoint.nodeName,
-                );
                 // Inherit pointer-events from mount point
                 const mountPointStyle = window.getComputedStyle(mountPoint);
                 el.style.pointerEvents = mountPointStyle.pointerEvents;
@@ -74,12 +64,6 @@ export function TabHostProvider({ children }: TabHostProviderProps) {
                 el.style.bottom = '0';
                 el.style.overflow = 'visible';
                 mountPoint.appendChild(el); // DOM reparent (no React remount)
-            } else {
-                console.log(
-                    '[TabHost] Tab:',
-                    tabId,
-                    'already attached to correct mount point',
-                );
             }
         },
         [ensureContainer],

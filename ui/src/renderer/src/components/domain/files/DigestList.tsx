@@ -143,7 +143,7 @@ function DigestList({
             { key: 'warnings', label: 'Warnings' },
             { key: 'errors', label: 'Errors' },
             { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
-            { key: 'actions', label: 'Actions' },
+            { key: 'actions', label: '', sortable: false },
         ];
 
     // Define filterable columns with their handlers
@@ -313,7 +313,8 @@ function DigestList({
                 <td className='w-36'>
                     {digest.createdAt ? formatDate(digest.createdAt) : 'N/A'}
                 </td>
-                <td className='w-8'>
+                <td className='w-8 text-right'>
+                    <div className='flex justify-end'>
                     <Tooltip content='Delete Digest'>
                         <button
                             className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
@@ -327,6 +328,7 @@ function DigestList({
                             <Trash width='18' height='18' />
                         </button>
                     </Tooltip>
+                    </div>
                 </td>
             </tr>
         );
@@ -396,20 +398,6 @@ function DigestList({
                             itemLabel='digest'
                             actions={[
                                 {
-                                    id: 'upload',
-                                    tooltip: 'Upload new digest',
-                                    icon: <PlusCircle width={20} height={20} />,
-                                    onClick: () => {
-                                        setModal(UploadDigestModal, {
-                                            dataTypeOptions,
-                                            onUpload: onUpload || onDigestDelete,
-                                        });
-                                    },
-                                    disabled: loading,
-                                    iconActive: true,
-                                    alwaysVisible: true,
-                                },
-                                {
                                     id: 'delete',
                                     tooltip: selectedDigests.length > 0
                                         ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
@@ -448,17 +436,23 @@ function DigestList({
                     </>
                 }
                 right={
-                    <PaginationWrapper
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            handlePageChange(1);
-                        }}
-                        disabled={digests.length === 0}
-                    />
+                    <>
+                        <Tooltip content='Upload new digest'>
+                            <button
+                                type='button'
+                                onClick={() => {
+                                    setModal(UploadDigestModal, {
+                                        dataTypeOptions,
+                                        onUpload: onUpload || onDigestDelete,
+                                    });
+                                }}
+                                disabled={loading}
+                                className='flex items-center gap-1.5 px-4 h-9 text-sm rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                            >
+                                New
+                            </button>
+                        </Tooltip>
+                    </>
                 }
             />
 
@@ -482,6 +476,20 @@ function DigestList({
                 }
                 filterableColumns={filterableColumns}
                 filterValues={columnFilters}
+            />
+
+            <PaginationWrapper
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                pageSize={pageSize}
+                onPageSizeChange={(newSize) => {
+                    setPageSize(newSize);
+                    handlePageChange(1);
+                }}
+                disabled={digests.length === 0}
+                selectedCount={selectedDigests.length}
+                totalRows={digests.length}
             />
         </>
     );

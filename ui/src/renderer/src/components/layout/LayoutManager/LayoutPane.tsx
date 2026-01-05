@@ -1,6 +1,7 @@
 import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
 import { useTabHost } from '@/contexts/tabs/TabHostContext';
 import { useLayout } from '@/contexts/ui/LayoutContext';
+import { Tab } from '@/utils/tabs';
 import { Menu, NavArrowDown, Plus, SplitArea, Xmark } from 'iconoir-react';
 import React, {
     CSSProperties,
@@ -16,13 +17,6 @@ declare global {
     interface Window {
         __cradleTabDragging?: boolean;
     }
-}
-
-interface Tab {
-    id: string;
-    path: string;
-    title: string;
-    icon: string;
 }
 
 interface DragData {
@@ -112,7 +106,7 @@ const computeReorderTarget = ({
     return target;
 };
 
-interface TabProps {
+interface TabItemProps {
     tab: Tab;
     index: number;
     isTabActive: boolean;
@@ -132,9 +126,9 @@ interface TabProps {
 }
 
 /**
- * Tab component - Individual tab with drag and drop support
+ * TabItem component - Individual tab with drag and drop support
  */
-const Tab = memo(
+const TabItem = memo(
     ({
         tab,
         index,
@@ -152,20 +146,14 @@ const Tab = memo(
         onDrop,
         onDragEnd,
         onKeyDown,
-    }: TabProps) => {
-        /*
-    const getIconComponent = useCallback((iconName) => {
-        const IconComponent = Iconoir[iconName];
-        const iconProps = { width: '1em', height: '1em', strokeWidth: 1.5 };
-        return IconComponent ? <IconComponent {...iconProps} /> : <Iconoir.Page {...iconProps} />;
-    }, []);
-    */
-
-        const getIconComponent = useCallback((iconName: string) => {
-            // For now, we just use a default icon since dynamic icon loading has TS issues
-            const iconProps = { width: '1em', height: '1em', strokeWidth: 1.5 };
-            return <Menu {...iconProps} />;
-        }, []);
+    }: TabItemProps) => {
+        // Render tab icon - can be a ReactNode or fallback to Menu icon
+        const renderIcon = () => {
+            if (tab.icon && typeof tab.icon !== 'string') {
+                return tab.icon;
+            }
+            return <Menu width='1em' height='1em' strokeWidth={1.5} />;
+        };
 
         return (
             <div
@@ -208,7 +196,7 @@ const Tab = memo(
                         className='flex-shrink-0'
                         style={{ width: '1em', height: '1em' }}
                     >
-                        {getIconComponent(tab.icon as string)}
+                        {renderIcon()}
                     </div>
 
                     <span className='flex-1 truncate text-sm cradle-mono'>
@@ -233,7 +221,7 @@ const Tab = memo(
     },
 );
 
-Tab.displayName = 'Tab';
+TabItem.displayName = 'TabItem';
 
 interface PaneTabsProps {
     paneId: string;
@@ -267,7 +255,7 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
     const contextMenuRef = useRef<HTMLDivElement>(null);
     const tabBarRef = useRef<HTMLDivElement | null>(null);
     const tabbarDragDepthRef = useRef(0);
-    const isMountedRef = useRef<React.MutableRefObject<boolean>>({ current: true });
+    const isMountedRef = useRef(true);
 
     const handleContextMenu = (e: React.MouseEvent, index: number) => {
         e.preventDefault();
@@ -309,7 +297,7 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
             } else {
                 switchToTab(paneId, index);
                 requestAnimationFrame(() => {
-                    if (isMountedRef.current.current) {
+                    if (isMountedRef.current) {
                         setActivePaneId(paneId);
                     }
                 });
@@ -471,22 +459,20 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
         return null;
     }
 
-    // TODO: Eventually enable this again
     return (
         <>
-            {false && (
-                <div
-                    ref={(el) => {
-                        tabBarRef.current = el;
-                        if (onRootRef) onRootRef(el);
-                    }}
-                    role='tablist'
-                    className={`flex items-center h-10 cradle-bg-elevated overflow-x-auto overflow-y-hidden cradle-scrollbar-thin relative z-20 ${isActive ? 'cradle-border-b' : 'cradle-border-b border-opacity-50'}`}
-                    onDragEnter={handleTabBarDragEnter}
-                    onDragOver={handleTabBarDragOver}
-                    onDragLeave={handleTabBarDragLeave}
-                    onDrop={handleTabBarDrop}
-                >
+            <div
+                ref={(el) => {
+                    tabBarRef.current = el;
+                    if (onRootRef) onRootRef(el);
+                }}
+                role='tablist'
+                className={`flex items-center h-10 cradle-bg-elevated overflow-x-auto overflow-y-hidden cradle-scrollbar-thin relative z-20 ${isActive ? 'cradle-border-b' : 'cradle-border-b border-opacity-50'}`}
+                onDragEnter={handleTabBarDragEnter}
+                onDragOver={handleTabBarDragOver}
+                onDragLeave={handleTabBarDragLeave}
+                onDrop={handleTabBarDrop}
+            >
                     {tabs.map((tab, index) => {
                         const isTabActive = index === activeTabIndex;
                         const isDragging = draggedTab === index;
@@ -496,9 +482,9 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                             dragOverTab?.index === index && !dragOverTab?.dropBefore;
 
                         return (
-                            <Tab
+                            <TabItem
                                 key={tab.id}
-                                tab={tab as Tab}
+                                tab={tab}
                                 index={index}
                                 isTabActive={isTabActive}
                                 isActive={isActive}
@@ -663,7 +649,6 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                         </div>
                     )}
                 </div>
-            )}
         </>
     );
 };
@@ -672,9 +657,6 @@ interface LayoutPaneProps {
     paneId: string;
     outletContext?: unknown;
 }
-
-// Static property to track attached tabs
-const LayoutPaneStatic: { attachedTabs?: Set<string> } = {};
 
 /**
  * LayoutPane component - A single pane with its own tabs and content
@@ -693,7 +675,7 @@ const LayoutPane = ({ paneId, outletContext }: LayoutPaneProps) => {
     const mountedTabsRef = useRef(new Set<string>());
     const wasActiveRef = useRef(isActive);
     const paneRef = useRef<HTMLDivElement>(null);
-    const isMountedRef = useRef<React.MutableRefObject<boolean>>({ current: true });
+    const isMountedRef = useRef(true);
     const mountRefs = useRef(new Map<string, HTMLElement>());
     const [dropZone, setDropZone] = useState<DropZone>(null);
     const [showOverlay, setShowOverlay] = useState(false);
@@ -711,9 +693,9 @@ const LayoutPane = ({ paneId, outletContext }: LayoutPaneProps) => {
     }, [paneId, initializePaneIfNeeded]);
 
     useEffect(() => {
-        isMountedRef.current.current = true;
+        isMountedRef.current = true;
         return () => {
-            isMountedRef.current.current = false;
+            isMountedRef.current = false;
         };
     }, []);
 
@@ -732,6 +714,28 @@ const LayoutPane = ({ paneId, outletContext }: LayoutPaneProps) => {
         ro.observe(paneRef.current);
         return () => ro.disconnect();
     }, []);
+
+    // Use native DOM event to activate pane on any interaction
+    // This is needed because portal content is DOM-reparented and React events don't bubble correctly
+    useEffect(() => {
+        const paneEl = paneRef.current;
+        if (!paneEl) return;
+
+        const handleInteraction = () => {
+            if (!isActive) {
+                setActivePaneId(paneId);
+            }
+        };
+
+        // Use capture phase to ensure we catch events before any handlers can stop propagation
+        paneEl.addEventListener('mousedown', handleInteraction, true);
+        paneEl.addEventListener('focusin', handleInteraction, true);
+
+        return () => {
+            paneEl.removeEventListener('mousedown', handleInteraction, true);
+            paneEl.removeEventListener('focusin', handleInteraction, true);
+        };
+    }, [isActive, paneId, setActivePaneId]);
 
     const paneState = getPaneTabsState(paneId);
     const { tabs, activeTabIndex } = paneState;
@@ -1003,7 +1007,7 @@ const LayoutPane = ({ paneId, outletContext }: LayoutPaneProps) => {
             );
 
             requestAnimationFrame(() => {
-                if (isMountedRef.current.current) {
+                if (isMountedRef.current) {
                     setActivePaneId(newPaneId);
                 }
             });
@@ -1111,25 +1115,6 @@ const LayoutPane = ({ paneId, outletContext }: LayoutPaneProps) => {
                                 ref={(el) => {
                                     if (el) {
                                         mountRefs.current.set(tab.id, el);
-                                        const attachmentKey = `${tab.id}-${paneId}`;
-                                        if (!LayoutPaneStatic.attachedTabs) {
-                                            LayoutPaneStatic.attachedTabs = new Set();
-                                        }
-                                        if (
-                                            !LayoutPaneStatic.attachedTabs.has(
-                                                attachmentKey,
-                                            )
-                                        ) {
-                                            console.log(
-                                                '[LayoutPane] First attachment of tab:',
-                                                tab.id,
-                                                'to pane:',
-                                                paneId,
-                                            );
-                                            LayoutPaneStatic.attachedTabs.add(
-                                                attachmentKey,
-                                            );
-                                        }
                                         requestAnimationFrame(() => {
                                             if (isMountedRef.current) {
                                                 attach(tab.id, el);

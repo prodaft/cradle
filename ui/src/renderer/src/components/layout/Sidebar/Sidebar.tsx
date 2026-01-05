@@ -4,7 +4,6 @@ import { Graph } from '@phosphor-icons/react';
 import {
     Archive,
     DatabaseBackup,
-    LogOut,
     Notes,
     Page,
     Settings,
@@ -46,7 +45,6 @@ export default function Sidebar({
     onThemeToggle,
 }: SidebarProps): JSX.Element {
     const [isRightMouseDown, setIsRightMouseDown] = useState(false);
-    const auth = useAuth();
     const { isEntryManager, profile } = useProfile();
     const { navigate, navigateLink } = useCradleNavigate();
 
@@ -93,10 +91,6 @@ export default function Sidebar({
 
     const adminLocation = '/manage';
     const handleAdminPanel = useCallback(navigateLink(adminLocation), [navigateLink]);
-
-    const handleLogout = useCallback(() => {
-        auth.logOut();
-    }, [auth]);
 
     return (
         <div className='h-full shrink-0' data-testid='sidebar-test'>
@@ -155,12 +149,6 @@ export default function Sidebar({
                         </SidebarSection>
                     </div>
                     <SidebarSection sectionType='footer' height='fit' justify='end'>
-                        <SidebarItem
-                            handleClick={handleAccountSettings}
-                            icon={<Settings height={24} width={24} />}
-                            text='Settings'
-                            highlightedLocation={accountSettingsLocation}
-                        />
                         {isEntryManager() && (
                             <SidebarItem
                                 handleClick={handleAdminPanel}
@@ -170,9 +158,10 @@ export default function Sidebar({
                             />
                         )}
                         <SidebarItem
-                            handleClick={handleLogout}
-                            icon={<LogOut />}
-                            text='Logout'
+                            handleClick={handleAccountSettings}
+                            icon={<Settings height={24} width={24} />}
+                            text='Settings'
+                            highlightedLocation={accountSettingsLocation}
                         />
                     </SidebarSection>
                 </div>

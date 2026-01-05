@@ -154,7 +154,7 @@ export default function StatusHeaderDropdown({
       <button
         ref={buttonRef}
         onClick={toggleDropdown}
-        className='inline-flex items-center justify-center hover:opacity-70 transition-opacity'
+        className='inline-flex items-center justify-center hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
       >
         {getStatusIcon(currentStatus)}
       </button>

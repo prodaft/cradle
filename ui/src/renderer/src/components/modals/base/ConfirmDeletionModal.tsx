@@ -86,14 +86,14 @@ export default function ConfirmDeletionModal({
             <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                 <button
                     type='button'
-                    className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
                     onClick={closeModal}
                 >
                     <span>Cancel</span>
                 </button>
                 <button
                     type='button'
-                    className='rounded-full border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    className='rounded-lg border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors text-sm px-3 py-1.5 flex items-center gap-1.5'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >

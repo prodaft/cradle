@@ -61,7 +61,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                 label: 'Uploaded At',
                                 className: 'w-32',
                             },
-                            { key: 'actions', label: 'Actions', className: 'w-32' },
+                            { key: 'actions', label: '', className: 'w-32', sortable: false },
                         ]}
                         renderRow={(file: FileReferenceWithNote, index: number) => (
                             <tr key={file.id || index}>
@@ -108,8 +108,8 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     {file.timestamp &&
                                         formatDate(new Date(file.timestamp))}
                                 </td>
-                                <td className='w-32'>
-                                    <div className='flex space-x-1'>
+                                <td className='w-32 text-right'>
+                                    <div className='flex justify-end space-x-1'>
                                         {file.bucketName && file.minioFileName && (
                                             <button
                                                 onClick={async () =>

@@ -338,7 +338,7 @@ export default function Relations({ obj }: RelationsProps) {
                             <button
                                 onClick={copyToCSV}
                                 disabled={selectedIds.length === 0}
-                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
+                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
                                 title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
                             >
                                 {isCopied ? (
@@ -375,7 +375,7 @@ export default function Relations({ obj }: RelationsProps) {
                         {!isSearchExpanded ? (
                             <button
                                 onClick={() => setIsSearchExpanded(true)}
-                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
+                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary rounded-full'
                                 title='Search'
                             >
                                 <Search className='w-4 h-4' />
@@ -423,17 +423,6 @@ export default function Relations({ obj }: RelationsProps) {
                         )}
                     </div>
 
-                    <div className='flex items-center gap-2'>
-                        {/* Pagination */}
-                        <PaginationWrapper
-                            currentPage={page}
-                            totalPages={calculatedTotalPages}
-                            onPageChange={setPage}
-                            pageSize={pageSize}
-                            onPageSizeChange={setPageSize}
-                            disabled={!results || results.length === 0}
-                        />
-                    </div>
                 </div>
             </TableCard>
 
@@ -461,6 +450,17 @@ export default function Relations({ obj }: RelationsProps) {
                     />
                 </div>
             </div>
+
+            <PaginationWrapper
+                currentPage={page}
+                totalPages={calculatedTotalPages}
+                onPageChange={setPage}
+                pageSize={pageSize}
+                onPageSizeChange={setPageSize}
+                disabled={!results || results.length === 0}
+                selectedCount={selectedIds.length}
+                totalRows={results?.length || 0}
+            />
         </div>
     );
 }

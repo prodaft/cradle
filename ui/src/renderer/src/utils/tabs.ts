@@ -1,22 +1,29 @@
+import { ReactNode } from 'react';
+
 /**
  * Common utilities for tab and layout management
  */
 
 /**
- * Tab object structure
+ * Tab object structure - canonical definition used across all tab-related components
  */
-export interface TabObject {
+export interface Tab {
     id: string;
     path: string;
     title: string;
-    icon: string;
+    icon: ReactNode;
 }
+
+/**
+ * @deprecated Use Tab instead
+ */
+export type TabObject = Tab;
 
 /**
  * Pane state structure
  */
 export interface PaneState {
-    tabs: TabObject[];
+    tabs: Tab[];
     activeTabIndex: number;
 }
 
@@ -141,14 +148,17 @@ export const generatePaneId = (): string => {
  * @param tab - The tab object to validate
  * @returns True if tab is valid
  */
-export const validateTab = (tab: any): tab is TabObject => {
+export const validateTab = (tab: unknown): tab is Tab => {
     return (
-        tab &&
+        tab !== null &&
         typeof tab === 'object' &&
-        typeof tab.id === 'string' &&
-        typeof tab.path === 'string' &&
-        typeof tab.title === 'string' &&
-        typeof tab.icon === 'string'
+        'id' in tab &&
+        typeof (tab as Tab).id === 'string' &&
+        'path' in tab &&
+        typeof (tab as Tab).path === 'string' &&
+        'title' in tab &&
+        typeof (tab as Tab).title === 'string' &&
+        'icon' in tab // icon can be ReactNode, so we just check existence
     );
 };
 
@@ -176,7 +186,7 @@ export const validatePaneState = (paneState: any): paneState is PaneState => {
  * @param path - The path for the tab
  * @returns A new tab object
  */
-export const createTab = (path: string): TabObject => {
+export const createTab = (path: string): Tab => {
     return {
         id: generateTabId(),
         path,

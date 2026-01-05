@@ -88,7 +88,7 @@ export default function SearchResult({
                         <button
                             key={index}
                             onClick={action.callback}
-                            className='p-1 hover:bg-cradle-bg-tertiary transition-colors'
+                            className='p-1 hover:bg-cradle-bg-secondary transition-colors'
                         >
                             {action.icon}
                         </button>

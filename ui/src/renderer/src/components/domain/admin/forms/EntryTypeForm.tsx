@@ -553,7 +553,7 @@ export default function EntryTypeForm({
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
                             <button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entry Type'}

@@ -64,7 +64,7 @@ export default function NoteViewer() {
             : true,
     );
     const [searchParams, setSearchParams] = useSearchParams();
-    const [enableEditing, setEnableEditing] = useState(searchParams.get('enableEditing') === 'true');
+    const [enableEditing, setEnableEditing] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
     const { setModal } = useModal();
     const { notify } = useNotif();
@@ -95,6 +95,16 @@ export default function NoteViewer() {
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
     const { execute, handleError } = useAPICall();
+    
+    // Refs to avoid dependency issues in effects
+    const activePaneIdRef = useRef(activePaneId);
+    const updateCurrentTabTitleRef = useRef(updateCurrentTabTitle);
+    
+    // Keep refs updated
+    useEffect(() => {
+        activePaneIdRef.current = activePaneId;
+        updateCurrentTabTitleRef.current = updateCurrentTabTitle;
+    }, [activePaneId, updateCurrentTabTitle]);
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
@@ -129,25 +139,8 @@ export default function NoteViewer() {
     }, [showOutline]);
 
     const toggleEditing = useCallback(() => {
-        // Use functional update to avoid closure issues
-        setEnableEditing((prev) => {
-            const newValue = !prev;
-
-            // Update URL using React Router's setSearchParams to keep things in sync
-            // Use replace: true to avoid adding to history
-            setSearchParams((prevParams) => {
-                const newParams = new URLSearchParams(prevParams);
-                if (newValue) {
-                    newParams.set('enableEditing', 'true');
-                } else {
-                    newParams.delete('enableEditing');
-                }
-                return newParams;
-            }, { replace: true });
-
-            return newValue;
-        });
-    }, [setSearchParams]);
+        setEnableEditing((prev) => !prev);
+    }, []);
 
     const handleEnableEditingWithConfirmation = useCallback(() => {
         // If we're already in editing mode, there's nothing to do
@@ -295,9 +288,9 @@ export default function NoteViewer() {
                 setInitialMarkdown(responseNote.content);
                 setFileData(responseNote.files || []);
                 setHasUnsavedChanges(false);
-                // Update tab title with note title
-                if (responseNote.title && activePaneId) {
-                    updateCurrentTabTitle(activePaneId, responseNote.title);
+                // Update tab title with note title (use refs to avoid dependency issues)
+                if (responseNote.title && activePaneIdRef.current) {
+                    updateCurrentTabTitleRef.current(activePaneIdRef.current, responseNote.title);
                 }
                 return responseNote;
             })
@@ -308,11 +301,7 @@ export default function NoteViewer() {
             });
     }, [
         id,
-        navigate,
         execute,
-        updateCurrentTabTitle,
-        activePaneId,
-        profile,
         notesApi,
         fleetingNotesApi,
     ]);
@@ -554,14 +543,6 @@ export default function NoteViewer() {
         localStorage.setItem('richEditor', richEditor.toString());
     }, [richEditor]);
 
-    // Sync enableEditing with URL params when URL changes externally (browser navigation)
-    useEffect(() => {
-        const urlEnableEditing = searchParams.get('enableEditing') === 'true';
-        if (urlEnableEditing !== enableEditing) {
-            setEnableEditing(urlEnableEditing);
-        }
-    }, [searchParams, enableEditing]);
-
     // Compute note outline from markdown content
     useEffect(() => {
         const content = markdownContent || '';
@@ -627,7 +608,7 @@ export default function NoteViewer() {
                         <Tooltip content={enableEditing ? 'Editing mode' : 'Reading mode'}>
                             <button
                                 onClick={() => toggleEditing()}
-                                className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:cradle-text-primary cradle-border hover:border-[#FF8C00]'
+                                className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cradle-border'
                                 data-testid='actions-dropdown-btn'
                             >
                                 {

@@ -157,7 +157,7 @@ export default function Login() {
                                                         setBackendUrl(auth.basePath);
                                                         setShowSettings(false);
                                                     }}
-                                                    className='cradle-btn p-2 rounded-full'
+                                                    className='cradle-btn p-2 rounded-lg'
                                                     data-testid='back-button'
                                                     title='Back'
                                                 >
@@ -166,7 +166,7 @@ export default function Login() {
                                             )}
                                             <button
                                                 onClick={toggleTheme}
-                                                className='cradle-btn p-2 rounded-full'
+                                                className='cradle-btn p-2 rounded-lg'
                                                 data-testid='theme-button'
                                                 title='Toggle Theme'
                                             >
