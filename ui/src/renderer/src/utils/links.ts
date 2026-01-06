@@ -66,10 +66,8 @@ export function strip(str: string, chars: string = ' \t\n\r\f\v'): string {
  * @returns Download link
  */
 export const createDownloadPath = (file: FileReference, apiBaseUrl: string): string => {
-    const { minioFileName, bucketName } = file;
     const queryParams = QueryString.stringify({
-        bucketName: bucketName,
-        minioFileName: minioFileName,
+        fileId: file.id!
     });
     return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
 };
@@ -102,7 +100,7 @@ export const prependLinks = (
     const mdLinks = fileData
         .map((file) => {
             const apiDownloadPath = createDownloadPath(file, apiBaseUrl);
-            return `[${file.minioFileName}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
+            return `[${file.id}-${file.fileName}]: ${apiDownloadPath} "${file.fileName}"\n\n`;
         })
         .join('');
 

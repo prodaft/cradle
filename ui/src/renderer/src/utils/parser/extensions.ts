@@ -108,9 +108,8 @@ export function renderCradleLink(
         displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
 
-    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
-        date ? `data-timestamp="${date}"` : ''
-    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
+    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${date ? `data-timestamp="${date}"` : ''
+        } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
 // Match ![....][....] or [....][....]
@@ -151,18 +150,19 @@ let MinioCache: Record<string, FileDownload> = {};
 
 export function fetchMinioDownloadLink(
     fileTransferApi: FileTransferApi,
-    bucketName: string,
-    minioFileName: string,
+    fileId: string
 ): Promise<FileDownload> {
-    const cacheKey = `${bucketName}:${minioFileName}`;
-    if (!DownloadLinkPromiseCache[cacheKey]) {
-        DownloadLinkPromiseCache[cacheKey] = fileTransferApi
-            .fileTransferDownloadRetrieve({ bucketName, minioFileName })
-            .then((response) => {
-                return response;
+    if (!DownloadLinkPromiseCache[fileId]) {
+        DownloadLinkPromiseCache[fileId] = fileTransferApi
+            .fileTransferDownloadRetrieve({ fileId })
+            .then(({ presignedUrl, expiresIn }) => {
+                return {
+                    presignedUrl,
+                    expiresIn: Date.now() + expiresIn
+                }
             });
     }
-    return DownloadLinkPromiseCache[cacheKey];
+    return DownloadLinkPromiseCache[fileId];
 }
 
 export async function resolveMinioLinks(
@@ -190,23 +190,20 @@ export async function resolveMinioLinks(
             url.pathname === `${apiBasePath}/file-transfer/download/`
         ) {
             const params = new URLSearchParams(url.search);
-            const bucketName = params.get('bucketName');
-            const minioFileName = params.get('minioFileName');
-            if (!bucketName || !minioFileName) return;
+            const fileId = params.get('fileId')
+            if (!fileId) return;
 
-            const cacheKey = `${bucketName}:${minioFileName}`;
-            let cached = MinioCache[cacheKey];
-            let presigned: string | undefined = cached?.presigned;
-            let expiry: number | undefined = cached?.expiresAt;
+            let cached = MinioCache[fileId];
+            let presigned: string | undefined = cached?.presignedUrl;
+            let expiry: number | undefined = cached?.expiresIn;
             if (!presigned || Date.now() > (expiry || 0)) {
                 const result = await fetchMinioDownloadLink(
                     fileTransferApi,
-                    bucketName,
-                    minioFileName,
+                    fileId
                 );
-                presigned = result.presigned;
-                expiry = result.expiresAt;
-                MinioCache[cacheKey] = result;
+                presigned = result.presignedUrl;
+                expiry = result.expiresIn;
+                MinioCache[fileId] = result;
             }
             token.attrs![hrefIndex][1] = presigned;
         }

@@ -198,7 +198,6 @@ export default function Welcome() {
         const response = await execute(() => fleetingNotesApi.fleetingNotesCreate({
             fleetingNoteRequest: {
                 content: defaultContent,
-                files: [],
             },
         }), {
             errorMessage: 'Failed to create note',

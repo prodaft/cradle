@@ -41,7 +41,6 @@ export default function Navbar({ contents }: NavbarProps): JSX.Element {
             const response = await fleetingNotesApi.fleetingNotesCreate({
                 fleetingNoteRequest: {
                     content: defaultContent,
-                    files: [],
                 },
             });
             navigate(`/notes/${response.id}`);

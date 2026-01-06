@@ -475,7 +475,7 @@ export default function NotesList({
             { key: 'editor', label: 'Editor', filterType: 'text' as const },
             { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
             { key: 'lastChanged', label: 'Updated At', filterType: 'date' as const },
-            { key: 'actions', label: '', sortable: false },
+            { key: 'actions', label: '' },
         ];
 
     const renderNotePreview = (note: NoteRetrieve) => {
@@ -583,9 +583,7 @@ export default function NotesList({
         const menuButtonClasses = 'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
 
         const handleDelete = () => {
-            if (actions[0]?.handler) {
-                actions[0].handler([note.id!]);
-            }
+            actions[0].handler([note.id!]);
         };
 
         const handleRetry = () => {
@@ -606,7 +604,7 @@ export default function NotesList({
             const noteObject = {
                 id: note.id!,
                 title: note.metadata?.title || note.title || 'Untitled',
-                entities: note.entities,
+                entities: note.entities || [],
             };
             setModal(EnrichmentRequestModal, {
                 notesList: [noteObject],
@@ -718,7 +716,7 @@ export default function NotesList({
                                                         .map((n) => ({
                                                             id: n.id!,
                                                             title: n.metadata?.title || n.title || 'Untitled',
-                                                            entities: n.entities,
+                                                            entities: n.entities || [],
                                                         }));
                                                     setModal(EnrichmentRequestModal, {
                                                         notesList: selectedNoteObjects,

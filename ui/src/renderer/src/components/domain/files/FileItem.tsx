@@ -33,19 +33,18 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
     const { notify } = useNotif();
 
     const downloadFile = async () => {
-        if (file.bucketName && file.minioFileName) {
+        if (file.id) {
             let response = await execute(() =>
                 fileTransferApi.fileTransferDownloadRetrieve({
-                    bucketName: file.bucketName,
-                    minioFileName: file.minioFileName,
+                    fileId: file.id!
                 }),
             );
 
-            const { presigned } = response;
+            const { presignedUrl } = response;
             const link = document.createElement('a');
-            link.href = presigned;
+            link.href = presignedUrl;
 
-            const fileName = file.minioFileName.split('/').pop() || file.minioFileName;
+            const fileName = file.fileName!;
             link.download = fileName;
             document.body.appendChild(link);
 

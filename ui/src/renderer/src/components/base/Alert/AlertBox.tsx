@@ -200,13 +200,11 @@ export default function AlertBox({
                 </div>
             </div>
             {alert.button && (
-                <Button
+                <button
                     onClick={alert.button.onClick}
-                    variant='default'
-                    size='sm'
                 >
                     {alert.button.text}
-                </Button>
+                </button>
             )}
         </div>
     ) : null;

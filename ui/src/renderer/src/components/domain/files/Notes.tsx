@@ -98,14 +98,13 @@ export default function Notes() {
             fleetingNotesApi.fleetingNotesCreate({
                 fleetingNoteRequest: {
                     content: defaultContent,
-                    files: [],
                 },
             }),
         )
             .then((response) => {
                 navigate(`/notes/${response.id}`);
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     // Auto-update search when filters change
