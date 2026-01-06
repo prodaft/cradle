@@ -132,6 +132,7 @@ export default function FileInput({
                 // Step 1: Request presigned URL
                 const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve({
                     fileName: file.name,
+                    fileSize: file.size,
                 });
 
                 // Step 2: Upload file to presigned URL

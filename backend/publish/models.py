@@ -3,7 +3,13 @@ from django.db import models
 from logs.models import LoggableModelMixin
 from notes.models import Note
 from user.models import CradleUser
+from file_transfer.storage import ReportStorage
 from .managers import PublishedReportManager
+
+
+def report_upload_path(instance: "PublishedReport", filename: str) -> str:
+    """Generate upload path for report: {report_id}.{extension}"""
+    return f"{instance.id}.{instance.strategy.lower()}"
 
 
 # Existing strategy choices.
@@ -47,6 +53,14 @@ class PublishedReport(models.Model, LoggableModelMixin):
     )
 
     error_message = models.TextField(blank=True, null=True)
+
+    # Report file stored in S3
+    file: models.FileField = models.FileField(
+        upload_to=report_upload_path,
+        storage=ReportStorage,
+        null=True,
+        blank=True,
+    )
 
     objects = PublishedReportManager()
 

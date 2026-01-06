@@ -145,6 +145,7 @@ export interface IntelioDigestUploadFinalizeCreateRequest {
 
 export interface IntelioDigestUploadRetrieveRequest {
     fileName: string;
+    fileSize: number;
 }
 
 export interface MappingsKeysSchemaRequest {
@@ -1016,7 +1017,7 @@ export class IntelioApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generates a presigned URL for uploading a digest file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Generates a presigned URL for uploading a digest file. Checks user\'s upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
      * Initiate digest file upload
      */
     async intelioDigestUploadRetrieveRaw(requestParameters: IntelioDigestUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DigestUploadResponse>> {
@@ -1027,10 +1028,21 @@ export class IntelioApi extends runtime.BaseAPI {
             );
         }
 
+        if (requestParameters['fileSize'] == null) {
+            throw new runtime.RequiredError(
+                'fileSize',
+                'Required parameter "fileSize" was null or undefined when calling intelioDigestUploadRetrieve().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['fileName'] != null) {
             queryParameters['fileName'] = requestParameters['fileName'];
+        }
+
+        if (requestParameters['fileSize'] != null) {
+            queryParameters['fileSize'] = requestParameters['fileSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -1061,7 +1073,7 @@ export class IntelioApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generates a presigned URL for uploading a digest file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Generates a presigned URL for uploading a digest file. Checks user\'s upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
      * Initiate digest file upload
      */
     async intelioDigestUploadRetrieve(requestParameters: IntelioDigestUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DigestUploadResponse> {

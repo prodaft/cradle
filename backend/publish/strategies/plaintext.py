@@ -1,13 +1,10 @@
-from io import BytesIO
 from typing import List
 
-from file_transfer.models import FileReference
-from file_transfer.storage import ReportStorage
+from django.core.files.base import ContentFile
+
 from notes.models import Note
 from publish.models import PublishedReport, ReportStatus
 from publish.strategies.base import BasePublishStrategy
-
-from file_transfer.s3_utils import delete_object, put_bytes
 
 
 class PlaintextPublish(BasePublishStrategy):
@@ -26,11 +23,10 @@ class PlaintextPublish(BasePublishStrategy):
         return self._upload_text(text_content, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = ReportStorage.bucket_name
-        key = f"{report.id}.txt"
         try:
-            delete_object(bucket_name, key)
-            FileReference.objects.filter(report=report).delete()
+            # Delete file from S3 via FileField
+            if report.file:
+                report.file.delete(save=False)
         except Exception:
             report.error_message = "Failed to delete plaintext report."
             report.status = ReportStatus.ERROR
@@ -48,24 +44,17 @@ class PlaintextPublish(BasePublishStrategy):
         notes_text = separator.join(contents)
         return f"{title}\n\n{notes_text}"
 
-    def _upload_text(self, text: dict, report: PublishedReport) -> bool:
-        bucket_name = ReportStorage.bucket_name
-        content_type = "text/plain"
-        key = f"{report.id}.txt"
-
+    def _upload_text(self, text: str, report: PublishedReport) -> bool:
         try:
-            put_bytes(
-                bucket_name,
-                key,
-                body=text.encode("utf-8"),
-                content_type=content_type,
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=key,
-                file_name=key,
-                bucket_name=bucket_name,
-                report=report,
+            # Delete old file if exists
+            if report.file:
+                report.file.delete(save=False)
+
+            # Save plaintext content to FileField - Django handles S3 upload
+            report.file.save(
+                f"{report.id}.txt",
+                ContentFile(text.encode("utf-8")),
+                save=True
             )
         except Exception:
             report.error_message = "Failed to upload plaintext report."

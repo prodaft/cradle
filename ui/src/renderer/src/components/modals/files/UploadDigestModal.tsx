@@ -3,6 +3,7 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import { DigestSubclass } from '@/services/cradle/models/DigestSubclass';
+import { DigestUploadFinalizeCreateRequest } from '@/services/cradle/models/DigestUploadFinalizeCreateRequest';
 import type { Alert } from '@/types';
 import { uploadFile } from '@/utils/files';
 import AlertBox from '@components/base/Alert/AlertBox';
@@ -219,62 +220,56 @@ export default function UploadDigestModal({
             await execute(
                 async () => {
                     const file = values.files[0];
-                    const token = await getAccessToken();
 
                     // Step 1: Request presigned URL from backend
-                    const initiateUrl = `${basePath}/intelio/digest/upload/?fileName=${encodeURIComponent(file.name)}`;
-                    const initiateResp = await fetch(initiateUrl, {
-                        method: 'GET',
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                        },
+                    const initiateData = await intelioApi.intelioDigestUploadRetrieve({
+                        fileName: file.name,
+                        fileSize: file.size,
                     });
-                    if (!initiateResp.ok) {
-                        throw { response: initiateResp };
-                    }
-                    const initiateData = await initiateResp.json();
 
                     // Step 2: Upload file directly to presigned URL
-                    await uploadFile(initiateData.presigned_url, file);
+                    await uploadFile(initiateData.presignedUrl, file);
 
                     // Step 3: Finalize upload (creates digest record and triggers processing)
-                    const finalizeUrl = `${basePath}/intelio/digest/upload/${initiateData.upload_id}/finalize/`;
                     const entities = (values.associatedEntry || []).map((e) => e.value);
-                    const finalizeBody: any = {
+                    const finalizeRequest: DigestUploadFinalizeCreateRequest = {
                         title: values.title,
-                        digest_type: values.dataType!.value,
+                        digestType: values.dataType!.value,
+                        entities: entities.length > 0 ? entities : undefined,
                     };
-                    if (entities.length > 0) {
-                        finalizeBody.entities = entities;
-                    }
 
-                    const finalizeResp = await fetch(finalizeUrl, {
-                        method: 'POST',
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(finalizeBody),
+                    await intelioApi.intelioDigestUploadFinalizeCreate({
+                        uploadId: initiateData.uploadId,
+                        digestUploadFinalizeCreateRequest: finalizeRequest,
                     });
-                    if (!finalizeResp.ok) {
-                        throw { response: finalizeResp };
+
+                    setAlert({
+                        color: 'green',
+                        message: 'File uploaded successfully',
+                        show: true,
+                    });
+                    notify({ text: 'File uploaded successfully', type: "success" });
+
+                    if (onUpload) {
+                        onUpload();
                     }
-                    return await finalizeResp.json();
+
+                    // Close modal after successful upload
+                    setTimeout(() => {
+                        closeModal();
+                    }, 1500);
                 },
-                { successMessage: 'File uploaded successfully' },
+                {
+                    onError: (err: any) => {
+                        console.error('Upload error:', err);
+                        setAlert({
+                            color: 'red',
+                            message: `Upload failed: ${err.message || 'Unknown error'} `,
+                            show: true,
+                        });
+                    },
+                },
             );
-
-            resetForm();
-            if (onUpload) {
-                onUpload();
-            }
-
-            // Close modal after successful upload
-            setTimeout(() => {
-                closeModal();
-            }, 1000);
-        } catch (error) {
-            // Errors are handled by useAPICall's executor (notifications + parsing).
         } finally {
             setIsUploading(false);
         }

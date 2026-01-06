@@ -56,6 +56,7 @@ export interface FileTransferUploadFinalizeCreateRequest {
 
 export interface FileTransferUploadRetrieveRequest {
     fileName: string;
+    fileSize: number;
 }
 
 /**
@@ -271,7 +272,7 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generates a presigned URL for uploading a file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Generates a presigned URL for uploading a file. Checks user\'s upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
      * Initiate file upload
      */
     async fileTransferUploadRetrieveRaw(requestParameters: FileTransferUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FileUploadResponse>> {
@@ -282,10 +283,21 @@ export class FileTransferApi extends runtime.BaseAPI {
             );
         }
 
+        if (requestParameters['fileSize'] == null) {
+            throw new runtime.RequiredError(
+                'fileSize',
+                'Required parameter "fileSize" was null or undefined when calling fileTransferUploadRetrieve().'
+            );
+        }
+
         const queryParameters: any = {};
 
         if (requestParameters['fileName'] != null) {
             queryParameters['fileName'] = requestParameters['fileName'];
+        }
+
+        if (requestParameters['fileSize'] != null) {
+            queryParameters['fileSize'] = requestParameters['fileSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -312,7 +324,7 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generates a presigned URL for uploading a file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Generates a presigned URL for uploading a file. Checks user\'s upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
      * Initiate file upload
      */
     async fileTransferUploadRetrieve(requestParameters: FileTransferUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FileUploadResponse> {

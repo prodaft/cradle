@@ -1,17 +1,18 @@
 import logging
 import bleach
 from typing import List
+from io import BytesIO
 
+from django.core.files.base import ContentFile
 from django.template.loader import get_template
 
-from file_transfer.models import FileReference
-from file_transfer.storage import FileTransferStorage, ReportStorage
+from file_transfer.storage import FileTransferStorage
 from notes.models import Note
 from notes.markdown.to_html import markdown_to_html
 from entries.models import EntryClass
 from publish.models import PublishedReport, ReportStatus
 from .base import BasePublishStrategy
-from file_transfer.s3_utils import delete_object, fetch_bytes, put_bytes
+from file_transfer.s3_utils import fetch_bytes
 
 
 class HTMLPublish(BasePublishStrategy):
@@ -106,23 +107,13 @@ class HTMLPublish(BasePublishStrategy):
 
     def create_report(self, report: PublishedReport) -> bool:
         full_html = self._build_html(report.title, report.notes.all(), user=report.user)
-        bucket_name = ReportStorage.bucket_name
-        key = f"{report.id}.html"
-        content_type = "text/html"
 
         try:
-            put_bytes(
-                bucket_name,
-                key,
-                body=full_html.encode("utf-8"),
-                content_type=content_type,
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=key,
-                file_name=key,
-                bucket_name=bucket_name,
-                report=report,
+            # Save HTML content to FileField - Django handles S3 upload
+            report.file.save(
+                f"{report.id}.html",
+                ContentFile(full_html.encode("utf-8")),
+                save=True
             )
         except Exception as e:
             logging.exception(e)
@@ -134,24 +125,18 @@ class HTMLPublish(BasePublishStrategy):
         return True
 
     def edit_report(self, report: PublishedReport) -> bool:
-        bucket_name = ReportStorage.bucket_name
-        key = f"{report.id}.html"
         full_html = self._build_html(report.title, report.notes.all(), user=report.user)
-        content_type = "text/html"
 
         try:
-            put_bytes(
-                bucket_name,
-                key,
-                body=full_html.encode("utf-8"),
-                content_type=content_type,
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=key,
-                file_name=key,
-                bucket_name=bucket_name,
-                report=report,
+            # Delete old file if exists
+            if report.file:
+                report.file.delete(save=False)
+
+            # Save new HTML content to FileField
+            report.file.save(
+                f"{report.id}.html",
+                ContentFile(full_html.encode("utf-8")),
+                save=True
             )
         except Exception:
             report.error_message = "Failed to upload HTML report."
@@ -162,11 +147,10 @@ class HTMLPublish(BasePublishStrategy):
         return True
 
     def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = ReportStorage.bucket_name
-        key = f"{report.id}.html"
         try:
-            delete_object(bucket_name, key)
-            FileReference.objects.filter(report=report).delete()
+            # Delete file from S3 via FileField
+            if report.file:
+                report.file.delete(save=False)
         except Exception:
             report.error_message = "Failed to delete HTML report."
             report.status = ReportStatus.ERROR

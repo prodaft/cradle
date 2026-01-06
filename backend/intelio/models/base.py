@@ -20,13 +20,17 @@ from pydantic import ValidationError as PydanticValidationError
 from core.fields import BitStringField
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
-from file_transfer.s3_utils import download_to_path
 from file_transfer.storage import DigestStorage
 from user.models import CradleUser
 
 from ..enums import DigestStatus, EnrichmentStatus
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
+
+
+def digest_upload_path(instance: "BaseDigest", filename: str) -> str:
+    """Generate upload path for digest: {user_id}/{digest_id}"""
+    return f"{instance.user_id}/{instance.id}"
 
 
 class BaseDigest(LifecycleModel):
@@ -40,6 +44,14 @@ class BaseDigest(LifecycleModel):
     title: models.CharField = models.CharField(max_length=255, null=False, blank=False)
     user = models.ForeignKey(
         "user.CradleUser", on_delete=models.CASCADE, related_name="digests"
+    )
+
+    # Digest file stored in S3
+    file: models.FileField = models.FileField(
+        upload_to=digest_upload_path,
+        storage=DigestStorage,
+        null=True,
+        blank=True,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -135,8 +147,25 @@ class BaseDigest(LifecycleModel):
                 f"{cls.__name__} must define a class attribute 'name' as a string"
             )
 
+    @hook(AFTER_DELETE)
+    def delete_file(self):
+        self.id = self._initial_state.get_value(self, "id")
+
+        self.cleanup_local_file()
+
+    @hook(AFTER_UPDATE, when="status", has_changed=True)
+    def status_updated_cleanup_file(self):
+        """
+        Cleanup local digest file after reaching a terminal state.
+
+        This covers digests that do not call finalize() (e.g. FalconDigest chunks).
+        """
+        if self.status in [DigestStatus.DONE, DigestStatus.ERROR, DigestStatus.WARNING]:
+            self.cleanup_local_file()
+
     @property
     def path(self):
+        """Local cache path for digest file."""
         upload_dir = os.path.join(settings.MEDIA_ROOT, "digests", str(self.user.id))
         os.makedirs(upload_dir, exist_ok=True)
         fpath = os.path.join(upload_dir, str(self.id))
@@ -147,18 +176,27 @@ class BaseDigest(LifecycleModel):
         """
         Object key for this digest in the digests bucket.
 
-        We keep it deterministic so we don't need an extra DB field.
+        Returns the file.name if FileField is set, otherwise computes
+        deterministic key for backward compatibility.
         """
+        if self.file:
+            return self.file.name
         return f"{self.user_id}/{self.id}"
 
     def ensure_local_file(self) -> None:
         """
-        Ensure the digest file exists at self.path by fetching it from DigestStorage.
+        Ensure the digest file exists at self.path by fetching it from S3.
+
+        Downloads from FileField if available, otherwise uses legacy storage_key.
         """
         if os.path.exists(self.path) and os.path.getsize(self.path) > 0:
             return
 
-        download_to_path(DigestStorage.bucket_name, self.storage_key, self.path)
+        with self.file.open("rb") as source:
+            os.makedirs(os.path.dirname(self.path), exist_ok=True)
+            with open(self.path, "wb") as dest:
+                for chunk in source.chunks():
+                    dest.write(chunk)
 
     def cleanup_local_file(self) -> None:
         """Remove the local cached digest file (best-effort)."""
@@ -203,22 +241,6 @@ class BaseDigest(LifecycleModel):
 
         self.save(update_fields=["status"])
         self.cleanup_local_file()
-
-    @hook(AFTER_DELETE)
-    def delete_file(self):
-        self.id = self._initial_state.get_value(self, "id")
-
-        self.cleanup_local_file()
-
-    @hook(AFTER_UPDATE, when="status", has_changed=True)
-    def status_updated_cleanup_file(self):
-        """
-        Cleanup local digest file after reaching a terminal state.
-
-        This covers digests that do not call finalize() (e.g. FalconDigest chunks).
-        """
-        if self.status in [DigestStatus.DONE, DigestStatus.ERROR, DigestStatus.WARNING]:
-            self.cleanup_local_file()
 
     def _append_error(self, error):
         if error in self.errors:

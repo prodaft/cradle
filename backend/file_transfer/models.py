@@ -67,13 +67,6 @@ class FileReference(models.Model, LifecycleModelMixin):
         null=True,
         blank=True,
     )
-    report: models.ForeignKey = models.OneToOneField(
-        "publish.PublishedReport",
-        related_name="file",
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-    )
     digest: models.ForeignKey = models.ForeignKey(
         "intelio.BaseDigest",
         related_name="files",

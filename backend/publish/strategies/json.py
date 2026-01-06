@@ -2,14 +2,15 @@ import json
 from datetime import timedelta
 from typing import List
 
-from file_transfer.models import FileReference
-from file_transfer.storage import FileTransferStorage, ReportStorage
+from django.core.files.base import ContentFile
+
+from file_transfer.storage import FileTransferStorage
 from notes.models import Note
 from publish.models import PublishedReport, ReportStatus
 from publish.strategies.base import BasePublishStrategy
 
 from entries.serializers import EntryClassSerializer, EntryPublishSerializer
-from file_transfer.s3_utils import delete_object, presign_get, put_bytes
+from file_transfer.s3_utils import presign_get
 
 
 class JSONPublish(BasePublishStrategy):
@@ -28,11 +29,10 @@ class JSONPublish(BasePublishStrategy):
         return self._upload_report(content, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = ReportStorage.bucket_name
-        key = f"{report.id}.json"
         try:
-            delete_object(bucket_name, key)
-            FileReference.objects.filter(report=report).delete()
+            # Delete file from S3 via FileField
+            if report.file:
+                report.file.delete(save=False)
         except Exception:
             report.error_message = "Failed to delete JSON report."
             report.status = ReportStatus.ERROR
@@ -98,23 +98,17 @@ class JSONPublish(BasePublishStrategy):
 
     def _upload_report(self, content: dict, report: PublishedReport) -> bool:
         report_json = json.dumps(content)
-        bucket_name = ReportStorage.bucket_name
-        content_type = "application/json"
-        key = f"{report.id}.json"
 
         try:
-            put_bytes(
-                bucket_name,
-                key,
-                body=report_json.encode("utf-8"),
-                content_type=content_type,
-            )
-            FileReference.objects.filter(report=report).delete()
-            FileReference.objects.create(
-                minio_file_name=key,
-                file_name=key,
-                bucket_name=bucket_name,
-                report=report,
+            # Delete old file if exists
+            if report.file:
+                report.file.delete(save=False)
+
+            # Save JSON content to FileField - Django handles S3 upload
+            report.file.save(
+                f"{report.id}.json",
+                ContentFile(report_json.encode("utf-8")),
+                save=True
             )
         except Exception:
             report.error_message = "Failed to upload JSON report."

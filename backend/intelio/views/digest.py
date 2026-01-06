@@ -89,6 +89,9 @@ class DigestUploadCallbacks:
             user=pending_upload.user,
             **digest_data,
         )
+
+        # Set the file field to point to the already-uploaded object
+        digest.file.name = pending_upload.object_key
         digest.save()
 
         # Set entities if provided
@@ -445,8 +448,6 @@ class DigestAPIView(GenericAPIView):
 
     def post(self, request):
         """Create a new digest for the current user."""
-        from file_transfer.storage import DigestStorage
-
         data = request.data.copy()
 
         # Use the create serializer for validation
@@ -459,14 +460,15 @@ class DigestAPIView(GenericAPIView):
         digest_data["user"] = request.user  # Assign the current user
 
         digest = BaseDigest(**digest_data)
-        digest.save()
 
         file = request.FILES.get("file")
 
         if not file:
             raise MissingFileException(detail="Missing 'file' in request.")
 
-        DigestStorage().save(digest.storage_key, file)
+        # Assign file to FileField - Django handles storage automatically
+        digest.file = file
+        digest.save()
 
         transaction.on_commit(lambda: start_digest.delay(digest.id))
         return Response(self.get_serializer(digest).data, status=201)
