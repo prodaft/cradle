@@ -24,7 +24,7 @@ export async function parseMarkdown(
                 if (lang && Prism.languages[lang]) {
                     try {
                         return Prism.highlight(code, Prism.languages[lang], lang);
-                    } catch { }
+                    } catch {}
                 }
                 return '';
             },

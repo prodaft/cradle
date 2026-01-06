@@ -6,8 +6,10 @@
 import { forwardRef, ReactNode, SelectHTMLAttributes } from 'react';
 import { FieldError } from 'react-hook-form';
 
-export interface SettingsSelectProps
-    extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'name'> {
+export interface SettingsSelectProps extends Omit<
+    SelectHTMLAttributes<HTMLSelectElement>,
+    'name'
+> {
     /** Label text for the select */
     label: string;
     /** Description text displayed below the label */

@@ -4,14 +4,14 @@
 
 import { ReactNode } from 'react';
 import {
-    Tab,
-    PaneState,
-    LayoutNode,
-    PaneNode,
-    SplitNode,
-    PaneId,
     isPaneNode,
     isSplitNode,
+    LayoutNode,
+    PaneId,
+    PaneNode,
+    PaneState,
+    SplitNode,
+    Tab,
     WELCOME_PATH,
 } from './types';
 
@@ -79,17 +79,17 @@ const PATH_TITLES: Record<string, string> = {
 
 export function getTitleForPath(path: string): string {
     if (!path || path === '/') return 'Welcome';
-    
+
     // Check exact match first
     if (PATH_TITLES[path]) return PATH_TITLES[path];
-    
+
     // Check first segment
     const segments = path.split('/').filter(Boolean);
     if (segments.length === 0) return 'Welcome';
-    
+
     const firstSegment = segments[0];
     const baseTitle = PATH_TITLES[`/${firstSegment}`];
-    
+
     if (baseTitle) {
         // If there's an ID segment, show abbreviated version
         if (segments.length > 1 && segments[1] !== 'edit') {
@@ -99,18 +99,20 @@ export function getTitleForPath(path: string): string {
         }
         return baseTitle;
     }
-    
+
     // Fallback: capitalize first segment
-    return firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1).replace(/-/g, ' ');
+    return (
+        firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1).replace(/-/g, ' ')
+    );
 }
 
 export function getIconForPath(path: string): ReactNode {
     // Return icon name as string - will be rendered by TabItem
     if (!path || path === '/') return 'Home';
-    
+
     const segments = path.split('/').filter(Boolean);
     if (segments.length === 0) return 'Home';
-    
+
     const iconMap: Record<string, string> = {
         documents: 'PageFlip',
         files: 'Folder',
@@ -125,7 +127,7 @@ export function getIconForPath(path: string): ReactNode {
         settings: 'Settings',
         manage: 'Shield',
     };
-    
+
     return iconMap[segments[0]] || 'Page';
 }
 
@@ -154,11 +156,11 @@ export function shouldExcludeFromTabs(path: string): boolean {
  */
 export function findNode(root: LayoutNode, id: string): LayoutNode | null {
     if (root.id === id) return root;
-    
+
     if (isSplitNode(root)) {
         return findNode(root.children[0], id) || findNode(root.children[1], id);
     }
-    
+
     return null;
 }
 
@@ -169,14 +171,11 @@ export function getAllPaneIds(root: LayoutNode): PaneId[] {
     if (isPaneNode(root)) {
         return [root.id];
     }
-    
+
     if (isSplitNode(root)) {
-        return [
-            ...getAllPaneIds(root.children[0]),
-            ...getAllPaneIds(root.children[1]),
-        ];
+        return [...getAllPaneIds(root.children[0]), ...getAllPaneIds(root.children[1])];
     }
-    
+
     return [];
 }
 
@@ -193,21 +192,21 @@ export function findFirstPaneId(root: LayoutNode): PaneId {
  */
 export function removeNode(root: LayoutNode, targetId: string): LayoutNode | null {
     if (root.id === targetId) return null;
-    
+
     if (!isSplitNode(root)) return root;
-    
+
     const left = removeNode(root.children[0], targetId);
     const right = removeNode(root.children[1], targetId);
-    
+
     // Both children remain
     if (left && right) {
         return { ...root, children: [left, right] };
     }
-    
+
     // One child remains - collapse the split
     if (left) return left;
     if (right) return right;
-    
+
     // No children remain
     return null;
 }
@@ -218,7 +217,7 @@ export function removeNode(root: LayoutNode, targetId: string): LayoutNode | nul
 export function updateSizes(
     root: LayoutNode,
     containerId: string,
-    newSizes: [number, number]
+    newSizes: [number, number],
 ): LayoutNode {
     if (root.id === containerId && isSplitNode(root)) {
         // Normalize sizes to sum to 100
@@ -229,7 +228,7 @@ export function updateSizes(
         ];
         return { ...root, sizes: normalized };
     }
-    
+
     if (isSplitNode(root)) {
         return {
             ...root,
@@ -239,7 +238,7 @@ export function updateSizes(
             ],
         };
     }
-    
+
     return root;
 }
 
@@ -250,17 +249,17 @@ export function splitPaneInTree(
     root: LayoutNode,
     paneId: PaneId,
     orientation: 'horizontal' | 'vertical',
-    position: 'before' | 'after'
+    position: 'before' | 'after',
 ): { newRoot: LayoutNode; newPaneId: PaneId } | null {
     const newPaneId = generatePaneId();
     const newPane: PaneNode = { type: 'pane', id: newPaneId };
-    
+
     const result = splitNodeRecursive(root, paneId, orientation, position, newPane);
-    
+
     if (result) {
         return { newRoot: result, newPaneId };
     }
-    
+
     return null;
 }
 
@@ -269,14 +268,12 @@ function splitNodeRecursive(
     targetPaneId: PaneId,
     orientation: 'horizontal' | 'vertical',
     position: 'before' | 'after',
-    newPane: PaneNode
+    newPane: PaneNode,
 ): LayoutNode | null {
     if (isPaneNode(node) && node.id === targetPaneId) {
-        const children: [LayoutNode, LayoutNode] = 
-            position === 'before' 
-                ? [newPane, node] 
-                : [node, newPane];
-        
+        const children: [LayoutNode, LayoutNode] =
+            position === 'before' ? [newPane, node] : [node, newPane];
+
         const newSplit: SplitNode = {
             type: 'split',
             id: generateContainerId(),
@@ -284,22 +281,33 @@ function splitNodeRecursive(
             children,
             sizes: [50, 50],
         };
-        
+
         return newSplit;
     }
-    
+
     if (isSplitNode(node)) {
-        const left = splitNodeRecursive(node.children[0], targetPaneId, orientation, position, newPane);
+        const left = splitNodeRecursive(
+            node.children[0],
+            targetPaneId,
+            orientation,
+            position,
+            newPane,
+        );
         if (left) {
             return { ...node, children: [left, node.children[1]] };
         }
-        
-        const right = splitNodeRecursive(node.children[1], targetPaneId, orientation, position, newPane);
+
+        const right = splitNodeRecursive(
+            node.children[1],
+            targetPaneId,
+            orientation,
+            position,
+            newPane,
+        );
         if (right) {
             return { ...node, children: [node.children[0], right] };
         }
     }
-    
+
     return null;
 }
-

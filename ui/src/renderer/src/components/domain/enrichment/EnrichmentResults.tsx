@@ -11,7 +11,7 @@ import {
     EnrichmentRequestDetail,
     EnrichmentRequestDetailStatusEnum,
     EnrichmentRequestEnricher,
-    EntrySerializerMinimal
+    EntrySerializerMinimal,
 } from '@services/cradle/models';
 import {
     Calendar,
@@ -327,13 +327,21 @@ export default function EnrichmentResults(): JSX.Element {
     const errorMsg = () => {
         let msgs: string[] = [];
         if (enrichmentDetails?.ignored && enrichmentDetails.ignored.length > 0) {
-            msgs.push(`Ignored ${enrichmentDetails.ignored.length} artifact${enrichmentDetails.ignored.length > 1 ? 's' : ''}`);
+            msgs.push(
+                `Ignored ${enrichmentDetails.ignored.length} artifact${enrichmentDetails.ignored.length > 1 ? 's' : ''}`,
+            );
         }
-        let warn_count = enrichmentDetails?.enrichers?.filter((enricher) => enricher.status === 'warning').length || 0;
+        let warn_count =
+            enrichmentDetails?.enrichers?.filter(
+                (enricher) => enricher.status === 'warning',
+            ).length || 0;
         if (warn_count > 0) {
             msgs.push(`Warnings in ${warn_count} enricher${warn_count > 1 ? 's' : ''}`);
         }
-        let error_count = enrichmentDetails?.enrichers?.filter((enricher) => enricher.status === 'error').length || 0;
+        let error_count =
+            enrichmentDetails?.enrichers?.filter(
+                (enricher) => enricher.status === 'error',
+            ).length || 0;
         if (error_count > 0) {
             msgs.push(`Errors in ${error_count} enricher${error_count > 1 ? 's' : ''}`);
         }
@@ -342,7 +350,8 @@ export default function EnrichmentResults(): JSX.Element {
     };
 
     // Check if enricher has warnings or errors
-    const hasWarnings = enricherDetails?.warnings && enricherDetails.warnings.length > 0;
+    const hasWarnings =
+        enricherDetails?.warnings && enricherDetails.warnings.length > 0;
     const hasErrors = enricherDetails?.errors && enricherDetails.errors.length > 0;
 
     // Get ignored artifacts from enrichmentDetails (assuming it comes from 'ignored' field)
@@ -414,15 +423,18 @@ export default function EnrichmentResults(): JSX.Element {
                                     {ignoredArtifacts.length > 0 && (
                                         <>
                                             {/* Separator */}
-                                            {enrichmentDetails?.enrichers && enrichmentDetails.enrichers.length > 0 && (
-                                                <div className='h-px cradle-bg-elevated my-2' />
-                                            )}
+                                            {enrichmentDetails?.enrichers &&
+                                                enrichmentDetails.enrichers.length >
+                                                    0 && (
+                                                    <div className='h-px cradle-bg-elevated my-2' />
+                                                )}
 
                                             <div
-                                                className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${showIgnored
-                                                    ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
-                                                    : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
-                                                    }`}
+                                                className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
+                                                    showIgnored
+                                                        ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
+                                                        : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
+                                                }`}
                                                 onClick={handleIgnoredSelect}
                                             >
                                                 <EyeClosed
@@ -444,11 +456,18 @@ export default function EnrichmentResults(): JSX.Element {
                                     {enrichmentDetails?.enrichers?.map((enricher) => (
                                         <div
                                             key={enricher.enricherType}
-                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${selectedEnricher === enricher.enricherType && !showIgnored
-                                                ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
-                                                : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
-                                                }`}
-                                            onClick={() => handleEnricherSelect(enricher.enricherType!)}
+                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
+                                                selectedEnricher ===
+                                                    enricher.enricherType &&
+                                                !showIgnored
+                                                    ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
+                                                    : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
+                                            }`}
+                                            onClick={() =>
+                                                handleEnricherSelect(
+                                                    enricher.enricherType!,
+                                                )
+                                            }
                                         >
                                             {getEnricherStatusIcon(enricher.status!)}
                                             <span className='text-sm font-medium truncate text-cradle-text-primary'>
@@ -474,31 +493,39 @@ export default function EnrichmentResults(): JSX.Element {
                                             Ignored Artifacts
                                         </h2>
                                         <p className='text-xs text-cradle-text-muted mt-1'>
-                                            These artifacts were ignored because they could not be matched with any enrichment technique.
+                                            These artifacts were ignored because they
+                                            could not be matched with any enrichment
+                                            technique.
                                         </p>
                                     </div>
                                     <div className='flex-1 overflow-y-auto min-h-0'>
                                         <div className='divide-y divide-cradle-border-primary'>
-                                            {ignoredArtifacts.map((artifact: any, index: number) => (
-                                                <div
-                                                    key={index}
-                                                    className='px-4 py-3 flex items-center gap-3'
-                                                >
-                                                    {/* Entry class indicator */}
-                                                    {artifact.entry_class && (
-                                                        <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
-                                                            {artifact.entry_class}
-                                                        </span>
-                                                    )}
+                                            {ignoredArtifacts.map(
+                                                (artifact: any, index: number) => (
+                                                    <div
+                                                        key={index}
+                                                        className='px-4 py-3 flex items-center gap-3'
+                                                    >
+                                                        {/* Entry class indicator */}
+                                                        {artifact.entry_class && (
+                                                            <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
+                                                                {artifact.entry_class}
+                                                            </span>
+                                                        )}
 
-                                                    {/* Name */}
-                                                    <span className='flex-1 text-sm text-cradle-text-primary truncate'>
-                                                        {typeof artifact === 'string'
-                                                            ? artifact
-                                                            : artifact.name || JSON.stringify(artifact)}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                                        {/* Name */}
+                                                        <span className='flex-1 text-sm text-cradle-text-primary truncate'>
+                                                            {typeof artifact ===
+                                                            'string'
+                                                                ? artifact
+                                                                : artifact.name ||
+                                                                  JSON.stringify(
+                                                                      artifact,
+                                                                  )}
+                                                        </span>
+                                                    </div>
+                                                ),
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -534,10 +561,13 @@ export default function EnrichmentResults(): JSX.Element {
                                                             onChange={(e) =>
                                                                 setSearchInput({
                                                                     ...searchInput,
-                                                                    query: e.target.value,
+                                                                    query: e.target
+                                                                        .value,
                                                                 })
                                                             }
-                                                            onKeyDown={handleSearchKeyPress}
+                                                            onKeyDown={
+                                                                handleSearchKeyPress
+                                                            }
                                                         />
                                                         {searchInput.query && (
                                                             <button
@@ -572,10 +602,13 @@ export default function EnrichmentResults(): JSX.Element {
                                                             onChange={(e) =>
                                                                 setSearchInput({
                                                                     ...searchInput,
-                                                                    details: e.target.value,
+                                                                    details:
+                                                                        e.target.value,
                                                                 })
                                                             }
-                                                            onKeyDown={handleSearchKeyPress}
+                                                            onKeyDown={
+                                                                handleSearchKeyPress
+                                                            }
                                                         />
                                                         {searchInput.details && (
                                                             <button
@@ -602,12 +635,17 @@ export default function EnrichmentResults(): JSX.Element {
                                                     <button
                                                         className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg text-cradle-accent-primary'
                                                         onClick={handleDownloadResults}
-                                                        disabled={!results || results.length === 0}
+                                                        disabled={
+                                                            !results ||
+                                                            results.length === 0
+                                                        }
                                                         title='Download results as JSON'
                                                     >
-                                                        <Download width='18' height='18' />
+                                                        <Download
+                                                            width='18'
+                                                            height='18'
+                                                        />
                                                     </button>
-
 
                                                     {/* Pagination */}
                                                     <PaginationWrapper
@@ -641,43 +679,66 @@ export default function EnrichmentResults(): JSX.Element {
                                                     ) : (
                                                         <>
                                                             <div className='space-y-4 mb-4'>
-                                                                {results.map((result, index) => (
-                                                                    <div
-                                                                        key={result.id || index}
-                                                                        className='p-4 cradle-bg-elevated border cradle-border'
-                                                                    >
-                                                                        {/* Entry badges */}
-                                                                        {(result.e1 || result.e2) && (
-                                                                            <div className='flex flex-wrap gap-2 mb-3'>
-                                                                                {renderEntryBadge(result.e1)}
-                                                                                {renderEntryBadge(result.e2)}
-                                                                            </div>
-                                                                        )}
+                                                                {results.map(
+                                                                    (result, index) => (
+                                                                        <div
+                                                                            key={
+                                                                                result.id ||
+                                                                                index
+                                                                            }
+                                                                            className='p-4 cradle-bg-elevated border cradle-border'
+                                                                        >
+                                                                            {/* Entry badges */}
+                                                                            {(result.e1 ||
+                                                                                result.e2) && (
+                                                                                <div className='flex flex-wrap gap-2 mb-3'>
+                                                                                    {renderEntryBadge(
+                                                                                        result.e1,
+                                                                                    )}
+                                                                                    {renderEntryBadge(
+                                                                                        result.e2,
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
 
-                                                                        {/* Details JSON viewer */}
-                                                                        {result.details && (
-                                                                            <ReactJson
-                                                                                src={result.details}
-                                                                                theme='monokai'
-                                                                                collapsed={1}
-                                                                                displayDataTypes={false}
-                                                                                displayObjectSize={false}
-                                                                                enableClipboard={true}
-                                                                                style={{
-                                                                                    backgroundColor:
-                                                                                        'transparent',
-                                                                                    fontSize: '12px',
-                                                                                }}
-                                                                            />
-                                                                        )}
+                                                                            {/* Details JSON viewer */}
+                                                                            {result.details && (
+                                                                                <ReactJson
+                                                                                    src={
+                                                                                        result.details
+                                                                                    }
+                                                                                    theme='monokai'
+                                                                                    collapsed={
+                                                                                        1
+                                                                                    }
+                                                                                    displayDataTypes={
+                                                                                        false
+                                                                                    }
+                                                                                    displayObjectSize={
+                                                                                        false
+                                                                                    }
+                                                                                    enableClipboard={
+                                                                                        true
+                                                                                    }
+                                                                                    style={{
+                                                                                        backgroundColor:
+                                                                                            'transparent',
+                                                                                        fontSize:
+                                                                                            '12px',
+                                                                                    }}
+                                                                                />
+                                                                            )}
 
-                                                                        {!result.details && (
-                                                                            <p className='text-xs cradle-text-tertiary italic'>
-                                                                                No details available
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
+                                                                            {!result.details && (
+                                                                                <p className='text-xs cradle-text-tertiary italic'>
+                                                                                    No
+                                                                                    details
+                                                                                    available
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                    ),
+                                                                )}
                                                             </div>
                                                         </>
                                                     )}
@@ -689,7 +750,8 @@ export default function EnrichmentResults(): JSX.Element {
                                         <Tab title='Artifacts'>
                                             <div className='h-full flex flex-col overflow-hidden'>
                                                 {!enricherDetails?.artifacts ||
-                                                    enricherDetails.artifacts.length === 0 ? (
+                                                enricherDetails.artifacts.length ===
+                                                    0 ? (
                                                     <div className='flex flex-col items-center justify-center h-full'>
                                                         <p className='text-sm cradle-text-tertiary'>
                                                             No artifacts found.
@@ -699,7 +761,10 @@ export default function EnrichmentResults(): JSX.Element {
                                                     <div className='flex-1 overflow-y-auto min-h-0'>
                                                         <div className='divide-y divide-cradle-border-primary'>
                                                             {enricherDetails.artifacts.map(
-                                                                (artifact: any, index: number) => (
+                                                                (
+                                                                    artifact: any,
+                                                                    index: number,
+                                                                ) => (
                                                                     <div
                                                                         key={index}
                                                                         className='px-4 py-3 flex items-center gap-3'
@@ -707,15 +772,21 @@ export default function EnrichmentResults(): JSX.Element {
                                                                         {/* Entry class indicator */}
                                                                         {artifact.entry_class && (
                                                                             <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
-                                                                                {artifact.entry_class}
+                                                                                {
+                                                                                    artifact.entry_class
+                                                                                }
                                                                             </span>
                                                                         )}
 
                                                                         {/* Name */}
                                                                         <span className='flex-1 text-sm text-cradle-text-primary truncate'>
-                                                                            {typeof artifact === 'string'
+                                                                            {typeof artifact ===
+                                                                            'string'
                                                                                 ? artifact
-                                                                                : artifact.name || JSON.stringify(artifact)}
+                                                                                : artifact.name ||
+                                                                                  JSON.stringify(
+                                                                                      artifact,
+                                                                                  )}
                                                                         </span>
                                                                     </div>
                                                                 ),
@@ -732,7 +803,10 @@ export default function EnrichmentResults(): JSX.Element {
                                                 <div className='h-full overflow-y-auto'>
                                                     <div className='divide-y divide-cradle-border-primary'>
                                                         {enricherDetails!.warnings!.map(
-                                                            (warning: any, index: number) => (
+                                                            (
+                                                                warning: any,
+                                                                index: number,
+                                                            ) => (
                                                                 <div
                                                                     key={index}
                                                                     className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-amber-500'
@@ -743,9 +817,12 @@ export default function EnrichmentResults(): JSX.Element {
                                                                         height='16'
                                                                     />
                                                                     <span className='flex-1 text-sm text-cradle-text-primary'>
-                                                                        {typeof warning === 'string'
+                                                                        {typeof warning ===
+                                                                        'string'
                                                                             ? warning
-                                                                            : JSON.stringify(warning)}
+                                                                            : JSON.stringify(
+                                                                                  warning,
+                                                                              )}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -761,7 +838,10 @@ export default function EnrichmentResults(): JSX.Element {
                                                 <div className='h-full overflow-y-auto'>
                                                     <div className='divide-y divide-cradle-border-primary'>
                                                         {enricherDetails!.errors!.map(
-                                                            (error: any, index: number) => (
+                                                            (
+                                                                error: any,
+                                                                index: number,
+                                                            ) => (
                                                                 <div
                                                                     key={index}
                                                                     className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
@@ -772,9 +852,12 @@ export default function EnrichmentResults(): JSX.Element {
                                                                         height='16'
                                                                     />
                                                                     <span className='flex-1 text-sm text-cradle-text-primary'>
-                                                                        {typeof error === 'string'
+                                                                        {typeof error ===
+                                                                        'string'
                                                                             ? error
-                                                                            : JSON.stringify(error)}
+                                                                            : JSON.stringify(
+                                                                                  error,
+                                                                              )}
                                                                     </span>
                                                                 </div>
                                                             ),

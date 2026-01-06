@@ -6,8 +6,10 @@
 import { forwardRef, ReactNode, TextareaHTMLAttributes } from 'react';
 import { FieldError } from 'react-hook-form';
 
-export interface SettingsTextAreaProps
-    extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'name'> {
+export interface SettingsTextAreaProps extends Omit<
+    TextareaHTMLAttributes<HTMLTextAreaElement>,
+    'name'
+> {
     /** Label text for the field */
     label: string;
     /** Description text displayed below the label */

@@ -48,9 +48,9 @@ export default function FileUploadModal({
     const [fileData, setFileData] = useState<FileReference[]>([]);
 
     // When new files are uploaded via FileInput, add them to the files list
-    const handleFileDataChange: React.Dispatch<React.SetStateAction<FileReference[]>> = (
-        newFileDataOrUpdater,
-    ) => {
+    const handleFileDataChange: React.Dispatch<
+        React.SetStateAction<FileReference[]>
+    > = (newFileDataOrUpdater) => {
         const newFileData =
             typeof newFileDataOrUpdater === 'function'
                 ? newFileDataOrUpdater(fileData)

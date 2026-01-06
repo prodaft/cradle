@@ -14,7 +14,7 @@ import {
     Notes,
     PlusCircle,
     Search,
-    User
+    User,
 } from 'iconoir-react/regular';
 import { ReactNode, useEffect, useState } from 'react';
 
@@ -137,9 +137,7 @@ function RecentNotesCard({
                             <div className='space-y-1'>
                                 <div className='cradle-text-primary font-medium truncate'>
                                     {truncateText(
-                                        parseMarkdownInline(
-                                            note.title || 'Untitled',
-                                        ),
+                                        parseMarkdownInline(note.title || 'Untitled'),
                                         50,
                                     )}
                                 </div>
@@ -195,13 +193,17 @@ export default function Welcome() {
         const defaultContent =
             profile?.defaultNoteTemplate ||
             '# Untitled\n\nStart writing your note here...';
-        const response = await execute(() => fleetingNotesApi.fleetingNotesCreate({
-            fleetingNoteRequest: {
-                content: defaultContent,
+        const response = await execute(
+            () =>
+                fleetingNotesApi.fleetingNotesCreate({
+                    fleetingNoteRequest: {
+                        content: defaultContent,
+                    },
+                }),
+            {
+                errorMessage: 'Failed to create note',
             },
-        }), {
-            errorMessage: 'Failed to create note',
-        });
+        );
         navigate(`/notes/${response.id}`);
     };
 

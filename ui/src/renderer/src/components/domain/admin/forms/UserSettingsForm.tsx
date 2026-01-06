@@ -1,10 +1,10 @@
+import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
 import { SettingsCard, SettingsSeparator, SettingsToggle } from '../../../forms';
-import { useNotif } from '@/contexts/ui/NotificationContext';
 
 interface UserSettingsFormProps {
     onAdd?: () => void;

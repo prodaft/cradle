@@ -101,7 +101,11 @@ export default function FileInput({
         }
     }, [pendingFiles]);
 
-    const updateFileStatus = (index: number, status: FileUploadStatus, error?: string) => {
+    const updateFileStatus = (
+        index: number,
+        status: FileUploadStatus,
+        error?: string,
+    ) => {
         setFilesWithStatus((prev) =>
             prev.map((item, i) => (i === index ? { ...item, status, error } : item)),
         );
@@ -130,19 +134,22 @@ export default function FileInput({
 
             try {
                 // Step 1: Request presigned URL
-                const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve({
-                    fileName: file.name,
-                    fileSize: file.size,
-                });
+                const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve(
+                    {
+                        fileName: file.name,
+                        fileSize: file.size,
+                    },
+                );
 
                 // Step 2: Upload file to presigned URL
                 await uploadFile(uploadResponse.presignedUrl, file);
 
                 // Step 3: Finalize upload with backend
-                const finalizeResponse = await fileTransferApi.fileTransferUploadFinalizeCreate({
-                    uploadId: uploadResponse.uploadId,
-                    fileUploadFinalizeRequest: noteId ? { noteId } : undefined,
-                });
+                const finalizeResponse =
+                    await fileTransferApi.fileTransferUploadFinalizeCreate({
+                        uploadId: uploadResponse.uploadId,
+                        fileUploadFinalizeRequest: noteId ? { noteId } : undefined,
+                    });
 
                 // Mark as success
                 updateFileStatus(i, 'success');
@@ -155,7 +162,11 @@ export default function FileInput({
                 });
             } catch (err) {
                 console.error(`Failed to upload file ${file.name}:`, err);
-                updateFileStatus(i, 'error', err instanceof Error ? err.message : 'Upload failed');
+                updateFileStatus(
+                    i,
+                    'error',
+                    err instanceof Error ? err.message : 'Upload failed',
+                );
             }
         }
 
@@ -165,7 +176,9 @@ export default function FileInput({
         }
 
         // Check results
-        const successCount = filesWithStatus.filter((f) => f.status === 'success').length + succeededFileData.length;
+        const successCount =
+            filesWithStatus.filter((f) => f.status === 'success').length +
+            succeededFileData.length;
         const errorCount = filesWithStatus.filter((f) => f.status === 'error').length;
 
         if (errorCount === 0 && succeededFileData.length > 0) {
@@ -215,24 +228,24 @@ export default function FileInput({
         switch (status) {
             case 'uploading':
                 return (
-                    <div className="w-4 h-4 border-2 border-cradle-accent-primary border-t-transparent rounded-full animate-spin" />
+                    <div className='w-4 h-4 border-2 border-cradle-accent-primary border-t-transparent rounded-full animate-spin' />
                 );
             case 'success':
-                return <Check className="w-4 h-4 text-green-500" strokeWidth={2.5} />;
+                return <Check className='w-4 h-4 text-green-500' strokeWidth={2.5} />;
             case 'error':
-                return <Xmark className="w-4 h-4 text-red-500" strokeWidth={2.5} />;
+                return <Xmark className='w-4 h-4 text-red-500' strokeWidth={2.5} />;
             default:
-                return <div className="w-4 h-4" />; // Empty placeholder for pending
+                return <div className='w-4 h-4' />; // Empty placeholder for pending
         }
     };
 
     return (
-        <div className="space-y-3" onPaste={handlePaste}>
+        <div className='space-y-3' onPaste={handlePaste}>
             {/* File Input Row */}
-            <div className="flex flex-row gap-2 items-stretch">
+            <div className='flex flex-row gap-2 items-stretch'>
                 <input
-                    type="file"
-                    className="flex-1 text-sm text-cradle-text-primary cursor-pointer
+                    type='file'
+                    className='flex-1 text-sm text-cradle-text-primary cursor-pointer
                         border border-cradle-border-accent rounded-xl bg-cradle-bg-secondary/5 p-0
                         file:mr-4 file:py-2 file:px-4
                         file:rounded-l-[11px] file:rounded-r-none
@@ -241,7 +254,7 @@ export default function FileInput({
                         file:text-sm file:font-medium
                         file:cursor-pointer file:transition-colors
                         hover:file:bg-cradle-accent-primary/20
-                    "
+                    '
                     multiple
                     onChange={handleFileChange}
                     ref={inputRef}
@@ -254,41 +267,45 @@ export default function FileInput({
                     disabled={isUploading || pendingFiles.length === 0}
                 >
                     {isUploading ? (
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
                     ) : (
-                        <CloudUpload className="w-5 h-5" strokeWidth={2} />
+                        <CloudUpload className='w-5 h-5' strokeWidth={2} />
                     )}
                 </button>
             </div>
 
             {/* Files List with Status */}
             {filesWithStatus.length > 0 && (
-                <ul className="border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto">
+                <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
                     {filesWithStatus.map(({ file, status, error }, index) => (
                         <li
                             key={`${file.name}-${index}`}
-                            className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${status === 'error'
+                            className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${
+                                status === 'error'
                                     ? 'bg-red-500/5'
                                     : status === 'success'
-                                        ? 'bg-green-500/5'
-                                        : status === 'uploading'
-                                            ? 'bg-cradle-accent-primary/5'
-                                            : ''
-                                }`}
+                                      ? 'bg-green-500/5'
+                                      : status === 'uploading'
+                                        ? 'bg-cradle-accent-primary/5'
+                                        : ''
+                            }`}
                             title={error || undefined}
                         >
-                            <div className="flex-shrink-0">{renderStatusIcon(status)}</div>
+                            <div className='flex-shrink-0'>
+                                {renderStatusIcon(status)}
+                            </div>
                             <span
-                                className={`text-sm truncate flex-1 ${status === 'error'
+                                className={`text-sm truncate flex-1 ${
+                                    status === 'error'
                                         ? 'text-red-500'
                                         : status === 'success'
-                                            ? 'text-green-500'
-                                            : 'text-cradle-text-primary'
-                                    }`}
+                                          ? 'text-green-500'
+                                          : 'text-cradle-text-primary'
+                                }`}
                             >
                                 {file.name}
                             </span>
-                            <span className="text-xs text-cradle-text-tertiary flex-shrink-0">
+                            <span className='text-xs text-cradle-text-tertiary flex-shrink-0'>
                                 {(file.size / 1024).toFixed(1)} KB
                             </span>
                         </li>

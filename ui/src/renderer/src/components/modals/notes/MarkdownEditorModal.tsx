@@ -104,10 +104,7 @@ export default function MarkdownEditorModal({
 
             {/* Editor Section */}
             <div className='mb-6'>
-                <label
-                    htmlFor='markdown-content'
-                    className='cradle-label mb-2 block'
-                >
+                <label htmlFor='markdown-content' className='cradle-label mb-2 block'>
                     Content
                 </label>
                 <div className='border border-cradle-border-accent rounded-lg overflow-hidden w-full'>
@@ -119,7 +116,7 @@ export default function MarkdownEditorModal({
                         extensions={extensions}
                         placeholder='Write your markdown content here...'
                         className='w-full text-base'
-                        width="100%"
+                        width='100%'
                     />
                 </div>
             </div>

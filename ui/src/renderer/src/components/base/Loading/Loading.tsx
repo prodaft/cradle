@@ -16,12 +16,13 @@ interface LoadingProps {
 export default function Loading({ logo = false, text = null }): JSX.Element {
     return (
         <div className='flex flex-col items-center justify-center h-screen text-center'>
-            {logo || text && (
-                <div className='mb-8 w-[370px]'>
-                    {logo && <Logo text={true} />}
-                    {text && <span className='text-2xl font-bold'>{text}</span>}
-                </div>
-            )}
+            {logo ||
+                (text && (
+                    <div className='mb-8 w-[370px]'>
+                        {logo && <Logo text={true} />}
+                        {text && <span className='text-2xl font-bold'>{text}</span>}
+                    </div>
+                ))}
             <svg
                 className='spinner-ring spinner-primary spinner-xl dark:[--spinner-color:#ffffff]'
                 viewBox='25 25 50 50'

@@ -98,38 +98,39 @@ export default function ViewsDropdown({
                                     <Check width='16' height='16' />
                                 )}
                             </button>
-                            {!isFleeting && (<>
-                                <button
-                                    onClick={() => {
-                                        setShowViewsMenu(false);
-                                        setActiveView(ViewMode.GRAPH);
-                                    }}
-                                    className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
-                                    data-testid='graph-view-menu-item'
-                                >
-                                    <Graph width='16' height='16' />
-                                    <span className='flex-1'>Graph</span>
-                                    {activeView === ViewMode.GRAPH && (
-                                        <Check width='16' height='16' />
-                                    )}
-                                </button>
-                                {isAdmin && (
+                            {!isFleeting && (
+                                <>
                                     <button
                                         onClick={() => {
                                             setShowViewsMenu(false);
-                                            setActiveView(ViewMode.HISTORY);
+                                            setActiveView(ViewMode.GRAPH);
                                         }}
                                         className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
-                                        data-testid='history-view-menu-item'
+                                        data-testid='graph-view-menu-item'
                                     >
-                                        <ClockRotateRight width='16' height='16' />
-                                        <span className='flex-1'>History</span>
-                                        {activeView === ViewMode.HISTORY && (
+                                        <Graph width='16' height='16' />
+                                        <span className='flex-1'>Graph</span>
+                                        {activeView === ViewMode.GRAPH && (
                                             <Check width='16' height='16' />
                                         )}
                                     </button>
-                                )}
-                            </>
+                                    {isAdmin && (
+                                        <button
+                                            onClick={() => {
+                                                setShowViewsMenu(false);
+                                                setActiveView(ViewMode.HISTORY);
+                                            }}
+                                            className='w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center gap-2'
+                                            data-testid='history-view-menu-item'
+                                        >
+                                            <ClockRotateRight width='16' height='16' />
+                                            <span className='flex-1'>History</span>
+                                            {activeView === ViewMode.HISTORY && (
+                                                <Check width='16' height='16' />
+                                            )}
+                                        </button>
+                                    )}
+                                </>
                             )}
                             {hasFiles && (
                                 <button

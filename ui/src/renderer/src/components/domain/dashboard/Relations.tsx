@@ -148,8 +148,8 @@ export default function Relations({ obj }: RelationsProps) {
                     const filteredResults =
                         entrySubtypeFilters.length > 0
                             ? resultsWithDepth.filter((r) =>
-                                entrySubtypeFilters.includes(r.subtype),
-                            )
+                                  entrySubtypeFilters.includes(r.subtype),
+                              )
                             : resultsWithDepth;
                     setResults(filteredResults);
                 })
@@ -219,7 +219,7 @@ export default function Relations({ obj }: RelationsProps) {
             .then(() => {
                 setInaccessibleEntities([]); // Clear inaccessible entities after request
             })
-            .catch(() => { })
+            .catch(() => {})
             .finally(() => {
                 setIsRequestingAccess(false);
             });
@@ -231,9 +231,12 @@ export default function Relations({ obj }: RelationsProps) {
         let csvContent = '"type","name"\n';
 
         // Filter results based on selection if any are selected
-        const itemsToCopy = selectedIds.length > 0
-            ? results.filter(r => r.id !== undefined && selectedIds.includes(r.id))
-            : results;
+        const itemsToCopy =
+            selectedIds.length > 0
+                ? results.filter(
+                      (r) => r.id !== undefined && selectedIds.includes(r.id),
+                  )
+                : results;
 
         if (itemsToCopy.length > 0) {
             itemsToCopy.forEach((result) => {
@@ -249,7 +252,7 @@ export default function Relations({ obj }: RelationsProps) {
                 setIsCopied(true);
                 setTimeout(() => setIsCopied(false), 2000);
                 // Optional: clear selection after copy
-                // setSelectedIds([]); 
+                // setSelectedIds([]);
             })
             .catch((err) => {
                 console.error('Error copying CSV: ', err);
@@ -339,13 +342,21 @@ export default function Relations({ obj }: RelationsProps) {
                                 onClick={copyToCSV}
                                 disabled={selectedIds.length === 0}
                                 className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
+                                title={
+                                    selectedIds.length > 0
+                                        ? `Copy ${selectedIds.length} selected to CSV`
+                                        : 'Select items to copy'
+                                }
                             >
                                 {isCopied ? (
                                     <Check className='w-4 h-4 text-green-500' />
                                 ) : (
                                     <Copy
-                                        className={selectedIds.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                        className={
+                                            selectedIds.length > 0
+                                                ? 'text-[#FF8C00]'
+                                                : 'text-cradle-text-secondary'
+                                        }
                                         width={18}
                                         height={18}
                                     />
@@ -422,7 +433,6 @@ export default function Relations({ obj }: RelationsProps) {
                             </div>
                         )}
                     </div>
-
                 </div>
             </TableCard>
 

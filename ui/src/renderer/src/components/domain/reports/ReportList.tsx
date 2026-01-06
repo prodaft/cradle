@@ -8,15 +8,27 @@ import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { ReportList as ReportListModel } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBar,
+    CollapsibleActionGroup,
+} from '@components/base/ActionBar/ActionBar';
 import ListView, { SortDirection } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { Edit, Eye, InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    Edit,
+    Eye,
+    InfoCircleSolid,
+    PlusCircle,
+    RefreshCircle,
+    Trash,
+    WarningCircleSolid,
+    WarningTriangleSolid,
+} from 'iconoir-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface Column {
@@ -102,7 +114,7 @@ export default function ReportList() {
                 let filteredResults = response.results;
                 if (statusFilter && statusFilter !== 'all') {
                     filteredResults = response.results.filter(
-                        (report) => report.status === statusFilter
+                        (report) => report.status === statusFilter,
                     );
                 }
 
@@ -114,7 +126,16 @@ export default function ReportList() {
         } finally {
             setLoading(false);
         }
-    }, [report_id, page, sortField, sortDirection, pageSize, statusFilter, execute, reportsApi]);
+    }, [
+        report_id,
+        page,
+        sortField,
+        sortDirection,
+        pageSize,
+        statusFilter,
+        execute,
+        reportsApi,
+    ]);
 
     useEffect(() => {
         fetchReports();
@@ -191,21 +212,23 @@ export default function ReportList() {
         className?: string;
         sortable?: boolean;
     }> = [
-            {
-                key: 'status',
-                label: <StatusHeaderDropdown
+        {
+            key: 'status',
+            label: (
+                <StatusHeaderDropdown
                     onStatusChange={handleStatusChange}
                     status={statusFilter}
                     statusOptions={['all', 'done', 'working', 'error']}
-                />,
-                sortable: false
-            },
-            { key: 'title', label: 'Title', className: 'truncate font-medium' },
-            { key: 'strategy', label: 'Strategy', className: 'truncate w-24' },
-            { key: 'createdAt', label: 'Created At', className: 'w-36' },
-            { key: 'anonymized', label: 'Anonymized' },
-            { key: 'actions', label: '', sortable: false },
-        ];
+                />
+            ),
+            sortable: false,
+        },
+        { key: 'title', label: 'Title', className: 'truncate font-medium' },
+        { key: 'strategy', label: 'Strategy', className: 'truncate w-24' },
+        { key: 'createdAt', label: 'Created At', className: 'w-36' },
+        { key: 'anonymized', label: 'Anonymized' },
+        { key: 'actions', label: '', sortable: false },
+    ];
 
     const getStatusIcon = (status?: string, errorMessage?: string) => {
         if (!status) return null;
@@ -232,7 +255,13 @@ export default function ReportList() {
                         </svg>
                     );
                 case 'working':
-                    return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
+                    return (
+                        <InfoCircleSolid
+                            className='text-blue-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
                 case 'warning':
                     return (
                         <WarningTriangleSolid
@@ -255,11 +284,16 @@ export default function ReportList() {
         })();
 
         const tooltipContent = errorMessage || capitalizeString(status);
-        const tooltipColor = status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'primary';
+        const tooltipColor =
+            status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'primary';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
-                <Tooltip content={tooltipContent} color={tooltipColor} showArrow={false}>
+                <Tooltip
+                    content={tooltipContent}
+                    color={tooltipColor}
+                    showArrow={false}
+                >
                     <span className='inline-flex items-center align-middle flex-shrink-0'>
                         {icon}
                     </span>
@@ -278,10 +312,13 @@ export default function ReportList() {
 
     // Row Actions Button Component
     const RowActionsButton = ({ report }: { report: ReportListModel }) => {
-        const menuButtonClasses = 'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
+        const menuButtonClasses =
+            'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
 
         const handleView = async () => {
-            let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }));
+            let details = await execute(() =>
+                reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }),
+            );
             if (details.reportUrl) {
                 window.open(details.reportUrl, '_blank');
             } else {
@@ -342,28 +379,19 @@ export default function ReportList() {
         return (
             <TableActionsButton>
                 {report.status === 'done' && (
-                    <button
-                        onClick={handleView}
-                        className={menuButtonClasses}
-                    >
+                    <button onClick={handleView} className={menuButtonClasses}>
                         <Eye width='18' height='18' />
                         View Report
                     </button>
                 )}
                 {report.status !== 'working' && (
-                    <button
-                        onClick={handleEdit}
-                        className={menuButtonClasses}
-                    >
+                    <button onClick={handleEdit} className={menuButtonClasses}>
                         <Edit width='18' height='18' />
                         Edit Report
                     </button>
                 )}
                 {report.status === 'error' && (
-                    <button
-                        onClick={handleRetry}
-                        className={menuButtonClasses}
-                    >
+                    <button onClick={handleRetry} className={menuButtonClasses}>
                         <RefreshCircle width='18' height='18' />
                         Retry
                     </button>
@@ -460,18 +488,20 @@ export default function ReportList() {
                                         },
                                         {
                                             id: 'delete',
-                                            tooltip: selectedReports.length > 0
-                                                ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                                : 'Select reports to delete',
+                                            tooltip:
+                                                selectedReports.length > 0
+                                                    ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                                    : 'Select reports to delete',
                                             icon: <Trash width={20} height={20} />,
                                             onClick: () => {
                                                 if (selectedReports.length > 0) {
                                                     actions[0].handler(selectedReports);
                                                 }
                                             },
-                                            disabled: selectedReports.length === 0 || reports.length === 0,
+                                            disabled:
+                                                selectedReports.length === 0 ||
+                                                reports.length === 0,
                                             iconActive: selectedReports.length > 0,
-
                                         },
                                     ]}
                                 />
@@ -502,14 +532,9 @@ export default function ReportList() {
                         onPageSizeChange={(newSize) => {
                             setPageSize(newSize);
                             setPage(1);
-                            const newParams = new URLSearchParams(
-                                searchParams,
-                            );
+                            const newParams = new URLSearchParams(searchParams);
                             newParams.set('reports_page', '1');
-                            newParams.set(
-                                'reports_pagesize',
-                                String(newSize),
-                            );
+                            newParams.set('reports_pagesize', String(newSize));
                             setSearchParams(newParams, { replace: true });
                         }}
                         disabled={reports.length === 0}

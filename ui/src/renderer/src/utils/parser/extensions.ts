@@ -108,8 +108,9 @@ export function renderCradleLink(
         displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
 
-    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${date ? `data-timestamp="${date}"` : ''
-        } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
+    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
+        date ? `data-timestamp="${date}"` : ''
+    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
 // Match ![....][....] or [....][....]
@@ -150,7 +151,7 @@ let MinioCache: Record<string, FileDownload> = {};
 
 export function fetchMinioDownloadLink(
     fileTransferApi: FileTransferApi,
-    fileId: string
+    fileId: string,
 ): Promise<FileDownload> {
     if (!DownloadLinkPromiseCache[fileId]) {
         DownloadLinkPromiseCache[fileId] = fileTransferApi
@@ -158,8 +159,8 @@ export function fetchMinioDownloadLink(
             .then(({ presignedUrl, expiresIn }) => {
                 return {
                     presignedUrl,
-                    expiresIn: Date.now() + expiresIn
-                }
+                    expiresIn: Date.now() + expiresIn,
+                };
             });
     }
     return DownloadLinkPromiseCache[fileId];
@@ -190,17 +191,14 @@ export async function resolveMinioLinks(
             url.pathname === `${apiBasePath}/file-transfer/download/`
         ) {
             const params = new URLSearchParams(url.search);
-            const fileId = params.get('fileId')
+            const fileId = params.get('fileId');
             if (!fileId) return;
 
             let cached = MinioCache[fileId];
             let presigned: string | undefined = cached?.presignedUrl;
             let expiry: number | undefined = cached?.expiresIn;
             if (!presigned || Date.now() > (expiry || 0)) {
-                const result = await fetchMinioDownloadLink(
-                    fileTransferApi,
-                    fileId
-                );
+                const result = await fetchMinioDownloadLink(fileTransferApi, fileId);
                 presigned = result.presignedUrl;
                 expiry = result.expiresIn;
                 MinioCache[fileId] = result;

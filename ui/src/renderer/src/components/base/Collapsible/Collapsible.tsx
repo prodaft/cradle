@@ -67,8 +67,8 @@ export default function Collapsible({
                 </button>
                 {/* Extra button rendered only if both text and callback are provided */}
                 {buttonText && onButtonClick && (
-                    <button 
-                        onClick={onButtonClick} 
+                    <button
+                        onClick={onButtonClick}
                         className='text-xs px-2 py-1 rounded hover:bg-cradle-bg-elevated transition-colors'
                     >
                         {buttonText}

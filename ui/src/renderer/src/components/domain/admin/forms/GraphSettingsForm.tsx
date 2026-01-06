@@ -1,9 +1,15 @@
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
-import { useState } from 'react';
-import { FormAlert, FormAlertState, SettingsButton, SettingsCard, SettingsSeparator } from '../../../forms';
 import { Refresh, Server } from 'iconoir-react';
+import { useState } from 'react';
+import {
+    FormAlert,
+    FormAlertState,
+    SettingsButton,
+    SettingsCard,
+    SettingsSeparator,
+} from '../../../forms';
 
 export default function GraphSettingsForm() {
     const { managementApi } = useApi();

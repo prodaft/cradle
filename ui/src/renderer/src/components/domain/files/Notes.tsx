@@ -104,7 +104,7 @@ export default function Notes() {
             .then((response) => {
                 navigate(`/notes/${response.id}`);
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     // Auto-update search when filters change
@@ -174,7 +174,8 @@ export default function Notes() {
                 </div>
                 <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
                     <span className='font-semibold'>
-                        {notesCount.current === notesCount.total || (notesCount.current === 0 && notesCount.total === 0)
+                        {notesCount.current === notesCount.total ||
+                        (notesCount.current === 0 && notesCount.total === 0)
                             ? notesCount.total
                             : `${notesCount.current}/${notesCount.total}`}
                     </span>

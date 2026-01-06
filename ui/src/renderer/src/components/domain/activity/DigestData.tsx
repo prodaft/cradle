@@ -82,13 +82,13 @@ export default function DigestData() {
         createdAt: {
             from: searchParams.get('created_at_gte')
                 ? new Date(searchParams.get('created_at_gte')!)
-                    .toISOString()
-                    .split('T')[0]
+                      .toISOString()
+                      .split('T')[0]
                 : '',
             to: searchParams.get('created_at_lte')
                 ? new Date(searchParams.get('created_at_lte')!)
-                    .toISOString()
-                    .split('T')[0]
+                      .toISOString()
+                      .split('T')[0]
                 : '',
         },
     });
@@ -107,7 +107,15 @@ export default function DigestData() {
 
     useEffect(() => {
         fetchDigests();
-    }, [page, sortField, sortDirection, pageSize, columnFilters, submittedFilters, intelioApi]);
+    }, [
+        page,
+        sortField,
+        sortDirection,
+        pageSize,
+        columnFilters,
+        submittedFilters,
+        intelioApi,
+    ]);
 
     // Initialize filters from URL parameters
     useEffect(() => {
@@ -119,13 +127,13 @@ export default function DigestData() {
         const initialDateRange: DateRange = {
             startDate: searchParams.get('created_at_gte')
                 ? new Date(searchParams.get('created_at_gte')!)
-                    .toISOString()
-                    .split('T')[0]
+                      .toISOString()
+                      .split('T')[0]
                 : null,
             endDate: searchParams.get('created_at_lte')
                 ? new Date(searchParams.get('created_at_lte')!)
-                    .toISOString()
-                    .split('T')[0]
+                      .toISOString()
+                      .split('T')[0]
                 : null,
         };
 
@@ -147,54 +155,57 @@ export default function DigestData() {
         fetchDigests();
     }, []);
 
-    const updateSearchParams = useCallback((filters: SearchFilters, dateRangeValue: DateRange) => {
-        const newParams = new URLSearchParams(searchParamsRef.current);
+    const updateSearchParams = useCallback(
+        (filters: SearchFilters, dateRangeValue: DateRange) => {
+            const newParams = new URLSearchParams(searchParamsRef.current);
 
-        if (filters.title) {
-            newParams.set('title', filters.title);
-        } else {
-            newParams.delete('title');
-        }
+            if (filters.title) {
+                newParams.set('title', filters.title);
+            } else {
+                newParams.delete('title');
+            }
 
-        if (filters.author) {
-            newParams.set('author', filters.author);
-        } else {
-            newParams.delete('author');
-        }
+            if (filters.author) {
+                newParams.set('author', filters.author);
+            } else {
+                newParams.delete('author');
+            }
 
-        if (dateRangeValue.startDate) {
-            newParams.set(
-                'created_at_gte',
-                new Date(dateRangeValue.startDate).toISOString(),
-            );
-        } else {
-            newParams.delete('created_at_gte');
-        }
+            if (dateRangeValue.startDate) {
+                newParams.set(
+                    'created_at_gte',
+                    new Date(dateRangeValue.startDate).toISOString(),
+                );
+            } else {
+                newParams.delete('created_at_gte');
+            }
 
-        if (dateRangeValue.endDate) {
-            const endDate = new Date(dateRangeValue.endDate);
-            endDate.setHours(23, 59, 59, 999);
-            newParams.set('created_at_lte', endDate.toISOString());
-        } else {
-            newParams.delete('created_at_lte');
-        }
+            if (dateRangeValue.endDate) {
+                const endDate = new Date(dateRangeValue.endDate);
+                endDate.setHours(23, 59, 59, 999);
+                newParams.set('created_at_lte', endDate.toISOString());
+            } else {
+                newParams.delete('created_at_lte');
+            }
 
-        setSearchParams(newParams, { replace: true });
+            setSearchParams(newParams, { replace: true });
 
-        setSubmittedFilters({
-            ...filters,
-            created_at_gte: dateRangeValue.startDate
-                ? new Date(dateRangeValue.startDate).toISOString()
-                : '',
-            created_at_lte: dateRangeValue.endDate
-                ? (() => {
-                    const endDate = new Date(dateRangeValue.endDate);
-                    endDate.setHours(23, 59, 59, 999);
-                    return endDate.toISOString();
-                })()
-                : '',
-        });
-    }, [setSearchParams]);
+            setSubmittedFilters({
+                ...filters,
+                created_at_gte: dateRangeValue.startDate
+                    ? new Date(dateRangeValue.startDate).toISOString()
+                    : '',
+                created_at_lte: dateRangeValue.endDate
+                    ? (() => {
+                          const endDate = new Date(dateRangeValue.endDate);
+                          endDate.setHours(23, 59, 59, 999);
+                          return endDate.toISOString();
+                      })()
+                    : '',
+            });
+        },
+        [setSearchParams],
+    );
 
     const debouncedUpdateSearchParams = useMemo(
         () => debounce(updateSearchParams, 300),
@@ -210,10 +221,10 @@ export default function DigestData() {
             : '';
         const expectedCreatedAtLte = dateRange.endDate
             ? (() => {
-                const endDate = new Date(dateRange.endDate);
-                endDate.setHours(23, 59, 59, 999);
-                return endDate.toISOString();
-            })()
+                  const endDate = new Date(dateRange.endDate);
+                  endDate.setHours(23, 59, 59, 999);
+                  return endDate.toISOString();
+              })()
             : '';
 
         const matchesSubmitted =
@@ -242,7 +253,9 @@ export default function DigestData() {
         // If we're being called from ActionBarSearch (or other non-form submit), we may get a synthetic
         // event with a { target: { name, value } } shape. Prefer that value so submit doesn't depend
         // on any debounced/lagging state updates.
-        const target = (e as any).target as { name?: string; value?: string } | undefined;
+        const target = (e as any).target as
+            | { name?: string; value?: string }
+            | undefined;
         const hasOverride = Boolean(target?.name && typeof target?.value === 'string');
 
         const nextFilters = hasOverride
@@ -354,13 +367,14 @@ export default function DigestData() {
                         Browse & Manage Imported Data
                     </p>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
-                    <span className="font-semibold">
-                        {digests.length === totalCount || (digests.length === 0 && totalCount === 0)
+                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
+                    <span className='font-semibold'>
+                        {digests.length === totalCount ||
+                        (digests.length === 0 && totalCount === 0)
                             ? totalCount
                             : `${digests.length}/${totalCount}`}
                     </span>
-                    <span className="opacity-70">digests</span>
+                    <span className='opacity-70'>digests</span>
                 </div>
             </div>
 

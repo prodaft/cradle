@@ -6,7 +6,10 @@ import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
-import { referenceLinksPlugin, referenceLinkSyntax } from '@/utils/editor/referenceLinks';
+import {
+    referenceLinksPlugin,
+    referenceLinkSyntax,
+} from '@/utils/editor/referenceLinks';
 import { createCradleTheme } from '@/utils/editor/theme';
 import {
     acceptCompletion,
@@ -22,7 +25,11 @@ import {
 } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
 import { yamlFrontmatter } from '@codemirror/lang-yaml';
-import { HighlightStyle, indentOnInput, syntaxHighlighting } from '@codemirror/language';
+import {
+    HighlightStyle,
+    indentOnInput,
+    syntaxHighlighting,
+} from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
 import { EditorState, Extension, StateEffect, Transaction } from '@codemirror/state';
@@ -43,7 +50,7 @@ import {
     markdownTags,
     prosemarkBaseThemeSetup,
     prosemarkBasicSetup,
-    prosemarkMarkdownSyntaxExtensions
+    prosemarkMarkdownSyntaxExtensions,
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
@@ -96,12 +103,22 @@ const sourceModeSyntaxHighlighting = syntaxHighlighting(
         { tag: tags.comment, color: 'var(--pm-muted-color)' },
         { tag: markdownTags.escapeMark, color: 'var(--pm-muted-color)' },
         { tag: markdownTags.inlineCode, color: 'var(--pm-syntax-keyword)' },
-        { tag: markdownTags.linkURL, color: 'var(--pm-link-color)', textDecoration: 'underline' },
+        {
+            tag: markdownTags.linkURL,
+            color: 'var(--pm-link-color)',
+            textDecoration: 'underline',
+        },
         // Code block syntax highlighting
         { tag: tags.link, color: 'var(--pm-syntax-link)' },
         { tag: tags.keyword, color: 'var(--pm-syntax-keyword)' },
         {
-            tag: [tags.atom, tags.bool, tags.url, tags.contentSeparator, tags.labelName],
+            tag: [
+                tags.atom,
+                tags.bool,
+                tags.url,
+                tags.contentSeparator,
+                tags.labelName,
+            ],
             color: 'var(--pm-syntax-atom)',
         },
         { tag: [tags.literal, tags.inserted], color: 'var(--pm-syntax-literal)' },
@@ -110,17 +127,29 @@ const sourceModeSyntaxHighlighting = syntaxHighlighting(
             tag: [tags.regexp, tags.escape, tags.special(tags.string)],
             color: 'var(--pm-syntax-regexp)',
         },
-        { tag: tags.definition(tags.variableName), color: 'var(--pm-syntax-definition-variable)' },
-        { tag: tags.local(tags.variableName), color: 'var(--pm-syntax-local-variable)' },
-        { tag: [tags.typeName, tags.namespace], color: 'var(--pm-syntax-type-namespace)' },
+        {
+            tag: tags.definition(tags.variableName),
+            color: 'var(--pm-syntax-definition-variable)',
+        },
+        {
+            tag: tags.local(tags.variableName),
+            color: 'var(--pm-syntax-local-variable)',
+        },
+        {
+            tag: [tags.typeName, tags.namespace],
+            color: 'var(--pm-syntax-type-namespace)',
+        },
         { tag: tags.className, color: 'var(--pm-syntax-class-name)' },
         {
             tag: [tags.special(tags.variableName), tags.macroName],
             color: 'var(--pm-syntax-special-variable-macro)',
         },
-        { tag: tags.definition(tags.propertyName), color: 'var(--pm-syntax-definition-property)' },
+        {
+            tag: tags.definition(tags.propertyName),
+            color: 'var(--pm-syntax-definition-property)',
+        },
         { tag: tags.invalid, color: 'var(--pm-syntax-invalid)' },
-    ])
+    ]),
 );
 
 /**
@@ -159,7 +188,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
-        () => executor(fileTransferApi.fileTransferDownloadRetrieve.bind(fileTransferApi)),
+        () =>
+            executor(
+                fileTransferApi.fileTransferDownloadRetrieve.bind(fileTransferApi),
+            ),
         [executor, fileTransferApi],
     );
 
@@ -192,7 +224,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     // Theme uses CSS variables, so we only need to update when isDarkMode changes for the dark flag
     const cradleTheme = useMemo(() => createCradleTheme(isDarkMode), [isDarkMode]);
 
-    useImperativeHandle(ref, () => ({ get view() { return editorViewRef.current; } }), []);
+    useImperativeHandle(
+        ref,
+        () => ({
+            get view() {
+                return editorViewRef.current;
+            },
+        }),
+        [],
+    );
 
     useEffect(() => {
         markdownContentRef.current = markdownContent;
@@ -212,7 +252,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         const code = codeBlock.textContent || '';
                         const originalText = target.innerText;
                         target.innerText = 'Copied!';
-                        setTimeout(() => { target.innerText = originalText; }, 900);
+                        setTimeout(() => {
+                            target.innerText = originalText;
+                        }, 900);
                         navigator.clipboard.writeText(code);
                     }
                     return true;
@@ -277,7 +319,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         GFM,
                         editorUtils.extension(),
                         referenceLinkSyntax(referenceMappings || {}),
-                        ...(source ? [additionalMarkdownSyntaxTags] : [prosemarkMarkdownSyntaxExtensions]),
+                        ...(source
+                            ? [additionalMarkdownSyntaxTags]
+                            : [prosemarkMarkdownSyntaxExtensions]),
                     ],
                 }),
             }),
@@ -293,16 +337,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             }),
             ...(!source
                 ? [
-                    prosemarkBasicSetup(),
-                    prosemarkBaseThemeSetup(),
-                    htmlBlockExtension,
-                    codeBlockCopyExtension,
-                    clickLinkHandler.of((url: string) => {
-                        window.open(url, '_blank', 'noopener,noreferrer');
-                    }),
-                    // Syntax highlighting for both modes
-                    baseSyntaxHighlights,
-                ]
+                      prosemarkBasicSetup(),
+                      prosemarkBaseThemeSetup(),
+                      htmlBlockExtension,
+                      codeBlockCopyExtension,
+                      clickLinkHandler.of((url: string) => {
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                      }),
+                      // Syntax highlighting for both modes
+                      baseSyntaxHighlights,
+                  ]
                 : [sourceModeSyntaxHighlighting]),
             pasteHandler,
             Prec.high(cradleTheme),
@@ -316,12 +360,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             indentOnInput(),
             closeBrackets(),
             Prec.highest(
-                keymap.of([
-                    ...completionKeymap,
-                    { key: 'Tab', run: acceptCompletion },
-                ]),
+                keymap.of([...completionKeymap, { key: 'Tab', run: acceptCompletion }]),
             ),
-            keymap.of([indentWithTab, ...defaultKeymap, ...historyKeymap, ...searchKeymap]),
+            keymap.of([
+                indentWithTab,
+                ...defaultKeymap,
+                ...historyKeymap,
+                ...searchKeymap,
+            ]),
             EditorState.readOnly.of(!enableEditing),
             EditorView.editable.of(enableEditing),
             keymap.of([
@@ -365,7 +411,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 } catch (error) {
                     notify({
                         type: 'error',
-                        text: "Failed to save note. Please try again with Ctrl-S.",
+                        text: 'Failed to save note. Please try again with Ctrl-S.',
                     });
                     console.error('Failed to save note:', error);
                 }
@@ -423,7 +469,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                             }
                         }
                         if (tr.selection) {
-                            const line = tr.state.doc.lineAt(tr.state.selection.main.head).number;
+                            const line = tr.state.doc.lineAt(
+                                tr.state.selection.main.head,
+                            ).number;
                             setLineNumber(line);
                         }
                     },
@@ -473,12 +521,13 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             const labelMap: Record<string, string> = {
                 'match case': 'Match Case',
                 'by word': 'Match Whole Word',
-                'regexp': 'Use Regular Expression',
+                regexp: 'Use Regular Expression',
             };
 
             panel.querySelectorAll('label').forEach((label) => {
                 const textNode = Array.from(label.childNodes).find(
-                    (node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
+                    (node) =>
+                        node.nodeType === Node.TEXT_NODE && node.textContent?.trim(),
                 );
                 if (textNode) {
                     const newText = labelMap[textNode.textContent?.trim() || ''];
@@ -521,30 +570,40 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     );
 
     return (
-        <div className="h-full w-full flex flex-col overflow-hidden">
-            <div className="flex-1 min-h-0 relative">
+        <div className='h-full w-full flex flex-col overflow-hidden'>
+            <div className='flex-1 min-h-0 relative'>
                 <div
                     ref={editorRef}
-                    className="absolute inset-0 rich-editor markdown-body"
-                    role="textbox"
-                    aria-label="Rich text editor"
-                    aria-multiline="true"
+                    className='absolute inset-0 rich-editor markdown-body'
+                    role='textbox'
+                    aria-label='Rich text editor'
+                    aria-multiline='true'
                     tabIndex={0}
                     style={{ backgroundColor: 'transparent' }}
                 />
             </div>
             {fileData && fileData.length > 0 && (
-                <div className="flex-none max-h-[25%] rounded-md flex flex-col justify-end z-30">
+                <div className='flex-none max-h-[25%] rounded-md flex flex-col justify-end z-30'>
                     <div
-                        className="bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] hover:cursor-pointer flex flex-row space-x-2 border-b border-cradle-border-primary"
+                        className='bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] hover:cursor-pointer flex flex-row space-x-2 border-b border-cradle-border-primary'
                         onClick={toggleFileList}
                     >
                         <span>
-                            {showFileList ? <NavArrowDown width="20px" /> : <NavArrowUp width="20px" />}
+                            {showFileList ? (
+                                <NavArrowDown width='20px' />
+                            ) : (
+                                <NavArrowUp width='20px' />
+                            )}
                         </span>
-                        <span>{showFileList ? 'Hide Uploaded Files' : 'Show Uploaded Files'}</span>
+                        <span>
+                            {showFileList
+                                ? 'Hide Uploaded Files'
+                                : 'Show Uploaded Files'}
+                        </span>
                     </div>
-                    <div className={`overflow-auto h-full rounded-md ${showFileList && 'min-h-24'}`}>
+                    <div
+                        className={`overflow-auto h-full rounded-md ${showFileList && 'min-h-24'}`}
+                    >
                         {showFileList && (
                             <FileTable
                                 fileData={fileData}
@@ -559,11 +618,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             {/* File Upload Modal */}
             {showFileUploadModal && (
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+                    className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'
                     onClick={handleFileUploadModalClose}
                 >
                     <div
-                        className="bg-cradle-bg-primary rounded-lg shadow-xl p-6"
+                        className='bg-cradle-bg-primary rounded-lg shadow-xl p-6'
                         onClick={(e) => e.stopPropagation()}
                     >
                         <FileUploadModal

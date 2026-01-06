@@ -50,11 +50,21 @@ export default function GraphSettings({
                         <select
                             value={config.layoutMode}
                             onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-                                setConfig((prev) => ({ ...prev, layoutMode: e.target.value as LayoutMode }))
+                                setConfig((prev) => ({
+                                    ...prev,
+                                    layoutMode: e.target.value as LayoutMode,
+                                }))
                             }
                             className='cradle-input text-sm px-3 py-2 capitalize'
                         >
-                            {(['circular', 'grid', 'cluster', 'random'] as LayoutMode[]).map((mode) => (
+                            {(
+                                [
+                                    'circular',
+                                    'grid',
+                                    'cluster',
+                                    'random',
+                                ] as LayoutMode[]
+                            ).map((mode) => (
                                 <option key={mode} value={mode} className='capitalize'>
                                     {mode}
                                 </option>
@@ -83,9 +93,7 @@ export default function GraphSettings({
                     ].map(({ label, value, min, max, step, key }) => (
                         <div key={key} className='flex flex-col gap-2'>
                             <div className='flex items-center justify-between'>
-                                <label className='text-sm font-medium'>
-                                    {label}
-                                </label>
+                                <label className='text-sm font-medium'>{label}</label>
                                 <input
                                     type='number'
                                     min={min}

@@ -1,8 +1,14 @@
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
-import { useState } from 'react';
-import { FormAlert, FormAlertState, SettingsButton, SettingsCard, SettingsSeparator } from '../../../forms';
 import { Server, Trash } from 'iconoir-react';
+import { useState } from 'react';
+import {
+    FormAlert,
+    FormAlertState,
+    SettingsButton,
+    SettingsCard,
+    SettingsSeparator,
+} from '../../../forms';
 
 export default function EntriesManagement() {
     const { managementApi } = useApi();
@@ -81,7 +87,9 @@ export default function EntriesManagement() {
                             {alert.type && (
                                 <FormAlert
                                     alert={alert}
-                                    onDismiss={() => setAlert({ type: null, message: '' })}
+                                    onDismiss={() =>
+                                        setAlert({ type: null, message: '' })
+                                    }
                                 />
                             )}
                             <SettingsCard>

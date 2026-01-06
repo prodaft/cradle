@@ -61,7 +61,10 @@ export { default as SettingsTextArea } from './SettingsTextArea';
 export type { SettingsTextAreaProps } from './SettingsTextArea';
 
 export { default as SettingsRadio } from './SettingsRadio';
-export type { SettingsRadioProps, RadioOption as SettingsRadioOption } from './SettingsRadio';
+export type {
+    RadioOption as SettingsRadioOption,
+    SettingsRadioProps,
+} from './SettingsRadio';
 
 // Legacy components (kept for backwards compatibility)
 /** @deprecated Use FormInput instead */

@@ -170,7 +170,9 @@ export default function Activity({ log }: ActivityProps) {
         >
             {log.details && (
                 <div className='text-gray-700 dark:text-gray-300 text-sm'>
-                    <strong className='text-cradle-accent-primary text-sm'>Details:</strong>
+                    <strong className='text-cradle-accent-primary text-sm'>
+                        Details:
+                    </strong>
                     <div
                         className='mt-2'
                         dangerouslySetInnerHTML={{
@@ -181,7 +183,9 @@ export default function Activity({ log }: ActivityProps) {
             )}
             {log.srcLog && (
                 <div className='mt-3'>
-                    <strong className='text-cradle-accent-primary text-sm'>Caused by:</strong>
+                    <strong className='text-cradle-accent-primary text-sm'>
+                        Caused by:
+                    </strong>
                     <Activity log={log.src_log!} />
                 </div>
             )}

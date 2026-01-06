@@ -220,9 +220,7 @@ export default function EntityForm({
     };
 
     // Auto-fill name when subtype changes (for new entities)
-    const handleSubtypeChange = async (
-        subtype: SubtypeOption | null,
-    ) => {
+    const handleSubtypeChange = async (subtype: SubtypeOption | null) => {
         if (!isEdit && subtype) {
             try {
                 const response = await entriesApi.entriesNextNameRetrieve({
@@ -302,7 +300,9 @@ export default function EntityForm({
                                                     isDisabled={isEdit}
                                                     onChange={(newValue) => {
                                                         field.onChange(newValue);
-                                                        handleSubtypeChange(newValue as SubtypeOption | null);
+                                                        handleSubtypeChange(
+                                                            newValue as SubtypeOption | null,
+                                                        );
                                                     }}
                                                 />
                                             )}
@@ -338,7 +338,8 @@ export default function EntityForm({
                                             Aliases
                                         </label>
                                         <p className='text-sm cradle-text-muted mb-2'>
-                                            Alternate names or references for this entity
+                                            Alternate names or references for this
+                                            entity
                                         </p>
                                         <Controller
                                             name='aliases'
@@ -364,7 +365,10 @@ export default function EntityForm({
 
                         {/* Access Section (only in edit mode with accesses) */}
                         {isEdit && entity && accesses.length > 0 && (
-                            <section id='access' className='border-t border-white/5 pt-5 pb-8'>
+                            <section
+                                id='access'
+                                className='border-t border-white/5 pt-5 pb-8'
+                            >
                                 <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                     Access Control
                                 </h2>
@@ -397,7 +401,11 @@ export default function EntityForm({
                                 className='cradle-btn cradle-btn-primary px-6 rounded-lg'
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entity'}
+                                {isSubmitting
+                                    ? 'Saving...'
+                                    : isEdit
+                                      ? 'Save Changes'
+                                      : 'Create Entity'}
                             </button>
                         </div>
                     </form>

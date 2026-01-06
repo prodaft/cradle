@@ -36,7 +36,7 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
         if (file.id) {
             let response = await execute(() =>
                 fileTransferApi.fileTransferDownloadRetrieve({
-                    fileId: file.id!
+                    fileId: file.id!,
                 }),
             );
 

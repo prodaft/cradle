@@ -116,18 +116,20 @@ const Tooltip = ({
     return (
         <RadixTooltip.Root>
             <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
-            {usePortal && <RadixTooltip.Portal>
-                <RadixTooltip.Content
-                    side={side}
-                    align={align}
-                    sideOffset={sideOffset}
-                    className={`z-[99999] ${bgClass} ${textClass} ${sizeClass} rounded-lg shadow-lg ${className}`}
-                    style={{ whiteSpace: 'pre-line' }}
-                >
-                    {strippedContent}
-                    {showArrow && <RadixTooltip.Arrow className={fillClass} />}
-                </RadixTooltip.Content>
-            </RadixTooltip.Portal>}
+            {usePortal && (
+                <RadixTooltip.Portal>
+                    <RadixTooltip.Content
+                        side={side}
+                        align={align}
+                        sideOffset={sideOffset}
+                        className={`z-[99999] ${bgClass} ${textClass} ${sizeClass} rounded-lg shadow-lg ${className}`}
+                        style={{ whiteSpace: 'pre-line' }}
+                    >
+                        {strippedContent}
+                        {showArrow && <RadixTooltip.Arrow className={fillClass} />}
+                    </RadixTooltip.Content>
+                </RadixTooltip.Portal>
+            )}
         </RadixTooltip.Root>
     );
 };

@@ -64,18 +64,11 @@ const GraphLegend = ({
                 onButtonClick={toggleAll}
             >
                 <div className='flex flex-wrap gap-1'>
-                    {new SubtypeHierarchy(
-                        Object.keys(entryGraphColors),
-                    ).convert(
+                    {new SubtypeHierarchy(Object.keys(entryGraphColors)).convert(
                         // --- Render for internal nodes (categories that have child categories) ---
-                        (
-                            value: string,
-                            children: ReactNode,
-                            childValues: string[],
-                        ) => {
+                        (value: string, children: ReactNode, childValues: string[]) => {
                             const path =
-                                childValues.length > 0 &&
-                                childValues[0].includes('/')
+                                childValues.length > 0 && childValues[0].includes('/')
                                     ? childValues[0].substring(
                                           0,
                                           childValues[0].lastIndexOf('/') + 1,
@@ -104,7 +97,9 @@ const GraphLegend = ({
                                             onButtonClick={() =>
                                                 toggleAllAtPath(
                                                     path,
-                                                    leafNodes.map((ln) => ln.substring(path.length)),
+                                                    leafNodes.map((ln) =>
+                                                        ln.substring(path.length),
+                                                    ),
                                                 )
                                             }
                                         >
@@ -131,7 +126,10 @@ const GraphLegend = ({
                                 >
                                     <div
                                         className='w-2 h-2 rounded-full flex-shrink-0'
-                                        style={{ backgroundColor: entryGraphColors[fullSubtype] }}
+                                        style={{
+                                            backgroundColor:
+                                                entryGraphColors[fullSubtype],
+                                        }}
                                     />
                                     <span className='truncate'>{value}</span>
                                 </div>

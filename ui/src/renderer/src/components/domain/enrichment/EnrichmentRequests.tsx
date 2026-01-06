@@ -57,7 +57,9 @@ export default function EnrichmentRequests() {
         user: searchParams.get('user__username') || '',
     });
 
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(null);
+    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
+        null,
+    );
 
     // Column filters for table header
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
@@ -83,7 +85,8 @@ export default function EnrichmentRequests() {
 
             const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
             searchQueryParams.orderBy = orderBy;
-            searchQueryParams.status = columnFilters.status == "all" ? undefined : columnFilters.status;
+            searchQueryParams.status =
+                columnFilters.status == 'all' ? undefined : columnFilters.status;
 
             const response = await intelioApi.enrichmentRequestList(searchQueryParams);
             console.log('API response:', response);
@@ -257,7 +260,9 @@ export default function EnrichmentRequests() {
 
         // Retry all selected requests
         await Promise.all(
-            selectedRequests.map((id) => execute(() => intelioApi.enrichmentRestart({ id: id }))),
+            selectedRequests.map((id) =>
+                execute(() => intelioApi.enrichmentRestart({ id: id })),
+            ),
         );
 
         notify({
@@ -280,13 +285,14 @@ export default function EnrichmentRequests() {
                         Browse & Manage Enrichment Requests
                     </p>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
-                    <span className="font-semibold">
-                        {enrichmentRequests.length === totalCount || (enrichmentRequests.length === 0 && totalCount === 0)
+                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
+                    <span className='font-semibold'>
+                        {enrichmentRequests.length === totalCount ||
+                        (enrichmentRequests.length === 0 && totalCount === 0)
                             ? totalCount
                             : `${enrichmentRequests.length}/${totalCount}`}
                     </span>
-                    <span className="opacity-70">requests</span>
+                    <span className='opacity-70'>requests</span>
                 </div>
             </div>
 

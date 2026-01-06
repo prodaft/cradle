@@ -35,19 +35,19 @@ export default function MainLayout(): JSX.Element {
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         isResizing.current = true;
         e.preventDefault();
-        
+
         const handleMouseMove = (e: MouseEvent) => {
             if (!isResizing.current) return;
             const newWidth = window.innerWidth - e.clientX;
             setPanelWidth(Math.max(280, Math.min(600, newWidth)));
         };
-        
+
         const handleMouseUp = () => {
             isResizing.current = false;
             document.removeEventListener('mousemove', handleMouseMove);
             document.removeEventListener('mouseup', handleMouseUp);
         };
-        
+
         document.addEventListener('mousemove', handleMouseMove);
         document.addEventListener('mouseup', handleMouseUp);
     }, []);
@@ -95,27 +95,29 @@ export default function MainLayout(): JSX.Element {
                 {showNotifications && (
                     <>
                         {/* Dark backdrop */}
-                        <div 
+                        <div
                             className='absolute inset-0 bg-black/50 z-40'
                             onClick={() => setShowNotifications(false)}
                         />
-                        
+
                         {/* Panel */}
-                        <div 
+                        <div
                             className='absolute right-0 top-0 h-full z-50 flex'
                             style={{ width: panelWidth }}
                         >
                             {/* Resize handle */}
-                            <div 
+                            <div
                                 className='w-[3px] h-full bg-zinc-600 hover:bg-[#FF8C00] cursor-col-resize transition-colors flex-shrink-0'
                                 onMouseDown={handleMouseDown}
                             />
-                            
+
                             {/* Panel content */}
                             <div className='flex-1 h-full cradle-bg-elevated overflow-hidden'>
                                 <NotificationsPanel
                                     unreadNotificationsCount={unreadNotificationsCount}
-                                    setUnreadNotificationsCount={setUnreadNotificationsCount}
+                                    setUnreadNotificationsCount={
+                                        setUnreadNotificationsCount
+                                    }
                                 />
                             </div>
                         </div>

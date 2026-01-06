@@ -91,7 +91,9 @@ export default function Card({
         >
             {/* Badge on top right */}
             {badge && (
-                <div className={`absolute top-2 right-2 cradle-status cradle-status-info ${badgeClass}`}>
+                <div
+                    className={`absolute top-2 right-2 cradle-status cradle-status-info ${badgeClass}`}
+                >
                     {badge}
                 </div>
             )}
@@ -102,7 +104,11 @@ export default function Card({
                     className={`cradle-card-header ${details || children ? 'mb-2 border-b-1' : ''}`}
                 >
                     <h2 className='cradle-card-title mx-2 px-1 break-all'>
-                        {prefix && <span className='text-cradle-text-muted mr-2'>{prefix}</span>}
+                        {prefix && (
+                            <span className='text-cradle-text-muted mr-2'>
+                                {prefix}
+                            </span>
+                        )}
                         <span>{title}</span>
                     </h2>
 
@@ -154,7 +160,9 @@ export default function Card({
                 <div className='text-cradle-text-secondary text-sm space-y-1 mx-2 p-2'>
                     {Object.entries(details).map(([key, value]) => (
                         <div key={key} className='items-start gap-2'>
-                            <strong className='text-cradle-accent-primary mr-1'>{key}:</strong>
+                            <strong className='text-cradle-accent-primary mr-1'>
+                                {key}:
+                            </strong>
                             {value}
                         </div>
                     ))}
@@ -162,7 +170,11 @@ export default function Card({
             )}
 
             {/* Children content */}
-            {children && <div className={details ? 'mt-3 cradle-card-body' : 'cradle-card-body'}>{children}</div>}
+            {children && (
+                <div className={details ? 'mt-3 cradle-card-body' : 'cradle-card-body'}>
+                    {children}
+                </div>
+            )}
 
             {/* Slug at bottom left */}
             {slug && (

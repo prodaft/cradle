@@ -81,7 +81,7 @@ export async function parseAPIError(error: any): Promise<ParsedAPIError> {
                 isValidationError: false,
                 fieldErrors: {},
                 raw: error,
-            }
+            };
         }
     }
 

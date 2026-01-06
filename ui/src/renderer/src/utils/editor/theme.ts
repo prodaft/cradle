@@ -107,4 +107,3 @@ export function createCradleTheme(isDarkMode: boolean) {
         { dark: isDarkMode },
     );
 }
-

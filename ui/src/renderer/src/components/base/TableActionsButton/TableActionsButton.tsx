@@ -13,7 +13,7 @@ interface TableActionsButtonProps {
 
 /**
  * Reusable table row actions button with dropdown menu
- * 
+ *
  * @example
  * ```tsx
  * <TableActionsButton>
@@ -29,7 +29,10 @@ export default function TableActionsButton({
     stopPropagation = true,
 }: TableActionsButtonProps) {
     const [isOpen, setIsOpen] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+    const [dropdownPosition, setDropdownPosition] = useState<{
+        top: number;
+        right: number;
+    } | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -59,11 +62,14 @@ export default function TableActionsButton({
             // Set initial position to render dropdown off-screen for measurement
             const buttonRect = buttonRef.current.getBoundingClientRect();
             const viewportWidth = window.innerWidth;
-            setDropdownPosition({ top: -9999, right: viewportWidth - buttonRect.right });
+            setDropdownPosition({
+                top: -9999,
+                right: viewportWidth - buttonRect.right,
+            });
 
             const updatePosition = () => {
                 if (!buttonRef.current || !dropdownRef.current) return;
-                
+
                 const buttonRect = buttonRef.current.getBoundingClientRect();
                 const dropdownRect = dropdownRef.current.getBoundingClientRect();
                 const viewportHeight = window.innerHeight;
@@ -76,7 +82,10 @@ export default function TableActionsButton({
                 let top: number;
                 const right = viewportWidth - buttonRect.right;
 
-                if (spaceBelow < dropdownHeight + 8 && spaceAbove > dropdownHeight + 8) {
+                if (
+                    spaceBelow < dropdownHeight + 8 &&
+                    spaceAbove > dropdownHeight + 8
+                ) {
                     // Position above - bottom of dropdown at top of button minus margin
                     top = buttonRect.top - dropdownHeight - 8; // 8px margin (mb-2)
                 } else {
@@ -106,7 +115,11 @@ export default function TableActionsButton({
     };
 
     return (
-        <div className={`relative ${className}`} ref={dropdownRef} onClick={(e) => stopPropagation && e.stopPropagation()}>
+        <div
+            className={`relative ${className}`}
+            ref={dropdownRef}
+            onClick={(e) => stopPropagation && e.stopPropagation()}
+        >
             <button
                 ref={buttonRef}
                 type='button'
@@ -149,9 +162,7 @@ export default function TableActionsButton({
                         }}
                         onClick={(e) => stopPropagation && e.stopPropagation()}
                     >
-                        <div role='menu'>
-                            {children}
-                        </div>
+                        <div role='menu'>{children}</div>
                     </div>
                 </>
             )}

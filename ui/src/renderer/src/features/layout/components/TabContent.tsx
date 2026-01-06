@@ -2,12 +2,12 @@
  * TabContent - Renders tab content into a portal for persistence
  */
 
-import { Suspense, useMemo, createContext, useContext, ReactNode } from 'react';
+import { createContext, Suspense, useContext, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { matchPath } from 'react-router-dom';
-import { Tab, PaneId } from '../types';
-import { useTabPortalHost } from '../TabPortalHost';
 import { useLayout } from '../LayoutContext';
+import { useTabPortalHost } from '../TabPortalHost';
+import { PaneId, Tab } from '../types';
 
 // ============================================================================
 // Tab Context - Provides tab info to rendered components
@@ -65,16 +65,16 @@ export function TabContent({ tab, paneId, isActive, isPaneActive }: TabContentPr
     const { getContainer } = useTabPortalHost();
     const { navigate } = useLayout();
     const routes = useRouteConfigs();
-    
+
     // Get container for this tab
     const container = useMemo(() => getContainer(tab.id), [tab.id, getContainer]);
-    
+
     // Resolve component from path
     const resolved = useMemo(() => {
         for (const route of routes) {
             const match = matchPath(
                 { path: route.path, end: route.exact !== false },
-                tab.path
+                tab.path,
             );
             if (match) {
                 return {
@@ -85,27 +85,30 @@ export function TabContent({ tab, paneId, isActive, isPaneActive }: TabContentPr
         }
         return { Component: null, params: {} };
     }, [routes, tab.path]);
-    
+
     // Create tab context value
-    const contextValue = useMemo<TabContextValue>(() => ({
-        tabId: tab.id,
-        paneId,
-        path: tab.path,
-        params: resolved.params,
-        isActive,
-        isPaneActive,
-        navigate: (path: string) => {
-            if (isActive && isPaneActive) {
-                navigate(path);
-            }
-        },
-    }), [tab.id, tab.path, paneId, resolved.params, isActive, isPaneActive, navigate]);
-    
+    const contextValue = useMemo<TabContextValue>(
+        () => ({
+            tabId: tab.id,
+            paneId,
+            path: tab.path,
+            params: resolved.params,
+            isActive,
+            isPaneActive,
+            navigate: (path: string) => {
+                if (isActive && isPaneActive) {
+                    navigate(path);
+                }
+            },
+        }),
+        [tab.id, tab.path, paneId, resolved.params, isActive, isPaneActive, navigate],
+    );
+
     // Don't render if no component found
     if (!resolved.Component) {
         return null;
     }
-    
+
     // Render into portal
     const element = (
         <div
@@ -113,13 +116,19 @@ export function TabContent({ tab, paneId, isActive, isPaneActive }: TabContentPr
             style={{ width: '100%', height: '100%', position: 'relative' }}
         >
             <TabContext.Provider value={contextValue}>
-                <Suspense fallback={<div className="flex items-center justify-center h-full">Loading...</div>}>
+                <Suspense
+                    fallback={
+                        <div className='flex items-center justify-center h-full'>
+                            Loading...
+                        </div>
+                    }
+                >
                     <resolved.Component key={tab.id} />
                 </Suspense>
             </TabContext.Provider>
         </div>
     );
-    
+
     return createPortal(element, container);
 }
 
@@ -134,9 +143,14 @@ interface TabContentMountProps {
     isPaneActive: boolean;
 }
 
-export function TabContentMount({ tab, paneId, isActive, isPaneActive }: TabContentMountProps) {
+export function TabContentMount({
+    tab,
+    paneId,
+    isActive,
+    isPaneActive,
+}: TabContentMountProps) {
     const { attach } = useTabPortalHost();
-    
+
     return (
         <>
             {/* Mount point for portal attachment */}
@@ -146,14 +160,14 @@ export function TabContentMount({ tab, paneId, isActive, isPaneActive }: TabCont
                         requestAnimationFrame(() => attach(tab.id, el));
                     }
                 }}
-                className="absolute inset-0"
+                className='absolute inset-0'
                 style={{
                     opacity: isActive ? 1 : 0,
                     pointerEvents: isActive ? 'auto' : 'none',
                     zIndex: isActive ? 1 : 0,
                 }}
             />
-            
+
             {/* Render the actual content into portal */}
             <TabContent
                 tab={tab}
@@ -164,4 +178,3 @@ export function TabContentMount({ tab, paneId, isActive, isPaneActive }: TabCont
         </>
     );
 }
-

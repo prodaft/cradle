@@ -25,7 +25,16 @@ const Datepicker = ({
 }: DatepickerProps) => {
     const CustomInput = forwardRef<HTMLInputElement, any>(
         (
-            { value, onClick, onChange, onBlur, onFocus, onKeyDown, className, placeholder },
+            {
+                value,
+                onClick,
+                onChange,
+                onBlur,
+                onFocus,
+                onKeyDown,
+                className,
+                placeholder,
+            },
             ref,
         ) => (
             <div className='relative flex items-center'>

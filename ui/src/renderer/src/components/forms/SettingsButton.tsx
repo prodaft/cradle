@@ -5,8 +5,7 @@
 
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 
-export interface SettingsButtonProps
-    extends ButtonHTMLAttributes<HTMLButtonElement> {
+export interface SettingsButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /** Label text for the button row */
     label: string;
     /** Description text displayed below the label */
@@ -53,8 +52,7 @@ export default function SettingsButton({
     const variantClasses = {
         default:
             'rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary',
-        danger:
-            'rounded-lg border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors',
+        danger: 'rounded-lg border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors',
     };
 
     return (

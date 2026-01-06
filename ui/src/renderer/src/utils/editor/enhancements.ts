@@ -908,12 +908,24 @@ export class CradleEditor {
         return [filteredChanges.length, formattedText];
     }
 
-    async artifactsAndEntries(editor: any, start: number, end: number): Promise<{ artifacts: Array<{ type: string; value: string }>, entities: Array<{ type: string; value: string }> }> {
+    async artifactsAndEntries(
+        editor: any,
+        start: number,
+        end: number,
+    ): Promise<{
+        artifacts: Array<{ type: string; value: string }>;
+        entities: Array<{ type: string; value: string }>;
+    }> {
         await this.ready();
         if (!this.entryClasses) return { artifacts: [], entities: [] };
 
         const text: string = editor.state.doc.toString();
-        const entries: Array<{ type: string; value: string, from: number, to: number }> = [];
+        const entries: Array<{
+            type: string;
+            value: string;
+            from: number;
+            to: number;
+        }> = [];
         const tree = syntaxTree(editor.state);
 
         // First, add timestamps to existing cradle links that don't have them
@@ -930,7 +942,12 @@ export class CradleEditor {
                     let type = text.slice(typeNode[0].from, typeNode[0].to);
                     let value = text.slice(valueNode[0].from, valueNode[0].to);
 
-                    entries.push({ type, value, from: typeNode[0].from, to: valueNode[0].to });
+                    entries.push({
+                        type,
+                        value,
+                        from: typeNode[0].from,
+                        to: valueNode[0].to,
+                    });
                     return true;
                 }
             },

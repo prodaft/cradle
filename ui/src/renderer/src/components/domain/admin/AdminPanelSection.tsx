@@ -40,11 +40,11 @@ export default function AdminPanelSection({
     // Sort the filtered children based on their key property
     const sortedFilteredChildren = filteredChildren
         ? filteredChildren.sort((a, b) => {
-            // Convert keys to strings to ensure proper lexicographical comparison
-            const aKey = a.key?.toString() || '';
-            const bKey = b.key?.toString() || '';
-            return naturalSort(aKey, bKey);
-        })
+              // Convert keys to strings to ensure proper lexicographical comparison
+              const aKey = a.key?.toString() || '';
+              const bKey = b.key?.toString() || '';
+              return naturalSort(aKey, bKey);
+          })
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>

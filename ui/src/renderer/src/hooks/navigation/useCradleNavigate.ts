@@ -73,11 +73,11 @@ const useCradleNavigate = () => {
         nativeNavigate: navigate,
         navigateLink:
             (to: string | { pathname: string }, options: NavigateOptions = {}) =>
-                (e: React.MouseEvent) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    smartNavigate(to, { event: e, ...options });
-                },
+            (e: React.MouseEvent) => {
+                e.stopPropagation();
+                e.preventDefault();
+                smartNavigate(to, { event: e, ...options });
+            },
     };
 };
 

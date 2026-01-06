@@ -1,4 +1,3 @@
-import vimIcon from '@/assets/vim32x32.gif';
 import ApiKeyGenerateModal from '@/components/modals/auth/ApiKeyGenerateModal';
 import ChangePasswordModal from '@/components/modals/auth/ChangePasswordModal';
 import TwoFactorSetupModal from '@/components/modals/auth/TwoFactorSetupModal';
@@ -12,19 +11,31 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { UserCreateRequestThemeEnum, UserRetrieve, UserUpdateRequest, UserUpdateRequestRoleEnum } from '@/services/cradle/models';
+import {
+    UserCreateRequestThemeEnum,
+    UserRetrieve,
+    UserUpdateRequest,
+    UserUpdateRequestRoleEnum,
+} from '@/services/cradle/models';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
-import { SettingsButton, SettingsCard, SettingsField, SettingsSelect, SettingsSeparator, SettingsToggle } from '@components/forms';
+import {
+    SettingsButton,
+    SettingsCard,
+    SettingsField,
+    SettingsSelect,
+    SettingsSeparator,
+    SettingsToggle,
+} from '@components/forms';
 import { yupResolver } from '@hookform/resolvers/yup';
-import { Edit, HalfMoon, Key, Lock, LogOut, Mail, Plus, RefreshDouble, SunLight, Trash, User } from 'iconoir-react';
-import ActiveSessions from './ActiveSessions';
-import { debounce } from 'lodash'; // Import lodash debounce
 import bytes from 'bytes';
+import { HalfMoon, SunLight } from 'iconoir-react';
+import { debounce } from 'lodash'; // Import lodash debounce
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
+import ActiveSessions from './ActiveSessions';
 
 interface AccountFormData extends UserUpdateRequest {
     id: string;
@@ -73,14 +84,15 @@ const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().sh
     theme: Yup.string().notRequired(),
     fileUploadLimit: Yup.string().when('$isAdminAndNotOwn', {
         is: true,
-        then: () => Yup.string().test(
-            'is-valid-bytes',
-            'Enter a valid size (e.g. 100MB, 1GB) or leave empty to use global default',
-            (value) => {
-                if (!value || value === '') return true; // Allow empty to use global default
-                return typeof bytes(value) === 'number';
-            },
-        ),
+        then: () =>
+            Yup.string().test(
+                'is-valid-bytes',
+                'Enter a valid size (e.g. 100MB, 1GB) or leave empty to use global default',
+                (value) => {
+                    if (!value || value === '') return true; // Allow empty to use global default
+                    return typeof bytes(value) === 'number';
+                },
+            ),
         otherwise: () => Yup.string().notRequired(),
     }),
 }) as Yup.ObjectSchema<AccountFormData>;
@@ -109,29 +121,29 @@ export default function AccountSettings({
 
     const defaultValues: AccountFormData = isEdit
         ? {
-            id: '',
-            username: '',
-            email: '',
-            password: 'password',
-            catalystApiKey: 'apikey',
-            role: 'author',
-            vimMode: false,
-            emailConfirmed: false,
-            isActive: false,
-            fileUploadLimit: '',
-        }
+              id: '',
+              username: '',
+              email: '',
+              password: 'password',
+              catalystApiKey: 'apikey',
+              role: 'author',
+              vimMode: false,
+              emailConfirmed: false,
+              isActive: false,
+              fileUploadLimit: '',
+          }
         : {
-            id: '',
-            username: '',
-            email: '',
-            password: '',
-            catalystApiKey: '',
-            role: 'author',
-            vimMode: false,
-            emailConfirmed: false,
-            isActive: false,
-            fileUploadLimit: '',
-        };
+              id: '',
+              username: '',
+              email: '',
+              password: '',
+              catalystApiKey: '',
+              role: 'author',
+              vimMode: false,
+              emailConfirmed: false,
+              isActive: false,
+              fileUploadLimit: '',
+          };
 
     const {
         register,
@@ -163,7 +175,9 @@ export default function AccountSettings({
             if (isEdit && target) {
                 let user: UserRetrieve | null = null;
                 try {
-                    user = await execute(() => usersApi.usersRetrieve({ userId: target }));
+                    user = await execute(() =>
+                        usersApi.usersRetrieve({ userId: target }),
+                    );
                 } catch (error) {
                     setUser(null);
                     return;
@@ -171,8 +185,9 @@ export default function AccountSettings({
                 setUser(user);
 
                 // Check for file_upload_limit in the response (may not be in TypeScript types yet)
-                const fileUploadLimitBytes = (user as any).fileUploadLimit || (user as any).file_upload_limit;
-                const fileUploadLimitFormatted = fileUploadLimitBytes 
+                const fileUploadLimitBytes =
+                    (user as any).fileUploadLimit || (user as any).file_upload_limit;
+                const fileUploadLimitFormatted = fileUploadLimitBytes
                     ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
                     : '';
 
@@ -204,11 +219,11 @@ export default function AccountSettings({
                 reset(defaultValues);
                 isInitialLoad.current = false;
             }
-        })()
+        })();
     }, [isEdit, target, reset, navigate, usersApi]);
 
     /**
-     * Performs the actual API call and diffing. 
+     * Performs the actual API call and diffing.
      * This function is not debounced directly; it is called by the debounced wrapper.
      */
     const processAutoSave = async (data: AccountFormData) => {
@@ -218,16 +233,17 @@ export default function AccountSettings({
 
         // Check if any relevant field actually changed using strict equality
         const hasChanges =
-            (isAdminAndNotOwn && (
-                data.username !== previousData?.username ||
-                data.email !== previousData?.email ||
-                data.role !== previousData?.role ||
-                data.emailConfirmed !== previousData?.emailConfirmed ||
-                data.isActive !== previousData?.isActive ||
-                data.fileUploadLimit !== previousData?.fileUploadLimit
-            )) ||
-            (data.password !== 'password' && data.password !== previousData?.password) ||
-            (data.catalystApiKey !== 'apikey' && data.catalystApiKey !== previousData?.catalystApiKey) ||
+            (isAdminAndNotOwn &&
+                (data.username !== previousData?.username ||
+                    data.email !== previousData?.email ||
+                    data.role !== previousData?.role ||
+                    data.emailConfirmed !== previousData?.emailConfirmed ||
+                    data.isActive !== previousData?.isActive ||
+                    data.fileUploadLimit !== previousData?.fileUploadLimit)) ||
+            (data.password !== 'password' &&
+                data.password !== previousData?.password) ||
+            (data.catalystApiKey !== 'apikey' &&
+                data.catalystApiKey !== previousData?.catalystApiKey) ||
             data.vimMode !== previousData?.vimMode ||
             data.theme !== previousData?.theme;
 
@@ -237,7 +253,10 @@ export default function AccountSettings({
         if (data.password !== 'password' && data.password !== previousData?.password) {
             payload.password = data.password;
         }
-        if (data.catalystApiKey !== 'apikey' && data.catalystApiKey !== previousData?.catalystApiKey) {
+        if (
+            data.catalystApiKey !== 'apikey' &&
+            data.catalystApiKey !== previousData?.catalystApiKey
+        ) {
             payload.catalystApiKey = data.catalystApiKey;
         }
         if (data.vimMode !== previousData?.vimMode) {
@@ -247,10 +266,13 @@ export default function AccountSettings({
             payload.theme = data.theme;
         }
         if (isAdminAndNotOwn) {
-            if (data.username !== previousData?.username) payload.username = data.username;
+            if (data.username !== previousData?.username)
+                payload.username = data.username;
             if (data.email !== previousData?.email) payload.email = data.email;
-            if (data.emailConfirmed !== previousData?.emailConfirmed) payload.emailConfirmed = data.emailConfirmed;
-            if (data.isActive !== previousData?.isActive) payload.isActive = data.isActive;
+            if (data.emailConfirmed !== previousData?.emailConfirmed)
+                payload.emailConfirmed = data.emailConfirmed;
+            if (data.isActive !== previousData?.isActive)
+                payload.isActive = data.isActive;
             if (data.role !== previousData?.role) payload.role = data.role;
             if (data.fileUploadLimit !== previousData?.fileUploadLimit) {
                 // Convert to bytes if provided, or null to use global default
@@ -265,14 +287,18 @@ export default function AccountSettings({
         if (Object.keys(payload).length === 0) return;
 
         try {
-            const updatedUser = await execute(() => usersApi.usersUpdate({
-                userId: data.id,
-                userUpdateRequest: payload,
-            }), {
-                // Optional: Reduce noise by removing success message on autosave
-                successMessage: 'Saved',
-                errorMessage: 'Failed to auto-save',
-            });
+            const updatedUser = await execute(
+                () =>
+                    usersApi.usersUpdate({
+                        userId: data.id,
+                        userUpdateRequest: payload,
+                    }),
+                {
+                    // Optional: Reduce noise by removing success message on autosave
+                    successMessage: 'Saved',
+                    errorMessage: 'Failed to auto-save',
+                },
+            );
 
             if (isOwnAccount) {
                 setProfile((prevProfile: any) => ({
@@ -290,7 +316,7 @@ export default function AccountSettings({
                 catalystApiKey: data.catalystApiKey ? 'apikey' : '',
             };
         } catch (error) {
-            console.error("Autosave failed", error);
+            console.error('Autosave failed', error);
         }
     };
 
@@ -301,10 +327,11 @@ export default function AccountSettings({
     });
 
     const debouncedSave = useMemo(
-        () => debounce((data: AccountFormData) => {
-            processAutoSaveRef.current(data);
-        }, 1000),
-        []
+        () =>
+            debounce((data: AccountFormData) => {
+                processAutoSaveRef.current(data);
+            }, 1000),
+        [],
     );
 
     // Cleanup debounce on unmount
@@ -324,7 +351,6 @@ export default function AccountSettings({
         }
     }, [watchedValues, isEdit, debouncedSave, getValues]);
 
-
     const onSubmit = async (data: AccountFormData) => {
         if (isEdit) {
             debouncedSave.flush(); // Force immediate execution of pending autosaves
@@ -340,9 +366,11 @@ export default function AccountSettings({
                 vim_mode: data.vimMode,
                 theme: data.theme,
             };
-            const newUser = await execute(() => usersApi.usersCreate({
-                userCreateRequest: payload,
-            }));
+            const newUser = await execute(() =>
+                usersApi.usersCreate({
+                    userCreateRequest: payload,
+                }),
+            );
 
             notify({
                 type: 'success',
@@ -403,9 +431,11 @@ export default function AccountSettings({
     const openNoteTemplateModal = async () => {
         setNoteTemplateLoading(true);
         try {
-            const defaultNoteResponse = await execute(() => usersApi.usersDefaultNoteTemplateRetrieve({
-                userId: target,
-            }));
+            const defaultNoteResponse = await execute(() =>
+                usersApi.usersDefaultNoteTemplateRetrieve({
+                    userId: target,
+                }),
+            );
             const initialTemplate = defaultNoteResponse.template || '';
 
             setModal(MarkdownEditorModal, {
@@ -449,7 +479,7 @@ export default function AccountSettings({
                 userId: target,
                 actionName: 'simulate',
             }),
-        )
+        );
         auth.setTokensDirectly(res as any);
         nativeNavigate('/', { replace: true });
     };
@@ -462,7 +492,7 @@ export default function AccountSettings({
                     actionName: 'send_email_confirmation',
                 }),
             { successMessage: 'Email confirmation sent successfully' },
-        ).catch(() => { });
+        ).catch(() => {});
     };
 
     const sendPasswordResetEmail = () => {
@@ -473,7 +503,7 @@ export default function AccountSettings({
                     actionName: 'password_reset_email',
                 }),
             { successMessage: 'Password reset email sent successfully' },
-        ).catch(() => { });
+        ).catch(() => {});
     };
 
     const handleDeleteUser = async () => {
@@ -494,7 +524,6 @@ export default function AccountSettings({
     };
 
     if (!user) return <div></div>;
-
 
     return (
         <div className='w-full h-full overflow-auto'>
@@ -568,11 +597,15 @@ export default function AccountSettings({
                             </div>
                         </section>
                     )}
-                    <form onSubmit={isEdit ? (e) => e.preventDefault() : handleSubmit(onSubmit)}>
+                    <form
+                        onSubmit={
+                            isEdit ? (e) => e.preventDefault() : handleSubmit(onSubmit)
+                        }
+                    >
                         {/* Account Section */}
                         <section
                             id='account'
-                            className={`pb-8 ${(isEdit && isAdminAndNotOwn) ? 'pt-5' : ''}`}
+                            className={`pb-8 ${isEdit && isAdminAndNotOwn ? 'pt-5' : ''}`}
                         >
                             <h2 className='text-lg cradle-text-primary tracking-tight'>
                                 Account
@@ -659,7 +692,6 @@ export default function AccountSettings({
                                 )}
 
                                 {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
-
                                     <section
                                         id='interface'
                                         className='border-t border-white/5 pt-5'
@@ -679,7 +711,9 @@ export default function AccountSettings({
                                                 {...register('role')}
                                             >
                                                 <option value='author'>User</option>
-                                                <option value='entrymanager'>Entry Manager</option>
+                                                <option value='entrymanager'>
+                                                    Entry Manager
+                                                </option>
                                                 <option value='admin'>Admin</option>
                                             </SettingsSelect>
 
@@ -733,7 +767,7 @@ export default function AccountSettings({
                             </div>
                         </section>
 
-                        {(isOwnAccount || (twoFactorEnabled || isOwnAccount)) && (
+                        {(isOwnAccount || twoFactorEnabled || isOwnAccount) && (
                             <section
                                 id='security'
                                 className='border-t border-white/5 pt-5 pb-8'
@@ -779,18 +813,25 @@ export default function AccountSettings({
                                                             Two-Factor Auth
                                                         </span>
                                                         <span className='text-sm cradle-text-muted'>
-                                                            Protect your account with one-time codes from an authenticator app
+                                                            Protect your account with
+                                                            one-time codes from an
+                                                            authenticator app
                                                         </span>
                                                     </div>
                                                     <button
                                                         type='button'
-                                                        className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${twoFactorEnabled
-                                                            ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent'
-                                                            : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                                                            }`}
+                                                        className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
+                                                            twoFactorEnabled
+                                                                ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent'
+                                                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
+                                                        }`}
                                                         onClick={openTwoFactorModal}
                                                     >
-                                                        <span>{twoFactorEnabled ? 'Disable' : 'Enable'}</span>
+                                                        <span>
+                                                            {twoFactorEnabled
+                                                                ? 'Disable'
+                                                                : 'Enable'}
+                                                        </span>
                                                     </button>
                                                 </div>
                                             </>
@@ -828,7 +869,9 @@ export default function AccountSettings({
                                                     description='Sign out of your account'
                                                     buttonText='Logout'
                                                     variant='danger'
-                                                    onClick={openLogoutConfirmationModal}
+                                                    onClick={
+                                                        openLogoutConfirmationModal
+                                                    }
                                                 />
                                             </SettingsCard>
                                         </>
@@ -857,11 +900,20 @@ export default function AccountSettings({
                                             <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                 Theme
                                             </label>
-                                            <p className='text-sm cradle-text-muted'>Choose your preferred color scheme</p>
+                                            <p className='text-sm cradle-text-muted'>
+                                                Choose your preferred color scheme
+                                            </p>
                                         </div>
                                         <button
                                             type='button'
-                                            onClick={() => setValue('theme', watch('theme') === 'dark' ? 'light' : 'dark')}
+                                            onClick={() =>
+                                                setValue(
+                                                    'theme',
+                                                    watch('theme') === 'dark'
+                                                        ? 'light'
+                                                        : 'dark',
+                                                )
+                                            }
                                             className='p-2 rounded-full transition-colors bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
                                         >
                                             {watch('theme') === 'dark' ? (
@@ -904,7 +956,11 @@ export default function AccountSettings({
                                             snippetListRef.current?.handleAddSnippet();
                                         }}
                                     />
-                                    <SnippetList ref={snippetListRef} userId={target} showTitle={false} />
+                                    <SnippetList
+                                        ref={snippetListRef}
+                                        userId={target}
+                                        showTitle={false}
+                                    />
                                 </SettingsCard>
                             </div>
                         </section>

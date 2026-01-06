@@ -62,7 +62,12 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                 label: 'Uploaded At',
                                 className: 'w-32',
                             },
-                            { key: 'actions', label: '', className: 'w-32', sortable: false },
+                            {
+                                key: 'actions',
+                                label: '',
+                                className: 'w-32',
+                                sortable: false,
+                            },
                         ]}
                         renderRow={(file: FileReferenceWithNote, index: number) => (
                             <tr key={file.id || index}>
@@ -106,7 +111,11 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     )}
                                 </td>
                                 <td className=''>
-                                    {file.fileSize ? bytes.format(file.fileSize, { unitSeparator: ' ' }) : '-'}
+                                    {file.fileSize
+                                        ? bytes.format(file.fileSize, {
+                                              unitSeparator: ' ',
+                                          })
+                                        : '-'}
                                 </td>
                                 <td className=''>
                                     {file.timestamp &&
@@ -130,15 +139,14 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                         )}
                                     </div>
                                 </td>
-                            </tr >
-                        )
-                        }
+                            </tr>
+                        )}
                         loading={false}
                         emptyMessage='No files found!'
                         tableClassName='table'
                     />
-                </div >
-            </div >
-        </div >
+                </div>
+            </div>
+        </div>
     );
 }

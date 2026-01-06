@@ -48,15 +48,29 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                         title={expanded ? 'Collapse' : 'Expand'}
                     >
                         {expanded ? (
-                            <NavArrowRight className='text-cradle2' width='14' height='14' />
+                            <NavArrowRight
+                                className='text-cradle2'
+                                width='14'
+                                height='14'
+                            />
                         ) : (
-                            <NavArrowDown className='text-cradle2' width='14' height='14' />
+                            <NavArrowDown
+                                className='text-cradle2'
+                                width='14'
+                                height='14'
+                            />
                         )}
                     </button>
                 ) : (
-                    <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>#</span>
+                    <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>
+                        #
+                    </span>
                 )}
-                <span className={`font-medium ${isCurrent ? 'underline decoration-cradle-accent-primary' : ''}`}>{nodeData.nodeName}</span>
+                <span
+                    className={`font-medium ${isCurrent ? 'underline decoration-cradle-accent-primary' : ''}`}
+                >
+                    {nodeData.nodeName}
+                </span>
             </div>
 
             {expanded && hasChildren && (

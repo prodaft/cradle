@@ -6,7 +6,12 @@ import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBar,
+    ActionBarDivider,
+    ActionBarSearch,
+    CollapsibleActionGroup,
+} from '@components/base/ActionBar/ActionBar';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Badge from '@components/base/Badge/Badge';
 import ListView from '@components/base/ListView/ListView';
@@ -16,7 +21,7 @@ import { useDroppable } from '@dnd-kit/core';
 import type { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import bytes from 'bytes';
 import { Download, RefreshCircle, Trash } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface FilesListQuery {
@@ -95,10 +100,12 @@ export default function FilesList({
     );
     const { execute } = useAPICall();
     const { setModal } = useModal();
-    const [selectedFiles, setSelectedFiles] = useState<(string)[]>([]);
+    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const { notesApi, fileTransferApi } = useApi();
-    const [statusFilter, setStatusFilter] = useState<'all' | 'healthy' | 'warning'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'healthy' | 'warning'>(
+        'all',
+    );
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
@@ -196,39 +203,46 @@ export default function FilesList({
         [notify],
     );
 
-    const getFileStatus = useCallback((file: FileReferenceWithNote): 'healthy' | 'warning' => {
-        return file.sha256Hash ? 'healthy' : 'warning';
-    }, []);
+    const getFileStatus = useCallback(
+        (file: FileReferenceWithNote): 'healthy' | 'warning' => {
+            return file.sha256Hash ? 'healthy' : 'warning';
+        },
+        [],
+    );
 
     // Download a single file
-    const handleDownloadFile = useCallback(async (file: FileReferenceWithNote) => {
-        if (!file.id) {
-            notify({
-                type: 'error',
-                text: 'File download information is missing.',
-            });
-            return;
-        }
+    const handleDownloadFile = useCallback(
+        async (file: FileReferenceWithNote) => {
+            if (!file.id) {
+                notify({
+                    type: 'error',
+                    text: 'File download information is missing.',
+                });
+                return;
+            }
 
-        try {
-            const { presignedUrl } = await fileTransferApi.fileTransferDownloadRetrieve({
-                fileId: file.id,
-            });
+            try {
+                const { presignedUrl } =
+                    await fileTransferApi.fileTransferDownloadRetrieve({
+                        fileId: file.id,
+                    });
 
-            const link = document.createElement('a');
-            link.href = presignedUrl;
-            link.download = file.fileName || 'data';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (error) {
-            console.error('Failed to download file: ', error);
-            notify({
-                type: 'error',
-                text: 'Failed to download file. Please try again.',
-            });
-        }
-    }, [fileTransferApi, notify]);
+                const link = document.createElement('a');
+                link.href = presignedUrl;
+                link.download = file.fileName || 'data';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                console.error('Failed to download file: ', error);
+                notify({
+                    type: 'error',
+                    text: 'Failed to download file. Please try again.',
+                });
+            }
+        },
+        [fileTransferApi, notify],
+    );
 
     // Download selected files
     const handleDownloadSelected = useCallback(async () => {
@@ -239,10 +253,12 @@ export default function FilesList({
                 selectedFiles.map((fileId) => {
                     if (!fileId) return null;
 
-                    return execute(() => fileTransferApi.fileTransferDownloadRetrieve({
-                        fileId: fileId,
-                    }));
-                })
+                    return execute(() =>
+                        fileTransferApi.fileTransferDownloadRetrieve({
+                            fileId: fileId,
+                        }),
+                    );
+                }),
             );
             downloads
                 .filter((download): download is FileDownload => download !== null)
@@ -254,7 +270,6 @@ export default function FilesList({
                 type: 'info',
                 text: `Attempted to download ${downloads.length} file(s). Your browser may block some.`,
             });
-
         } catch (error) {
             console.error('Failed to download files: ', error);
             notify({
@@ -267,11 +282,15 @@ export default function FilesList({
     const handleReprocessSelected = useCallback(async () => {
         if (selectedFiles.length === 0) return;
 
-        const promises = selectedFiles.map((fileId) => execute(() => fileTransferApi.fileTransferProcessCreate({
-            fileProcessRequest: {
-                fileId: fileId,
-            },
-        })));
+        const promises = selectedFiles.map((fileId) =>
+            execute(() =>
+                fileTransferApi.fileTransferProcessCreate({
+                    fileProcessRequest: {
+                        fileId: fileId,
+                    },
+                }),
+            ),
+        );
 
         await Promise.all(promises);
         notify({
@@ -281,11 +300,14 @@ export default function FilesList({
         setSelectedFiles([]);
     }, [selectedFiles, fileTransferApi, execute, notify]);
 
-
     const deleteFiles = async (fileIds: string[]) => {
-        let promises = selectedFiles.map((fileId) => execute(() => fileTransferApi.fileTransferDeleteDestroy({
-            fileId: fileId.toString(),
-        })));
+        let promises = selectedFiles.map((fileId) =>
+            execute(() =>
+                fileTransferApi.fileTransferDeleteDestroy({
+                    fileId: fileId.toString(),
+                }),
+            ),
+        );
 
         await Promise.all(promises);
         notify({
@@ -303,7 +325,6 @@ export default function FilesList({
             text: `Are you sure you want to delete ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}?`,
             onConfirm: () => deleteFiles(selectedFiles),
         });
-
     }, [selectedFiles, files, notesApi, notify]);
 
     const resetToFirstPage = useCallback(() => {
@@ -314,10 +335,7 @@ export default function FilesList({
     }, [searchParams, setSearchParams]);
 
     // Memoize the files_page value to prevent unnecessary rerenders
-    const filesPage = useMemo(
-        () => searchParams.get('files_page'),
-        [searchParams],
-    );
+    const filesPage = useMemo(() => searchParams.get('files_page'), [searchParams]);
 
     useEffect(() => {
         const pageFromParams = Number(filesPage) || 1;
@@ -328,7 +346,21 @@ export default function FilesList({
 
     useEffect(() => {
         fetchFiles();
-    }, [page, pageSize, sortField, sortDirection, query.date, query.keyword, query.linked_to, query.linked_to_exact_match, query.mimetype, query.references, query.timestamp_gte, query.timestamp_lte, searchQuery]);
+    }, [
+        page,
+        pageSize,
+        sortField,
+        sortDirection,
+        query.date,
+        query.keyword,
+        query.linked_to,
+        query.linked_to_exact_match,
+        query.mimetype,
+        query.references,
+        query.timestamp_gte,
+        query.timestamp_lte,
+        searchQuery,
+    ]);
 
     const handlePageChange = useCallback(
         (newPage: number) => {
@@ -365,7 +397,8 @@ export default function FilesList({
 
     // Row Actions Button Component
     const RowActionsButton = ({ file }: { file: FileReferenceWithNote }) => {
-        const menuButtonClasses = 'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
+        const menuButtonClasses =
+            'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
 
         const handleDownload = () => {
             handleDownloadFile(file);
@@ -373,11 +406,13 @@ export default function FilesList({
 
         const handleReprocess = async () => {
             try {
-                await execute(() => fileTransferApi.fileTransferProcessCreate({
-                    fileProcessRequest: {
-                        fileId: file.id!,
-                    },
-                }));
+                await execute(() =>
+                    fileTransferApi.fileTransferProcessCreate({
+                        fileProcessRequest: {
+                            fileId: file.id!,
+                        },
+                    }),
+                );
                 notify({
                     type: 'success',
                     text: 'File queued for reprocessing',
@@ -400,17 +435,11 @@ export default function FilesList({
 
         return (
             <TableActionsButton>
-                <button
-                    onClick={handleDownload}
-                    className={menuButtonClasses}
-                >
+                <button onClick={handleDownload} className={menuButtonClasses}>
                     <Download width='18' height='18' />
                     Download
                 </button>
-                <button
-                    onClick={handleReprocess}
-                    className={menuButtonClasses}
-                >
+                <button onClick={handleReprocess} className={menuButtonClasses}>
                     <RefreshCircle width='18' height='18' />
                     Reprocess
                 </button>
@@ -427,12 +456,9 @@ export default function FilesList({
     };
 
     const renderRow = useCallback(
-        (
-            file: FileReferenceWithNote,
-            index: number,
-            selectProps: SelectProps = {},
-        ) => {
-            if (statusFilter !== 'all' && getFileStatus(file) !== statusFilter) return null;
+        (file: FileReferenceWithNote, index: number, selectProps: SelectProps = {}) => {
+            if (statusFilter !== 'all' && getFileStatus(file) !== statusFilter)
+                return null;
 
             for (const f of filteredFiles) {
                 if (f.id === file.id) return null;
@@ -441,7 +467,11 @@ export default function FilesList({
             const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
             return (
-                <tr key={file.id || index} className='cursor-pointer' onClick={navigateLink(`/notes/${file.noteId}`)}>
+                <tr
+                    key={file.id || index}
+                    className='cursor-pointer'
+                    onClick={navigateLink(`/notes/${file.noteId}`)}
+                >
                     {enableMultiSelect && (
                         <td className='w-12' onClick={(e) => e.stopPropagation()}>
                             <div className='flex items-center'>
@@ -455,7 +485,9 @@ export default function FilesList({
                         </td>
                     )}
                     <td className='truncate w-32'>
-                        <span className='truncate'>{truncateText(file.fileName, 32)}</span>
+                        <span className='truncate'>
+                            {truncateText(file.fileName, 32)}
+                        </span>
                     </td>
                     <td className=''>
                         <div className='flex flex-wrap gap-1'>
@@ -509,11 +541,20 @@ export default function FilesList({
                 </tr>
             );
         },
-        [filteredFiles, copyToClipboard, handleDownloadFile, fileTransferApi, execute, notify, setModal, deleteFiles],
+        [
+            filteredFiles,
+            copyToClipboard,
+            handleDownloadFile,
+            fileTransferApi,
+            execute,
+            notify,
+            setModal,
+            deleteFiles,
+        ],
     );
 
     // Memoize the setSelected callback to prevent recreation on every render
-    const handleSetSelected = useCallback((ids: (string)[]) => {
+    const handleSetSelected = useCallback((ids: string[]) => {
         setSelectedFiles(ids);
     }, []);
 
@@ -544,34 +585,42 @@ export default function FilesList({
                                 actions={[
                                     {
                                         id: 'download',
-                                        tooltip: selectedFiles.length > 0
-                                            ? `Download ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
-                                            : 'Select files to download',
+                                        tooltip:
+                                            selectedFiles.length > 0
+                                                ? `Download ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+                                                : 'Select files to download',
                                         icon: <Download width={20} height={20} />,
                                         onClick: handleDownloadSelected,
-                                        disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                        disabled:
+                                            loading ||
+                                            files.length === 0 ||
+                                            selectedFiles.length === 0,
                                         iconActive: selectedFiles.length > 0,
-
                                     },
                                     {
                                         id: 'delete',
                                         tooltip: 'Delete selected files (Coming soon)',
                                         icon: <Trash width={20} height={20} />,
                                         onClick: handleDeleteSelected,
-                                        disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                        disabled:
+                                            loading ||
+                                            files.length === 0 ||
+                                            selectedFiles.length === 0,
                                         iconActive: selectedFiles.length > 0,
-
                                     },
                                     {
                                         id: 'reprocess',
-                                        tooltip: selectedFiles.length > 0
-                                            ? `Reprocess ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
-                                            : 'Select files to reprocess',
+                                        tooltip:
+                                            selectedFiles.length > 0
+                                                ? `Reprocess ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`
+                                                : 'Select files to reprocess',
                                         icon: <RefreshCircle width={20} height={20} />,
                                         onClick: handleReprocessSelected,
-                                        disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                        disabled:
+                                            loading ||
+                                            files.length === 0 ||
+                                            selectedFiles.length === 0,
                                         iconActive: selectedFiles.length > 0,
-
                                     },
                                 ]}
                             />

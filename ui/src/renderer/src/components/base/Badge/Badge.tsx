@@ -66,7 +66,8 @@ export default function Badge({
     const variantColor = getVariantColor();
 
     // Combine all classes
-    const combinedClasses = `${baseClasses} ${shapeClasses} ${variantColor} ${className}`.trim();
+    const combinedClasses =
+        `${baseClasses} ${shapeClasses} ${variantColor} ${className}`.trim();
 
     // Apply custom color via inline style if provided
     const style = color ? { backgroundColor: color } : undefined;

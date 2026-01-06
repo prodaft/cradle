@@ -92,7 +92,6 @@ const entryTypeSchema: Yup.ObjectSchema<EntryTypeFormValues> = Yup.object().shap
     children: Yup.array().default([]),
 });
 
-
 export default function EntryTypeForm({
     id = null,
     isEdit = false,
@@ -192,7 +191,7 @@ export default function EntryTypeForm({
                 format:
                     data.typeFormat?.value === 'any'
                         ? null
-                        : data.typeFormat?.value ?? null,
+                        : (data.typeFormat?.value ?? null),
                 type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
                 subtype: data.subtype,
                 description: data.description,
@@ -261,7 +260,9 @@ export default function EntryTypeForm({
                         {isEdit ? 'Edit Entry Type' : 'New Entry Type'}
                     </h1>
                     <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        {isEdit ? 'Modify entry class definition' : 'Create new entry class'}
+                        {isEdit
+                            ? 'Modify entry class definition'
+                            : 'Create new entry class'}
                     </p>
                 </div>
             </div>
@@ -349,7 +350,9 @@ export default function EntryTypeForm({
                                                 ref={colorButtonRef}
                                                 className='h-10 w-12 rounded cursor-pointer border border-gray-300 flex-shrink-0'
                                                 style={{ backgroundColor: watchColor }}
-                                                onClick={() => setShowColorPicker(!showColorPicker)}
+                                                onClick={() =>
+                                                    setShowColorPicker(!showColorPicker)
+                                                }
                                             />
                                             <button
                                                 type='button'
@@ -372,50 +375,68 @@ export default function EntryTypeForm({
                                                 </svg>
                                             </button>
                                         </div>
-                                        {showColorPicker && colorButtonRef.current && (() => {
-                                            const buttonRect = colorButtonRef.current!.getBoundingClientRect();
-                                            const pickerWidth = 200; // Approximate width of HexColorPicker
-                                            const pickerHeight = 200; // Approximate height of HexColorPicker
+                                        {showColorPicker &&
+                                            colorButtonRef.current &&
+                                            (() => {
+                                                const buttonRect =
+                                                    colorButtonRef.current!.getBoundingClientRect();
+                                                const pickerWidth = 200; // Approximate width of HexColorPicker
+                                                const pickerHeight = 200; // Approximate height of HexColorPicker
 
-                                            // Calculate horizontal position
-                                            let leftPos = buttonRect.left;
-                                            // If picker would go off the right edge, align it to the right of the button
-                                            if (leftPos + pickerWidth > window.innerWidth) {
-                                                leftPos = buttonRect.right - pickerWidth;
-                                            }
-                                            // Ensure it doesn't go off the left edge either
-                                            leftPos = Math.max(8, leftPos);
+                                                // Calculate horizontal position
+                                                let leftPos = buttonRect.left;
+                                                // If picker would go off the right edge, align it to the right of the button
+                                                if (
+                                                    leftPos + pickerWidth >
+                                                    window.innerWidth
+                                                ) {
+                                                    leftPos =
+                                                        buttonRect.right - pickerWidth;
+                                                }
+                                                // Ensure it doesn't go off the left edge either
+                                                leftPos = Math.max(8, leftPos);
 
-                                            // Calculate vertical position (above the button)
-                                            const bottomPos = window.innerHeight - buttonRect.top + 8;
+                                                // Calculate vertical position (above the button)
+                                                const bottomPos =
+                                                    window.innerHeight -
+                                                    buttonRect.top +
+                                                    8;
 
-                                            return (
-                                                <>
-                                                    <div
-                                                        className='fixed inset-0 z-10'
-                                                        onClick={() => setShowColorPicker(false)}
-                                                    />
-                                                    <div
-                                                        className='fixed z-20'
-                                                        style={{
-                                                            left: `${leftPos}px`,
-                                                            bottom: `${bottomPos}px`,
-                                                        }}
-                                                    >
-                                                        <Controller
-                                                            name='color'
-                                                            control={control}
-                                                            render={({ field }) => (
-                                                                <HexColorPicker
-                                                                    color={field.value}
-                                                                    onChange={field.onChange}
-                                                                />
-                                                            )}
+                                                return (
+                                                    <>
+                                                        <div
+                                                            className='fixed inset-0 z-10'
+                                                            onClick={() =>
+                                                                setShowColorPicker(
+                                                                    false,
+                                                                )
+                                                            }
                                                         />
-                                                    </div>
-                                                </>
-                                            );
-                                        })()}
+                                                        <div
+                                                            className='fixed z-20'
+                                                            style={{
+                                                                left: `${leftPos}px`,
+                                                                bottom: `${bottomPos}px`,
+                                                            }}
+                                                        >
+                                                            <Controller
+                                                                name='color'
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <HexColorPicker
+                                                                        color={
+                                                                            field.value
+                                                                        }
+                                                                        onChange={
+                                                                            field.onChange
+                                                                        }
+                                                                    />
+                                                                )}
+                                                            />
+                                                        </div>
+                                                    </>
+                                                );
+                                            })()}
                                         {errors.color && (
                                             <p className='text-sm text-red-500 mt-1'>
                                                 {errors.color.message}
@@ -427,7 +448,10 @@ export default function EntryTypeForm({
                         </section>
 
                         {/* Advanced Section */}
-                        <section id='advanced' className='border-t border-white/5 pt-5 pb-8'>
+                        <section
+                            id='advanced'
+                            className='border-t border-white/5 pt-5 pb-8'
+                        >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 Advanced Settings
                             </h2>
@@ -461,7 +485,9 @@ export default function EntryTypeForm({
                                                     render={({ field }) => (
                                                         <Selector
                                                             {...field}
-                                                            staticOptions={formatOptions}
+                                                            staticOptions={
+                                                                formatOptions
+                                                            }
                                                             placeholder='Select format'
                                                             isClearable
                                                         />
@@ -516,16 +542,16 @@ export default function EntryTypeForm({
                                         </>
                                     )}
 
-                                    {((isEntity && isArtifact === false) || isArtifact) && (
-                                        <SettingsSeparator />
-                                    )}
+                                    {((isEntity && isArtifact === false) ||
+                                        isArtifact) && <SettingsSeparator />}
 
                                     <div className='py-2'>
                                         <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                             Children
                                         </label>
                                         <p className='text-sm cradle-text-muted mb-2'>
-                                            Entry types that can be children of this type
+                                            Entry types that can be children of this
+                                            type
                                         </p>
                                         <Controller
                                             name='children'
@@ -556,7 +582,11 @@ export default function EntryTypeForm({
                                 className='cradle-btn cradle-btn-primary px-6 rounded-lg'
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entry Type'}
+                                {isSubmitting
+                                    ? 'Saving...'
+                                    : isEdit
+                                      ? 'Save Changes'
+                                      : 'Create Entry Type'}
                             </button>
                         </div>
                     </form>

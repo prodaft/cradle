@@ -67,7 +67,7 @@ export function strip(str: string, chars: string = ' \t\n\r\f\v'): string {
  */
 export const createDownloadPath = (file: FileReference, apiBaseUrl: string): string => {
     const queryParams = QueryString.stringify({
-        fileId: file.id!
+        fileId: file.id!,
     });
     return `${apiBaseUrl}/file-transfer/download/?${queryParams}`;
 };

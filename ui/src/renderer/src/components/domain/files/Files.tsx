@@ -1,5 +1,5 @@
-import FilesList from './FilesList';
 import { useState } from 'react';
+import FilesList from './FilesList';
 
 /**
  * Files page component
@@ -20,13 +20,14 @@ export default function Files() {
                         Browse & Manage Files
                     </p>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
-                    <span className="font-semibold">
-                        {fileCount.current === fileCount.total || (fileCount.current === 0 && fileCount.total === 0)
+                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
+                    <span className='font-semibold'>
+                        {fileCount.current === fileCount.total ||
+                        (fileCount.current === 0 && fileCount.total === 0)
                             ? fileCount.total
                             : `${fileCount.current}/${fileCount.total}`}
                     </span>
-                    <span className="opacity-70">files</span>
+                    <span className='opacity-70'>files</span>
                 </div>
             </div>
 

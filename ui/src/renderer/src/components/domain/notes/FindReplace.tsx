@@ -3,13 +3,24 @@ import {
     replaceAll,
     replaceNext,
     SearchQuery,
-    setSearchQuery
+    setSearchQuery,
 } from '@codemirror/search';
 import { EditorSelection } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { VscArrowDown, VscArrowUp, VscChevronDown, VscChevronRight, VscListSelection, VscRegex, VscReplace, VscReplaceAll, VscTextSize, VscWholeWord } from 'react-icons/vsc';
+import {
+    VscArrowDown,
+    VscArrowUp,
+    VscChevronDown,
+    VscChevronRight,
+    VscListSelection,
+    VscRegex,
+    VscReplace,
+    VscReplaceAll,
+    VscTextSize,
+    VscWholeWord,
+} from 'react-icons/vsc';
 
 interface FindReplaceProps {
     view: EditorView | null;
@@ -17,7 +28,11 @@ interface FindReplaceProps {
     initialReplace?: boolean;
 }
 
-export default function FindReplace({ view, onClose, initialReplace = false }: FindReplaceProps) {
+export default function FindReplace({
+    view,
+    onClose,
+    initialReplace = false,
+}: FindReplaceProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [replaceTerm, setReplaceTerm] = useState('');
     const [caseSensitive, setCaseSensitive] = useState(false);
@@ -108,9 +123,7 @@ export default function FindReplace({ view, onClose, initialReplace = false }: F
                 view.dispatch({
                     selection: { anchor: last.from, head: last.to },
                     scrollIntoView: true,
-                    effects: EditorView.announce.of(
-                        `Match ${last.from}-${last.to}`,
-                    ),
+                    effects: EditorView.announce.of(`Match ${last.from}-${last.to}`),
                 });
             }
         }
@@ -132,7 +145,9 @@ export default function FindReplace({ view, onClose, initialReplace = false }: F
 
         if (ranges.length > 0) {
             // Create multi-selection with all matches
-            const selections = ranges.map(range => EditorSelection.range(range.from, range.to));
+            const selections = ranges.map((range) =>
+                EditorSelection.range(range.from, range.to),
+            );
             view.dispatch({
                 selection: EditorSelection.create(selections),
                 scrollIntoView: true,
@@ -166,9 +181,9 @@ export default function FindReplace({ view, onClose, initialReplace = false }: F
     if (!view) return null;
 
     return (
-        <div className="absolute top-2 right-4 z-50 w-[28rem] bg-cradle-bg-elevated border border-cradle-border-accent shadow-lg rounded-md p-2 text-sm">
-            <div className="flex flex-col gap-2">
-                <div className="flex gap-1 items-start">
+        <div className='absolute top-2 right-4 z-50 w-[28rem] bg-cradle-bg-elevated border border-cradle-border-accent shadow-lg rounded-md p-2 text-sm'>
+            <div className='flex flex-col gap-2'>
+                <div className='flex gap-1 items-start'>
                     {/* Toggle Button - Height matches two fields when replace is shown */}
                     <button
                         className={`w-6 flex-shrink-0 cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors flex items-center justify-center rounded-md ${
@@ -176,131 +191,140 @@ export default function FindReplace({ view, onClose, initialReplace = false }: F
                         }`}
                         onClick={() => setShowReplace(!showReplace)}
                     >
-                        {showReplace ? <VscChevronDown className="text-sm" /> : <VscChevronRight className="text-sm" />}
+                        {showReplace ? (
+                            <VscChevronDown className='text-sm' />
+                        ) : (
+                            <VscChevronRight className='text-sm' />
+                        )}
                     </button>
 
                     {/* Fields Container */}
-                    <div className="flex flex-col gap-2 flex-1 min-w-0">
-                    {/* Find Input */}
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1 min-w-0">
-                            <div className="flex-1 min-w-0 bg-cradle-bg-secondary border border-cradle-border-accent rounded-md flex items-center focus-within:border-[#FF8C00] focus-within:ring-1 focus-within:ring-[#FF8C00] overflow-hidden">
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Find"
-                                    className="flex-1 min-w-0 bg-transparent border-0 outline-none px-2 py-1.5 text-cradle-text-primary placeholder:text-cradle-text-muted text-sm"
-                                    autoFocus
-                                />
-                                {/* Options - Inside the input field */}
-                                <div className="flex gap-0.5 flex-shrink-0 pr-1">
+                    <div className='flex flex-col gap-2 flex-1 min-w-0'>
+                        {/* Find Input */}
+                        <div className='flex flex-col gap-1'>
+                            <div className='flex items-center gap-1 min-w-0'>
+                                <div className='flex-1 min-w-0 bg-cradle-bg-secondary border border-cradle-border-accent rounded-md flex items-center focus-within:border-[#FF8C00] focus-within:ring-1 focus-within:ring-[#FF8C00] overflow-hidden'>
+                                    <input
+                                        type='text'
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder='Find'
+                                        className='flex-1 min-w-0 bg-transparent border-0 outline-none px-2 py-1.5 text-cradle-text-primary placeholder:text-cradle-text-muted text-sm'
+                                        autoFocus
+                                    />
+                                    {/* Options - Inside the input field */}
+                                    <div className='flex gap-0.5 flex-shrink-0 pr-1'>
+                                        <button
+                                            onClick={() =>
+                                                setCaseSensitive(!caseSensitive)
+                                            }
+                                            className={`w-6 h-6 flex items-center justify-center transition-colors rounded border border-transparent ${
+                                                caseSensitive
+                                                    ? 'bg-cradle-bg-primary text-cradle-text-primary'
+                                                    : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
+                                            }`}
+                                            title='Match Case'
+                                        >
+                                            <VscTextSize className='text-xs' />
+                                        </button>
+                                        <button
+                                            onClick={() => setWholeWord(!wholeWord)}
+                                            className={`w-6 h-6 flex items-center justify-center transition-colors rounded border border-transparent ${
+                                                wholeWord
+                                                    ? 'bg-cradle-bg-primary text-cradle-text-primary'
+                                                    : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
+                                            }`}
+                                            title='Match Whole Word'
+                                        >
+                                            <VscWholeWord className='text-xs' />
+                                        </button>
+                                        <button
+                                            onClick={() => setUseRegex(!useRegex)}
+                                            className={`w-6 h-6 flex items-center justify-center transition-colors rounded border border-transparent ${
+                                                useRegex
+                                                    ? 'bg-cradle-bg-primary text-cradle-text-primary'
+                                                    : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
+                                            }`}
+                                            title='Use Regular Expression'
+                                        >
+                                            <VscRegex className='text-xs' />
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className='flex gap-0.5 flex-shrink-0'>
                                     <button
-                                        onClick={() => setCaseSensitive(!caseSensitive)}
-                                        className={`w-6 h-6 flex items-center justify-center transition-colors rounded border border-transparent ${
-                                            caseSensitive
-                                                ? 'bg-cradle-bg-primary text-cradle-text-primary'
-                                                : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
-                                        }`}
-                                        title="Match Case"
+                                        onClick={handlePrevious}
+                                        className='w-8 h-8 flex items-center justify-center cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent'
+                                        title='Previous match (Shift+Enter)'
                                     >
-                                        <VscTextSize className="text-xs" />
+                                        <VscArrowUp className='text-lg' />
                                     </button>
                                     <button
-                                        onClick={() => setWholeWord(!wholeWord)}
-                                        className={`w-6 h-6 flex items-center justify-center transition-colors rounded border border-transparent ${
-                                            wholeWord
-                                                ? 'bg-cradle-bg-primary text-cradle-text-primary'
-                                                : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
-                                        }`}
-                                        title="Match Whole Word"
+                                        onClick={handleNext}
+                                        className='w-8 h-8 flex items-center justify-center cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent'
+                                        title='Next match (Enter)'
                                     >
-                                        <VscWholeWord className="text-xs" />
+                                        <VscArrowDown className='text-lg' />
                                     </button>
                                     <button
-                                        onClick={() => setUseRegex(!useRegex)}
-                                        className={`w-6 h-6 flex items-center justify-center transition-colors rounded border border-transparent ${
-                                            useRegex
-                                                ? 'bg-cradle-bg-primary text-cradle-text-primary'
-                                                : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
-                                        }`}
-                                        title="Use Regular Expression"
+                                        onClick={handleFindAll}
+                                        className='w-8 h-8 flex items-center justify-center cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent'
+                                        title='Find All'
                                     >
-                                        <VscRegex className="text-xs" />
+                                        <VscListSelection className='text-lg' />
+                                    </button>
+                                    <button
+                                        onClick={onClose}
+                                        className='w-8 h-8 flex items-center justify-center cradle-text-muted hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent'
+                                        aria-label='Close'
+                                    >
+                                        <Xmark width='18' height='18' />
                                     </button>
                                 </div>
                             </div>
-                            <div className="flex gap-0.5 flex-shrink-0">
-                                <button
-                                    onClick={handlePrevious}
-                                    className="w-8 h-8 flex items-center justify-center cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent"
-                                    title="Previous match (Shift+Enter)"
-                                >
-                                    <VscArrowUp className="text-lg" />
-                                </button>
-                                <button
-                                    onClick={handleNext}
-                                    className="w-8 h-8 flex items-center justify-center cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent"
-                                    title="Next match (Enter)"
-                                >
-                                    <VscArrowDown className="text-lg" />
-                                </button>
-                                <button
-                                    onClick={handleFindAll}
-                                    className="w-8 h-8 flex items-center justify-center cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent"
-                                    title="Find All"
-                                >
-                                    <VscListSelection className="text-lg" />
-                                </button>
-                                <button
-                                    onClick={onClose}
-                                    className="w-8 h-8 flex items-center justify-center cradle-text-muted hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-md border border-transparent"
-                                    aria-label="Close"
-                                >
-                                    <Xmark width="18" height="18" />
-                                </button>
-                            </div>
                         </div>
-                    </div>
 
-                    {/* Replace Input */}
-                    {showReplace && (
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-1 min-w-0">
-                                <input
-                                    type="text"
-                                    value={replaceTerm}
-                                    onChange={(e) => setReplaceTerm(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && searchTerm.trim()) {
-                                            handleReplace();
-                                        }
-                                    }}
-                                    placeholder="Replace"
-                                    className="flex-1 min-w-0 bg-cradle-bg-secondary border border-cradle-border-accent rounded-md px-2 py-1.5 outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] text-cradle-text-primary placeholder:text-cradle-text-muted text-sm"
-                                />
-                                <div className="flex gap-0.5 flex-shrink-0">
-                                    <button
-                                        onClick={handleReplace}
-                                        disabled={!searchTerm.trim()}
-                                        className="w-8 h-8 flex items-center justify-center text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-[#FF8C00] transition-colors rounded-md border border-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#FF8C00]"
-                                        title="Replace"
-                                    >
-                                        <VscReplace className="text-lg" />
-                                    </button>
-                                    <button
-                                        onClick={handleReplaceAll}
-                                        disabled={!searchTerm.trim()}
-                                        className="w-8 h-8 flex items-center justify-center text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-[#FF8C00] transition-colors rounded-md border border-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#FF8C00]"
-                                        title="Replace All"
-                                    >
-                                        <VscReplaceAll className="text-lg" />
-                                    </button>
+                        {/* Replace Input */}
+                        {showReplace && (
+                            <div className='flex flex-col gap-1'>
+                                <div className='flex items-center gap-1 min-w-0'>
+                                    <input
+                                        type='text'
+                                        value={replaceTerm}
+                                        onChange={(e) => setReplaceTerm(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (
+                                                e.key === 'Enter' &&
+                                                searchTerm.trim()
+                                            ) {
+                                                handleReplace();
+                                            }
+                                        }}
+                                        placeholder='Replace'
+                                        className='flex-1 min-w-0 bg-cradle-bg-secondary border border-cradle-border-accent rounded-md px-2 py-1.5 outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] text-cradle-text-primary placeholder:text-cradle-text-muted text-sm'
+                                    />
+                                    <div className='flex gap-0.5 flex-shrink-0'>
+                                        <button
+                                            onClick={handleReplace}
+                                            disabled={!searchTerm.trim()}
+                                            className='w-8 h-8 flex items-center justify-center text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-[#FF8C00] transition-colors rounded-md border border-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#FF8C00]'
+                                            title='Replace'
+                                        >
+                                            <VscReplace className='text-lg' />
+                                        </button>
+                                        <button
+                                            onClick={handleReplaceAll}
+                                            disabled={!searchTerm.trim()}
+                                            className='w-8 h-8 flex items-center justify-center text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-[#FF8C00] transition-colors rounded-md border border-transparent disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#FF8C00]'
+                                            title='Replace All'
+                                        >
+                                            <VscReplaceAll className='text-lg' />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
                     </div>
                 </div>
             </div>

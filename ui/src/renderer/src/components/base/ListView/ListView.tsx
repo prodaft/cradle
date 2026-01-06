@@ -35,8 +35,8 @@ interface ListViewProps<T extends { id?: string | number }> {
     sortFieldMapping?: Record<string, string>;
     emptyMessage?: string;
     renderRow?:
-    | ((item: T, index: number, options: RenderRowOptions<T>) => ReactNode)
-    | null;
+        | ((item: T, index: number, options: RenderRowOptions<T>) => ReactNode)
+        | null;
     tableClassName?: string;
     enableMultiSelect?: boolean;
     /**
@@ -69,7 +69,7 @@ export default function ListView<T extends { id?: string | number }>({
     tableClassName = 'table table-hover',
     enableMultiSelect = false,
     selectedIds: controlledSelectedIds,
-    setSelected = () => { },
+    setSelected = () => {},
     filterableColumns = {},
     filterValues = {},
 }: ListViewProps<T>) {
@@ -149,8 +149,8 @@ export default function ListView<T extends { id?: string | number }>({
             // New field, default to descending for timestamp fields, ascending for others
             const newDirection =
                 newSortField.includes('timestamp') ||
-                    newSortField.includes('created_at') ||
-                    newSortField.includes('edit_timestamp')
+                newSortField.includes('created_at') ||
+                newSortField.includes('edit_timestamp')
                     ? 'desc'
                     : 'asc';
             onSort(newSortField, newDirection);
@@ -169,7 +169,6 @@ export default function ListView<T extends { id?: string | number }>({
             <SortUp className={className} />
         );
     };
-
 
     const handleFilterChange = (column: string, value: string | DateRangeFilter) => {
         if (filterableColumns[column]) {
@@ -190,8 +189,9 @@ export default function ListView<T extends { id?: string | number }>({
         className = '',
         filterType = 'text',
     }: SortableTableHeaderProps) => {
-        const columnDef = columns.find(c => c.key === column);
-        const isSortable = !!sortFieldMapping[column] && !!onSort && columnDef?.sortable !== false;
+        const columnDef = columns.find((c) => c.key === column);
+        const isSortable =
+            !!sortFieldMapping[column] && !!onSort && columnDef?.sortable !== false;
         const isFilterable = !!filterableColumns[column];
         const isFilterActive = activeFilterColumn === column;
 
@@ -211,7 +211,9 @@ export default function ListView<T extends { id?: string | number }>({
                         [column]: existing ?? '',
                     }));
                 } else {
-                    const committed = filterValues[column] as DateRangeFilter | undefined;
+                    const committed = filterValues[column] as
+                        | DateRangeFilter
+                        | undefined;
                     const committedStart = safeParseDate(committed?.from);
                     const committedEnd = safeParseDate(committed?.to);
                     if (committedStart && committedEnd) {
@@ -264,31 +266,40 @@ export default function ListView<T extends { id?: string | number }>({
             >
                 {isFilterActive ? (
                     <div
-                        ref={(el) => { filterInputRefs.current[column] = el }}
+                        ref={(el) => {
+                            filterInputRefs.current[column] = el;
+                        }}
                         className='p-1'
                     >
                         {filterType === 'date' ? (
                             (() => {
-                                const committed = filterValues[column] as DateRangeFilter | undefined;
+                                const committed = filterValues[column] as
+                                    | DateRangeFilter
+                                    | undefined;
                                 const committedStart = safeParseDate(committed?.from);
                                 const committedEnd = safeParseDate(committed?.to);
-                                const committedHasCompleteRange = Boolean(committedStart) && Boolean(committedEnd);
+                                const committedHasCompleteRange =
+                                    Boolean(committedStart) && Boolean(committedEnd);
 
                                 const draft = draftDateRanges[column];
                                 // IMPORTANT: if a draft exists, it must fully override committed values,
                                 // even if `draft.end` is null. Otherwise we'd incorrectly fall back to the
                                 // committed end date and make range selection feel "stuck".
-                                const effectiveStart = draft ? draft.start : (committedHasCompleteRange ? committedStart : null);
-                                const effectiveEnd = draft ? draft.end : (committedHasCompleteRange ? committedEnd : null);
+                                const effectiveStart = draft
+                                    ? draft.start
+                                    : committedHasCompleteRange
+                                      ? committedStart
+                                      : null;
+                                const effectiveEnd = draft
+                                    ? draft.end
+                                    : committedHasCompleteRange
+                                      ? committedEnd
+                                      : null;
 
                                 return (
                                     <Datepicker
-                                        startDate={
-                                            effectiveStart
-                                        }
-                                        endDate={
-                                            effectiveEnd
-                                        }
+                                        startDate={effectiveStart}
+                                        endDate={effectiveEnd}
                                         onChange={handleDateRangeChange}
                                         className='cradle-search cradle-search-with-icon-left text-xs !py-1 w-48'
                                         open={true}
@@ -428,10 +439,10 @@ export default function ListView<T extends { id?: string | number }>({
                         data.map((item, index) =>
                             renderRow
                                 ? renderRow(item, index, {
-                                    enableMultiSelect,
-                                    isSelected: selectedIds.includes(item.id!),
-                                    onSelect: () => handleSelectRow(item.id!),
-                                })
+                                      enableMultiSelect,
+                                      isSelected: selectedIds.includes(item.id!),
+                                      onSelect: () => handleSelectRow(item.id!),
+                                  })
                                 : null,
                         )
                     )}

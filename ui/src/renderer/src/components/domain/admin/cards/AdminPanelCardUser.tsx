@@ -67,7 +67,7 @@ export default function AdminPanelCardUser({
             onClick: handlePermissionsClick,
             tooltip: 'Edit',
             variant: 'ghost' as const,
-        }
+        },
     ];
 
     return (

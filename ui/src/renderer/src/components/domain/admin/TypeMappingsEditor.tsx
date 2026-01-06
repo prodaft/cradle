@@ -54,11 +54,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
     const allColumns = columnDefinitions
         ? [
-            'internal_class',
-            ...Object.keys(columnDefinitions).filter(
-                (col) => col !== 'internal_class',
-            ),
-        ]
+              'internal_class',
+              ...Object.keys(columnDefinitions).filter(
+                  (col) => col !== 'internal_class',
+              ),
+          ]
         : [];
 
     // Create a new empty row using defaults if provided; note id is null by default.
@@ -99,10 +99,12 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         if (typeof firstOption === 'string') {
                             transformedMappingKeys[key] = {
                                 ...colDef,
-                                options: (colDef.options as unknown as string[]).map((opt) => ({
-                                    value: opt,
-                                    label: opt,
-                                })),
+                                options: (colDef.options as unknown as string[]).map(
+                                    (opt) => ({
+                                        value: opt,
+                                        label: opt,
+                                    }),
+                                ),
                             };
                         } else {
                             transformedMappingKeys[key] = colDef;
@@ -136,7 +138,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         if (key === 'id') continue;
 
                         const colDef = cols[key];
-                        if (colDef?.type === 'options' && value !== null && value !== undefined) {
+                        if (
+                            colDef?.type === 'options' &&
+                            value !== null &&
+                            value !== undefined
+                        ) {
                             // Transform string values to {value, label} format
                             if (typeof value === 'string') {
                                 transformedMapping[key] = {
@@ -327,7 +333,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         mappingId: row.id ?? undefined,
                     }),
                 { successMessage: 'Mapping deleted successfully' },
-            ).catch(() => { });
+            ).catch(() => {});
         }
     };
 
@@ -398,7 +404,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                     ),
                 );
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     const handleSaveAll = () => {
@@ -473,7 +479,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                     prevRows.map((r) => (r.edited ? { ...r, edited: false } : r)),
                 );
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     // Get used internal_class values to filter options
@@ -501,7 +507,8 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         {name ? capitalizeString(name) : 'Edit Type Mappings'}
                     </h1>
                     <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Map {name ? `${capitalizeString(name)} ` : ''}types to internal entry classes
+                        Map {name ? `${capitalizeString(name)} ` : ''}types to internal
+                        entry classes
                     </p>
                 </div>
             </div>
@@ -513,9 +520,10 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         <button
                             onClick={handleSaveAll}
                             disabled={!rows.some((row) => row.edited)}
-                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-lg px-6 hover:bg-cradle-bg-secondary ${!rows.some((row) => row.edited) &&
+                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-lg px-6 hover:bg-cradle-bg-secondary ${
+                                !rows.some((row) => row.edited) &&
                                 'opacity-50 cursor-not-allowed'
-                                }`}
+                            }`}
                         >
                             Save All
                         </button>
@@ -537,7 +545,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                         >
                                             {capitalizeString(column)}
                                             {columnDefinitions[column]?.required && (
-                                                <span className='text-red-500 ml-1'>*</span>
+                                                <span className='text-red-500 ml-1'>
+                                                    *
+                                                </span>
                                             )}
                                         </th>
                                     ))}
@@ -547,10 +557,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                 {rows.map((row, index) => (
                                     <tr
                                         key={index}
-                                        className={`border-b border-cradle-border-primary/50 ${index < rows.length - 1 && !row.edited
-                                            ? 'bg-transparent'
-                                            : ''
-                                            } hover:bg-cradle-bg-secondary/20 transition-colors`}
+                                        className={`border-b border-cradle-border-primary/50 ${
+                                            index < rows.length - 1 && !row.edited
+                                                ? 'bg-transparent'
+                                                : ''
+                                        } hover:bg-cradle-bg-secondary/20 transition-colors`}
                                     >
                                         {/* Actions cell with Delete and Save buttons */}
                                         <td className='px-4 py-2 whitespace-nowrap'>
@@ -567,7 +578,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                 )}
                                                 {row.edited && (
                                                     <button
-                                                        onClick={() => handleSaveRow(index)}
+                                                        onClick={() =>
+                                                            handleSaveRow(index)
+                                                        }
                                                         className='text-green-600 hover:text-green-900'
                                                     >
                                                         Save
@@ -597,10 +610,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                 )
                                                             }
                                                             staticOptions={
-                                                                column === 'internal_class'
+                                                                column ===
+                                                                'internal_class'
                                                                     ? getAvailableInternalClassOptions(
-                                                                        index,
-                                                                    )
+                                                                          index,
+                                                                      )
                                                                     : colDef.options
                                                             }
                                                             placeholder={
@@ -608,7 +622,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     ? 'Required...'
                                                                     : 'Select...'
                                                             }
-                                                            isClearable={!colDef.required}
+                                                            isClearable={
+                                                                !colDef.required
+                                                            }
                                                             classNames={{
                                                                 control: () =>
                                                                     hasError
@@ -635,10 +651,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     e.target.value,
                                                                 )
                                                             }
-                                                            className={`cradle-input w-full ${hasError
-                                                                ? 'border-red-500'
-                                                                : ''
-                                                                }`}
+                                                            className={`cradle-input w-full ${
+                                                                hasError
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                            }`}
                                                             min={colDef.min}
                                                             max={colDef.max}
                                                             placeholder={
@@ -665,10 +682,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     e.target.value,
                                                                 )
                                                             }
-                                                            className={`cradle-input w-full ${hasError
-                                                                ? 'border-red-500'
-                                                                : ''
-                                                                }`}
+                                                            className={`cradle-input w-full ${
+                                                                hasError
+                                                                    ? 'border-red-500'
+                                                                    : ''
+                                                            }`}
                                                             minLength={colDef.minLength}
                                                             maxLength={colDef.maxLength}
                                                             pattern={colDef.pattern}

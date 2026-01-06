@@ -2,7 +2,12 @@ import { useModal } from '@/contexts/ui/ModalContext';
 import { useCradleNavigate } from '@/hooks';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBar,
+    ActionBarDivider,
+    ActionBarSearch,
+    CollapsibleActionGroup,
+} from '@components/base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -10,7 +15,13 @@ import TableActionsButton from '@components/base/TableActionsButton';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { EnrichmentRequestList } from '@services/cradle/models';
-import { InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import {
+    InfoCircleSolid,
+    RefreshCircle,
+    Trash,
+    WarningCircleSolid,
+    WarningTriangleSolid,
+} from 'iconoir-react';
 import { capitalize } from 'lodash';
 import { ChangeEvent, FormEvent, MouseEvent } from 'react';
 
@@ -70,17 +81,17 @@ function EnrichmentRequestsList({
     sortDirection = 'desc',
     onSort,
     pageSize = 10,
-    setPageSize = () => { },
+    setPageSize = () => {},
     onColumnFilterChange = null,
     columnFilters = { status: 'all', user: '' },
     searchFilters = {},
-    onSearchChange = () => { },
-    onSearchSubmit = () => { },
+    onSearchChange = () => {},
+    onSearchSubmit = () => {},
     selectedRequests = [],
-    setSelectedRequests = () => { },
-    onDeleteSelected = () => { },
-    onRerunSelected = () => { },
-    onCreateRequest = () => { },
+    setSelectedRequests = () => {},
+    onDeleteSelected = () => {},
+    onRerunSelected = () => {},
+    onCreateRequest = () => {},
 }: EnrichmentRequestsListProps) {
     const { navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
@@ -98,49 +109,59 @@ function EnrichmentRequestsList({
         }
     };
 
-    const columns: Array<{ key: string; label: string | React.ReactNode; filterType?: 'text' | 'date'; sortable?: boolean }> =
-        [
-            {
-                key: 'title',
-                label: (
-                    <div className='flex items-center gap-2'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status}
-                            statusOptions={['all', 'done', 'waiting', 'error', 'info']}
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
-            },
-            { key: 'user', label: 'User', filterType: 'text' as const },
-            { key: 'createdAt', label: 'Created At' },
-            { key: 'actions', label: '', sortable: false },
-        ];
+    const columns: Array<{
+        key: string;
+        label: string | React.ReactNode;
+        filterType?: 'text' | 'date';
+        sortable?: boolean;
+    }> = [
+        {
+            key: 'title',
+            label: (
+                <div className='flex items-center gap-2'>
+                    <StatusHeaderDropdown
+                        onStatusChange={handleStatusChange}
+                        status={columnFilters.status}
+                        statusOptions={['all', 'done', 'waiting', 'error', 'info']}
+                    />
+                    <span>Title</span>
+                </div>
+            ),
+        },
+        { key: 'user', label: 'User', filterType: 'text' as const },
+        { key: 'createdAt', label: 'Created At' },
+        { key: 'actions', label: '', sortable: false },
+    ];
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
         onColumnFilterChange
             ? {
-                user: (value: string | DateRangeFilter) => {
-                    if (typeof value === 'string') {
-                        onColumnFilterChange('user', value);
-                    }
-                },
-            }
+                  user: (value: string | DateRangeFilter) => {
+                      if (typeof value === 'string') {
+                          onColumnFilterChange('user', value);
+                      }
+                  },
+              }
             : {
-                status: (value: string | DateRangeFilter) => { },
-            };
+                  status: (value: string | DateRangeFilter) => {},
+              };
 
     const errorMsg = (request: EnrichmentRequest) => {
         let msgs: string[] = [];
         if (request.ignoredCount && request.ignoredCount > 0) {
-            msgs.push(`Ignored ${request.ignoredCount} artifact${request.ignoredCount > 1 ? 's' : ''}`);
+            msgs.push(
+                `Ignored ${request.ignoredCount} artifact${request.ignoredCount > 1 ? 's' : ''}`,
+            );
         }
-        let warn_count = request.enrichers?.filter((enricher) => enricher.status === 'warning').length || 0;
+        let warn_count =
+            request.enrichers?.filter((enricher) => enricher.status === 'warning')
+                .length || 0;
         if (warn_count > 0) {
             msgs.push(`Warnings in ${warn_count} enricher${warn_count > 1 ? 's' : ''}`);
         }
-        let error_count = request.enrichers?.filter((enricher) => enricher.status === 'error').length || 0;
+        let error_count =
+            request.enrichers?.filter((enricher) => enricher.status === 'error')
+                .length || 0;
         if (error_count > 0) {
             msgs.push(`Errors in ${error_count} enricher${error_count > 1 ? 's' : ''}`);
         }
@@ -189,18 +210,29 @@ function EnrichmentRequestsList({
                         />
                     );
                 case 'working':
-                    return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
+                    return (
+                        <InfoCircleSolid
+                            className='text-blue-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
                 default:
                     return null;
             }
         })();
 
         const tooltipContent = errorMessage || capitalize(status);
-        const tooltipColor = status === 'error' ? 'error' : status === 'waiting' ? 'warning' : 'primary';
+        const tooltipColor =
+            status === 'error' ? 'error' : status === 'waiting' ? 'warning' : 'primary';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
-                <Tooltip content={tooltipContent} color={tooltipColor} showArrow={false}>
+                <Tooltip
+                    content={tooltipContent}
+                    color={tooltipColor}
+                    showArrow={false}
+                >
                     <span className='inline-flex items-center align-middle flex-shrink-0'>
                         {icon}
                     </span>
@@ -227,13 +259,13 @@ function EnrichmentRequestsList({
 
         return (
             <TableActionsButton>
-                            <button
-                                onClick={handleDelete}
-                                className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
-                            >
-                                <Trash width='18' height='18' className='text-red-500' />
-                                Delete
-                            </button>
+                <button
+                    onClick={handleDelete}
+                    className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
+                >
+                    <Trash width='18' height='18' className='text-red-500' />
+                    Delete
+                </button>
             </TableActionsButton>
         );
     };
@@ -269,7 +301,9 @@ function EnrichmentRequestsList({
                         <span className='inline-flex items-center flex-shrink-0'>
                             {getStatusIcon(request.status, errorMsg(request))}
                         </span>
-                        <span className='truncate'>{truncateText(request.title, 50)}</span>
+                        <span className='truncate'>
+                            {truncateText(request.title, 50)}
+                        </span>
                     </div>
                 </td>
                 <td className='w-32'>{request.userDetail?.username || 'N/A'}</td>
@@ -299,9 +333,10 @@ function EnrichmentRequestsList({
                             actions={[
                                 {
                                     id: 'delete',
-                                    tooltip: selectedRequests.length > 0
-                                        ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
-                                        : 'Select requests to delete',
+                                    tooltip:
+                                        selectedRequests.length > 0
+                                            ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
+                                            : 'Select requests to delete',
                                     icon: <Trash width={20} height={20} />,
                                     onClick: () => {
                                         if (selectedRequests.length === 0) return;
@@ -310,20 +345,25 @@ function EnrichmentRequestsList({
                                             text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
                                         });
                                     },
-                                    disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                                    disabled:
+                                        loading ||
+                                        enrichmentRequests.length === 0 ||
+                                        selectedRequests.length === 0,
                                     iconActive: selectedRequests.length > 0,
-
                                 },
                                 {
                                     id: 'rerun',
-                                    tooltip: selectedRequests.length > 0
-                                        ? `Rerun ${selectedRequests.length} enrichment${selectedRequests.length > 1 ? 's' : ''}`
-                                        : 'Select requests to rerun',
+                                    tooltip:
+                                        selectedRequests.length > 0
+                                            ? `Rerun ${selectedRequests.length} enrichment${selectedRequests.length > 1 ? 's' : ''}`
+                                            : 'Select requests to rerun',
                                     icon: <RefreshCircle width={20} height={20} />,
                                     onClick: onRerunSelected,
-                                    disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                                    disabled:
+                                        loading ||
+                                        enrichmentRequests.length === 0 ||
+                                        selectedRequests.length === 0,
                                     iconActive: selectedRequests.length > 0,
-
                                 },
                             ]}
                         />
@@ -337,7 +377,7 @@ function EnrichmentRequestsList({
                             debounceMs={300}
                             onDebouncedChange={(value) => {
                                 const event = {
-                                    preventDefault: () => { },
+                                    preventDefault: () => {},
                                     target: { name: 'title', value },
                                 } as ChangeEvent<HTMLInputElement>;
                                 onSearchChange(event);
@@ -346,7 +386,7 @@ function EnrichmentRequestsList({
                             }}
                             onSubmit={(value) => {
                                 const event = {
-                                    preventDefault: () => { },
+                                    preventDefault: () => {},
                                     target: { name: 'title', value },
                                 } as any;
                                 onSearchSubmit(event);

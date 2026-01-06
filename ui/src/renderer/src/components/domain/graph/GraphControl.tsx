@@ -1,10 +1,10 @@
 import { EdgeRelation } from '@/services/cradle';
 import { CosmographSearch } from '@cosmograph/react';
 import { ComponentType, MutableRefObject, useMemo } from 'react';
+import ExplorerPanel from './ExplorerPanel';
 import { Edge, Node } from './graphFilterUtils';
 import GraphLegend from './GraphLegend';
 import GraphSettings from './GraphSettings';
-import ExplorerPanel from './ExplorerPanel';
 
 interface Entry {
     id: string;
@@ -77,14 +77,19 @@ export default function GraphControl({
         <>
             {/* Explorer Panel Content */}
             <div className={activePanel === 'explorer' ? '' : 'hidden'}>
-                <SearchComponent addEdges={addEdges} addNodes={addNodes} addBoth={addBoth} />
+                <SearchComponent
+                    addEdges={addEdges}
+                    addNodes={addNodes}
+                    addBoth={addBoth}
+                />
                 {/* Graph Search - Keep mounted to avoid cleanup errors */}
                 <div className='px-4 mt-4'>
                     <div className='cradle-bg-primary border border-cradle-border-accent rounded-lg p-3'>
                         <CosmographSearch
                             accessor='_label'
                             onSelect={(suggestion: any) => {
-                                if (suggestion == null || cosmographRef.current == null) return;
+                                if (suggestion == null || cosmographRef.current == null)
+                                    return;
                                 const index = suggestion._index;
                                 if (index !== undefined) {
                                     cosmographRef.current.setFocusedPoint(index);
@@ -100,8 +105,8 @@ export default function GraphControl({
                 </div>
                 {/* Explorer Panel */}
                 <div className='border-t-2 border-t-zinc-400 dark:border-t-zinc-800 mt-4'>
-                    <ExplorerPanel 
-                        selectedNodes={selectedEntries} 
+                    <ExplorerPanel
+                        selectedNodes={selectedEntries}
                         allNodes={nodes}
                         edges={edges}
                         onNodeClick={(node) => {

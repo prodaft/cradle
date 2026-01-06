@@ -12,7 +12,7 @@ import {
     RefreshCircle,
     Search,
     Sparks,
-    StatsReport
+    StatsReport,
 } from 'iconoir-react';
 import { FloppyDisk, LightBulb, Trash } from 'iconoir-react/regular';
 import { ViewMode } from './constants';
@@ -251,22 +251,24 @@ export default function ActionsDropdown({
                                         <span className='flex-1'>Add Timestamps</span>
                                     </button>
                                 )}
-                            {isAdmin && !isFleeting && activeView !== ViewMode.GRAPH && (
-                                <>
-                                    <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
-                                    <button
-                                        onClick={() => {
-                                            setShowActionsMenu(false);
-                                            handleRelinkNote();
-                                        }}
-                                        className={menuButtonClasses}
-                                        data-testid='relink-note-menu-item'
-                                    >
-                                        <RefreshCircle width='16' height='16' />
-                                        <span className='flex-1'>Relink Note</span>
-                                    </button>
-                                </>
-                            )}
+                            {isAdmin &&
+                                !isFleeting &&
+                                activeView !== ViewMode.GRAPH && (
+                                    <>
+                                        <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />
+                                        <button
+                                            onClick={() => {
+                                                setShowActionsMenu(false);
+                                                handleRelinkNote();
+                                            }}
+                                            className={menuButtonClasses}
+                                            data-testid='relink-note-menu-item'
+                                        >
+                                            <RefreshCircle width='16' height='16' />
+                                            <span className='flex-1'>Relink Note</span>
+                                        </button>
+                                    </>
+                                )}
                             {activeView !== ViewMode.GRAPH && (
                                 <>
                                     <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1' />

@@ -113,7 +113,7 @@
     /* Maybe use a glow or lighter opacity of accent? Design system uses tertiary for backgrounds */
     /* Let's try a transparent accent if possible, but variables are hex.
        Using --cradle-glow-primary which is rgba */
-    background-color: var(--cradle-glow-primary); 
+    background-color: var(--cradle-glow-primary);
 }
 
 /* Selected Start/End of range */
@@ -150,25 +150,37 @@
     border-bottom-right-radius: var(--cradle-radius-md);
 }
 
-.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item {
+.react-datepicker__time-container
+    .react-datepicker__time
+    .react-datepicker__time-box
+    ul.react-datepicker__time-list
+    li.react-datepicker__time-list-item {
     height: 30px;
     padding: 5px 10px;
     white-space: nowrap;
     color: var(--cradle-text-primary);
 }
 
-.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item:hover {
+.react-datepicker__time-container
+    .react-datepicker__time
+    .react-datepicker__time-box
+    ul.react-datepicker__time-list
+    li.react-datepicker__time-list-item:hover {
     background-color: var(--cradle-bg-tertiary);
 }
 
-.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box ul.react-datepicker__time-list li.react-datepicker__time-list-item--selected {
+.react-datepicker__time-container
+    .react-datepicker__time
+    .react-datepicker__time-box
+    ul.react-datepicker__time-list
+    li.react-datepicker__time-list-item--selected {
     background-color: var(--cradle-accent-primary);
     color: #fff;
 }
 
 /* Triangle/Popper Arrow */
-.react-datepicker-popper[data-placement^="bottom"] .react-datepicker__triangle,
-.react-datepicker-popper[data-placement^="top"] .react-datepicker__triangle {
+.react-datepicker-popper[data-placement^='bottom'] .react-datepicker__triangle,
+.react-datepicker-popper[data-placement^='top'] .react-datepicker__triangle {
     fill: var(--cradle-bg-elevated);
     color: var(--cradle-bg-elevated);
     stroke: var(--cradle-border-primary);

@@ -6,8 +6,10 @@
 import { forwardRef, InputHTMLAttributes } from 'react';
 import { FieldError, UseFormWatch } from 'react-hook-form';
 
-export interface SettingsToggleProps
-    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
+export interface SettingsToggleProps extends Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    'name' | 'type'
+> {
     /** Label text for the toggle */
     label: string;
     /** Description text displayed below the label */
@@ -67,7 +69,8 @@ const SettingsToggle = forwardRef<HTMLInputElement, SettingsToggleProps>(
         const isChecked = watch && name ? watch(name) : checkedProp;
 
         // Generate ID for accessibility
-        const toggleId = id || name || `toggle-${Math.random().toString(36).substr(2, 9)}`;
+        const toggleId =
+            id || name || `toggle-${Math.random().toString(36).substr(2, 9)}`;
 
         return (
             <div className='py-2'>

@@ -38,7 +38,7 @@ export default function AdminPanelUserPermissions({
                 auth.setTokensDirectly(res as any);
                 navigate('/', { replace: true });
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     const sendEmailConfirmation = () => {
@@ -49,7 +49,7 @@ export default function AdminPanelUserPermissions({
                     actionName: 'send_email_confirmation',
                 }),
             { successMessage: 'Email confirmation sent successfully' },
-        ).catch(() => { });
+        ).catch(() => {});
     };
 
     const sendPasswordResetEmail = () => {
@@ -60,7 +60,7 @@ export default function AdminPanelUserPermissions({
                     actionName: 'password_reset_email',
                 }),
             { successMessage: 'Password reset email sent successfully' },
-        ).catch(() => { });
+        ).catch(() => {});
     };
 
     useEffect(() => {
@@ -78,9 +78,9 @@ export default function AdminPanelUserPermissions({
                                     searchKey={c.name}
                                     accessLevel={
                                         (c.accessType ?? 'none') as
-                                        | 'none'
-                                        | 'read'
-                                        | 'read-write'
+                                            | 'none'
+                                            | 'read'
+                                            | 'read-write'
                                     }
                                 />
                             );
@@ -92,7 +92,7 @@ export default function AdminPanelUserPermissions({
                         }),
                 );
             })
-            .catch(() => { });
+            .catch(() => {});
     }, [id, accessApi, execute]);
 
     // Filter entities based on search

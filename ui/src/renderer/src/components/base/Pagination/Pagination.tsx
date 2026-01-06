@@ -67,17 +67,18 @@ export default function Pagination({
             {/* Left side: Selection info */}
             {selectedCount !== undefined && totalRows !== undefined && (
                 <div className='flex-1 text-sm cradle-text-tertiary'>
-                    {selectedCount} of {totalRows} row{totalRows !== 1 ? 's' : ''} selected.
+                    {selectedCount} of {totalRows} row{totalRows !== 1 ? 's' : ''}{' '}
+                    selected.
                 </div>
             )}
 
             {/* Right side: Pagination controls */}
             <div className='flex items-center space-x-6 lg:space-x-8'>
                 {/* Rows per page selector */}
-            {pageSize !== null && onPageSizeChange && (
+                {pageSize !== null && onPageSizeChange && (
                     <div className='flex items-center space-x-2'>
                         <p className='text-sm font-medium'>Rows per page</p>
-                    <select
+                        <select
                             className='h-8 px-3 text-sm rounded-md border border-cradle-border-accent bg-transparent text-cradle-text-primary focus:outline-none focus:ring-2 focus:ring-cradle-accent-primary focus:ring-offset-2 cursor-pointer appearance-none'
                             style={{
                                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
@@ -86,21 +87,21 @@ export default function Pagination({
                                 backgroundSize: '1.5em 1.5em',
                                 paddingRight: '2.5rem',
                             }}
-                        value={pageSize}
-                        onChange={handlePageSizeChange}
-                        aria-label='Rows per page'
-                    >
-                        {pageSizeOptions.map((size) => (
-                            <option key={size} value={size}>
-                                {size}
-                            </option>
-                        ))}
-                        {!pageSizeOptions.includes(pageSize) && (
-                            <option value={pageSize}>{pageSize}</option>
-                        )}
-                    </select>
-                </div>
-            )}
+                            value={pageSize}
+                            onChange={handlePageSizeChange}
+                            aria-label='Rows per page'
+                        >
+                            {pageSizeOptions.map((size) => (
+                                <option key={size} value={size}>
+                                    {size}
+                                </option>
+                            ))}
+                            {!pageSizeOptions.includes(pageSize) && (
+                                <option value={pageSize}>{pageSize}</option>
+                            )}
+                        </select>
+                    </div>
+                )}
 
                 {/* Page info */}
                 <div className='flex w-[100px] items-center justify-center text-sm font-medium'>

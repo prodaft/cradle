@@ -17,7 +17,7 @@ import {
     SettingsCard,
     SettingsField,
     SettingsSeparator,
-    SettingsToggle
+    SettingsToggle,
 } from '../../../forms';
 import Selector from '../../../forms/Selector';
 
@@ -46,41 +46,35 @@ interface FileSettingsResponse {
     };
 }
 
-const fileSettingsSchema: Yup.ObjectSchema<FileSettingsFormValues> = Yup.object().shape({
-    autoprocessFiles: Yup.boolean().default(true).required(),
-    md5Subtype: Yup.object()
-        .shape({ value: Yup.string().required(), label: Yup.string().required() })
-        .nullable()
-        .required('MD5 hash subtype is required'),
-    sha1Subtype: Yup.object()
-        .shape({ value: Yup.string().required(), label: Yup.string().required() })
-        .nullable()
-        .required('SHA1 hash subtype is required'),
-    sha256Subtype: Yup.object()
-        .shape({ value: Yup.string().required(), label: Yup.string().required() })
-        .nullable()
-        .required('SHA256 hash subtype is required'),
-    maxFileSizeForHashing: Yup.string()
-        .required('Maximum file size for hashing is required')
-        .test(
-            'is-valid-bytes',
-            'Enter a valid size (e.g. 10MB, 1GB)',
-            (value) => {
+const fileSettingsSchema: Yup.ObjectSchema<FileSettingsFormValues> = Yup.object().shape(
+    {
+        autoprocessFiles: Yup.boolean().default(true).required(),
+        md5Subtype: Yup.object()
+            .shape({ value: Yup.string().required(), label: Yup.string().required() })
+            .nullable()
+            .required('MD5 hash subtype is required'),
+        sha1Subtype: Yup.object()
+            .shape({ value: Yup.string().required(), label: Yup.string().required() })
+            .nullable()
+            .required('SHA1 hash subtype is required'),
+        sha256Subtype: Yup.object()
+            .shape({ value: Yup.string().required(), label: Yup.string().required() })
+            .nullable()
+            .required('SHA256 hash subtype is required'),
+        maxFileSizeForHashing: Yup.string()
+            .required('Maximum file size for hashing is required')
+            .test('is-valid-bytes', 'Enter a valid size (e.g. 10MB, 1GB)', (value) => {
                 if (!value) return false;
                 return typeof bytes(value) === 'number';
-            },
-        ),
-    uploadLimit: Yup.string()
-        .required('Upload limit is required')
-        .test(
-            'is-valid-bytes',
-            'Enter a valid size (e.g. 100MB, 1GB)',
-            (value) => {
+            }),
+        uploadLimit: Yup.string()
+            .required('Upload limit is required')
+            .test('is-valid-bytes', 'Enter a valid size (e.g. 100MB, 1GB)', (value) => {
                 if (!value) return false;
                 return typeof bytes(value) === 'number';
-            },
-        ),
-});
+            }),
+    },
+);
 
 export default function FileSettingsForm() {
     const { entriesApi, managementApi } = useApi();
@@ -108,8 +102,8 @@ export default function FileSettingsForm() {
             md5Subtype: null,
             sha1Subtype: null,
             sha256Subtype: null,
-            maxFileSizeForHashing: "10 MB",
-            uploadLimit: "2 GB",
+            maxFileSizeForHashing: '10 MB',
+            uploadLimit: '2 GB',
         },
     });
 
@@ -139,10 +133,7 @@ export default function FileSettingsForm() {
             try {
                 const entryClasses = await entriesApi.entryClassesList({});
                 const artifactSubtypes = entryClasses
-                    .filter(
-                        (entry) =>
-                            entry.type === EntryClassTypeEnum.Artifact,
-                    )
+                    .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
                     .map((entry) => ({
                         value: entry.subtype,
                         label: entry.subtype,
@@ -165,29 +156,32 @@ export default function FileSettingsForm() {
                         autoprocessFiles: settings.files.autoprocess_files ?? true,
                         md5Subtype: settings.files.md5_subtype
                             ? {
-                                value: settings.files.md5_subtype,
-                                label: settings.files.md5_subtype,
-                            }
+                                  value: settings.files.md5_subtype,
+                                  label: settings.files.md5_subtype,
+                              }
                             : null,
                         sha1Subtype: settings.files.sha1_subtype
                             ? {
-                                value: settings.files.sha1_subtype,
-                                label: settings.files.sha1_subtype,
-                            }
+                                  value: settings.files.sha1_subtype,
+                                  label: settings.files.sha1_subtype,
+                              }
                             : null,
                         sha256Subtype: settings.files.sha256_subtype
                             ? {
-                                value: settings.files.sha256_subtype,
-                                label: settings.files.sha256_subtype,
-                            }
+                                  value: settings.files.sha256_subtype,
+                                  label: settings.files.sha256_subtype,
+                              }
                             : null,
                         maxFileSizeForHashing: settings.files.max_file_size_for_hashing
-                            ? bytes.format(settings.files.max_file_size_for_hashing, { unitSeparator: ' ' })
+                            ? bytes.format(settings.files.max_file_size_for_hashing, {
+                                  unitSeparator: ' ',
+                              })
                             : '10 MB',
                         uploadLimit: settings.files.upload_limit
-                            ? bytes.format(settings.files.upload_limit, { unitSeparator: ' ' })
+                            ? bytes.format(settings.files.upload_limit, {
+                                  unitSeparator: ' ',
+                              })
                             : '2 GB',
-
                     });
                 }
             } catch (error) {
@@ -208,7 +202,9 @@ export default function FileSettingsForm() {
                         md5_subtype: data.md5Subtype?.value || '',
                         sha1_subtype: data.sha1Subtype?.value || '',
                         sha256_subtype: data.sha256Subtype?.value || '',
-                        max_file_size_for_hashing: bytes.parse(data.maxFileSizeForHashing),
+                        max_file_size_for_hashing: bytes.parse(
+                            data.maxFileSizeForHashing,
+                        ),
                         upload_limit: bytes.parse(data.uploadLimit),
                     },
                 },
@@ -355,7 +351,10 @@ export default function FileSettingsForm() {
                         </section>
 
                         {/* Actions Section */}
-                        <section id='actions' className='border-t border-white/5 pt-5 pb-8'>
+                        <section
+                            id='actions'
+                            className='border-t border-white/5 pt-5 pb-8'
+                        >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 Actions
                             </h2>

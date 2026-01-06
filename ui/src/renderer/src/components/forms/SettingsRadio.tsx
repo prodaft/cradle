@@ -11,8 +11,10 @@ export interface RadioOption {
     label: string;
 }
 
-export interface SettingsRadioProps
-    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'type' | 'onChange'> {
+export interface SettingsRadioProps extends Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    'name' | 'type' | 'onChange'
+> {
     /** Label text for the radio group */
     label: string;
     /** Description text displayed below the label */
@@ -87,7 +89,9 @@ const SettingsRadio = forwardRef<HTMLInputElement, SettingsRadioProps>(
                             <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
                         )}
                     </div>
-                    <div className={`flex ${layout === 'horizontal' ? 'flex-row gap-3' : 'flex-col gap-2'}`}>
+                    <div
+                        className={`flex ${layout === 'horizontal' ? 'flex-row gap-3' : 'flex-col gap-2'}`}
+                    >
                         {options.map((option) => (
                             <label
                                 key={option.value}

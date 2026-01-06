@@ -4,8 +4,10 @@ import { FieldError } from 'react-hook-form';
 /**
  * FormField component props - designed for react-hook-form
  */
-export interface FormFieldProps
-    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name'> {
+export interface FormFieldProps extends Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    'name'
+> {
     /** Label text for the field */
     label?: string;
     /** Name from react-hook-form registration (automatically provided by {...register()}) */

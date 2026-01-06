@@ -60,13 +60,14 @@ const UploadSchema = Yup.object().shape({
     associatedEntry: Yup.mixed().when('dataType', {
         is: (dataType: DataTypeOption | null) => dataType && !dataType.inferEntities,
         then: () =>
-            Yup.array().of(
-                Yup.object()
-                    .shape({
+            Yup.array()
+                .of(
+                    Yup.object().shape({
                         value: Yup.string().required(),
                         label: Yup.string().required(),
-                    })
-            ).notRequired(),
+                    }),
+                )
+                .notRequired(),
         otherwise: () => Yup.array(),
     }),
     files: Yup.array()
@@ -248,7 +249,7 @@ export default function UploadDigestModal({
                         message: 'File uploaded successfully',
                         show: true,
                     });
-                    notify({ text: 'File uploaded successfully', type: "success" });
+                    notify({ text: 'File uploaded successfully', type: 'success' });
 
                     if (onUpload) {
                         onUpload();
@@ -317,13 +318,15 @@ export default function UploadDigestModal({
     };
 
     const fetchDigestTypes = async (query: string): Promise<DataTypeOption[]> => {
-        const response = await execute(() => intelioApi.intelioDigestOptionsList(), { errorMessage: 'Failed to fetch digest types' });
+        const response = await execute(() => intelioApi.intelioDigestOptionsList(), {
+            errorMessage: 'Failed to fetch digest types',
+        });
         return response.map((type: DigestSubclass) => ({
             value: type.className,
             label: type.name,
             inferEntities: type.inferEntities,
         }));
-    }
+    };
 
     // Check if form has errors for styling
     const titleError = touched.title && errors.title;

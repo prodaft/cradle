@@ -122,10 +122,10 @@ export default function AlertBox({
             normalizedColor === 'green'
                 ? 'var(--cradle-accent-success)'
                 : normalizedColor === 'red'
-                    ? 'var(--cradle-accent-error)'
-                    : normalizedColor === 'yellow'
-                        ? 'var(--cradle-accent-warning)'
-                        : 'var(--cradle-accent-primary)';
+                  ? 'var(--cradle-accent-error)'
+                  : normalizedColor === 'yellow'
+                    ? 'var(--cradle-accent-warning)'
+                    : 'var(--cradle-accent-primary)';
 
         switch (normalizedColor) {
             case 'green':
@@ -200,11 +200,7 @@ export default function AlertBox({
                 </div>
             </div>
             {alert.button && (
-                <button
-                    onClick={alert.button.onClick}
-                >
-                    {alert.button.text}
-                </button>
+                <button onClick={alert.button.onClick}>{alert.button.text}</button>
             )}
         </div>
     ) : null;

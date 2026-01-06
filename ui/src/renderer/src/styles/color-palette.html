@@ -1,788 +1,793 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRADLE Design System - Color Palette</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CRADLE Design System - Color Palette</title>
+        <style>
+            * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f5f5;
-            padding: 2rem;
-            color: #333;
-        }
+            body {
+                font-family:
+                    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: #f5f5f5;
+                padding: 2rem;
+                color: #333;
+            }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+            .container {
+                max-width: 1400px;
+                margin: 0 auto;
+            }
 
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            color: #000;
-        }
+            h1 {
+                font-size: 2.5rem;
+                margin-bottom: 0.5rem;
+                color: #000;
+            }
 
-        .subtitle {
-            color: #666;
-            margin-bottom: 3rem;
-            font-size: 1.1rem;
-        }
+            .subtitle {
+                color: #666;
+                margin-bottom: 3rem;
+                font-size: 1.1rem;
+            }
 
-        .section {
-            margin-bottom: 4rem;
-        }
+            .section {
+                margin-bottom: 4rem;
+            }
 
-        .section-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            color: #000;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+            .section-title {
+                font-size: 1.5rem;
+                font-weight: 600;
+                margin-bottom: 1.5rem;
+                color: #000;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
 
-        .color-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
+            .color-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+                gap: 1rem;
+                margin-bottom: 2rem;
+            }
 
-        .color-card {
-            background: white;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+            .color-card {
+                background: white;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                transition:
+                    transform 0.2s,
+                    box-shadow 0.2s;
+            }
 
-        .color-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
+            .color-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            }
 
-        .color-swatch {
-            width: 100%;
-            height: 120px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #000;
-            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
-        }
+            .color-swatch {
+                width: 100%;
+                height: 120px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 0.9rem;
+                color: #000;
+                text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            }
 
-        .color-info {
-            padding: 1rem;
-        }
+            .color-info {
+                padding: 1rem;
+            }
 
-        .color-name {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-            font-size: 0.9rem;
-        }
+            .color-name {
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+                font-size: 0.9rem;
+            }
 
-        .color-hex {
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-            font-size: 0.8rem;
-            color: #666;
-            margin-bottom: 0.25rem;
-        }
+            .color-hex {
+                font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+                font-size: 0.8rem;
+                color: #666;
+                margin-bottom: 0.25rem;
+            }
 
-        .color-class {
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-            font-size: 0.75rem;
-            color: #999;
-            background: #f5f5f5;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            display: inline-block;
-        }
+            .color-class {
+                font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+                font-size: 0.75rem;
+                color: #999;
+                background: #f5f5f5;
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+                display: inline-block;
+            }
 
-        .design-tokens {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1rem;
-        }
+            .design-tokens {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 1rem;
+            }
 
-        .token-card {
-            background: white;
-            padding: 1rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
+            .token-card {
+                background: white;
+                padding: 1rem;
+                border-radius: 8px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
 
-        .token-name {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
+            .token-name {
+                font-weight: 600;
+                margin-bottom: 0.5rem;
+                font-size: 0.9rem;
+            }
 
-        .token-swatch {
-            width: 100%;
-            height: 60px;
-            border-radius: 4px;
-            margin-bottom: 0.5rem;
-            border: 1px solid #e0e0e0;
-        }
+            .token-swatch {
+                width: 100%;
+                height: 60px;
+                border-radius: 4px;
+                margin-bottom: 0.5rem;
+                border: 1px solid #e0e0e0;
+            }
 
-        .token-value {
-            font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
-            font-size: 0.8rem;
-            color: #666;
-        }
+            .token-value {
+                font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+                font-size: 0.8rem;
+                color: #666;
+            }
 
-        .dark-text {
-            color: #000;
-        }
+            .dark-text {
+                color: #000;
+            }
 
-        .light-text {
-            color: #fff;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>CRADLE Design System</h1>
-        <p class="subtitle">Complete Color Palette Reference</p>
+            .light-text {
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>CRADLE Design System</h1>
+            <p class="subtitle">Complete Color Palette Reference</p>
 
-        <!-- Primary Colors -->
-        <div class="section">
-            <h2 class="section-title">Primary Colors</h2>
-            <div class="color-grid">
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #ff8c00;">
-                        <span class="dark-text">Primary</span>
+            <!-- Primary Colors -->
+            <div class="section">
+                <h2 class="section-title">Primary Colors</h2>
+                <div class="color-grid">
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #ff8c00">
+                            <span class="dark-text">Primary</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Primary</div>
+                            <div class="color-hex">#ff8c00</div>
+                            <div class="color-class">bg-primary</div>
+                        </div>
                     </div>
-                    <div class="color-info">
-                        <div class="color-name">Primary</div>
-                        <div class="color-hex">#ff8c00</div>
-                        <div class="color-class">bg-primary</div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #ffa500">
+                            <span class="dark-text">Secondary</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Secondary</div>
+                            <div class="color-hex">#ffa500</div>
+                            <div class="color-class">accent-secondary</div>
+                        </div>
                     </div>
                 </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #ffa500;">
-                        <span class="dark-text">Secondary</span>
+            </div>
+
+            <!-- Gray Scale -->
+            <div class="section">
+                <h2 class="section-title">Gray Scale</h2>
+                <div class="color-grid">
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #fafafa">
+                            <span class="dark-text">50</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 50</div>
+                            <div class="color-hex">#FAFAFA</div>
+                            <div class="color-class">bg-cradle-gray-50</div>
+                        </div>
                     </div>
-                    <div class="color-info">
-                        <div class="color-name">Secondary</div>
-                        <div class="color-hex">#ffa500</div>
-                        <div class="color-class">accent-secondary</div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #f5f5f5">
+                            <span class="dark-text">100</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 100</div>
+                            <div class="color-hex">#F5F5F5</div>
+                            <div class="color-class">bg-cradle-gray-100</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #efefef">
+                            <span class="dark-text">200</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 200</div>
+                            <div class="color-hex">#EFEFEF</div>
+                            <div class="color-class">bg-cradle-gray-200</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #d4d4d4">
+                            <span class="dark-text">300</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 300</div>
+                            <div class="color-hex">#D4D4D4</div>
+                            <div class="color-class">bg-cradle-gray-300</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #a0a0a0">
+                            <span class="light-text">400</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 400</div>
+                            <div class="color-hex">#A0A0A0</div>
+                            <div class="color-class">bg-cradle-gray-400</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #808080">
+                            <span class="light-text">500</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 500</div>
+                            <div class="color-hex">#808080</div>
+                            <div class="color-class">bg-cradle-gray-500</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #6a6a6a">
+                            <span class="light-text">600</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 600</div>
+                            <div class="color-hex">#6A6A6A</div>
+                            <div class="color-class">bg-cradle-gray-600</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #5a5a5a">
+                            <span class="light-text">700</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 700</div>
+                            <div class="color-hex">#5A5A5A</div>
+                            <div class="color-class">bg-cradle-gray-700</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #3a3a3a">
+                            <span class="light-text">800</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 800</div>
+                            <div class="color-hex">#3A3A3A</div>
+                            <div class="color-class">bg-cradle-gray-800</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #1a1a1a">
+                            <span class="light-text">900</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Gray 900</div>
+                            <div class="color-hex">#1A1A1A</div>
+                            <div class="color-class">bg-cradle-gray-900</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Green Scale -->
+            <div class="section">
+                <h2 class="section-title">Green Scale</h2>
+                <div class="color-grid">
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #f0fdf4">
+                            <span class="dark-text">50</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 50</div>
+                            <div class="color-hex">#f0fdf4</div>
+                            <div class="color-class">bg-green-50</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #dcfce7">
+                            <span class="dark-text">100</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 100</div>
+                            <div class="color-hex">#dcfce7</div>
+                            <div class="color-class">bg-green-100</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #bbf7d0">
+                            <span class="dark-text">200</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 200</div>
+                            <div class="color-hex">#bbf7d0</div>
+                            <div class="color-class">bg-green-200</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #86efac">
+                            <span class="dark-text">300</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 300</div>
+                            <div class="color-hex">#86efac</div>
+                            <div class="color-class">bg-green-300</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #4ade80">
+                            <span class="dark-text">400</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 400</div>
+                            <div class="color-hex">#4ade80</div>
+                            <div class="color-class">bg-green-400</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #22c55e">
+                            <span class="light-text">500</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 500</div>
+                            <div class="color-hex">#22c55e</div>
+                            <div class="color-class">bg-green-500</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #16a34a">
+                            <span class="light-text">600</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 600</div>
+                            <div class="color-hex">#16a34a</div>
+                            <div class="color-class">bg-green-600</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #15803d">
+                            <span class="light-text">700</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 700</div>
+                            <div class="color-hex">#15803d</div>
+                            <div class="color-class">bg-green-700</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #166534">
+                            <span class="light-text">800</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 800</div>
+                            <div class="color-hex">#166534</div>
+                            <div class="color-class">bg-green-800</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #14532d">
+                            <span class="light-text">900</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Green 900</div>
+                            <div class="color-hex">#14532d</div>
+                            <div class="color-class">bg-green-900</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Blue Scale -->
+            <div class="section">
+                <h2 class="section-title">Blue Scale</h2>
+                <div class="color-grid">
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #eff6ff">
+                            <span class="dark-text">50</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 50</div>
+                            <div class="color-hex">#eff6ff</div>
+                            <div class="color-class">bg-blue-50</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #dbeafe">
+                            <span class="dark-text">100</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 100</div>
+                            <div class="color-hex">#dbeafe</div>
+                            <div class="color-class">bg-blue-100</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #bfdbfe">
+                            <span class="dark-text">200</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 200</div>
+                            <div class="color-hex">#bfdbfe</div>
+                            <div class="color-class">bg-blue-200</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #93c5fd">
+                            <span class="dark-text">300</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 300</div>
+                            <div class="color-hex">#93c5fd</div>
+                            <div class="color-class">bg-blue-300</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #60a5fa">
+                            <span class="dark-text">400</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 400</div>
+                            <div class="color-hex">#60a5fa</div>
+                            <div class="color-class">bg-blue-400</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #3b82f6">
+                            <span class="light-text">500</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 500</div>
+                            <div class="color-hex">#3b82f6</div>
+                            <div class="color-class">bg-blue-500</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #2563eb">
+                            <span class="light-text">600</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 600</div>
+                            <div class="color-hex">#2563eb</div>
+                            <div class="color-class">bg-blue-600</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #1d4ed8">
+                            <span class="light-text">700</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 700</div>
+                            <div class="color-hex">#1d4ed8</div>
+                            <div class="color-class">bg-blue-700</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #1e40af">
+                            <span class="light-text">800</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 800</div>
+                            <div class="color-hex">#1e40af</div>
+                            <div class="color-class">bg-blue-800</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #1e3a8a">
+                            <span class="light-text">900</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Blue 900</div>
+                            <div class="color-hex">#1e3a8a</div>
+                            <div class="color-class">bg-blue-900</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Red Scale -->
+            <div class="section">
+                <h2 class="section-title">Red Scale</h2>
+                <div class="color-grid">
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #fef2f2">
+                            <span class="dark-text">50</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 50</div>
+                            <div class="color-hex">#fef2f2</div>
+                            <div class="color-class">bg-red-50</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #fee2e2">
+                            <span class="dark-text">100</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 100</div>
+                            <div class="color-hex">#fee2e2</div>
+                            <div class="color-class">bg-red-100</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #fecaca">
+                            <span class="dark-text">200</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 200</div>
+                            <div class="color-hex">#fecaca</div>
+                            <div class="color-class">bg-red-200</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #fca5a5">
+                            <span class="dark-text">300</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 300</div>
+                            <div class="color-hex">#fca5a5</div>
+                            <div class="color-class">bg-red-300</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #f87171">
+                            <span class="dark-text">400</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 400</div>
+                            <div class="color-hex">#f87171</div>
+                            <div class="color-class">bg-red-400</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #ef4444">
+                            <span class="light-text">500</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 500</div>
+                            <div class="color-hex">#ef4444</div>
+                            <div class="color-class">bg-red-500</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #dc2626">
+                            <span class="light-text">600</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 600</div>
+                            <div class="color-hex">#dc2626</div>
+                            <div class="color-class">bg-red-600</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #b91c1c">
+                            <span class="light-text">700</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 700</div>
+                            <div class="color-hex">#b91c1c</div>
+                            <div class="color-class">bg-red-700</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #991b1b">
+                            <span class="light-text">800</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 800</div>
+                            <div class="color-hex">#991b1b</div>
+                            <div class="color-class">bg-red-800</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #7f1d1d">
+                            <span class="light-text">900</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Red 900</div>
+                            <div class="color-hex">#7f1d1d</div>
+                            <div class="color-class">bg-red-900</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purple Scale -->
+            <div class="section">
+                <h2 class="section-title">Purple Scale</h2>
+                <div class="color-grid">
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #faf5ff">
+                            <span class="dark-text">50</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 50</div>
+                            <div class="color-hex">#faf5ff</div>
+                            <div class="color-class">bg-purple-50</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #f3e8ff">
+                            <span class="dark-text">100</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 100</div>
+                            <div class="color-hex">#f3e8ff</div>
+                            <div class="color-class">bg-purple-100</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #e9d5ff">
+                            <span class="dark-text">200</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 200</div>
+                            <div class="color-hex">#e9d5ff</div>
+                            <div class="color-class">bg-purple-200</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #d8b4fe">
+                            <span class="dark-text">300</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 300</div>
+                            <div class="color-hex">#d8b4fe</div>
+                            <div class="color-class">bg-purple-300</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #c084fc">
+                            <span class="dark-text">400</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 400</div>
+                            <div class="color-hex">#c084fc</div>
+                            <div class="color-class">bg-purple-400</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #a855f7">
+                            <span class="light-text">500</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 500</div>
+                            <div class="color-hex">#a855f7</div>
+                            <div class="color-class">bg-purple-500</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #9333ea">
+                            <span class="light-text">600</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 600</div>
+                            <div class="color-hex">#9333ea</div>
+                            <div class="color-class">bg-purple-600</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #7e22ce">
+                            <span class="light-text">700</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 700</div>
+                            <div class="color-hex">#7e22ce</div>
+                            <div class="color-class">bg-purple-700</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #6b21a8">
+                            <span class="light-text">800</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 800</div>
+                            <div class="color-hex">#6b21a8</div>
+                            <div class="color-class">bg-purple-800</div>
+                        </div>
+                    </div>
+                    <div class="color-card">
+                        <div class="color-swatch" style="background: #581c87">
+                            <span class="light-text">900</span>
+                        </div>
+                        <div class="color-info">
+                            <div class="color-name">Purple 900</div>
+                            <div class="color-hex">#581c87</div>
+                            <div class="color-class">bg-purple-900</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design System Tokens -->
+            <div class="section">
+                <h2 class="section-title">Design System Tokens</h2>
+                <div class="design-tokens">
+                    <div class="token-card">
+                        <div class="token-name">Background Primary</div>
+                        <div
+                            class="token-swatch"
+                            style="background: #ffffff; border: 1px solid #e0e0e0"
+                        ></div>
+                        <div class="token-value">#ffffff</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Background Secondary</div>
+                        <div class="token-swatch" style="background: #f5f5f5"></div>
+                        <div class="token-value">#f5f5f5</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Background Tertiary</div>
+                        <div class="token-swatch" style="background: #eeeeee"></div>
+                        <div class="token-value">#eeeeee</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Border Primary</div>
+                        <div class="token-swatch" style="background: #e0e0e0"></div>
+                        <div class="token-value">#e0e0e0</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Border Accent</div>
+                        <div class="token-swatch" style="background: #cccccc"></div>
+                        <div class="token-value">#cccccc</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Text Primary</div>
+                        <div class="token-swatch" style="background: #000000"></div>
+                        <div class="token-value">#000000</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Text Secondary</div>
+                        <div class="token-swatch" style="background: #333333"></div>
+                        <div class="token-value">#333333</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Text Tertiary</div>
+                        <div class="token-swatch" style="background: #666666"></div>
+                        <div class="token-value">#666666</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Text Muted</div>
+                        <div class="token-swatch" style="background: #999999"></div>
+                        <div class="token-value">#999999</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Accent Primary</div>
+                        <div class="token-swatch" style="background: #ff8c00"></div>
+                        <div class="token-value">#ff8c00</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Accent Secondary</div>
+                        <div class="token-swatch" style="background: #ffa500"></div>
+                        <div class="token-value">#ffa500</div>
+                    </div>
+                    <div class="token-card">
+                        <div class="token-name">Accent Error</div>
+                        <div class="token-swatch" style="background: #ff6b00"></div>
+                        <div class="token-value">#ff6b00</div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Gray Scale -->
-        <div class="section">
-            <h2 class="section-title">Gray Scale</h2>
-            <div class="color-grid">
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #FAFAFA;">
-                        <span class="dark-text">50</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 50</div>
-                        <div class="color-hex">#FAFAFA</div>
-                        <div class="color-class">bg-cradle-gray-50</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #F5F5F5;">
-                        <span class="dark-text">100</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 100</div>
-                        <div class="color-hex">#F5F5F5</div>
-                        <div class="color-class">bg-cradle-gray-100</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #EFEFEF;">
-                        <span class="dark-text">200</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 200</div>
-                        <div class="color-hex">#EFEFEF</div>
-                        <div class="color-class">bg-cradle-gray-200</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #D4D4D4;">
-                        <span class="dark-text">300</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 300</div>
-                        <div class="color-hex">#D4D4D4</div>
-                        <div class="color-class">bg-cradle-gray-300</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #A0A0A0;">
-                        <span class="light-text">400</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 400</div>
-                        <div class="color-hex">#A0A0A0</div>
-                        <div class="color-class">bg-cradle-gray-400</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #808080;">
-                        <span class="light-text">500</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 500</div>
-                        <div class="color-hex">#808080</div>
-                        <div class="color-class">bg-cradle-gray-500</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #6A6A6A;">
-                        <span class="light-text">600</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 600</div>
-                        <div class="color-hex">#6A6A6A</div>
-                        <div class="color-class">bg-cradle-gray-600</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #5A5A5A;">
-                        <span class="light-text">700</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 700</div>
-                        <div class="color-hex">#5A5A5A</div>
-                        <div class="color-class">bg-cradle-gray-700</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #3A3A3A;">
-                        <span class="light-text">800</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 800</div>
-                        <div class="color-hex">#3A3A3A</div>
-                        <div class="color-class">bg-cradle-gray-800</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #1A1A1A;">
-                        <span class="light-text">900</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Gray 900</div>
-                        <div class="color-hex">#1A1A1A</div>
-                        <div class="color-class">bg-cradle-gray-900</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Green Scale -->
-        <div class="section">
-            <h2 class="section-title">Green Scale</h2>
-            <div class="color-grid">
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #f0fdf4;">
-                        <span class="dark-text">50</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 50</div>
-                        <div class="color-hex">#f0fdf4</div>
-                        <div class="color-class">bg-green-50</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #dcfce7;">
-                        <span class="dark-text">100</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 100</div>
-                        <div class="color-hex">#dcfce7</div>
-                        <div class="color-class">bg-green-100</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #bbf7d0;">
-                        <span class="dark-text">200</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 200</div>
-                        <div class="color-hex">#bbf7d0</div>
-                        <div class="color-class">bg-green-200</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #86efac;">
-                        <span class="dark-text">300</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 300</div>
-                        <div class="color-hex">#86efac</div>
-                        <div class="color-class">bg-green-300</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #4ade80;">
-                        <span class="dark-text">400</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 400</div>
-                        <div class="color-hex">#4ade80</div>
-                        <div class="color-class">bg-green-400</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #22c55e;">
-                        <span class="light-text">500</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 500</div>
-                        <div class="color-hex">#22c55e</div>
-                        <div class="color-class">bg-green-500</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #16a34a;">
-                        <span class="light-text">600</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 600</div>
-                        <div class="color-hex">#16a34a</div>
-                        <div class="color-class">bg-green-600</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #15803d;">
-                        <span class="light-text">700</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 700</div>
-                        <div class="color-hex">#15803d</div>
-                        <div class="color-class">bg-green-700</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #166534;">
-                        <span class="light-text">800</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 800</div>
-                        <div class="color-hex">#166534</div>
-                        <div class="color-class">bg-green-800</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #14532d;">
-                        <span class="light-text">900</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Green 900</div>
-                        <div class="color-hex">#14532d</div>
-                        <div class="color-class">bg-green-900</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Blue Scale -->
-        <div class="section">
-            <h2 class="section-title">Blue Scale</h2>
-            <div class="color-grid">
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #eff6ff;">
-                        <span class="dark-text">50</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 50</div>
-                        <div class="color-hex">#eff6ff</div>
-                        <div class="color-class">bg-blue-50</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #dbeafe;">
-                        <span class="dark-text">100</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 100</div>
-                        <div class="color-hex">#dbeafe</div>
-                        <div class="color-class">bg-blue-100</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #bfdbfe;">
-                        <span class="dark-text">200</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 200</div>
-                        <div class="color-hex">#bfdbfe</div>
-                        <div class="color-class">bg-blue-200</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #93c5fd;">
-                        <span class="dark-text">300</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 300</div>
-                        <div class="color-hex">#93c5fd</div>
-                        <div class="color-class">bg-blue-300</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #60a5fa;">
-                        <span class="dark-text">400</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 400</div>
-                        <div class="color-hex">#60a5fa</div>
-                        <div class="color-class">bg-blue-400</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #3b82f6;">
-                        <span class="light-text">500</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 500</div>
-                        <div class="color-hex">#3b82f6</div>
-                        <div class="color-class">bg-blue-500</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #2563eb;">
-                        <span class="light-text">600</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 600</div>
-                        <div class="color-hex">#2563eb</div>
-                        <div class="color-class">bg-blue-600</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #1d4ed8;">
-                        <span class="light-text">700</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 700</div>
-                        <div class="color-hex">#1d4ed8</div>
-                        <div class="color-class">bg-blue-700</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #1e40af;">
-                        <span class="light-text">800</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 800</div>
-                        <div class="color-hex">#1e40af</div>
-                        <div class="color-class">bg-blue-800</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #1e3a8a;">
-                        <span class="light-text">900</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Blue 900</div>
-                        <div class="color-hex">#1e3a8a</div>
-                        <div class="color-class">bg-blue-900</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Red Scale -->
-        <div class="section">
-            <h2 class="section-title">Red Scale</h2>
-            <div class="color-grid">
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #fef2f2;">
-                        <span class="dark-text">50</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 50</div>
-                        <div class="color-hex">#fef2f2</div>
-                        <div class="color-class">bg-red-50</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #fee2e2;">
-                        <span class="dark-text">100</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 100</div>
-                        <div class="color-hex">#fee2e2</div>
-                        <div class="color-class">bg-red-100</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #fecaca;">
-                        <span class="dark-text">200</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 200</div>
-                        <div class="color-hex">#fecaca</div>
-                        <div class="color-class">bg-red-200</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #fca5a5;">
-                        <span class="dark-text">300</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 300</div>
-                        <div class="color-hex">#fca5a5</div>
-                        <div class="color-class">bg-red-300</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #f87171;">
-                        <span class="dark-text">400</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 400</div>
-                        <div class="color-hex">#f87171</div>
-                        <div class="color-class">bg-red-400</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #ef4444;">
-                        <span class="light-text">500</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 500</div>
-                        <div class="color-hex">#ef4444</div>
-                        <div class="color-class">bg-red-500</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #dc2626;">
-                        <span class="light-text">600</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 600</div>
-                        <div class="color-hex">#dc2626</div>
-                        <div class="color-class">bg-red-600</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #b91c1c;">
-                        <span class="light-text">700</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 700</div>
-                        <div class="color-hex">#b91c1c</div>
-                        <div class="color-class">bg-red-700</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #991b1b;">
-                        <span class="light-text">800</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 800</div>
-                        <div class="color-hex">#991b1b</div>
-                        <div class="color-class">bg-red-800</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #7f1d1d;">
-                        <span class="light-text">900</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Red 900</div>
-                        <div class="color-hex">#7f1d1d</div>
-                        <div class="color-class">bg-red-900</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Purple Scale -->
-        <div class="section">
-            <h2 class="section-title">Purple Scale</h2>
-            <div class="color-grid">
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #faf5ff;">
-                        <span class="dark-text">50</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 50</div>
-                        <div class="color-hex">#faf5ff</div>
-                        <div class="color-class">bg-purple-50</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #f3e8ff;">
-                        <span class="dark-text">100</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 100</div>
-                        <div class="color-hex">#f3e8ff</div>
-                        <div class="color-class">bg-purple-100</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #e9d5ff;">
-                        <span class="dark-text">200</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 200</div>
-                        <div class="color-hex">#e9d5ff</div>
-                        <div class="color-class">bg-purple-200</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #d8b4fe;">
-                        <span class="dark-text">300</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 300</div>
-                        <div class="color-hex">#d8b4fe</div>
-                        <div class="color-class">bg-purple-300</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #c084fc;">
-                        <span class="dark-text">400</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 400</div>
-                        <div class="color-hex">#c084fc</div>
-                        <div class="color-class">bg-purple-400</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #a855f7;">
-                        <span class="light-text">500</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 500</div>
-                        <div class="color-hex">#a855f7</div>
-                        <div class="color-class">bg-purple-500</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #9333ea;">
-                        <span class="light-text">600</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 600</div>
-                        <div class="color-hex">#9333ea</div>
-                        <div class="color-class">bg-purple-600</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #7e22ce;">
-                        <span class="light-text">700</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 700</div>
-                        <div class="color-hex">#7e22ce</div>
-                        <div class="color-class">bg-purple-700</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #6b21a8;">
-                        <span class="light-text">800</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 800</div>
-                        <div class="color-hex">#6b21a8</div>
-                        <div class="color-class">bg-purple-800</div>
-                    </div>
-                </div>
-                <div class="color-card">
-                    <div class="color-swatch" style="background: #581c87;">
-                        <span class="light-text">900</span>
-                    </div>
-                    <div class="color-info">
-                        <div class="color-name">Purple 900</div>
-                        <div class="color-hex">#581c87</div>
-                        <div class="color-class">bg-purple-900</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Design System Tokens -->
-        <div class="section">
-            <h2 class="section-title">Design System Tokens</h2>
-            <div class="design-tokens">
-                <div class="token-card">
-                    <div class="token-name">Background Primary</div>
-                    <div class="token-swatch" style="background: #ffffff; border: 1px solid #e0e0e0;"></div>
-                    <div class="token-value">#ffffff</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Background Secondary</div>
-                    <div class="token-swatch" style="background: #f5f5f5;"></div>
-                    <div class="token-value">#f5f5f5</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Background Tertiary</div>
-                    <div class="token-swatch" style="background: #eeeeee;"></div>
-                    <div class="token-value">#eeeeee</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Border Primary</div>
-                    <div class="token-swatch" style="background: #e0e0e0;"></div>
-                    <div class="token-value">#e0e0e0</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Border Accent</div>
-                    <div class="token-swatch" style="background: #cccccc;"></div>
-                    <div class="token-value">#cccccc</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Text Primary</div>
-                    <div class="token-swatch" style="background: #000000;"></div>
-                    <div class="token-value">#000000</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Text Secondary</div>
-                    <div class="token-swatch" style="background: #333333;"></div>
-                    <div class="token-value">#333333</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Text Tertiary</div>
-                    <div class="token-swatch" style="background: #666666;"></div>
-                    <div class="token-value">#666666</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Text Muted</div>
-                    <div class="token-swatch" style="background: #999999;"></div>
-                    <div class="token-value">#999999</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Accent Primary</div>
-                    <div class="token-swatch" style="background: #ff8c00;"></div>
-                    <div class="token-value">#ff8c00</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Accent Secondary</div>
-                    <div class="token-swatch" style="background: #ffa500;"></div>
-                    <div class="token-value">#ffa500</div>
-                </div>
-                <div class="token-card">
-                    <div class="token-name">Accent Error</div>
-                    <div class="token-swatch" style="background: #ff6b00;"></div>
-                    <div class="token-value">#ff6b00</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</body>
+    </body>
 </html>
-

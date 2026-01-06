@@ -10,7 +10,7 @@ import {
     NewUserNotification,
     Notification,
     ReportProcessingErrorNotification,
-    ReportRenderNotification
+    ReportRenderNotification,
 } from '@/services/cradle';
 import { formatDate } from '@/utils/dates';
 import Tooltip from '@components/base/Tooltip/Tooltip';
@@ -25,13 +25,8 @@ interface NotificationCardProps {
 const ActionBar = ({ children }: { children: React.ReactNode }) => {
     if (!children) return null;
 
-    return (
-        <div className='flex justify-end gap-2 mt-1'>
-            {children}
-        </div>
-    );
+    return <div className='flex justify-end gap-2 mt-1'>{children}</div>;
 };
-
 
 export default function NotificationCard({
     notification,
@@ -125,7 +120,12 @@ export default function NotificationCard({
         const notif = notification as ReportRenderNotification;
         if (!notif.publishedReportId) return;
 
-        let report = await execute(() => reportsApi.reportsRetrieve({ id: notif.publishedReportId, downloadUrl: false }));
+        let report = await execute(() =>
+            reportsApi.reportsRetrieve({
+                id: notif.publishedReportId,
+                downloadUrl: false,
+            }),
+        );
 
         if (report.reportUrl) {
             window.open(report.reportUrl, '_blank');
@@ -214,11 +214,13 @@ export default function NotificationCard({
                     </button>
                 )}
 
-                {notification.notificationType === 'report_processing_error_notification' && (
+                {notification.notificationType ===
+                    'report_processing_error_notification' && (
                     <button
                         className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
                         onClick={(e) => {
-                            const notif = notification as ReportProcessingErrorNotification;
+                            const notif =
+                                notification as ReportProcessingErrorNotification;
                             navigateLink(`/reports/${notif.publishedReportId}`)(e);
                         }}
                     >
@@ -226,11 +228,13 @@ export default function NotificationCard({
                     </button>
                 )}
 
-                {notification.notificationType === 'enrichment_complete_notification' && (
+                {notification.notificationType ===
+                    'enrichment_complete_notification' && (
                     <button
                         className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
                         onClick={(e) => {
-                            const notif = notification as EnrichmentCompleteNotification;
+                            const notif =
+                                notification as EnrichmentCompleteNotification;
                             navigateLink(`/enrichment/${notif.enrichmentRequestId}`)(e);
                         }}
                     >
@@ -250,7 +254,6 @@ export default function NotificationCard({
                     </button>
                 )}
             </ActionBar>
-
         </div>
     );
 }

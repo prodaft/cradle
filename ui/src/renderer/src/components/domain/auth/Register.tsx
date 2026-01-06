@@ -37,13 +37,15 @@ export default function Register() {
     const { notify } = useNotif();
 
     const handleSubmit = async (data: FormData) => {
-        let user = await execute(() => usersApi.usersCreate({
-            userCreateRequest: {
-                username: data.username,
-                email: data.email,
-                password: data.password,
-            },
-        }));
+        let user = await execute(() =>
+            usersApi.usersCreate({
+                userCreateRequest: {
+                    username: data.username,
+                    email: data.email,
+                    password: data.password,
+                },
+            }),
+        );
 
         if (!user.emailConfirmed) {
             notify({
@@ -95,7 +97,9 @@ export default function Register() {
                                 </span>
                                 <div className='flex items-center gap-2 -mr-1.5'>
                                     <button
-                                        onClick={() => navigate('/login', { replace: true })}
+                                        onClick={() =>
+                                            navigate('/login', { replace: true })
+                                        }
                                         className='cradle-btn p-2 rounded-lg'
                                         data-testid='back-button'
                                         title='Back to Login'

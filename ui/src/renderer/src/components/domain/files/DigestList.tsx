@@ -4,7 +4,12 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBar,
+    ActionBarDivider,
+    ActionBarSearch,
+    CollapsibleActionGroup,
+} from '@components/base/ActionBar/ActionBar';
 import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -12,7 +17,12 @@ import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
-import { InfoCircleSolid, PlusCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import {
+    InfoCircleSolid,
+    Trash,
+    WarningCircleSolid,
+    WarningTriangleSolid,
+} from 'iconoir-react';
 import React, { useMemo, useState } from 'react';
 
 interface DataTypeOption {
@@ -37,8 +47,8 @@ interface DigestListProps {
     pageSize?: number;
     setPageSize?: (size: number) => void;
     onColumnFilterChange?:
-    | ((column: string, value: string | DateRangeFilter) => void)
-    | null;
+        | ((column: string, value: string | DateRangeFilter) => void)
+        | null;
     columnFilters?: Record<string, any>;
     searchFilters?: Record<string, string>;
     onSearchChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -61,12 +71,12 @@ function DigestList({
     selectedDigests: externalSelectedDigests,
     setSelectedDigests: externalSetSelectedDigests,
     pageSize = 10,
-    setPageSize = () => { },
+    setPageSize = () => {},
     onColumnFilterChange = null,
     columnFilters = {},
     searchFilters = {},
-    onSearchChange = () => { },
-    onSearchSubmit = () => { },
+    onSearchChange = () => {},
+    onSearchSubmit = () => {},
     dataTypeOptions = [],
     onUpload,
 }: DigestListProps) {
@@ -75,13 +85,15 @@ function DigestList({
     const { executor } = useAPICall();
 
     // Internal state for selection when no external state is provided
-    const [internalSelectedDigests, setInternalSelectedDigests] = useState<string[]>([]);
+    const [internalSelectedDigests, setInternalSelectedDigests] = useState<string[]>(
+        [],
+    );
 
     // Use external state if provided, otherwise use internal state
     const selectedDigests = externalSelectedDigests ?? internalSelectedDigests;
     const setSelectedDigests = useMemo(
         () => externalSetSelectedDigests ?? setInternalSelectedDigests,
-        [externalSetSelectedDigests]
+        [externalSetSelectedDigests],
     );
 
     // Mapping of table columns to API field names
@@ -120,47 +132,51 @@ function DigestList({
         }
     };
 
-    const columns: Array<{ key: string; label: string | React.ReactNode; filterType?: 'text' | 'date'; sortable?: boolean }> =
-        [
-            {
-                key: 'title',
-                label: (
-                    <div className='flex items-center gap-2'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status || 'all'}
-                            statusOptions={['all', 'done', 'working', 'error']}
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
-            },
-            {
-                key: 'type',
-                label: 'Type',
-            },
-            { key: 'user', label: 'User', filterType: 'text' as const },
-            { key: 'warnings', label: 'Warnings' },
-            { key: 'errors', label: 'Errors' },
-            { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
-            { key: 'actions', label: '', sortable: false },
-        ];
+    const columns: Array<{
+        key: string;
+        label: string | React.ReactNode;
+        filterType?: 'text' | 'date';
+        sortable?: boolean;
+    }> = [
+        {
+            key: 'title',
+            label: (
+                <div className='flex items-center gap-2'>
+                    <StatusHeaderDropdown
+                        onStatusChange={handleStatusChange}
+                        status={columnFilters.status || 'all'}
+                        statusOptions={['all', 'done', 'working', 'error']}
+                    />
+                    <span>Title</span>
+                </div>
+            ),
+        },
+        {
+            key: 'type',
+            label: 'Type',
+        },
+        { key: 'user', label: 'User', filterType: 'text' as const },
+        { key: 'warnings', label: 'Warnings' },
+        { key: 'errors', label: 'Errors' },
+        { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
+        { key: 'actions', label: '', sortable: false },
+    ];
 
     // Define filterable columns with their handlers
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
         onColumnFilterChange
             ? {
-                user: (value) => {
-                    if (typeof value === 'string') {
-                        onColumnFilterChange('user', value);
-                    }
-                },
-                createdAt: (value) => {
-                    if (typeof value !== 'string') {
-                        onColumnFilterChange('createdAt', value);
-                    }
-                },
-            }
+                  user: (value) => {
+                      if (typeof value === 'string') {
+                          onColumnFilterChange('user', value);
+                      }
+                  },
+                  createdAt: (value) => {
+                      if (typeof value !== 'string') {
+                          onColumnFilterChange('createdAt', value);
+                      }
+                  },
+              }
             : {};
 
     interface SelectProps {
@@ -210,7 +226,13 @@ function DigestList({
                         />
                     );
                 case 'working':
-                    return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
+                    return (
+                        <InfoCircleSolid
+                            className='text-blue-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
                 default:
                     return null;
             }
@@ -218,11 +240,16 @@ function DigestList({
 
         const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
         const tooltipContent = errorMessage || statusCapitalized;
-        const tooltipColor = status === 'error' ? 'error' : status === 'waiting' ? 'warning' : 'primary';
+        const tooltipColor =
+            status === 'error' ? 'error' : status === 'waiting' ? 'warning' : 'primary';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
-                <Tooltip content={tooltipContent} color={tooltipColor} showArrow={false}>
+                <Tooltip
+                    content={tooltipContent}
+                    color={tooltipColor}
+                    showArrow={false}
+                >
                     <span className='inline-flex items-center align-middle flex-shrink-0'>
                         {icon}
                     </span>
@@ -279,15 +306,13 @@ function DigestList({
                         content={
                             digest.warnings?.length > 0
                                 ? digest.warnings.slice(0, 10).join('\n') +
-                                (digest.warnings.length > 10 ? '...' : '')
+                                  (digest.warnings.length > 10 ? '...' : '')
                                 : undefined
                         }
                         side='left'
                         color='warning'
                     >
-                        <span
-                            className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-yellow-600'
-                        >
+                        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-yellow-600'>
                             {digest.warnings?.length || 0}
                         </span>
                     </Tooltip>
@@ -297,15 +322,13 @@ function DigestList({
                         content={
                             digest.errors?.length > 0
                                 ? digest.errors.slice(0, 10).join('\n') +
-                                (digest.errors.length > 10 ? '\n...' : '')
+                                  (digest.errors.length > 10 ? '\n...' : '')
                                 : undefined
                         }
                         side='left'
                         color='error'
                     >
-                        <span
-                            className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-red-600'
-                        >
+                        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-red-600'>
                             {digest.errors?.length || 0}
                         </span>
                     </Tooltip>
@@ -315,19 +338,19 @@ function DigestList({
                 </td>
                 <td className='w-8 text-right'>
                     <div className='flex justify-end'>
-                    <Tooltip content='Delete Digest'>
-                        <button
-                            className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
-                            onClick={() =>
-                                setModal(ConfirmDeletionModal, {
-                                    text: 'Are you sure you want to delete this digest?',
-                                    onConfirm: () => handleDelete(digest.id!),
-                                })
-                            }
-                        >
-                            <Trash width='18' height='18' />
-                        </button>
-                    </Tooltip>
+                        <Tooltip content='Delete Digest'>
+                            <button
+                                className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
+                                onClick={() =>
+                                    setModal(ConfirmDeletionModal, {
+                                        text: 'Are you sure you want to delete this digest?',
+                                        onConfirm: () => handleDelete(digest.id!),
+                                    })
+                                }
+                            >
+                                <Trash width='18' height='18' />
+                            </button>
+                        </Tooltip>
                     </div>
                 </td>
             </tr>
@@ -379,8 +402,7 @@ function DigestList({
                     setAlert({
                         show: true,
                         color: 'red',
-                        message:
-                            'An unexpected error occurred while deleting digests',
+                        message: 'An unexpected error occurred while deleting digests',
                     });
                 }
             },
@@ -399,14 +421,18 @@ function DigestList({
                             actions={[
                                 {
                                     id: 'delete',
-                                    tooltip: selectedDigests.length > 0
-                                        ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
-                                        : 'Select digests to delete',
+                                    tooltip:
+                                        selectedDigests.length > 0
+                                            ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
+                                            : 'Select digests to delete',
                                     icon: <Trash width={20} height={20} />,
-                                    onClick: () => handleDeleteSelected(selectedDigests),
-                                    disabled: loading || digests.length === 0 || selectedDigests.length === 0,
+                                    onClick: () =>
+                                        handleDeleteSelected(selectedDigests),
+                                    disabled:
+                                        loading ||
+                                        digests.length === 0 ||
+                                        selectedDigests.length === 0,
                                     iconActive: selectedDigests.length > 0,
-
                                 },
                             ]}
                         />
@@ -420,14 +446,14 @@ function DigestList({
                             debounceMs={300}
                             onDebouncedChange={(value) => {
                                 const event = {
-                                    preventDefault: () => { },
+                                    preventDefault: () => {},
                                     target: { name: 'title', value },
                                 } as React.ChangeEvent<HTMLInputElement>;
                                 onSearchChange(event);
                             }}
                             onSubmit={(value) => {
                                 const event = {
-                                    preventDefault: () => { },
+                                    preventDefault: () => {},
                                     target: { name: 'title', value },
                                 } as any;
                                 onSearchSubmit(event);

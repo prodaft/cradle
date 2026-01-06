@@ -67,7 +67,11 @@ export default function ActionConfirmationModal({
             {confirmText && (
                 <div className='mb-5'>
                     <label className='cradle-label mb-2 block'>
-                        Type "<span className='text-cradle-accent-primary'>{confirmText}</span>" to confirm
+                        Type "
+                        <span className='text-cradle-accent-primary'>
+                            {confirmText}
+                        </span>
+                        " to confirm
                     </label>
                     <input
                         type='text'

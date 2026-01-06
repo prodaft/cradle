@@ -6,8 +6,10 @@
 import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
 import { FieldError } from 'react-hook-form';
 
-export interface SettingsFieldProps
-    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name'> {
+export interface SettingsFieldProps extends Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    'name'
+> {
     /** Label text for the field */
     label: string;
     /** Description text displayed below the label */

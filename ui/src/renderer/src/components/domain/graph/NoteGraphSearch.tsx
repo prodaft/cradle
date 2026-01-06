@@ -50,11 +50,11 @@ export default function NoteGraphSearch(
                 // Make direct fetch call to bypass API client's incorrect parsing
                 const token = await getAccessToken();
                 const url = `${basePath}/notes/${noteId}/graph`;
-                
+
                 const response = await fetch(url, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${token}`,
+                        Authorization: `Bearer ${token}`,
                         'Content-Type': 'application/json',
                     },
                 });
@@ -64,33 +64,38 @@ export default function NoteGraphSearch(
                 }
 
                 const graphData = await response.json();
-                
+
                 const { entries, relations, colors } = graphData || {};
-                
+
                 console.log('[NoteGraphSearch] Colors from API:', colors);
-                
+
                 // Process nodes and edges together to avoid race conditions
                 let nodes: any[] = [];
                 let hasData = false;
-                
+
                 if (entries) {
                     try {
                         const flattenedEntries = LinkTreeFlattener.flatten(entries);
-                        
-                        console.log('[NoteGraphSearch] Flattened entries:', flattenedEntries);
-                        
+
+                        console.log(
+                            '[NoteGraphSearch] Flattened entries:',
+                            flattenedEntries,
+                        );
+
                         if (flattenedEntries && flattenedEntries.length > 0) {
                             nodes = flattenedEntries.map((e: any) => {
                                 let label = `${e.subtype}: ${e.name || e.id}`;
-                                
+
                                 // For note nodes, show "note: title"
                                 if (e.subtype === 'note') {
                                     label = `note: ${e.name || 'untitled'}`;
                                 }
-                                
+
                                 const nodeColor = colors?.[e.subtype] || '#4A90E2';
-                                console.log(`[NoteGraphSearch] Node ${e.id} (${e.subtype}): color=${nodeColor}`);
-                                
+                                console.log(
+                                    `[NoteGraphSearch] Node ${e.id} (${e.subtype}): color=${nodeColor}`,
+                                );
+
                                 return {
                                     id: String(e.id),
                                     degree: e.degree,
@@ -107,12 +112,15 @@ export default function NoteGraphSearch(
                         console.error('[NoteGraphSearch] Error processing entries:', e);
                     }
                 }
-                
-                const edges = (relations && Array.isArray(relations) && relations.length > 0) ? relations : [];
+
+                const edges =
+                    relations && Array.isArray(relations) && relations.length > 0
+                        ? relations
+                        : [];
                 if (edges.length > 0) {
                     hasData = true;
                 }
-                
+
                 // Add nodes and edges together atomically using addBoth if available
                 if (nodes.length > 0 || edges.length > 0) {
                     if (addBoth) {

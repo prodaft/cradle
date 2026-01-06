@@ -62,10 +62,13 @@ function ProfileProvider({ children }: ProfileProviderProps): JSX.Element {
             setProfile(null); // Clear profile if no data is returned
         }
 
-        const defaultNoteTemplate = await execute(() => usersApi.usersDefaultNoteTemplateRetrieve(
-            {
-                userId: 'me',
-            }), { errorMessage: 'Failed to fetch default note template' });
+        const defaultNoteTemplate = await execute(
+            () =>
+                usersApi.usersDefaultNoteTemplateRetrieve({
+                    userId: 'me',
+                }),
+            { errorMessage: 'Failed to fetch default note template' },
+        );
 
         if (defaultNoteTemplate && defaultNoteTemplate.template) {
             // Assuming the default note template is stored in the profile

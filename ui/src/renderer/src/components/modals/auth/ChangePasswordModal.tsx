@@ -61,7 +61,7 @@ export default function ChangePasswordModal({
             {/* Info Section */}
             <div className='mb-6 p-4 border border-cradle-border-accent bg-cradle-bg-secondary/30 rounded-lg'>
                 <div className='flex items-start gap-3'>
-                     <div className='w-2 h-2 rounded-full bg-cradle-accent-primary mt-1.5 flex-shrink-0'></div>
+                    <div className='w-2 h-2 rounded-full bg-cradle-accent-primary mt-1.5 flex-shrink-0'></div>
                     <div>
                         <h3 className='text-sm font-semibold text-cradle-text-primary mb-1'>
                             Password Requirements

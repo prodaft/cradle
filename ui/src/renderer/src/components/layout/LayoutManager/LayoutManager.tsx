@@ -150,9 +150,14 @@ const LayoutRenderer = ({ node, outletContext }: LayoutRendererProps) => {
         return <LayoutPane paneId={node.id} outletContext={outletContext} />;
     }
 
-    if (node.type === 'split' || node.type === 'split-horizontal' || node.type === 'split-vertical') {
+    if (
+        node.type === 'split' ||
+        node.type === 'split-horizontal' ||
+        node.type === 'split-vertical'
+    ) {
         const splitNode = node as SplitNode;
-        const isHorizontal = node.type === 'split-horizontal' || splitNode.orientation === 'horizontal';
+        const isHorizontal =
+            node.type === 'split-horizontal' || splitNode.orientation === 'horizontal';
         return (
             <ResizableContainer
                 node={splitNode}

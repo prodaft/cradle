@@ -57,9 +57,11 @@ export default function FileTable({
 
     // Downloads a file
     const handleDownload = async (data: FileReference) => {
-        const { presignedUrl } = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
-            fileId: data.id!,
-        }));
+        const { presignedUrl } = await execute(() =>
+            fileTransferApi.fileTransferDownloadRetrieve({
+                fileId: data.id!,
+            }),
+        );
         const link = document.createElement('a');
         link.href = presignedUrl;
         link.download = data.fileName || 'data';
@@ -84,9 +86,7 @@ export default function FileTable({
                                 className='py-1 border-b dark:border-zinc-600'
                             >
                                 <div className='dark:text-zinc-200 flex items-center justify-between w-full'>
-                                    <div className='truncate px-3'>
-                                        {data.fileName}
-                                    </div>
+                                    <div className='truncate px-3'>{data.fileName}</div>
                                     <div className='dark:text-zinc-200 flex items-center justify-end pr-4 ml-auto'>
                                         <Tooltip content='Insert link into text'>
                                             <span>
@@ -141,7 +141,8 @@ export default function FileTable({
                                                     onClick={() => {
                                                         setModal(ConfirmDeletionModal, {
                                                             text: 'Are you sure you want to delete this file?',
-                                                            onConfirm: () => handleDelete(data),
+                                                            onConfirm: () =>
+                                                                handleDelete(data),
                                                         });
                                                     }}
                                                 >

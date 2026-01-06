@@ -7,7 +7,12 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { ReportList } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import { ActionBar, ActionBarDivider, ActionBarSearch, CollapsibleActionGroup } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBar,
+    ActionBarDivider,
+    ActionBarSearch,
+    CollapsibleActionGroup,
+} from '@components/base/ActionBar/ActionBar';
 import ListView, {
     DateRangeFilter,
     SortDirection,
@@ -17,8 +22,17 @@ import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHe
 import TableActionsButton from '@components/base/TableActionsButton';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { Download, Edit, Eye, InfoCircleSolid, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    Download,
+    Edit,
+    Eye,
+    InfoCircleSolid,
+    RefreshCircle,
+    Trash,
+    WarningCircleSolid,
+    WarningTriangleSolid,
+} from 'iconoir-react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface ColumnFilters {
@@ -80,20 +94,33 @@ export default function Reports() {
     // Sync URL params to state (for browser back/forward)
     useEffect(() => {
         const pageFromParams = Number(searchParams.get('reports_page')) || 1;
-        const sortFieldFromParams = searchParams.get('reports_sort_field') || 'created_at';
-        const sortDirectionFromParams = (searchParams.get('reports_sort_direction') as SortDirection) || 'desc';
+        const sortFieldFromParams =
+            searchParams.get('reports_sort_field') || 'created_at';
+        const sortDirectionFromParams =
+            (searchParams.get('reports_sort_direction') as SortDirection) || 'desc';
         const pageSizeFromParams = Number(searchParams.get('reports_pagesize')) || 10;
 
         if (pageFromParams !== page) setPage(pageFromParams);
         if (sortFieldFromParams !== sortField) setSortField(sortFieldFromParams);
-        if (sortDirectionFromParams !== sortDirection) setSortDirection(sortDirectionFromParams);
+        if (sortDirectionFromParams !== sortDirection)
+            setSortDirection(sortDirectionFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
     }, [searchParams]);
 
     // Fetch reports when dependencies change
     useEffect(() => {
         fetchReports();
-    }, [page, sortField, sortDirection, pageSize, columnFilters.status, columnFilters.user, columnFilters.createdAt.from, columnFilters.createdAt.to, searchQuery]);
+    }, [
+        page,
+        sortField,
+        sortDirection,
+        pageSize,
+        columnFilters.status,
+        columnFilters.user,
+        columnFilters.createdAt.from,
+        columnFilters.createdAt.to,
+        searchQuery,
+    ]);
 
     const resetToFirstPage = useCallback(() => {
         const newParams = new URLSearchParams(searchParams);
@@ -134,7 +161,7 @@ export default function Reports() {
             let filteredResults = response.results;
             if (columnFilters.status && columnFilters.status !== 'all') {
                 filteredResults = response.results.filter(
-                    (report) => report.status === columnFilters.status
+                    (report) => report.status === columnFilters.status,
                 );
             }
 
@@ -267,41 +294,43 @@ export default function Reports() {
         sortable?: boolean;
         filterType?: 'text' | 'date';
     }> = [
-            {
-                key: 'title',
-                label: (
-                    <div className='flex items-center gap-2'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status}
-                            statusOptions={['all', 'done', 'working', 'error']}
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
-                sortable: true,
-            },
-            { key: 'strategy', label: 'Strategy', sortable: true },
-            { key: 'anonymized', label: 'Anonymized', sortable: true },
-            {
-                key: 'createdAt',
-                label: 'Created At',
-                sortable: true,
-                filterType: 'date' as const,
-            },
-            { key: 'actions', label: '', sortable: false },
-        ];
+        {
+            key: 'title',
+            label: (
+                <div className='flex items-center gap-2'>
+                    <StatusHeaderDropdown
+                        onStatusChange={handleStatusChange}
+                        status={columnFilters.status}
+                        statusOptions={['all', 'done', 'working', 'error']}
+                    />
+                    <span>Title</span>
+                </div>
+            ),
+            sortable: true,
+        },
+        { key: 'strategy', label: 'Strategy', sortable: true },
+        { key: 'anonymized', label: 'Anonymized', sortable: true },
+        {
+            key: 'createdAt',
+            label: 'Created At',
+            sortable: true,
+            filterType: 'date' as const,
+        },
+        { key: 'actions', label: '', sortable: false },
+    ];
 
     // Define filterable columns with their handlers
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-    {
-        user: (value) => handleColumnFilterChange('user', value),
-        createdAt: (value) => handleColumnFilterChange('createdAt', value),
-    };
+        {
+            user: (value) => handleColumnFilterChange('user', value),
+            createdAt: (value) => handleColumnFilterChange('createdAt', value),
+        };
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
-        const promises = idsArray.map((id) => execute(() => reportsApi.reportsRetrieve({ id, downloadUrl: true })));
+        const promises = idsArray.map((id) =>
+            execute(() => reportsApi.reportsRetrieve({ id, downloadUrl: true })),
+        );
         const reports = await Promise.all(promises);
 
         try {
@@ -354,7 +383,13 @@ export default function Reports() {
                         </svg>
                     );
                 case 'working':
-                    return <InfoCircleSolid className='text-blue-500' width='18' height='18' />;
+                    return (
+                        <InfoCircleSolid
+                            className='text-blue-500'
+                            width='18'
+                            height='18'
+                        />
+                    );
                 case 'warning':
                     return (
                         <WarningTriangleSolid
@@ -377,11 +412,17 @@ export default function Reports() {
         })();
 
         const tooltipContent = errorMessage || capitalizeString(status);
-        const tooltipColor = status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'primary';
+        const tooltipColor =
+            status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'primary';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
-                <Tooltip content={tooltipContent} color={tooltipColor} showArrow={true} side="right">
+                <Tooltip
+                    content={tooltipContent}
+                    color={tooltipColor}
+                    showArrow={true}
+                    side='right'
+                >
                     <span className='inline-flex items-center align-middle flex-shrink-0'>
                         {icon}
                     </span>
@@ -390,7 +431,7 @@ export default function Reports() {
         }
 
         return (
-            <Tooltip content={tooltipContent} showArrow={true} side="right">
+            <Tooltip content={tooltipContent} showArrow={true} side='right'>
                 <span className='inline-flex items-center align-middle flex-shrink-0'>
                     {icon}
                 </span>
@@ -400,10 +441,13 @@ export default function Reports() {
 
     // Row Actions Button Component
     const RowActionsButton = ({ report }: { report: ReportList }) => {
-        const menuButtonClasses = 'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
+        const menuButtonClasses =
+            'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
 
         const handleView = async () => {
-            let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }));
+            let details = await execute(() =>
+                reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }),
+            );
             if (details.reportUrl) {
                 window.open(details.reportUrl, '_blank');
             } else {
@@ -464,28 +508,19 @@ export default function Reports() {
         return (
             <TableActionsButton>
                 {report.status === 'done' && (
-                    <button
-                        onClick={handleView}
-                        className={menuButtonClasses}
-                    >
+                    <button onClick={handleView} className={menuButtonClasses}>
                         <Eye width='18' height='18' />
                         View Report
                     </button>
                 )}
                 {report.status !== 'working' && (
-                    <button
-                        onClick={handleEdit}
-                        className={menuButtonClasses}
-                    >
+                    <button onClick={handleEdit} className={menuButtonClasses}>
                         <Edit width='18' height='18' />
                         Edit Report
                     </button>
                 )}
                 {report.status === 'error' && (
-                    <button
-                        onClick={handleRetry}
-                        className={menuButtonClasses}
-                    >
+                    <button onClick={handleRetry} className={menuButtonClasses}>
                         <RefreshCircle width='18' height='18' />
                         Retry
                     </button>
@@ -510,7 +545,9 @@ export default function Reports() {
         const { enableMultiSelect, isSelected, onSelect } = selectProps;
 
         const handleRowClick = async () => {
-            let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }));
+            let details = await execute(() =>
+                reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }),
+            );
             if (details.reportUrl) {
                 window.open(details.reportUrl, '_blank');
             } else {
@@ -522,11 +559,7 @@ export default function Reports() {
         };
 
         return (
-            <tr
-                key={report.id}
-                className={`cursor-pointer`}
-                onClick={handleRowClick}
-            >
+            <tr key={report.id} className={`cursor-pointer`} onClick={handleRowClick}>
                 {enableMultiSelect && onSelect && (
                     <td className='w-12' onClick={(e) => e.stopPropagation()}>
                         <div className='flex items-center'>
@@ -542,9 +575,14 @@ export default function Reports() {
                 <td className='cradle-text-primary'>
                     <div className='flex items-center gap-2 min-w-0'>
                         <span className='inline-flex items-center flex-shrink-0'>
-                            {getStatusIcon(report.status, report.errorMessage || undefined)}
+                            {getStatusIcon(
+                                report.status,
+                                report.errorMessage || undefined,
+                            )}
                         </span>
-                        <span className='truncate'>{truncateText(report.title, 50)}</span>
+                        <span className='truncate'>
+                            {truncateText(report.title, 50)}
+                        </span>
                     </div>
                 </td>
                 <td className='cradle-text-secondary'>
@@ -577,13 +615,14 @@ export default function Reports() {
                         Manage & View Your Reports
                     </p>
                 </div>
-                <div className="flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]">
-                    <span className="font-semibold">
-                        {reports.length === totalCount || (reports.length === 0 && totalCount === 0)
+                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
+                    <span className='font-semibold'>
+                        {reports.length === totalCount ||
+                        (reports.length === 0 && totalCount === 0)
                             ? totalCount
                             : `${reports.length}/${totalCount}`}
                     </span>
-                    <span className="opacity-70">reports</span>
+                    <span className='opacity-70'>reports</span>
                 </div>
             </div>
 
@@ -598,32 +637,44 @@ export default function Reports() {
                                 actions={[
                                     {
                                         id: 'download',
-                                        tooltip: selectedReports.length > 0
-                                            ? `Download ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                            : 'Select reports to download',
+                                        tooltip:
+                                            selectedReports.length > 0
+                                                ? `Download ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                                : 'Select reports to download',
                                         icon: <Download width={20} height={20} />,
                                         onClick: () => handleDownload(selectedReports),
-                                        disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                                        disabled:
+                                            loading ||
+                                            reports.length === 0 ||
+                                            selectedReports.length === 0,
                                         iconActive: selectedReports.length > 0,
                                     },
                                     {
                                         id: 'delete',
-                                        tooltip: selectedReports.length > 0
-                                            ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                            : 'Select reports to delete',
+                                        tooltip:
+                                            selectedReports.length > 0
+                                                ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                                : 'Select reports to delete',
                                         icon: <Trash width={20} height={20} />,
                                         onClick: () => handleDelete(selectedReports),
-                                        disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                                        disabled:
+                                            loading ||
+                                            reports.length === 0 ||
+                                            selectedReports.length === 0,
                                         iconActive: selectedReports.length > 0,
                                     },
                                     {
                                         id: 'retry',
-                                        tooltip: selectedReports.length > 0
-                                            ? `Retry ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                            : 'Select reports to retry',
+                                        tooltip:
+                                            selectedReports.length > 0
+                                                ? `Retry ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
+                                                : 'Select reports to retry',
                                         icon: <RefreshCircle width={20} height={20} />,
                                         onClick: () => handleRetry(selectedReports),
-                                        disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                                        disabled:
+                                            loading ||
+                                            reports.length === 0 ||
+                                            selectedReports.length === 0,
                                         iconActive: selectedReports.length > 0,
                                     },
                                 ]}

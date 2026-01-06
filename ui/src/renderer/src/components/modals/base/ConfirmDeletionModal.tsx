@@ -1,4 +1,3 @@
-import { Trash, Xmark } from 'iconoir-react';
 import { useState } from 'react';
 
 /**
@@ -58,7 +57,6 @@ export default function ConfirmDeletionModal({
                         Confirm Deletion
                     </h2>
                 </div>
-                
             </div>
 
             {/* Body text */}
@@ -70,7 +68,11 @@ export default function ConfirmDeletionModal({
             {confirmText && (
                 <div className='mb-5'>
                     <label className='cradle-label mb-2 block'>
-                        Type "<span className='text-cradle-accent-primary'>{confirmText}</span>" to confirm
+                        Type "
+                        <span className='text-cradle-accent-primary'>
+                            {confirmText}
+                        </span>
+                        " to confirm
                     </label>
                     <input
                         type='text'

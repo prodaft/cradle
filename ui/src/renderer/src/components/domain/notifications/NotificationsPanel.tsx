@@ -13,7 +13,7 @@ interface NotificationsPanelProps {
 
 /**
  * NotificationsPanel - Displays a scrollable list of user notifications.
- * 
+ *
  * Rendered as a resizable side panel in MainLayout. Fetches notifications on mount
  * and when unread count increases. Users close the panel via the notification bell button.
  */
@@ -37,8 +37,7 @@ export default function NotificationsPanel({
 
     async function fetchNotificationsAndUpdateCounts() {
         setLoading(true);
-        const response = await execute(() => notificationsApi
-            .notificationsList());
+        const response = await execute(() => notificationsApi.notificationsList());
         setNotifications(response);
         const auxFlaggedNotificationsCount = (response || []).filter(
             (notification: Notification) => notification.isMarkedUnread,

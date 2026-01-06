@@ -3,7 +3,13 @@ import { FileTransferDownloadRetrieveRequest } from '@/services/cradle/apis/File
 import { FileDownload, FileReference } from '@/services/cradle/models';
 import { syntaxTree } from '@codemirror/language';
 import { EditorState, Range } from '@codemirror/state';
-import { Decoration, DecorationSet, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
+import {
+    Decoration,
+    DecorationSet,
+    EditorView,
+    ViewPlugin,
+    WidgetType,
+} from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
 import { MarkdownConfig } from '@lezer/markdown';
 
@@ -35,10 +41,7 @@ export class ReferenceLinkWidget extends WidgetType {
     }
 
     eq(other: ReferenceLinkWidget) {
-        return (
-            other.text === this.text &&
-            other.file.id === this.file.id
-        );
+        return other.text === this.text && other.file.id === this.file.id;
     }
 
     toDOM(view: EditorView) {
@@ -98,10 +101,7 @@ export class ReferenceImageWidget extends WidgetType {
     }
 
     eq(other: ReferenceImageWidget) {
-        return (
-            other.text === this.text &&
-            other.file.id === this.file.id
-        );
+        return other.text === this.text && other.file.id === this.file.id;
     }
 
     toDOM(view: EditorView) {
@@ -161,14 +161,17 @@ export function referenceLinkSyntax(
                     // Scan for matching closing bracket, respecting escapes
                     while (p < cx.end && balance > 0) {
                         const code = cx.char(p);
-                        if (code == 92) { // '\' escape
+                        if (code == 92) {
+                            // '\' escape
                             p += 2;
                             continue;
                         }
-                        if (code == 91) { // '['
+                        if (code == 91) {
+                            // '['
                             opening++;
                             balance++;
-                        } else if (code == 93) { // ']'
+                        } else if (code == 93) {
+                            // ']'
                             balance--;
                         }
                         p++;
@@ -210,11 +213,13 @@ export function referenceLinkSyntax(
                         // Labels usually cannot contain brackets
                         while (q < cx.end) {
                             const code = cx.char(q);
-                            if (code == 92) { // Escape
+                            if (code == 92) {
+                                // Escape
                                 q += 2;
                                 continue;
                             }
-                            if (code == 93) { // ']'
+                            if (code == 93) {
+                                // ']'
                                 break;
                             }
                             q++;
@@ -251,12 +256,12 @@ export function referenceLinkSyntax(
                                 cx.elt('ExternalReferenceText', textStart, textEnd),
                                 ...(labelStart !== -1
                                     ? [
-                                        cx.elt(
-                                            'ExternalReferenceLabel',
-                                            labelStart,
-                                            labelEnd,
-                                        ),
-                                    ]
+                                          cx.elt(
+                                              'ExternalReferenceLabel',
+                                              labelStart,
+                                              labelEnd,
+                                          ),
+                                      ]
                                     : []),
                             ]),
                         );
@@ -281,14 +286,17 @@ export function referenceLinkSyntax(
                     // Scan for matching closing bracket, respecting escapes
                     while (p < cx.end && balance > 0) {
                         const code = cx.char(p);
-                        if (code == 92) { // '\' escape
+                        if (code == 92) {
+                            // '\' escape
                             p += 2;
                             continue;
                         }
-                        if (code == 91) { // '['
+                        if (code == 91) {
+                            // '['
                             opening++;
                             balance++;
-                        } else if (code == 93) { // ']'
+                        } else if (code == 93) {
+                            // ']'
                             balance--;
                         }
                         p++;
@@ -330,11 +338,13 @@ export function referenceLinkSyntax(
                         // Labels usually cannot contain brackets
                         while (q < cx.end) {
                             const code = cx.char(q);
-                            if (code == 92) { // Escape
+                            if (code == 92) {
+                                // Escape
                                 q += 2;
                                 continue;
                             }
-                            if (code == 93) { // ']'
+                            if (code == 93) {
+                                // ']'
                                 break;
                             }
                             q++;
@@ -371,12 +381,12 @@ export function referenceLinkSyntax(
                                 cx.elt('ExternalReferenceText', textStart, textEnd),
                                 ...(labelStart !== -1
                                     ? [
-                                        cx.elt(
-                                            'ExternalReferenceLabel',
-                                            labelStart,
-                                            labelEnd,
-                                        ),
-                                    ]
+                                          cx.elt(
+                                              'ExternalReferenceLabel',
+                                              labelStart,
+                                              labelEnd,
+                                          ),
+                                      ]
                                     : []),
                             ]),
                         );
@@ -518,11 +528,7 @@ function createReferenceDecoration(
         let widget: WidgetType;
         if (node.node.name === 'ExternalReferenceImage') {
             console.log(reference);
-            widget = new ReferenceImageWidget(
-                linkText,
-                reference,
-                resolveMinioLink,
-            );
+            widget = new ReferenceImageWidget(linkText, reference, resolveMinioLink);
         } else {
             widget = new ReferenceLinkWidget(
                 linkText,

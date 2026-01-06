@@ -7,7 +7,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import SnippetList, { SnippetListRef } from '../../../base/SnippetList/SnippetList';
-import { FormAlert, FormAlertState, SettingsButton, SettingsCard, SettingsField, SettingsSeparator, SettingsToggle } from '../../../forms';
+import {
+    FormAlert,
+    FormAlertState,
+    SettingsButton,
+    SettingsCard,
+    SettingsField,
+    SettingsSeparator,
+    SettingsToggle,
+} from '../../../forms';
 
 interface FormData {
     minEntries: number;
@@ -203,7 +211,10 @@ export default function NoteSettingsForm() {
                         </section>
 
                         {/* Snippets Section */}
-                        <section id='snippets' className='border-t border-white/5 pt-5 pb-8'>
+                        <section
+                            id='snippets'
+                            className='border-t border-white/5 pt-5 pb-8'
+                        >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 Global Snippets
                             </h2>
@@ -222,13 +233,20 @@ export default function NoteSettingsForm() {
                                             snippetListRef.current?.handleAddSnippet();
                                         }}
                                     />
-                                    <SnippetList ref={snippetListRef} userId='null' showTitle={false} />
+                                    <SnippetList
+                                        ref={snippetListRef}
+                                        userId='null'
+                                        showTitle={false}
+                                    />
                                 </SettingsCard>
                             </div>
                         </section>
 
                         {/* Actions Section */}
-                        <section id='actions' className='border-t border-white/5 pt-5 pb-8'>
+                        <section
+                            id='actions'
+                            className='border-t border-white/5 pt-5 pb-8'
+                        >
                             <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
                                 Actions
                             </h2>

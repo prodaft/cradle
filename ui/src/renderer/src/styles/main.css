@@ -132,7 +132,7 @@ h6:hover .header-anchor-icon {
 }
 
 .notification-action:hover {
-    color: #FF8C00;
+    color: #ff8c00;
     background-color: var(--cradle-bg-tertiary);
 }
 
@@ -167,7 +167,9 @@ h6:hover .header-anchor-icon {
     color-scheme: light dark;
     background-color: transparent !important;
     color: var(--cradle-md-text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
     font-size: 16px;
     line-height: 1.5;
     word-wrap: break-word;
@@ -217,10 +219,19 @@ h6:hover .header-anchor-icon {
     border-bottom: 1px solid var(--cradle-md-border-light);
 }
 
-.markdown-body h3 { font-size: 1.25em; }
-.markdown-body h4 { font-size: 1em; }
-.markdown-body h5 { font-size: 0.875em; }
-.markdown-body h6 { font-size: 0.85em; color: var(--pm-muted-color); }
+.markdown-body h3 {
+    font-size: 1.25em;
+}
+.markdown-body h4 {
+    font-size: 1em;
+}
+.markdown-body h5 {
+    font-size: 0.875em;
+}
+.markdown-body h6 {
+    font-size: 0.85em;
+    color: var(--pm-muted-color);
+}
 
 .markdown-body p {
     margin-top: 0;
@@ -332,7 +343,14 @@ h6:hover .header-anchor-icon {
 .markdown-body kbd {
     display: inline-block;
     padding: 0.25rem;
-    font: 11px ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, 'Liberation Mono', monospace;
+    font:
+        11px ui-monospace,
+        SFMono-Regular,
+        SF Mono,
+        Menlo,
+        Consolas,
+        'Liberation Mono',
+        monospace;
     line-height: 10px;
     color: var(--cradle-md-text);
     vertical-align: middle;

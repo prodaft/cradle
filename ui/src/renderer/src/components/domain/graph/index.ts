@@ -5,5 +5,5 @@ export { default as GraphLegend } from './GraphLegend';
 export { default as GraphQuery } from './GraphQuery';
 export { default as GraphSearch } from './GraphSearch';
 export { default as GraphSettings } from './GraphSettings';
-export { default as NoteGraphSearch } from './NoteGraphSearch';
 export { default as KnowledgeGraphSearch } from './KnowledgeGraphSearch';
+export { default as NoteGraphSearch } from './NoteGraphSearch';

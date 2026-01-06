@@ -196,7 +196,9 @@ export default function Login() {
                                         </button>
                                     ) : (
                                         <button
-                                            onClick={() => setShowSettings(!showSettings)}
+                                            onClick={() =>
+                                                setShowSettings(!showSettings)
+                                            }
                                             className='cradle-btn p-2 rounded-full'
                                             data-testid='settings-button'
                                             title='Settings'

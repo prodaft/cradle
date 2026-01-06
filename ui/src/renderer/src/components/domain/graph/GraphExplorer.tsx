@@ -1,7 +1,7 @@
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { EdgeRelation } from '@/services/cradle';
-import { CosmographProvider } from '@cosmograph/react';
 import InProgress from '@components/feedback/InProgress';
+import { CosmographProvider } from '@cosmograph/react';
 import { ComponentType, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import Graph from './Graph';
@@ -54,7 +54,10 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
      * Add nodes and edges atomically to prevent race conditions.
      * This ensures edges are only added after their corresponding nodes exist.
      */
-    const addNodesAndEdges = (newNodes: Node[] | Node, newEdges: EdgeRelation[] | EdgeRelation) => {
+    const addNodesAndEdges = (
+        newNodes: Node[] | Node,
+        newEdges: EdgeRelation[] | EdgeRelation,
+    ) => {
         const nodesToProcess = Array.isArray(newNodes) ? newNodes : [newNodes];
         const edgesToProcess = Array.isArray(newEdges) ? newEdges : [newEdges];
 
@@ -68,13 +71,16 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         });
 
         // Create a set of all node IDs (existing + new)
-        const allNodeIds = new Set([...nodeIds, ...nodesToAdd.map(n => n.id)]);
+        const allNodeIds = new Set([...nodeIds, ...nodesToAdd.map((n) => n.id)]);
 
         // Filter valid edges (must reference existing or new nodes)
         const edgesToAdd = edgesToProcess.filter((edge) => {
             // Validate required properties
             if (!edge.id || edge.src == null || edge.dst == null) {
-                console.warn('[GraphExplorer] Edge missing required properties (id, src, dst):', edge);
+                console.warn(
+                    '[GraphExplorer] Edge missing required properties (id, src, dst):',
+                    edge,
+                );
                 return false;
             }
 
@@ -86,16 +92,16 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             // Convert edge src/dst to strings for comparison (nodes have string IDs)
             const srcStr = String(edge.src);
             const dstStr = String(edge.dst);
-            
+
             // Validate that both source and destination nodes exist or will exist
             const srcExists = allNodeIds.has(srcStr);
             const dstExists = allNodeIds.has(dstStr);
-            
+
             if (!srcExists || !dstExists) {
                 console.warn(
                     `[GraphExplorer] Edge references non-existent node(s). Edge: ${edge.id}, ` +
-                    `src: ${edge.src} (exists: ${srcExists}), dst: ${edge.dst} (exists: ${dstExists}). ` +
-                    `Available node IDs: ${Array.from(allNodeIds).join(', ')}`
+                        `src: ${edge.src} (exists: ${srcExists}), dst: ${edge.dst} (exists: ${dstExists}). ` +
+                        `Available node IDs: ${Array.from(allNodeIds).join(', ')}`,
                 );
                 return false;
             }
@@ -143,12 +149,15 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         const edgesToProcess = Array.isArray(newEdges) ? newEdges : [newEdges];
         addNodesAndEdges([], edgesToProcess);
     };
-    
+
     /**
      * Add both nodes and edges together atomically.
      * This is the preferred method when you have both nodes and edges to add.
      */
-    const addBoth = (newNodes: Node[] | Node, newEdges: EdgeRelation[] | EdgeRelation) => {
+    const addBoth = (
+        newNodes: Node[] | Node,
+        newEdges: EdgeRelation[] | EdgeRelation,
+    ) => {
         const nodesToProcess = Array.isArray(newNodes) ? newNodes : [newNodes];
         const edgesToProcess = Array.isArray(newEdges) ? newEdges : [newEdges];
         addNodesAndEdges(nodesToProcess, edgesToProcess);
@@ -176,9 +185,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             <div className='w-full h-full overflow-y-hidden relative'>
                 <PanelGroup direction='horizontal' className='h-full'>
                     {/* Always render panel but hide it when closed */}
-                    <Panel 
-                        defaultSize={30} 
-                        minSize={20} 
+                    <Panel
+                        defaultSize={30}
+                        minSize={20}
                         maxSize={50}
                         className={activePanel ? '' : 'hidden'}
                     >
@@ -220,7 +229,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                                 nodes={filteredNodes}
                                 edges={filteredEdges}
                                 activePanel={activePanel}
-                                onTogglePanel={(panel) => setActivePanel(activePanel === panel ? null : panel)}
+                                onTogglePanel={(panel) =>
+                                    setActivePanel(activePanel === panel ? null : panel)
+                                }
                                 cosmographRef={cosmographRef}
                             />
                         </div>

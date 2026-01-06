@@ -15,16 +15,16 @@
 
 The CRADLE frontend is a modern desktop application built with:
 
--   **React** for UI components
--   **Electron** for desktop runtime
--   **Vite** for development and bundling
--   **Tailwind CSS** for styling
+- **React** for UI components
+- **Electron** for desktop runtime
+- **Vite** for development and bundling
+- **Tailwind CSS** for styling
 
 It provides an intuitive interface for cybersecurity analysts to:
 
--   Collaborate on threat intelligence
--   Visualize entity relationships
--   Generate and export reports
+- Collaborate on threat intelligence
+- Visualize entity relationships
+- Generate and export reports
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -34,8 +34,8 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 ### Prerequisites
 
--   Bun runtime
--   Git
+- Bun runtime
+- Git
 
 ### Installation
 
@@ -85,10 +85,10 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 ### Key Features
 
--   Hot module replacement during development
--   Optimized production builds
--   Automated code formatting and linting
--   Comprehensive test suite
+- Hot module replacement during development
+- Optimized production builds
+- Automated code formatting and linting
+- Comprehensive test suite
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -98,13 +98,13 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 **Build Issues**
 
--   Ensure Bun runtime is properly installed
--   Delete `node_modules` and reinstall dependencies
+- Ensure Bun runtime is properly installed
+- Delete `node_modules` and reinstall dependencies
 
 **Runtime Errors**
 
--   Verify backend service is running
--   Check `.env` configuration
+- Verify backend service is running
+- Check `.env` configuration
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

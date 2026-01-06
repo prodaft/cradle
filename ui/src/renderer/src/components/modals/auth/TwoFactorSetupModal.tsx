@@ -178,7 +178,9 @@ export default function TwoFactorSetupModal({
                                         // Auto-focus next input
                                         if (value && index < 5) {
                                             document
-                                                .getElementById(`twoFactorToken-${index + 1}`)
+                                                .getElementById(
+                                                    `twoFactorToken-${index + 1}`,
+                                                )
                                                 ?.focus();
                                         }
                                     }
@@ -191,7 +193,9 @@ export default function TwoFactorSetupModal({
                                         index > 0
                                     ) {
                                         document
-                                            .getElementById(`twoFactorToken-${index - 1}`)
+                                            .getElementById(
+                                                `twoFactorToken-${index - 1}`,
+                                            )
                                             ?.focus();
                                     }
                                 }}

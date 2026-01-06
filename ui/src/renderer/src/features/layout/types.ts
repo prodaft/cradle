@@ -1,6 +1,6 @@
 /**
  * Layout & Tabs System - Type Definitions
- * 
+ *
  * This is the single source of truth for all types in the layout system.
  */
 
@@ -126,13 +126,17 @@ export type DropZone = 'top' | 'bottom' | 'left' | 'right' | 'tabs' | null;
 export interface LayoutContextValue {
     // State
     state: LayoutState;
-    
+
     // Layout operations
-    splitPane: (paneId: PaneId, direction: SplitDirection, position?: SplitPosition) => SplitPaneResult | null;
+    splitPane: (
+        paneId: PaneId,
+        direction: SplitDirection,
+        position?: SplitPosition,
+    ) => SplitPaneResult | null;
     closePane: (paneId: PaneId) => void;
     setActivePaneId: (paneId: PaneId) => void;
     updateSplitSizes: (containerId: ContainerId, sizes: [number, number]) => void;
-    
+
     // Tab operations
     openTab: (paneId: PaneId, path: string) => void;
     closeTab: (paneId: PaneId, tabIndex: number) => void;
@@ -140,13 +144,18 @@ export interface LayoutContextValue {
     updateTabPath: (paneId: PaneId, tabIndex: number, path: string) => void;
     updateTabTitle: (paneId: PaneId, tabIndex: number, title: string) => void;
     reorderTabs: (paneId: PaneId, fromIndex: number, toIndex: number) => void;
-    moveTabToPane: (fromPaneId: PaneId, tabIndex: number, toPaneId: PaneId, insertIndex?: number) => void;
+    moveTabToPane: (
+        fromPaneId: PaneId,
+        tabIndex: number,
+        toPaneId: PaneId,
+        insertIndex?: number,
+    ) => void;
     closeOtherTabs: (paneId: PaneId, keepIndex: number) => void;
     closeTabsToRight: (paneId: PaneId, fromIndex: number) => void;
-    
+
     // Navigation
     navigate: (path: string) => void;
-    
+
     // Utilities
     getPaneState: (paneId: PaneId) => PaneState;
     getActiveTab: (paneId: PaneId) => Tab | null;
@@ -158,7 +167,8 @@ export interface LayoutContextValue {
 // ============================================================================
 
 export const isPaneNode = (node: LayoutNode): node is PaneNode => node.type === 'pane';
-export const isSplitNode = (node: LayoutNode): node is SplitNode => node.type === 'split';
+export const isSplitNode = (node: LayoutNode): node is SplitNode =>
+    node.type === 'split';
 
 // ============================================================================
 // Constants
@@ -167,4 +177,3 @@ export const isSplitNode = (node: LayoutNode): node is SplitNode => node.type ==
 export const WELCOME_PATH = '/';
 export const LAYOUT_STORAGE_KEY = 'cradle-layout-v1';
 export const TAB_DRAG_TYPE = 'application/x-cradle-tab';
-

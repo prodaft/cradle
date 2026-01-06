@@ -106,7 +106,10 @@ export function useAPICall(): UseAPICallReturn {
                 return result;
             } catch (err) {
                 const parsed = await handleError(err, options);
-                if (parsed?.code !== 'UNAUTHENTICATED' && parsed?.code !== 'SESSION_EXPIRED') {
+                if (
+                    parsed?.code !== 'UNAUTHENTICATED' &&
+                    parsed?.code !== 'SESSION_EXPIRED'
+                ) {
                     if (options.onError) {
                         options.onError(parsed!);
                     }
@@ -166,7 +169,10 @@ export function useAPICall(): UseAPICallReturn {
                 parsed = await parseAPIError(err);
             }
 
-            if (parsed?.code === 'UNAUTHENTICATED' || parsed?.code === 'SESSION_EXPIRED') {
+            if (
+                parsed?.code === 'UNAUTHENTICATED' ||
+                parsed?.code === 'SESSION_EXPIRED'
+            ) {
                 if (!sessionExpiredNotifiedRef.current) {
                     sessionExpiredNotifiedRef.current = true;
                     notify({
@@ -182,7 +188,6 @@ export function useAPICall(): UseAPICallReturn {
                 }
                 return parsed;
             }
-
 
             // Only notify if not suppressed
             if (!options.suppressNotification) {

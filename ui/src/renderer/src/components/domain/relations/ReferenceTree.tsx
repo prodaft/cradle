@@ -92,7 +92,9 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
     return (
         <>
             {note?.entries && note.entries.length > 0 && (
-                <div className={`dark:text-zinc-300 text-xs w-full pt-1 pl-3 ${className}`}>
+                <div
+                    className={`dark:text-zinc-300 text-xs w-full pt-1 pl-3 ${className}`}
+                >
                     <Collapsible label='References' open={false}>
                         {new SubtypeHierarchy(note.entries).convert(
                             // --- Render for internal nodes (categories that have child categories) ---
@@ -122,25 +124,28 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                     >
                                         <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
                                             {/* Render the actual references */}
-                                            {references[`${path}${value}`]?.map((entry) => (
-                                                <Link
-                                                    key={`${entry.name}:${entry.subtype}`}
-                                                    to={createDashboardLink(entry)}
-                                                    className='text-zinc-100 dark:text-zinc-300 hover:underline hover:text-cradle2 bg-cradle3 bg-opacity-60 h-6 px-1 py-1 mx-1 my-1 rounded-md'
-                                                >
-                                                    {truncateText(entry.name, 30)}
-                                                </Link>
-                                            ))}
+                                            {references[`${path}${value}`]?.map(
+                                                (entry) => (
+                                                    <Link
+                                                        key={`${entry.name}:${entry.subtype}`}
+                                                        to={createDashboardLink(entry)}
+                                                        className='text-zinc-100 dark:text-zinc-300 hover:underline hover:text-cradle2 bg-cradle3 bg-opacity-60 h-6 px-1 py-1 mx-1 my-1 rounded-md'
+                                                    >
+                                                        {truncateText(entry.name, 30)}
+                                                    </Link>
+                                                ),
+                                            )}
 
                                             <span className='h-6 px-1 py-1 mx-1 my-1'>
                                                 {/* Render pagination logic */}
                                                 {nextPageStatus[`${path}${value}`] ===
-                                                    'loading' ? (
+                                                'loading' ? (
                                                     <div className='spinner-dot-pulse spinner-sm'>
                                                         <div className='spinner-pulse-dot spinner-sm '></div>
                                                     </div>
-                                                ) : nextPageStatus[`${path}${value}`] !==
-                                                    'end' ? (
+                                                ) : nextPageStatus[
+                                                      `${path}${value}`
+                                                  ] !== 'end' ? (
                                                     <span
                                                         onClick={() =>
                                                             fetchReferences(

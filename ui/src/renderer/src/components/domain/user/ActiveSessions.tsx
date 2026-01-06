@@ -44,7 +44,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             const response = await fetch(`${basePath}/users/${userId}/sessions/`, {
                 method: 'GET',
                 headers: {
-                    'Authorization': `Bearer ${token}`,
+                    Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
             });
@@ -66,13 +66,15 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         // Get the refresh token from localStorage and decode it to get the JTI
         const refreshToken = localStorage.getItem('refresh_token');
         if (!refreshToken) return null;
-        
+
         try {
             // Decode JWT token (base64url decode the payload)
             const parts = refreshToken.split('.');
             if (parts.length !== 3) return null;
-            
-            const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+
+            const payload = JSON.parse(
+                atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')),
+            );
             return payload.jti || null;
         } catch (error) {
             console.error('Error decoding refresh token:', error);
@@ -80,62 +82,75 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         }
     }, []);
 
-    const revokeSession = useCallback(async (sessionId: string) => {
-        try {
-            const token = await auth.getAccessToken();
-            const response = await fetch(`${basePath}/users/${userId}/sessions/${sessionId}/`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
+    const revokeSession = useCallback(
+        async (sessionId: string) => {
+            try {
+                const token = await auth.getAccessToken();
+                const response = await fetch(
+                    `${basePath}/users/${userId}/sessions/${sessionId}/`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                    },
+                );
 
-            if (response.ok) {
-                notify({
-                    type: 'success',
-                    text: 'Session revoked successfully',
-                });
-                
-                // Check if this is the current session by comparing JTI
-                const session = sessions.find(s => s.id === sessionId);
-                const currentJti = getCurrentSessionJti();
-                const isCurrentSession = session && currentJti && session.refresh_token_jti === currentJti;
-                
-                // If current session was revoked, log out immediately
-                if (isCurrentSession || session?.is_current) {
-                    // Clear tokens and log out
-                    auth.logOut();
+                if (response.ok) {
+                    notify({
+                        type: 'success',
+                        text: 'Session revoked successfully',
+                    });
+
+                    // Check if this is the current session by comparing JTI
+                    const session = sessions.find((s) => s.id === sessionId);
+                    const currentJti = getCurrentSessionJti();
+                    const isCurrentSession =
+                        session &&
+                        currentJti &&
+                        session.refresh_token_jti === currentJti;
+
+                    // If current session was revoked, log out immediately
+                    if (isCurrentSession || session?.is_current) {
+                        // Clear tokens and log out
+                        auth.logOut();
+                    } else {
+                        fetchSessions();
+                    }
                 } else {
-                    fetchSessions();
+                    notify({
+                        type: 'error',
+                        text: 'Failed to revoke session',
+                    });
                 }
-            } else {
+            } catch (error) {
+                console.error('Error revoking session:', error);
                 notify({
                     type: 'error',
                     text: 'Failed to revoke session',
                 });
             }
-        } catch (error) {
-            console.error('Error revoking session:', error);
-            notify({
-                type: 'error',
-                text: 'Failed to revoke session',
-            });
-        }
-    }, [userId, basePath, auth, sessions, fetchSessions, notify, getCurrentSessionJti]);
+        },
+        [userId, basePath, auth, sessions, fetchSessions, notify, getCurrentSessionJti],
+    );
 
-    const openRevokeConfirmationModal = useCallback((sessionId: string) => {
-        const session = sessions.find(s => s.id === sessionId);
-        const currentJti = getCurrentSessionJti();
-        const isCurrentSession = session && currentJti && session.refresh_token_jti === currentJti;
-        
-        setModal(ActionConfirmationModal, {
-            onConfirm: () => revokeSession(sessionId),
-            text: isCurrentSession
-                ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
-                : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.',
-        });
-    }, [sessions, setModal, revokeSession, getCurrentSessionJti]);
+    const openRevokeConfirmationModal = useCallback(
+        (sessionId: string) => {
+            const session = sessions.find((s) => s.id === sessionId);
+            const currentJti = getCurrentSessionJti();
+            const isCurrentSession =
+                session && currentJti && session.refresh_token_jti === currentJti;
+
+            setModal(ActionConfirmationModal, {
+                onConfirm: () => revokeSession(sessionId),
+                text: isCurrentSession
+                    ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
+                    : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.',
+            });
+        },
+        [sessions, setModal, revokeSession, getCurrentSessionJti],
+    );
 
     useEffect(() => {
         fetchSessions();
@@ -149,14 +164,18 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const formatDeviceInfo = (deviceInfo: string | null): string => {
         if (!deviceInfo) return 'Unknown device';
         // Truncate long device info
-        return deviceInfo.length > 50 ? deviceInfo.substring(0, 50) + '...' : deviceInfo;
+        return deviceInfo.length > 50
+            ? deviceInfo.substring(0, 50) + '...'
+            : deviceInfo;
     };
 
     // Mark current session by comparing JTI
     const currentJti = getCurrentSessionJti();
-    const sessionsWithCurrent = sessions.map(session => ({
+    const sessionsWithCurrent = sessions.map((session) => ({
         ...session,
-        is_current: currentJti ? session.refresh_token_jti === currentJti : session.is_current,
+        is_current: currentJti
+            ? session.refresh_token_jti === currentJti
+            : session.is_current,
     }));
 
     if (isLoading) {
@@ -193,9 +212,13 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                             </div>
                             <div className='text-xs cradle-text-muted mt-0.5'>
                                 {session.ip_address && (
-                                    <span className='mr-3'>IP: {session.ip_address}</span>
+                                    <span className='mr-3'>
+                                        IP: {session.ip_address}
+                                    </span>
                                 )}
-                                <span>Last activity: {formatDate(session.last_activity)}</span>
+                                <span>
+                                    Last activity: {formatDate(session.last_activity)}
+                                </span>
                             </div>
                         </div>
                         <button
@@ -215,4 +238,3 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         </div>
     );
 }
-

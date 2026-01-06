@@ -19,11 +19,11 @@ interface GraphConfig {
 function calculateLayout(
     nodes: Node[],
     layoutMode: LayoutMode,
-    spaceSize: number = 512
+    spaceSize: number = 512,
 ): Map<string, { x: number; y: number }> {
     const positions = new Map<string, { x: number; y: number }>();
     const centerOffset = spaceSize / 2;
-    
+
     switch (layoutMode) {
         case 'circular': {
             const radius = spaceSize * 0.35;
@@ -59,26 +59,39 @@ function calculateLayout(
                 }
                 groups.get(groupKey)!.push(node);
             });
-            
+
             // Position each cluster in a circle, nodes within cluster also in circle
             const groupArray = Array.from(groups.entries());
             const clusterRadius = spaceSize * 0.3;
             const clusterAngleStep = (2 * Math.PI) / groupArray.length;
-            
+
             groupArray.forEach(([_, groupNodes], groupIndex) => {
-                const clusterCenterX = centerOffset + Math.cos(groupIndex * clusterAngleStep - Math.PI / 2) * clusterRadius;
-                const clusterCenterY = centerOffset + Math.sin(groupIndex * clusterAngleStep - Math.PI / 2) * clusterRadius;
-                
+                const clusterCenterX =
+                    centerOffset +
+                    Math.cos(groupIndex * clusterAngleStep - Math.PI / 2) *
+                        clusterRadius;
+                const clusterCenterY =
+                    centerOffset +
+                    Math.sin(groupIndex * clusterAngleStep - Math.PI / 2) *
+                        clusterRadius;
+
                 const nodeRadius = Math.min(spaceSize * 0.15, 30 * groupNodes.length);
                 const nodeAngleStep = (2 * Math.PI) / groupNodes.length;
-                
+
                 groupNodes.forEach((node, nodeIndex) => {
                     if (groupNodes.length === 1) {
-                        positions.set(node.id, { x: clusterCenterX, y: clusterCenterY });
+                        positions.set(node.id, {
+                            x: clusterCenterX,
+                            y: clusterCenterY,
+                        });
                     } else {
                         positions.set(node.id, {
-                            x: clusterCenterX + Math.cos(nodeIndex * nodeAngleStep) * nodeRadius,
-                            y: clusterCenterY + Math.sin(nodeIndex * nodeAngleStep) * nodeRadius,
+                            x:
+                                clusterCenterX +
+                                Math.cos(nodeIndex * nodeAngleStep) * nodeRadius,
+                            y:
+                                clusterCenterY +
+                                Math.sin(nodeIndex * nodeAngleStep) * nodeRadius,
                         });
                     }
                 });
@@ -99,7 +112,7 @@ function calculateLayout(
             break;
         }
     }
-    
+
     return positions;
 }
 
@@ -117,12 +130,12 @@ interface GraphViewerProps {
 
 /**
  * Normalizes a node degree value to a size suitable for graph visualization.
- * 
+ *
  * @param x - The input value (node degree)
  * @param inputMin - Minimum expected input value (default: 1)
  * @param inputMax - Maximum expected input value (default: 60)
  * @returns Normalized size value between outputMin (4) and outputMax (15)
- * 
+ *
  * The function maps node degrees to visual sizes:
  * - Nodes with degree 1 (minimum connections) → size 4
  * - Nodes with degree 60+ (maximum connections) → size 15
@@ -132,7 +145,7 @@ function normalize(x: number, inputMin: number, inputMax: number): number {
     // Clamp input to valid range
     x = Math.min(x, inputMax);
     x = Math.max(x, inputMin);
-    
+
     // Output range for node sizes in the graph (increased for better visibility)
     const outputMin = 15;
     const outputMax = 40;
@@ -171,11 +184,13 @@ export default function GraphViewer({
             }
             return isValid;
         });
-        
+
         if (filtered.length < nodes.length) {
-            console.warn(`[Graph] Filtered out ${nodes.length - filtered.length} invalid node(s) with null or empty IDs`);
+            console.warn(
+                `[Graph] Filtered out ${nodes.length - filtered.length} invalid node(s) with null or empty IDs`,
+            );
         }
-        
+
         return filtered;
     }, [nodes]);
 
@@ -215,7 +230,7 @@ export default function GraphViewer({
                 x: position?.x ?? 512,
                 y: position?.y ?? 512,
             };
-            
+
             return point;
         });
     }, [validNodes, layoutPositions]);
@@ -259,7 +274,8 @@ export default function GraphViewer({
                 let clickedNodes = [node];
                 if (cosmographRef.current != null && selectedNodes.has(node)) {
                     try {
-                        const connectedIndices = cosmographRef.current.getConnectedPointIndices(index);
+                        const connectedIndices =
+                            cosmographRef.current.getConnectedPointIndices(index);
                         if (connectedIndices) {
                             clickedNodes = connectedIndices
                                 .map((i: number) => indexToNode.get(i))
@@ -281,15 +297,15 @@ export default function GraphViewer({
                         newNodes.add(n);
                     }
                 }
-                
+
                 try {
                     cosmographRef.current?.setFocusedPoint(index);
                 } catch (e) {
                     console.warn('[Graph] Error setting focused point:', e);
                 }
-                
+
                 setSelectedNodes(newNodes);
-                
+
                 // Open explorer panel when a node is clicked
                 if (onTogglePanel && activePanel !== 'explorer') {
                     onTogglePanel('explorer');
@@ -298,7 +314,14 @@ export default function GraphViewer({
                 console.error('[Graph] Error in onClick handler:', error);
             }
         },
-        [indexToNode, selectedNodes, setSelectedNodes, cosmographRef, onTogglePanel, activePanel],
+        [
+            indexToNode,
+            selectedNodes,
+            setSelectedNodes,
+            cosmographRef,
+            onTogglePanel,
+            activePanel,
+        ],
     );
 
     // onLinkClick handles link/connection clicks
@@ -307,7 +330,10 @@ export default function GraphViewer({
             try {
                 const link = linksData[linkIndex];
                 if (!link) {
-                    console.warn('[Graph] onLinkClick: Link not found for index:', linkIndex);
+                    console.warn(
+                        '[Graph] onLinkClick: Link not found for index:',
+                        linkIndex,
+                    );
                     return;
                 }
 
@@ -333,11 +359,10 @@ export default function GraphViewer({
         [linksData, indexToNode, setSelectedNodes, onTogglePanel, activePanel],
     );
 
-
     // Fit view when data changes (Cosmograph handles data updates automatically via props)
     useEffect(() => {
         if (!cosmographRef.current || pointsData.length === 0) return;
-        
+
         // Debounce fit view to avoid excessive calls
         const fitTimer = setTimeout(() => {
             try {
@@ -348,7 +373,7 @@ export default function GraphViewer({
                 console.warn('[Graph] Could not fit view:', e);
             }
         }, 300);
-        
+
         return () => clearTimeout(fitTimer);
     }, [pointsData.length, config.layoutMode]);
 
@@ -356,7 +381,10 @@ export default function GraphViewer({
     useEffect(() => {
         return () => {
             try {
-                if (cosmographRef.current && typeof cosmographRef.current.destroy === 'function') {
+                if (
+                    cosmographRef.current &&
+                    typeof cosmographRef.current.destroy === 'function'
+                ) {
                     cosmographRef.current.destroy();
                 }
             } catch (e) {
@@ -388,23 +416,23 @@ export default function GraphViewer({
                                 type='button'
                                 className={`cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border flex items-center justify-center ${
                                     activePanel === 'explorer'
-                                        ? 'border-cradle-accent-primary' 
+                                        ? 'border-cradle-accent-primary'
                                         : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
                                 }`}
                                 title='Toggle explorer panel'
                                 onClick={() => onTogglePanel('explorer')}
                             >
-                                <Search width="16" height="16" />
+                                <Search width='16' height='16' />
                             </button>
                         )}
-                        
+
                         {/* Display Panel Toggle Button */}
                         {onTogglePanel && (
                             <button
                                 type='button'
                                 className={`cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border flex items-center justify-center ${
                                     activePanel === 'display'
-                                        ? 'border-cradle-accent-primary' 
+                                        ? 'border-cradle-accent-primary'
                                         : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
                                 }`}
                                 title='Toggle display panel'
@@ -413,7 +441,7 @@ export default function GraphViewer({
                                 <Settings width={16} height={16} />
                             </button>
                         )}
-                        
+
                         {/* Simulation Toggle Button - Non-functional, kept for future use */}
                         <button
                             type='button'
@@ -424,10 +452,14 @@ export default function GraphViewer({
                                 // Kept for future implementation
                             }}
                         >
-                            {disableSimulation ? <PlaySolid width="16" height="16" /> : <PauseSolid width="16" height="16" />}
+                            {disableSimulation ? (
+                                <PlaySolid width='16' height='16' />
+                            ) : (
+                                <PauseSolid width='16' height='16' />
+                            )}
                         </button>
                     </div>
-                    
+
                     {/* Zoom controls - top right */}
                     <div className='absolute top-2 right-2 z-10 flex flex-col gap-1'>
                         {/* Fit View Button */}
@@ -442,9 +474,15 @@ export default function GraphViewer({
                                         cosmographRef.current.unselectAllPoints();
                                         setSelectedNodes(new Set());
                                         // Fit view
-                                        if (typeof cosmographRef.current.zoomToFit === 'function') {
+                                        if (
+                                            typeof cosmographRef.current.zoomToFit ===
+                                            'function'
+                                        ) {
                                             cosmographRef.current.zoomToFit();
-                                        } else if (typeof cosmographRef.current.fitView === 'function') {
+                                        } else if (
+                                            typeof cosmographRef.current.fitView ===
+                                            'function'
+                                        ) {
                                             cosmographRef.current.fitView(250, 0.1);
                                         }
                                     }
@@ -453,14 +491,24 @@ export default function GraphViewer({
                                 }
                             }}
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="m21 21-6-6m6 6v-4.8m0 4.8h-4.8"></path>
-                                <path d="M3 16.2V21m0 0h4.8M3 21l6-6"></path>
-                                <path d="M21 7.8V3m0 0h-4.8M21 3l-6 6"></path>
-                                <path d="M3 7.8V3m0 0h4.8M3 3l6 6"></path>
+                            <svg
+                                xmlns='http://www.w3.org/2000/svg'
+                                width='16'
+                                height='16'
+                                viewBox='0 0 24 24'
+                                fill='none'
+                                stroke='currentColor'
+                                strokeWidth='2'
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
+                            >
+                                <path d='m21 21-6-6m6 6v-4.8m0 4.8h-4.8'></path>
+                                <path d='M3 16.2V21m0 0h4.8M3 21l6-6'></path>
+                                <path d='M21 7.8V3m0 0h-4.8M21 3l-6 6'></path>
+                                <path d='M3 7.8V3m0 0h4.8M3 3l6 6'></path>
                             </svg>
                         </button>
-                        
+
                         <button
                             type='button'
                             className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
@@ -469,13 +517,30 @@ export default function GraphViewer({
                                 try {
                                     if (cosmographRef.current) {
                                         // Try multiple zoom methods
-                                        if (typeof cosmographRef.current.setZoomLevel === 'function') {
-                                            const currentZoom = cosmographRef.current.getZoomLevel?.() || 1;
-                                            cosmographRef.current.setZoomLevel(currentZoom + 0.2, 250);
-                                        } else if (typeof cosmographRef.current.setZoom === 'function') {
-                                            const currentZoom = cosmographRef.current.getZoom?.() || 1;
-                                            cosmographRef.current.setZoom(currentZoom * 1.2);
-                                        } else if (typeof cosmographRef.current.zoomBy === 'function') {
+                                        if (
+                                            typeof cosmographRef.current
+                                                .setZoomLevel === 'function'
+                                        ) {
+                                            const currentZoom =
+                                                cosmographRef.current.getZoomLevel?.() ||
+                                                1;
+                                            cosmographRef.current.setZoomLevel(
+                                                currentZoom + 0.2,
+                                                250,
+                                            );
+                                        } else if (
+                                            typeof cosmographRef.current.setZoom ===
+                                            'function'
+                                        ) {
+                                            const currentZoom =
+                                                cosmographRef.current.getZoom?.() || 1;
+                                            cosmographRef.current.setZoom(
+                                                currentZoom * 1.2,
+                                            );
+                                        } else if (
+                                            typeof cosmographRef.current.zoomBy ===
+                                            'function'
+                                        ) {
                                             cosmographRef.current.zoomBy(1.2);
                                         }
                                     }
@@ -484,8 +549,19 @@ export default function GraphViewer({
                                 }
                             }}
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4 12H20M12 4V20" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                            <svg
+                                width='16'
+                                height='16'
+                                viewBox='0 0 24 24'
+                                stroke='currentColor'
+                                xmlns='http://www.w3.org/2000/svg'
+                            >
+                                <path
+                                    d='M4 12H20M12 4V20'
+                                    strokeWidth='2'
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                ></path>
                             </svg>
                         </button>
                         <button
@@ -496,13 +572,30 @@ export default function GraphViewer({
                                 try {
                                     if (cosmographRef.current) {
                                         // Try multiple zoom methods
-                                        if (typeof cosmographRef.current.setZoomLevel === 'function') {
-                                            const currentZoom = cosmographRef.current.getZoomLevel?.() || 1;
-                                            cosmographRef.current.setZoomLevel(Math.max(0.1, currentZoom - 0.2), 250);
-                                        } else if (typeof cosmographRef.current.setZoom === 'function') {
-                                            const currentZoom = cosmographRef.current.getZoom?.() || 1;
-                                            cosmographRef.current.setZoom(currentZoom * 0.8);
-                                        } else if (typeof cosmographRef.current.zoomBy === 'function') {
+                                        if (
+                                            typeof cosmographRef.current
+                                                .setZoomLevel === 'function'
+                                        ) {
+                                            const currentZoom =
+                                                cosmographRef.current.getZoomLevel?.() ||
+                                                1;
+                                            cosmographRef.current.setZoomLevel(
+                                                Math.max(0.1, currentZoom - 0.2),
+                                                250,
+                                            );
+                                        } else if (
+                                            typeof cosmographRef.current.setZoom ===
+                                            'function'
+                                        ) {
+                                            const currentZoom =
+                                                cosmographRef.current.getZoom?.() || 1;
+                                            cosmographRef.current.setZoom(
+                                                currentZoom * 0.8,
+                                            );
+                                        } else if (
+                                            typeof cosmographRef.current.zoomBy ===
+                                            'function'
+                                        ) {
                                             cosmographRef.current.zoomBy(0.8);
                                         }
                                     }
@@ -511,8 +604,19 @@ export default function GraphViewer({
                                 }
                             }}
                         >
-                            <svg width="16" height="16" viewBox="0 0 24 24" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M4 12H20" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"></path>
+                            <svg
+                                width='16'
+                                height='16'
+                                viewBox='0 0 24 24'
+                                stroke='currentColor'
+                                xmlns='http://www.w3.org/2000/svg'
+                            >
+                                <path
+                                    d='M4 12H20'
+                                    strokeWidth='2'
+                                    strokeLinecap='round'
+                                    strokeLinejoin='round'
+                                ></path>
                             </svg>
                         </button>
                     </div>

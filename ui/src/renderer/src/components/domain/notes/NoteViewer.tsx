@@ -95,11 +95,11 @@ export default function NoteViewer() {
     const { updateCurrentTabTitle } = usePaneTabs();
     const { activePaneId } = useLayout();
     const { execute, handleError } = useAPICall();
-    
+
     // Refs to avoid dependency issues in effects
     const activePaneIdRef = useRef(activePaneId);
     const updateCurrentTabTitleRef = useRef(updateCurrentTabTitle);
-    
+
     // Keep refs updated
     useEffect(() => {
         activePaneIdRef.current = activePaneId;
@@ -166,7 +166,7 @@ export default function NoteViewer() {
                 return;
             }
 
-            console.log(view)
+            console.log(view);
 
             const doc = view.state;
             let to = doc.selection.main.to;
@@ -198,7 +198,6 @@ export default function NoteViewer() {
         [editorUtils, setMarkdownContent, notify],
     );
 
-
     const handleEnrichData = useCallback(async () => {
         if (!editorRef.current) return;
         const view = editorRef.current.view || editorRef.current;
@@ -214,13 +213,16 @@ export default function NoteViewer() {
         }
         const result = editorUtils.artifactsAndEntries(view, from, to);
         const entities = result.then((result) => result.entities);
-        const artifacts = result.then((result) => result.artifacts.map((artifact) => `${artifact.type}:${artifact.value}`).join('\n'));
+        const artifacts = result.then((result) =>
+            result.artifacts
+                .map((artifact) => `${artifact.type}:${artifact.value}`)
+                .join('\n'),
+        );
 
         setModal(EnrichmentRequestModal, {
             entitiesList: entities,
             artifactsList: artifacts,
-        }
-        )
+        });
     }, [editorUtils, setModal]);
 
     useEffect(() => {
@@ -290,21 +292,19 @@ export default function NoteViewer() {
                 setHasUnsavedChanges(false);
                 // Update tab title with note title (use refs to avoid dependency issues)
                 if (responseNote.title && activePaneIdRef.current) {
-                    updateCurrentTabTitleRef.current(activePaneIdRef.current, responseNote.title);
+                    updateCurrentTabTitleRef.current(
+                        activePaneIdRef.current,
+                        responseNote.title,
+                    );
                 }
                 return responseNote;
             })
-            .catch(() => { })
+            .catch(() => {})
             .finally(() => {
                 // Turn off loading spinner regardless of success or failure
                 setIsLoading(false);
             });
-    }, [
-        id,
-        execute,
-        notesApi,
-        fleetingNotesApi,
-    ]);
+    }, [id, execute, notesApi, fleetingNotesApi]);
 
     const handleDelete = useCallback(async () => {
         if (!note || !id) return;
@@ -328,7 +328,7 @@ export default function NoteViewer() {
             const stateNotes = state.notes.filter((n) => n.id !== id);
             const newState = { ...state, notes: stateNotes };
             navigate(from?.pathname || '/', { replace: true, state: newState });
-        }).catch(() => { });
+        }).catch(() => {});
     }, [id, execute, navigate, note, fleetingNotesApi, notesApi, state, from]);
 
     // Use a ref to store the latest values for the save function
@@ -359,8 +359,8 @@ export default function NoteViewer() {
                     ? 'Fleeting note saved.'
                     : undefined
                 : showAlert
-                    ? 'Note saved successfully.'
-                    : undefined;
+                  ? 'Note saved successfully.'
+                  : undefined;
 
             execute(
                 async () => {
@@ -388,7 +388,7 @@ export default function NoteViewer() {
                     setInitialMarkdown(content);
                     setHasUnsavedChanges(false);
                 })
-                .catch(() => { })
+                .catch(() => {})
                 .finally(() => {
                     setSaving(false);
                 });
@@ -410,7 +410,7 @@ export default function NoteViewer() {
                 // Navigate to the regular note view
                 navigate(`/notes/${response.id}`, { replace: true });
             })
-            .catch(() => { })
+            .catch(() => {})
             .finally(() => {
                 setSaving(false);
             });
@@ -450,17 +450,23 @@ export default function NoteViewer() {
         });
     }, [handleDelete, setModal]);
 
-    const handleFilesChange = useCallback((files: FileReferenceWithNote[]) => {
-        setFileData(files);
-    }, [setFileData, isFleeting]);
+    const handleFilesChange = useCallback(
+        (files: FileReferenceWithNote[]) => {
+            setFileData(files);
+        },
+        [setFileData, isFleeting],
+    );
 
-    const handleUploadFiles = useCallback((filesList?: any[]) => {
-        setModal(FileUploadModal, {
-            files: fileData,
-            onFilesChange: handleFilesChange,
-            noteId: id,
-        });
-    }, [fileData, handleFilesChange, setModal, id]);
+    const handleUploadFiles = useCallback(
+        (filesList?: any[]) => {
+            setModal(FileUploadModal, {
+                files: fileData,
+                onFilesChange: handleFilesChange,
+                noteId: id,
+            });
+        },
+        [fileData, handleFilesChange, setModal, id],
+    );
 
     const handleFind = useCallback(() => {
         setShowFind(true);
@@ -586,16 +592,19 @@ export default function NoteViewer() {
                     </div>
 
                     <div className='flex items-center gap-2'>
-                        <Tooltip content={enableEditing ? 'Editing mode' : 'Reading mode'}>
+                        <Tooltip
+                            content={enableEditing ? 'Editing mode' : 'Reading mode'}
+                        >
                             <button
                                 onClick={() => toggleEditing()}
                                 className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cradle-border'
                                 data-testid='actions-dropdown-btn'
                             >
-                                {
-                                    enableEditing ? <EditPencil width='20' height='20' /> : <Book width='20' height='20' />
-                                }
-
+                                {enableEditing ? (
+                                    <EditPencil width='20' height='20' />
+                                ) : (
+                                    <Book width='20' height='20' />
+                                )}
                             </button>
                         </Tooltip>
                         {!id?.startsWith('guide_') && (
@@ -675,21 +684,20 @@ export default function NoteViewer() {
                                         <Panel defaultSize={85} minSize={50}>
                                             <div
                                                 className='h-full flex flex-col border-l cradle-border relative'
-                                                onDoubleClick={handleEnableEditingWithConfirmation}
+                                                onDoubleClick={
+                                                    handleEnableEditingWithConfirmation
+                                                }
                                             >
                                                 {showFind && (
                                                     <FindReplace
                                                         view={
-                                                            editorRef.current
-                                                                ?.view ||
+                                                            editorRef.current?.view ||
                                                             editorRef.current
                                                         }
                                                         onClose={() =>
                                                             setShowFind(false)
                                                         }
-                                                        initialReplace={
-                                                            findReplaceMode
-                                                        }
+                                                        initialReplace={findReplaceMode}
                                                     />
                                                 )}
                                                 {/* Embedded Rich Editor */}
@@ -723,7 +731,10 @@ export default function NoteViewer() {
 
                                                 {/* Reference Tree below the editor */}
                                                 {note && (
-                                                    <ReferenceTree note={note} className='mt-4' />
+                                                    <ReferenceTree
+                                                        note={note}
+                                                        className='mt-4'
+                                                    />
                                                 )}
                                             </div>
                                         </Panel>
@@ -731,7 +742,9 @@ export default function NoteViewer() {
                                 ) : (
                                     <div
                                         className='h-full flex flex-col border-l cradle-border relative'
-                                        onDoubleClick={handleEnableEditingWithConfirmation}
+                                        onDoubleClick={
+                                            handleEnableEditingWithConfirmation
+                                        }
                                     >
                                         {showFind && (
                                             <FindReplace
@@ -739,23 +752,15 @@ export default function NoteViewer() {
                                                     editorRef.current?.view ||
                                                     editorRef.current
                                                 }
-                                                onClose={() =>
-                                                    setShowFind(false)
-                                                }
+                                                onClose={() => setShowFind(false)}
                                                 initialReplace={findReplaceMode}
                                             />
                                         )}
                                         {/* Embedded Rich Editor */}
                                         <div className='flex-1 min-h-0'>
                                             <RichEditor
-                                                additionalExtensions={
-                                                    customKeymap
-                                                }
-                                                key={
-                                                    richEditor
-                                                        ? 'rich'
-                                                        : 'source'
-                                                }
+                                                additionalExtensions={customKeymap}
+                                                key={richEditor ? 'rich' : 'source'}
                                                 ref={editorRef}
                                                 noteid={id}
                                                 markdownContent={markdownContent}
@@ -772,7 +777,10 @@ export default function NoteViewer() {
 
                                         {/* Reference Tree below the editor */}
                                         {note && (
-                                            <ReferenceTree note={note} className='mt-4' />
+                                            <ReferenceTree
+                                                note={note}
+                                                className='mt-4'
+                                            />
                                         )}
                                     </div>
                                 )}
@@ -798,7 +806,7 @@ export default function NoteViewer() {
                         </div>
                     )}
                 </div>
-            </div >
+            </div>
         </>
     );
 }

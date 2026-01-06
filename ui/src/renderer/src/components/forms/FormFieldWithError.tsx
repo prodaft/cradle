@@ -1,7 +1,9 @@
 import { InputHTMLAttributes } from 'react';
 
-interface FormFieldWithErrorProps
-    extends Omit<InputHTMLAttributes<HTMLInputElement>, 'name' | 'type'> {
+interface FormFieldWithErrorProps extends Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    'name' | 'type'
+> {
     name: string;
     label?: string;
     type?: string;

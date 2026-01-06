@@ -177,13 +177,13 @@ async function fixEntryCompressedTreeValue(): Promise<void> {
 
 async function suppressTypeErrors(): Promise<void> {
     const rootDir = path.join(CRADLE_MODELS_PATH, '..');
-    
+
     async function processDirectory(dir: string) {
         const entries = await fs.readdir(dir, { withFileTypes: true });
-        
+
         for (const entry of entries) {
             const fullPath = path.join(dir, entry.name);
-            
+
             if (entry.isDirectory()) {
                 await processDirectory(fullPath);
             } else if (entry.isFile() && entry.name.endsWith('.ts')) {

@@ -38,9 +38,9 @@ export function ApiProvider({ children }: ApiProviderProps) {
             basePath: basePath,
             accessToken: isLoggedIn()
                 ? async () => {
-                    const token = await getAccessToken();
-                    return token;
-                }
+                      const token = await getAccessToken();
+                      return token;
+                  }
                 : undefined,
             // Note: Don't set Content-Type as a default header here.
             // Individual API methods set it as needed (e.g., 'application/json' for JSON requests).

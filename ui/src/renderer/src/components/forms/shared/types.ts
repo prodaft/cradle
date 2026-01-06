@@ -25,8 +25,9 @@ export interface BaseFieldProps<TFieldValues extends FieldValues = FieldValues> 
 /**
  * Props for text-based input fields
  */
-export interface TextFieldProps<TFieldValues extends FieldValues = FieldValues>
-    extends BaseFieldProps<TFieldValues> {
+export interface TextFieldProps<
+    TFieldValues extends FieldValues = FieldValues,
+> extends BaseFieldProps<TFieldValues> {
     /** Input type */
     type?: 'text' | 'email' | 'password' | 'number' | 'url' | 'tel' | 'search';
     /** Placeholder text */
@@ -46,8 +47,9 @@ export interface TextFieldProps<TFieldValues extends FieldValues = FieldValues>
 /**
  * Props for textarea fields
  */
-export interface TextAreaFieldProps<TFieldValues extends FieldValues = FieldValues>
-    extends BaseFieldProps<TFieldValues> {
+export interface TextAreaFieldProps<
+    TFieldValues extends FieldValues = FieldValues,
+> extends BaseFieldProps<TFieldValues> {
     /** Placeholder text */
     placeholder?: string;
     /** Number of visible rows */
@@ -59,8 +61,9 @@ export interface TextAreaFieldProps<TFieldValues extends FieldValues = FieldValu
 /**
  * Props for checkbox fields
  */
-export interface CheckboxFieldProps<TFieldValues extends FieldValues = FieldValues>
-    extends BaseFieldProps<TFieldValues> {
+export interface CheckboxFieldProps<
+    TFieldValues extends FieldValues = FieldValues,
+> extends BaseFieldProps<TFieldValues> {
     /** Description text next to the checkbox */
     description?: string;
 }
@@ -68,8 +71,9 @@ export interface CheckboxFieldProps<TFieldValues extends FieldValues = FieldValu
 /**
  * Props for switch/toggle fields
  */
-export interface SwitchFieldProps<TFieldValues extends FieldValues = FieldValues>
-    extends BaseFieldProps<TFieldValues> {
+export interface SwitchFieldProps<
+    TFieldValues extends FieldValues = FieldValues,
+> extends BaseFieldProps<TFieldValues> {
     /** Description text next to the switch */
     description?: string;
 }
@@ -100,8 +104,9 @@ export interface RadioGroupFieldProps<
 /**
  * Props for slider/range fields
  */
-export interface SliderFieldProps<TFieldValues extends FieldValues = FieldValues>
-    extends BaseFieldProps<TFieldValues> {
+export interface SliderFieldProps<
+    TFieldValues extends FieldValues = FieldValues,
+> extends BaseFieldProps<TFieldValues> {
     /** Minimum value */
     min?: number;
     /** Maximum value */

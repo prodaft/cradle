@@ -139,14 +139,21 @@ export default function EnrichmentSettingsForm({
                         );
 
                         // Initialize settings object with defaults
-                        const initialSettings: Record<string, string | number | boolean> = {};
-                        Object.entries(settings.formFields || {}).forEach(([key, field]) => {
-                            if (field.type === 'boolean') {
-                                initialSettings[key] = settings.settings?.[key] ?? false;
-                            } else {
-                                initialSettings[key] = settings.settings?.[key] || '';
-                            }
-                        });
+                        const initialSettings: Record<
+                            string,
+                            string | number | boolean
+                        > = {};
+                        Object.entries(settings.formFields || {}).forEach(
+                            ([key, field]) => {
+                                if (field.type === 'boolean') {
+                                    initialSettings[key] =
+                                        settings.settings?.[key] ?? false;
+                                } else {
+                                    initialSettings[key] =
+                                        settings.settings?.[key] || '';
+                                }
+                            },
+                        );
 
                         // Format for_eclasses for the selector
                         const formattedEclasses =
@@ -224,9 +231,9 @@ export default function EnrichmentSettingsForm({
                                 render={({ field: { onChange, value } }) => (
                                     <Selector
                                         value={
-                                            field.options?.map(o => ({ label: o, value: o })).find(
-                                                (o) => o.value === value,
-                                            ) || null
+                                            field.options
+                                                ?.map((o) => ({ label: o, value: o }))
+                                                .find((o) => o.value === value) || null
                                         }
                                         onChange={(option: any) =>
                                             onChange(option?.value)
@@ -294,7 +301,9 @@ export default function EnrichmentSettingsForm({
 
             {/* Content Area */}
             <div className='p-5'>
-                <div className='w-full'> {/* Removed max-w-4xl here */}
+                <div className='w-full'>
+                    {' '}
+                    {/* Removed max-w-4xl here */}
                     <form onSubmit={handleSubmit(onSubmit)}>
                         <FormAlert
                             alert={alert}
@@ -322,13 +331,16 @@ export default function EnrichmentSettingsForm({
                                     <SettingsSeparator />
 
                                     <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'> {/* Added flex container */}
+                                        <div className='flex items-center justify-between gap-4'>
+                                            {' '}
+                                            {/* Added flex container */}
                                             <div className='flex-1'>
                                                 <label className='text-sm cradle-text-tertiary block mb-0.5'>
                                                     Entry Classes
                                                 </label>
                                                 <p className='text-sm cradle-text-muted'>
-                                                    Entry classes to apply this enrichment to
+                                                    Entry classes to apply this
+                                                    enrichment to
                                                 </p>
                                                 {errors.for_eclasses && (
                                                     <p className='text-red-600 text-sm mt-1'>
@@ -336,14 +348,18 @@ export default function EnrichmentSettingsForm({
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className='w-auto flex-1'> {/* Wrapped Selector in this div */}
+                                            <div className='w-auto flex-1'>
+                                                {' '}
+                                                {/* Wrapped Selector in this div */}
                                                 <Controller
                                                     name='for_eclasses'
                                                     control={control}
                                                     render={({ field }) => (
                                                         <Selector
                                                             {...field}
-                                                            fetchOptions={fetchEntryClasses}
+                                                            fetchOptions={
+                                                                fetchEntryClasses
+                                                            }
                                                             isMulti={true}
                                                             placeholder='Select entry classes...'
                                                         />
@@ -370,7 +386,9 @@ export default function EnrichmentSettingsForm({
                                 </p>
 
                                 <div className='space-y-4'>
-                                    <SettingsCard>{renderSettingsFields()}</SettingsCard>
+                                    <SettingsCard>
+                                        {renderSettingsFields()}
+                                    </SettingsCard>
                                 </div>
                             </section>
                         )}

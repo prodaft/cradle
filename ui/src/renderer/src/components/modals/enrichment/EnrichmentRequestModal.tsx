@@ -49,7 +49,11 @@ export interface EnrichmentRequestModalProps {
     /** Optional artifacts text or promise resolving to artifacts text */
     artifactsList?: string | Promise<string>;
     /** Optional list of notes to include in the enrichment request */
-    notesList?: Array<{ id: string; title: string; entities: OptimizedEntryResponse[] }>;
+    notesList?: Array<{
+        id: string;
+        title: string;
+        entities: OptimizedEntryResponse[];
+    }>;
 }
 
 /**
@@ -92,9 +96,13 @@ export default function EnrichmentRequestModal({
     const [enricherTypes, setEnricherTypes] = useState<EnricherOption[]>([]);
     const [loadingEnrichers, setLoadingEnrichers] = useState(true);
     const { notify } = useNotif();
-    const [selectedEntities, setSelectedEntities] = useState<Array<{ value: number, label: string }>>([]);
+    const [selectedEntities, setSelectedEntities] = useState<
+        Array<{ value: number; label: string }>
+    >([]);
     const [initialDataLoading, setInitialDataLoading] = useState(false);
-    const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(() => new Set(notesList?.map(n => n.id) || []));
+    const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(
+        () => new Set(notesList?.map((n) => n.id) || []),
+    );
 
     // Form state
     const [formData, setFormData] = useState<EnrichmentFormData>({
@@ -126,7 +134,7 @@ export default function EnrichmentRequestModal({
     // Update selected note IDs if notesList changes
     useEffect(() => {
         if (notesList) {
-            setSelectedNoteIds(new Set(notesList.map(n => n.id)));
+            setSelectedNoteIds(new Set(notesList.map((n) => n.id)));
         }
     }, [notesList]);
 
@@ -149,10 +157,12 @@ export default function EnrichmentRequestModal({
                 }
             }
         }
-        setSelectedEntities(Object.values(entities).map((entity) => ({
-            value: entity.id!,
-            label: entity.name,
-        })));
+        setSelectedEntities(
+            Object.values(entities).map((entity) => ({
+                value: entity.id!,
+                label: entity.name,
+            })),
+        );
         setFormData((prev) => ({
             ...prev,
             entities: Object.values(entities).map((entity) => entity.id!),
@@ -171,11 +181,18 @@ export default function EnrichmentRequestModal({
                 // Resolve entities list if provided
                 let resolvedEntities: number[] | undefined;
                 if (entitiesList) {
-                    let entities = (await Promise.resolve(entitiesList));
+                    let entities = await Promise.resolve(entitiesList);
                     let allEntities = await execute(() => entriesApi.entitiesList(), {
                         errorMessage: 'Failed to fetch entities',
                     });
-                    resolvedEntities = entities.map((entity) => allEntities.find((e) => e.name === entity.value && e.subtype === entity.type)?.id!);
+                    resolvedEntities = entities.map(
+                        (entity) =>
+                            allEntities.find(
+                                (e) =>
+                                    e.name === entity.value &&
+                                    e.subtype === entity.type,
+                            )?.id!,
+                    );
                 }
 
                 // Resolve artifacts list if provided
@@ -185,16 +202,17 @@ export default function EnrichmentRequestModal({
                 }
 
                 // Fetch entity details for the UI if entity IDs are provided
-                let entityOptions: Array<{ value: number, label: string }> = [];
+                let entityOptions: Array<{ value: number; label: string }> = [];
                 if (resolvedEntities && resolvedEntities.length > 0) {
-                    const allEntities = await execute(
-                        () => entriesApi.entitiesList(),
-                        {
-                            errorMessage: 'Failed to fetch entities',
-                        }
-                    );
+                    const allEntities = await execute(() => entriesApi.entitiesList(), {
+                        errorMessage: 'Failed to fetch entities',
+                    });
                     entityOptions = allEntities
-                        .filter((entity) => entity.id !== undefined && resolvedEntities!.includes(entity.id))
+                        .filter(
+                            (entity) =>
+                                entity.id !== undefined &&
+                                resolvedEntities!.includes(entity.id),
+                        )
                         .map((entity) => ({
                             value: entity.id!,
                             label: entity.name,
@@ -304,7 +322,10 @@ export default function EnrichmentRequestModal({
                 return;
             }
             if (!formData.enricherNames || formData.enricherNames.length === 0) {
-                notify({ type: 'error', text: 'At least one enrichment technique must be selected' });
+                notify({
+                    type: 'error',
+                    text: 'At least one enrichment technique must be selected',
+                });
                 return;
             }
             if (!formData.entities || formData.entities.length === 0) {
@@ -319,23 +340,27 @@ export default function EnrichmentRequestModal({
             // Parse the request text
             const parsedRequest = parseRequestText(formData.request);
             if (parsedRequest.length === 0 && selectedNoteIds.size === 0) {
-                notify({ type: 'error', text: 'Request must contain at least one valid entry in format <type>:<artifact>' });
+                notify({
+                    type: 'error',
+                    text: 'Request must contain at least one valid entry in format <type>:<artifact>',
+                });
                 return;
             }
 
-            let result = await execute(() =>
-                intelioApi.enrichmentRequestCreate({
-                    enrichmentRequestRequest: {
-                        title: formData.title,
-                        enricherNames: formData.enricherNames,
-                        request: parsedRequest,
-                        entities: formData.entities,
-                        notes: Array.from(selectedNoteIds),
-                    },
-                }),
+            let result = await execute(
+                () =>
+                    intelioApi.enrichmentRequestCreate({
+                        enrichmentRequestRequest: {
+                            title: formData.title,
+                            enricherNames: formData.enricherNames,
+                            request: parsedRequest,
+                            entities: formData.entities,
+                            notes: Array.from(selectedNoteIds),
+                        },
+                    }),
                 {
                     successMessage: 'Enrichment request created successfully',
-                }
+                },
             );
             if (onSuccess) {
                 onSuccess();
@@ -371,22 +396,26 @@ export default function EnrichmentRequestModal({
                                 return (
                                     <li
                                         key={note.id}
-                                        className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${isSelected
-                                            ? 'hover:bg-cradle-bg-secondary/50'
-                                            : 'bg-cradle-bg-secondary/10'
-                                            }`}
+                                        className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${
+                                            isSelected
+                                                ? 'hover:bg-cradle-bg-secondary/50'
+                                                : 'bg-cradle-bg-secondary/10'
+                                        }`}
                                     >
                                         <input
                                             type='checkbox'
                                             className='cradle-checkbox'
                                             checked={isSelected}
-                                            onChange={() => toggleNoteSelection(note.id)}
+                                            onChange={() =>
+                                                toggleNoteSelection(note.id)
+                                            }
                                         />
                                         <span
-                                            className={`text-sm truncate flex-1 ${isSelected
-                                                ? 'text-cradle-text-primary'
-                                                : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
-                                                }`}
+                                            className={`text-sm truncate flex-1 ${
+                                                isSelected
+                                                    ? 'text-cradle-text-primary'
+                                                    : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
+                                            }`}
                                         >
                                             {note.title || 'Untitled'}
                                         </span>
@@ -399,10 +428,7 @@ export default function EnrichmentRequestModal({
 
                 {/* Title */}
                 <div className='mb-5'>
-                    <label
-                        htmlFor='title'
-                        className='cradle-label mb-2 block'
-                    >
+                    <label htmlFor='title' className='cradle-label mb-2 block'>
                         Title <span className='text-red-500'>*</span>
                     </label>
                     <input
@@ -419,10 +445,7 @@ export default function EnrichmentRequestModal({
 
                 {/* Enrichment Techniques */}
                 <div className='mb-5'>
-                    <label
-                        htmlFor='enricherNames'
-                        className='cradle-label mb-2 block'
-                    >
+                    <label htmlFor='enricherNames' className='cradle-label mb-2 block'>
                         Enrichment Techniques <span className='text-red-500'>*</span>
                     </label>
                     <Selector
@@ -440,14 +463,15 @@ export default function EnrichmentRequestModal({
 
                 {/* Entities */}
                 <div className='mb-5'>
-                    <label
-                        htmlFor='entity'
-                        className='cradle-label mb-2 block'
-                    >
+                    <label htmlFor='entity' className='cradle-label mb-2 block'>
                         Entities <span className='text-red-500'>*</span>
                     </label>
                     <Tooltip
-                        content={selectedNoteIds.size > 0 ? "Entities will be selected from the selected notes" : undefined}
+                        content={
+                            selectedNoteIds.size > 0
+                                ? 'Entities will be selected from the selected notes'
+                                : undefined
+                        }
                         color='info'
                         showArrow={false}
                         usePortal={false}
@@ -468,10 +492,7 @@ export default function EnrichmentRequestModal({
 
                 {/* Request Artifacts */}
                 <div className='mb-5 w-full'>
-                    <label
-                        htmlFor='request'
-                        className='cradle-label mb-2 block'
-                    >
+                    <label htmlFor='request' className='cradle-label mb-2 block'>
                         Request Artifacts <span className='text-red-500'>*</span>
                     </label>
                     <textarea
@@ -500,7 +521,11 @@ export default function EnrichmentRequestModal({
                         className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
                         disabled={loading || initialDataLoading}
                     >
-                        {loading ? 'Creating...' : initialDataLoading ? 'Loading...' : 'Create Request'}
+                        {loading
+                            ? 'Creating...'
+                            : initialDataLoading
+                              ? 'Loading...'
+                              : 'Create Request'}
                     </button>
                 </div>
             </form>

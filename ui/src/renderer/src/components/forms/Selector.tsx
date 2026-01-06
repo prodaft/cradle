@@ -92,14 +92,10 @@ export default function Selector<
                 .filter(Boolean)
                 .join(' '),
 
-        valueContainer: () =>
-            'flex flex-wrap items-center gap-1 px-3 py-1.5',
+        valueContainer: () => 'flex flex-wrap items-center gap-1 px-3 py-1.5',
 
         placeholder: (state: any) =>
-            [
-                'text-sm cradle-text-tertiary',
-                state.isDisabled && 'cursor-not-allowed',
-            ]
+            ['text-sm cradle-text-tertiary', state.isDisabled && 'cursor-not-allowed']
                 .filter(Boolean)
                 .join(' '),
 
@@ -113,27 +109,19 @@ export default function Selector<
                 .join(' '),
 
         singleValue: (state: any) =>
-            [
-                'text-sm cradle-text-primary',
-                state.isDisabled && 'opacity-70',
-            ]
+            ['text-sm cradle-text-primary', state.isDisabled && 'opacity-70']
                 .filter(Boolean)
                 .join(' '),
 
         indicatorsContainer: (state: any) =>
-            [
-                'flex items-center gap-1 pr-2',
-                state.isDisabled && 'opacity-50',
-            ]
+            ['flex items-center gap-1 pr-2', state.isDisabled && 'opacity-50']
                 .filter(Boolean)
                 .join(' '),
 
         menu: () =>
-            [
-                'mt-1 rounded-md',
-                'cradle-bg-elevated cradle-border',
-                'shadow-lg',
-            ].join(' '),
+            ['mt-1 rounded-md', 'cradle-bg-elevated cradle-border', 'shadow-lg'].join(
+                ' ',
+            ),
 
         menuPortal: () => 'z-[9999]',
 
@@ -150,11 +138,9 @@ export default function Selector<
                 .filter(Boolean)
                 .join(' '),
 
-        multiValue: () =>
-            'flex items-center rounded-sm bg-cradle2/20',
+        multiValue: () => 'flex items-center rounded-sm bg-cradle2/20',
 
-        multiValueLabel: () =>
-            'px-2 py-0.5 text-sm cradle-text-primary',
+        multiValueLabel: () => 'px-2 py-0.5 text-sm cradle-text-primary',
 
         multiValueRemove: () =>
             [
@@ -162,13 +148,10 @@ export default function Selector<
                 'cradle-text-secondary hover:cradle-text-primary hover:bg-cradle-hover',
             ].join(' '),
 
-        noOptionsMessage: () =>
-            'px-3 py-2 text-sm cradle-text-tertiary',
+        noOptionsMessage: () => 'px-3 py-2 text-sm cradle-text-tertiary',
 
-        loadingMessage: () =>
-            'px-3 py-2 text-sm cradle-text-tertiary',
+        loadingMessage: () => 'px-3 py-2 text-sm cradle-text-tertiary',
     };
-
 
     // Common props for both Select and AsyncSelect
     const commonProps = {

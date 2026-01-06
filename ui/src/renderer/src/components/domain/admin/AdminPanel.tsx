@@ -49,7 +49,9 @@ type TabItem = {
 export default function AdminPanel() {
     const [entities, setEntities] = useState<SearchableChild[] | null>(null);
     const [mappingTypes, setMappingTypes] = useState<SearchableChild[] | null>(null);
-    const [enrichmentTypes, setEnrichmentTypes] = useState<SearchableChild[] | null>(null);
+    const [enrichmentTypes, setEnrichmentTypes] = useState<SearchableChild[] | null>(
+        null,
+    );
     const [users, setUsers] = useState<SearchableChild[] | null>(null);
     const { isAdmin } = useProfile();
     const [entryTypes, setEntryTypes] = useState<SearchableChild[] | null>(null);
@@ -80,7 +82,7 @@ export default function AdminPanel() {
                     }),
                 );
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     const displayEntryTypes = async () => {
@@ -103,7 +105,7 @@ export default function AdminPanel() {
                     ),
                 );
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     const displayUsers = async () => {
@@ -121,7 +123,7 @@ export default function AdminPanel() {
                     )),
                 );
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     const displayMappingTypes = async () => {
@@ -142,7 +144,7 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     const displayEnrichmentTypes = async () => {
@@ -163,7 +165,7 @@ export default function AdminPanel() {
                     );
                 }
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     useEffect(() => {
@@ -178,200 +180,203 @@ export default function AdminPanel() {
     }, [location.state]);
 
     // Define tabs
-    const tabs: TabItem[] = useMemo(() => [
-        {
-            id: 'entities',
-            title: 'Entities',
-            content: (
-                <AdminPanelSection
-                    title='Entities'
-                    addEnabled={isAdmin()}
-                    addTooltipText='Add Entity'
-                    handleAdd={(onAdd) =>
-                        setRightPane(
-                            <EntityForm
-                                isEdit={false}
-                                key={uniqueId('entity-form-')}
-                                onAdd={(c: Entity) => {
-                                    const entity = c;
-                                    const subtype = entity.subtype || 'unknown';
-                                    onAdd(
-                                        <AdminPanelCardEntity
-                                            id={entity.id?.toString() || ''}
-                                            key={`${subtype}:${entity.name}`}
-                                            name={entity.name}
-                                            onDelete={displayEntities}
-                                            link={createDashboardLink({
-                                                name: entity.name,
-                                                subtype,
-                                                type: entity.type,
-                                            })}
-                                            typename={subtype}
-                                            setRightPane={setRightPane}
-                                        />,
-                                    );
-                                }}
-                            />,
-                        )
-                    }
-                    isLoading={entities === null}
-                >
-                    {entities}
-                </AdminPanelSection>
-            ),
-        },
-        {
-            id: 'entry-types',
-            title: 'Entry Types',
-            content: (
-                <AdminPanelSection
-                    title='Entry Types'
-                    addEnabled={isAdmin()}
-                    addTooltipText='Add Entry Class'
-                    handleAdd={(onAdd) =>
-                        setRightPane(
-                            <EntryTypeForm
-                                isEdit={false}
-                                key={uniqueId('entry-type-form-')}
-                                onAdd={(c: EntryClass) =>
-                                    onAdd(
-                                        <AdminPanelCardEntryType
-                                            id={c.subtype}
-                                            key={c.subtype}
-                                            name={c.subtype}
-                                            // @ts-ignore - count might not be in EntryClass but in a subclass or extended type from list response
-                                            count={c.count}
-                                            onDelete={displayEntryTypes}
-                                            setRightPane={setRightPane}
-                                        />,
-                                    )
-                                }
-                            />,
-                        )
-                    }
-                    isLoading={entryTypes === null}
-                >
-                    {entryTypes}
-                </AdminPanelSection>
-            ),
-        },
-        {
-            id: 'type-mappings',
-            title: 'Type Mappings',
-            content: (
-                <AdminPanelSection
-                    title='Type Mappings'
-                    addEnabled={false}
-                    addTooltipText=''
-                    handleAdd={() => { }}
-                    isLoading={mappingTypes === null}
-                >
-                    {mappingTypes}
-                </AdminPanelSection>
-            ),
-        },
-        ...(isAdmin()
-            ? [
-                  {
-                      id: 'users',
-                      title: 'Users',
-                      content: (
-                          <AdminPanelSection
-                              title='Users'
-                              addEnabled={true}
-                              addTooltipText='Add User'
-                              handleAdd={(onAdd) =>
-                                  setRightPane(
-                                      <AccountSettings
-                                          isEdit={false}
-                                          key={uniqueId('user-form-')}
-                                          onAdd={(user: UserRetrieve) =>
-                                              onAdd(
-                                                  <AdminPanelCardUser
-                                                      id={
-                                                          user.id?.toString() ||
-                                                          user.username
-                                                      }
-                                                      key={user.username}
-                                                      name={user.username}
-                                                      onDelete={displayUsers}
-                                                      setRightPane={setRightPane}
-                                                  />,
-                                              )
-                                          }
+    const tabs: TabItem[] = useMemo(
+        () => [
+            {
+                id: 'entities',
+                title: 'Entities',
+                content: (
+                    <AdminPanelSection
+                        title='Entities'
+                        addEnabled={isAdmin()}
+                        addTooltipText='Add Entity'
+                        handleAdd={(onAdd) =>
+                            setRightPane(
+                                <EntityForm
+                                    isEdit={false}
+                                    key={uniqueId('entity-form-')}
+                                    onAdd={(c: Entity) => {
+                                        const entity = c;
+                                        const subtype = entity.subtype || 'unknown';
+                                        onAdd(
+                                            <AdminPanelCardEntity
+                                                id={entity.id?.toString() || ''}
+                                                key={`${subtype}:${entity.name}`}
+                                                name={entity.name}
+                                                onDelete={displayEntities}
+                                                link={createDashboardLink({
+                                                    name: entity.name,
+                                                    subtype,
+                                                    type: entity.type,
+                                                })}
+                                                typename={subtype}
+                                                setRightPane={setRightPane}
+                                            />,
+                                        );
+                                    }}
+                                />,
+                            )
+                        }
+                        isLoading={entities === null}
+                    >
+                        {entities}
+                    </AdminPanelSection>
+                ),
+            },
+            {
+                id: 'entry-types',
+                title: 'Entry Types',
+                content: (
+                    <AdminPanelSection
+                        title='Entry Types'
+                        addEnabled={isAdmin()}
+                        addTooltipText='Add Entry Class'
+                        handleAdd={(onAdd) =>
+                            setRightPane(
+                                <EntryTypeForm
+                                    isEdit={false}
+                                    key={uniqueId('entry-type-form-')}
+                                    onAdd={(c: EntryClass) =>
+                                        onAdd(
+                                            <AdminPanelCardEntryType
+                                                id={c.subtype}
+                                                key={c.subtype}
+                                                name={c.subtype}
+                                                // @ts-ignore - count might not be in EntryClass but in a subclass or extended type from list response
+                                                count={c.count}
+                                                onDelete={displayEntryTypes}
+                                                setRightPane={setRightPane}
+                                            />,
+                                        )
+                                    }
+                                />,
+                            )
+                        }
+                        isLoading={entryTypes === null}
+                    >
+                        {entryTypes}
+                    </AdminPanelSection>
+                ),
+            },
+            {
+                id: 'type-mappings',
+                title: 'Type Mappings',
+                content: (
+                    <AdminPanelSection
+                        title='Type Mappings'
+                        addEnabled={false}
+                        addTooltipText=''
+                        handleAdd={() => {}}
+                        isLoading={mappingTypes === null}
+                    >
+                        {mappingTypes}
+                    </AdminPanelSection>
+                ),
+            },
+            ...(isAdmin()
+                ? [
+                      {
+                          id: 'users',
+                          title: 'Users',
+                          content: (
+                              <AdminPanelSection
+                                  title='Users'
+                                  addEnabled={true}
+                                  addTooltipText='Add User'
+                                  handleAdd={(onAdd) =>
+                                      setRightPane(
+                                          <AccountSettings
+                                              isEdit={false}
+                                              key={uniqueId('user-form-')}
+                                              onAdd={(user: UserRetrieve) =>
+                                                  onAdd(
+                                                      <AdminPanelCardUser
+                                                          id={
+                                                              user.id?.toString() ||
+                                                              user.username
+                                                          }
+                                                          key={user.username}
+                                                          name={user.username}
+                                                          onDelete={displayUsers}
+                                                          setRightPane={setRightPane}
+                                                      />,
+                                                  )
+                                              }
+                                          />,
+                                      )
+                                  }
+                                  isLoading={users === null}
+                              >
+                                  {users}
+                              </AdminPanelSection>
+                          ),
+                      },
+                      {
+                          id: 'enrichment',
+                          title: 'Enrichment',
+                          content: (
+                              <AdminPanelSection
+                                  title='Enrichment'
+                                  addEnabled={false}
+                                  addTooltipText=''
+                                  handleAdd={() => {}}
+                                  isLoading={enrichmentTypes === null}
+                              >
+                                  {enrichmentTypes}
+                              </AdminPanelSection>
+                          ),
+                      },
+                      {
+                          id: 'management',
+                          title: 'Management',
+                          content: (
+                              <AdminPanelSection
+                                  title='Management'
+                                  addEnabled={false}
+                                  addTooltipText=''
+                                  handleAdd={() => {}}
+                                  isLoading={false}
+                              >
+                                  {[
+                                      <AdminPanelCardManagement
+                                          key='note'
+                                          setRightPane={setRightPane}
+                                          name='Note Settings'
+                                          SettingComponent={NoteSettingsForm}
                                       />,
-                                  )
-                              }
-                              isLoading={users === null}
-                          >
-                              {users}
-                          </AdminPanelSection>
-                      ),
-                  },
-                  {
-                      id: 'enrichment',
-                      title: 'Enrichment',
-                      content: (
-                          <AdminPanelSection
-                              title='Enrichment'
-                              addEnabled={false}
-                              addTooltipText=''
-                              handleAdd={() => { }}
-                              isLoading={enrichmentTypes === null}
-                          >
-                              {enrichmentTypes}
-                          </AdminPanelSection>
-                      ),
-                  },
-                  {
-                      id: 'management',
-                      title: 'Management',
-                      content: (
-                          <AdminPanelSection
-                              title='Management'
-                              addEnabled={false}
-                              addTooltipText=''
-                              handleAdd={() => { }}
-                              isLoading={false}
-                          >
-                              {[
-                                  <AdminPanelCardManagement
-                                      key='note'
-                                      setRightPane={setRightPane}
-                                      name='Note Settings'
-                                      SettingComponent={NoteSettingsForm}
-                                  />,
-                                  <AdminPanelCardManagement
-                                      key='files'
-                                      setRightPane={setRightPane}
-                                      name='File Settings'
-                                      SettingComponent={FileSettingsForm}
-                                  />,
-                                  <AdminPanelCardManagement
-                                      key='graph'
-                                      setRightPane={setRightPane}
-                                      name='Graph Settings'
-                                      SettingComponent={GraphSettingsForm}
-                                  />,
-                                  <AdminPanelCardManagement
-                                      key='entries'
-                                      setRightPane={setRightPane}
-                                      name='Entry Settings'
-                                      SettingComponent={EntriesSettingsForm}
-                                  />,
-                                  <AdminPanelCardManagement
-                                      key='users'
-                                      setRightPane={setRightPane}
-                                      name='New User Settings'
-                                      SettingComponent={UserSettingsForm}
-                                  />,
-                              ]}
-                          </AdminPanelSection>
-                      ),
-                  },
-              ]
-            : []),
-    ], [isAdmin]);
+                                      <AdminPanelCardManagement
+                                          key='files'
+                                          setRightPane={setRightPane}
+                                          name='File Settings'
+                                          SettingComponent={FileSettingsForm}
+                                      />,
+                                      <AdminPanelCardManagement
+                                          key='graph'
+                                          setRightPane={setRightPane}
+                                          name='Graph Settings'
+                                          SettingComponent={GraphSettingsForm}
+                                      />,
+                                      <AdminPanelCardManagement
+                                          key='entries'
+                                          setRightPane={setRightPane}
+                                          name='Entry Settings'
+                                          SettingComponent={EntriesSettingsForm}
+                                      />,
+                                      <AdminPanelCardManagement
+                                          key='users'
+                                          setRightPane={setRightPane}
+                                          name='New User Settings'
+                                          SettingComponent={UserSettingsForm}
+                                      />,
+                                  ]}
+                              </AdminPanelSection>
+                          ),
+                      },
+                  ]
+                : []),
+        ],
+        [isAdmin],
+    );
 
     // Tab management
     const getTabIndexFromURL = () => {

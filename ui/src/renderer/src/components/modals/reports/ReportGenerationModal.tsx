@@ -56,10 +56,14 @@ export default function ReportGenerationModal({
     const { notify } = useNotif();
     const { execute } = useAPICall();
 
-    const targets = selectedNotes || (noteId ? [{ id: noteId, title: noteTitle || 'Untitled' }] : []);
+    const targets =
+        selectedNotes ||
+        (noteId ? [{ id: noteId, title: noteTitle || 'Untitled' }] : []);
 
     // Track selected note IDs
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set(targets.map(t => t.id)));
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(
+        () => new Set(targets.map((t) => t.id)),
+    );
 
     // Update selection if targets change (e.g. initial load)
     useEffect(() => {
@@ -140,10 +144,11 @@ export default function ReportGenerationModal({
                             return (
                                 <li
                                     key={note.id}
-                                    className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${isSelected
+                                    className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${
+                                        isSelected
                                             ? 'hover:bg-cradle-bg-secondary/50'
                                             : 'bg-cradle-bg-secondary/10'
-                                        }`}
+                                    }`}
                                 >
                                     <input
                                         type='checkbox'
@@ -152,10 +157,11 @@ export default function ReportGenerationModal({
                                         onChange={() => toggleSelection(note.id)}
                                     />
                                     <span
-                                        className={`text-sm truncate flex-1 ${isSelected
+                                        className={`text-sm truncate flex-1 ${
+                                            isSelected
                                                 ? 'text-cradle-text-primary'
                                                 : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
-                                            }`}
+                                        }`}
                                     >
                                         {note.title || 'Untitled'}
                                     </span>
@@ -168,9 +174,7 @@ export default function ReportGenerationModal({
 
             {/* Title Input */}
             <div className='mb-5'>
-                <label className='cradle-label mb-2 block'>
-                    Report Title
-                </label>
+                <label className='cradle-label mb-2 block'>Report Title</label>
                 <input
                     type='text'
                     value={title}
@@ -183,18 +187,17 @@ export default function ReportGenerationModal({
 
             {/* Format Selection */}
             <div className='mb-5'>
-                <label className='cradle-label mb-2 block'>
-                    Format
-                </label>
+                <label className='cradle-label mb-2 block'>Format</label>
                 <div className='grid grid-cols-3 gap-3'>
                     <button
                         onClick={() => setFormat('html')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'html'
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
+                            format === 'html'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                            } disabled:opacity-50`}
+                        } disabled:opacity-50`}
                     >
                         <Page width='20' height='20' />
                         <span className='text-sm font-medium'>HTML</span>
@@ -203,10 +206,11 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('json')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'json'
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
+                            format === 'json'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                            } disabled:opacity-50`}
+                        } disabled:opacity-50`}
                     >
                         <Code width='20' height='20' />
                         <span className='text-sm font-medium'>JSON</span>
@@ -215,10 +219,11 @@ export default function ReportGenerationModal({
                         onClick={() => setFormat('plain')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${format === 'plain'
+                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
+                            format === 'plain'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                            } disabled:opacity-50`}
+                        } disabled:opacity-50`}
                     >
                         <Download width='20' height='20' />
                         <span className='text-sm font-medium'>Plain Text</span>
@@ -228,18 +233,17 @@ export default function ReportGenerationModal({
 
             {/* Mode Selection */}
             <div className='mb-6'>
-                <label className='cradle-label mb-2 block'>
-                    Mode
-                </label>
+                <label className='cradle-label mb-2 block'>Mode</label>
                 <div className='grid grid-cols-2 gap-3'>
                     <button
                         onClick={() => setMode('anonymized')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${mode === 'anonymized'
+                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
+                            mode === 'anonymized'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                            } disabled:opacity-50`}
+                        } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Anonymized</span>
                     </button>
@@ -247,10 +251,11 @@ export default function ReportGenerationModal({
                         onClick={() => setMode('transparent')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${mode === 'transparent'
+                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
+                            mode === 'transparent'
                                 ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
                                 : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                            } disabled:opacity-50`}
+                        } disabled:opacity-50`}
                     >
                         <span className='text-sm font-medium'>Transparent</span>
                     </button>

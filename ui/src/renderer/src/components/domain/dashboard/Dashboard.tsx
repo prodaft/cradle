@@ -89,7 +89,7 @@ export default function Dashboard() {
             .then(() => {
                 navigate('/');
             })
-            .catch(() => { });
+            .catch(() => {});
     };
 
     if (entryMissing) {

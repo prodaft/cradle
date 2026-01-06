@@ -89,10 +89,7 @@ export default function FormModal({
             <form onSubmit={handleSubmit}>
                 {fields.map((field, index) => (
                     <div key={index} className='mb-5'>
-                        <label
-                            htmlFor={field.name}
-                            className='cradle-label mb-2 block'
-                        >
+                        <label htmlFor={field.name} className='cradle-label mb-2 block'>
                             {field.label}
                         </label>
                         {field.type === 'textarea' ? (

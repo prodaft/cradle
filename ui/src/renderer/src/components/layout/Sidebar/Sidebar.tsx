@@ -1,5 +1,5 @@
 import { useProfile } from '@contexts';
-import { useAuth, useCradleNavigate } from '@hooks';
+import { useCradleNavigate } from '@hooks';
 import { Graph } from '@phosphor-icons/react';
 import {
     Archive,

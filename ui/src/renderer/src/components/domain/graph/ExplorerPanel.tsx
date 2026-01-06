@@ -8,9 +8,16 @@ interface ExplorerPanelProps {
     onNodeClick?: (node: Node) => void;
 }
 
-export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeClick }: ExplorerPanelProps) {
+export default function ExplorerPanel({
+    selectedNodes,
+    allNodes,
+    edges,
+    onNodeClick,
+}: ExplorerPanelProps) {
     const nodesArray = Array.from(selectedNodes);
-    const [expandedConnections, setExpandedConnections] = useState<Set<string>>(new Set());
+    const [expandedConnections, setExpandedConnections] = useState<Set<string>>(
+        new Set(),
+    );
 
     // Create a map from node id to node for quick lookup
     const nodeMap = useMemo(() => {
@@ -73,11 +80,12 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                                 <div className='text-sm font-semibold text-gray-900 dark:text-gray-100 break-words'>
                                     {node.label || node.name || node.id}
                                 </div>
-                                {(node.label || node.name) && node.id !== (node.label || node.name) && (
-                                    <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono break-all'>
-                                        ID: {node.id}
-                                    </div>
-                                )}
+                                {(node.label || node.name) &&
+                                    node.id !== (node.label || node.name) && (
+                                        <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono break-all'>
+                                            ID: {node.id}
+                                        </div>
+                                    )}
                             </div>
                             {/* Color indicator */}
                             {node.color && (
@@ -92,7 +100,9 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                         {/* Node Type */}
                         {node.type && (
                             <div className='flex items-center gap-2'>
-                                <span className='text-xs text-gray-500 dark:text-gray-400'>Type:</span>
+                                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                    Type:
+                                </span>
                                 <span className='text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded'>
                                     {node.type}
                                 </span>
@@ -102,7 +112,9 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                         {/* Node Subtype */}
                         {node.subtype && (
                             <div className='flex items-center gap-2'>
-                                <span className='text-xs text-gray-500 dark:text-gray-400'>Subtype:</span>
+                                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                    Subtype:
+                                </span>
                                 <span className='text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded'>
                                     {node.subtype}
                                 </span>
@@ -115,10 +127,11 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                             if (connectedNodes.length === 0) return null;
                             const isExpanded = expandedConnections.has(node.id);
                             const showCollapse = connectedNodes.length > 5;
-                            const displayedNodes = showCollapse && !isExpanded 
-                                ? connectedNodes.slice(0, 5) 
-                                : connectedNodes;
-                            
+                            const displayedNodes =
+                                showCollapse && !isExpanded
+                                    ? connectedNodes.slice(0, 5)
+                                    : connectedNodes;
+
                             return (
                                 <div className='space-y-2'>
                                     <div className='flex items-center gap-2'>
@@ -128,10 +141,14 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                                         {showCollapse && (
                                             <button
                                                 type='button'
-                                                onClick={() => toggleConnections(node.id)}
+                                                onClick={() =>
+                                                    toggleConnections(node.id)
+                                                }
                                                 className='text-xs text-cradle-accent-primary hover:underline'
                                             >
-                                                {isExpanded ? 'Show less' : `Show all (${connectedNodes.length})`}
+                                                {isExpanded
+                                                    ? 'Show less'
+                                                    : `Show all (${connectedNodes.length})`}
                                             </button>
                                         )}
                                     </div>
@@ -140,18 +157,25 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                                             <button
                                                 key={connectedNode.id}
                                                 type='button'
-                                                onClick={() => onNodeClick?.(connectedNode)}
+                                                onClick={() =>
+                                                    onNodeClick?.(connectedNode)
+                                                }
                                                 className='inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-md border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cursor-pointer'
                                                 title={`Click to select ${connectedNode.label || connectedNode.name || connectedNode.id}`}
                                             >
                                                 {connectedNode.color && (
                                                     <span
                                                         className='w-2 h-2 rounded-full flex-shrink-0'
-                                                        style={{ backgroundColor: connectedNode.color }}
+                                                        style={{
+                                                            backgroundColor:
+                                                                connectedNode.color,
+                                                        }}
                                                     />
                                                 )}
                                                 <span className='truncate max-w-[120px]'>
-                                                    {connectedNode.label || connectedNode.name || connectedNode.id}
+                                                    {connectedNode.label ||
+                                                        connectedNode.name ||
+                                                        connectedNode.id}
                                                 </span>
                                             </button>
                                         ))}
@@ -164,8 +188,16 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                         {Object.entries(node)
                             .filter(
                                 ([key]) =>
-                                    !['id', 'label', 'name', 'color', 'degree', 'type', 'subtype', 'location'].includes(key) &&
-                                    !key.startsWith('_')
+                                    ![
+                                        'id',
+                                        'label',
+                                        'name',
+                                        'color',
+                                        'degree',
+                                        'type',
+                                        'subtype',
+                                        'location',
+                                    ].includes(key) && !key.startsWith('_'),
                             )
                             .map(([key, value]) => (
                                 <div key={key} className='flex items-start gap-2'>
@@ -173,7 +205,9 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                                         {key}:
                                     </span>
                                     <span className='text-xs text-gray-700 dark:text-gray-300 break-words flex-1'>
-                                        {typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value)}
+                                        {typeof value === 'object'
+                                            ? JSON.stringify(value, null, 2)
+                                            : String(value)}
                                     </span>
                                 </div>
                             ))}
@@ -183,4 +217,3 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
         </div>
     );
 }
-
