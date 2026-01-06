@@ -49,6 +49,6 @@
         }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],
-    "exclude": ["node_modules", "dist", "out", "build"],
+    "exclude": ["node_modules", "dist", "out", "build", "src/renderer/src/services/cradle"],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

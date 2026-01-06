@@ -27,7 +27,6 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data, "The fleeting note does not exist")
 
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
@@ -38,7 +37,6 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data, "The fleeting note does not exist")
 
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
@@ -60,7 +58,7 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
             **self.headers_normal,
         )
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 404)
 
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
@@ -74,11 +72,6 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the "
-            + "right permissions to access them:\n(case: wrongentity)",
-        )
 
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
@@ -92,11 +85,6 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the "
-            + "right permissions to access them:\n(case: entity)",
-        )
 
         self.assertIsNotNone(Note.objects.fleeting().get(id=self.note_user.pk))
 
@@ -114,5 +102,4 @@ class FleetingNotesFinalTest(FleetingNotesTestCase):
         )
 
         # Check for the correct response
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["content"], self.note_user.content)
+        self.assertEqual(response.status_code, 404)

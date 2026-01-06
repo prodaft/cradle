@@ -11,7 +11,7 @@ from .exceptions import (
     EntryTypeDoesNotExist,
     EntryTypeMismatchException,
 )
-from .models import Entry, EntryClass, Relation
+from .models import Attachment, Entry, EntryClass, Relation
 
 
 class EntryCompressedTreeValueSerializer(serializers.Serializer):
@@ -733,6 +733,68 @@ class RelationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["created_at", "last_seen", "id"]
         ref_name = "Relation"
+
+
+class AttachmentSerializer(serializers.ModelSerializer):
+    """Serializer for Attachment model with presigned download URL."""
+
+    presigned_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Attachment
+        fields = [
+            "id",
+            "name",
+            "type",
+            "context",
+            "presigned_url",
+        ]
+        read_only_fields = ["id", "presigned_url"]
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_presigned_url(self, obj):
+        """Generate presigned URL for attachment download."""
+        from datetime import timedelta
+        from file_transfer.s3_utils import presign_get
+        from file_transfer.storage import RelationStorage
+
+        if not obj.file:
+            return None
+
+        try:
+            return presign_get(
+                RelationStorage.bucket_name,
+                obj.file.name,
+                expires_in=int(timedelta(days=7).total_seconds()),
+                response_content_disposition=f'attachment; filename="{obj.name}"',
+            )
+        except Exception:
+            return None
+
+
+class RelationDetailSerializer(serializers.ModelSerializer):
+    """Detailed serializer for Relation with attachments."""
+
+    e1 = EntrySerializerMinimal(read_only=True)
+    e2 = EntrySerializerMinimal(read_only=True)
+    attachments = AttachmentSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Relation
+        fields = [
+            "id",
+            "e1",
+            "e2",
+            "created_at",
+            "last_seen",
+            "reason",
+            "reason_context",
+            "details",
+            "virtual",
+            "attachments",
+        ]
+        read_only_fields = ["created_at", "last_seen", "id"]
+        ref_name = "RelationDetail"
 
 
 class EnricherListSerializer(serializers.Serializer):

@@ -42,7 +42,7 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "none"}
+            {"id": self.entity.id, "name": "Entity 1", "access_type": "none"}
         ]
 
         self.assertEqual(response.status_code, 200)
@@ -71,7 +71,7 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read-write"}
+            {"id": self.entity.id, "name": "Entity 1", "access_type": "read-write"}
         ]
 
         self.assertEqual(response.status_code, 200)
@@ -100,7 +100,7 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read"}
+            {"id": self.entity.id, "name": "Entity 1", "access_type": "read"}
         ]
 
         self.assertEqual(response.status_code, 200)
@@ -121,8 +121,8 @@ class AccessListTest(AccessTestCase):
         )
 
         expected_response = [
-            {"id": str(self.entity.id), "name": "Entity 1", "access_type": "read"},
-            {"id": str(entity2.id), "name": "Entity 2", "access_type": "none"},
+            {"id": self.entity.id, "name": "Entity 1", "access_type": "read"},
+            {"id": entity2.id, "name": "Entity 2", "access_type": "none"},
         ]
 
         self.assertEqual(response.status_code, 200)

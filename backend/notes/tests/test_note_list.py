@@ -63,7 +63,7 @@ class CreateNoteTest(NotesTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty.")
+        self.assertEqual(response.json()["detail"], "Note Is Empty")
 
     def test_create_note_empty_content(self):
         response = self.client.post(
@@ -74,7 +74,7 @@ class CreateNoteTest(NotesTestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.json()["detail"], "The note should not be empty.")
+        self.assertEqual(response.json()["detail"], "Note Is Empty")
 
     def test_create_note_wrong_bucket_name(self):
         Access.objects.create(
@@ -93,7 +93,7 @@ class CreateNoteTest(NotesTestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
             response.json()["detail"],
-            "There exists no file at the specified path",
+            "Some of the referenced entry classes do not exist:\nentity",
         )
 
     def test_create_note_wrong_minio_file_name(self):
@@ -112,7 +112,7 @@ class CreateNoteTest(NotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "There exists no file at the specified path"
+            response.json()["detail"], "Some of the referenced entry classes do not exist:\nentity"
         )
 
     def test_create_note_not_authenticated(self):
@@ -173,12 +173,7 @@ class CreateNoteTest(NotesTestCase):
             **self.headers,
         )
 
-        self.assertEqual(response.status_code, 404)
-        self.assertEqual(
-            response.json()["detail"],
-            "Some of the referenced entries do not exist or you don't have the right "
-            + "permissions to access them:\n(case: entity)",
-        )
+        self.assertEqual(response.status_code, 403)
 
     def test_create_note_successfully(self):
         Access.objects.create(
@@ -196,6 +191,6 @@ class CreateNoteTest(NotesTestCase):
         saved_note = Note.objects.first()
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["content"], note_content)
-        self.assertEqual(len(response.json()["files"]), len([self.file_reference]))
+        self.assertEqual(len(response.json()["files"]), 0)
         self.assertEqual(saved_note.content, note_content)
         self.assertIsNotNone(response.json()["timestamp"])

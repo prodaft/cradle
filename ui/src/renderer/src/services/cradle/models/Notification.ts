@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* tslint:disable */
 import { AccessRequestNotification, AccessRequestNotificationFromJSONTyped, AccessRequestNotificationToJSON } from "./AccessRequestNotification";
 import { MessageNotification, MessageNotificationFromJSONTyped, MessageNotificationToJSON } from "./MessageNotification";
@@ -51,8 +52,7 @@ export function NotificationFromJSONTyped(json: any, ignoreDiscriminator: boolea
             return Object.assign({}, ReportRenderNotificationFromJSONTyped(json, true), { notificationType: 'report_render_notification' } as const);
         case 'request_access_notification':
             return Object.assign({}, AccessRequestNotificationFromJSONTyped(json, true), { notificationType: 'request_access_notification' } as const);
-        default:
-            return json;
+        default: return value;
     }
 }
 

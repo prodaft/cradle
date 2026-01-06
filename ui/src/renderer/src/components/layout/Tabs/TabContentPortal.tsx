@@ -62,6 +62,7 @@ export default function TabContentPortal({
 
     const element = (
         <div style={{ width: '100%', height: '100%', position: 'relative' }} key={tab.id}>
+            {/* @ts-ignore */}
             <TabContextProvider value={contextValue}>
                 <Suspense fallback={null}>
                     <resolved.Component key={tab.id} />

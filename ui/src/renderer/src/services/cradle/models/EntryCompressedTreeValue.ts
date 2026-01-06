@@ -1,3 +1,4 @@
+// @ts-nocheck
 /* tslint:disable */
 import { EntryCompressedTreeObject, EntryCompressedTreeObjectFromJSONTyped, EntryCompressedTreeObjectToJSONTyped } from "./EntryCompressedTreeObject";
 

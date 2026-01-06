@@ -19,7 +19,7 @@ from ..exceptions import (
     RelatesParameterRequiredException,
 )
 from ..models import Relation
-from ..serializers import RelationSerializer
+from ..serializers import RelationDetailSerializer, RelationSerializer
 
 
 @extend_schema(
@@ -109,23 +109,48 @@ class RelationListView(APIView):
         return Response(entry_serializer.data, status=status.HTTP_200_OK)
 
 
-@extend_schema(
-    summary="Delete a relation",
-    description="Deletes a specific relation by ID. Only admin users can perform this action.",
-    responses={
-        204: {"description": "No content - relation deleted successfully"},
-        **get_common_error_responses(),
-    },
-)
 class RelationDetailView(APIView):
     """
     Retrieve or delete a relation by ID.
     """
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="Get relation details",
+        description="Retrieves detailed information about a relation including its attachments with presigned URLs.",
+        responses={
+            200: RelationDetailSerializer,
+            404: {"description": "Relation not found"},
+            **get_common_error_responses(),
+        },
+    )
+    def get(self, request, relation_id):
+        """Get detailed relation information including attachments."""
+        relation = get_object_or_404(
+            Relation.objects.accessible(request.user).prefetch_related("attachments"),
+            id=relation_id,
+        )
+        serializer = RelationDetailSerializer(relation)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="Delete a relation",
+        description="Deletes a specific relation by ID. Only admin users can perform this action.",
+        responses={
+            204: {"description": "No content - relation deleted successfully"},
+            **get_common_error_responses(),
+        },
+    )
     def delete(self, request, relation_id):
+        """Delete a relation (admin only)."""
+        # Check admin permission explicitly for delete
+        if not request.user.is_staff:
+            from rest_framework.exceptions import PermissionDenied
+
+            raise PermissionDenied("Only admin users can delete relations.")
+
         relation = get_object_or_404(Relation, id=relation_id)
         relation.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)

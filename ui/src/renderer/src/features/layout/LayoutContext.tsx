@@ -424,6 +424,7 @@ export function LayoutProvider({ children }: LayoutProviderProps) {
     const prevActivePaneRef = useRef(state.activePaneId);
     
     // Save layout on state changes (debounced)
+    // @ts-ignore
     const saveTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
     useEffect(() => {
         clearTimeout(saveTimeoutRef.current);

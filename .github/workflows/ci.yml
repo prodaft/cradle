@@ -95,5 +95,5 @@ jobs:
           uv run python3 manage.py check
       - name: Run Tests with Coverage
         run: |
-          uv run coverage run manage.py test
+          uv run coverage run -m pytest
           uv run coverage report

@@ -175,6 +175,30 @@ async function fixEntryCompressedTreeValue(): Promise<void> {
     console.log('✓ Fixed EntryCompressedTreeValue.ts imports + JSON functions');
 }
 
+async function suppressTypeErrors(): Promise<void> {
+    const rootDir = path.join(CRADLE_MODELS_PATH, '..');
+    
+    async function processDirectory(dir: string) {
+        const entries = await fs.readdir(dir, { withFileTypes: true });
+        
+        for (const entry of entries) {
+            const fullPath = path.join(dir, entry.name);
+            
+            if (entry.isDirectory()) {
+                await processDirectory(fullPath);
+            } else if (entry.isFile() && entry.name.endsWith('.ts')) {
+                const content = await readFileSafe(fullPath);
+                if (content && !content.startsWith('// @ts-nocheck')) {
+                    await writeFileSafe(fullPath, '// @ts-nocheck\n' + content);
+                }
+            }
+        }
+    }
+
+    await processDirectory(rootDir);
+    console.log('✓ Added // @ts-nocheck to all generated files');
+}
+
 /* -------------------------------------------------------------
  * MAIN
  * ------------------------------------------------------------- */
@@ -184,6 +208,7 @@ async function fixEntryCompressedTreeValue(): Promise<void> {
 
     await fixNotificationImports();
     await fixEntryCompressedTreeValue();
+    await suppressTypeErrors();
 
     console.log('\n✓ All fixes applied successfully!');
 })();

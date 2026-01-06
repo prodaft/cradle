@@ -79,7 +79,7 @@ class PostEntityListTest(EntriesTestCase):
         }
 
         response_post = self.client.post(
-            reverse("entry-list-create"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, format='json', **self.headers_admin
         )
         print(response_post.content)
 
@@ -92,7 +92,7 @@ class PostEntityListTest(EntriesTestCase):
         entity_json = {"name": "entity1", "subtype": "case", "type": "entity"}
 
         response_post = self.client.post(
-            reverse("entry-list-create"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, format='json', **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 200)
 
@@ -108,12 +108,12 @@ class PostEntityListTest(EntriesTestCase):
         }
 
         response_post = self.client.post(
-            reverse("entry-list-create"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, format='json', **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 200)
 
         response_post = self.client.post(
-            reverse("entry-list-create"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, format='json', **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 409)
 
@@ -121,7 +121,7 @@ class PostEntityListTest(EntriesTestCase):
         entity_json = {"description": "description1"}
 
         response_post = self.client.post(
-            reverse("entry-list-create"), entity_json, **self.headers_admin
+            reverse("entry-list-create"), entity_json, format='json', **self.headers_admin
         )
         self.assertEqual(response_post.status_code, 400)
 
@@ -136,7 +136,7 @@ class PostEntityListTest(EntriesTestCase):
         }
 
         response_post = self.client.post(
-            reverse("entry-list-create"), entity_json, **self.headers_normal
+            reverse("entry-list-create"), entity_json, format='json', **self.headers_normal
         )
         self.assertEqual(response_post.status_code, 403)
 
@@ -148,5 +148,5 @@ class PostEntityListTest(EntriesTestCase):
             "description": "description1",
         }
 
-        response_post = self.client.post(reverse("entry-list-create"), entity_json)
+        response_post = self.client.post(reverse("entry-list-create"), entity_json, format='json')
         self.assertEqual(response_post.status_code, 403)

@@ -17,7 +17,7 @@ class CreateUserTest(UserTestCase):
         if email is not None:
             create_user_dict["email"] = email
 
-        response = self.client.post(reverse("user_list"), create_user_dict)
+        response = self.client.post(reverse("user_list"), create_user_dict, format='json')
         return response
 
     def test_user_create_successfully(self):
