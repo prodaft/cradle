@@ -190,9 +190,9 @@ class AccessManager(models.Manager):
         """
 
         assert not user.is_cradle_admin, "The user parameter should not be a superuser"
-        assert (
-            access_type != AccessType.NONE
-        ), "The provided access type should not be NONE"
+        assert access_type != AccessType.NONE, (
+            "The provided access type should not be NONE"
+        )
 
         return (
             self.get_queryset()

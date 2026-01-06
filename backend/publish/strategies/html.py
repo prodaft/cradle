@@ -1,7 +1,6 @@
 import logging
 import bleach
 from typing import List
-from io import BytesIO
 
 from django.core.files.base import ContentFile
 from django.template.loader import get_template
@@ -111,9 +110,7 @@ class HTMLPublish(BasePublishStrategy):
         try:
             # Save HTML content to FileField - Django handles S3 upload
             report.file.save(
-                f"{report.id}.html",
-                ContentFile(full_html.encode("utf-8")),
-                save=True
+                f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True
             )
         except Exception as e:
             logging.exception(e)
@@ -134,9 +131,7 @@ class HTMLPublish(BasePublishStrategy):
 
             # Save new HTML content to FileField
             report.file.save(
-                f"{report.id}.html",
-                ContentFile(full_html.encode("utf-8")),
-                save=True
+                f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True
             )
         except Exception:
             report.error_message = "Failed to upload HTML report."

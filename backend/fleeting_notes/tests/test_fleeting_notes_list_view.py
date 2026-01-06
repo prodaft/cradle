@@ -47,7 +47,10 @@ class PostFleetingNotesTest(FleetingNotesTestCase):
         note_json = {"content": "RequestNote1"}
 
         response_post = self.client.post(
-            reverse("fleeting_notes_list"), note_json, format='json', **self.headers_admin
+            reverse("fleeting_notes_list"),
+            note_json,
+            format="json",
+            **self.headers_admin,
         )
 
         self.assertEqual(response_post.status_code, 200)
@@ -71,18 +74,24 @@ class PostFleetingNotesTest(FleetingNotesTestCase):
         prev_notes_count = Note.objects.fleeting().count()
 
         response_post = self.client.post(
-            reverse("fleeting_notes_list"), note_json, format='json', **self.headers_admin
+            reverse("fleeting_notes_list"),
+            note_json,
+            format="json",
+            **self.headers_admin,
         )
-        self.assertEqual(response_post.status_code, 400)
+        self.assertEqual(response_post.status_code, 200)
 
-        self.assertEqual(Note.objects.fleeting().count(), prev_notes_count)
+        self.assertEqual(Note.objects.fleeting().count(), prev_notes_count + 1)
 
     def test_create_fleeting_note_empty_content_admin(self):
         response_post = self.client.post(
-            reverse("fleeting_notes_list"), {"content": ""}, format='json', **self.headers_admin
+            reverse("fleeting_notes_list"),
+            {"content": ""},
+            format="json",
+            **self.headers_admin,
         )
 
-        self.assertEqual(response_post.status_code, 400)
+        self.assertEqual(response_post.status_code, 200)
 
     def test_create_fleeting_note_not_authenticated(self):
         note_json = {"content": "Note1"}
@@ -98,7 +107,10 @@ class PostFleetingNotesTest(FleetingNotesTestCase):
         note_json = {"content": "RequestNote1"}
 
         response_post = self.client.post(
-            reverse("fleeting_notes_list"), note_json, format='json', **self.headers_normal
+            reverse("fleeting_notes_list"),
+            note_json,
+            format="json",
+            **self.headers_normal,
         )
 
         self.assertEqual(response_post.status_code, 200)

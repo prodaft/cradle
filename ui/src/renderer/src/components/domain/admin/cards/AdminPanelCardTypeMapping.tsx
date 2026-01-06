@@ -16,7 +16,7 @@ export default function AdminPanelCardTypeMapping({
     setRightPane,
 }: AdminPanelCardTypeMappingProps) {
     const handleEditClick = () => {
-        setRightPane(<TypeMappingsEditor id={id} onSave={() => {}} />);
+        setRightPane(<TypeMappingsEditor id={id} name={name} onSave={() => {}} />);
     };
 
     const actions = [

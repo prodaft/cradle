@@ -1,4 +1,3 @@
-from notes.models import Note
 from fleeting_notes.tests.utils import FleetingNotesTestCase
 from django.urls import reverse
 from rest_framework.parsers import JSONParser
@@ -70,7 +69,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             {"content": "New content"},
-            format='json',
+            format="json",
             **self.headers_admin,
         )
 
@@ -80,7 +79,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()}),
             {"content": "New content"},
-            format='json',
+            format="json",
             **self.headers_admin,
         )
 
@@ -90,7 +89,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": "New content"},
-            format='json',
+            format="json",
             **self.headers_normal,
         )
 
@@ -100,7 +99,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": self.note_admin.pk}),
             {"content": "New content"},
-            format='json',
+            format="json",
             **self.headers_normal,
         )
 
@@ -110,7 +109,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": "New content"},
-            format='json',
+            format="json",
             **self.headers_admin,
         )
 
@@ -120,7 +119,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": ""},
-            format='json',
+            format="json",
             **self.headers_admin,
         )
 
@@ -130,7 +129,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": self.note_user.pk}),
             {"content": ""},
-            format='json',
+            format="json",
             **self.headers_normal,
         )
 
@@ -140,7 +139,7 @@ class PutFleetingNotesByIdTest(FleetingNotesTestCase):
         response = self.client.put(
             reverse("fleeting_notes_detail", kwargs={"id": uuid.uuid4()}),
             {"content": ""},
-            format='json',
+            format="json",
             **self.headers_admin,
         )
 

@@ -3,7 +3,7 @@ import random
 # Ugly hack to get graph_tool working
 import sys
 
-from .settings_common import *  # noqa:F401
+from .settings_common import *  # noqa:F401,F403
 
 global_base = random.__file__.removesuffix("random.py")
 
@@ -75,8 +75,8 @@ EMAIL_HOST_PASSWORD = None
 EMAIL_USE_TLS = True
 
 USE_SILK = True
-MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
-INSTALLED_APPS.append("silk")
+MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE  # noqa: F405
+INSTALLED_APPS.append("silk")  # noqa: F405
 
 # Silk: disable query analysis (EXPLAIN) to avoid param mangling on JSON fields
 SILKY_ANALYZE_QUERIES = False

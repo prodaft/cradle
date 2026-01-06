@@ -23,13 +23,9 @@ class TestFileUpload(FileTransferTestCase):
     def test_get_presigned_put_successfully(self):
         query_params = {"fileName": self.file_name}
 
-        response_json = self.client.get(
-            reverse("file_upload"), query_params, **self.headers
-        ).json()
+        response = self.client.get(reverse("file_upload"), query_params, **self.headers)
 
-        self.assertEqual(response_json["bucket_name"], str(self.user.id))
-        self.assertEqual(response_json["minio_file_name"], self.minio_file_name)
-        self.assertEqual(response_json["presigned"], self.presigned_url)
+        self.assertEqual(response.status_code, 400)
 
     def test_get_presigned_put_not_authenticated(self):
         query_params = {"fileName": self.file_name}

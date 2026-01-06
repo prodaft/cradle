@@ -786,10 +786,10 @@ class UserSessionsView(APIView):
             # Blacklist the refresh token before deleting the session
             refresh_token_jti = session.refresh_token_jti
             expires_at = session.expires_at
-            
+
             # Add token to blacklist
             BlacklistedToken.blacklist_token(refresh_token_jti, expires_at)
-            
+
             # Delete the session
             session.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)

@@ -67,7 +67,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI"
     )
 
-    file_upload_limit: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
+    file_upload_limit_override: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
         default=None, null=True, help_text="File upload limit in bytes"
     )
 
@@ -128,9 +128,9 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     def file_upload_limit(self):
         if self.is_cradle_admin:
             return 2 ** (64)
-        if self.file_upload_limit is None:
+        if self.file_upload_limit_override is None:
             return cradle_settings.files.upload_limit
-        return self.file_upload_limit
+        return self.file_upload_limit_override
 
     @property
     def is_cradle_admin(self):
@@ -258,7 +258,10 @@ class UserSession(models.Model):
         CradleUser, on_delete=models.CASCADE, related_name="sessions"
     )
     refresh_token_jti: models.CharField = models.CharField(
-        max_length=255, unique=True, db_index=True, help_text="JWT ID of the refresh token"
+        max_length=255,
+        unique=True,
+        db_index=True,
+        help_text="JWT ID of the refresh token",
     )
     device_info: Optional[str] = models.CharField(
         max_length=255, blank=True, null=True, help_text="Device/browser information"
@@ -287,7 +290,9 @@ class UserSession(models.Model):
         ]
 
     def __str__(self):
-        return f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
+        return (
+            f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
+        )
 
     def is_expired(self):
         """Check if the session has expired."""
@@ -298,7 +303,10 @@ class BlacklistedToken(models.Model):
     """Track blacklisted refresh tokens to prevent their use after revocation."""
 
     jti: models.CharField = models.CharField(
-        max_length=255, unique=True, db_index=True, help_text="JWT ID of the blacklisted token"
+        max_length=255,
+        unique=True,
+        db_index=True,
+        help_text="JWT ID of the blacklisted token",
     )
     blacklisted_at: models.DateTimeField = models.DateTimeField(
         auto_now_add=True, help_text="When the token was blacklisted"

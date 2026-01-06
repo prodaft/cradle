@@ -103,19 +103,19 @@ class CradleAPIException(APIException):
         """Get the machine-readable error code"""
         if self.error_code:
             return self.error_code.code
-        return 'UNKNOWN_ERROR'
+        return "UNKNOWN_ERROR"
 
     def get_error_title(self) -> str:
         """Get the error title"""
         if self.error_code:
             return self.error_code.title
-        return 'An error occurred'
+        return "An error occurred"
 
     def get_error_type_uri(self) -> str:
         """Get the error type URI"""
         if self.error_code:
             return self.error_code.type_uri
-        return '/errors/unknown-error'
+        return "/errors/unknown-error"
 
 
 # Core Error Codes - for errors that apply across all apps
@@ -123,45 +123,71 @@ class CoreErrorCodes(ErrorCode):
     """Core error codes used across the application"""
 
     # Authentication & Authorization
-    UNAUTHENTICATED = (status.HTTP_401_UNAUTHORIZED, "Authentication Required", "unauthenticated")
-    PERMISSION_DENIED = (status.HTTP_403_FORBIDDEN, "Permission Denied", "permission-denied")
+    UNAUTHENTICATED = (
+        status.HTTP_401_UNAUTHORIZED,
+        "Authentication Required",
+        "unauthenticated",
+    )
+    PERMISSION_DENIED = (
+        status.HTTP_403_FORBIDDEN,
+        "Permission Denied",
+        "permission-denied",
+    )
 
     # Generic Errors
-    INTERNAL_SERVER_ERROR = (status.HTTP_500_INTERNAL_SERVER_ERROR, "Internal Server Error", "internal-server-error")
+    INTERNAL_SERVER_ERROR = (
+        status.HTTP_500_INTERNAL_SERVER_ERROR,
+        "Internal Server Error",
+        "internal-server-error",
+    )
     BAD_REQUEST = (status.HTTP_400_BAD_REQUEST, "Bad Request", "bad-request")
     NOT_FOUND = (status.HTTP_404_NOT_FOUND, "Not Found", "not-found")
 
     # Validation
-    VALIDATION_ERROR = (status.HTTP_400_BAD_REQUEST, "Validation Error", "validation-error")
-    INVALID_REQUEST = (status.HTTP_400_BAD_REQUEST, "Invalid Request", "invalid-request")
+    VALIDATION_ERROR = (
+        status.HTTP_400_BAD_REQUEST,
+        "Validation Error",
+        "validation-error",
+    )
+    INVALID_REQUEST = (
+        status.HTTP_400_BAD_REQUEST,
+        "Invalid Request",
+        "invalid-request",
+    )
 
 
 # Convenience exception classes for common errors
 class ValidationException(CradleAPIException):
     """Exception for validation errors"""
+
     error_code = CoreErrorCodes.VALIDATION_ERROR
 
 
 class UnauthenticatedException(CradleAPIException):
     """Exception for authentication errors"""
+
     error_code = CoreErrorCodes.UNAUTHENTICATED
 
 
 class PermissionDeniedException(CradleAPIException):
     """Exception for permission errors"""
+
     error_code = CoreErrorCodes.PERMISSION_DENIED
 
 
 class NotFoundException(CradleAPIException):
     """Exception for not found errors"""
+
     error_code = CoreErrorCodes.NOT_FOUND
 
 
 class BadRequestException(CradleAPIException):
     """Exception for bad request errors"""
+
     error_code = CoreErrorCodes.BAD_REQUEST
 
 
 class InternalServerException(CradleAPIException):
     """Exception for internal server errors"""
+
     error_code = CoreErrorCodes.INTERNAL_SERVER_ERROR

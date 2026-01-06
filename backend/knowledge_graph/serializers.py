@@ -3,10 +3,7 @@ import re
 from drf_spectacular.extensions import OpenApiSerializerExtension
 from rest_framework import serializers
 
-from access.enums import AccessType
-from access.models import Access
 from core.utils import flatten
-from entries.enums import EntryType
 from entries.models import Edge, Entry, Relation
 from entries.serializers import (
     EntryClassSerializerNoChildren,
@@ -64,18 +61,26 @@ class SubGraphSerializer(serializers.Serializer):
         # Annotate entries with their calculated degree and enrich note entries with note titles and UUIDs
         for entry in entries:
             entry.degree = degree_map.get(int(entry.id), 0)
-            
+
             # For note entries, replace the name with the note title and add note_id
             if entry.entry_class.subtype == "note" and entry.name:
                 # Extract UUID from note entry name (format: "uuid-hash")
-                uuid_match = re.match(r'^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})', entry.name, re.IGNORECASE)
+                uuid_match = re.match(
+                    r"^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})",
+                    entry.name,
+                    re.IGNORECASE,
+                )
                 if uuid_match:
                     note_uuid = uuid_match.group(1)
                     entry.note_id = note_uuid  # Add note UUID to entry
                     try:
                         note = Note.objects.get(id=note_uuid)
                         # Use metadata title if available, otherwise fall back to title field
-                        note_title = (note.metadata or {}).get('title') or note.title or note_uuid
+                        note_title = (
+                            (note.metadata or {}).get("title")
+                            or note.title
+                            or note_uuid
+                        )
                         entry.name = note_title
                     except Note.DoesNotExist:
                         # If note not found, keep the UUID

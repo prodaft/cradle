@@ -31,5 +31,3 @@ def cleanup_expired_digest_uploads():
     from file_transfer.uploads.tasks import cleanup_all_expired_uploads
 
     cleanup_all_expired_uploads()
-
-

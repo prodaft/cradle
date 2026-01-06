@@ -25,7 +25,7 @@ interface EclassOption extends SelectOption<string> {
 }
 
 interface FormField {
-    type: 'string' | 'number' | 'choice';
+    type: 'string' | 'number' | 'choice' | 'boolean' | 'url';
     required?: boolean;
     options?: string[];
     description?: string;
@@ -52,6 +52,10 @@ const createEnrichmentSchema = (form_fields: FormFields) => {
                 validator = Yup.number();
             } else if (field.type === 'choice') {
                 validator = Yup.string();
+            } else if (field.type === 'boolean') {
+                validator = Yup.boolean();
+            } else if (field.type === 'url') {
+                validator = Yup.string().url(`${key} must be a valid URL`);
             }
 
             if (field.required) {
@@ -135,9 +139,13 @@ export default function EnrichmentSettingsForm({
                         );
 
                         // Initialize settings object with defaults
-                        const initialSettings: Record<string, string | number> = {};
-                        Object.keys(settings.formFields || {}).forEach((key) => {
-                            initialSettings[key] = settings.settings?.[key] || '';
+                        const initialSettings: Record<string, string | number | boolean> = {};
+                        Object.entries(settings.formFields || {}).forEach(([key, field]) => {
+                            if (field.type === 'boolean') {
+                                initialSettings[key] = settings.settings?.[key] ?? false;
+                            } else {
+                                initialSettings[key] = settings.settings?.[key] || '';
+                            }
                         });
 
                         // Format for_eclasses for the selector
@@ -196,7 +204,14 @@ export default function EnrichmentSettingsForm({
             const isLast = index === entries.length - 1;
             const content = (
                 <div key={key}>
-                    {field.type === 'choice' ? (
+                    {field.type === 'boolean' ? (
+                        <SettingsToggle
+                            label={capitalizeString(key)}
+                            description={field.description}
+                            {...register(`settings.${key}`)}
+                            watch={watch}
+                        />
+                    ) : field.type === 'choice' ? (
                         <SettingsField
                             label={capitalizeString(key)}
                             required={field.required}
@@ -227,6 +242,15 @@ export default function EnrichmentSettingsForm({
                                 )}
                             />
                         </SettingsField>
+                    ) : field.type === 'url' ? (
+                        <SettingsField
+                            label={capitalizeString(key)}
+                            description={field.description}
+                            type='url'
+                            {...register(`settings.${key}`)}
+                            error={errors.settings?.[key]?.message?.toString()}
+                            required={field.required}
+                        />
                     ) : (
                         <SettingsField
                             label={capitalizeString(key)}

@@ -473,182 +473,182 @@ const PaneTabs = ({ paneId, isActive, onRootRef }: PaneTabsProps) => {
                 onDragLeave={handleTabBarDragLeave}
                 onDrop={handleTabBarDrop}
             >
-                    {tabs.map((tab, index) => {
-                        const isTabActive = index === activeTabIndex;
-                        const isDragging = draggedTab === index;
-                        const showDropBefore =
-                            dragOverTab?.index === index && dragOverTab?.dropBefore;
-                        const showDropAfter =
-                            dragOverTab?.index === index && !dragOverTab?.dropBefore;
+                {tabs.map((tab, index) => {
+                    const isTabActive = index === activeTabIndex;
+                    const isDragging = draggedTab === index;
+                    const showDropBefore =
+                        dragOverTab?.index === index && dragOverTab?.dropBefore;
+                    const showDropAfter =
+                        dragOverTab?.index === index && !dragOverTab?.dropBefore;
 
-                        return (
-                            <TabItem
-                                key={tab.id}
-                                tab={tab}
-                                index={index}
-                                isTabActive={isTabActive}
-                                isActive={isActive}
-                                isDragging={isDragging}
-                                showDropBefore={showDropBefore ?? false}
-                                showDropAfter={showDropAfter}
-                                onTabClick={handleTabClick}
-                                onCloseClick={handleCloseClick}
-                                onContextMenu={handleContextMenu}
-                                onDragStart={handleDragStart}
-                                onDragOver={handleDragOver}
-                                onDragLeave={handleDragLeave}
-                                onDrop={handleDrop}
-                                onDragEnd={handleDragEnd}
-                                onKeyDown={handleKeyDown}
+                    return (
+                        <TabItem
+                            key={tab.id}
+                            tab={tab}
+                            index={index}
+                            isTabActive={isTabActive}
+                            isActive={isActive}
+                            isDragging={isDragging}
+                            showDropBefore={showDropBefore ?? false}
+                            showDropAfter={showDropAfter}
+                            onTabClick={handleTabClick}
+                            onCloseClick={handleCloseClick}
+                            onContextMenu={handleContextMenu}
+                            onDragStart={handleDragStart}
+                            onDragOver={handleDragOver}
+                            onDragLeave={handleDragLeave}
+                            onDrop={handleDrop}
+                            onDragEnd={handleDragEnd}
+                            onKeyDown={handleKeyDown}
+                        />
+                    );
+                })}
+
+                <button
+                    aria-label='Create new tab'
+                    className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
+                    style={
+                        {
+                            borderColor: 'var(--cradle-border-primary)',
+                            '--hover-border-color': 'var(--cradle-accent-primary)',
+                        } as CSSProperties
+                    }
+                    onMouseEnter={(e) =>
+                    ((e.target as HTMLElement).style.borderColor =
+                        'var(--cradle-accent-primary)')
+                    }
+                    onMouseLeave={(e) =>
+                    ((e.target as HTMLElement).style.borderColor =
+                        'var(--cradle-border-primary)')
+                    }
+                    onClick={() => createNewTab(paneId)}
+                    title='New Tab'
+                >
+                    <Plus width='1.2em' height='1.2em' />
+                </button>
+
+                <div className='flex-1'></div>
+
+                {isActive && (
+                    <>
+                        <button
+                            aria-label='Split pane horizontally'
+                            className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
+                            style={
+                                {
+                                    borderColor: 'var(--cradle-border-primary)',
+                                    '--hover-border-color':
+                                        'var(--cradle-accent-primary)',
+                                } as CSSProperties
+                            }
+                            onMouseEnter={(e) =>
+                            ((e.target as HTMLElement).style.borderColor =
+                                'var(--cradle-accent-primary)')
+                            }
+                            onMouseLeave={(e) =>
+                            ((e.target as HTMLElement).style.borderColor =
+                                'var(--cradle-border-primary)')
+                            }
+                            onClick={() => splitPane(paneId, 'horizontal', 'after')}
+                            title='Split Horizontally'
+                        >
+                            <SplitArea width='1.2em' height='1.2em' />
+                        </button>
+
+                        <button
+                            aria-label='Split pane vertically'
+                            className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
+                            style={
+                                {
+                                    borderColor: 'var(--cradle-border-primary)',
+                                    '--hover-border-color':
+                                        'var(--cradle-accent-primary)',
+                                } as CSSProperties
+                            }
+                            onMouseEnter={(e) =>
+                            ((e.target as HTMLElement).style.borderColor =
+                                'var(--cradle-accent-primary)')
+                            }
+                            onMouseLeave={(e) =>
+                            ((e.target as HTMLElement).style.borderColor =
+                                'var(--cradle-border-primary)')
+                            }
+                            onClick={() => splitPane(paneId, 'vertical', 'after')}
+                            title='Split Vertically'
+                        >
+                            <SplitArea
+                                width='1.2em'
+                                height='1.2em'
+                                style={{ transform: 'rotate(90deg)' }}
                             />
-                        );
-                    })}
+                        </button>
+                    </>
+                )}
 
-                    <button
-                        aria-label='Create new tab'
-                        className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
-                        style={
-                            {
-                                borderColor: 'var(--cradle-border-primary)',
-                                '--hover-border-color': 'var(--cradle-accent-primary)',
-                            } as CSSProperties
-                        }
-                        onMouseEnter={(e) =>
-                        ((e.target as HTMLElement).style.borderColor =
-                            'var(--cradle-accent-primary)')
-                        }
-                        onMouseLeave={(e) =>
-                        ((e.target as HTMLElement).style.borderColor =
-                            'var(--cradle-border-primary)')
-                        }
-                        onClick={() => createNewTab(paneId)}
-                        title='New Tab'
+                {contextMenuTab !== null && (
+                    <div
+                        ref={contextMenuRef}
+                        role='menu'
+                        className='fixed z-50 cradle-bg-elevated cradle-border rounded shadow-lg py-1 min-w-[180px]'
+                        style={{
+                            left: `${contextMenuPosition.x}px`,
+                            top: `${contextMenuPosition.y}px`,
+                        }}
                     >
-                        <Plus width='1.2em' height='1.2em' />
-                    </button>
-
-                    <div className='flex-1'></div>
-
-                    {isActive && (
-                        <>
-                            <button
-                                aria-label='Split pane horizontally'
-                                className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
-                                style={
-                                    {
-                                        borderColor: 'var(--cradle-border-primary)',
-                                        '--hover-border-color':
-                                            'var(--cradle-accent-primary)',
-                                    } as CSSProperties
+                        <button
+                            role='menuitem'
+                            className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
+                            onClick={() => {
+                                if (contextMenuTab !== null) {
+                                    closeTab(paneId, contextMenuTab);
                                 }
-                                onMouseEnter={(e) =>
-                                ((e.target as HTMLElement).style.borderColor =
-                                    'var(--cradle-accent-primary)')
-                                }
-                                onMouseLeave={(e) =>
-                                ((e.target as HTMLElement).style.borderColor =
-                                    'var(--cradle-border-primary)')
-                                }
-                                onClick={() => splitPane(paneId, 'vertical', 'after')}
-                                title='Split Horizontally'
-                            >
-                                <SplitArea width='1.2em' height='1.2em' />
-                            </button>
-
-                            <button
-                                aria-label='Split pane vertically'
-                                className='flex items-center justify-center h-full w-10 flex-shrink-0 cradle-text-tertiary hover:cradle-text-secondary border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
-                                style={
-                                    {
-                                        borderColor: 'var(--cradle-border-primary)',
-                                        '--hover-border-color':
-                                            'var(--cradle-accent-primary)',
-                                    } as CSSProperties
-                                }
-                                onMouseEnter={(e) =>
-                                ((e.target as HTMLElement).style.borderColor =
-                                    'var(--cradle-accent-primary)')
-                                }
-                                onMouseLeave={(e) =>
-                                ((e.target as HTMLElement).style.borderColor =
-                                    'var(--cradle-border-primary)')
-                                }
-                                onClick={() => splitPane(paneId, 'horizontal', 'after')}
-                                title='Split Vertically'
-                            >
-                                <SplitArea
-                                    width='1.2em'
-                                    height='1.2em'
-                                    style={{ transform: 'rotate(90deg)' }}
-                                />
-                            </button>
-                        </>
-                    )}
-
-                    {contextMenuTab !== null && (
-                        <div
-                            ref={contextMenuRef}
-                            role='menu'
-                            className='fixed z-50 cradle-bg-elevated cradle-border rounded shadow-lg py-1 min-w-[180px]'
-                            style={{
-                                left: `${contextMenuPosition.x}px`,
-                                top: `${contextMenuPosition.y}px`,
+                                handleCloseContextMenu();
                             }}
                         >
+                            <Xmark width='1em' height='1em' />
+                            Close
+                        </button>
+                        {tabs.length > 1 && (
                             <button
                                 role='menuitem'
                                 className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                                 onClick={() => {
                                     if (contextMenuTab !== null) {
-                                        closeTab(paneId, contextMenuTab);
+                                        closeOtherTabs(paneId, contextMenuTab);
                                     }
                                     handleCloseContextMenu();
                                 }}
                             >
-                                <Xmark width='1em' height='1em' />
-                                Close
+                                <NavArrowDown width='1em' height='1em' />
+                                Close Others
                             </button>
-                            {tabs.length > 1 && (
+                        )}
+                        {contextMenuTab !== null &&
+                            contextMenuTab! < tabs.length - 1 && (
                                 <button
                                     role='menuitem'
                                     className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
                                     onClick={() => {
                                         if (contextMenuTab !== null) {
-                                            closeOtherTabs(paneId, contextMenuTab);
+                                            closeTabsToRight(
+                                                paneId,
+                                                contextMenuTab,
+                                            );
                                         }
                                         handleCloseContextMenu();
                                     }}
                                 >
-                                    <NavArrowDown width='1em' height='1em' />
-                                    Close Others
+                                    <NavArrowDown
+                                        width='1em'
+                                        height='1em'
+                                        style={{ transform: 'rotate(-90deg)' }}
+                                    />
+                                    Close to the Right
                                 </button>
                             )}
-                            {contextMenuTab !== null &&
-                                contextMenuTab! < tabs.length - 1 && (
-                                    <button
-                                        role='menuitem'
-                                        className='w-full px-4 py-2 text-left text-sm cradle-text-secondary hover:cradle-bg-secondary flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2'
-                                        onClick={() => {
-                                            if (contextMenuTab !== null) {
-                                                closeTabsToRight(
-                                                    paneId,
-                                                    contextMenuTab,
-                                                );
-                                            }
-                                            handleCloseContextMenu();
-                                        }}
-                                    >
-                                        <NavArrowDown
-                                            width='1em'
-                                            height='1em'
-                                            style={{ transform: 'rotate(-90deg)' }}
-                                        />
-                                        Close to the Right
-                                    </button>
-                                )}
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
+            </div>
         </>
     );
 };

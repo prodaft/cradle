@@ -112,7 +112,8 @@ class CreateNoteTest(NotesTestCase):
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(
-            response.json()["detail"], "Some of the referenced entry classes do not exist:\nentity"
+            response.json()["detail"],
+            "Some of the referenced entry classes do not exist:\nentity",
         )
 
     def test_create_note_not_authenticated(self):

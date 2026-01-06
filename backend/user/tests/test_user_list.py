@@ -4,6 +4,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.parsers import JSONParser
 from ..serializers import UserRetrieveSerializer
 import io
+import json
 from .utils import UserTestCase
 
 
@@ -17,7 +18,11 @@ class CreateUserTest(UserTestCase):
         if email is not None:
             create_user_dict["email"] = email
 
-        response = self.client.post(reverse("user_list"), create_user_dict, format='json')
+        response = self.client.post(
+            reverse("user_list"),
+            data=json.dumps(create_user_dict),
+            content_type="application/json",
+        )
         return response
 
     def test_user_create_successfully(self):
@@ -82,25 +87,37 @@ class CreateUserTest(UserTestCase):
     def test_user_login_successfully(self):
         self.create_user_request("user", "userR1#1234112", email="alabala@gmail.com")
         response = self.client.post(
-            reverse("user_login"), {"username": "user", "password": "userR1#1234112"}
+            reverse("user_login"),
+            data=json.dumps({"username": "user", "password": "userR1#1234112"}),
+            content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 200)
 
     def test_user_login_wrong_credentials(self):
         response = self.client.post(
-            reverse("user_login"), {"username": "user", "password": "user"}
+            reverse("user_login"),
+            data=json.dumps({"username": "user", "password": "user"}),
+            content_type="application/json",
         )
 
         self.assertEqual(response.status_code, 401)
 
     def test_user_login_no_username(self):
-        response = self.client.post(reverse("user_login"), {"password": "user"})
+        response = self.client.post(
+            reverse("user_login"),
+            data=json.dumps({"password": "user"}),
+            content_type="application/json",
+        )
 
         self.assertEqual(response.status_code, 400)
 
     def test_user_login_no_password(self):
-        response = self.client.post(reverse("user_login"), {"username": "user"})
+        response = self.client.post(
+            reverse("user_login"),
+            data=json.dumps({"username": "user"}),
+            content_type="application/json",
+        )
 
         self.assertEqual(response.status_code, 400)
 

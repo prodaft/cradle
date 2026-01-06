@@ -7,9 +7,7 @@ automatic OpenAPI documentation.
 """
 
 from rest_framework.views import exception_handler
-from rest_framework.response import Response
 from django.utils import timezone
-from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError as DRFValidationError
 from .exceptions import CradleAPIException, CoreErrorCodes
 
@@ -44,47 +42,53 @@ def custom_exception_handler(exc, context):
     if response is None:
         return None
 
-    request = context.get('request')
+    request = context.get("request")
 
     # Build the RFC 9457 compliant error response
     error_response = {
-        'status': response.status_code,
-        'timestamp': timezone.now().isoformat(),
+        "status": response.status_code,
+        "timestamp": timezone.now().isoformat(),
     }
 
     # Handle CradleAPIException (our custom exceptions)
     if isinstance(exc, CradleAPIException):
-        error_response.update({
-            'type': exc.get_error_type_uri(),
-            'title': exc.get_error_title(),
-            'code': exc.get_error_code(),
-            'detail': str(exc.detail) if exc.detail else exc.get_error_title(),
-        })
+        error_response.update(
+            {
+                "type": exc.get_error_type_uri(),
+                "title": exc.get_error_title(),
+                "code": exc.get_error_code(),
+                "detail": str(exc.detail) if exc.detail else exc.get_error_title(),
+            }
+        )
 
     # Handle DRF ValidationError
     elif isinstance(exc, DRFValidationError):
-        error_response.update({
-            'type': CoreErrorCodes.VALIDATION_ERROR.type_uri,
-            'title': CoreErrorCodes.VALIDATION_ERROR.title,
-            'code': CoreErrorCodes.VALIDATION_ERROR.code,
-            'detail': 'One or more fields failed validation.',
-            'errors': response.data,
-        })
+        error_response.update(
+            {
+                "type": CoreErrorCodes.VALIDATION_ERROR.type_uri,
+                "title": CoreErrorCodes.VALIDATION_ERROR.title,
+                "code": CoreErrorCodes.VALIDATION_ERROR.code,
+                "detail": "One or more fields failed validation.",
+                "errors": response.data,
+            }
+        )
 
     # Handle other DRF exceptions
     else:
         # Map status codes to appropriate error types
         error_code = _get_error_code_for_status(response.status_code)
-        error_response.update({
-            'type': error_code.type_uri,
-            'title': error_code.title,
-            'code': error_code.code,
-            'detail': _get_detail_from_response(response.data),
-        })
+        error_response.update(
+            {
+                "type": error_code.type_uri,
+                "title": error_code.title,
+                "code": error_code.code,
+                "detail": _get_detail_from_response(response.data),
+            }
+        )
 
     # Add instance path if request is available
     if request:
-        error_response['instance'] = request.path
+        error_response["instance"] = request.path
 
     # Replace response data with our standardized format
     response.data = error_response
@@ -130,10 +134,10 @@ def _get_detail_from_response(data):
         return data
     elif isinstance(data, dict):
         # Try to get 'detail' key first, then 'error', then first value
-        if 'detail' in data:
-            return data['detail']
-        elif 'error' in data:
-            return data['error']
+        if "detail" in data:
+            return data["detail"]
+        elif "error" in data:
+            return data["error"]
         else:
             # Get first value if it's a string
             for value in data.values():
@@ -141,8 +145,8 @@ def _get_detail_from_response(data):
                     return value
                 elif isinstance(value, list) and len(value) > 0:
                     return str(value[0])
-        return 'An error occurred'
+        return "An error occurred"
     elif isinstance(data, list) and len(data) > 0:
         return str(data[0])
     else:
-        return 'An error occurred'
+        return "An error occurred"

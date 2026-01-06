@@ -2,9 +2,9 @@ import django_stubs_ext
 
 django_stubs_ext.monkeypatch()
 
-import os
-from datetime import timedelta
-from pathlib import Path
+import os  # noqa: E402
+from datetime import timedelta  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 VERSION = "2.10.2-beta.9bd46310"
 

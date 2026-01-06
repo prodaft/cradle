@@ -69,7 +69,7 @@ class ClassMappingSubclassesAPIView(APIView):
             },
             **get_error_responses(
                 IntelioErrorCodes.INVALID_CLASS_NAME,
-                IntelioErrorCodes.NOT_MAPPING_CLASS
+                IntelioErrorCodes.NOT_MAPPING_CLASS,
             ),
             **get_common_error_responses(),
         },
@@ -111,7 +111,7 @@ class MappingKeysSchemaView(APIView):
             },
             **get_error_responses(
                 IntelioErrorCodes.INVALID_CLASS_NAME,
-                IntelioErrorCodes.NOT_MAPPING_CLASS
+                IntelioErrorCodes.NOT_MAPPING_CLASS,
             ),
             **get_common_error_responses(),
         },
@@ -130,7 +130,7 @@ class MappingKeysSchemaView(APIView):
                 IntelioErrorCodes.INVALID_CLASS_NAME,
                 IntelioErrorCodes.NOT_MAPPING_CLASS,
                 IntelioErrorCodes.INTERNAL_CLASS_REQUIRED,
-                IntelioErrorCodes.INTEGRITY_ERROR
+                IntelioErrorCodes.INTEGRITY_ERROR,
             ),
             **get_common_error_responses(),
         },
@@ -153,7 +153,7 @@ class MappingKeysSchemaView(APIView):
                 IntelioErrorCodes.INVALID_CLASS_NAME,
                 IntelioErrorCodes.NOT_MAPPING_CLASS,
                 IntelioErrorCodes.MAPPING_ID_REQUIRED,
-                IntelioErrorCodes.MAPPING_NOT_FOUND
+                IntelioErrorCodes.MAPPING_NOT_FOUND,
             ),
             **get_common_error_responses(),
         },

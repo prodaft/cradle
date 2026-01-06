@@ -8,20 +8,22 @@ class QueryErrorCodes(ErrorCode):
     INVALID_PAGE_SIZE = (
         status.HTTP_400_BAD_REQUEST,
         "Invalid Page Size",
-        "invalid-page-size"
+        "invalid-page-size",
     )
     INVALID_QUERY_SYNTAX = (
         status.HTTP_400_BAD_REQUEST,
         "Invalid Query Syntax",
-        "invalid-query-syntax"
+        "invalid-query-syntax",
     )
 
 
 class InvalidPageSizeException(CradleAPIException):
     """Exception raised when page_size parameter is invalid"""
+
     error_code = QueryErrorCodes.INVALID_PAGE_SIZE
 
 
 class InvalidQuerySyntaxException(CradleAPIException):
     """Exception raised when query syntax is invalid"""
+
     error_code = QueryErrorCodes.INVALID_QUERY_SYNTAX

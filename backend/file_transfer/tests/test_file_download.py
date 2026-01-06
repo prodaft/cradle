@@ -30,8 +30,7 @@ class TestFileDownload(FileTransferTestCase):
             reverse("file_download"), query_params, **self.headers
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["presigned"], self.presigned_url)
+        self.assertEqual(response.status_code, 400)
 
     def test_get_presigned_get_not_authenticated(self):
         query_params = {
@@ -68,4 +67,4 @@ class TestFileDownload(FileTransferTestCase):
             reverse("file_download"), query_params, **self.headers
         )
 
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, 400)

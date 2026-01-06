@@ -93,28 +93,20 @@ class TokenObtainPairLogView(TokenObtainPairView):
         user = serializer.user
 
         if not user.email_confirmed:
-            raise EmailNotConfirmedException(
-                detail="Your email is not confirmed"
-            )
+            raise EmailNotConfirmedException(detail="Your email is not confirmed")
 
         if not user.is_active:
-            raise AccountNotActivatedException(
-                detail="Your account is not activated"
-            )
+            raise AccountNotActivatedException(detail="Your account is not activated")
 
         # Check if 2FA is enabled
         if user.two_factor_enabled:
             # If no 2FA token provided, return a special response
             if "two_factor_token" not in request.data:
-                raise TwoFactorRequiredException(
-                    detail="2FA token required"
-                )
+                raise TwoFactorRequiredException(detail="2FA token required")
 
             # Verify 2FA token
             if not user.verify_2fa_token(request.data["two_factor_token"]):
-                raise InvalidTwoFactorTokenException(
-                    detail="Invalid 2FA token"
-                )
+                raise InvalidTwoFactorTokenException(detail="Invalid 2FA token")
 
         # Add role and token expiry times to response
         response_data = serializer.validated_data.copy()
@@ -224,14 +216,13 @@ class TokenRefreshLogView(TokenRefreshView):
             # Update session record with new refresh token (if rotated)
             # Get user from the old refresh token by validating it
             from rest_framework_simplejwt.authentication import JWTAuthentication
-            from ..models import CradleUser
 
             try:
                 # Validate the old refresh token to get the user
                 jwt_auth = JWTAuthentication()
                 validated_token = jwt_auth.get_validated_token(old_refresh_token)
                 user = jwt_auth.get_user(validated_token)
-                
+
                 # Delete old session if token was rotated
                 old_jti = old_refresh_token.get("jti")
                 if old_jti and new_refresh_token_str != refresh_token_str:

@@ -96,6 +96,7 @@ class EnrichmentCompleteNotification(MessageNotification):
     @property
     def get_mail(self):
         from mail.models import EnrichmentReadyMail
+
         return EnrichmentReadyMail(self.user, self.enrichment_request)
 
 
@@ -110,4 +111,7 @@ class EnrichmentErrorNotification(MessageNotification):
     @property
     def get_mail(self):
         from mail.models import EnrichmentErrorMail
-        return EnrichmentErrorMail(self.user, self.enrichment_request, self.error_message)
+
+        return EnrichmentErrorMail(
+            self.user, self.enrichment_request, self.error_message
+        )

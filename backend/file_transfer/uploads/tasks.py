@@ -47,12 +47,16 @@ def cleanup_expired_upload_generic(
         pending = Model.objects.get(id=pending_upload_id)
     except Model.DoesNotExist:
         # Already cleaned up or finalized
-        logger.debug(f"Pending upload {pending_upload_id} not found (already cleaned up)")
+        logger.debug(
+            f"Pending upload {pending_upload_id} not found (already cleaned up)"
+        )
         return
 
     # Only clean up if expired
     if not pending.is_expired:
-        logger.debug(f"Pending upload {pending_upload_id} not yet expired, skipping cleanup")
+        logger.debug(
+            f"Pending upload {pending_upload_id} not yet expired, skipping cleanup"
+        )
         return
 
     # Delete file from S3 if it exists
@@ -61,9 +65,7 @@ def cleanup_expired_upload_generic(
             delete_object(bucket_name, pending.object_key)
             logger.info(f"Deleted orphaned file: {pending.object_key}")
         except Exception as e:
-            logger.error(
-                f"Failed to delete orphaned file {pending.object_key}: {e}"
-            )
+            logger.error(f"Failed to delete orphaned file {pending.object_key}: {e}")
 
     # Delete the pending upload record
     pending.delete()

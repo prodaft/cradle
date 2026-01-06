@@ -24,7 +24,6 @@ from file_transfer.uploads import PresignedUploadFlow, UploadConfig
 from file_transfer.uploads.exceptions import (
     InvalidFileNameException,
     InvalidFileSizeException,
-    QuotaExceededException,
     UploadErrorCodes,
 )
 from intelio.enums import DigestStatus

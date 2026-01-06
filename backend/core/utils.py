@@ -28,6 +28,12 @@ def fields_to_form(fields):
         ):
             field_type = "number"
             options = None
+        elif isinstance(field, models.BooleanField):
+            field_type = "boolean"
+            options = None
+        elif isinstance(field, models.URLField):
+            field_type = "url"
+            options = None
         else:
             continue
 

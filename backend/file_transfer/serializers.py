@@ -50,7 +50,13 @@ class FileReferenceSerializer(serializers.ModelSerializer):
             "sha1_hash",
             "sha256_hash",
         ]
-        read_only_fields = ["timestamp", "mimetype", "md5_hash", "sha1_hash", "sha256_hash"]
+        read_only_fields = [
+            "timestamp",
+            "mimetype",
+            "md5_hash",
+            "sha1_hash",
+            "sha256_hash",
+        ]
 
 
 class FileProcessSerializer(serializers.Serializer):

@@ -3,10 +3,8 @@ import logging
 
 from celery import shared_task
 from django.db import transaction
-from django.utils import timezone
 
-from file_transfer.models import FileReference, PendingUpload
-from file_transfer.s3_utils import delete_object
+from file_transfer.models import FileReference
 from file_transfer.storage import FileTransferStorage
 from management.settings import cradle_settings
 

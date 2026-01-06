@@ -6,7 +6,7 @@ import sys
 import sentry_sdk
 from environs import Env
 
-from .settings_common import *  # noqa:F401
+from .settings_common import *  # noqa:F401,F403
 
 global_base = random.__file__.removesuffix("random.py")
 
@@ -51,7 +51,7 @@ MINIO_CONFIG = {
     "secure": env.bool("MINIO_SECURE", True),
 }
 
-MINIO_BACKEND_URL = env.str("MINIO_BACKEND_URL", MINIO_BACKEND_URL)
+MINIO_BACKEND_URL = env.str("MINIO_BACKEND_URL", MINIO_BACKEND_URL)  # noqa: F405
 
 # django-storages S3 configuration (for MinIO compatibility)
 # Note: Each model can use its own storage class with a specific bucket
@@ -100,7 +100,7 @@ EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", False)
 USE_SILK = env.bool("USE_SILK", False)
 
 if USE_SILK:
-    MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE
-    INSTALLED_APPS.append("silk")
+    MIDDLEWARE = ["silk.middleware.SilkyMiddleware"] + MIDDLEWARE  # noqa: F405
+    INSTALLED_APPS.append("silk")  # noqa: F405
     # Disable EXPLAIN analysis which can break parameterized JSON updates
     SILKY_ANALYZE_QUERIES = False

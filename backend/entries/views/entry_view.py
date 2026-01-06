@@ -1,5 +1,5 @@
 from uuid import UUID
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -7,7 +7,11 @@ from rest_framework.views import APIView
 
 from access.models import Access
 from core.pagination import TotalPagesPagination
-from core.openapi import get_error_responses, get_validation_error_response, get_common_error_responses
+from core.openapi import (
+    get_error_responses,
+    get_validation_error_response,
+    get_common_error_responses,
+)
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from ..exceptions import (
     DuplicateEntryException,
@@ -98,9 +102,7 @@ class EntryDetailView(APIView):
         try:
             entry = Entry.objects.accessible(request.user).get(pk=id)
         except Entry.DoesNotExist:
-            raise EntryNotFoundException(
-                detail="There is no entry with specified ID."
-            )
+            raise EntryNotFoundException(detail="There is no entry with specified ID.")
 
         # Access control for entities
         if entry.type == EntryType.ENTITY:

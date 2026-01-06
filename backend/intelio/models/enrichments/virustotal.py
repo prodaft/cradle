@@ -158,7 +158,7 @@ class VirusTotalEnricher(BaseEnricher):
                 timeout=5,
             )
             return response.status_code in [200, 404]  # 404 = valid API, hash not found
-        except:
+        except requests.RequestException:
             return False
 
     def _query_virustotal(self, file_hash: str, api_key: str, timeout: int):

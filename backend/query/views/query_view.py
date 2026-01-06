@@ -166,8 +166,7 @@ class AdvancedQueryView(APIView):
                 EntryResponseSerializer
             ),
             **get_error_responses(
-                QueryErrorCodes.INVALID_PAGE_SIZE,
-                QueryErrorCodes.INVALID_QUERY_SYNTAX
+                QueryErrorCodes.INVALID_PAGE_SIZE, QueryErrorCodes.INVALID_QUERY_SYNTAX
             ),
             **get_common_error_responses(),
         },
@@ -201,7 +200,9 @@ class AdvancedQueryView(APIView):
                 try:
                     query_filter |= parse_query(query_str.strip())
                 except Exception as e:
-                    raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
+                    raise InvalidQuerySyntaxException(
+                        detail=f"Invalid query syntax: {str(e)}"
+                    )
 
         # Get accessible entries for the user with optimized queries
         accessible_entries = (

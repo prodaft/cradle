@@ -50,6 +50,7 @@ class NotificationDetailTest(NotificationsTestCase):
                 "notification_detail", kwargs={"notification_id": self.message_user.id}
             ),
             {"is_marked_unread": "blabla"},
+            format="json",
             **self.headers,
         )
 
@@ -70,6 +71,7 @@ class NotificationDetailTest(NotificationsTestCase):
                 "notification_detail", kwargs={"notification_id": self.message_user.id}
             ),
             {"is_marked_unread": True},
+            format="json",
             **self.headers,
         )
 
@@ -87,6 +89,7 @@ class NotificationDetailTest(NotificationsTestCase):
                 kwargs={"notification_id": self.access_request_user.id},
             ),
             {"is_marked_unread": True},
+            format="json",
             **self.headers,
         )
 

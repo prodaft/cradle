@@ -32,7 +32,6 @@ from .uploads.exceptions import (
     FileNotUploadedException,
     InvalidFileNameException,
     InvalidFileSizeException,
-    QuotaExceededException,
     UploadErrorCodes,
 )
 

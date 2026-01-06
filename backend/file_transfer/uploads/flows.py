@@ -10,7 +10,6 @@ from django.db import models
 from django.utils import timezone
 
 from file_transfer.s3_utils import exists
-from file_transfer.storage import FileTransferStorage
 
 from .exceptions import (
     AlreadyUploadingException,
@@ -51,7 +50,9 @@ class UploadFlowCallbacks(Protocol):
     successful upload finalization.
     """
 
-    def on_finalize_success(self, pending_upload: "BasePendingUpload", **kwargs) -> dict:
+    def on_finalize_success(
+        self, pending_upload: "BasePendingUpload", **kwargs
+    ) -> dict:
         """
         Called after upload is verified and before pending record is deleted.
 
@@ -234,9 +235,7 @@ class PresignedUploadFlow(Generic[T]):
             "expires_in": self.config.expiry_seconds,
         }
 
-    def finalize(
-        self, upload_id: uuid.UUID, user: "CradleUser", **kwargs
-    ) -> dict:
+    def finalize(self, upload_id: uuid.UUID, user: "CradleUser", **kwargs) -> dict:
         """
         Phase 2: Verify upload exists and finalize.
 

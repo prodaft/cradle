@@ -3,16 +3,14 @@
 from typing import Optional
 from urllib.parse import urlparse
 from django.db import models
-from entries.models import Entry, EntryClass, Relation
-from entries.enums import RelationReason, EntryType
+from entries.models import Entry, Relation
+from entries.enums import RelationReason
 from ..base import BaseEnricher
+from ..mappings.dns import DNSMapping
+import logging
+import pypdns
 
-try:
-    import pypdns
-
-    PYPDNS_AVAILABLE = True
-except ImportError:
-    PYPDNS_AVAILABLE = False
+logger = logging.getLogger(__name__)
 
 
 class CIRCLPDNSEnricher(BaseEnricher):
@@ -50,9 +48,6 @@ class CIRCLPDNSEnricher(BaseEnricher):
 
     def pre_enrich(self, entries: list[Entry]) -> Optional[str]:
         """Validate configuration before enrichment."""
-        if not PYPDNS_AVAILABLE:
-            return "pypdns library is not installed. Install with: pip install pypdns"
-
         if not self.settings.get("username"):
             return "CIRCL PDNS username is required"
 
@@ -61,6 +56,14 @@ class CIRCLPDNSEnricher(BaseEnricher):
 
         if not entries:
             return "No entries provided for enrichment"
+
+        # Warn if mappings are missing
+        if not DNSMapping.objects.exists():
+            self.request._append_warning(
+                "No DNS type mappings configured. "
+                "IP address extraction will be disabled. "
+                "Configure DNSMapping in Django admin to enable IP extraction."
+            )
 
         return None
 
@@ -77,13 +80,11 @@ class CIRCLPDNSEnricher(BaseEnricher):
             self.request._append_warning(f"Failed to initialize PDNS client: {e}")
             return
 
-        # Get IP entry classes
-        ipv4_class = EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype="ip"
-        ).first()
-        ipv6_class = EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype="ipv6"
-        ).first()
+        # Get DNS type mapping
+        typemapping = DNSMapping.get_typemapping_rev()
+
+        # Track unmapped record types
+        unmapped_types = set()
 
         for entry in entries:
             try:
@@ -100,45 +101,52 @@ class CIRCLPDNSEnricher(BaseEnricher):
 
                 # Process results
                 for record in results:
-                    # Determine IP class based on record type
+                    # Get record type
                     record_type = record.get("rrtype", "")
-
-                    if record_type == "A" and ipv4_class:
-                        ip_class = ipv4_class
-                    elif record_type == "AAAA" and ipv6_class:
-                        ip_class = ipv6_class
-                    else:
-                        continue  # Skip non-IP records
-
-                    # Get or create IP entry
-                    ip_address = record.get("rdata")
-                    if not ip_address:
+                    if not record_type:
                         continue
 
-                    ip_entry, _ = Entry.objects.get_or_create(
-                        entry_class=ip_class, name=ip_address
-                    )
+                    # Use mapping to get CRADLE entry class for this DNS record type
+                    target_class = typemapping.get(record_type)
 
-                    # Create relation
-                    Relation.objects.create(
-                        e1=entry,
-                        e2=ip_entry,
-                        reason=RelationReason.ENRICHMENT,
-                        reason_context=self.name,
-                        content_object=self.request,
-                        access_vector=self.request.access_vector,
-                        inherit_av=True,
-                        details={
-                            "record_type": record_type,
-                            "time_first": self._format_timestamp(
-                                record.get("time_first")
-                            ),
-                            "time_last": self._format_timestamp(
-                                record.get("time_last")
-                            ),
-                            "count": record.get("count", 0),
-                        },
-                    )
+                    if target_class:
+                        # Get IP/hostname from record
+                        rdata = record.get("rdata")
+                        if not rdata:
+                            continue
+
+                        # Create entry for the discovered artifact
+                        artifact_entry, _ = Entry.objects.get_or_create(
+                            entry_class=target_class, name=rdata
+                        )
+
+                        # Create relation
+                        Relation.objects.create(
+                            e1=entry,
+                            e2=artifact_entry,
+                            reason=RelationReason.ENRICHMENT,
+                            reason_context=self.name,
+                            content_object=self.request,
+                            access_vector=self.request.access_vector,
+                            inherit_av=True,
+                            details={
+                                "record_type": record_type,
+                                "time_first": self._format_timestamp(
+                                    record.get("time_first")
+                                ),
+                                "time_last": self._format_timestamp(
+                                    record.get("time_last")
+                                ),
+                                "count": record.get("count", 0),
+                                "source": "circl_pdns",
+                            },
+                        )
+                    elif record_type not in unmapped_types:
+                        # Track unmapped type
+                        unmapped_types.add(record_type)
+                        logger.debug(
+                            f"Skipping DNS record type '{record_type}' - no mapping configured"
+                        )
 
             except pypdns.errors.UnauthorizedError:
                 self.request._append_warning(
@@ -150,6 +158,13 @@ class CIRCLPDNSEnricher(BaseEnricher):
                     f"PDNS lookup failed for {entry.name}: {str(e)}"
                 )
 
+        # Warn if unmapped types were encountered
+        if unmapped_types:
+            self.request._append_warning(
+                f"Skipped DNS record type(s) without mappings: {', '.join(sorted(unmapped_types))}. "
+                f"Configure DNSMapping in Django admin to extract these records."
+            )
+
     def _extract_domain(self, entry: Entry) -> Optional[str]:
         """Extract domain from entry based on entry class."""
         if entry.entry_class.subtype == "url":
@@ -157,7 +172,7 @@ class CIRCLPDNSEnricher(BaseEnricher):
             try:
                 parsed = urlparse(entry.name)
                 return parsed.hostname
-            except:
+            except Exception:
                 return None
         elif entry.entry_class.subtype == "domain":
             return entry.name

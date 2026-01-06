@@ -2,7 +2,6 @@ import uuid
 from typing import TYPE_CHECKING
 
 from django.db import models
-from django.utils import timezone
 from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
 
 from entries.enums import EntryType

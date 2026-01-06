@@ -38,10 +38,11 @@ interface ValidationErrors {
 
 interface TypeMappingsEditorProps {
     id: string;
+    name?: string;
     onSave?: () => void;
 }
 
-const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
+const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const [columnDefinitions, setColumnDefinitions] =
         useState<ColumnDefinitions | null>(null);
     const [rows, setRows] = useState<RowData[]>([]);
@@ -89,8 +90,30 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                     className: id,
                 })) as any[]; // The response here is a list of objects with dynamic keys
 
+                // Transform string arrays in options to {value, label} format
+                const transformedMappingKeys: ColumnDefinitions = {};
+                for (const [key, colDef] of Object.entries(mappingKeys)) {
+                    if (colDef.type === 'options' && colDef.options) {
+                        // Check if options are strings and need transformation
+                        const firstOption = colDef.options[0];
+                        if (typeof firstOption === 'string') {
+                            transformedMappingKeys[key] = {
+                                ...colDef,
+                                options: (colDef.options as unknown as string[]).map((opt) => ({
+                                    value: opt,
+                                    label: opt,
+                                })),
+                            };
+                        } else {
+                            transformedMappingKeys[key] = colDef;
+                        }
+                    } else {
+                        transformedMappingKeys[key] = colDef;
+                    }
+                }
+
                 const cols: ColumnDefinitions = {
-                    ...mappingKeys,
+                    ...transformedMappingKeys,
                     internal_class: {
                         type: 'options',
                         options: entryClasses.map((x) => ({
@@ -102,15 +125,34 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                 };
                 setColumnDefinitions(cols);
 
-                const mappedRows = mappings.map((mapping) => ({
-                    ...mapping,
-                    internal_class: {
-                        value: mapping.internal_class,
-                        label: mapping.internal_class,
-                    },
-                    id: mapping.id,
-                    edited: false,
-                }));
+                // Transform option values in existing data to {value, label} format
+                const mappedRows = mappings.map((mapping) => {
+                    const transformedMapping: any = {
+                        id: mapping.id,
+                        edited: false,
+                    };
+
+                    for (const [key, value] of Object.entries(mapping)) {
+                        if (key === 'id') continue;
+
+                        const colDef = cols[key];
+                        if (colDef?.type === 'options' && value !== null && value !== undefined) {
+                            // Transform string values to {value, label} format
+                            if (typeof value === 'string') {
+                                transformedMapping[key] = {
+                                    value: value,
+                                    label: value,
+                                };
+                            } else {
+                                transformedMapping[key] = value;
+                            }
+                        } else {
+                            transformedMapping[key] = value;
+                        }
+                    }
+
+                    return transformedMapping;
+                });
 
                 let initialRows = mappedRows.length > 0 ? mappedRows : [];
                 // We can't append createEmptyRow directly here because we need columnDefinitions state set first?
@@ -456,10 +498,10 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
             <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
                 <div>
                     <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        Edit Type Mappings
+                        {name ? capitalizeString(name) : 'Edit Type Mappings'}
                     </h1>
                     <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Manage data type transformations
+                        Map {name ? `${capitalizeString(name)} ` : ''}types to internal entry classes
                     </p>
                 </div>
             </div>
@@ -506,8 +548,8 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                                     <tr
                                         key={index}
                                         className={`border-b border-cradle-border-primary/50 ${index < rows.length - 1 && !row.edited
-                                                ? 'bg-transparent'
-                                                : ''
+                                            ? 'bg-transparent'
+                                            : ''
                                             } hover:bg-cradle-bg-secondary/20 transition-colors`}
                                     >
                                         {/* Actions cell with Delete and Save buttons */}
@@ -594,8 +636,8 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                                                                 )
                                                             }
                                                             className={`cradle-input w-full ${hasError
-                                                                    ? 'border-red-500'
-                                                                    : ''
+                                                                ? 'border-red-500'
+                                                                : ''
                                                                 }`}
                                                             min={colDef.min}
                                                             max={colDef.max}
@@ -624,8 +666,8 @@ const TypeMappingsEditor = ({ id, onSave }: TypeMappingsEditorProps) => {
                                                                 )
                                                             }
                                                             className={`cradle-input w-full ${hasError
-                                                                    ? 'border-red-500'
-                                                                    : ''
+                                                                ? 'border-red-500'
+                                                                : ''
                                                                 }`}
                                                             minLength={colDef.minLength}
                                                             maxLength={colDef.maxLength}
