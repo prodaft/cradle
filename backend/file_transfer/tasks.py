@@ -118,57 +118,27 @@ def process_file_task(file_id):
 def cleanup_expired_upload(pending_upload_id: str):
     """
     Clean up an expired pending upload.
-    Deletes the PendingUpload record and removes the file from storage if it exists.
+
+    Deprecated: This task delegates to the generic cleanup task.
+    Use file_transfer.uploads.tasks.cleanup_expired_upload_generic instead.
     """
-    try:
-        pending_upload = PendingUpload.objects.get(id=pending_upload_id)
-    except PendingUpload.DoesNotExist:
-        # Already cleaned up or finalized
-        return
+    from .uploads.tasks import cleanup_expired_upload_generic
 
-    if not pending_upload.is_expired:
-        # Not expired yet, reschedule
-        return
-
-    storage = get_storage()
-
-    # Delete file from storage if it exists
-    if storage.exists(pending_upload.object_key):
-        try:
-            delete_object(FileTransferStorage.bucket_name, pending_upload.object_key)
-            logger.info(f"Deleted orphaned file: {pending_upload.object_key}")
-        except Exception as e:
-            logger.error(
-                f"Failed to delete orphaned file {pending_upload.object_key}: {str(e)}"
-            )
-
-    # Delete the pending upload record
-    pending_upload.delete()
+    cleanup_expired_upload_generic(
+        pending_upload_id,
+        "file_transfer.PendingUpload",
+        FileTransferStorage.bucket_name,
+    )
 
 
 @shared_task
 def cleanup_expired_uploads():
     """
     Periodic task to clean up all expired pending uploads.
-    Should be scheduled to run periodically (e.g., every 10 minutes).
+
+    Deprecated: This task delegates to the generic cleanup task.
+    Use file_transfer.uploads.tasks.cleanup_all_expired_uploads instead.
     """
-    expired_uploads = PendingUpload.objects.filter(expires_at__lt=timezone.now())
-    storage = get_storage()
+    from .uploads.tasks import cleanup_all_expired_uploads
 
-    for pending_upload in expired_uploads:
-        # Delete file from storage if it exists
-        if storage.exists(pending_upload.object_key):
-            try:
-                delete_object(
-                    FileTransferStorage.bucket_name, pending_upload.object_key
-                )
-                logger.info(f"Deleted orphaned file: {pending_upload.object_key}")
-            except Exception as e:
-                logger.error(
-                    f"Failed to delete orphaned file {pending_upload.object_key}: {str(e)}"
-                )
-
-        # Delete the pending upload record
-        pending_upload.delete()
-
-    logger.info(f"Cleaned up {expired_uploads.count()} expired uploads")
+    cleanup_all_expired_uploads()

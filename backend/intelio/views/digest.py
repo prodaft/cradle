@@ -1,8 +1,6 @@
 import uuid
-from datetime import timedelta
 
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from django_lifecycle.mixins import transaction
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -21,16 +19,19 @@ from core.openapi import (
 )
 from core.pagination import TotalPagesPagination
 from core.utils import validate_order_by
+from file_transfer.storage import DigestStorage
+from file_transfer.uploads import PresignedUploadFlow, UploadConfig
+from file_transfer.uploads.exceptions import (
+    InvalidFileNameException,
+    InvalidFileSizeException,
+    QuotaExceededException,
+    UploadErrorCodes,
+)
 from intelio.enums import DigestStatus
 from user.authentication import APIKeyAuthentication
 
 from ..exceptions import (
-    AlreadyUploadingException,
-    DigestFileNotUploadedException,
-    DigestUploadExpiredException,
-    DigestUploadNotFoundException,
     IntelioErrorCodes,
-    InvalidFileNameException,
     InvalidPageSizeException,
     InvalidRequestBodyException,
     MissingDigestIdException,
@@ -53,6 +54,65 @@ from ..tasks import start_digest
 DIGEST_UPLOAD_EXPIRY_SECONDS = 5 * 60  # 5 minutes
 
 
+# Digest upload flow configuration and callbacks
+def _digest_object_key_generator(upload_id: uuid.UUID, file_name: str, user) -> str:
+    """Generate object key for digest uploads: {user_id}/{upload_id}"""
+    return f"{user.id}/{upload_id}"
+
+
+class DigestUploadCallbacks:
+    """Callbacks for digest upload lifecycle."""
+
+    def on_finalize_success(self, pending_upload, **validated_data) -> dict:
+        """
+        Create BaseDigest after successful upload.
+
+        Args:
+            pending_upload: The pending upload record
+            **validated_data: Validated data from DigestUploadFinalizeCreateSerializer
+
+        Returns:
+            dict with digest object to serialize
+
+        Raises:
+            InvalidRequestBodyException: If serializer validation fails
+        """
+        digest_data = validated_data.copy()
+        entities = digest_data.pop("entities", [])
+
+        # Get the digest model class (BaseDigest or subclass)
+        digest_model = digest_data.pop("_digest_model", BaseDigest)
+
+        # Create digest instance
+        digest = digest_model(
+            id=pending_upload.id,
+            user=pending_upload.user,
+            **digest_data,
+        )
+        digest.save()
+
+        # Set entities if provided
+        if entities:
+            digest.entities.set(entities)
+
+        # Trigger digest processing
+        transaction.on_commit(lambda: start_digest.delay(digest.id))
+
+        return {"digest": digest}
+
+
+# Create the digest upload flow instance
+digest_upload_flow = PresignedUploadFlow(
+    config=UploadConfig(
+        bucket_name=DigestStorage.bucket_name,
+        object_key_generator=_digest_object_key_generator,
+        allow_concurrent_per_user=True,  # Admins can have concurrent uploads
+    ),
+    pending_model=PendingDigestUpload,
+    callbacks=DigestUploadCallbacks(),
+)
+
+
 def get_digest_storage():
     """Get the digest storage instance."""
     from file_transfer.storage import DigestStorage
@@ -71,7 +131,7 @@ def get_digest_storage():
 
 @extend_schema(
     summary="Initiate digest file upload",
-    description="Generates a presigned URL for uploading a digest file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
+    description="Generates a presigned URL for uploading a digest file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
     parameters=[
         OpenApiParameter(
             name="fileName",
@@ -79,12 +139,22 @@ def get_digest_storage():
             location=OpenApiParameter.QUERY,
             description="Name of the file to be uploaded",
             required=True,
-        )
+        ),
+        OpenApiParameter(
+            name="fileSize",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Size of the file to be uploaded in bytes",
+            required=True,
+        ),
     ],
     responses={
         200: DigestUploadResponseSerializer,
         **get_error_responses(
-            IntelioErrorCodes.INVALID_FILE_NAME, IntelioErrorCodes.ALREADY_UPLOADING
+            IntelioErrorCodes.INVALID_FILE_NAME,
+            IntelioErrorCodes.ALREADY_UPLOADING,
+            UploadErrorCodes.INVALID_FILE_SIZE,
+            UploadErrorCodes.QUOTA_EXCEEDED,
         ),
         **get_common_error_responses(),
     },
@@ -101,53 +171,33 @@ class DigestUploadAPIView(APIView):
                 detail="The 'fileName' query parameter is required."
             )
 
+        # Get and validate file size
+        file_size_str = request.query_params.get("fileSize")
+        if not file_size_str:
+            raise InvalidFileSizeException(
+                detail="The 'fileSize' query parameter is required."
+            )
+
+        try:
+            file_size = int(file_size_str)
+        except ValueError:
+            raise InvalidFileSizeException(
+                detail="The 'fileSize' parameter must be a valid integer."
+            )
+
+        # Non-admin users cannot have concurrent uploads
+        # (admins can have multiple pending uploads)
         if (
             PendingDigestUpload.objects.filter(user=request.user).exists()
             and not request.user.is_cradle_admin
         ):
+            from file_transfer.uploads.exceptions import AlreadyUploadingException
+
             raise AlreadyUploadingException(
                 detail="You already have an open upload session. Please finalize the previous upload before starting a new one."
             )
 
-        upload_id = uuid.uuid4()
-        object_key = f"{request.user.id}/{upload_id}"
-        expires_at = timezone.now() + timedelta(seconds=DIGEST_UPLOAD_EXPIRY_SECONDS)
-
-        pending_upload = PendingDigestUpload.objects.create(
-            id=upload_id,
-            object_key=object_key,
-            file_name=file_name,
-            user=request.user,
-            expires_at=expires_at,
-        )
-
-        storage = get_digest_storage()
-        presigned_url = storage.connection.meta.client.generate_presigned_url(
-            "put_object",
-            Params={
-                "Bucket": storage.bucket_name,
-                "Key": object_key,
-            },
-            ExpiresIn=DIGEST_UPLOAD_EXPIRY_SECONDS,
-        )
-
-        from ..tasks import cleanup_expired_digest_upload
-
-        try:
-            cleanup_expired_digest_upload.apply_async(
-                args=(str(pending_upload.id),),
-                countdown=DIGEST_UPLOAD_EXPIRY_SECONDS + 60,
-            )
-        except Exception:
-            pass
-
-        response_data = {
-            "upload_id": upload_id,
-            "presigned_url": presigned_url,
-            "object_key": object_key,
-            "expires_in": DIGEST_UPLOAD_EXPIRY_SECONDS,
-        }
-
+        response_data = digest_upload_flow.initiate(request.user, file_name, file_size)
         return Response(DigestUploadResponseSerializer(response_data).data)
 
 
@@ -182,56 +232,27 @@ class DigestUploadFinalizeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, upload_id: str):
+        # Validate request body
+        serializer = DigestUploadFinalizeCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            raise InvalidRequestBodyException(detail="Request body validation failed.")
+
+        # Get digest model from serializer
+        validated_data = serializer.validated_data.copy()
+        validated_data["_digest_model"] = serializer.Meta.model or BaseDigest
+
+        # Finalize upload via flow
         try:
-            pending_upload = PendingDigestUpload.objects.get(
-                id=upload_id, user=request.user
+            response_data = digest_upload_flow.finalize(
+                uuid.UUID(upload_id), request.user, **validated_data
             )
         except ValueError:
             raise InvalidFileNameException(
                 detail="The 'upload_id' parameter must be a valid UUID."
             )
-        except PendingDigestUpload.DoesNotExist:
-            raise DigestUploadNotFoundException(
-                detail=f"Upload with ID {upload_id} not found."
-            )
 
-        storage = get_digest_storage()
-        if not storage.exists(pending_upload.object_key):
-            raise DigestFileNotUploadedException(
-                detail="File was not uploaded to the presigned URL."
-            )
-
-        if pending_upload.is_expired:
-            try:
-                storage.delete(pending_upload.object_key)
-            except Exception:
-                pass
-            pending_upload.delete()
-            raise DigestUploadExpiredException(
-                detail="Upload has expired. Please initiate a new upload."
-            )
-
-        serializer = DigestUploadFinalizeCreateSerializer(data=request.data)
-        if not serializer.is_valid():
-            raise InvalidRequestBodyException(detail="Request body validation failed.")
-
-        digest_data = serializer.validated_data.copy()
-        entities = digest_data.pop("entities", [])
-
-        digest_model = serializer.Meta.model or BaseDigest
-        digest = digest_model(
-            id=pending_upload.id,
-            user=request.user,
-            **digest_data,
-        )
-        digest.save()
-
-        if entities:
-            digest.entities.set(entities)
-
-        pending_upload.delete()
-
-        transaction.on_commit(lambda: start_digest.delay(digest.id))
+        # Extract digest from response
+        digest = response_data["digest"]
 
         return Response(
             BaseDigestSerializer(digest).data, status=status.HTTP_201_CREATED

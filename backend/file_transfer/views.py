@@ -1,7 +1,5 @@
 import uuid
-from datetime import timedelta
 
-from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -14,16 +12,11 @@ from core.openapi import get_common_error_responses, get_error_responses
 from notes.models import Note
 
 from .exceptions import (
-    AlreadyUploadingException,
-    FileNotUploadedException,
     FileReferenceNotFoundException,
     FileTransferErrorCodes,
-    InvalidFileNameException,
     InvalidRequestBodyException,
     MinioObjectNotFound,
     NoteNotFoundException,
-    UploadExpiredException,
-    UploadNotFoundException,
 )
 from .models import FileReference, PendingUpload
 from .serializers import (
@@ -34,9 +27,15 @@ from .serializers import (
     FileUploadResponseSerializer,
 )
 from .storage import FileTransferStorage
+from .uploads import PresignedUploadFlow, UploadConfig
+from .uploads.exceptions import (
+    FileNotUploadedException,
+    InvalidFileNameException,
+    InvalidFileSizeException,
+    QuotaExceededException,
+    UploadErrorCodes,
+)
 
-# Upload URL expiration time
-UPLOAD_EXPIRY_SECONDS = 5 * 60  # 5 minutes
 # Download URL expiration time
 DOWNLOAD_EXPIRY_SECONDS = 7 * 24 * 60 * 60  # 7 days
 
@@ -54,10 +53,85 @@ def get_storage():
     return storage
 
 
+# Upload flow configuration and callbacks
+def _file_object_key_generator(upload_id: uuid.UUID, file_name: str, user) -> str:
+    """Generate object key for file uploads: {upload_id}-{filename}"""
+    return f"{upload_id}-{file_name}"
+
+
+class FileUploadCallbacks:
+    """Callbacks for file upload lifecycle."""
+
+    def on_finalize_success(self, pending_upload, note_id=None, **kwargs) -> dict:
+        """
+        Create FileReference after successful upload.
+
+        Args:
+            pending_upload: The pending upload record
+            note_id: Optional UUID of note to link file to
+            **kwargs: Additional parameters
+
+        Returns:
+            dict with file_id, file_name, object_key
+
+        Raises:
+            NoteNotFoundException: If note_id provided but note not found
+            FileNotUploadedException: If file size cannot be determined
+        """
+        storage = get_storage()
+
+        # Get file size
+        file_size = None
+        try:
+            file_size = storage.size(pending_upload.object_key)
+        except Exception:
+            try:
+                storage.delete(pending_upload.object_key)
+            except Exception:
+                pass
+            raise FileNotUploadedException(detail="File size could not be determined.")
+
+        # Get note if provided
+        note = None
+        if note_id:
+            try:
+                note = Note.objects.get(id=note_id)
+            except Note.DoesNotExist:
+                raise NoteNotFoundException(detail=f"Note with ID {note_id} not found.")
+
+        # Create FileReference
+        file_reference = FileReference(
+            file_name=pending_upload.file_name,
+            note=note,
+            user=pending_upload.user,
+            file_size=file_size,
+        )
+        # Set the file field to point to the already-uploaded object
+        file_reference.file.name = pending_upload.object_key
+        file_reference.save()
+
+        return {
+            "file_id": file_reference.id,
+            "file_name": file_reference.file_name,
+            "object_key": pending_upload.object_key,
+        }
+
+
+# Create the upload flow instance
+file_upload_flow = PresignedUploadFlow(
+    config=UploadConfig(
+        bucket_name=FileTransferStorage.bucket_name,
+        object_key_generator=_file_object_key_generator,
+    ),
+    pending_model=PendingUpload,
+    callbacks=FileUploadCallbacks(),
+)
+
+
 @extend_schema_view(
     get=extend_schema(
         summary="Initiate file upload",
-        description="Generates a presigned URL for uploading a file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
+        description="Generates a presigned URL for uploading a file. Checks user's upload quota before generating URL. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.",
         parameters=[
             OpenApiParameter(
                 name="fileName",
@@ -65,11 +139,22 @@ def get_storage():
                 location=OpenApiParameter.QUERY,
                 description="Name of the file to be uploaded",
                 required=True,
-            )
+            ),
+            OpenApiParameter(
+                name="fileSize",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Size of the file to be uploaded in bytes",
+                required=True,
+            ),
         ],
         responses={
             200: FileUploadResponseSerializer,
-            **get_error_responses(FileTransferErrorCodes.INVALID_FILE_NAME),
+            **get_error_responses(
+                FileTransferErrorCodes.INVALID_FILE_NAME,
+                UploadErrorCodes.INVALID_FILE_SIZE,
+                UploadErrorCodes.QUOTA_EXCEEDED,
+            ),
             **get_common_error_responses(),
         },
     )
@@ -86,7 +171,7 @@ class FileUpload(APIView):
         and then call the finalize endpoint.
 
         Args:
-            request: The request with query parameter `fileName`.
+            request: The request with query parameters `fileName` and `fileSize`.
 
         Returns:
             Response with upload_id, presigned_url, object_key, and expires_in.
@@ -97,57 +182,21 @@ class FileUpload(APIView):
                 detail="The 'fileName' query parameter is required."
             )
 
-        if PendingUpload.objects.filter(user=request.user).exists():
-            raise AlreadyUploadingException(
-                detail="You already have an open upload session. Please finalize the previous upload before starting a new one."
+        # Get and validate file size
+        file_size_str = request.query_params.get("fileSize")
+        if not file_size_str:
+            raise InvalidFileSizeException(
+                detail="The 'fileSize' query parameter is required."
             )
-
-        # Generate unique object key
-        upload_id = uuid.uuid4()
-        object_key = f"{upload_id}-{file_name}"
-
-        # Calculate expiration time
-        expires_at = timezone.now() + timedelta(seconds=UPLOAD_EXPIRY_SECONDS)
-
-        # Create pending upload record
-        pending_upload = PendingUpload.objects.create(
-            id=upload_id,
-            object_key=object_key,
-            file_name=file_name,
-            user=request.user,
-            expires_at=expires_at,
-        )
-
-        # Generate presigned URL for upload using boto3
-        storage = get_storage()
-        presigned_url = storage.connection.meta.client.generate_presigned_url(
-            "put_object",
-            Params={
-                "Bucket": storage.bucket_name,
-                "Key": object_key,
-            },
-            ExpiresIn=UPLOAD_EXPIRY_SECONDS,
-        )
-
-        # Schedule cleanup task for expired upload
-        from .tasks import cleanup_expired_upload
 
         try:
-            cleanup_expired_upload.apply_async(
-                args=(str(pending_upload.id),),
-                countdown=UPLOAD_EXPIRY_SECONDS + 60,  # Add 1 minute buffer
+            file_size = int(file_size_str)
+        except ValueError:
+            raise InvalidFileSizeException(
+                detail="The 'fileSize' parameter must be a valid integer."
             )
-        except Exception:
-            # If Celery is not available, cleanup will happen via periodic task
-            pass
 
-        response_data = {
-            "upload_id": upload_id,
-            "presigned_url": presigned_url,
-            "object_key": object_key,
-            "expires_in": UPLOAD_EXPIRY_SECONDS,
-        }
-
+        response_data = file_upload_flow.initiate(request.user, file_name, file_size)
         return Response(FileUploadResponseSerializer(response_data).data)
 
 
@@ -181,7 +230,7 @@ class FileUploadFinalize(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request, upload_id: str) -> Response:
+    def post(self, request: Request, upload_id: uuid.UUID) -> Response:
         """Finalize a file upload.
 
         Verifies the file exists in storage, creates a FileReference record,
@@ -189,80 +238,19 @@ class FileUploadFinalize(APIView):
 
         Args:
             request: The request with optional note_id in body.
-            upload_id: The upload ID from the initiation step.
+            upload_id: The upload ID from the initiation step (UUID object from URL).
 
         Returns:
             Response with file_id, file_name, and object_key.
         """
-        # Get pending upload
-        try:
-            pending_upload = PendingUpload.objects.get(id=upload_id, user=request.user)
-        except PendingUpload.DoesNotExist:
-            raise UploadNotFoundException(
-                detail=f"Upload with ID {upload_id} not found."
-            )
-
-        # Verify file exists in storage
-        storage = get_storage()
-        if not storage.exists(pending_upload.object_key):
-            raise FileNotUploadedException(
-                detail="File was not uploaded to the presigned URL."
-            )
-
-        # Check if upload has expired
-        if pending_upload.is_expired:
-            try:
-                storage.delete(pending_upload.object_key)
-            except Exception:
-                pass
-            pending_upload.delete()
-            raise UploadExpiredException(
-                detail="Upload has expired. Please initiate a new upload."
-            )
-
-        file_size = None
-        try:
-            file_size = storage.size(pending_upload.object_key)
-        except Exception:
-            try:
-                storage.delete(pending_upload.object_key)
-            except Exception:
-                pass
-            pending_upload.delete()
-            raise FileNotUploadedException(detail="File size could not be determined.")
-
         # Parse request body for note_id
         serializer = FileUploadFinalizeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        note_id = serializer.validated_data.get("note_id")
 
-        # Get note if provided
-        note = None
-        if note_id:
-            try:
-                note = Note.objects.get(id=note_id)
-            except Note.DoesNotExist:
-                raise NoteNotFoundException(detail=f"Note with ID {note_id} not found.")
-
-        # Create FileReference
-        file_reference = FileReference(
-            file_name=pending_upload.file_name,
-            note=note,
-            user=request.user,
-            file_size=file_size,
+        # Finalize upload via flow
+        response_data = file_upload_flow.finalize(
+            upload_id, request.user, **serializer.validated_data
         )
-        # Set the file field to point to the already-uploaded object
-        file_reference.file.name = pending_upload.object_key
-        file_reference.save()
-
-        # Delete pending upload
-        pending_upload.delete()
-
-        response_data = {
-            "file_id": file_reference.id,
-            "file_name": file_reference.file_name,
-            "object_key": pending_upload.object_key,
-        }
 
         return Response(
             FileUploadFinalizeResponseSerializer(response_data).data,

@@ -10,6 +10,7 @@ from entries.models import Entry, EntryClass
 from management.settings import cradle_settings
 
 from .storage import FileTransferStorage
+from .uploads.models import BasePendingUpload
 
 if TYPE_CHECKING:
     pass
@@ -20,33 +21,18 @@ def file_upload_path(instance: "FileReference", filename: str) -> str:
     return f"{instance.id}-{filename}"
 
 
-class PendingUpload(models.Model):
+class PendingUpload(BasePendingUpload):
     """
     Tracks pending file uploads that have been initiated but not yet finalized.
     Used to manage presigned URL uploads and cleanup of abandoned uploads.
     """
 
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    object_key: models.CharField = models.CharField(max_length=512)
-    file_name: models.CharField = models.CharField(max_length=255)
-    user: models.ForeignKey = models.ForeignKey(
-        "user.CradleUser",
-        related_name="pending_uploads",
-        on_delete=models.CASCADE,
-    )
-    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    expires_at: models.DateTimeField = models.DateTimeField()
-
     class Meta:
-        indexes = [
-            models.Index(fields=["expires_at"]),
-        ]
+        db_table = "file_transfer_pendingupload"
 
-    @property
-    def is_expired(self) -> bool:
-        return timezone.now() > self.expires_at
+    def get_bucket_name(self) -> str:
+        """Get the S3 bucket name for file transfers."""
+        return FileTransferStorage.bucket_name
 
 
 class FileReference(models.Model, LifecycleModelMixin):
