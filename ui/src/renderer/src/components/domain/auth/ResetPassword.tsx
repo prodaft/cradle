@@ -72,7 +72,7 @@ export default function ResetPassword() {
                         <p className='mt-10 text-center text-sm text-gray-500'>
                             <Link
                                 to='/login'
-                                className='font-semibold leading-6 text-cradle2 hover:opacity-90 hover:shadow-gray-400'
+                                className='font-semibold leading-6 text-cradle2 px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors hover:shadow-gray-400'
                                 replace={true}
                             >
                                 Go back to login

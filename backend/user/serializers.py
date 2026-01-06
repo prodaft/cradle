@@ -12,7 +12,7 @@ from .exceptions import (
     DuplicateUserException,
     InvalidPasswordException,
 )
-from .models import CradleUser
+from .models import CradleUser, UserSession
 from .utils.validators import password_validator
 
 
@@ -371,3 +371,23 @@ class DefaultNoteTemplateResponseSerializer(serializers.Serializer):
 
     class Meta:
         ref_name = "DefaultNoteTemplateResponse"
+
+
+class UserSessionSerializer(serializers.ModelSerializer):
+    """Serializer for user session information."""
+
+    refresh_token_jti = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = UserSession
+        fields = [
+            "id",
+            "refresh_token_jti",
+            "device_info",
+            "ip_address",
+            "created_at",
+            "last_activity",
+            "expires_at",
+            "is_current",
+        ]
+        read_only_fields = fields

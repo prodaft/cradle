@@ -96,7 +96,7 @@ export default function AlertDismissible({
                     <div className='flex flex-row items-center justify-between px-4'>
                         <p>{alert.message}</p>
                         <button
-                            className={`${colorVariants[alert.color]} hover:opacity-90 text-white font-bold py-2 pl-4 alert-dismiss-button`}
+                            className={`${colorVariants[alert.color]} hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-white font-bold py-2 pl-4 alert-dismiss-button`}
                             onClick={() => setAlert('')}
                         >
                             <Xmark strokeWidth='2' stroke='white' fill='none' />

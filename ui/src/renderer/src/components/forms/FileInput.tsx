@@ -248,8 +248,8 @@ export default function FileInput({
                     disabled={isUploading}
                 />
                 <button
-                    type="button"
-                    className="rounded-xl border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                    type='button'
+                    className='rounded-xl border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
                     onClick={handleUpload}
                     disabled={isUploading || pendingFiles.length === 0}
                 >
@@ -267,26 +267,24 @@ export default function FileInput({
                     {filesWithStatus.map(({ file, status, error }, index) => (
                         <li
                             key={`${file.name}-${index}`}
-                            className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${
-                                status === 'error'
+                            className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${status === 'error'
                                     ? 'bg-red-500/5'
                                     : status === 'success'
-                                      ? 'bg-green-500/5'
-                                      : status === 'uploading'
-                                        ? 'bg-cradle-accent-primary/5'
-                                        : ''
-                            }`}
+                                        ? 'bg-green-500/5'
+                                        : status === 'uploading'
+                                            ? 'bg-cradle-accent-primary/5'
+                                            : ''
+                                }`}
                             title={error || undefined}
                         >
                             <div className="flex-shrink-0">{renderStatusIcon(status)}</div>
                             <span
-                                className={`text-sm truncate flex-1 ${
-                                    status === 'error'
+                                className={`text-sm truncate flex-1 ${status === 'error'
                                         ? 'text-red-500'
                                         : status === 'success'
-                                          ? 'text-green-500'
-                                          : 'text-cradle-text-primary'
-                                }`}
+                                            ? 'text-green-500'
+                                            : 'text-cradle-text-primary'
+                                    }`}
                             >
                                 {file.name}
                             </span>

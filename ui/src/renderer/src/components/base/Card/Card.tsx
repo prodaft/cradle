@@ -82,7 +82,7 @@ export default function Card({
     // Filter actions based on 'show' property (defaults to true if not specified)
     const visibleActions = actions.filter((action) => action.show !== false);
     const baseClasses =
-        'px-1 pb-1 rounded-lg transition-colors duration-200 flex items-center justify-center w-7 h-7 hover:bg-cradle-bg-tertiary';
+        'px-1 pb-1 rounded-lg transition-colors duration-200 flex items-center justify-center w-7 h-7 hover:bg-cradle-bg-secondary';
 
     return (
         <div

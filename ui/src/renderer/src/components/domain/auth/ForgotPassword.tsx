@@ -61,7 +61,7 @@ export default function ForgotPassword() {
                                         state={location.state}
                                     >
                                         <button
-                                            className='cradle-btn p-2 rounded-full'
+                                            className='cradle-btn p-2 rounded-lg'
                                             data-testid='back-button'
                                             title='Back to Login'
                                         >

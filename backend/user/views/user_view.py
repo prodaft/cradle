@@ -34,7 +34,7 @@ from ..exceptions import (
     UserErrorCodes,
     UserNotFoundException,
 )
-from ..models import CradleUser
+from ..models import BlacklistedToken, CradleUser, UserSession
 from ..serializers import (
     APIKeyRequestSerializer,
     APIKeyResponseSerializer,
@@ -50,6 +50,7 @@ from ..serializers import (
     UserCreateSerializerAdmin,
     UserManageResponseSerializer,
     UserRetrieveSerializer,
+    UserSessionSerializer,
     UserUpdateSerializer,
 )
 
@@ -673,3 +674,124 @@ class DefaultNoteTemplateView(APIView):
             {"template": edited.default_note_template},
             status=status.HTTP_200_OK,
         )
+
+
+@extend_schema_view(
+    get=extend_schema(
+        summary="List user sessions",
+        description="Returns a list of active sessions for the specified user. Users can only view their own sessions.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to list sessions for the current user",
+            ),
+        ],
+        responses={
+            200: UserSessionSerializer(many=True),
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+    delete=extend_schema(
+        summary="Revoke user session",
+        description="Revokes a specific session by ID. Users can only revoke their own sessions.",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to revoke session for the current user",
+            ),
+            OpenApiParameter(
+                name="session_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the session to revoke",
+            ),
+        ],
+        responses={
+            204: {"description": "Session revoked successfully"},
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserSessionsView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, user_id):
+        """List all active sessions for a user."""
+        initiator = cast(CradleUser, request.user)
+        user = None
+        if user_id == "me":
+            user = initiator
+        else:
+            try:
+                user = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
+                )
+
+        # Users can only view their own sessions
+        if initiator.pk != user.pk:
+            raise DisallowedActionException(
+                detail="You are not allowed to view sessions for this user."
+            )
+
+        # Get all non-expired sessions, ordered by last activity
+        sessions = UserSession.objects.filter(
+            user=user, expires_at__gt=timezone.now()
+        ).order_by("-last_activity")
+
+        # Mark current session - we can't get refresh token from Authorization header
+        # (it contains access token), so we'll rely on frontend to determine current session
+        # by comparing refresh_token_jti. For now, mark all as not current.
+        sessions.update(is_current=False)
+
+        serializer = UserSessionSerializer(sessions, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, user_id, session_id):
+        """Revoke a specific session."""
+        initiator = cast(CradleUser, request.user)
+        user = None
+        if user_id == "me":
+            user = initiator
+        else:
+            try:
+                user = CradleUser.objects.get(id=user_id)
+            except CradleUser.DoesNotExist:
+                raise UserNotFoundException(
+                    detail="There is no user with the specified ID."
+                )
+
+        # Users can only revoke their own sessions
+        if initiator.pk != user.pk:
+            raise DisallowedActionException(
+                detail="You are not allowed to revoke sessions for this user."
+            )
+
+        try:
+            session = UserSession.objects.get(id=session_id, user=user)
+            # Blacklist the refresh token before deleting the session
+            refresh_token_jti = session.refresh_token_jti
+            expires_at = session.expires_at
+            
+            # Add token to blacklist
+            BlacklistedToken.blacklist_token(refresh_token_jti, expires_at)
+            
+            # Delete the session
+            session.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except UserSession.DoesNotExist:
+            raise UserNotFoundException(detail="Session not found.")

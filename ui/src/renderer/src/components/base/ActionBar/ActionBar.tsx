@@ -32,8 +32,8 @@ export const ActionBarButton = memo(function ActionBarButton({
 }: ActionBarButtonProps) {
   const baseClass =
     variant === 'circle'
-      ? 'flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors rounded-full'
-      : 'flex items-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full';
+      ? 'flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg'
+      : 'flex items-center gap-2 px-3 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
   // Many pages rely on icon color toggling based on whether an action is "active" (e.g. selected count > 0).
   const iconWrapperClass = iconActive ? 'text-[#FF8C00]' : 'text-cradle-text-secondary';
@@ -140,7 +140,7 @@ export const ActionBarSearch = memo(function ActionBarSearch({
         <button
           type='button'
           onClick={() => setIsExpanded(true)}
-          className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary rounded-full'
+          className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary rounded-lg'
           title='Search'
         >
           <Search className='w-4 h-4' />
@@ -294,11 +294,11 @@ export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
 
   // Circle button style (perfect circle)
   const circleButtonClass =
-    'flex items-center justify-center w-10 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed rounded-full';
+    'flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
   // Pill button style (for MoreHoriz with count)
   const pillButtonClass =
-    'flex items-center justify-center gap-2 px-3 h-10 border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed rounded-full';
+    'flex items-center justify-center gap-2 px-3 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
   const renderActionButton = (action: CollapsibleAction, animated = false, animationIndex = 0) => {
     const button = (

@@ -141,7 +141,7 @@ export default function ExplorerPanel({ selectedNodes, allNodes, edges, onNodeCl
                                                 key={connectedNode.id}
                                                 type='button'
                                                 onClick={() => onNodeClick?.(connectedNode)}
-                                                className='inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-md border border-cradle-border-accent hover:border-cradle-accent-primary hover:bg-cradle-accent-primary/10 transition-colors cursor-pointer'
+                                                className='inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-md border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cursor-pointer'
                                                 title={`Click to select ${connectedNode.label || connectedNode.name || connectedNode.id}`}
                                             >
                                                 {connectedNode.color && (

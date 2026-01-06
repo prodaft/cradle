@@ -222,9 +222,7 @@ export default function NoteSettingsForm() {
                                             snippetListRef.current?.handleAddSnippet();
                                         }}
                                     />
-                                    <div className='mt-4'>
-                                        <SnippetList ref={snippetListRef} userId='null' showTitle={false} />
-                                    </div>
+                                    <SnippetList ref={snippetListRef} userId='null' showTitle={false} />
                                 </SettingsCard>
                             </div>
                         </section>
@@ -263,7 +261,7 @@ export default function NoteSettingsForm() {
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
                             <button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-full'
+                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Saving...' : 'Save Settings'}

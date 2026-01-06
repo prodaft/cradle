@@ -153,7 +153,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
     };
 
     return (
-        <div className='w-full'>
+        <div className='w-full pb-2'>
             {/* Header with title and add button */}
             {showTitle && (
                 <div className='flex items-center justify-between mb-3'>

@@ -14,23 +14,13 @@ import {
     createTab,
     getIconForPath,
     getTitleForPath,
+    PaneState,
     shouldExcludeFromTabs,
+    Tab,
     validatePaneState,
 } from '../../utils/tabs';
 import { useLayout } from '../ui/LayoutContext';
 import { useTabHost } from './TabHostContext';
-
-interface Tab {
-    id: string;
-    path: string;
-    title: string;
-    icon: ReactNode;
-}
-
-interface PaneState {
-    tabs: Tab[];
-    activeTabIndex: number;
-}
 
 interface PaneTabsState {
     [paneId: string]: PaneState;
@@ -94,7 +84,8 @@ interface PaneTabsProviderProps {
 export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
     // Store tabs per pane: { [paneId]: { tabs: [], activeTabIndex: number } }
     const [paneTabsState, setPaneTabsState] = useState<PaneTabsState>({});
-    const [isNavigatingToTab, setIsNavigatingToTab] = useState(false);
+    // Use ref instead of state for synchronous flag checking
+    const isNavigatingToTabRef = useRef(false);
     const location: Location = useLocation();
     const navigate = useNavigate();
     const { activePaneId, getAllPaneIds, closePane } = useLayout();
@@ -113,11 +104,12 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
     const safeNavigate = useCallback(
         (path: string) => {
             try {
-                setIsNavigatingToTab(true);
+                // Use ref for synchronous flag update before navigation
+                isNavigatingToTabRef.current = true;
                 navigate(path);
             } catch (error) {
                 console.error('Navigation failed:', error);
-                setIsNavigatingToTab(false);
+                isNavigatingToTabRef.current = false;
             }
         },
         [navigate],
@@ -133,6 +125,8 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     return current;
                 }
 
+                // Use initialPath if provided, otherwise use current location
+                // Don't add location.pathname to dependencies to avoid unnecessary recreations
                 const path = initialPath || location.pathname || '/';
                 return {
                     ...current,
@@ -140,7 +134,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             });
         },
-        [location.pathname],
+        [], // Intentionally empty - we read location.pathname but don't depend on it
     );
 
     // Initialize active pane on mount (only if it doesn't exist yet)
@@ -148,7 +142,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
         if (activePaneId && !paneTabsState[activePaneId]) {
             initializePaneIfNeeded(activePaneId);
         }
-    }, [activePaneId, initializePaneIfNeeded]);
+    }, [activePaneId, paneTabsState, initializePaneIfNeeded]);
 
     // Update active pane's tab when location changes
     useEffect(() => {
@@ -168,9 +162,9 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
             return;
         }
 
-        // Skip if we're in the middle of a programmatic navigation
-        if (isNavigatingToTab) {
-            setIsNavigatingToTab(false);
+        // Skip if we're in the middle of a programmatic navigation (use ref for sync check)
+        if (isNavigatingToTabRef.current) {
+            isNavigatingToTabRef.current = false;
             return;
         }
 
@@ -249,7 +243,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 },
             };
         });
-    }, [location.pathname, activePaneId, isNavigatingToTab]);
+    }, [location.pathname, activePaneId]);
 
     /**
      * Opens a new tab in a specific pane
@@ -302,6 +296,8 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
      */
     const closeTab = useCallback(
         (paneId: string, index: number) => {
+            let pathToNavigate: string | null = null;
+
             setPaneTabsState((current) => {
                 const paneState = current[paneId];
                 if (!paneState || !validatePaneState(paneState)) {
@@ -354,7 +350,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     newActiveIndex = index > 0 ? index - 1 : 0;
                     // Only navigate if this is the active pane
                     if (paneId === activePaneId && newTabs[newActiveIndex]) {
-                        safeNavigate(newTabs[newActiveIndex].path);
+                        pathToNavigate = newTabs[newActiveIndex].path;
                     }
                 } else if (index < activeTabIndex) {
                     newActiveIndex = activeTabIndex - 1;
@@ -368,6 +364,11 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     },
                 };
             });
+
+            // Navigate after state update to avoid setState during render
+            if (pathToNavigate) {
+                safeNavigate(pathToNavigate);
+            }
         },
         [safeNavigate, getAllPaneIds, activePaneId, destroyTabContainer],
     );
@@ -377,6 +378,8 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
      */
     const switchToTab = useCallback(
         (paneId: string, index: number) => {
+            let pathToNavigate: string | null = null;
+
             setPaneTabsState((current) => {
                 const paneState = current[paneId];
                 if (
@@ -390,7 +393,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
 
                 // Only navigate if this is the active pane
                 if (paneId === activePaneId) {
-                    safeNavigate(paneState.tabs[index].path);
+                    pathToNavigate = paneState.tabs[index].path;
                 }
 
                 return {
@@ -401,6 +404,11 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     },
                 };
             });
+
+            // Navigate after state update to avoid setState during render
+            if (pathToNavigate) {
+                safeNavigate(pathToNavigate);
+            }
         },
         [safeNavigate, activePaneId],
     );
@@ -410,6 +418,8 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
      */
     const closeOtherTabs = useCallback(
         (paneId: string, index: number) => {
+            let pathToNavigate: string | null = null;
+
             setPaneTabsState((current) => {
                 const paneState = current[paneId];
                 if (
@@ -432,7 +442,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
 
                 // Only navigate if this is the active pane
                 if (paneId === activePaneId) {
-                    safeNavigate(tabToKeep.path);
+                    pathToNavigate = tabToKeep.path;
                 }
 
                 return {
@@ -443,6 +453,11 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     },
                 };
             });
+
+            // Navigate after state update to avoid setState during render
+            if (pathToNavigate) {
+                safeNavigate(pathToNavigate);
+            }
         },
         [safeNavigate, activePaneId, destroyTabContainer],
     );
@@ -452,6 +467,8 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
      */
     const closeTabsToRight = useCallback(
         (paneId: string, index: number) => {
+            let pathToNavigate: string | null = null;
+
             setPaneTabsState((current) => {
                 const paneState = current[paneId];
                 if (
@@ -478,7 +495,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     newActiveIndex = index;
                     // Only navigate if this is the active pane
                     if (paneId === activePaneId) {
-                        safeNavigate(newTabs[index].path);
+                        pathToNavigate = newTabs[index].path;
                     }
                 }
 
@@ -490,6 +507,11 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     },
                 };
             });
+
+            // Navigate after state update to avoid setState during render
+            if (pathToNavigate) {
+                safeNavigate(pathToNavigate);
+            }
         },
         [safeNavigate, activePaneId, destroyTabContainer],
     );
@@ -544,6 +566,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
     const createNewTab = useCallback(
         (paneId: string) => {
             const welcomeTab = createTab('/');
+            const shouldNavigate = paneId === activePaneId;
 
             setPaneTabsState((current) => {
                 const paneState = current[paneId];
@@ -572,8 +595,8 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 };
             });
 
-            // Only navigate if this is the active pane
-            if (paneId === activePaneId) {
+            // Navigate after state update to avoid setState during render
+            if (shouldNavigate) {
                 safeNavigate('/');
             }
         },
@@ -635,6 +658,7 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
 
             // Get all pane IDs to check if we should close the source pane
             const allPaneIds = getAllPaneIds();
+            let pathToNavigate: string | null = null;
 
             setPaneTabsState((current) => {
                 const fromPaneState = current[fromPaneId];
@@ -684,6 +708,10 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     const insertIndex = toIndex >= 0 ? toIndex : newToTabs.length;
                     newToTabs.splice(insertIndex, 0, tabToMove);
 
+                    if (toPaneId === activePaneId) {
+                        pathToNavigate = tabToMove.path;
+                    }
+
                     return {
                         ...current,
                         [fromPaneId]: {
@@ -705,7 +733,11 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                 // Set the moved tab as active in target pane
                 const newToActiveIndex = insertIndex;
 
-                const newState = {
+                if (toPaneId === activePaneId) {
+                    pathToNavigate = tabToMove.path;
+                }
+
+                return {
                     ...current,
                     [fromPaneId]: {
                         tabs: newFromTabs,
@@ -719,12 +751,12 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                         activeTabIndex: newToActiveIndex,
                     },
                 };
-
-                if (toPaneId === activePaneId) {
-                    safeNavigate(tabToMove.path);
-                }
-                return newState;
             });
+
+            // Navigate after state update to avoid setState during render
+            if (pathToNavigate) {
+                safeNavigate(pathToNavigate);
+            }
         },
         [safeNavigate, activePaneId, reorderTabs, getAllPaneIds],
     );
@@ -815,13 +847,6 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
 
                 // Get the tab to move (keep original ID - we're moving, not copying)
                 const tabToMove = actualSourceState.tabs[sourceIndex];
-                console.log(
-                    '[TabSplit] Moving tab:',
-                    tabToMove.id,
-                    'from pane:',
-                    sourcePaneId,
-                    'to new pane',
-                );
 
                 // Build new state
                 const newState: PaneTabsState = { ...current };
@@ -902,13 +927,6 @@ export const PaneTabsProvider = ({ children }: PaneTabsProviderProps) => {
                     tabs: [tabToMove],
                     activeTabIndex: 0,
                 };
-
-                console.log(
-                    '[TabSplit] Final state - Original pane tabs:',
-                    newState[originalPaneId]?.tabs.map((t) => t.id),
-                    'New pane tabs:',
-                    newState[newPaneId]?.tabs.map((t) => t.id),
-                );
 
                 return newState;
             });

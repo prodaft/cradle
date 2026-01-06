@@ -389,7 +389,7 @@ export default function GraphViewer({
                                 className={`cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border flex items-center justify-center ${
                                     activePanel === 'explorer'
                                         ? 'border-cradle-accent-primary' 
-                                        : 'border-cradle-border-accent hover:border-cradle-accent-primary'
+                                        : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
                                 }`}
                                 title='Toggle explorer panel'
                                 onClick={() => onTogglePanel('explorer')}
@@ -405,7 +405,7 @@ export default function GraphViewer({
                                 className={`cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border flex items-center justify-center ${
                                     activePanel === 'display'
                                         ? 'border-cradle-accent-primary' 
-                                        : 'border-cradle-border-accent hover:border-cradle-accent-primary'
+                                        : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
                                 }`}
                                 title='Toggle display panel'
                                 onClick={() => onTogglePanel('display')}
@@ -417,7 +417,7 @@ export default function GraphViewer({
                         {/* Simulation Toggle Button - Non-functional, kept for future use */}
                         <button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center opacity-50 cursor-not-allowed'
+                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center opacity-50 cursor-not-allowed'
                             title='Toggle simulation (coming soon)'
                             onClick={() => {
                                 // Non-functional - simulation is always disabled
@@ -433,7 +433,7 @@ export default function GraphViewer({
                         {/* Fit View Button */}
                         <button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center'
+                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
                             title='Fit view to show all nodes'
                             onClick={() => {
                                 try {
@@ -463,7 +463,7 @@ export default function GraphViewer({
                         
                         <button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center'
+                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
                             title='Zoom in'
                             onClick={() => {
                                 try {
@@ -490,7 +490,7 @@ export default function GraphViewer({
                         </button>
                         <button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent hover:border-cradle-accent-primary flex items-center justify-center'
+                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
                             title='Zoom out'
                             onClick={() => {
                                 try {

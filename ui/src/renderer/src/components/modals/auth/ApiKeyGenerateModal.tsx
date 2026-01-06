@@ -101,7 +101,7 @@ export default function ApiKeyGenerateModal({
                     <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                         <button
                             type='button'
-                            className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                            className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
                             onClick={closeModal}
                             disabled={loading}
                         >
@@ -109,7 +109,7 @@ export default function ApiKeyGenerateModal({
                         </button>
                         <button
                             type='button'
-                            className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                            className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
                             onClick={handleGenerate}
                             disabled={loading}
                         >
@@ -171,7 +171,7 @@ export default function ApiKeyGenerateModal({
                     <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
                         <button
                             type='button'
-                            className='rounded-full border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                            className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
                             onClick={closeModal}
                         >
                             <span>Close</span>

@@ -93,7 +93,7 @@ export default function FileTable({
                                                 <button
                                                     id={`insert-${index}`}
                                                     data-testid={`insert-${index}`}
-                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
                                                     onClick={() =>
                                                         insertTextCallback(
                                                             `[${data.fileName}][${data.id}-${data.fileName}]`,
@@ -109,7 +109,7 @@ export default function FileTable({
                                                 <button
                                                     id={`copy-${index}`}
                                                     data-testid={`copy-${index}`}
-                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
                                                     onClick={() =>
                                                         copyToClipboard(
                                                             `[${data.fileName}][${data.id}-${data.fileName}]`,
@@ -125,7 +125,7 @@ export default function FileTable({
                                                 <button
                                                     id={`download-${index}`}
                                                     data-testid={`download-${index}`}
-                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
                                                     onClick={() => handleDownload(data)}
                                                 >
                                                     <Download width='20px' />
@@ -137,7 +137,7 @@ export default function FileTable({
                                                 <button
                                                     id={`delete-${index}`}
                                                     data-testid={`delete-${index}`}
-                                                    className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
+                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
                                                     onClick={() => {
                                                         setModal(ConfirmDeletionModal, {
                                                             text: 'Are you sure you want to delete this file?',

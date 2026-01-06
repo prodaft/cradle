@@ -4,6 +4,7 @@ from typing import Optional
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 from django_otp.plugins.otp_totp.models import TOTPDevice
 
 from access.enums import AccessType
@@ -245,3 +246,90 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             TOTPDevice.objects.filter(user=self).delete()
             self.two_factor_enabled = False
             self.save(update_fields=["two_factor_enabled"])
+
+
+class UserSession(models.Model):
+    """Track active user sessions based on refresh tokens."""
+
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    user: models.ForeignKey = models.ForeignKey(
+        CradleUser, on_delete=models.CASCADE, related_name="sessions"
+    )
+    refresh_token_jti: models.CharField = models.CharField(
+        max_length=255, unique=True, db_index=True, help_text="JWT ID of the refresh token"
+    )
+    device_info: Optional[str] = models.CharField(
+        max_length=255, blank=True, null=True, help_text="Device/browser information"
+    )
+    ip_address: Optional[str] = models.CharField(
+        max_length=45, blank=True, null=True, help_text="IP address of the session"
+    )
+    created_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="When the session was created"
+    )
+    last_activity: models.DateTimeField = models.DateTimeField(
+        auto_now=True, help_text="Last activity timestamp"
+    )
+    expires_at: models.DateTimeField = models.DateTimeField(
+        help_text="When the refresh token expires"
+    )
+    is_current: models.BooleanField = models.BooleanField(
+        default=False, help_text="Whether this is the current session"
+    )
+
+    class Meta:
+        ordering = ["-last_activity"]
+        indexes = [
+            models.Index(fields=["user", "-last_activity"]),
+            models.Index(fields=["refresh_token_jti"]),
+        ]
+
+    def __str__(self):
+        return f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
+
+    def is_expired(self):
+        """Check if the session has expired."""
+        return datetime.now() > self.expires_at
+
+
+class BlacklistedToken(models.Model):
+    """Track blacklisted refresh tokens to prevent their use after revocation."""
+
+    jti: models.CharField = models.CharField(
+        max_length=255, unique=True, db_index=True, help_text="JWT ID of the blacklisted token"
+    )
+    blacklisted_at: models.DateTimeField = models.DateTimeField(
+        auto_now_add=True, help_text="When the token was blacklisted"
+    )
+    expires_at: models.DateTimeField = models.DateTimeField(
+        help_text="When the token expires (for cleanup purposes)"
+    )
+
+    class Meta:
+        ordering = ["-blacklisted_at"]
+        indexes = [
+            models.Index(fields=["jti"]),
+        ]
+
+    def __str__(self):
+        return f"Blacklisted token {self.jti}"
+
+    @classmethod
+    def is_blacklisted(cls, jti: str) -> bool:
+        """Check if a token JTI is blacklisted."""
+        return cls.objects.filter(jti=jti).exists()
+
+    @classmethod
+    def blacklist_token(cls, jti: str, expires_at: datetime):
+        """Add a token JTI to the blacklist."""
+        cls.objects.get_or_create(
+            jti=jti,
+            defaults={"expires_at": expires_at},
+        )
+
+    @classmethod
+    def cleanup_expired(cls):
+        """Remove expired blacklisted tokens."""
+        cls.objects.filter(expires_at__lt=timezone.now()).delete()

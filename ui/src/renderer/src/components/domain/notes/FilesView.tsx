@@ -62,7 +62,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                 label: 'Uploaded At',
                                 className: 'w-32',
                             },
-                            { key: 'actions', label: '', className: 'w-8' },
+                            { key: 'actions', label: '', className: 'w-32', sortable: false },
                         ]}
                         renderRow={(file: FileReferenceWithNote, index: number) => (
                             <tr key={file.id || index}>
@@ -112,8 +112,8 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     {file.timestamp &&
                                         formatDate(new Date(file.timestamp))}
                                 </td>
-                                <td className='w-8'>
-                                    <div className='flex space-x-1 justify-end'>
+                                <td className='w-32 text-right'>
+                                    <div className='flex justify-end space-x-1'>
                                         {file.id && (
                                             <button
                                                 onClick={async () =>
@@ -130,14 +130,15 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                         )}
                                     </div>
                                 </td>
-                            </tr>
-                        )}
+                            </tr >
+                        )
+                        }
                         loading={false}
                         emptyMessage='No files found!'
                         tableClassName='table'
                     />
-                </div>
-            </div>
-        </div>
+                </div >
+            </div >
+        </div >
     );
 }

@@ -25,6 +25,7 @@ import ListView, { DateRangeFilter, SortDirection } from '../../base/ListView/Li
 import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
+import TableActionsButton from '../../base/TableActionsButton';
 import Tooltip from '../../base/Tooltip/Tooltip';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import EnrichmentRequestModal from '../../modals/enrichment/EnrichmentRequestModal';
@@ -474,6 +475,7 @@ export default function NotesList({
             { key: 'editor', label: 'Editor', filterType: 'text' as const },
             { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
             { key: 'lastChanged', label: 'Updated At', filterType: 'date' as const },
+            { key: 'actions', label: '', sortable: false },
         ];
 
     const renderNotePreview = (note: NoteRetrieve) => {
@@ -566,8 +568,83 @@ export default function NotesList({
                             ? formatDate(new Date(note.editTimestamp))
                             : '-'}
                     </td>
+                    <td className='w-12 text-right' onClick={(e) => e.stopPropagation()}>
+                        <div className='flex justify-end'>
+                            <RowActionsButton note={note} />
+                        </div>
+                    </td>
                 </tr>
             </PreviewTip>
+        );
+    };
+
+    // Row Actions Button Component
+    const RowActionsButton = ({ note }: { note: NoteRetrieve }) => {
+        const menuButtonClasses = 'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
+
+        const handleDelete = () => {
+            if (actions[0]?.handler) {
+                actions[0].handler([note.id!]);
+            }
+        };
+
+        const handleRetry = () => {
+            handleRetrySelected([note.id!]);
+        };
+
+        const handleReport = () => {
+            const noteObject = {
+                id: note.id!,
+                title: note.metadata?.title || note.title || 'Untitled',
+            };
+            setModal(ReportGenerationModal, {
+                selectedNotes: [noteObject],
+            });
+        };
+
+        const handleEnrich = () => {
+            const noteObject = {
+                id: note.id!,
+                title: note.metadata?.title || note.title || 'Untitled',
+                entities: note.entities,
+            };
+            setModal(EnrichmentRequestModal, {
+                notesList: [noteObject],
+            });
+        };
+
+        return (
+            <TableActionsButton>
+                <button
+                    onClick={handleRetry}
+                    className={menuButtonClasses}
+                >
+                    <RefreshCircle width='18' height='18' />
+                    Retry
+                </button>
+                <button
+                    onClick={handleReport}
+                    className={menuButtonClasses}
+                >
+                    <StatsReport width='18' height='18' />
+                    Generate Report
+                </button>
+                <button
+                    onClick={handleEnrich}
+                    className={menuButtonClasses}
+                >
+                    <Sparks width='18' height='18' />
+                    Enrich
+                </button>
+                <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1 -mx-1' />
+                <button
+                    onClick={handleDelete}
+                    className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
+                >
+                    <Trash width='18' height='18' className='text-red-500' />
+                    Delete
+                </button>
+            </TableActionsButton>
         );
     };
 
@@ -583,15 +660,6 @@ export default function NotesList({
                                         selectedCount={selectedNotes.length}
                                         itemLabel='note'
                                         actions={[
-                                            ...(onCreateNote ? [{
-                                                id: 'create',
-                                                tooltip: 'Create new note (Ctrl+N)',
-                                                icon: <PlusCircle width={18} height={18} />,
-                                                onClick: onCreateNote,
-                                                disabled: loading,
-                                                iconActive: true,
-                                                alwaysVisible: true,
-                                            }] : []),
                                             {
                                                 id: 'delete',
                                                 tooltip: selectedNotes.length > 0
@@ -694,21 +762,20 @@ export default function NotesList({
                         </>
                     }
                     right={
-                        <PaginationWrapper
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={(newSize) => {
-                                setPageSize(newSize);
-                                setPage(1);
-                                const newParams = new URLSearchParams(searchParams);
-                                newParams.set('notes_page', '1');
-                                newParams.set('notes_pagesize', String(newSize));
-                                setSearchParams(newParams, { replace: true });
-                            }}
-                            disabled={notes.length === 0}
-                        />
+                        <>
+                            {onCreateNote && (
+                                <Tooltip content='Create new note (Ctrl+N)'>
+                                    <button
+                                        type='button'
+                                        onClick={onCreateNote}
+                                        disabled={loading}
+                                        className='flex items-center gap-1.5 px-4 h-9 text-sm rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+                                    >
+                                        New
+                                    </button>
+                                </Tooltip>
+                            )}
+                        </>
                     }
                 />
 
@@ -728,6 +795,24 @@ export default function NotesList({
                     setSelected={setSelectedNotes}
                     filterableColumns={filterableColumns}
                     filterValues={columnFilters}
+                />
+
+                <PaginationWrapper
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    pageSize={pageSize}
+                    onPageSizeChange={(newSize) => {
+                        setPageSize(newSize);
+                        setPage(1);
+                        const newParams = new URLSearchParams(searchParams);
+                        newParams.set('notes_page', '1');
+                        newParams.set('notes_pagesize', String(newSize));
+                        setSearchParams(newParams, { replace: true });
+                    }}
+                    disabled={notes.length === 0}
+                    selectedCount={selectedNotes.length}
+                    totalRows={totalCount}
                 />
             </div>
         </PreviewTipProvider>

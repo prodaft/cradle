@@ -11,11 +11,12 @@ import AlertBox from '@components/base/Alert/AlertBox';
 import Badge from '@components/base/Badge/Badge';
 import ListView from '@components/base/ListView/ListView';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
+import TableActionsButton from '@components/base/TableActionsButton';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import bytes from 'bytes';
 import { Download, RefreshCircle, Trash } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
 interface FilesListQuery {
@@ -351,6 +352,7 @@ export default function FilesList({
             { key: 'fileSize', label: 'Size', className: 'w-24' },
             { key: 'sha256', label: 'SHA256', className: 'w-48' },
             { key: 'uploadedAt', label: 'Uploaded At', className: 'w-32' },
+            { key: 'actions', label: '', className: 'w-12', sortable: false },
         ],
         [resetToFirstPage, statusFilter],
     );
@@ -360,6 +362,69 @@ export default function FilesList({
         isSelected?: boolean;
         onSelect?: () => void;
     }
+
+    // Row Actions Button Component
+    const RowActionsButton = ({ file }: { file: FileReferenceWithNote }) => {
+        const menuButtonClasses = 'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
+
+        const handleDownload = () => {
+            handleDownloadFile(file);
+        };
+
+        const handleReprocess = async () => {
+            try {
+                await execute(() => fileTransferApi.fileTransferProcessCreate({
+                    fileProcessRequest: {
+                        fileId: file.id!,
+                    },
+                }));
+                notify({
+                    type: 'success',
+                    text: 'File queued for reprocessing',
+                });
+            } catch (error) {
+                console.error('Reprocess file failed:', error);
+                notify({
+                    type: 'error',
+                    text: 'Failed to reprocess file',
+                });
+            }
+        };
+
+        const handleDelete = () => {
+            setModal(ConfirmDeletionModal, {
+                text: `Are you sure you want to delete this file?`,
+                onConfirm: () => deleteFiles([file.id!]),
+            });
+        };
+
+        return (
+            <TableActionsButton>
+                <button
+                    onClick={handleDownload}
+                    className={menuButtonClasses}
+                >
+                    <Download width='18' height='18' />
+                    Download
+                </button>
+                <button
+                    onClick={handleReprocess}
+                    className={menuButtonClasses}
+                >
+                    <RefreshCircle width='18' height='18' />
+                    Reprocess
+                </button>
+                <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1 -mx-1' />
+                <button
+                    onClick={handleDelete}
+                    className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
+                >
+                    <Trash width='18' height='18' className='text-red-500' />
+                    Delete
+                </button>
+            </TableActionsButton>
+        );
+    };
 
     const renderRow = useCallback(
         (
@@ -436,10 +501,15 @@ export default function FilesList({
                     <td className='w-32'>
                         {file.timestamp ? formatDate(file.timestamp) : '-'}
                     </td>
+                    <td className='w-12 text-right'>
+                        <div className='flex justify-end'>
+                            <RowActionsButton file={file} />
+                        </div>
+                    </td>
                 </tr>
             );
         },
-        [filteredFiles, copyToClipboard, handleDownloadFile],
+        [filteredFiles, copyToClipboard, handleDownloadFile, fileTransferApi, execute, notify, setModal, deleteFiles],
     );
 
     // Memoize the setSelected callback to prevent recreation on every render
@@ -518,16 +588,6 @@ export default function FilesList({
                             />
                         </>
                     }
-                    right={
-                        <PaginationWrapper
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                            pageSize={pageSize}
-                            onPageSizeChange={handlePageSizeChange}
-                            disabled={files.length === 0}
-                        />
-                    }
                 />
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
@@ -547,6 +607,17 @@ export default function FilesList({
                         setSelected={handleSetSelected}
                     />
                 </div>
+
+                <PaginationWrapper
+                    currentPage={page}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                    pageSize={pageSize}
+                    onPageSizeChange={handlePageSizeChange}
+                    disabled={files.length === 0}
+                    selectedCount={selectedFiles.length}
+                    totalRows={files.length}
+                />
             </div>
         </>
     );

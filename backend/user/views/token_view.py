@@ -17,11 +17,51 @@ from ..exceptions import (
     InvalidTwoFactorTokenException,
     UserErrorCodes,
 )
+from ..models import BlacklistedToken, UserSession
 from ..serializers import (
     TokenObtainSerializer,
     TokenPairRetrieveSerializer,
     TokenRefreshRetrieveSerializer,
 )
+
+
+def get_client_ip(request: Request) -> str:
+    """Extract client IP address from request."""
+    x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(",")[0]
+    else:
+        ip = request.META.get("REMOTE_ADDR", "")
+    return ip
+
+
+def get_device_info(request: Request) -> str:
+    """Extract device/browser information from request."""
+    user_agent = request.META.get("HTTP_USER_AGENT", "Unknown")
+    # Truncate to max length
+    return user_agent[:255] if len(user_agent) > 255 else user_agent
+
+
+def create_or_update_session(
+    request: Request, user, refresh_token: RefreshToken, expires_at: datetime
+):
+    """Create or update a session record for a user."""
+    jti = refresh_token.get("jti")
+    if not jti:
+        return
+
+    device_info = get_device_info(request)
+    ip_address = get_client_ip(request)
+
+    UserSession.objects.update_or_create(
+        refresh_token_jti=jti,
+        defaults={
+            "user": user,
+            "device_info": device_info,
+            "ip_address": ip_address,
+            "expires_at": expires_at,
+        },
+    )
 
 
 class TokenObtainPairLogView(TokenObtainPairView):
@@ -92,6 +132,9 @@ class TokenObtainPairLogView(TokenObtainPairView):
         )
         response_data["refresh_expires_at"] = refresh_expires_at
 
+        # Create session record
+        create_or_update_session(request, user, refresh_token, refresh_expires_at)
+
         return Response(response_data, status=status.HTTP_200_OK)
 
 
@@ -133,15 +176,30 @@ class TokenRefreshLogView(TokenRefreshView):
             Response(status=401): If the provided refresh type JSON web
             token is invalid.
         """
+        # Check if the refresh token is blacklisted before processing
+        refresh_token_str = request.data.get("refresh")
+        if refresh_token_str:
+            try:
+                old_refresh_token = RefreshToken(refresh_token_str)
+                jti = old_refresh_token.get("jti")
+                if jti and BlacklistedToken.is_blacklisted(jti):
+                    raise InvalidToken("Token has been revoked")
+            except (TokenError, InvalidToken):
+                # Re-raise token errors
+                raise
+            except Exception:
+                # If we can't decode the token, let the parent class handle it
+                pass
+
         response = super().post(request, *args, **kwargs)
 
         if response.status_code == 200:
             # Get the refresh token from request
             refresh_token_str = request.data.get("refresh")
-            refresh_token = RefreshToken(refresh_token_str)
+            old_refresh_token = RefreshToken(refresh_token_str)
 
             # Extract role from the refresh token payload
-            role = refresh_token.get("role", "")
+            role = old_refresh_token.get("role", "")
 
             # Get access token expiry time from the newly generated access token
             access_token = AccessToken(response.data["access"])
@@ -149,14 +207,40 @@ class TokenRefreshLogView(TokenRefreshView):
                 access_token["exp"], tz=timezone.utc
             )
 
+            # Get new refresh token (if rotated) or use old one
+            new_refresh_token_str = response.data.get("refresh", refresh_token_str)
+            new_refresh_token = RefreshToken(new_refresh_token_str)
+
             # Get refresh token expiry time
             refresh_expires_at = datetime.fromtimestamp(
-                refresh_token["exp"], tz=timezone.utc
+                new_refresh_token["exp"], tz=timezone.utc
             )
 
             # Add additional fields to response
             response.data["role"] = role
             response.data["access_expires_at"] = access_expires_at
             response.data["refresh_expires_at"] = refresh_expires_at
+
+            # Update session record with new refresh token (if rotated)
+            # Get user from the old refresh token by validating it
+            from rest_framework_simplejwt.authentication import JWTAuthentication
+            from ..models import CradleUser
+
+            try:
+                # Validate the old refresh token to get the user
+                jwt_auth = JWTAuthentication()
+                validated_token = jwt_auth.get_validated_token(old_refresh_token)
+                user = jwt_auth.get_user(validated_token)
+                
+                # Delete old session if token was rotated
+                old_jti = old_refresh_token.get("jti")
+                if old_jti and new_refresh_token_str != refresh_token_str:
+                    UserSession.objects.filter(refresh_token_jti=old_jti).delete()
+                # Create/update session with new token
+                create_or_update_session(
+                    request, user, new_refresh_token, refresh_expires_at
+                )
+            except Exception:
+                pass  # If we can't get the user, skip session tracking
 
         return response
