@@ -12,7 +12,6 @@ from entries.serializers import (
 )
 from file_transfer.models import FileReference
 from file_transfer.serializers import FileReferenceSerializer
-from management.settings import cradle_settings
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
 
@@ -37,11 +36,10 @@ class SnippetSerializer(serializers.ModelSerializer):
 
 class NoteCreateSerializer(serializers.ModelSerializer):
     content = serializers.CharField(required=False, allow_blank=True)
-    files = FileReferenceSerializer(required=False, many=True)
 
     class Meta:
         model = Note
-        fields = ["content", "files"]
+        fields = ["content"]
 
     def validate(self, data):
         """First checks whether the client sent the content of the field
@@ -74,10 +72,6 @@ class NoteCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Creates a new Note entry based on the validated data.
-        Moreover, it sets the entries field to correspond to the
-        referenced_entries field which was persisted in the validate
-        method. Additionally, it sets the files field to
-        correspond to the file references that are linked to the note.
 
         Args:
             validated_data: a dictionary containing the attributes of
@@ -86,63 +80,21 @@ class NoteCreateSerializer(serializers.ModelSerializer):
         Returns:
             The created Note entry
         """
-        files = validated_data.pop("files", None)
-        validated_data = validated_data
-
-        # save the referenced entries to be used when creating the note
         user = self.context["request"].user
         note = TaskScheduler(user, **validated_data).run_pipeline()
-
-        if files is not None:
-            file_reference_models = [
-                FileReference(note=note, **file_data) for file_data in files
-            ]
-            FileReference.objects.bulk_create(file_reference_models)
-
-            # Trigger automatic processing for all created files
-            if cradle_settings.files.autoprocess_files:
-                for file_ref in file_reference_models:
-                    file_ref.process_file()
-
         return note
 
 
 class NoteEditSerializer(serializers.ModelSerializer):
     content = serializers.CharField(required=False, allow_blank=True)
-    files = FileReferenceSerializer(
-        required=False,
-        many=True,
-    )
 
     class Meta:
         model = Note
-        fields = ["content", "files"]
+        fields = ["content"]
 
     def update(self, instance: Note, validated_data: dict[str, Any]):
         user = self.context["request"].user
-
-        updated_files = validated_data.pop("files", None)
         content = validated_data.pop("content", None)
-
-        if updated_files is not None:
-            existing_files = set([i.id for i in instance.files.all()])
-            files_kept = set([i["id"] for i in updated_files if "id" in i])
-
-            # Remove files that are no longer used
-            FileReference.objects.filter(id__in=(existing_files - files_kept)).delete()
-
-            # Create new file references
-            new_files = [
-                FileReference(note=instance, **file_data)
-                for file_data in updated_files
-                if file_data.get("id", None) not in existing_files
-            ]
-            FileReference.objects.bulk_create(new_files)
-
-            # Trigger automatic processing for new files
-            if cradle_settings.files.autoprocess_files:
-                for file_ref in new_files:
-                    file_ref.process_file()
 
         if content is not None:
             TaskScheduler(user, content=content, **validated_data).run_pipeline(
@@ -205,12 +157,10 @@ class FileReferenceWithNoteSerializer(serializers.ModelSerializer):
         model = FileReference
         fields = [
             "id",
-            "minio_file_name",
             "mimetype",
             "entities",
             "file_size",
             "file_name",
-            "bucket_name",
             "timestamp",
             "note_id",
             "md5_hash",
@@ -243,10 +193,8 @@ class FileReferenceListSerializer:
         """Serialize a single file reference"""
         data = {
             "id": str(file_ref.id),
-            "minio_file_name": file_ref.minio_file_name,
             "mimetype": file_ref.mimetype,
             "file_name": file_ref.file_name,
-            "bucket_name": file_ref.bucket_name,
             "timestamp": file_ref.timestamp.isoformat(),
             "note_id": str(file_ref.note.id) if file_ref.note else None,
             "md5_hash": file_ref.md5_hash,
@@ -554,7 +502,6 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
     and is used for quick note taking without entity references.
     """
 
-    files = FileReferenceSerializer(many=True, required=False)
     content = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
@@ -563,7 +510,6 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
             "id",
             "content",
             "timestamp",
-            "files",
             "title",
             "description",
             "fleeting",
@@ -571,7 +517,6 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "timestamp", "fleeting"]
 
     def create(self, validated_data):
-        files_data = validated_data.pop("files", [])
         request = self.context.get("request")
         user = cast(CradleUser, request.user)
 
@@ -590,19 +535,9 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
             validated_data["content_offset"] = offset
 
         note = Note.objects.create(**validated_data)
-
-        if files_data is not None:
-            file_reference_models = [
-                FileReference(note=note, **file_data)
-                for file_data in files_data
-                if "id" not in file_data
-            ]
-            FileReference.objects.bulk_create(file_reference_models)
-
         return note
 
     def update(self, instance, validated_data):
-        updated_files = validated_data.pop("files", [])
         request = self.context.get("request")
         user = cast(CradleUser, request.user)
 
@@ -623,22 +558,6 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
             instance.content_offset = offset
 
         instance.save()
-
-        if updated_files is not None:
-            existing_files = set([i.id for i in instance.files.all()])
-            files_kept = set([i["id"] for i in updated_files if "id" in i])
-
-            # Remove files that are no longer used
-            FileReference.objects.filter(id__in=(existing_files - files_kept)).delete()
-
-            # Create new file references
-            new_files = [
-                FileReference(note=instance, **file_data)
-                for file_data in updated_files
-                if file_data.get("id", None) not in existing_files
-            ]
-            FileReference.objects.bulk_create(new_files)
-
         return instance
 
 

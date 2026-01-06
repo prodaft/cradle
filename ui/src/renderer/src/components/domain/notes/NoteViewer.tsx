@@ -381,7 +381,6 @@ export default function NoteViewer() {
                             id,
                             fleetingNoteRequest: {
                                 content,
-                                files,
                             },
                         });
                     } else {
@@ -390,7 +389,6 @@ export default function NoteViewer() {
                             noteId: id,
                             noteEditRequest: {
                                 content: content,
-                                files: files,
                             },
                         });
                     }
@@ -464,24 +462,6 @@ export default function NoteViewer() {
     }, [handleDelete, setModal]);
 
     const handleFilesChange = useCallback((files: FileReferenceWithNote[]) => {
-        (async () => {
-            if (isFleeting) {
-                await execute(() => fleetingNotesApi.fleetingNotesUpdate({
-                    id,
-                    fleetingNoteRequest: {
-                        files: files,
-                    },
-                }));
-            } else {
-                await execute(() => notesApi.notesUpdate({
-                    noteId: id,
-                    noteEditRequest: {
-                        files: files,
-                    },
-                }));
-            }
-        })();
-
         setFileData(files);
     }, [setFileData, isFleeting]);
 
@@ -489,8 +469,9 @@ export default function NoteViewer() {
         setModal(FileUploadModal, {
             files: fileData,
             onFilesChange: handleFilesChange,
+            noteId: id,
         });
-    }, [fileData, setFileData, setModal]);
+    }, [fileData, handleFilesChange, setModal, id]);
 
     const handleFind = useCallback(() => {
         setShowFind(true);
@@ -677,6 +658,7 @@ export default function NoteViewer() {
                             setFileData={setFileData}
                             pendingFiles={pendingFiles}
                             setPendingFiles={setPendingFiles}
+                            noteId={id}
                         />
                     </div>
                 )}
@@ -765,34 +747,34 @@ export default function NoteViewer() {
                                             </div>
                                         </Panel>
                                     </PanelGroup>
-                                                                ) : (
-                                                                    <div
-                                                                        className='h-full flex flex-col border-l cradle-border relative'
-                                                                        onDoubleClick={handleEnableEditingWithConfirmation}
-                                                                    >
-                                                                        {showFind && (
-                                                                            <FindReplace
-                                                                                view={
-                                                                                    editorRef.current?.view ||
-                                                                                    editorRef.current
-                                                                                }
-                                                                                onClose={() =>
-                                                                                    setShowFind(false)
-                                                                                }
-                                                                                initialReplace={findReplaceMode}
-                                                                            />
-                                                                        )}
-                                                                        {/* Embedded Rich Editor */}
-                                                                        <div className='flex-1 min-h-0'>
-                                                                            <RichEditor
-                                                                                additionalExtensions={
-                                                                                    customKeymap
-                                                                                }
-                                                                                key={
-                                                                                    richEditor
-                                                                                        ? 'rich'
-                                                                                        : 'source'
-                                                                                }
+                                ) : (
+                                    <div
+                                        className='h-full flex flex-col border-l cradle-border relative'
+                                        onDoubleClick={handleEnableEditingWithConfirmation}
+                                    >
+                                        {showFind && (
+                                            <FindReplace
+                                                view={
+                                                    editorRef.current?.view ||
+                                                    editorRef.current
+                                                }
+                                                onClose={() =>
+                                                    setShowFind(false)
+                                                }
+                                                initialReplace={findReplaceMode}
+                                            />
+                                        )}
+                                        {/* Embedded Rich Editor */}
+                                        <div className='flex-1 min-h-0'>
+                                            <RichEditor
+                                                additionalExtensions={
+                                                    customKeymap
+                                                }
+                                                key={
+                                                    richEditor
+                                                        ? 'rich'
+                                                        : 'source'
+                                                }
                                                 ref={editorRef}
                                                 noteid={id}
                                                 markdownContent={markdownContent}
@@ -824,7 +806,7 @@ export default function NoteViewer() {
 
                     {activeView === ViewMode.FILES && note && (
                         <FilesView
-                            files={note.files || []}
+                            files={fileData || []}
                             copyToClipboard={copyToClipboard}
                         />
                     )}

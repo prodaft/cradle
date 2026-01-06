@@ -1,15 +1,15 @@
 import json
-from io import BytesIO
 from datetime import timedelta
 from typing import List
 
 from file_transfer.models import FileReference
+from file_transfer.storage import FileTransferStorage, ReportStorage
 from notes.models import Note
 from publish.models import PublishedReport, ReportStatus
 from publish.strategies.base import BasePublishStrategy
-from file_transfer.utils import MinioClient
 
 from entries.serializers import EntryClassSerializer, EntryPublishSerializer
+from file_transfer.s3_utils import delete_object, presign_get, put_bytes
 
 
 class JSONPublish(BasePublishStrategy):
@@ -28,10 +28,11 @@ class JSONPublish(BasePublishStrategy):
         return self._upload_report(content, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
+        bucket_name = ReportStorage.bucket_name
+        key = f"{report.id}.json"
         try:
-            client.remove_object(bucket_name, f"{report.id}.json")
+            delete_object(bucket_name, key)
+            FileReference.objects.filter(report=report).delete()
         except Exception:
             report.error_message = "Failed to delete JSON report."
             report.status = ReportStatus.ERROR
@@ -62,13 +63,25 @@ class JSONPublish(BasePublishStrategy):
                 linked_entries_set.add(self._anonymize_entry(entry))
 
             for file_ref in files.all():
+                # Backward-compatible: markdown keys may reference legacy minio_file_name,
+                # while actual objects are now stored under file_ref.file.name.
+                if not file_ref.file:
+                    continue
+
+                key_candidates = [file_ref.file.name]
+                if file_ref.minio_file_name:
+                    key_candidates.insert(0, file_ref.minio_file_name)
+
                 try:
-                    url = MinioClient().create_presigned_get(
-                        file_ref.bucket_name,
-                        file_ref.minio_file_name,
-                        timedelta(days=7),
+                    url = presign_get(
+                        FileTransferStorage.bucket_name,
+                        file_ref.file.name,
+                        expires_in=int(timedelta(days=7).total_seconds()),
+                        response_content_type="application/octet-stream",
+                        response_content_disposition=f'attachment; filename="{file_ref.file_name or "file"}"',
                     )
-                    note_data["file_urls"][file_ref.minio_file_name] = url
+                    for k in key_candidates:
+                        note_data["file_urls"][k] = url
                 except Exception:
                     continue
 
@@ -85,21 +98,21 @@ class JSONPublish(BasePublishStrategy):
 
     def _upload_report(self, content: dict, report: PublishedReport) -> bool:
         report_json = json.dumps(content)
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
-        data = BytesIO(report_json.encode("utf-8"))
-        size = len(report_json)
+        bucket_name = ReportStorage.bucket_name
         content_type = "application/json"
-        file_name = f"{report.id}.json"
+        key = f"{report.id}.json"
 
         try:
-            client.put_object(
-                bucket_name, file_name, data, size, content_type=content_type
+            put_bytes(
+                bucket_name,
+                key,
+                body=report_json.encode("utf-8"),
+                content_type=content_type,
             )
             FileReference.objects.filter(report=report).delete()
             FileReference.objects.create(
-                minio_file_name=file_name,
-                file_name=file_name,
+                minio_file_name=key,
+                file_name=key,
                 bucket_name=bucket_name,
                 report=report,
             )

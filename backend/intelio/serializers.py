@@ -239,6 +239,44 @@ class BaseDigestCreateSerializer(serializers.ModelSerializer):
         return super().create(validated_data)
 
 
+class DigestUploadResponseSerializer(serializers.Serializer):
+    """Response serializer for digest upload initiation."""
+
+    upload_id = serializers.UUIDField()
+    presigned_url = serializers.CharField()
+    object_key = serializers.CharField()
+    expires_in = serializers.IntegerField(help_text="Expiration time in seconds")
+
+
+class DigestUploadFinalizeCreateSerializer(serializers.ModelSerializer):
+    """
+    Serializer for finalizing digest upload (creates digest metadata only).
+
+    The digest file is uploaded directly to storage via presigned URL and must exist
+    at BaseDigest.storage_key before finalization.
+    """
+
+    entities = serializers.ListField(
+        child=serializers.PrimaryKeyRelatedField(
+            queryset=Entry.objects.all(),
+        ),
+        required=False,
+        help_text="Optional entities to associate with this digest",
+    )
+
+    class Meta:
+        model = BaseDigest
+        fields = ["title", "digest_type", "entities"]
+
+    def to_internal_value(self, data):
+        self.Meta.model = BaseDigest.get_subclass(data["digest_type"])
+
+        if self.Meta.model is None:
+            raise serializers.ValidationError("Invalid digest type")
+
+        return super().to_internal_value(data)
+
+
 class EnrichmentRequestEnricherMinimal(serializers.Serializer):
     """Serializer for minimal enrichment request enricher information."""
 

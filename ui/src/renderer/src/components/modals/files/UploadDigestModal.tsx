@@ -1,8 +1,10 @@
 import { useNotif } from '@/contexts';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
+import useAuth from '@/hooks/auth/useAuth';
 import { DigestSubclass } from '@/services/cradle/models/DigestSubclass';
 import type { Alert } from '@/types';
+import { uploadFile } from '@/utils/files';
 import AlertBox from '@components/base/Alert/AlertBox';
 import Selector from '@components/forms/Selector';
 import { Upload } from 'iconoir-react';
@@ -110,9 +112,10 @@ export default function UploadDigestModal({
     const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: '' });
     const [touched, setTouched] = useState<TouchedFields>({});
     const [errors, setErrors] = useState<FormErrors>({});
-    const { queryApi, intelioApi } = useApi();
+    const { queryApi, intelioApi, basePath } = useApi();
     const { execute } = useAPICall();
     const { notify } = useNotif();
+    const { getAccessToken } = useAuth();
     const [formValues, setFormValues] = useState<FormValues>({
         title: '',
         dataType: null,
@@ -213,22 +216,53 @@ export default function UploadDigestModal({
     const handleUpload = async (values: FormValues) => {
         setIsUploading(true);
         try {
-            const requestParams: any = {
-                digestType: values.dataType!.value,
-                title: values.title,
-                file: values.files[0], // API expects single file, not array
-            };
+            await execute(
+                async () => {
+                    const file = values.files[0];
+                    const token = await getAccessToken();
 
-            // Handle associatedEntry which could be a single value or array
-            const associatedEntry = Array.isArray(values.associatedEntry)
-                ? values.associatedEntry[0]
-                : values.associatedEntry;
+                    // Step 1: Request presigned URL from backend
+                    const initiateUrl = `${basePath}/intelio/digest/upload/?fileName=${encodeURIComponent(file.name)}`;
+                    const initiateResp = await fetch(initiateUrl, {
+                        method: 'GET',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                        },
+                    });
+                    if (!initiateResp.ok) {
+                        throw { response: initiateResp };
+                    }
+                    const initiateData = await initiateResp.json();
 
-            if (associatedEntry?.value) {
-                requestParams.entity = associatedEntry.value;
-            }
+                    // Step 2: Upload file directly to presigned URL
+                    await uploadFile(initiateData.presigned_url, file);
 
-            await execute(() => intelioApi.intelioDigestCreate(requestParams), { successMessage: 'File uploaded successfully' });
+                    // Step 3: Finalize upload (creates digest record and triggers processing)
+                    const finalizeUrl = `${basePath}/intelio/digest/upload/${initiateData.upload_id}/finalize/`;
+                    const entities = (values.associatedEntry || []).map((e) => e.value);
+                    const finalizeBody: any = {
+                        title: values.title,
+                        digest_type: values.dataType!.value,
+                    };
+                    if (entities.length > 0) {
+                        finalizeBody.entities = entities;
+                    }
+
+                    const finalizeResp = await fetch(finalizeUrl, {
+                        method: 'POST',
+                        headers: {
+                            Authorization: `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(finalizeBody),
+                    });
+                    if (!finalizeResp.ok) {
+                        throw { response: finalizeResp };
+                    }
+                    return await finalizeResp.json();
+                },
+                { successMessage: 'File uploaded successfully' },
+            );
 
             resetForm();
             if (onUpload) {
@@ -240,10 +274,7 @@ export default function UploadDigestModal({
                 closeModal();
             }, 1000);
         } catch (error) {
-            notify({
-                type: 'error',
-                text: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            });
+            // Errors are handled by useAPICall's executor (notifications + parsing).
         } finally {
             setIsUploading(false);
         }

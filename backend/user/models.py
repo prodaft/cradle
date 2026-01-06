@@ -2,13 +2,15 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
-from access.enums import AccessType
-from core.fields import BitStringField
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django_otp.plugins.otp_totp.models import TOTPDevice
+
+from access.enums import AccessType
+from core.fields import BitStringField
 from logs.models import LoggableModelMixin
 from mail.models import ConfirmationMail, ResetPasswordMail
+from management.settings import cradle_settings
 
 from .managers import CradleUserManager
 
@@ -64,6 +66,10 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI"
     )
 
+    file_upload_limit: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
+        default=None, null=True, help_text="File upload limit in bytes"
+    )
+
     USERNAME_FIELD = "username"
     REQUIRED_FIELDS = ["password", "email"]
     EMAIL_FIELD = "email"
@@ -116,6 +122,14 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 
     def _propagate_log(self, log):
         return
+
+    @property
+    def file_upload_limit(self):
+        if self.is_cradle_admin:
+            return 2 ** (64)
+        if self.file_upload_limit is None:
+            return cradle_settings.files.upload_limit
+        return self.file_upload_limit
 
     @property
     def is_cradle_admin(self):

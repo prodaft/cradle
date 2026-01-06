@@ -5,11 +5,12 @@ from publish.models import PublishedReport, ReportStatus
 from user.models import CradleUser
 from django.conf import settings
 from notes.markdown.to_platejs import markdown_to_pjs
-from file_transfer.utils import MinioClient
+from file_transfer.storage import FileTransferStorage
 from entries.models import Entry
 from .base import BasePublishStrategy
 from intelio.models.mappings.catalyst import CatalystMapping
 from entries.models import EntryClass
+from file_transfer.s3_utils import fetch_bytes
 
 
 class CatalystPublish(BasePublishStrategy):
@@ -155,10 +156,17 @@ class CatalystPublish(BasePublishStrategy):
         footnotes = {}
         for note in report.notes.all():
             for f in note.files.all():
-                footnotes[f.minio_file_name] = (f.bucket_name, f.minio_file_name)
+                if not f.file:
+                    continue
+                if f.minio_file_name:
+                    footnotes[f.minio_file_name] = (
+                        FileTransferStorage.bucket_name,
+                        f.file.name,
+                    )
+                footnotes[f.file.name] = (FileTransferStorage.bucket_name, f.file.name)
 
         platejs = markdown_to_pjs(
-            joint_md, entry_map, footnotes, MinioClient().fetch_file
+            joint_md, entry_map, footnotes, lambda bucket, key: fetch_bytes(bucket, key)
         )
 
         payload = {

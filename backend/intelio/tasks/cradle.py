@@ -1,13 +1,13 @@
 import logging
 import traceback
-from io import BytesIO
 
 import requests
 from celery import shared_task
 from django.db import transaction
 
 from file_transfer.models import FileReference
-from file_transfer.utils import MinioClient
+from file_transfer.s3_utils import put_bytes
+from file_transfer.storage import FileTransferStorage
 from intelio.models.base import BaseDigest
 from management.settings import cradle_settings
 from notes.models import Note
@@ -34,27 +34,29 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
         return
 
     try:
-        client = MinioClient().client
         print(file_url)
         r = requests.get(file_url, timeout=10)
         r.raise_for_status()  # Raise an HTTPError for bad responses
 
         file_data = r.content
-        data_stream = BytesIO(file_data)
-        size = len(file_data)
         content_type = r.headers.get("Content-Type", "application/octet-stream")
 
-        client.put_object(
-            bucket_name,
-            file_identifier,
-            data_stream,
-            size,
-            content_type=content_type,
-        )
+        # Store into the shared files bucket under a UUID-prefixed key.
+        bucket_name = FileTransferStorage.bucket_name
         fr = FileReference.objects.create(
-            minio_file_name=file_identifier,
             file_name=file_identifier,
             bucket_name=bucket_name,
+        )
+        object_key = f"{fr.id}-{file_identifier}"
+        fr.file.name = object_key
+        fr.minio_file_name = object_key
+        fr.save(update_fields=["file", "minio_file_name"])
+
+        put_bytes(
+            bucket_name,
+            object_key,
+            body=file_data,
+            content_type=content_type,
         )
         note.files.add(fr)
         note.save()

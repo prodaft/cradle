@@ -38,12 +38,6 @@ export interface FileReferenceWithNote {
      * @type {string}
      * @memberof FileReferenceWithNote
      */
-    minioFileName: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof FileReferenceWithNote
-     */
     mimetype?: string | null;
     /**
      * 
@@ -62,13 +56,7 @@ export interface FileReferenceWithNote {
      * @type {string}
      * @memberof FileReferenceWithNote
      */
-    fileName: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof FileReferenceWithNote
-     */
-    bucketName: string;
+    fileName?: string | null;
     /**
      * 
      * @type {Date}
@@ -105,9 +93,6 @@ export interface FileReferenceWithNote {
  * Check if a given object implements the FileReferenceWithNote interface.
  */
 export function instanceOfFileReferenceWithNote(value: object): value is FileReferenceWithNote {
-    if (!('minioFileName' in value) || value['minioFileName'] === undefined) return false;
-    if (!('fileName' in value) || value['fileName'] === undefined) return false;
-    if (!('bucketName' in value) || value['bucketName'] === undefined) return false;
     return true;
 }
 
@@ -122,12 +107,10 @@ export function FileReferenceWithNoteFromJSONTyped(json: any, ignoreDiscriminato
     return {
         
         'id': json['id'] == null ? undefined : json['id'],
-        'minioFileName': json['minio_file_name'],
         'mimetype': json['mimetype'] == null ? undefined : json['mimetype'],
         'entities': json['entities'] == null ? undefined : ((json['entities'] as Array<any>).map(OptimizedEntryResponseFromJSON)),
         'fileSize': json['file_size'] == null ? undefined : json['file_size'],
-        'fileName': json['file_name'],
-        'bucketName': json['bucket_name'],
+        'fileName': json['file_name'] == null ? undefined : json['file_name'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
         'noteId': json['note_id'] == null ? undefined : json['note_id'],
         'md5Hash': json['md5_hash'] == null ? undefined : json['md5_hash'],
@@ -147,11 +130,9 @@ export function FileReferenceWithNoteToJSONTyped(value?: Omit<FileReferenceWithN
 
     return {
         
-        'minio_file_name': value['minioFileName'],
         'mimetype': value['mimetype'],
         'file_size': value['fileSize'],
         'file_name': value['fileName'],
-        'bucket_name': value['bucketName'],
         'md5_hash': value['md5Hash'],
         'sha1_hash': value['sha1Hash'],
         'sha256_hash': value['sha256Hash'],

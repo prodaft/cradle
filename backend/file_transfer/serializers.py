@@ -1,62 +1,59 @@
-from typing import Any
-
 from rest_framework import serializers
 
-from .exceptions import MinioObjectNotFound
 from .models import FileReference
-from .utils import MinioClient
 
 
-class FileUploadSerializer(serializers.Serializer):
-    bucket_name = serializers.CharField()
-    minio_file_name = serializers.CharField()
-    presigned = serializers.CharField()
-    expires_at = serializers.IntegerField()
+class FileUploadResponseSerializer(serializers.Serializer):
+    """Response serializer for file upload initiation."""
+
+    upload_id = serializers.UUIDField()
+    presigned_url = serializers.CharField()
+    object_key = serializers.CharField()
+    expires_in = serializers.IntegerField(help_text="Expiration time in seconds")
+
+
+class FileUploadFinalizeSerializer(serializers.Serializer):
+    """Request serializer for finalizing file upload."""
+
+    note_id = serializers.UUIDField(required=False, allow_null=True)
+
+
+class FileUploadFinalizeResponseSerializer(serializers.Serializer):
+    """Response serializer for finalized file upload."""
+
+    file_id = serializers.UUIDField()
+    file_name = serializers.CharField()
+    object_key = serializers.CharField()
 
 
 class FileDownloadSerializer(serializers.Serializer):
-    presigned = serializers.CharField()
-    expires_at = serializers.IntegerField()
+    """Response serializer for file download."""
+
+    presigned_url = serializers.CharField()
+    expires_in = serializers.IntegerField(help_text="Expiration time in seconds")
 
 
 class FileReferenceSerializer(serializers.ModelSerializer):
+    """Serializer for FileReference model."""
+
     id = serializers.UUIDField(required=False)
 
     class Meta:
         model = FileReference
         fields = [
             "id",
-            "minio_file_name",
             "file_name",
-            "bucket_name",
             "timestamp",
             "file_size",
+            "mimetype",
+            "md5_hash",
+            "sha1_hash",
+            "sha256_hash",
         ]
-
-    def validate(self, data: Any) -> Any:
-        """This method validates the file reference entry. Firstly, it checks
-        that bucket_name matches the user's id. Secondly, it checks that a file
-        was uploaded at the indicated MinIO path.
-
-        Args:
-            data: Dictionary containing the data to be validated.
-
-        Returns:
-            Any: The data that was provided to the method as an argument.
-
-        Raises:
-            IncorrectBucketException: If bucket_name does not match the user's id.
-            MinioObjectNotFound: If a file could not be found at the indicated
-                MinIO path.
-
-        """
-        if not MinioClient().file_exists_at_path(
-            bucket_name=data["bucket_name"], minio_file_name=data["minio_file_name"]
-        ):
-            raise MinioObjectNotFound()
-
-        return super().validate(data)
+        read_only_fields = ["timestamp", "mimetype", "md5_hash", "sha1_hash", "sha256_hash"]
 
 
 class FileProcessSerializer(serializers.Serializer):
+    """Request serializer for file processing."""
+
     file_id = serializers.UUIDField(required=True)

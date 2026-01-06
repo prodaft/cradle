@@ -19,6 +19,7 @@ import { SettingsButton, SettingsCard, SettingsField, SettingsSelect, SettingsSe
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Edit, HalfMoon, Key, Lock, Mail, Plus, RefreshDouble, SunLight, Trash, User } from 'iconoir-react';
 import { debounce } from 'lodash'; // Import lodash debounce
+import bytes from 'bytes';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -34,6 +35,7 @@ interface AccountFormData extends UserUpdateRequest {
     theme?: UserCreateRequestThemeEnum;
     emailConfirmed: boolean;
     isActive: boolean;
+    fileUploadLimit?: string;
 }
 
 interface AccountSettingsProps {
@@ -67,6 +69,18 @@ const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().sh
     isActive: Yup.boolean(),
     vimMode: Yup.boolean().notRequired(),
     theme: Yup.string().notRequired(),
+    fileUploadLimit: Yup.string().when('$isAdminAndNotOwn', {
+        is: true,
+        then: () => Yup.string().test(
+            'is-valid-bytes',
+            'Enter a valid size (e.g. 100MB, 1GB) or leave empty to use global default',
+            (value) => {
+                if (!value || value === '') return true; // Allow empty to use global default
+                return typeof bytes(value) === 'number';
+            },
+        ),
+        otherwise: () => Yup.string().notRequired(),
+    }),
 }) as Yup.ObjectSchema<AccountFormData>;
 
 export default function AccountSettings({
@@ -102,6 +116,7 @@ export default function AccountSettings({
             vimMode: false,
             emailConfirmed: false,
             isActive: false,
+            fileUploadLimit: '',
         }
         : {
             id: '',
@@ -113,6 +128,7 @@ export default function AccountSettings({
             vimMode: false,
             emailConfirmed: false,
             isActive: false,
+            fileUploadLimit: '',
         };
 
     const {
@@ -152,6 +168,12 @@ export default function AccountSettings({
                 }
                 setUser(user);
 
+                // Check for file_upload_limit in the response (may not be in TypeScript types yet)
+                const fileUploadLimitBytes = (user as any).fileUploadLimit || (user as any).file_upload_limit;
+                const fileUploadLimitFormatted = fileUploadLimitBytes 
+                    ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
+                    : '';
+
                 const initialData = {
                     id: user.id,
                     username: user.username,
@@ -163,6 +185,7 @@ export default function AccountSettings({
                     emailConfirmed: user.emailConfirmed || false,
                     isActive: user.isActive || false,
                     vimMode: user.vimMode || false,
+                    fileUploadLimit: fileUploadLimitFormatted,
                 };
 
                 reset(initialData);
@@ -198,7 +221,8 @@ export default function AccountSettings({
                 data.email !== previousData?.email ||
                 data.role !== previousData?.role ||
                 data.emailConfirmed !== previousData?.emailConfirmed ||
-                data.isActive !== previousData?.isActive
+                data.isActive !== previousData?.isActive ||
+                data.fileUploadLimit !== previousData?.fileUploadLimit
             )) ||
             (data.password !== 'password' && data.password !== previousData?.password) ||
             (data.catalystApiKey !== 'apikey' && data.catalystApiKey !== previousData?.catalystApiKey) ||
@@ -226,6 +250,14 @@ export default function AccountSettings({
             if (data.emailConfirmed !== previousData?.emailConfirmed) payload.emailConfirmed = data.emailConfirmed;
             if (data.isActive !== previousData?.isActive) payload.isActive = data.isActive;
             if (data.role !== previousData?.role) payload.role = data.role;
+            if (data.fileUploadLimit !== previousData?.fileUploadLimit) {
+                // Convert to bytes if provided, or null to use global default
+                if (data.fileUploadLimit && data.fileUploadLimit.trim() !== '') {
+                    payload.file_upload_limit = bytes.parse(data.fileUploadLimit);
+                } else {
+                    payload.file_upload_limit = null;
+                }
+            }
         }
 
         if (Object.keys(payload).length === 0) return;
@@ -670,6 +702,15 @@ export default function AccountSettings({
 
                                             {isAdminAndNotOwn && (
                                                 <>
+                                                    <SettingsSeparator />
+                                                    <SettingsField
+                                                        label='Upload Limit'
+                                                        description='Maximum file size allowed for uploads (leave empty to use global default)'
+                                                        placeholder='e.g. 100MB, 1GB'
+                                                        inputWidth='w-48'
+                                                        {...register('fileUploadLimit')}
+                                                        error={errors.fileUploadLimit}
+                                                    />
                                                     <SettingsSeparator />
                                                     <SettingsField
                                                         label='Password'

@@ -10,6 +10,7 @@ from django.db import models, transaction
 from django.utils import timezone
 from django_lifecycle import (
     AFTER_DELETE,
+    AFTER_UPDATE,
     LifecycleModel,
     hook,
 )
@@ -19,6 +20,8 @@ from pydantic import ValidationError as PydanticValidationError
 from core.fields import BitStringField
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
+from file_transfer.s3_utils import download_to_path
+from file_transfer.storage import DigestStorage
 from user.models import CradleUser
 
 from ..enums import DigestStatus, EnrichmentStatus
@@ -139,11 +142,39 @@ class BaseDigest(LifecycleModel):
         fpath = os.path.join(upload_dir, str(self.id))
         return fpath
 
+    @property
+    def storage_key(self) -> str:
+        """
+        Object key for this digest in the digests bucket.
+
+        We keep it deterministic so we don't need an extra DB field.
+        """
+        return f"{self.user_id}/{self.id}"
+
+    def ensure_local_file(self) -> None:
+        """
+        Ensure the digest file exists at self.path by fetching it from DigestStorage.
+        """
+        if os.path.exists(self.path) and os.path.getsize(self.path) > 0:
+            return
+
+        download_to_path(DigestStorage.bucket_name, self.storage_key, self.path)
+
+    def cleanup_local_file(self) -> None:
+        """Remove the local cached digest file (best-effort)."""
+        try:
+            if os.path.exists(self.path):
+                os.remove(self.path)
+        except Exception:
+            # Best-effort cleanup; never fail digest completion due to local FS issues.
+            pass
+
     def digest(self):
         """
         Perform the actual digesting of the external data.
         """
         try:
+            self.ensure_local_file()
             self.status = DigestStatus.WORKING
             self.save(update_fields=["status"])
             self._digest()
@@ -154,6 +185,8 @@ class BaseDigest(LifecycleModel):
             )
             self.save()
             raise e
+        finally:
+            pass
 
         self.save()
 
@@ -169,13 +202,23 @@ class BaseDigest(LifecycleModel):
             self.status = DigestStatus.DONE
 
         self.save(update_fields=["status"])
+        self.cleanup_local_file()
 
     @hook(AFTER_DELETE)
     def delete_file(self):
         self.id = self._initial_state.get_value(self, "id")
 
-        if os.path.exists(self.path):
-            os.remove(self.path)
+        self.cleanup_local_file()
+
+    @hook(AFTER_UPDATE, when="status", has_changed=True)
+    def status_updated_cleanup_file(self):
+        """
+        Cleanup local digest file after reaching a terminal state.
+
+        This covers digests that do not call finalize() (e.g. FalconDigest chunks).
+        """
+        if self.status in [DigestStatus.DONE, DigestStatus.ERROR, DigestStatus.WARNING]:
+            self.cleanup_local_file()
 
     def _append_error(self, error):
         if error in self.errors:

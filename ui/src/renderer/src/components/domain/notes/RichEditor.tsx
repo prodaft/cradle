@@ -259,7 +259,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (propReferenceMappings) return propReferenceMappings;
         const mappings: Record<string, FileReference> = {};
         for (const file of fileData) {
-            mappings[file.minioFileName] = file;
+            mappings[`${file.id}-${file.fileName}`] = file;
         }
         return mappings;
     }, [fileData, propReferenceMappings]);
@@ -571,6 +571,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                             onFilesChange={handleFilesChange}
                             closeModal={handleFileUploadModalClose}
                             initialFiles={clipboardFiles}
+                            noteId={noteid}
                         />
                     </div>
                 </div>

@@ -29,6 +29,7 @@ class FalconDigest(BaseDigest):
         proxy = True
 
     def digest_data(self):
+        self.ensure_local_file()
         with open(self.path, "r") as report_file:
             report_data = json.load(report_file)
 

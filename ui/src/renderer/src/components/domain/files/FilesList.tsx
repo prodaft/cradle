@@ -201,7 +201,7 @@ export default function FilesList({
 
     // Download a single file
     const handleDownloadFile = useCallback(async (file: FileReferenceWithNote) => {
-        if (!file.bucketName || !file.minioFileName) {
+        if (!file.id) {
             notify({
                 type: 'error',
                 text: 'File download information is missing.',
@@ -210,10 +210,16 @@ export default function FilesList({
         }
 
         try {
-            const response = await fileTransferApi.fileTransferDownloadRetrieve({
-                bucketName: file.bucketName,
-                minioFileName: file.minioFileName,
+            const { presignedUrl } = await fileTransferApi.fileTransferDownloadRetrieve({
+                fileId: file.id,
             });
+
+            const link = document.createElement('a');
+            link.href = presignedUrl;
+            link.download = file.fileName || 'data';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } catch (error) {
             console.error('Failed to download file: ', error);
             notify({
@@ -230,19 +236,17 @@ export default function FilesList({
         try {
             const downloads = await Promise.all(
                 selectedFiles.map((fileId) => {
-                    const file = files.find((f) => f.id === fileId);
-                    if (!file?.bucketName || !file?.minioFileName) return null;
+                    if (!fileId) return null;
 
                     return execute(() => fileTransferApi.fileTransferDownloadRetrieve({
-                        bucketName: file.bucketName,
-                        minioFileName: file.minioFileName,
+                        fileId: fileId,
                     }));
                 })
             );
             downloads
                 .filter((download): download is FileDownload => download !== null)
-                .forEach(({ presigned }, index) => {
-                    window.open(presigned, '_blank', 'noopener');
+                .forEach(({ presignedUrl }, index) => {
+                    window.open(presignedUrl, '_blank', 'noopener');
                 });
 
             notify({

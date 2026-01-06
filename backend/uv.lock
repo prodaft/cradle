@@ -312,6 +312,34 @@ wheels = [
 ]
 
 [[package]]
+name = "boto3"
+version = "1.42.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "botocore" },
+    { name = "jmespath" },
+    { name = "s3transfer" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/09/72/e236ca627bc0461710685f5b7438f759ef3b4106e0e08dda08513a6539ab/boto3-1.42.14.tar.gz", hash = "sha256:a5d005667b480c844ed3f814a59f199ce249d0f5669532a17d06200c0a93119c", size = 112825, upload-time = "2025-12-19T20:27:15.325Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bb/ba/c657ea6f6d63563cc46748202fccd097b51755d17add00ebe4ea27580d06/boto3-1.42.14-py3-none-any.whl", hash = "sha256:bfcc665227bb4432a235cb4adb47719438d6472e5ccbf7f09512046c3f749670", size = 140571, upload-time = "2025-12-19T20:27:13.316Z" },
+]
+
+[[package]]
+name = "botocore"
+version = "1.42.14"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jmespath" },
+    { name = "python-dateutil" },
+    { name = "urllib3" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/35/3f/50c56f093c2c6ce6de1f579726598db1cf9a9cccd3bf8693f73b1cf5e319/botocore-1.42.14.tar.gz", hash = "sha256:cf5bebb580803c6cfd9886902ca24834b42ecaa808da14fb8cd35ad523c9f621", size = 14910547, upload-time = "2025-12-19T20:27:04.431Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ad/94/67a78a8d08359e779894d4b1672658a3c7fcce216b48f06dfbe1de45521d/botocore-1.42.14-py3-none-any.whl", hash = "sha256:efe89adfafa00101390ec2c371d453b3359d5f9690261bc3bd70131e0d453e8e", size = 14583247, upload-time = "2025-12-19T20:27:00.54Z" },
+]
+
+[[package]]
 name = "bracex"
 version = "2.6"
 source = { registry = "https://pypi.org/simple" }
@@ -694,6 +722,7 @@ dependencies = [
     { name = "django-model-utils" },
     { name = "django-otp" },
     { name = "django-silk", extra = ["formatting"] },
+    { name = "django-storages", extra = ["s3"] },
     { name = "django-stubs" },
     { name = "django-stubs-ext" },
     { name = "djangorestframework" },
@@ -760,6 +789,7 @@ requires-dist = [
     { name = "django-model-utils" },
     { name = "django-otp" },
     { name = "django-silk", extras = ["formatting"], specifier = "==5.4.3" },
+    { name = "django-storages", extras = ["s3"], specifier = ">=1.14.6" },
     { name = "django-stubs" },
     { name = "django-stubs-ext" },
     { name = "djangorestframework", specifier = "==3.15.1" },
@@ -975,6 +1005,23 @@ wheels = [
 [package.optional-dependencies]
 formatting = [
     { name = "autopep8" },
+]
+
+[[package]]
+name = "django-storages"
+version = "1.14.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "django" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ff/d6/2e50e378fff0408d558f36c4acffc090f9a641fd6e084af9e54d45307efa/django_storages-1.14.6.tar.gz", hash = "sha256:7a25ce8f4214f69ac9c7ce87e2603887f7ae99326c316bc8d2d75375e09341c9", size = 87587, upload-time = "2025-04-02T02:34:55.103Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/1f/21/3cedee63417bc5553eed0c204be478071c9ab208e5e259e97287590194f1/django_storages-1.14.6-py3-none-any.whl", hash = "sha256:11b7b6200e1cb5ffcd9962bd3673a39c7d6a6109e8096f0e03d46fab3d3aabd9", size = 33095, upload-time = "2025-04-02T02:34:53.291Z" },
+]
+
+[package.optional-dependencies]
+s3 = [
+    { name = "boto3" },
 ]
 
 [[package]]
@@ -1305,6 +1352,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/72/3a/79a912fbd4d8dd6fbb02bf69afd3bb72cf0c729bb3063c6f4498603db17a/jedi-0.19.2.tar.gz", hash = "sha256:4770dc3de41bde3966b02eb84fbcf557fb33cce26ad23da12c742fb50ecb11f0", size = 1231287, upload-time = "2024-11-11T01:41:42.873Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c0/5a/9cac0c82afec3d09ccd97c8b6502d48f165f9124db81b4bcb90b4af974ee/jedi-0.19.2-py2.py3-none-any.whl", hash = "sha256:a8ef22bde8490f57fe5c7681a3c83cb58874daf72b4784de3cce5b6ef6edb5b9", size = 1572278, upload-time = "2024-11-11T01:41:40.175Z" },
+]
+
+[[package]]
+name = "jmespath"
+version = "1.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/00/2a/e867e8531cf3e36b41201936b7fa7ba7b5702dbef42922193f05c8976cd6/jmespath-1.0.1.tar.gz", hash = "sha256:90261b206d6defd58fdd5e85f478bf633a2901798906be2ad389150c5c60edbe", size = 25843, upload-time = "2022-06-17T18:00:12.224Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/31/b4/b9b800c45527aadd64d5b442f9b932b00648617eb5d63d2c7a6587b7cafc/jmespath-1.0.1-py3-none-any.whl", hash = "sha256:02e2e4cc71b5bcab88332eebf907519190dd9e6e82107fa7f83b1003a6252980", size = 20256, upload-time = "2022-06-17T18:00:10.251Z" },
 ]
 
 [[package]]
@@ -2414,6 +2470,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6a/24/e3e72d265121e00b063aef3e3501e5b2473cf1b23511d56e529531acf01e/rpds_py-0.27.1-pp311-pypy311_pp73-musllinux_1_2_aarch64.whl", hash = "sha256:94c44ee01fd21c9058f124d2d4f0c9dc7634bec93cd4b38eefc385dabe71acbf", size = 560003, upload-time = "2025-08-27T12:16:08.06Z" },
     { url = "https://files.pythonhosted.org/packages/26/ca/f5a344c534214cc2d41118c0699fffbdc2c1bc7046f2a2b9609765ab9c92/rpds_py-0.27.1-pp311-pypy311_pp73-musllinux_1_2_i686.whl", hash = "sha256:df8b74962e35c9249425d90144e721eed198e6555a0e22a563d29fe4486b51f6", size = 590482, upload-time = "2025-08-27T12:16:10.137Z" },
     { url = "https://files.pythonhosted.org/packages/ce/08/4349bdd5c64d9d193c360aa9db89adeee6f6682ab8825dca0a3f535f434f/rpds_py-0.27.1-pp311-pypy311_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:dc23e6820e3b40847e2f4a7726462ba0cf53089512abe9ee16318c366494c17a", size = 556523, upload-time = "2025-08-27T12:16:12.188Z" },
+]
+
+[[package]]
+name = "s3transfer"
+version = "0.16.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "botocore" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/05/04/74127fc843314818edfa81b5540e26dd537353b123a4edc563109d8f17dd/s3transfer-0.16.0.tar.gz", hash = "sha256:8e990f13268025792229cd52fa10cb7163744bf56e719e0b9cb925ab79abf920", size = 153827, upload-time = "2025-12-01T02:30:59.114Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fc/51/727abb13f44c1fcf6d145979e1535a35794db0f6e450a0cb46aa24732fe2/s3transfer-0.16.0-py3-none-any.whl", hash = "sha256:18e25d66fed509e3868dc1572b3f427ff947dd2c56f844a5bf09481ad3f3b2fe", size = 86830, upload-time = "2025-12-01T02:30:57.729Z" },
 ]
 
 [[package]]

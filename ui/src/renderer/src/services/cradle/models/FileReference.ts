@@ -14,7 +14,7 @@
 
 import { mapValues } from '../runtime';
 /**
- * 
+ * Serializer for FileReference model.
  * @export
  * @interface FileReference
  */
@@ -30,19 +30,7 @@ export interface FileReference {
      * @type {string}
      * @memberof FileReference
      */
-    minioFileName: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof FileReference
-     */
-    fileName: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof FileReference
-     */
-    bucketName: string;
+    fileName?: string | null;
     /**
      * 
      * @type {Date}
@@ -55,15 +43,36 @@ export interface FileReference {
      * @memberof FileReference
      */
     fileSize?: number | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof FileReference
+     */
+    readonly mimetype?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof FileReference
+     */
+    readonly md5Hash?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof FileReference
+     */
+    readonly sha1Hash?: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof FileReference
+     */
+    readonly sha256Hash?: string | null;
 }
 
 /**
  * Check if a given object implements the FileReference interface.
  */
 export function instanceOfFileReference(value: object): value is FileReference {
-    if (!('minioFileName' in value) || value['minioFileName'] === undefined) return false;
-    if (!('fileName' in value) || value['fileName'] === undefined) return false;
-    if (!('bucketName' in value) || value['bucketName'] === undefined) return false;
     return true;
 }
 
@@ -78,11 +87,13 @@ export function FileReferenceFromJSONTyped(json: any, ignoreDiscriminator: boole
     return {
         
         'id': json['id'] == null ? undefined : json['id'],
-        'minioFileName': json['minio_file_name'],
-        'fileName': json['file_name'],
-        'bucketName': json['bucket_name'],
+        'fileName': json['file_name'] == null ? undefined : json['file_name'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
         'fileSize': json['file_size'] == null ? undefined : json['file_size'],
+        'mimetype': json['mimetype'] == null ? undefined : json['mimetype'],
+        'md5Hash': json['md5_hash'] == null ? undefined : json['md5_hash'],
+        'sha1Hash': json['sha1_hash'] == null ? undefined : json['sha1_hash'],
+        'sha256Hash': json['sha256_hash'] == null ? undefined : json['sha256_hash'],
     };
 }
 
@@ -90,7 +101,7 @@ export function FileReferenceToJSON(json: any): FileReference {
     return FileReferenceToJSONTyped(json, false);
 }
 
-export function FileReferenceToJSONTyped(value?: Omit<FileReference, 'timestamp'> | null, ignoreDiscriminator: boolean = false): any {
+export function FileReferenceToJSONTyped(value?: Omit<FileReference, 'timestamp'|'mimetype'|'md5_hash'|'sha1_hash'|'sha256_hash'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
@@ -98,9 +109,7 @@ export function FileReferenceToJSONTyped(value?: Omit<FileReference, 'timestamp'
     return {
         
         'id': value['id'],
-        'minio_file_name': value['minioFileName'],
         'file_name': value['fileName'],
-        'bucket_name': value['bucketName'],
         'file_size': value['fileSize'],
     };
 }

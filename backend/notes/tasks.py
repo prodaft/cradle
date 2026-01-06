@@ -161,9 +161,6 @@ def link_files_task(note_id, file_ref_id=None):
         files = [file_ref]
 
     for f in files:
-        if cradle_settings.files.autoprocess_files:
-            f.process_file()
-
         note.entries.add(f.entry)
 
         for e in f.entities:

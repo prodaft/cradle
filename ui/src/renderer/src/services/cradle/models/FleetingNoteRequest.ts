@@ -13,14 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { FileReferenceRequest } from './FileReferenceRequest';
-import {
-    FileReferenceRequestFromJSON,
-    FileReferenceRequestFromJSONTyped,
-    FileReferenceRequestToJSON,
-    FileReferenceRequestToJSONTyped,
-} from './FileReferenceRequest';
-
 /**
  * Serializer for fleeting notes. This bypasses the normal note processing pipeline
  * and is used for quick note taking without entity references.
@@ -34,12 +26,6 @@ export interface FleetingNoteRequest {
      * @memberof FleetingNoteRequest
      */
     content?: string;
-    /**
-     * 
-     * @type {Array<FileReferenceRequest>}
-     * @memberof FleetingNoteRequest
-     */
-    files?: Array<FileReferenceRequest>;
     /**
      * 
      * @type {string}
@@ -72,7 +58,6 @@ export function FleetingNoteRequestFromJSONTyped(json: any, ignoreDiscriminator:
     return {
         
         'content': json['content'] == null ? undefined : json['content'],
-        'files': json['files'] == null ? undefined : ((json['files'] as Array<any>).map(FileReferenceRequestFromJSON)),
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],
     };
@@ -90,7 +75,6 @@ export function FleetingNoteRequestToJSONTyped(value?: FleetingNoteRequest | nul
     return {
         
         'content': value['content'],
-        'files': value['files'] == null ? undefined : ((value['files'] as Array<any>).map(FileReferenceRequestToJSON)),
         'title': value['title'],
         'description': value['description'],
     };

@@ -22,6 +22,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Application definition
 INSTALLED_APPS = [
     "corsheaders",
+    "storages",
     "knowledge_graph.apps.KnowledgeGraphConfig",
     "intelio.apps.IntelIOConfig",
     "management.apps.ManagementConfig",

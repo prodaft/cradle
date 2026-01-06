@@ -18,6 +18,8 @@ import type {
   AccessEntityList404Response,
   BaseDigest,
   DigestSubclass,
+  DigestUploadFinalizeCreateRequest,
+  DigestUploadResponse,
   EnrichmentRequest,
   EnrichmentRequestDetail,
   EnrichmentRequestEnricher,
@@ -37,6 +39,10 @@ import {
     BaseDigestToJSON,
     DigestSubclassFromJSON,
     DigestSubclassToJSON,
+    DigestUploadFinalizeCreateRequestFromJSON,
+    DigestUploadFinalizeCreateRequestToJSON,
+    DigestUploadResponseFromJSON,
+    DigestUploadResponseToJSON,
     EnrichmentRequestFromJSON,
     EnrichmentRequestToJSON,
     EnrichmentRequestDetailFromJSON,
@@ -130,6 +136,15 @@ export interface IntelioDigestRetrieveRequest {
     pageSize?: number;
     status?: IntelioDigestRetrieveStatusEnum;
     title?: string;
+}
+
+export interface IntelioDigestUploadFinalizeCreateRequest {
+    uploadId: string;
+    digestUploadFinalizeCreateRequest: DigestUploadFinalizeCreateRequest;
+}
+
+export interface IntelioDigestUploadRetrieveRequest {
+    fileName: string;
 }
 
 export interface MappingsKeysSchemaRequest {
@@ -936,6 +951,121 @@ export class IntelioApi extends runtime.BaseAPI {
      */
     async intelioDigestRetrieve(requestParameters: IntelioDigestRetrieveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedBaseDigestSerializerResponse> {
         const response = await this.intelioDigestRetrieveRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Verifies the digest file was uploaded to storage and creates the digest record, then triggers processing.
+     * Finalize digest file upload
+     */
+    async intelioDigestUploadFinalizeCreateRaw(requestParameters: IntelioDigestUploadFinalizeCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<BaseDigest>> {
+        if (requestParameters['uploadId'] == null) {
+            throw new runtime.RequiredError(
+                'uploadId',
+                'Required parameter "uploadId" was null or undefined when calling intelioDigestUploadFinalizeCreate().'
+            );
+        }
+
+        if (requestParameters['digestUploadFinalizeCreateRequest'] == null) {
+            throw new runtime.RequiredError(
+                'digestUploadFinalizeCreateRequest',
+                'Required parameter "digestUploadFinalizeCreateRequest" was null or undefined when calling intelioDigestUploadFinalizeCreate().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Api-Key"] = await this.configuration.apiKey("Api-Key"); // ApiKey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/intelio/digest/upload/{upload_id}/finalize/`;
+        urlPath = urlPath.replace(`{${"upload_id"}}`, encodeURIComponent(String(requestParameters['uploadId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: DigestUploadFinalizeCreateRequestToJSON(requestParameters['digestUploadFinalizeCreateRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => BaseDigestFromJSON(jsonValue));
+    }
+
+    /**
+     * Verifies the digest file was uploaded to storage and creates the digest record, then triggers processing.
+     * Finalize digest file upload
+     */
+    async intelioDigestUploadFinalizeCreate(requestParameters: IntelioDigestUploadFinalizeCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<BaseDigest> {
+        const response = await this.intelioDigestUploadFinalizeCreateRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Generates a presigned URL for uploading a digest file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Initiate digest file upload
+     */
+    async intelioDigestUploadRetrieveRaw(requestParameters: IntelioDigestUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DigestUploadResponse>> {
+        if (requestParameters['fileName'] == null) {
+            throw new runtime.RequiredError(
+                'fileName',
+                'Required parameter "fileName" was null or undefined when calling intelioDigestUploadRetrieve().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['fileName'] != null) {
+            queryParameters['fileName'] = requestParameters['fileName'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.apiKey) {
+            headerParameters["Api-Key"] = await this.configuration.apiKey("Api-Key"); // ApiKey authentication
+        }
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/intelio/digest/upload/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => DigestUploadResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Generates a presigned URL for uploading a digest file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Initiate digest file upload
+     */
+    async intelioDigestUploadRetrieve(requestParameters: IntelioDigestUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<DigestUploadResponse> {
+        const response = await this.intelioDigestUploadRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

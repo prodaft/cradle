@@ -1,9 +1,8 @@
 import { useNotif } from '@contexts/ui';
-import { useApi, useCradleNavigate } from '@hooks';
+import { useApi } from '@hooks';
 import type { FileReference } from '@services/cradle/models';
-import { handleAPIError } from '@utils/api';
 import { uploadFile } from '@utils/files';
-import { CloudUpload } from 'iconoir-react';
+import { Check, CloudUpload, Xmark } from 'iconoir-react';
 import {
     ChangeEvent,
     ClipboardEvent,
@@ -14,6 +13,17 @@ import {
     useRef,
     useState,
 } from 'react';
+
+/**
+ * Upload status for individual files
+ */
+type FileUploadStatus = 'pending' | 'uploading' | 'success' | 'error';
+
+interface FileWithStatus {
+    file: File;
+    status: FileUploadStatus;
+    error?: string;
+}
 
 /**
  * FileInput component props
@@ -27,14 +37,21 @@ export interface FileInputProps {
     pendingFiles: File[];
     /** Callback used when pending files change */
     setPendingFiles: Dispatch<SetStateAction<File[]>>;
+    /** Optional note ID to link uploaded files to */
+    noteId?: string;
 }
 
 /**
  * This component is used to upload files to the server.
  * It has an input field for selecting files and a button to upload them.
  *
- * The user can upload multiple files at once. Each file is uploaded individually.
- * If any of the files fail to upload, the user is alerted.
+ * The user can upload multiple files at once. Files are uploaded sequentially
+ * (one at a time) with individual status indicators.
+ *
+ * Upload flow per file:
+ * 1. Request presigned URL from backend (GET /file-transfer/upload/)
+ * 2. Upload file directly to presigned URL
+ * 3. Finalize upload with backend (POST /file-transfer/upload/{upload_id}/finalize/)
  *
  * @example
  * ```tsx
@@ -46,6 +63,7 @@ export interface FileInputProps {
  *   setFileData={setFileData}
  *   pendingFiles={pendingFiles}
  *   setPendingFiles={setPendingFiles}
+ *   noteId="optional-note-uuid"
  * />
  * ```
  */
@@ -54,91 +72,126 @@ export default function FileInput({
     setFileData,
     pendingFiles,
     setPendingFiles,
+    noteId,
 }: FileInputProps): JSX.Element {
     const { fileTransferApi } = useApi();
     const { notify } = useNotif();
     const [isUploading, setIsUploading] = useState(false);
+    const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
-    const { navigate, navigateLink } = useCradleNavigate();
+
+    // Sync filesWithStatus when pendingFiles changes
+    useEffect(() => {
+        setFilesWithStatus(
+            pendingFiles.map((file) => ({
+                file,
+                status: 'pending' as FileUploadStatus,
+            })),
+        );
+    }, [pendingFiles]);
 
     // Update the file input's files when pendingFiles changes
     useEffect(() => {
         if (inputRef.current && pendingFiles.length > 0) {
-            // Create a new DataTransfer object to convert the array back to a FileList
             const dataTransfer = new DataTransfer();
             pendingFiles.forEach((file) => dataTransfer.items.add(file));
             inputRef.current.files = dataTransfer.files;
         } else if (inputRef.current) {
-            // Clear the input
             inputRef.current.value = '';
         }
     }, [pendingFiles]);
 
-    const handleUpload = () => {
+    const updateFileStatus = (index: number, status: FileUploadStatus, error?: string) => {
+        setFilesWithStatus((prev) =>
+            prev.map((item, i) => (i === index ? { ...item, status, error } : item)),
+        );
+    };
+
+    const handleUpload = async () => {
         if (!pendingFiles || pendingFiles.length === 0) {
             notify({ type: 'error', text: 'No files selected.' });
             return;
         }
 
-        // Attempt to upload all files and remember which files succeed and which fail
         setIsUploading(true);
         const succeededFileData: FileReference[] = [];
-        const failedFiles: File[] = [];
 
-        const fileUploadPromises = pendingFiles.map((file) =>
-            fileTransferApi
-                .fileTransferUploadRetrieve({ fileName: file.name })
-                .then(async (res) => {
-                    const uploadUrl = res.presigned;
-                    await uploadFile(uploadUrl, file);
-                    return res;
-                })
-                .then((data) => {
-                    succeededFileData.push({
-                        minioFileName: data.minioFileName,
-                        fileName: file.name,
-                        bucketName: data.bucketName,
-                    });
-                })
-                .catch((err) => {
-                    failedFiles.push(file);
-                }),
-        );
+        // Upload files sequentially
+        for (let i = 0; i < filesWithStatus.length; i++) {
+            const { file, status } = filesWithStatus[i];
 
-        // Handle all the failures by alerting the user which uploads failed
-        Promise.all(fileUploadPromises)
-            .then(() => {
-                // Add the files that succeeded to the list of files
-                setFileData(fileData.concat(succeededFileData));
-            })
-            .then(() => {
-                // All other files are kept in the input fields and the user is alerted
-                if (failedFiles.length > 0) {
-                    setPendingFiles(failedFiles);
-                    throw new Error(
-                        'Failed to upload files: ' +
-                            failedFiles.map((file) => file.name).join(', '),
-                    );
-                } else {
-                    setPendingFiles([]);
-                    notify({
-                        type: 'success',
-                        text: 'All files uploaded successfully!',
-                    });
-                }
-            })
-            .catch((error) => {
-                handleAPIError(error, notify);
-            }) // Catches the error thrown in the .then block
-            .finally(() => {
-                setIsUploading(false);
+            // Skip already processed files
+            if (status === 'success' || status === 'error') {
+                continue;
+            }
+
+            // Mark as uploading
+            updateFileStatus(i, 'uploading');
+
+            try {
+                // Step 1: Request presigned URL
+                const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve({
+                    fileName: file.name,
+                });
+
+                // Step 2: Upload file to presigned URL
+                await uploadFile(uploadResponse.presignedUrl, file);
+
+                // Step 3: Finalize upload with backend
+                const finalizeResponse = await fileTransferApi.fileTransferUploadFinalizeCreate({
+                    uploadId: uploadResponse.uploadId,
+                    fileUploadFinalizeRequest: noteId ? { noteId } : undefined,
+                });
+
+                // Mark as success
+                updateFileStatus(i, 'success');
+
+                // Add to succeeded files
+                succeededFileData.push({
+                    id: finalizeResponse.fileId,
+                    fileName: finalizeResponse.fileName,
+                    fileSize: file.size,
+                });
+            } catch (err) {
+                console.error(`Failed to upload file ${file.name}:`, err);
+                updateFileStatus(i, 'error', err instanceof Error ? err.message : 'Upload failed');
+            }
+        }
+
+        // Update file data with all successful uploads
+        if (succeededFileData.length > 0) {
+            setFileData((prev) => [...prev, ...succeededFileData]);
+        }
+
+        // Check results
+        const successCount = filesWithStatus.filter((f) => f.status === 'success').length + succeededFileData.length;
+        const errorCount = filesWithStatus.filter((f) => f.status === 'error').length;
+
+        if (errorCount === 0 && succeededFileData.length > 0) {
+            notify({
+                type: 'success',
+                text: `${succeededFileData.length} file${succeededFileData.length > 1 ? 's' : ''} uploaded successfully!`,
             });
+            // Clear pending files on full success
+            setPendingFiles([]);
+        } else if (succeededFileData.length > 0) {
+            notify({
+                type: 'info',
+                text: `${succeededFileData.length} uploaded, ${errorCount} failed.`,
+            });
+        } else if (errorCount > 0) {
+            notify({
+                type: 'error',
+                text: `Failed to upload ${errorCount} file${errorCount > 1 ? 's' : ''}.`,
+            });
+        }
+
+        setIsUploading(false);
     };
 
     const handleFileChange = useCallback(
         (event: ChangeEvent<HTMLInputElement>) => {
             if (event.target && event.target.files && event.target.files.length > 0) {
-                // Convert FileList to Array to ensure consistency across browsers
                 setPendingFiles(Array.from(event.target.files));
             } else {
                 setPendingFiles([]);
@@ -147,24 +200,38 @@ export default function FileInput({
         [setPendingFiles],
     );
 
-    // Handle paste events (for the editor component issue)
     const handlePaste = useCallback(
         (e: ClipboardEvent<HTMLDivElement>) => {
             if (e.clipboardData && e.clipboardData.files.length > 0) {
                 e.preventDefault();
-                // Immediately convert FileList to Array
                 setPendingFiles(Array.from(e.clipboardData.files));
             }
         },
         [setPendingFiles],
     );
 
+    const renderStatusIcon = (status: FileUploadStatus) => {
+        switch (status) {
+            case 'uploading':
+                return (
+                    <div className="w-4 h-4 border-2 border-cradle-accent-primary border-t-transparent rounded-full animate-spin" />
+                );
+            case 'success':
+                return <Check className="w-4 h-4 text-green-500" strokeWidth={2.5} />;
+            case 'error':
+                return <Xmark className="w-4 h-4 text-red-500" strokeWidth={2.5} />;
+            default:
+                return <div className="w-4 h-4" />; // Empty placeholder for pending
+        }
+    };
+
     return (
-        <>
-            <div className='flex flex-row gap-2 items-stretch' onPaste={handlePaste}>
+        <div className="space-y-3" onPaste={handlePaste}>
+            {/* File Input Row */}
+            <div className="flex flex-row gap-2 items-stretch">
                 <input
-                    type='file'
-                    className='flex-1 text-sm text-cradle-text-primary cursor-pointer
+                    type="file"
+                    className="flex-1 text-sm text-cradle-text-primary cursor-pointer
                         border border-cradle-border-accent rounded-xl bg-cradle-bg-secondary/5 p-0
                         file:mr-4 file:py-2 file:px-4
                         file:rounded-l-[11px] file:rounded-r-none
@@ -173,23 +240,62 @@ export default function FileInput({
                         file:text-sm file:font-medium
                         file:cursor-pointer file:transition-colors
                         hover:file:bg-cradle-accent-primary/20
-                    '
+                    "
                     multiple
                     onChange={handleFileChange}
                     ref={inputRef}
+                    disabled={isUploading}
                 />
                 <button
-                    type='button'
-                    className='rounded-xl border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                    type="button"
+                    className="rounded-xl border border-cradle-border-accent hover:border-cradle-accent-primary bg-transparent transition-colors text-cradle-text-secondary hover:text-cradle-text-primary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={handleUpload}
                     disabled={isUploading || pendingFiles.length === 0}
                 >
-                    {isUploading && (
+                    {isUploading ? (
                         <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <CloudUpload className="w-5 h-5" strokeWidth={2} />
                     )}
-                    <CloudUpload className='w-5 h-5' strokeWidth={2} />
                 </button>
             </div>
-        </>
+
+            {/* Files List with Status */}
+            {filesWithStatus.length > 0 && (
+                <ul className="border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto">
+                    {filesWithStatus.map(({ file, status, error }, index) => (
+                        <li
+                            key={`${file.name}-${index}`}
+                            className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${
+                                status === 'error'
+                                    ? 'bg-red-500/5'
+                                    : status === 'success'
+                                      ? 'bg-green-500/5'
+                                      : status === 'uploading'
+                                        ? 'bg-cradle-accent-primary/5'
+                                        : ''
+                            }`}
+                            title={error || undefined}
+                        >
+                            <div className="flex-shrink-0">{renderStatusIcon(status)}</div>
+                            <span
+                                className={`text-sm truncate flex-1 ${
+                                    status === 'error'
+                                        ? 'text-red-500'
+                                        : status === 'success'
+                                          ? 'text-green-500'
+                                          : 'text-cradle-text-primary'
+                                }`}
+                            >
+                                {file.name}
+                            </span>
+                            <span className="text-xs text-cradle-text-tertiary flex-shrink-0">
+                                {(file.size / 1024).toFixed(1)} KB
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
     );
 }

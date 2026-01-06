@@ -53,6 +53,29 @@ MINIO_CONFIG = {
 
 MINIO_BACKEND_URL = env.str("MINIO_BACKEND_URL", MINIO_BACKEND_URL)
 
+# django-storages S3 configuration (for MinIO compatibility)
+# Note: Each model can use its own storage class with a specific bucket
+# See file_transfer/storage.py for available storage classes
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+AWS_ACCESS_KEY_ID = env.str("MINIO_ROOT_USER", "admin")
+AWS_SECRET_ACCESS_KEY = env.str("MINIO_ROOT_PASSWORD", "admin")
+AWS_S3_ENDPOINT_URL = env.str(
+    "AWS_S3_ENDPOINT_URL",
+    f"{'https' if env.bool('MINIO_SECURE', True) else 'http'}://{env.str('MINIO_ENDPOINT', 'localhost')}",
+)
+AWS_S3_USE_SSL = env.bool("MINIO_SECURE", True)
+AWS_S3_VERIFY = env.bool("AWS_S3_VERIFY", True)
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_S3_ADDRESSING_STYLE = "path"
+
 BASE_URL = env.str("BASE_URL", "")
 STATIC_URL = env.str("STATIC_URL", "static/")
 FRONTEND_URL = env.str("FRONTEND_URL", "http://localhost:5173")

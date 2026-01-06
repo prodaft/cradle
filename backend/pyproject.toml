@@ -44,6 +44,7 @@ dependencies = [
     "django-silk[formatting]==5.4.3",
     "gunicorn",
     "pydantic>=2.12.0",
+    "django-storages[s3]>=1.14.6",
 ]
 
 [project.optional-dependencies]

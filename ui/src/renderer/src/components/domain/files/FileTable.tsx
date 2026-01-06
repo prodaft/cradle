@@ -47,7 +47,7 @@ export default function FileTable({
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (data: FileReference) => {
         console.log('handleDelete', data);
-        setFileData(fileData.filter((d) => d.minioFileName !== data.minioFileName));
+        setFileData(fileData.filter((d) => d.id !== data.id));
         const minioCache = JSON.parse(localStorage.getItem('minio-cache') || '{}');
         if (minioCache) {
             delete minioCache[createDownloadPath(data, basePath)];
@@ -57,13 +57,12 @@ export default function FileTable({
 
     // Downloads a file
     const handleDownload = async (data: FileReference) => {
-        const { presigned } = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
-            bucketName: data.bucketName,
-            minioFileName: data.minioFileName,
+        const { presignedUrl } = await execute(() => fileTransferApi.fileTransferDownloadRetrieve({
+            fileId: data.id!,
         }));
         const link = document.createElement('a');
-        link.href = presigned;
-        link.download = data.fileName;
+        link.href = presignedUrl;
+        link.download = data.fileName || 'data';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -79,29 +78,16 @@ export default function FileTable({
                                 No files uploaded yet.
                             </p>
                         )}
-                        {fileData.length > 0 && (
-                            <div className='grid grid-cols-2 p-2 border-b dark:border-zinc-400 text-base'>
-                                <div className='font-bold dark:text-zinc-200'>Tag</div>
-                                <div className='font-bold dark:text-zinc-200'>
-                                    File Name
-                                </div>
-                            </div>
-                        )}
                         {Array.from(fileData).map((data, index) => (
                             <div
                                 key={index}
-                                className='grid grid-cols-2 py-1 border-b dark:border-zinc-600'
+                                className='py-1 border-b dark:border-zinc-600'
                             >
-                                <div className='dark:text-zinc-200 flex items-center'>
-                                    <div className='max-w-150px truncate px-3'>
-                                        {data.minioFileName}
-                                    </div>
-                                </div>
-                                <div className='dark:text-zinc-200 flex items-center justify-between'>
-                                    <div className='max-w-150px truncate pr-3'>
+                                <div className='dark:text-zinc-200 flex items-center justify-between w-full'>
+                                    <div className='truncate px-3'>
                                         {data.fileName}
                                     </div>
-                                    <div className='dark:text-zinc-200 flex items-center justify-end pr-4'>
+                                    <div className='dark:text-zinc-200 flex items-center justify-end pr-4 ml-auto'>
                                         <Tooltip content='Insert link into text'>
                                             <span>
                                                 <button
@@ -110,7 +96,7 @@ export default function FileTable({
                                                     className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
                                                     onClick={() =>
                                                         insertTextCallback(
-                                                            `[${data.fileName}][${data.minioFileName}]`,
+                                                            `[${data.fileName}][${data.id}-${data.fileName}]`,
                                                         )
                                                     }
                                                 >
@@ -126,7 +112,7 @@ export default function FileTable({
                                                     className='px-2 py-1 rounded hover:opacity-60 bg-zinc-3'
                                                     onClick={() =>
                                                         copyToClipboard(
-                                                            `[${data.fileName}][${data.minioFileName}]`,
+                                                            `[${data.fileName}][${data.id}-${data.fileName}]`,
                                                         )
                                                     }
                                                 >

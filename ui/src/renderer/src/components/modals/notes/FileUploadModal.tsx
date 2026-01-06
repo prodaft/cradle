@@ -1,5 +1,5 @@
 import type { FileReference, FileReferenceWithNote } from '@services/cradle/models';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import FileInput from '../../forms/FileInput';
 
 /**
@@ -14,12 +14,18 @@ export interface FileUploadModalProps {
     closeModal: () => void;
     /** Optional initial files from clipboard or other sources */
     initialFiles?: File[];
+    /** Note ID to link uploaded files to */
+    noteId?: string;
 }
 
 /**
  * FileManagementModal component - upload files to attach to a note
  *
  * Provides file upload functionality for attaching files to notes.
+ * Files are uploaded using the presigned URL flow:
+ * 1. Request presigned URL from backend
+ * 2. Upload file directly to storage
+ * 3. Finalize upload with note_id to link the file
  *
  * @example
  * ```tsx
@@ -27,6 +33,7 @@ export interface FileUploadModalProps {
  *   files={noteFiles}
  *   onFilesChange={setFileData}
  *   closeModal={closeModal}
+ *   noteId="note-uuid"
  * />
  * ```
  */
@@ -35,25 +42,10 @@ export default function FileUploadModal({
     onFilesChange,
     closeModal,
     initialFiles = [],
+    noteId,
 }: FileUploadModalProps): JSX.Element {
     const [pendingFiles, setPendingFiles] = useState<File[]>(initialFiles);
     const [fileData, setFileData] = useState<FileReference[]>([]);
-    const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
-
-    // Auto-select all pending files when the list changes
-    useEffect(() => {
-        setSelectedIndices(new Set(pendingFiles.map((_, i) => i)));
-    }, [pendingFiles]);
-
-    const toggleSelection = (index: number) => {
-        const newSelected = new Set(selectedIndices);
-        if (newSelected.has(index)) {
-            newSelected.delete(index);
-        } else {
-            newSelected.add(index);
-        }
-        setSelectedIndices(newSelected);
-    };
 
     // When new files are uploaded via FileInput, add them to the files list
     const handleFileDataChange: React.Dispatch<React.SetStateAction<FileReference[]>> = (
@@ -72,7 +64,8 @@ export default function FileUploadModal({
             ...files,
             ...newFilesOnly.map((f) => ({
                 ...f,
-                id: crypto.randomUUID(), // Temporary ID for new files
+                // Use the id from the finalize response (already set by FileInput)
+                id: f.id || crypto.randomUUID(),
             })),
         ] as FileReferenceWithNote[];
         onFilesChange(updatedFiles);
@@ -90,54 +83,15 @@ export default function FileUploadModal({
             </div>
 
             {/* File Upload Section */}
-            <div className='mb-6 w-full flex justify-center'>
-                <div className='w-full'>
-                    <FileInput
-                        fileData={fileData}
-                        setFileData={handleFileDataChange}
-                        pendingFiles={pendingFiles}
-                        setPendingFiles={setPendingFiles}
-                    />
-                </div>
+            <div className='mb-6 w-full'>
+                <FileInput
+                    fileData={fileData}
+                    setFileData={handleFileDataChange}
+                    pendingFiles={pendingFiles}
+                    setPendingFiles={setPendingFiles}
+                    noteId={noteId}
+                />
             </div>
-
-            {/* Queued Files List */}
-            {pendingFiles.length > 0 && (
-                <div className='mb-6'>
-                    <label className='cradle-label mb-2 block'>
-                        Queued for Upload ({selectedIndices.size})
-                    </label>
-                    <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
-                        {pendingFiles.map((file, index) => {
-                            const isSelected = selectedIndices.has(index);
-                            return (
-                                <li
-                                    key={index}
-                                    className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${isSelected
-                                        ? 'hover:bg-cradle-bg-secondary/50'
-                                        : 'bg-cradle-bg-secondary/10'
-                                        }`}
-                                >
-                                    <input
-                                        type='checkbox'
-                                        className='cradle-checkbox'
-                                        checked={isSelected}
-                                        onChange={() => toggleSelection(index)}
-                                    />
-                                    <span
-                                        className={`text-sm truncate flex-1 ${isSelected
-                                            ? 'text-cradle-text-primary'
-                                            : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
-                                            }`}
-                                    >
-                                        {file.name}
-                                    </span>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
-            )}
 
             {/* Actions */}
             <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>

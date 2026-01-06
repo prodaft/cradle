@@ -28,6 +28,8 @@ models/ChangePasswordResponse.ts
 models/DefaultNoteTemplateRequest.ts
 models/DefaultNoteTemplateResponse.ts
 models/DigestSubclass.ts
+models/DigestUploadFinalizeCreateRequest.ts
+models/DigestUploadResponse.ts
 models/EdgeRelation.ts
 models/EmailConfirmRequest.ts
 models/Enable2FA.ts
@@ -66,9 +68,10 @@ models/EventLog.ts
 models/FileDownload.ts
 models/FileProcessRequest.ts
 models/FileReference.ts
-models/FileReferenceRequest.ts
 models/FileReferenceWithNote.ts
-models/FileUpload.ts
+models/FileUploadFinalizeRequest.ts
+models/FileUploadFinalizeResponse.ts
+models/FileUploadResponse.ts
 models/FleetingNote.ts
 models/FleetingNoteRequest.ts
 models/FleetingNoteRetrieve.ts

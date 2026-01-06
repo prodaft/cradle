@@ -2,10 +2,12 @@ from io import BytesIO
 from typing import List
 
 from file_transfer.models import FileReference
+from file_transfer.storage import ReportStorage
 from notes.models import Note
 from publish.models import PublishedReport, ReportStatus
 from publish.strategies.base import BasePublishStrategy
-from file_transfer.utils import MinioClient
+
+from file_transfer.s3_utils import delete_object, put_bytes
 
 
 class PlaintextPublish(BasePublishStrategy):
@@ -24,10 +26,11 @@ class PlaintextPublish(BasePublishStrategy):
         return self._upload_text(text_content, report)
 
     def delete_report(self, report: PublishedReport) -> bool:
-        bucket_name = str(report.user.id)
-        client = MinioClient().client
+        bucket_name = ReportStorage.bucket_name
+        key = f"{report.id}.txt"
         try:
-            client.remove_object(bucket_name, f"{report.id}.txt")
+            delete_object(bucket_name, key)
+            FileReference.objects.filter(report=report).delete()
         except Exception:
             report.error_message = "Failed to delete plaintext report."
             report.status = ReportStatus.ERROR
@@ -46,21 +49,21 @@ class PlaintextPublish(BasePublishStrategy):
         return f"{title}\n\n{notes_text}"
 
     def _upload_text(self, text: dict, report: PublishedReport) -> bool:
-        client = MinioClient().client
-        data = BytesIO(text.encode("utf-8"))
-        bucket_name = str(report.user.id)
-        size = len(text)
+        bucket_name = ReportStorage.bucket_name
         content_type = "text/plain"
-        file_name = f"{report.id}.txt"
+        key = f"{report.id}.txt"
 
         try:
-            client.put_object(
-                bucket_name, file_name, data, size, content_type=content_type
+            put_bytes(
+                bucket_name,
+                key,
+                body=text.encode("utf-8"),
+                content_type=content_type,
             )
             FileReference.objects.filter(report=report).delete()
             FileReference.objects.create(
-                minio_file_name=file_name,
-                file_name=file_name,
+                minio_file_name=key,
+                file_name=key,
                 bucket_name=bucket_name,
                 report=report,
             )

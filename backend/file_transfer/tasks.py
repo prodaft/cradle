@@ -3,13 +3,19 @@ import logging
 
 from celery import shared_task
 from django.db import transaction
+from django.utils import timezone
 
-from file_transfer.models import FileReference
-from file_transfer.utils import MinioClient
+from file_transfer.models import FileReference, PendingUpload
+from file_transfer.s3_utils import delete_object
+from file_transfer.storage import FileTransferStorage
 from management.settings import cradle_settings
-from user.models import CradleUser
 
 logger = logging.getLogger("django.request")
+
+
+def get_storage():
+    """Get the file transfer storage instance."""
+    return FileTransferStorage()
 
 
 @shared_task
@@ -23,68 +29,56 @@ def reprocess_all_files_task():
         try:
             file_ref.process_file()
         except Exception as e:
-            logger.error(
-                f"Error reprocessing file {file_ref.minio_file_name}: {str(e)}"
-            )
+            logger.error(f"Error reprocessing file {file_ref.id}: {str(e)}")
 
 
 @shared_task
 def process_file_task(file_id):
+    """
+    Process a file to calculate hashes, mimetype, and file size.
+    Uses django-storages to access file content.
+    """
     import magic
 
     # Get the file reference
     file_ref = FileReference.objects.get(id=file_id)
 
-    # Get the file from MinIO
-    minio_client = MinioClient()
+    if not file_ref.file:
+        logger.error(f"File reference {file_id} has no file attached")
+        return
+
+    storage = get_storage()
 
     # Fetch the file size if it is not set
     if file_ref.file_size is None:
-        file_size = minio_client.fetch_file_size(
-            file_ref.bucket_name, file_ref.minio_file_name
-        )
-
-        if file_size is None:
+        try:
+            file_ref.file_size = storage.size(file_ref.file.name)
+            file_ref.save(update_fields=["file_size"])
+        except Exception as e:
             logger.error(
-                f"Failed to fetch file size for {file_ref.minio_file_name} in bucket {file_ref.bucket_name}"
+                f"Failed to fetch file size for {file_ref.file.name}: {str(e)}"
             )
-
-        file_ref.file_size = file_size
-        file_ref.save(update_fields=["file_size"])
 
     # Fetch the mimetype if it is not set
     if file_ref.mimetype is None:
-        header_bytes = minio_client.read_bytes(
-            file_ref.bucket_name, file_ref.minio_file_name, offset=0, length=8192
-        )
+        try:
+            with file_ref.file.open("rb") as f:
+                header_bytes = f.read(8192)
 
-        if header_bytes is None:
-            logger.error(
-                f"Failed to fetch header bytes for {file_ref.minio_file_name} in bucket {file_ref.bucket_name}"
-            )
+            if header_bytes:
+                mimetype = magic.from_buffer(header_bytes, mime=True)
+                file_ref.mimetype = mimetype
+                file_ref.save(update_fields=["mimetype"])
+        except Exception as e:
+            logger.error(f"Failed to fetch mimetype for {file_ref.file.name}: {str(e)}")
             return
 
-        mimetype = magic.from_buffer(header_bytes, mime=True)
-        file_ref.mimetype = mimetype
-        file_ref.save(update_fields=["mimetype"])
-
+    # Calculate hashes if file is small enough
     if (
         file_ref.file_size is not None
         and file_ref.file_size <= cradle_settings.files.max_file_size_for_hashing
+        and not (file_ref.md5_hash and file_ref.sha1_hash and file_ref.sha256_hash)
     ):
-        file_obj = minio_client.fetch_file(
-            file_ref.bucket_name, file_ref.minio_file_name
-        )
-
-        if not file_obj:
-            logger.error(
-                f"File not found in MinIO: {file_ref.minio_file_name} in bucket {file_ref.bucket_name}"
-            )
-            return
-
-        if file_ref.md5_hash and file_ref.sha1_hash and file_ref.sha256_hash:
-            return
-
         try:
             # Initialize hash objects
             md5_hash = hashlib.md5()
@@ -94,49 +88,87 @@ def process_file_task(file_id):
             # Read and update hash in chunks
             chunk_size = 8192  # 8KB chunks
 
-            while True:
-                data = file_obj.read(chunk_size)
-
-                if not data:
-                    break
-
-                md5_hash.update(data)
-                sha1_hash.update(data)
-                sha256_hash.update(data)
+            with file_ref.file.open("rb") as f:
+                while True:
+                    data = f.read(chunk_size)
+                    if not data:
+                        break
+                    md5_hash.update(data)
+                    sha1_hash.update(data)
+                    sha256_hash.update(data)
 
             # Store the hexadecimal digest of the hashes
             file_ref.md5_hash = md5_hash.hexdigest()
             file_ref.sha1_hash = sha1_hash.hexdigest()
             file_ref.sha256_hash = sha256_hash.hexdigest()
-
-            # Save all updated fields
             file_ref.save(update_fields=["md5_hash", "sha1_hash", "sha256_hash"])
         except Exception as e:
-            logger.error(f"Error processing file {file_ref.minio_file_name}: {str(e)}")
-        finally:
-            # Always close the file object
-            file_obj.close()
+            logger.error(f"Error processing file {file_ref.file.name}: {str(e)}")
 
-    from notes.tasks import link_files_task
+    # Link files to entries if note is attached
+    if file_ref.note:
+        from notes.tasks import link_files_task
 
-    transaction.on_commit(lambda: link_files_task.apply_async(args=(file_ref.note.id,)))
+        transaction.on_commit(
+            lambda: link_files_task.apply_async(args=(str(file_ref.note.id),))
+        )
 
 
 @shared_task
-def delete_hanging_files():
-    client = MinioClient()
+def cleanup_expired_upload(pending_upload_id: str):
+    """
+    Clean up an expired pending upload.
+    Deletes the PendingUpload record and removes the file from storage if it exists.
+    """
+    try:
+        pending_upload = PendingUpload.objects.get(id=pending_upload_id)
+    except PendingUpload.DoesNotExist:
+        # Already cleaned up or finalized
+        return
 
-    for user in CradleUser.objects.all():
-        bucket_name = str(user.id)
+    if not pending_upload.is_expired:
+        # Not expired yet, reschedule
+        return
 
-        filenames = set(client.list_objects(bucket_name))
+    storage = get_storage()
 
-        referenced_files = set(
-            FileReference.objects.filter(bucket_name=bucket_name).values_list(
-                "minio_file_name", flat=True
+    # Delete file from storage if it exists
+    if storage.exists(pending_upload.object_key):
+        try:
+            delete_object(FileTransferStorage.bucket_name, pending_upload.object_key)
+            logger.info(f"Deleted orphaned file: {pending_upload.object_key}")
+        except Exception as e:
+            logger.error(
+                f"Failed to delete orphaned file {pending_upload.object_key}: {str(e)}"
             )
-        )
 
-        unreferenced_files = set(filenames) - referenced_files
+    # Delete the pending upload record
+    pending_upload.delete()
 
-        client.delete_files(bucket_name, unreferenced_files)
+
+@shared_task
+def cleanup_expired_uploads():
+    """
+    Periodic task to clean up all expired pending uploads.
+    Should be scheduled to run periodically (e.g., every 10 minutes).
+    """
+    expired_uploads = PendingUpload.objects.filter(expires_at__lt=timezone.now())
+    storage = get_storage()
+
+    for pending_upload in expired_uploads:
+        # Delete file from storage if it exists
+        if storage.exists(pending_upload.object_key):
+            try:
+                delete_object(
+                    FileTransferStorage.bucket_name, pending_upload.object_key
+                )
+                logger.info(f"Deleted orphaned file: {pending_upload.object_key}")
+            except Exception as e:
+                logger.error(
+                    f"Failed to delete orphaned file {pending_upload.object_key}: {str(e)}"
+                )
+
+        # Delete the pending upload record
+        pending_upload.delete()
+
+    logger.info(f"Cleaned up {expired_uploads.count()} expired uploads")

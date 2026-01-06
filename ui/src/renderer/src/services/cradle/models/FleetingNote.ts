@@ -13,14 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { FileReference } from './FileReference';
-import {
-    FileReferenceFromJSON,
-    FileReferenceFromJSONTyped,
-    FileReferenceToJSON,
-    FileReferenceToJSONTyped,
-} from './FileReference';
-
 /**
  * Serializer for fleeting notes. This bypasses the normal note processing pipeline
  * and is used for quick note taking without entity references.
@@ -46,12 +38,6 @@ export interface FleetingNote {
      * @memberof FleetingNote
      */
     readonly timestamp?: Date;
-    /**
-     * 
-     * @type {Array<FileReference>}
-     * @memberof FleetingNote
-     */
-    files?: Array<FileReference>;
     /**
      * 
      * @type {string}
@@ -92,7 +78,6 @@ export function FleetingNoteFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'id': json['id'] == null ? undefined : json['id'],
         'content': json['content'] == null ? undefined : json['content'],
         'timestamp': json['timestamp'] == null ? undefined : (new Date(json['timestamp'])),
-        'files': json['files'] == null ? undefined : ((json['files'] as Array<any>).map(FileReferenceFromJSON)),
         'title': json['title'] == null ? undefined : json['title'],
         'description': json['description'] == null ? undefined : json['description'],
         'fleeting': json['fleeting'] == null ? undefined : json['fleeting'],
@@ -111,7 +96,6 @@ export function FleetingNoteToJSONTyped(value?: Omit<FleetingNote, 'id'|'timesta
     return {
         
         'content': value['content'],
-        'files': value['files'] == null ? undefined : ((value['files'] as Array<any>).map(FileReferenceToJSON)),
         'title': value['title'],
         'description': value['description'],
     };

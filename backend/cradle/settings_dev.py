@@ -37,6 +37,26 @@ MINIO_CONFIG = {
     "secure": False,
 }
 
+# django-storages S3 configuration (for MinIO compatibility)
+# Note: Each model can use its own storage class with a specific bucket
+# See file_transfer/storage.py for available storage classes
+STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3.S3Storage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
+
+AWS_ACCESS_KEY_ID = "admin"
+AWS_SECRET_ACCESS_KEY = "minio_admin"
+AWS_S3_ENDPOINT_URL = "http://192.168.31.41:9000"
+AWS_S3_USE_SSL = False
+AWS_S3_VERIFY = False
+AWS_S3_SIGNATURE_VERSION = "s3v4"
+AWS_S3_ADDRESSING_STYLE = "path"
+
 RABBITMQ_URL = "amqp://cradle:cradle@192.168.31.44:5672//"
 REDIS_URL = "redis://192.168.31.42:6379/0"
 BROKER = RABBITMQ_URL

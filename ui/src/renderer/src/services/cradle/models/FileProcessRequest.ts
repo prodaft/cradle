@@ -14,7 +14,7 @@
 
 import { mapValues } from '../runtime';
 /**
- * 
+ * Request serializer for file processing.
  * @export
  * @interface FileProcessRequest
  */

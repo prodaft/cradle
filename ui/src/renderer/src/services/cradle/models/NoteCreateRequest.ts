@@ -13,14 +13,6 @@
  */
 
 import { mapValues } from '../runtime';
-import type { FileReferenceRequest } from './FileReferenceRequest';
-import {
-    FileReferenceRequestFromJSON,
-    FileReferenceRequestFromJSONTyped,
-    FileReferenceRequestToJSON,
-    FileReferenceRequestToJSONTyped,
-} from './FileReferenceRequest';
-
 /**
  * 
  * @export
@@ -33,12 +25,6 @@ export interface NoteCreateRequest {
      * @memberof NoteCreateRequest
      */
     content?: string;
-    /**
-     * 
-     * @type {Array<FileReferenceRequest>}
-     * @memberof NoteCreateRequest
-     */
-    files?: Array<FileReferenceRequest>;
 }
 
 /**
@@ -59,7 +45,6 @@ export function NoteCreateRequestFromJSONTyped(json: any, ignoreDiscriminator: b
     return {
         
         'content': json['content'] == null ? undefined : json['content'],
-        'files': json['files'] == null ? undefined : ((json['files'] as Array<any>).map(FileReferenceRequestFromJSON)),
     };
 }
 
@@ -75,7 +60,6 @@ export function NoteCreateRequestToJSONTyped(value?: NoteCreateRequest | null, i
     return {
         
         'content': value['content'],
-        'files': value['files'] == null ? undefined : ((value['files'] as Array<any>).map(FileReferenceRequestToJSON)),
     };
 }
 

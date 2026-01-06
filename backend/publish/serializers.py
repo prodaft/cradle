@@ -4,7 +4,8 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from file_transfer.models import FileReference
-from file_transfer.utils import MinioClient
+from file_transfer.s3_utils import presign_get
+from file_transfer.storage import FileTransferStorage, ReportStorage
 
 from .models import DownloadStrategies, PublishedReport, ReportStatus, UploadStrategies
 from .strategies import PUBLISH_STRATEGIES
@@ -39,13 +40,11 @@ class ReportDetailSerializer(serializers.ModelSerializer):
     def get_report_url(self, obj):
         download_url = self.context.get("download_url", False)
         if download_url:
-            extra_headers = {
-                "Response-Content-Disposition": f"attachment; filename={obj.title}.{obj.strategy.lower()}",
-            }
+            response_disposition = (
+                f'attachment; filename="{obj.title}.{obj.strategy.lower()}"'
+            )
         else:
-            extra_headers = {}
-
-        print(download_url, extra_headers)
+            response_disposition = None
 
         if obj.status != ReportStatus.DONE:
             return None
@@ -56,22 +55,32 @@ class ReportDetailSerializer(serializers.ModelSerializer):
                 return strategy(False).get_remote_url(obj)
 
         if FileReference.objects.filter(report=obj).exists():
-            headers = extra_headers
             strategy = PUBLISH_STRATEGIES.get(obj.strategy.lower())
-            if strategy:
-                headers.update(
-                    {
-                        "Response-Content-Type": strategy(False).content_type,
-                    }
+            response_content_type = strategy(False).content_type if strategy else None
+
+            # Prefer report bucket if the reference indicates it.
+            file_ref = obj.file
+            if (
+                file_ref.bucket_name == ReportStorage.bucket_name
+                and file_ref.minio_file_name
+            ):
+                return presign_get(
+                    ReportStorage.bucket_name,
+                    file_ref.minio_file_name,
+                    expires_in=int(timedelta(hours=8).total_seconds()),
+                    response_content_type=response_content_type,
+                    response_content_disposition=response_disposition,
                 )
 
-            client = MinioClient()
-            return client.create_presigned_get(
-                obj.file.bucket_name,
-                obj.file.minio_file_name,
-                expiry_time=timedelta(hours=8),
-                response_headers=headers,
-            )
+            # Fallback for older records stored in the files bucket using the new FileField.
+            if file_ref.file:
+                return presign_get(
+                    FileTransferStorage.bucket_name,
+                    file_ref.file.name,
+                    expires_in=int(timedelta(hours=8).total_seconds()),
+                    response_content_type=response_content_type,
+                    response_content_disposition=response_disposition,
+                )
 
         return None
 

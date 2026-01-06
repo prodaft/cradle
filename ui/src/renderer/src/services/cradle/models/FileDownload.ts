@@ -14,7 +14,7 @@
 
 import { mapValues } from '../runtime';
 /**
- * 
+ * Response serializer for file download.
  * @export
  * @interface FileDownload
  */
@@ -24,21 +24,21 @@ export interface FileDownload {
      * @type {string}
      * @memberof FileDownload
      */
-    presigned: string;
+    presignedUrl: string;
     /**
-     * 
+     * Expiration time in seconds
      * @type {number}
      * @memberof FileDownload
      */
-    expiresAt: number;
+    expiresIn: number;
 }
 
 /**
  * Check if a given object implements the FileDownload interface.
  */
 export function instanceOfFileDownload(value: object): value is FileDownload {
-    if (!('presigned' in value) || value['presigned'] === undefined) return false;
-    if (!('expiresAt' in value) || value['expiresAt'] === undefined) return false;
+    if (!('presignedUrl' in value) || value['presignedUrl'] === undefined) return false;
+    if (!('expiresIn' in value) || value['expiresIn'] === undefined) return false;
     return true;
 }
 
@@ -52,8 +52,8 @@ export function FileDownloadFromJSONTyped(json: any, ignoreDiscriminator: boolea
     }
     return {
         
-        'presigned': json['presigned'],
-        'expiresAt': json['expires_at'],
+        'presignedUrl': json['presigned_url'],
+        'expiresIn': json['expires_in'],
     };
 }
 
@@ -68,8 +68,8 @@ export function FileDownloadToJSONTyped(value?: FileDownload | null, ignoreDiscr
 
     return {
         
-        'presigned': value['presigned'],
-        'expires_at': value['expiresAt'],
+        'presigned_url': value['presignedUrl'],
+        'expires_in': value['expiresIn'],
     };
 }
 

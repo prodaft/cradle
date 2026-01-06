@@ -3,6 +3,7 @@ import useApi from '@/hooks/api/useApi';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import type { FileReferenceWithNote } from '@services/cradle/models';
+import bytes from 'bytes';
 import { Download } from 'iconoir-react';
 import ListView from '../../base/ListView/ListView';
 
@@ -31,15 +32,14 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const handleDownload = async (file: FileReferenceWithNote) => {
         let response = await execute(() =>
             fileTransferApi.fileTransferDownloadRetrieve({
-                bucketName: file.bucketName,
-                minioFileName: file.minioFileName,
+                fileId: file.id!,
             }),
         );
-        const { presigned } = response;
+        const { presignedUrl } = response;
         const link = document.createElement('a');
-        link.href = presigned;
-        const fileName = file.minioFileName.split('/').pop() || file.minioFileName;
-        link.download = fileName;
+        link.href = presignedUrl;
+        const fileName = file.fileName;
+        link.download = fileName || 'data';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -56,12 +56,13 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                             { key: 'entities', label: 'Entities', className: 'w-32' },
                             { key: 'mimetype', label: 'MimeType', className: 'w-32' },
                             { key: 'sha256', label: 'SHA256' },
+                            { key: 'fileSize', label: 'File Size' },
                             {
                                 key: 'uploadedAt',
                                 label: 'Uploaded At',
                                 className: 'w-32',
                             },
-                            { key: 'actions', label: 'Actions', className: 'w-32' },
+                            { key: 'actions', label: '', className: 'w-8' },
                         ]}
                         renderRow={(file: FileReferenceWithNote, index: number) => (
                             <tr key={file.id || index}>
@@ -105,17 +106,20 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     )}
                                 </td>
                                 <td className=''>
+                                    {file.fileSize ? bytes.format(file.fileSize, { unitSeparator: ' ' }) : '-'}
+                                </td>
+                                <td className=''>
                                     {file.timestamp &&
                                         formatDate(new Date(file.timestamp))}
                                 </td>
-                                <td className='w-32'>
-                                    <div className='flex space-x-1'>
-                                        {file.bucketName && file.minioFileName && (
+                                <td className='w-8'>
+                                    <div className='flex space-x-1 justify-end'>
+                                        {file.id && (
                                             <button
                                                 onClick={async () =>
                                                     await handleDownload(file)
                                                 }
-                                                className='btn btn-ghost btn-xs text-green-600 hover:text-green-500'
+                                                className='btn btn-ghost btn-xs text-green-600 hover:bg-cradle-accent-primary/5 p-2 ml-2'
                                                 title='Download'
                                             >
                                                 <Download

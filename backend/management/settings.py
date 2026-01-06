@@ -41,6 +41,10 @@ class FileSettings(BaseSettingsSection):
     prefix = "files"
 
     @property
+    def upload_limit(self):
+        return self.get("upload_limit", 2 ** (31))
+
+    @property
     def autoprocess_files(self):
         return self.get("autoprocess_files", True)
 

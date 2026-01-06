@@ -13,6 +13,7 @@ from django_lifecycle.conditions import WhenFieldHasChanged
 from django_lifecycle.mixins import LifecycleModelMixin, transaction
 
 from core.fields import BitStringField
+from file_transfer.storage import RelationStorage
 from logs.models import LoggableModelMixin
 
 from .enums import EntryType, EntryTypeFormat, RelationReason
@@ -32,6 +33,11 @@ from .managers import (
 )
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
+
+
+def attachment_upload_path(instance: "Attachment", filename: str) -> str:
+    """Generate upload path for attachments: attachments/{uuid}-{filename}"""
+    return f"{instance.id}-{filename}"
 
 
 class Edge(LifecycleModel):
@@ -461,6 +467,9 @@ class Attachment(LifecycleModel):
         Relation, on_delete=models.CASCADE, related_name="attachments"
     )
     name: models.CharField = models.CharField(max_length=255)
-    file: models.FileField = models.FileField(upload_to="attachments/")
+    file: models.FileField = models.FileField(
+        upload_to=attachment_upload_path,
+        storage=RelationStorage,
+    )
     type: models.CharField = models.CharField(max_length=255)
     context: models.JSONField = models.JSONField(default=dict)

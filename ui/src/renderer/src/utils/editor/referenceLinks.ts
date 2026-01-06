@@ -37,7 +37,7 @@ export class ReferenceLinkWidget extends WidgetType {
     eq(other: ReferenceLinkWidget) {
         return (
             other.text === this.text &&
-            other.file.minioFileName === this.file.minioFileName
+            other.file.id === this.file.id
         );
     }
 
@@ -57,11 +57,10 @@ export class ReferenceLinkWidget extends WidgetType {
             e.preventDefault();
             e.stopPropagation();
             this.resolveMinioLink({
-                bucketName: this.file.bucketName,
-                minioFileName: this.file.minioFileName,
+                fileId: this.file.id!,
             }).then((fdownload) => {
-                const { presigned } = fdownload;
-                window.open(presigned, '_blank', 'noopener,noreferrer');
+                const { presignedUrl } = fdownload;
+                window.open(presignedUrl, '_blank', 'noopener,noreferrer');
             });
         });
 
@@ -101,7 +100,7 @@ export class ReferenceImageWidget extends WidgetType {
     eq(other: ReferenceImageWidget) {
         return (
             other.text === this.text &&
-            other.file.minioFileName === this.file.minioFileName
+            other.file.id === this.file.id
         );
     }
 
@@ -112,12 +111,12 @@ export class ReferenceImageWidget extends WidgetType {
         img.style.cursor = 'default';
 
         this.resolveMinioLink({
-            bucketName: this.file.bucketName,
-            minioFileName: this.file.minioFileName,
+            fileId: this.file.id!,
         }).then((fdownload) => {
-            const { presigned } = fdownload;
-            img.src = presigned;
+            const { presignedUrl } = fdownload;
+            img.src = presignedUrl;
         });
+        console.log(img);
 
         return img;
     }
@@ -504,19 +503,21 @@ function createReferenceDecoration(
 
     let key = linkText;
     const labelNode = node.node.getChild('ExternalReferenceLabel');
+    console.log(labelNode);
     if (labelNode) {
         const label = text.slice(labelNode.from, labelNode.to);
         if (label.trim() !== '') {
             key = label;
         }
     }
+    console.log(key);
 
     const reference = mappings[key] || mappings[key.toLowerCase()];
 
     if (reference) {
-
         let widget: WidgetType;
         if (node.node.name === 'ExternalReferenceImage') {
+            console.log(reference);
             widget = new ReferenceImageWidget(
                 linkText,
                 reference,

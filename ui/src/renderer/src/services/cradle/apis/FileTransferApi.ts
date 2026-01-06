@@ -18,7 +18,9 @@ import type {
   AccessEntityList404Response,
   FileDownload,
   FileProcessRequest,
-  FileUpload,
+  FileUploadFinalizeRequest,
+  FileUploadFinalizeResponse,
+  FileUploadResponse,
 } from '../models/index';
 import {
     AccessEntityList404ResponseFromJSON,
@@ -27,8 +29,12 @@ import {
     FileDownloadToJSON,
     FileProcessRequestFromJSON,
     FileProcessRequestToJSON,
-    FileUploadFromJSON,
-    FileUploadToJSON,
+    FileUploadFinalizeRequestFromJSON,
+    FileUploadFinalizeRequestToJSON,
+    FileUploadFinalizeResponseFromJSON,
+    FileUploadFinalizeResponseToJSON,
+    FileUploadResponseFromJSON,
+    FileUploadResponseToJSON,
 } from '../models/index';
 
 export interface FileTransferDeleteDestroyRequest {
@@ -36,12 +42,16 @@ export interface FileTransferDeleteDestroyRequest {
 }
 
 export interface FileTransferDownloadRetrieveRequest {
-    bucketName: string;
-    minioFileName: string;
+    fileId: string;
 }
 
 export interface FileTransferProcessCreateRequest {
     fileProcessRequest: FileProcessRequest;
+}
+
+export interface FileTransferUploadFinalizeCreateRequest {
+    uploadId: string;
+    fileUploadFinalizeRequest?: FileUploadFinalizeRequest;
 }
 
 export interface FileTransferUploadRetrieveRequest {
@@ -54,7 +64,7 @@ export interface FileTransferUploadRetrieveRequest {
 export class FileTransferApi extends runtime.BaseAPI {
 
     /**
-     * Deletes a file reference and removes the associated file from MinIO storage.
+     * Deletes a file reference and removes the associated file from storage.
      * Delete a file reference
      */
     async fileTransferDeleteDestroyRaw(requestParameters: FileTransferDeleteDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
@@ -99,7 +109,7 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Deletes a file reference and removes the associated file from MinIO storage.
+     * Deletes a file reference and removes the associated file from storage.
      * Delete a file reference
      */
     async fileTransferDeleteDestroy(requestParameters: FileTransferDeleteDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
@@ -108,32 +118,21 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generates a presigned URL that allows clients to download files from Minio without requiring credentials. The URL expires after 7 days.
+     * Generates a presigned URL for downloading a file.
      * Get file download URL
      */
     async fileTransferDownloadRetrieveRaw(requestParameters: FileTransferDownloadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FileDownload>> {
-        if (requestParameters['bucketName'] == null) {
+        if (requestParameters['fileId'] == null) {
             throw new runtime.RequiredError(
-                'bucketName',
-                'Required parameter "bucketName" was null or undefined when calling fileTransferDownloadRetrieve().'
-            );
-        }
-
-        if (requestParameters['minioFileName'] == null) {
-            throw new runtime.RequiredError(
-                'minioFileName',
-                'Required parameter "minioFileName" was null or undefined when calling fileTransferDownloadRetrieve().'
+                'fileId',
+                'Required parameter "fileId" was null or undefined when calling fileTransferDownloadRetrieve().'
             );
         }
 
         const queryParameters: any = {};
 
-        if (requestParameters['bucketName'] != null) {
-            queryParameters['bucketName'] = requestParameters['bucketName'];
-        }
-
-        if (requestParameters['minioFileName'] != null) {
-            queryParameters['minioFileName'] = requestParameters['minioFileName'];
+        if (requestParameters['fileId'] != null) {
+            queryParameters['fileId'] = requestParameters['fileId'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -160,7 +159,7 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generates a presigned URL that allows clients to download files from Minio without requiring credentials. The URL expires after 7 days.
+     * Generates a presigned URL for downloading a file.
      * Get file download URL
      */
     async fileTransferDownloadRetrieve(requestParameters: FileTransferDownloadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FileDownload> {
@@ -169,7 +168,7 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Triggers processing for a file that has been uploaded to MinIO.
+     * Triggers processing for a file (calculates hashes, mimetype, etc.).
      * Process an uploaded file
      */
     async fileTransferProcessCreateRaw(requestParameters: FileTransferProcessCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
@@ -213,7 +212,7 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Triggers processing for a file that has been uploaded to MinIO.
+     * Triggers processing for a file (calculates hashes, mimetype, etc.).
      * Process an uploaded file
      */
     async fileTransferProcessCreate(requestParameters: FileTransferProcessCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
@@ -222,10 +221,60 @@ export class FileTransferApi extends runtime.BaseAPI {
     }
 
     /**
-     * Generates a presigned URL that allows uploading a file to MinIO storage without requiring credentials. The URL expires after 5 minutes.
-     * Generate file upload URL
+     * Verifies the file was uploaded to storage and creates a FileReference. Optionally connects the file to a note.
+     * Finalize file upload
      */
-    async fileTransferUploadRetrieveRaw(requestParameters: FileTransferUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FileUpload>> {
+    async fileTransferUploadFinalizeCreateRaw(requestParameters: FileTransferUploadFinalizeCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FileUploadFinalizeResponse>> {
+        if (requestParameters['uploadId'] == null) {
+            throw new runtime.RequiredError(
+                'uploadId',
+                'Required parameter "uploadId" was null or undefined when calling fileTransferUploadFinalizeCreate().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/file-transfer/upload/{upload_id}/finalize/`;
+        urlPath = urlPath.replace(`{${"upload_id"}}`, encodeURIComponent(String(requestParameters['uploadId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: FileUploadFinalizeRequestToJSON(requestParameters['fileUploadFinalizeRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => FileUploadFinalizeResponseFromJSON(jsonValue));
+    }
+
+    /**
+     * Verifies the file was uploaded to storage and creates a FileReference. Optionally connects the file to a note.
+     * Finalize file upload
+     */
+    async fileTransferUploadFinalizeCreate(requestParameters: FileTransferUploadFinalizeCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FileUploadFinalizeResponse> {
+        const response = await this.fileTransferUploadFinalizeCreateRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Generates a presigned URL for uploading a file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Initiate file upload
+     */
+    async fileTransferUploadRetrieveRaw(requestParameters: FileTransferUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FileUploadResponse>> {
         if (requestParameters['fileName'] == null) {
             throw new runtime.RequiredError(
                 'fileName',
@@ -259,14 +308,14 @@ export class FileTransferApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => FileUploadFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => FileUploadResponseFromJSON(jsonValue));
     }
 
     /**
-     * Generates a presigned URL that allows uploading a file to MinIO storage without requiring credentials. The URL expires after 5 minutes.
-     * Generate file upload URL
+     * Generates a presigned URL for uploading a file. Returns upload_id, presigned_url, object_key, and expires_in. The upload must be finalized within the expiration time.
+     * Initiate file upload
      */
-    async fileTransferUploadRetrieve(requestParameters: FileTransferUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FileUpload> {
+    async fileTransferUploadRetrieve(requestParameters: FileTransferUploadRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FileUploadResponse> {
         const response = await this.fileTransferUploadRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }

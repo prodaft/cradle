@@ -2,16 +2,51 @@ import uuid
 from typing import TYPE_CHECKING
 
 from django.db import models
-from django_lifecycle import AFTER_CREATE, AFTER_DELETE, LifecycleModelMixin, hook
+from django.utils import timezone
+from django_lifecycle import AFTER_CREATE, LifecycleModelMixin, hook
 
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass
 from management.settings import cradle_settings
 
-from .utils import MinioClient
+from .storage import FileTransferStorage
 
 if TYPE_CHECKING:
     pass
+
+
+def file_upload_path(instance: "FileReference", filename: str) -> str:
+    """Generate upload path: {uuid}-{filename}"""
+    return f"{instance.id}-{filename}"
+
+
+class PendingUpload(models.Model):
+    """
+    Tracks pending file uploads that have been initiated but not yet finalized.
+    Used to manage presigned URL uploads and cleanup of abandoned uploads.
+    """
+
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    object_key: models.CharField = models.CharField(max_length=512)
+    file_name: models.CharField = models.CharField(max_length=255)
+    user: models.ForeignKey = models.ForeignKey(
+        "user.CradleUser",
+        related_name="pending_uploads",
+        on_delete=models.CASCADE,
+    )
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    expires_at: models.DateTimeField = models.DateTimeField()
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["expires_at"]),
+        ]
+
+    @property
+    def is_expired(self) -> bool:
+        return timezone.now() > self.expires_at
 
 
 class FileReference(models.Model, LifecycleModelMixin):
@@ -20,9 +55,24 @@ class FileReference(models.Model, LifecycleModelMixin):
     )
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
 
-    minio_file_name: models.CharField = models.CharField()
-    file_name: models.CharField = models.CharField()
-    bucket_name: models.CharField = models.CharField()
+    # New django-storages FileField
+    file: models.FileField = models.FileField(
+        upload_to=file_upload_path,
+        storage=FileTransferStorage,
+        null=True,
+        blank=True,
+    )
+
+    # Legacy fields for migration from old MinIO storage (and for display/download filename)
+    minio_file_name: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True
+    )
+    file_name: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True
+    )
+    bucket_name: models.CharField = models.CharField(
+        max_length=255, null=True, blank=True
+    )
 
     note: models.ForeignKey = models.ForeignKey(
         "notes.Note",
@@ -45,6 +95,13 @@ class FileReference(models.Model, LifecycleModelMixin):
         null=True,
         blank=True,
     )
+    user: models.ForeignKey = models.ForeignKey(
+        "user.CradleUser",
+        related_name="files",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
     md5_hash: models.CharField = models.CharField(max_length=32, null=True, blank=True)
     sha1_hash: models.CharField = models.CharField(max_length=40, null=True, blank=True)
@@ -56,7 +113,7 @@ class FileReference(models.Model, LifecycleModelMixin):
         null=True, blank=True
     )
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> dict[str, str | None]:
         return {
             "minio_file_name": self.minio_file_name,
             "file_name": self.file_name,
@@ -89,7 +146,7 @@ class FileReference(models.Model, LifecycleModelMixin):
 
         entry, _ = Entry.objects.get_or_create(
             entry_class=file_class,
-            name=f"{self.bucket_name}/{self.file_name}_{self.minio_file_name}",
+            name=f"{self.id}-{self.file_name}",
         )
 
         return entry
@@ -119,11 +176,3 @@ class FileReference(models.Model, LifecycleModelMixin):
         """
         if cradle_settings.files.autoprocess_files:
             self.process_file()
-
-    @hook(AFTER_DELETE)
-    def delete_file(self):
-        """
-        Delete the file from MinIO after it is deleted from the database.
-        """
-        minio_client = MinioClient()
-        minio_client.delete_files(self.bucket_name, [self.minio_file_name])

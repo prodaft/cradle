@@ -32,6 +32,7 @@ interface FileSettingsFormValues {
     sha1Subtype: SubtypeOption | null;
     sha256Subtype: SubtypeOption | null;
     maxFileSizeForHashing: string;
+    uploadLimit: string;
 }
 
 interface FileSettingsResponse {
@@ -41,6 +42,7 @@ interface FileSettingsResponse {
         sha1_subtype?: string;
         sha256_subtype?: string;
         max_file_size_for_hashing?: number;
+        upload_limit?: number;
     };
 }
 
@@ -63,6 +65,16 @@ const fileSettingsSchema: Yup.ObjectSchema<FileSettingsFormValues> = Yup.object(
         .test(
             'is-valid-bytes',
             'Enter a valid size (e.g. 10MB, 1GB)',
+            (value) => {
+                if (!value) return false;
+                return typeof bytes(value) === 'number';
+            },
+        ),
+    uploadLimit: Yup.string()
+        .required('Upload limit is required')
+        .test(
+            'is-valid-bytes',
+            'Enter a valid size (e.g. 100MB, 1GB)',
             (value) => {
                 if (!value) return false;
                 return typeof bytes(value) === 'number';
@@ -97,6 +109,7 @@ export default function FileSettingsForm() {
             sha1Subtype: null,
             sha256Subtype: null,
             maxFileSizeForHashing: "10 MB",
+            uploadLimit: "2 GB",
         },
     });
 
@@ -171,6 +184,9 @@ export default function FileSettingsForm() {
                         maxFileSizeForHashing: settings.files.max_file_size_for_hashing
                             ? bytes.format(settings.files.max_file_size_for_hashing, { unitSeparator: ' ' })
                             : '10 MB',
+                        uploadLimit: settings.files.upload_limit
+                            ? bytes.format(settings.files.upload_limit, { unitSeparator: ' ' })
+                            : '2 GB',
 
                     });
                 }
@@ -193,6 +209,7 @@ export default function FileSettingsForm() {
                         sha1_subtype: data.sha1Subtype?.value || '',
                         sha256_subtype: data.sha256Subtype?.value || '',
                         max_file_size_for_hashing: bytes.parse(data.maxFileSizeForHashing),
+                        upload_limit: bytes.parse(data.uploadLimit),
                     },
                 },
             });
@@ -323,6 +340,15 @@ export default function FileSettingsForm() {
                                         description='Maximum file size for hashing'
                                         {...register('maxFileSizeForHashing')}
                                         error={errors.maxFileSizeForHashing}
+                                    />
+
+                                    <SettingsSeparator />
+
+                                    <SettingsField
+                                        label='Upload Limit'
+                                        description='Maximum file size allowed for uploads (per user limit can override this)'
+                                        {...register('uploadLimit')}
+                                        error={errors.uploadLimit}
                                     />
                                 </SettingsCard>
                             </div>

@@ -46,7 +46,7 @@ app.conf.task_routes = {
     "entries.tasks.delete_hanging_artifacts": {"queue": "cleanup"},
     "file_transfer.tasks.process_file_task": {"queue": "files"},
     "file_transfer.tasks.reprocess_all_files_task": {"queue": "files"},
-    "file_transfer.tasks.delete_hanging_files": {"queue": "cleanup"},
+    "file_transfer.tasks.cleanup_expired_uploads": {"queue": "cleanup"},
 }
 
 app.conf.task_default_priority = 5
@@ -83,8 +83,8 @@ app.conf.beat_schedule = {
         "task": "entries.tasks.delete_hanging_artifacts",
         "schedule": crontab(hour=2, minute=0),
     },
-    "delete-hanging-files-every-night": {
-        "task": "entries.tasks.delete_hanging_artifacts",
-        "schedule": crontab(hour=2, minute=0),
+    "cleanup-expired-uploads-every-10-minutes": {
+        "task": "file_transfer.tasks.cleanup_expired_uploads",
+        "schedule": crontab(hour=10, minute=0),
     },
 }

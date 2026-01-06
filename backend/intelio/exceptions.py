@@ -80,6 +80,36 @@ class IntelioErrorCodes(ErrorCode):
         "Permission Denied",
         "permission-denied"
     )
+    INVALID_FILE_NAME = (
+        status.HTTP_400_BAD_REQUEST,
+        "Invalid File Name",
+        "invalid-file-name",
+    )
+    DIGEST_UPLOAD_NOT_FOUND = (
+        status.HTTP_404_NOT_FOUND,
+        "Digest Upload Not Found",
+        "digest-upload-not-found",
+    )
+    DIGEST_UPLOAD_EXPIRED = (
+        status.HTTP_410_GONE,
+        "Digest Upload Expired",
+        "digest-upload-expired",
+    )
+    DIGEST_FILE_NOT_UPLOADED = (
+        status.HTTP_400_BAD_REQUEST,
+        "Digest File Not Uploaded",
+        "digest-file-not-uploaded",
+    )
+    ALREADY_UPLOADING = (
+        status.HTTP_400_BAD_REQUEST,
+        "Already Uploading",
+        "already-uploading",
+    )
+    INVALID_REQUEST_BODY = (
+        status.HTTP_400_BAD_REQUEST,
+        "Invalid Request Body",
+        "invalid-request-body",
+    )
 
 
 class EnricherNotFoundException(CradleAPIException):
@@ -155,3 +185,39 @@ class MappingNotFoundException(CradleAPIException):
 class PermissionDeniedException(CradleAPIException):
     """Exception raised when user doesn't have permission"""
     error_code = IntelioErrorCodes.PERMISSION_DENIED
+
+
+class InvalidFileNameException(CradleAPIException):
+    """Exception raised when a file name is invalid or missing."""
+
+    error_code = IntelioErrorCodes.INVALID_FILE_NAME
+
+
+class DigestUploadNotFoundException(CradleAPIException):
+    """Exception raised when pending digest upload is not found."""
+
+    error_code = IntelioErrorCodes.DIGEST_UPLOAD_NOT_FOUND
+
+
+class DigestUploadExpiredException(CradleAPIException):
+    """Exception raised when pending digest upload has expired."""
+
+    error_code = IntelioErrorCodes.DIGEST_UPLOAD_EXPIRED
+
+
+class DigestFileNotUploadedException(CradleAPIException):
+    """Exception raised when digest file was not uploaded to presigned URL."""
+
+    error_code = IntelioErrorCodes.DIGEST_FILE_NOT_UPLOADED
+
+
+class AlreadyUploadingException(CradleAPIException):
+    """Exception raised when user is already uploading a digest file."""
+
+    error_code = IntelioErrorCodes.ALREADY_UPLOADING
+
+
+class InvalidRequestBodyException(CradleAPIException):
+    """Exception raised when request body is invalid."""
+
+    error_code = IntelioErrorCodes.INVALID_REQUEST_BODY

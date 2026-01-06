@@ -1,6 +1,11 @@
 from django.urls import path
 
-from intelio.views.digest import DigestAPIView, DigestSubclassesAPIView
+from intelio.views.digest import (
+    DigestAPIView,
+    DigestSubclassesAPIView,
+    DigestUploadAPIView,
+    DigestUploadFinalizeAPIView,
+)
 
 from .views.enrichment import (
     EnrichmentAPIView,
@@ -52,6 +57,16 @@ urlpatterns = [
         "digest/",
         DigestAPIView.as_view(),
         name="enrichment-subclasses",
+    ),
+    path(
+        "digest/upload/",
+        DigestUploadAPIView.as_view(),
+        name="digest-upload",
+    ),
+    path(
+        "digest/upload/<str:upload_id>/finalize/",
+        DigestUploadFinalizeAPIView.as_view(),
+        name="digest-upload-finalize",
     ),
     path(
         "enrich/",

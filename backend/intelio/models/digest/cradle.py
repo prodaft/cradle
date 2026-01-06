@@ -20,6 +20,7 @@ class CradleDigest(BaseDigest):
         proxy = True
 
     def _digest(self):
+        self.ensure_local_file()
         with open(self.path, "r") as report_file:
             try:
                 report_data = json.load(report_file)
@@ -65,7 +66,10 @@ class CradleDigest(BaseDigest):
                     )
 
             created_notes = []
-            bucket_name = str(self.user.id)
+            # Note files are stored in the shared files bucket.
+            from file_transfer.storage import FileTransferStorage
+
+            bucket_name = FileTransferStorage.bucket_name
             files_scheduled = 0
             download_tasks = []
 
