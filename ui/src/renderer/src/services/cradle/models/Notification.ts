@@ -52,7 +52,8 @@ export function NotificationFromJSONTyped(json: any, ignoreDiscriminator: boolea
             return Object.assign({}, ReportRenderNotificationFromJSONTyped(json, true), { notificationType: 'report_render_notification' } as const);
         case 'request_access_notification':
             return Object.assign({}, AccessRequestNotificationFromJSONTyped(json, true), { notificationType: 'request_access_notification' } as const);
-        default: return value;
+        default:
+            return json;
     }
 }
 

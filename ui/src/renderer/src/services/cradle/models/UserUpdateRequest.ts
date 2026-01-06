@@ -86,6 +86,12 @@ export interface UserUpdateRequest {
      * @memberof UserUpdateRequest
      */
     twoFactorEnabled?: boolean;
+    /**
+     * File upload limit in bytes
+     * @type {number}
+     * @memberof UserUpdateRequest
+     */
+    fileUploadLimitOverride?: number | null;
 }
 
 
@@ -137,6 +143,7 @@ export function UserUpdateRequestFromJSONTyped(json: any, ignoreDiscriminator: b
         'emailConfirmed': json['email_confirmed'] == null ? undefined : json['email_confirmed'],
         'isActive': json['is_active'] == null ? undefined : json['is_active'],
         'twoFactorEnabled': json['two_factor_enabled'] == null ? undefined : json['two_factor_enabled'],
+        'fileUploadLimitOverride': json['file_upload_limit_override'] == null ? undefined : json['file_upload_limit_override'],
     };
 }
 
@@ -161,6 +168,7 @@ export function UserUpdateRequestToJSONTyped(value?: UserUpdateRequest | null, i
         'email_confirmed': value['emailConfirmed'],
         'is_active': value['isActive'],
         'two_factor_enabled': value['twoFactorEnabled'],
+        'file_upload_limit_override': value['fileUploadLimitOverride'],
     };
 }
 

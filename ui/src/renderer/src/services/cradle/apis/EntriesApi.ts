@@ -27,6 +27,7 @@ import type {
   EntryResponse,
   NextNameResponse,
   PaginatedRelationSerializerResponse,
+  RelationDetail,
 } from '../models/index';
 import {
     AccessEntityList404ResponseFromJSON,
@@ -51,6 +52,8 @@ import {
     NextNameResponseToJSON,
     PaginatedRelationSerializerResponseFromJSON,
     PaginatedRelationSerializerResponseToJSON,
+    RelationDetailFromJSON,
+    RelationDetailToJSON,
 } from '../models/index';
 
 export interface EntitiesCreateRequest {
@@ -90,6 +93,10 @@ export interface EntriesRelationsRetrieveRequest {
     relates: Array<number>;
     page?: number;
     pageSize?: number;
+}
+
+export interface EntriesRelationsRetrieve2Request {
+    relationId: string;
 }
 
 export interface EntryClassesCreateRequest {
@@ -618,6 +625,53 @@ export class EntriesApi extends runtime.BaseAPI {
      */
     async entriesRelationsRetrieve(requestParameters: EntriesRelationsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedRelationSerializerResponse> {
         const response = await this.entriesRelationsRetrieveRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Retrieves detailed information about a relation including its attachments with presigned URLs.
+     * Get relation details
+     */
+    async entriesRelationsRetrieve2Raw(requestParameters: EntriesRelationsRetrieve2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RelationDetail>> {
+        if (requestParameters['relationId'] == null) {
+            throw new runtime.RequiredError(
+                'relationId',
+                'Required parameter "relationId" was null or undefined when calling entriesRelationsRetrieve2().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/entries/relations/{relation_id}/`;
+        urlPath = urlPath.replace(`{${"relation_id"}}`, encodeURIComponent(String(requestParameters['relationId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => RelationDetailFromJSON(jsonValue));
+    }
+
+    /**
+     * Retrieves detailed information about a relation including its attachments with presigned URLs.
+     * Get relation details
+     */
+    async entriesRelationsRetrieve2(requestParameters: EntriesRelationsRetrieve2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RelationDetail> {
+        const response = await this.entriesRelationsRetrieve2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

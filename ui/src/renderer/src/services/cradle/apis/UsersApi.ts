@@ -33,6 +33,7 @@ import type {
   UserCreateRequest,
   UserManageResponse,
   UserRetrieve,
+  UserSession,
   UserUpdateRequest,
   Verify2FARequest,
 } from '../models/index';
@@ -71,6 +72,8 @@ import {
     UserManageResponseToJSON,
     UserRetrieveFromJSON,
     UserRetrieveToJSON,
+    UserSessionFromJSON,
+    UserSessionToJSON,
     UserUpdateRequestFromJSON,
     UserUpdateRequestToJSON,
     Verify2FARequestFromJSON,
@@ -136,6 +139,25 @@ export interface UsersResetPasswordUpdateRequest {
 }
 
 export interface UsersRetrieveRequest {
+    userId: string;
+}
+
+export interface UsersSessionsDestroyRequest {
+    sessionId: string;
+    userId: string;
+}
+
+export interface UsersSessionsDestroy2Request {
+    sessionId: string;
+    userId: string;
+}
+
+export interface UsersSessionsListRequest {
+    userId: string;
+}
+
+export interface UsersSessionsList2Request {
+    sessionId: string;
     userId: string;
 }
 
@@ -948,6 +970,226 @@ export class UsersApi extends runtime.BaseAPI {
      */
     async usersRetrieve(requestParameters: UsersRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserRetrieve> {
         const response = await this.usersRetrieveRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Revokes a specific session by ID. Users can only revoke their own sessions.
+     * Revoke user session
+     */
+    async usersSessionsDestroyRaw(requestParameters: UsersSessionsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['sessionId'] == null) {
+            throw new runtime.RequiredError(
+                'sessionId',
+                'Required parameter "sessionId" was null or undefined when calling usersSessionsDestroy().'
+            );
+        }
+
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling usersSessionsDestroy().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/users/{user_id}/sessions/`;
+        urlPath = urlPath.replace(`{${"session_id"}}`, encodeURIComponent(String(requestParameters['sessionId'])));
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Revokes a specific session by ID. Users can only revoke their own sessions.
+     * Revoke user session
+     */
+    async usersSessionsDestroy(requestParameters: UsersSessionsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.usersSessionsDestroyRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Revokes a specific session by ID. Users can only revoke their own sessions.
+     * Revoke user session
+     */
+    async usersSessionsDestroy2Raw(requestParameters: UsersSessionsDestroy2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+        if (requestParameters['sessionId'] == null) {
+            throw new runtime.RequiredError(
+                'sessionId',
+                'Required parameter "sessionId" was null or undefined when calling usersSessionsDestroy2().'
+            );
+        }
+
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling usersSessionsDestroy2().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/users/{user_id}/sessions/{session_id}/`;
+        urlPath = urlPath.replace(`{${"session_id"}}`, encodeURIComponent(String(requestParameters['sessionId'])));
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        if (this.isJsonMime(response.headers.get('content-type'))) {
+            return new runtime.JSONApiResponse<any>(response);
+        } else {
+            return new runtime.TextApiResponse(response) as any;
+        }
+    }
+
+    /**
+     * Revokes a specific session by ID. Users can only revoke their own sessions.
+     * Revoke user session
+     */
+    async usersSessionsDestroy2(requestParameters: UsersSessionsDestroy2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.usersSessionsDestroy2Raw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns a list of active sessions for the specified user. Users can only view their own sessions.
+     * List user sessions
+     */
+    async usersSessionsListRaw(requestParameters: UsersSessionsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<UserSession>>> {
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling usersSessionsList().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/users/{user_id}/sessions/`;
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(UserSessionFromJSON));
+    }
+
+    /**
+     * Returns a list of active sessions for the specified user. Users can only view their own sessions.
+     * List user sessions
+     */
+    async usersSessionsList(requestParameters: UsersSessionsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<UserSession>> {
+        const response = await this.usersSessionsListRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Returns a list of active sessions for the specified user. Users can only view their own sessions.
+     * List user sessions
+     */
+    async usersSessionsList2Raw(requestParameters: UsersSessionsList2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<UserSession>>> {
+        if (requestParameters['sessionId'] == null) {
+            throw new runtime.RequiredError(
+                'sessionId',
+                'Required parameter "sessionId" was null or undefined when calling usersSessionsList2().'
+            );
+        }
+
+        if (requestParameters['userId'] == null) {
+            throw new runtime.RequiredError(
+                'userId',
+                'Required parameter "userId" was null or undefined when calling usersSessionsList2().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/users/{user_id}/sessions/{session_id}/`;
+        urlPath = urlPath.replace(`{${"session_id"}}`, encodeURIComponent(String(requestParameters['sessionId'])));
+        urlPath = urlPath.replace(`{${"user_id"}}`, encodeURIComponent(String(requestParameters['userId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(UserSessionFromJSON));
+    }
+
+    /**
+     * Returns a list of active sessions for the specified user. Users can only view their own sessions.
+     * List user sessions
+     */
+    async usersSessionsList2(requestParameters: UsersSessionsList2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<UserSession>> {
+        const response = await this.usersSessionsList2Raw(requestParameters, initOverrides);
         return await response.value();
     }
 

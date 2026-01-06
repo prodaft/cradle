@@ -113,6 +113,7 @@ class UserCreateSerializerAdmin(UserCreateSerializer):
             "email_confirmed",
             "is_active",
             "two_factor_enabled",
+            "file_upload_limit_override",
         ]
         extra_kwargs: Dict[str, Dict[str, List]] = {"username": {"validators": []}}
 
@@ -149,6 +150,7 @@ class UserUpdateSerializer(UserCreateSerializer):
             "email_confirmed",
             "is_active",
             "two_factor_enabled",
+            "file_upload_limit_override",
         ]
 
     def validate(self, data: Any) -> Any:

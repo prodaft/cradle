@@ -22,6 +22,7 @@ models/AccessEntityList404Response.ts
 models/AccessRequest.ts
 models/AccessRequestNotification.ts
 models/AccessUser.ts
+models/Attachment.ts
 models/BaseDigest.ts
 models/ChangePasswordRequestRequest.ts
 models/ChangePasswordResponse.ts
@@ -105,6 +106,7 @@ models/PublishReportRequest.ts
 models/PublishStrategiesResponse.ts
 models/PublishStrategy.ts
 models/Relation.ts
+models/RelationDetail.ts
 models/ReportDetail.ts
 models/ReportList.ts
 models/ReportProcessingErrorNotification.ts
@@ -126,6 +128,7 @@ models/UserCreateRequest.ts
 models/UserManageResponse.ts
 models/UserRetrieve.ts
 models/UserRetrieveRequest.ts
+models/UserSession.ts
 models/UserUpdateRequest.ts
 models/Verify2FARequest.ts
 models/index.ts

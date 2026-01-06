@@ -46,7 +46,7 @@ export interface ProfileProviderProps {
  * ProfileProvider component
  * Fetches and manages user profile data
  */
-function ProfileProvider({ children }: ProfileProviderProps): JSX.Element {
+export function ProfileProvider({ children }: ProfileProviderProps): JSX.Element {
     const [profile, setProfile] = useState<ExtendedProfile | null>(null);
     const { execute } = useAPICall();
     const { usersApi } = useApi();
@@ -125,4 +125,4 @@ export function useProfile(): ProfileContextValue {
     return context;
 }
 
-export { ProfileProvider };
+

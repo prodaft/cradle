@@ -14,8 +14,7 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import {
     UserCreateRequestThemeEnum,
     UserRetrieve,
-    UserUpdateRequest,
-    UserUpdateRequestRoleEnum,
+    UserUpdateRequestRoleEnum
 } from '@/services/cradle/models';
 import { displayError } from '@/utils/api';
 import AlertBox from '@components/base/Alert/AlertBox';
@@ -37,7 +36,7 @@ import { useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import ActiveSessions from './ActiveSessions';
 
-interface AccountFormData extends UserUpdateRequest {
+interface AccountFormData {
     id: string;
     username: string;
     email: string;
@@ -48,7 +47,7 @@ interface AccountFormData extends UserUpdateRequest {
     theme?: UserCreateRequestThemeEnum;
     emailConfirmed: boolean;
     isActive: boolean;
-    fileUploadLimit?: string;
+    fileUploadLimitOverride?: string;
 }
 
 interface AccountSettingsProps {
@@ -82,7 +81,7 @@ const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().sh
     isActive: Yup.boolean(),
     vimMode: Yup.boolean().notRequired(),
     theme: Yup.string().notRequired(),
-    fileUploadLimit: Yup.string().when('$isAdminAndNotOwn', {
+    fileUploadLimitOverride: Yup.string().when('$isAdminAndNotOwn', {
         is: true,
         then: () =>
             Yup.string().test(
@@ -121,29 +120,29 @@ export default function AccountSettings({
 
     const defaultValues: AccountFormData = isEdit
         ? {
-              id: '',
-              username: '',
-              email: '',
-              password: 'password',
-              catalystApiKey: 'apikey',
-              role: 'author',
-              vimMode: false,
-              emailConfirmed: false,
-              isActive: false,
-              fileUploadLimit: '',
-          }
+            id: '',
+            username: '',
+            email: '',
+            password: 'password',
+            catalystApiKey: 'apikey',
+            role: 'author',
+            vimMode: false,
+            emailConfirmed: false,
+            isActive: false,
+            fileUploadLimitOverride: '',
+        }
         : {
-              id: '',
-              username: '',
-              email: '',
-              password: '',
-              catalystApiKey: '',
-              role: 'author',
-              vimMode: false,
-              emailConfirmed: false,
-              isActive: false,
-              fileUploadLimit: '',
-          };
+            id: '',
+            username: '',
+            email: '',
+            password: '',
+            catalystApiKey: '',
+            role: 'author',
+            vimMode: false,
+            emailConfirmed: false,
+            isActive: false,
+            fileUploadLimitOverride: '',
+        };
 
     const {
         register,
@@ -184,9 +183,7 @@ export default function AccountSettings({
                 }
                 setUser(user);
 
-                // Check for file_upload_limit in the response (may not be in TypeScript types yet)
-                const fileUploadLimitBytes =
-                    (user as any).fileUploadLimit || (user as any).file_upload_limit;
+                const fileUploadLimitBytes = user.fileUploadLimitOverride;
                 const fileUploadLimitFormatted = fileUploadLimitBytes
                     ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
                     : '';
@@ -202,7 +199,7 @@ export default function AccountSettings({
                     emailConfirmed: user.emailConfirmed || false,
                     isActive: user.isActive || false,
                     vimMode: user.vimMode || false,
-                    fileUploadLimit: fileUploadLimitFormatted,
+                    fileUploadLimitOverride: fileUploadLimitFormatted,
                 };
 
                 reset(initialData);
@@ -239,7 +236,7 @@ export default function AccountSettings({
                     data.role !== previousData?.role ||
                     data.emailConfirmed !== previousData?.emailConfirmed ||
                     data.isActive !== previousData?.isActive ||
-                    data.fileUploadLimit !== previousData?.fileUploadLimit)) ||
+                    data.fileUploadLimitOverride !== previousData?.fileUploadLimitOverride)) ||
             (data.password !== 'password' &&
                 data.password !== previousData?.password) ||
             (data.catalystApiKey !== 'apikey' &&
@@ -274,10 +271,10 @@ export default function AccountSettings({
             if (data.isActive !== previousData?.isActive)
                 payload.isActive = data.isActive;
             if (data.role !== previousData?.role) payload.role = data.role;
-            if (data.fileUploadLimit !== previousData?.fileUploadLimit) {
+            if (data.fileUploadLimitOverride !== previousData?.fileUploadLimitOverride) {
                 // Convert to bytes if provided, or null to use global default
-                if (data.fileUploadLimit && data.fileUploadLimit.trim() !== '') {
-                    payload.file_upload_limit = bytes.parse(data.fileUploadLimit);
+                if (data.fileUploadLimitOverride && data.fileUploadLimitOverride.trim() !== '') {
+                    payload.fileUploadLimitOverride = bytes.parse(data.fileUploadLimitOverride);
                 } else {
                     payload.file_upload_limit = null;
                 }
@@ -492,7 +489,7 @@ export default function AccountSettings({
                     actionName: 'send_email_confirmation',
                 }),
             { successMessage: 'Email confirmation sent successfully' },
-        ).catch(() => {});
+        ).catch(() => { });
     };
 
     const sendPasswordResetEmail = () => {
@@ -503,7 +500,7 @@ export default function AccountSettings({
                     actionName: 'password_reset_email',
                 }),
             { successMessage: 'Password reset email sent successfully' },
-        ).catch(() => {});
+        ).catch(() => { });
     };
 
     const handleDeleteUser = async () => {
@@ -820,11 +817,10 @@ export default function AccountSettings({
                                                     </div>
                                                     <button
                                                         type='button'
-                                                        className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
-                                                            twoFactorEnabled
-                                                                ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent'
-                                                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                                                        }`}
+                                                        className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${twoFactorEnabled
+                                                            ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent'
+                                                            : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
+                                                            }`}
                                                         onClick={openTwoFactorModal}
                                                     >
                                                         <span>
