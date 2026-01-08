@@ -4,12 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "predev": "test -d src/services/cradle || bun run generate-api -- --input http://localhost:8000/schema/",
     "dev": "tsx watch src/index.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "generate-api": "rm -rf src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/api/schema/} -c openapitools.json -o src/services/cradle/",
-    "dev:setup": "bun install && bun run dev"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
