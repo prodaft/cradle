@@ -66,6 +66,12 @@ export interface UserRetrieveRequest {
      */
     emailConfirmed?: boolean;
     /**
+     * File upload limit in bytes
+     * @type {number}
+     * @memberof UserRetrieveRequest
+     */
+    fileUploadLimitOverride?: number | null;
+    /**
      * Theme to use in the UI
      * 
      * * `dark` - Dark
@@ -124,6 +130,7 @@ export function UserRetrieveRequestFromJSONTyped(json: any, ignoreDiscriminator:
         'isActive': json['is_active'] == null ? undefined : json['is_active'],
         'vimMode': json['vim_mode'] == null ? undefined : json['vim_mode'],
         'emailConfirmed': json['email_confirmed'] == null ? undefined : json['email_confirmed'],
+        'fileUploadLimitOverride': json['file_upload_limit_override'] == null ? undefined : json['file_upload_limit_override'],
         'theme': json['theme'] == null ? undefined : json['theme'],
     };
 }
@@ -146,6 +153,7 @@ export function UserRetrieveRequestToJSONTyped(value?: UserRetrieveRequest | nul
         'is_active': value['isActive'],
         'vim_mode': value['vimMode'],
         'email_confirmed': value['emailConfirmed'],
+        'file_upload_limit_override': value['fileUploadLimitOverride'],
         'theme': value['theme'],
     };
 }

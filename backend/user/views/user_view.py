@@ -678,6 +678,7 @@ class DefaultNoteTemplateView(APIView):
 
 @extend_schema_view(
     get=extend_schema(
+        operation_id="users_sessions_list",
         summary="List user sessions",
         description="Returns a list of active sessions for the specified user. Users can only view their own sessions.",
         parameters=[
@@ -698,6 +699,7 @@ class DefaultNoteTemplateView(APIView):
         },
     ),
     delete=extend_schema(
+        operation_id="users_sessions_destroy",
         summary="Revoke user session",
         description="Revokes a specific session by ID. Users can only revoke their own sessions.",
         parameters=[

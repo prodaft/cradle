@@ -744,8 +744,8 @@ export default function AccountSettings({
                                                         description='Maximum file size allowed for uploads (leave empty to use global default)'
                                                         placeholder='e.g. 100MB, 1GB'
                                                         inputWidth='w-48'
-                                                        {...register('fileUploadLimit')}
-                                                        error={errors.fileUploadLimit}
+                                                        {...register('fileUploadLimitOverride')}
+                                                        error={errors.fileUploadLimitOverride}
                                                     />
                                                     <SettingsSeparator />
                                                     <SettingsField

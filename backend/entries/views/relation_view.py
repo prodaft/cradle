@@ -23,6 +23,7 @@ from ..serializers import RelationDetailSerializer, RelationSerializer
 
 
 @extend_schema(
+    operation_id="entries_relations_list",
     summary="List relations between entries",
     description="Returns a paginated list of relations between specified entries."
     + "Requires 'relates' query parameter with entry IDs.",
@@ -118,6 +119,7 @@ class RelationDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        operation_id="entries_relations_retrieve",
         summary="Get relation details",
         description="Retrieves detailed information about a relation including its attachments with presigned URLs.",
         responses={
@@ -136,6 +138,7 @@ class RelationDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
+        operation_id="entries_relations_destroy",
         summary="Delete a relation",
         description="Deletes a specific relation by ID. Only admin users can perform this action.",
         responses={
