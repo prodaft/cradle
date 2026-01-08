@@ -1,6 +1,7 @@
 import { EditPencil } from 'iconoir-react';
 import { ComponentType, ReactNode } from 'react';
-import Card from '../../../base/Card/Card';
+import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface AdminPanelCardManagementProps {
     name: string;
@@ -17,23 +18,27 @@ export default function AdminPanelCardManagement({
         setRightPane(<SettingComponent />);
     };
 
-    const actions = [
-        {
-            icon: <EditPencil />,
-            onClick: handleClick,
-            tooltip: 'Edit',
-            variant: 'ghost' as const,
-        },
-    ];
-
     return (
-        <>
-            <Card
-                title={name}
-                actions={actions}
-                onClick={handleClick}
-                className='bg-cradle3 bg-opacity-20'
-            />
-        </>
+        <Card
+            className='bg-cradle3 bg-opacity-20 cursor-pointer hover:shadow-lg transition-shadow'
+            onClick={handleClick}
+        >
+            <CardHeader>
+                <CardTitle>{name}</CardTitle>
+                <CardAction>
+                    <Button
+                        variant='ghost'
+                        size='icon-sm'
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleClick();
+                        }}
+                        title='Edit'
+                    >
+                        <EditPencil />
+                    </Button>
+                </CardAction>
+            </CardHeader>
+        </Card>
     );
 }

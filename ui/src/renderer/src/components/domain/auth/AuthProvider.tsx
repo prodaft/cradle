@@ -102,6 +102,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Timer for automatic token refresh
     const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+    // Track last network error log time to throttle noisy error messages
+    const lastNetworkErrorLogRef = useRef<number>(0);
 
     /**
      * Check if user is currently logged in (has valid refresh token)
@@ -209,7 +211,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
 
             // Network/connection error - do NOT clear tokens, just return false
-            console.error('Token refresh failed due to network error:', error);
+            // Throttle error logging to avoid console spam (log at most once per 5 seconds)
+            const now = Date.now();
+            if (now - lastNetworkErrorLogRef.current > 5000) {
+                console.error('Token refresh failed due to network error:', error);
+                lastNetworkErrorLogRef.current = now;
+            }
             return false;
         }
     }, [basePath, storeTokens, clearTokens]);

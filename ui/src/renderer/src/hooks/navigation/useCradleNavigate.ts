@@ -1,5 +1,3 @@
-import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
-import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -19,10 +17,6 @@ enum NavigationDirection {
 const useCradleNavigate = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const paneTabsContext = usePaneTabs();
-    const layoutContext = useLayout();
-    const openTab = paneTabsContext?.openTab;
-    const activePaneId = layoutContext?.activePaneId;
 
     const smartNavigate = useCallback(
         (
@@ -42,17 +36,10 @@ const useCradleNavigate = () => {
             const targetPath = typeof to === 'string' ? to : to.pathname;
 
             if (event && (event.ctrlKey || event.metaKey || event.button === 1)) {
-                // Ctrl/Cmd + click or middle click: open in new tab in active pane
-                if (openTab && activePaneId) {
-                    openTab(activePaneId, targetPath);
-                } else {
-                    // Fallback to opening in new window if tabs context is not available
-                    const url = '#' + targetPath;
-                    console.log('Opening new tab:', url);
-                    window.open(url, '_blank');
-                }
+                // Ctrl/Cmd + click or middle click: open in new window
+                const url = '#' + targetPath;
+                window.open(url, '_blank');
             } else {
-                console.log('Normal click or programmatic navigation:', event);
                 // Normal click or programmatic navigation: use React Router navigation
                 const { event: _, ...navOptions } = options; // Remove event from options before passing to navigate
 
@@ -65,7 +52,7 @@ const useCradleNavigate = () => {
                 navigate(to, { ...navOptions, state });
             }
         },
-        [navigate, location, openTab, activePaneId],
+        [navigate, location],
     );
 
     return {

@@ -2,7 +2,7 @@
  * Hook for common API call pattern with error handling
  */
 
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { SessionExpiredException } from '@/exceptions/AuthExceptions';
 import { handleAPIError, parseAPIError, ParsedAPIError } from '@/utils/api';
 import { useCallback, useRef, useState } from 'react';
@@ -64,7 +64,6 @@ export interface UseAPICallReturn {
  * await deleteUser();
  */
 export function useAPICall(): UseAPICallReturn {
-    const { notify } = useNotif();
     const navigate = useNavigate();
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<ParsedAPIError | null>(null);
@@ -91,9 +90,7 @@ export function useAPICall(): UseAPICallReturn {
 
                 // Optional success notification
                 if (options.successMessage) {
-                    notify({
-                        type: 'success',
-                        text: options.successMessage,
+                    toast.success(options.successMessage, {
                         duration: options.duration || 3500,
                     });
                 }
@@ -120,7 +117,7 @@ export function useAPICall(): UseAPICallReturn {
                 setLoading(false);
             }
         },
-        [notify, navigate],
+        [navigate],
     );
 
     /**
@@ -175,9 +172,7 @@ export function useAPICall(): UseAPICallReturn {
             ) {
                 if (!sessionExpiredNotifiedRef.current) {
                     sessionExpiredNotifiedRef.current = true;
-                    notify({
-                        type: 'error',
-                        text: 'Authentication failed. Please log in again.',
+                    toast.error('Authentication failed. Please log in again.', {
                         duration: 3000,
                     });
                     navigate('/login');
@@ -191,7 +186,7 @@ export function useAPICall(): UseAPICallReturn {
 
             // Only notify if not suppressed
             if (!options.suppressNotification) {
-                handleAPIError(parsed!, notify, {
+                handleAPIError(parsed!, {
                     message: options.errorMessage,
                     duration: options.duration,
                 });
@@ -204,7 +199,7 @@ export function useAPICall(): UseAPICallReturn {
 
             return parsed;
         },
-        [notify],
+        [navigate],
     );
 
     return {

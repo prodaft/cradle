@@ -1,7 +1,9 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import React from 'react';
+import { toast } from 'sonner';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { Card, CardContent } from '@/components/ui/card';
 import {
     AccessRequestAccessTypeEnum,
     AccessRequestNotification,
@@ -13,9 +15,10 @@ import {
     ReportRenderNotification,
 } from '@/services/cradle';
 import { formatDate } from '@/utils/dates';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Mail, MailOpen } from 'iconoir-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface NotificationCardProps {
     notification: Notification;
@@ -31,13 +34,12 @@ const ActionBar = ({ children }: { children: React.ReactNode }) => {
 export default function NotificationCard({
     notification,
     updateFlaggedNotificationsCount,
-}: NotificationCardProps) {
+}: NotificationCardProps): React.JSX.Element {
     const { id, message, timestamp, isMarkedUnread } = notification;
     const [unreadStatus, setUnreadStatus] = useState(isMarkedUnread);
     const { reportsApi, notificationsApi, accessApi, usersApi } = useApi();
     const { navigate, navigateLink } = useCradleNavigate();
     const { execute } = useAPICall();
-    const { notify } = useNotif();
     console.log(notification);
 
     const handleMarkUnread = (id: string) => {
@@ -57,11 +59,7 @@ export default function NotificationCard({
                 setUnreadStatus(!unreadStatus);
             })
             .catch((error: any) => {
-                notify({
-                    type: 'error',
-                    text:
-                        error.response?.data?.detail || 'Failed to update notification',
-                });
+                toast.error(error.response?.data?.detail || 'Failed to update notification');
             });
     };
 
@@ -78,16 +76,10 @@ export default function NotificationCard({
                 },
             })
             .then(() => {
-                notify({
-                    type: 'success',
-                    text: 'Access level changed successfully',
-                });
+                toast.success('Access level changed successfully');
             })
             .catch((error: any) => {
-                notify({
-                    type: 'error',
-                    text: error.response?.data?.detail || 'Failed to change access',
-                });
+                toast.error(error.response?.data?.detail || 'Failed to change access');
             });
     };
 
@@ -103,16 +95,10 @@ export default function NotificationCard({
                 },
             })
             .then(() => {
-                notify({
-                    type: 'success',
-                    text: 'User activated successfully.',
-                });
+                toast.success('User activated successfully.');
             })
             .catch((error: any) => {
-                notify({
-                    type: 'error',
-                    text: error.response?.data?.detail || 'Failed to activate user',
-                });
+                toast.error(error.response?.data?.detail || 'Failed to activate user');
             });
     };
 
@@ -130,46 +116,51 @@ export default function NotificationCard({
         if (report.reportUrl) {
             window.open(report.reportUrl, '_blank');
         } else {
-            notify({
-                type: 'error',
-                text: 'Report URL not found',
-            });
+            toast.error('Report URL not found');
         }
     };
 
     const formattedDate = timestamp ? formatDate(new Date(timestamp)) : 'N/A';
 
     return (
-        <div className='cradle-card p-3'>
-            {/* Content */}
-            <div className='flex-1 min-w-0'>
+        <Card>
+            <CardContent className='p-3'>
+                {/* Content */}
+                <div className='flex-1 min-w-0'>
                 {/* Meta row: date + read/unread */}
                 <div className='flex items-center justify-between'>
                     <span className='text-cradle-text-muted text-xs'>
                         {formattedDate}
                     </span>
 
-                    <Tooltip content={unreadStatus ? 'Mark as read' : 'Mark as unread'}>
-                        <button
-                            className='p-1.5 hover:bg-cradle-bg-secondary rounded transition-colors'
-                            onClick={() => handleMarkUnread(id!)}
-                        >
-                            {unreadStatus ? (
-                                <Mail
-                                    width='16'
-                                    height='16'
-                                    className='text-[#FF8C00]'
-                                    data-testid='mark-read'
-                                />
-                            ) : (
-                                <MailOpen
-                                    width='16'
-                                    height='16'
-                                    className='text-cradle-text-muted hover:text-cradle-text-primary'
-                                    data-testid='mark-unread'
-                                />
-                            )}
-                        </button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant='ghost'
+                                size='icon-sm'
+                                className='p-1.5 hover:bg-cradle-bg-secondary'
+                                onClick={() => handleMarkUnread(id!)}
+                            >
+                                {unreadStatus ? (
+                                    <Mail
+                                        width='16'
+                                        height='16'
+                                        className='text-[#FF8C00]'
+                                        data-testid='mark-read'
+                                    />
+                                ) : (
+                                    <MailOpen
+                                        width='16'
+                                        height='16'
+                                        className='text-cradle-text-muted hover:text-cradle-text-primary'
+                                        data-testid='mark-unread'
+                                    />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {unreadStatus ? 'Mark as read' : 'Mark as unread'}
+                        </TooltipContent>
                     </Tooltip>
                 </div>
 
@@ -181,43 +172,52 @@ export default function NotificationCard({
             <ActionBar>
                 {notification.notificationType === 'request_access_notification' && (
                     <>
-                        <button
-                            className='px-2.5 py-1 text-xs font-medium text-amber-400 border border-amber-400/30 hover:bg-amber-400/10 rounded transition-colors'
+                        <Button
+                            variant='outline'
+                            size='sm'
+                            className='px-2.5 py-1 text-xs font-medium text-amber-400 border-amber-400/30 hover:bg-amber-400/10'
                             onClick={handleChangeAccess('read')}
                         >
                             Read
-                        </button>
-                        <button
-                            className='px-2.5 py-1 text-xs font-medium text-green-400 border border-green-400/30 hover:bg-green-400/10 rounded transition-colors'
+                        </Button>
+                        <Button
+                            variant='outline'
+                            size='sm'
+                            className='px-2.5 py-1 text-xs font-medium text-green-400 border-green-400/30 hover:bg-green-400/10'
                             onClick={handleChangeAccess('read-write')}
                         >
                             Read/Write
-                        </button>
+                        </Button>
                     </>
                 )}
 
                 {notification.notificationType === 'new_user_notification' && (
-                    <button
-                        className='px-2.5 py-1 text-xs font-medium text-green-400 border border-green-400/30 hover:bg-green-400/10 rounded transition-colors'
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        className='px-2.5 py-1 text-xs font-medium text-green-400 border-green-400/30 hover:bg-green-400/10'
                         onClick={handleActivateUser}
                     >
                         Activate User
-                    </button>
+                    </Button>
                 )}
 
                 {notification.notificationType === 'report_render_notification' && (
-                    <button
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
                         onClick={handleViewReport}
                     >
                         View Report
-                    </button>
+                    </Button>
                 )}
 
-                {notification.notificationType ===
-                    'report_processing_error_notification' && (
-                    <button
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
+                {notification.notificationType === 'report_processing_error_notification' && (
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
                         onClick={(e) => {
                             const notif =
                                 notification as ReportProcessingErrorNotification;
@@ -225,13 +225,14 @@ export default function NotificationCard({
                         }}
                     >
                         View Details
-                    </button>
+                    </Button>
                 )}
 
-                {notification.notificationType ===
-                    'enrichment_complete_notification' && (
-                    <button
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
+                {notification.notificationType === 'enrichment_complete_notification' && (
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
                         onClick={(e) => {
                             const notif =
                                 notification as EnrichmentCompleteNotification;
@@ -239,21 +240,24 @@ export default function NotificationCard({
                         }}
                     >
                         View Enrichment
-                    </button>
+                    </Button>
                 )}
 
                 {notification.notificationType === 'enrichment_error_notification' && (
-                    <button
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00] rounded transition-colors'
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
                         onClick={(e) => {
                             const notif = notification as EnrichmentErrorNotification;
                             navigateLink(`/enrichment/${notif.enrichmentRequestId}`)(e);
                         }}
                     >
                         View Details
-                    </button>
+                    </Button>
                 )}
             </ActionBar>
-        </div>
+            </CardContent>
+        </Card>
     );
 }

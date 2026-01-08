@@ -1,4 +1,5 @@
-import { Dispatch, SetStateAction } from 'react';
+import React, { Dispatch, SetStateAction } from 'react';
+import { Button } from '@/components/ui/button';
 
 /**
  * SearchFilter component props
@@ -33,7 +34,7 @@ export default function SearchFilter({
     option,
     filters,
     setFilters,
-}: SearchFilterProps): JSX.Element {
+}: SearchFilterProps): React.JSX.Element {
     const isActive = filters.includes(option);
 
     const toggleFilter = () => {
@@ -45,11 +46,12 @@ export default function SearchFilter({
     };
 
     return (
-        <button
+        <Button
+            variant={isActive ? 'outline' : 'outline'}
+            size='sm'
             onClick={toggleFilter}
             className={`
                 px-2.5 py-1 text-xs font-mono transition-all duration-150
-                border
                 ${
                     isActive
                         ? 'bg-cradle-accent-primary/15 text-cradle-accent-primary border-cradle-accent-primary/40'
@@ -58,6 +60,6 @@ export default function SearchFilter({
             `}
         >
             {text}
-        </button>
+        </Button>
     );
 }

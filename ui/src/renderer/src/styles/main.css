@@ -7,18 +7,25 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600;700&family=VT323&family=Press+Start+2P&family=Comic+Neue:wght@400;700&display=swap');
 
 @import 'tailwindcss';
+@import 'tw-animate-css';
 
 /* Source directive for content scanning */
 @source "../../**/*.{ts,tsx,html}";
 
-/* Cradle Design System - includes tokens, theme config, and components */
+/* Custom variant for dark mode */
+@custom-variant dark (&:is([data-theme='dark'] *));
+
+/* Shadcn UI styles - includes CSS variables and theme configuration */
+@import './globals.css';
+
+/* Cradle Design System - includes border utilities and design tokens */
 @import './design.css';
 
 /* ============================================
    PROSEMARK CSS VARIABLES - Light Mode
    ============================================ */
 :root {
-    --pm-header-mark-color: var(--cradle-accent-primary);
+    --pm-header-mark-color: #ff8c00;
     --pm-link-color: oklch(58.8% 0.158 241.966);
     --pm-muted-color: oklch(37.2% 0.044 257.287);
     --pm-code-background-color: oklch(92.9% 0.013 255.508);
@@ -47,7 +54,7 @@
    PROSEMARK CSS VARIABLES - Dark Mode
    ============================================ */
 [data-theme='dark'] {
-    --pm-header-mark-color: var(--cradle-accent-primary);
+    --pm-header-mark-color: #ff8c00;
     --pm-link-color: oklch(58.8% 0.158 241.966);
     --pm-muted-color: oklch(55.4% 0.046 257.417);
     --pm-code-background-color: oklch(27.9% 0.041 260.031);
@@ -108,7 +115,7 @@
 [data-theme='light'] .tab-toggle:checked + .tab.tab-pill,
 [data-theme='light'] .tabs-boxed .tab-toggle:checked + .tab {
     --tw-bg-opacity: 0.2 !important;
-    background-color: rgb(var(--cradle3) / var(--tw-bg-opacity)) !important;
+    background-color: oklch(0.646 0.222 41.116 / var(--tw-bg-opacity)) !important;
 }
 
 /* Show header anchor icon on hover */
@@ -127,13 +134,13 @@ h6:hover .header-anchor-icon {
 .notification-action {
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
-    color: var(--cradle-text-muted);
+    color: var(--muted-foreground);
     border-radius: 0.375rem;
 }
 
 .notification-action:hover {
-    color: #ff8c00;
-    background-color: var(--cradle-bg-tertiary);
+    color: #FF8C00;
+    background-color: var(--muted);
 }
 
 /* ============================================
@@ -166,10 +173,8 @@ h6:hover .header-anchor-icon {
 .cm-content {
     color-scheme: light dark;
     background-color: transparent !important;
-    color: var(--cradle-md-text);
-    font-family:
-        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial,
-        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
+    color: var(--foreground);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
     font-size: 16px;
     line-height: 1.5;
     word-wrap: break-word;
@@ -203,20 +208,20 @@ h6:hover .header-anchor-icon {
     margin-bottom: 1rem;
     font-weight: 600;
     line-height: 1.25;
-    color: var(--cradle-md-text);
+    color: var(--foreground);
 }
 
 .markdown-body h1 {
     margin: 0.67em 0;
     padding-bottom: 0.3em;
     font-size: 2em;
-    border-bottom: 1px solid var(--cradle-md-border-light);
+    border-bottom: 1px solid var(--border);
 }
 
 .markdown-body h2 {
     padding-bottom: 0.3em;
     font-size: 1.5em;
-    border-bottom: 1px solid var(--cradle-md-border-light);
+    border-bottom: 1px solid var(--border);
 }
 
 .markdown-body h3 {
@@ -254,7 +259,7 @@ h6:hover .header-anchor-icon {
 
 /* Bullet points and numbers in CodeMirror */
 .markdown-body .cm-rendered-list-mark {
-    color: var(--cradle-accent-primary);
+    color: #ff8c00;
 }
 
 /* ============================================
@@ -306,9 +311,9 @@ h6:hover .header-anchor-icon {
     overflow: hidden;
     height: 0.25em;
     margin: 1.5rem 0;
-    background-color: var(--cradle-md-border);
+    background-color: var(--border);
     border: 0;
-    border-bottom: 1px solid var(--cradle-md-border-light);
+    border-bottom: 1px solid var(--border);
     padding: 0;
 }
 
@@ -325,16 +330,16 @@ h6:hover .header-anchor-icon {
 .markdown-body table th,
 .markdown-body table td {
     padding: 6px 13px;
-    border: 1px solid var(--cradle-md-border);
+    border: 1px solid var(--border);
 }
 
 .markdown-body table tr {
-    background-color: var(--cradle-md-table-row);
-    border-top: 1px solid var(--cradle-md-border-light);
+    background-color: var(--background);
+    border-top: 1px solid var(--border);
 }
 
 .markdown-body table tr:nth-child(2n) {
-    background-color: var(--cradle-md-table-row-alt);
+    background-color: var(--muted);
 }
 
 /* ============================================
@@ -352,12 +357,12 @@ h6:hover .header-anchor-icon {
         'Liberation Mono',
         monospace;
     line-height: 10px;
-    color: var(--cradle-md-text);
+    color: var(--foreground);
     vertical-align: middle;
-    background-color: var(--cradle-md-kbd-bg);
-    border: solid 1px var(--cradle-md-border-light);
+    background-color: var(--muted);
+    border: solid 1px var(--border);
     border-radius: 6px;
-    box-shadow: inset 0 -1px 0 var(--cradle-md-border-light);
+    box-shadow: inset 0 -1px 0 var(--border);
 }
 
 /* ============================================
@@ -376,4 +381,243 @@ h6:hover .header-anchor-icon {
 
 .animate-actions-fade-in-right {
     animation: actions-fade-in-right 150ms ease-out backwards;
+}
+
+/* ============================================
+   FONT UTILITIES
+   ============================================ */
+.cradle-mono {
+    font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', monospace;
+}
+
+/* ============================================
+   SPINNER SYSTEM - LOADING INDICATORS
+   ============================================ */
+.cradle-spinner-ring {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    animation: spinner-rotate 1s linear infinite;
+}
+
+.cradle-spinner-ring circle {
+    fill: none;
+    stroke: var(--spinner-color, #ff8c00);
+    stroke-linecap: round;
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: 0;
+    animation: spinner-dash 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    transform-origin: center;
+}
+
+/* Spinner ring sizes */
+.cradle-spinner-ring.cradle-spinner-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.cradle-spinner-ring.cradle-spinner-md {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.cradle-spinner-ring.cradle-spinner-lg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.cradle-spinner-ring.cradle-spinner-xl {
+    width: 3rem;
+    height: 3rem;
+}
+
+@keyframes spinner-rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes spinner-dash {
+    0% {
+        stroke-dasharray: 1, 150;
+        stroke-dashoffset: 0;
+    }
+    50% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -40px;
+    }
+    100% {
+        stroke-dasharray: 90, 150;
+        stroke-dashoffset: -130px;
+    }
+}
+
+/* Spinner colors */
+.cradle-spinner-primary {
+    --spinner-color: #ff8c00;
+}
+
+.cradle-spinner-secondary {
+    --spinner-color: var(--foreground);
+}
+
+/* Generic spinner sizes (for dot-pulse etc) */
+.cradle-spinner-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+.cradle-spinner-md {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.cradle-spinner-lg {
+    width: 2rem;
+    height: 2rem;
+}
+
+.cradle-spinner-xl {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Dot pulse spinner */
+.cradle-spinner-dot-pulse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cradle-spinner-dot-pulse .cradle-spinner-pulse-dot {
+    position: relative;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ff8c00;
+    animation: spinner-dot-pulse-animation 1.5s infinite linear;
+}
+
+.cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::before,
+.cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::after {
+    content: '';
+    display: inline-block;
+    position: absolute;
+    top: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #ff8c00;
+}
+
+.cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::before {
+    left: -15px;
+    animation: spinner-dot-pulse-before 1.5s infinite linear;
+}
+
+.cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::after {
+    left: 15px;
+    animation: spinner-dot-pulse-after 1.5s infinite linear;
+}
+
+.cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot,
+.cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::before,
+.cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::after {
+    width: 6px;
+    height: 6px;
+}
+
+.cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::before {
+    left: -10px;
+}
+
+.cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::after {
+    left: 10px;
+}
+
+.cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot,
+.cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::before,
+.cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::after {
+    width: 14px;
+    height: 14px;
+}
+
+.cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::before {
+    left: -20px;
+}
+
+.cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::after {
+    left: 20px;
+}
+
+@keyframes spinner-dot-pulse-before {
+    0% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    25% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    75% {
+        transform: scale(0.7);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+}
+
+@keyframes spinner-dot-pulse-animation {
+    0% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    25% {
+        transform: scale(0.7);
+        opacity: 0.5;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    75% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+}
+
+@keyframes spinner-dot-pulse-after {
+    0% {
+        transform: scale(0.7);
+        opacity: 0.5;
+    }
+    25% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    75% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    100% {
+        transform: scale(0.7);
+        opacity: 0.5;
+    }
 }

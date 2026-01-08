@@ -4,6 +4,7 @@
  */
 
 import { ReactNode } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface SettingsCardProps {
     /** Card content */
@@ -30,10 +31,10 @@ export default function SettingsCard({
     className = '',
 }: SettingsCardProps): JSX.Element {
     return (
-        <div
-            className={`rounded-lg cradle-border bg-white/[0.02] px-4 py-1 space-y-0 ${className}`}
-        >
-            {children}
-        </div>
+        <Card className={`rounded-lg cradle-border bg-white/[0.02] space-y-0 ${className}`}>
+            <CardContent className='px-4 py-1'>
+                {children}
+            </CardContent>
+        </Card>
     );
 }

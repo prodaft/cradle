@@ -17,7 +17,7 @@
  * </Form>
  */
 
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { parseAPIError, ParsedAPIError } from '@/utils/api';
 import { useCallback, useState } from 'react';
 
@@ -78,7 +78,6 @@ export interface UseFormValidationReturn {
  * {usernameError && <span>{usernameError.join(', ')}</span>}
  */
 export function useFormValidation(): UseFormValidationReturn {
-    const { notify } = useNotif();
     const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -101,9 +100,7 @@ export function useFormValidation(): UseFormValidationReturn {
                 const result = await apiCall();
 
                 if (options.successMessage) {
-                    notify({
-                        type: 'success',
-                        text: options.successMessage,
+                    toast.success(options.successMessage, {
                         duration: options.duration || 3500,
                     });
                 }
@@ -120,18 +117,16 @@ export function useFormValidation(): UseFormValidationReturn {
                     // Store field errors for display
                     setFieldErrors(parsed.fieldErrors);
 
-                    notify({
-                        type: 'error',
-                        text:
-                            options.validationMessage ||
+                    toast.error(
+                        options.validationMessage ||
                             'Please fix the validation errors.',
-                        duration: options.duration || 4000,
-                    });
+                        {
+                            duration: options.duration || 4000,
+                        }
+                    );
                 } else {
                     // Non-validation error
-                    notify({
-                        type: 'error',
-                        text: parsed.detail,
+                    toast.error(parsed.detail, {
                         duration: options.duration || 5000,
                     });
                 }
@@ -145,7 +140,7 @@ export function useFormValidation(): UseFormValidationReturn {
                 setIsSubmitting(false);
             }
         },
-        [notify],
+        [],
     );
 
     /**

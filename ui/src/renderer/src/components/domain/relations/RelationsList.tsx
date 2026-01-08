@@ -71,8 +71,8 @@ export default function RelationsList({ query }: RelationsListProps) {
         <div className='p-4'>
             {loading ? (
                 <div className='flex items-center justify-center min-h-[200px]'>
-                    <div className='spinner-dot-pulse spinner-xl'>
-                        <div className='spinner-pulse-dot'></div>
+                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                        <div className='cradle-spinner-pulse-dot'></div>
                     </div>
                 </div>
             ) : relations.length === 0 ? (

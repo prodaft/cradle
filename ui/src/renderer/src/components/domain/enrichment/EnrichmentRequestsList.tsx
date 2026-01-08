@@ -2,17 +2,14 @@ import { useModal } from '@/contexts/ui/ModalContext';
 import { useCradleNavigate } from '@/hooks';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import {
-    ActionBar,
-    ActionBarDivider,
-    ActionBarSearch,
-    CollapsibleActionGroup,
-} from '@components/base/ActionBar/ActionBar';
-import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
+import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { DataTable, type BulkAction } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { EnrichmentRequestList } from '@services/cradle/models';
 import {
@@ -23,7 +20,10 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { capitalize } from 'lodash';
-import { ChangeEvent, FormEvent, MouseEvent } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useMemo } from 'react';
+import { Button } from '@/components/ui/button';
+import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { Checkbox } from '@/components/ui/checkbox';
 
 type EnrichmentRequest = EnrichmentRequestList;
 
@@ -109,29 +109,32 @@ function EnrichmentRequestsList({
         }
     };
 
-    const columns: Array<{
-        key: string;
-        label: string | React.ReactNode;
-        filterType?: 'text' | 'date';
-        sortable?: boolean;
-    }> = [
-        {
-            key: 'title',
-            label: (
-                <div className='flex items-center gap-2'>
-                    <StatusHeaderDropdown
-                        onStatusChange={handleStatusChange}
-                        status={columnFilters.status}
-                        statusOptions={['all', 'done', 'waiting', 'error', 'info']}
-                    />
-                    <span>Title</span>
-                </div>
-            ),
+    // Convert sortField and sortDirection to TanStack Table sorting state
+    const sorting = useMemo<SortingState>(() => {
+        const columnId = Object.keys(sortFieldMapping).find(
+            (key) => sortFieldMapping[key] === sortField
+        ) || sortField;
+        
+        return columnId ? [{
+            id: columnId,
+            desc: sortDirection === 'desc',
+        }] : [];
+    }, [sortField, sortDirection]);
+
+    const handleSortingChange = useCallback(
+        (newSorting: SortingState) => {
+            if (onSort) {
+                if (newSorting.length === 0) {
+                    onSort('created_at', 'desc');
+                } else {
+                    const sort = newSorting[0];
+                    const apiField = sortFieldMapping[sort.id] || sort.id;
+                    onSort(apiField, sort.desc ? 'desc' : 'asc');
+                }
+            }
         },
-        { key: 'user', label: 'User', filterType: 'text' as const },
-        { key: 'createdAt', label: 'Created At' },
-        { key: 'actions', label: '', sortable: false },
-    ];
+        [onSort],
+    );
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
         onColumnFilterChange
@@ -223,103 +226,148 @@ function EnrichmentRequestsList({
         })();
 
         const tooltipContent = errorMessage || capitalize(status);
-        const tooltipColor =
-            status === 'error' ? 'error' : status === 'waiting' ? 'warning' : 'primary';
+        const tooltipColorClass = status === 'error' ? 'bg-red-500 text-white' : status === 'waiting' ? 'bg-yellow-500 text-white' : '';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
-                <Tooltip
-                    content={tooltipContent}
-                    color={tooltipColor}
-                    showArrow={false}
-                >
-                    <span className='inline-flex items-center align-middle flex-shrink-0'>
-                        {icon}
-                    </span>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span className='inline-flex items-center align-middle flex-shrink-0'>
+                            {icon}
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent className={tooltipColorClass}>
+                        {tooltipContent}
+                    </TooltipContent>
                 </Tooltip>
             );
         }
 
         return (
-            <Tooltip content={tooltipContent} showArrow={false}>
-                <span className='inline-flex items-center align-middle flex-shrink-0'>
-                    {icon}
-                </span>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className='inline-flex items-center align-middle flex-shrink-0'>
+                        {icon}
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {tooltipContent}
+                </TooltipContent>
             </Tooltip>
         );
     };
 
-    // Row Actions Button Component
-    const RowActionsButton = ({ request }: { request: EnrichmentRequest }) => {
-        const handleDelete = () => {
-            if (onRequestDelete) {
-                onRequestDelete();
-            }
-        };
-
-        return (
-            <TableActionsButton>
-                <button
-                    onClick={handleDelete}
-                    className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
-                >
-                    <Trash width='18' height='18' className='text-red-500' />
-                    Delete
-                </button>
-            </TableActionsButton>
-        );
-    };
-
-    const renderRow = (
-        request: EnrichmentRequest,
-        index: number,
-        selectProps: SelectProps = {},
-    ) => {
-        const { enableMultiSelect, isSelected, onSelect } = selectProps;
-
-        return (
-            <tr
-                key={request.id}
-                onClick={navigateLink(`/enrichment/${request.id}`)}
-                className='cursor-pointer'
-            >
-                {enableMultiSelect && (
-                    <td
-                        className='w-12'
-                        onClick={(e: MouseEvent) => e.stopPropagation()}
-                    >
-                        <input
-                            type='checkbox'
-                            className='cradle-checkbox'
-                            checked={isSelected}
-                            onChange={onSelect}
-                        />
-                    </td>
-                )}
-                <td className='truncate max-w-xs' title={request.title}>
-                    <div className='flex items-center gap-2 min-w-0'>
-                        <span className='inline-flex items-center flex-shrink-0'>
-                            {getStatusIcon(request.status, errorMsg(request))}
-                        </span>
-                        <span className='truncate'>
-                            {truncateText(request.title, 50)}
-                        </span>
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo<ColumnDef<EnrichmentRequest>[]>(
+        () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                accessorKey: 'title',
+                id: 'title',
+                header: () => (
+                    <span>Title</span>
+                ),
+                cell: ({ row }) => (
+                    <div className='truncate max-w-xs cursor-pointer' title={row.original.title} onClick={navigateLink(`/enrichment/${row.original.id}`)}>
+                        <div className='flex items-center gap-2 min-w-0'>
+                            <span className='inline-flex items-center flex-shrink-0'>
+                                {getStatusIcon(row.original.status, errorMsg(row.original))}
+                            </span>
+                            <span className='truncate'>{truncateText(row.original.title, 50)}</span>
+                        </div>
                     </div>
-                </td>
-                <td className='w-32'>{request.userDetail?.username || 'N/A'}</td>
-                <td className='w-40'>
-                    {request.createdAt
-                        ? formatDate(new Date(request.createdAt))
-                        : 'N/A'}
-                </td>
-                <td className='w-12 text-right'>
-                    <div className='flex justify-end'>
-                        <RowActionsButton request={request} />
+                ),
+            },
+            {
+                accessorKey: 'user',
+                id: 'user',
+                header: ({ column }) => {
+                    const filterValue = columnFilters.user as string;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DataTableColumnHeader column={column} title="User" />
+                            {filterValue && (
+                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            )}
+                        </div>
+                    );
+                },
+                cell: ({ row }) => (
+                    <div className='w-32'>{row.original.userDetail?.username || 'N/A'}</div>
+                ),
+            },
+            {
+                accessorKey: 'createdAt',
+                id: 'createdAt',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Created At" />
+                ),
+                cell: ({ row }) => (
+                    <div className='w-40'>
+                        {row.original.createdAt
+                            ? formatDate(new Date(row.original.createdAt))
+                            : 'N/A'}
                     </div>
-                </td>
-            </tr>
-        );
-    };
+                ),
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    const request = row.original;
+                    const handleDelete = () => {
+                        if (onRequestDelete) {
+                            onRequestDelete();
+                        }
+                    };
+
+                    return (
+                        <div className='w-12 text-right' onClick={(e) => e.stopPropagation()}>
+                            <div className='flex justify-end'>
+                                <TableActionsButton>
+                                    <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                                        <Trash width='18' height='18' />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </TableActionsButton>
+                            </div>
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [columnFilters, handleStatusChange, getStatusIcon, errorMsg, onRequestDelete],
+    );
+
+    // Handle row selection - convert number[] to string[]
+    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
+        if (setSelectedRequests) {
+            setSelectedRequests(selectedIds.map(id => Number(id)));
+        }
+    }, [setSelectedRequests]);
 
     return (
         <div className='flex flex-col space-y-4'>
@@ -327,48 +375,6 @@ function EnrichmentRequestsList({
             <ActionBar
                 left={
                     <>
-                        <CollapsibleActionGroup
-                            selectedCount={selectedRequests.length}
-                            itemLabel='request'
-                            actions={[
-                                {
-                                    id: 'delete',
-                                    tooltip:
-                                        selectedRequests.length > 0
-                                            ? `Delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}`
-                                            : 'Select requests to delete',
-                                    icon: <Trash width={20} height={20} />,
-                                    onClick: () => {
-                                        if (selectedRequests.length === 0) return;
-                                        setModal(ConfirmDeletionModal, {
-                                            onConfirm: onDeleteSelected,
-                                            text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
-                                        });
-                                    },
-                                    disabled:
-                                        loading ||
-                                        enrichmentRequests.length === 0 ||
-                                        selectedRequests.length === 0,
-                                    iconActive: selectedRequests.length > 0,
-                                },
-                                {
-                                    id: 'rerun',
-                                    tooltip:
-                                        selectedRequests.length > 0
-                                            ? `Rerun ${selectedRequests.length} enrichment${selectedRequests.length > 1 ? 's' : ''}`
-                                            : 'Select requests to rerun',
-                                    icon: <RefreshCircle width={20} height={20} />,
-                                    onClick: onRerunSelected,
-                                    disabled:
-                                        loading ||
-                                        enrichmentRequests.length === 0 ||
-                                        selectedRequests.length === 0,
-                                    iconActive: selectedRequests.length > 0,
-                                },
-                            ]}
-                        />
-
-                        <ActionBarDivider />
 
                         <ActionBarSearch
                             placeholder='Search requests...'
@@ -396,36 +402,53 @@ function EnrichmentRequestsList({
                 }
                 right={
                     <>
-                        <Tooltip content='Create new enrichment request'>
-                            <button
-                                type='button'
-                                onClick={onCreateRequest}
-                                disabled={loading}
-                                className='flex items-center gap-1.5 px-4 h-9 text-sm rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                            >
-                                New
-                            </button>
-                        </Tooltip>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status}
+                            statusOptions={['all', 'done', 'waiting', 'error', 'info']}
+                        />
                     </>
                 }
             />
 
             {/* Table */}
-            <ListView
-                data={enrichmentRequests}
+            <DataTable
                 columns={columns}
-                renderRow={renderRow}
+                data={enrichmentRequests}
                 loading={loading}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                onSort={onSort}
-                sortFieldMapping={sortFieldMapping}
-                filterableColumns={filterableColumns}
-                filterValues={columnFilters}
                 emptyMessage='No enrichment requests found'
-                enableMultiSelect={true}
-                selectedIds={selectedRequests}
-                setSelected={(ids) => setSelectedRequests(ids)}
+                enableRowSelection={true}
+                selectedRows={selectedRequests.map(id => String(id))}
+                onRowSelectionChange={handleRowSelectionChange}
+                sorting={sorting}
+                onSortingChange={handleSortingChange}
+                manualPagination={true}
+                manualSorting={true}
+                bulkActions={[
+                    {
+                        id: 'delete',
+                        label: 'Delete requests',
+                        icon: <Trash width={18} height={18} />,
+                        onClick: () => {
+                            if (selectedRequests.length === 0) return;
+                            setModal(ConfirmDeletionModal, {
+                                onConfirm: onDeleteSelected,
+                                text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
+                            });
+                        },
+                        disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                        variant: 'destructive',
+                    },
+                    {
+                        id: 'rerun',
+                        label: 'Rerun enrichments',
+                        icon: <RefreshCircle width={18} height={18} />,
+                        onClick: onRerunSelected,
+                        disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                    },
+                ]}
+                itemLabel="request"
+                onRowClick={(request) => navigateLink(`/enrichment/${request.id}`)()}
             />
 
             <PaginationWrapper

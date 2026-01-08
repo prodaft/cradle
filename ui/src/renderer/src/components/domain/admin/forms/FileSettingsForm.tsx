@@ -1,4 +1,7 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -10,16 +13,15 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import {
-    FormAlert,
-    FormAlertState,
     SelectOption,
     SettingsButton,
     SettingsCard,
     SettingsField,
-    SettingsSeparator,
-    SettingsToggle,
 } from '../../../forms';
-import Selector from '../../../forms/Selector';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
+import { Separator } from '@/components/ui/separator';
+import ShadcnSelect from '../../../forms/ShadcnSelect';
 
 interface SubtypeOption extends SelectOption<string> {
     value: string;
@@ -79,11 +81,10 @@ const fileSettingsSchema: Yup.ObjectSchema<FileSettingsFormValues> = Yup.object(
 export default function FileSettingsForm() {
     const { entriesApi, managementApi } = useApi();
     const { execute } = useAPICall();
-    const { notify } = useNotif();
 
     const [isLoading, setIsLoading] = useState(true);
     const [subtypes, setSubtypes] = useState<SubtypeOption[]>([]);
-    const [actionAlert, setActionAlert] = useState<FormAlertState>({
+    const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({
         type: null,
         message: '',
     });
@@ -209,15 +210,9 @@ export default function FileSettingsForm() {
                     },
                 },
             });
-            notify({
-                type: 'success',
-                text: 'File settings updated successfully!',
-            });
+            toast.success('File settings updated successfully!');
         } catch (error) {
-            notify({
-                type: 'error',
-                text: 'Failed to save settings',
-            });
+            toast.error('Failed to save settings');
         }
     };
 
@@ -230,16 +225,12 @@ export default function FileSettingsForm() {
     }
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        File Settings
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Configure file processing and hash generation
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>File Settings</h2>
+                    <p className='text-muted-foreground'>Configure file processing and hash generation</p>
                 </div>
             </div>
 
@@ -258,15 +249,33 @@ export default function FileSettingsForm() {
 
                             <div className='space-y-4'>
                                 <SettingsCard>
-                                    <SettingsToggle
-                                        label='Autoprocess Files'
-                                        description='Automatically process uploaded files'
-                                        {...register('autoprocessFiles')}
-                                        watch={watch}
-                                        error={errors.autoprocessFiles}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor='autoprocessFiles' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Autoprocess Files
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>Automatically process uploaded files</p>
+                                                {errors.autoprocessFiles && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.autoprocessFiles.message}</p>
+                                                )}
+                                            </div>
+                                            <Controller
+                                                name='autoprocessFiles'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='autoprocessFiles'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='MD5 Subtype'
@@ -278,16 +287,19 @@ export default function FileSettingsForm() {
                                             name='md5Subtype'
                                             control={control}
                                             render={({ field }) => (
-                                                <Selector
-                                                    {...field}
+                                                <ShadcnSelect
                                                     staticOptions={subtypes}
+                                                    value={field.value}
                                                     placeholder='Select MD5 subtype'
+                                                    onChange={(newValue) => {
+                                                        field.onChange(newValue);
+                                                    }}
                                                 />
                                             )}
                                         />
                                     </SettingsField>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='SHA1 Subtype'
@@ -299,16 +311,19 @@ export default function FileSettingsForm() {
                                             name='sha1Subtype'
                                             control={control}
                                             render={({ field }) => (
-                                                <Selector
-                                                    {...field}
+                                                <ShadcnSelect
                                                     staticOptions={subtypes}
+                                                    value={field.value}
                                                     placeholder='Select SHA1 subtype'
+                                                    onChange={(newValue) => {
+                                                        field.onChange(newValue);
+                                                    }}
                                                 />
                                             )}
                                         />
                                     </SettingsField>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='SHA256 Subtype'
@@ -320,16 +335,19 @@ export default function FileSettingsForm() {
                                             name='sha256Subtype'
                                             control={control}
                                             render={({ field }) => (
-                                                <Selector
-                                                    {...field}
+                                                <ShadcnSelect
                                                     staticOptions={subtypes}
+                                                    value={field.value}
                                                     placeholder='Select SHA256 subtype'
+                                                    onChange={(newValue) => {
+                                                        field.onChange(newValue);
+                                                    }}
                                                 />
                                             )}
                                         />
                                     </SettingsField>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='Maximum File Size for Hashing'
@@ -364,12 +382,12 @@ export default function FileSettingsForm() {
 
                             <div className='space-y-4'>
                                 {actionAlert.type && (
-                                    <FormAlert
-                                        alert={actionAlert}
-                                        onDismiss={() =>
-                                            setActionAlert({ type: null, message: '' })
-                                        }
-                                    />
+                                    <Alert variant={actionAlert.type === 'error' ? 'destructive' : 'default'}>
+                                        {actionAlert.type === 'success' && <CheckCircle />}
+                                        {actionAlert.type === 'error' && <WarningCircle />}
+                                        {actionAlert.type === 'warning' && <InfoCircle />}
+                                        <AlertDescription>{actionAlert.message}</AlertDescription>
+                                    </Alert>
                                 )}
                                 <SettingsCard>
                                     <SettingsButton
@@ -385,13 +403,13 @@ export default function FileSettingsForm() {
 
                         {/* Save Button */}
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <button
+                            <Button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
+                                variant='default'
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Saving...' : 'Save Settings'}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>

@@ -1,35 +1,29 @@
 import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { useProfile } from '@/contexts/user/ProfileContext';
+import { Button } from '@/components/ui/button';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
+import { useParams } from 'react-router-dom';
 import { ReportList as ReportListModel } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import {
-    ActionBar,
-    CollapsibleActionGroup,
-} from '@components/base/ActionBar/ActionBar';
-import ListView, { SortDirection } from '@components/base/ListView/ListView';
+import { ActionBar, ActionBarButton } from '@components/base/ActionBar/ActionBar';
+import { DataTable, type BulkAction } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import {
-    Edit,
-    Eye,
-    InfoCircleSolid,
-    PlusCircle,
-    RefreshCircle,
-    Trash,
-    WarningCircleSolid,
-    WarningTriangleSolid,
-} from 'iconoir-react';
-import { useCallback, useEffect, useState } from 'react';
+import { Edit, Eye, InfoCircleSolid, PlusCircle, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { SortDirection } from '@/components/base/ListView/types';
 
 interface Column {
     key: string;
@@ -50,10 +44,8 @@ interface Action {
 }
 
 export default function ReportList() {
-    const { params } = useTabContext();
-    const report_id = params.report_id;
+    const { report_id } = useParams<{ report_id: string }>();
     const [searchParams, setSearchParams] = useSearchParams();
-    const { notify } = useNotif();
     const [reports, setReports] = useState<ReportListModel[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -83,16 +75,32 @@ export default function ReportList() {
         createdAt: 'created_at',
     };
 
-    const handleSort = (field: string, direction: SortDirection) => {
-        setSortField(field);
-        setSortDirection(direction);
-        // Reset to first page when sorting changes
-        setPage(1);
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('reports_sort_field', field);
-        newParams.set('reports_sort_direction', direction);
-        setSearchParams(newParams, { replace: true });
-    };
+    const handleSortingChange = useCallback(
+        (sorting: SortingState) => {
+            if (sorting.length === 0) {
+                setSortField('created_at');
+                setSortDirection('desc');
+            } else {
+                const sort = sorting[0];
+                const apiField = sortFieldMapping[sort.id] || sort.id;
+                setSortField(apiField);
+                setSortDirection(sort.desc ? 'desc' : 'asc');
+            }
+
+            // Reset to first page when sorting changes
+            setPage(1);
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('reports_page', '1');
+            if (sorting.length > 0) {
+                const sort = sorting[0];
+                const apiField = sortFieldMapping[sort.id] || sort.id;
+                newParams.set('reports_sort_field', apiField);
+                newParams.set('reports_sort_direction', sort.desc ? 'desc' : 'asc');
+            }
+            setSearchParams(newParams, { replace: true });
+        },
+        [searchParams, setSearchParams],
+    );
 
     const fetchReports = useCallback(async () => {
         setLoading(true);
@@ -174,30 +182,18 @@ export default function ReportList() {
                             ).length;
 
                             if (failures === 0) {
-                                notify({
-                                    type: 'success',
-                                    text: `Successfully deleted ${successes} report${successes > 1 ? 's' : ''}`,
-                                });
+                                toast.success(`Successfully deleted ${successes} report${successes > 1 ? 's' : ''}`);
                             } else if (successes === 0) {
-                                notify({
-                                    type: 'error',
-                                    text: `Failed to delete ${failures} report${failures > 1 ? 's' : ''}`,
-                                });
+                                toast.error(`Failed to delete ${failures} report${failures > 1 ? 's' : ''}`);
                             } else {
-                                notify({
-                                    type: 'info',
-                                    text: `Deleted ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`,
-                                });
+                                toast.info(`Deleted ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`);
                             }
 
                             // Refresh the reports list
                             setSelectedReports([]);
                             fetchReports();
                         } catch (error) {
-                            notify({
-                                type: 'error',
-                                text: 'An unexpected error occurred while deleting reports',
-                            });
+                            toast.error('An unexpected error occurred while deleting reports');
                         }
                     },
                     text: `Are you sure you want to delete ${selectedIds.length} report${selectedIds.length > 1 ? 's' : ''}? This action is irreversible.`,
@@ -206,29 +202,17 @@ export default function ReportList() {
         },
     ];
 
-    const columns: Array<{
-        key: string;
-        label: string | React.ReactNode;
-        className?: string;
-        sortable?: boolean;
-    }> = [
-        {
-            key: 'status',
-            label: (
-                <StatusHeaderDropdown
-                    onStatusChange={handleStatusChange}
-                    status={statusFilter}
-                    statusOptions={['all', 'done', 'working', 'error']}
-                />
-            ),
-            sortable: false,
-        },
-        { key: 'title', label: 'Title', className: 'truncate font-medium' },
-        { key: 'strategy', label: 'Strategy', className: 'truncate w-24' },
-        { key: 'createdAt', label: 'Created At', className: 'w-36' },
-        { key: 'anonymized', label: 'Anonymized' },
-        { key: 'actions', label: '', sortable: false },
-    ];
+    // Convert sortField and sortDirection to TanStack Table sorting state
+    const sorting = useMemo<SortingState>(() => {
+        const columnId = Object.keys(sortFieldMapping).find(
+            (key) => sortFieldMapping[key] === sortField
+        ) || sortField;
+        
+        return columnId ? [{
+            id: columnId,
+            desc: sortDirection === 'desc',
+        }] : [];
+    }, [sortField, sortDirection]);
 
     const getStatusIcon = (status?: string, errorMessage?: string) => {
         if (!status) return null;
@@ -284,172 +268,210 @@ export default function ReportList() {
         })();
 
         const tooltipContent = errorMessage || capitalizeString(status);
-        const tooltipColor =
-            status === 'error' ? 'error' : status === 'warning' ? 'warning' : 'primary';
+        const tooltipColorClass = status === 'error' ? 'bg-red-500 text-white' : status === 'warning' ? 'bg-yellow-500 text-white' : '';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
-                <Tooltip
-                    content={tooltipContent}
-                    color={tooltipColor}
-                    showArrow={false}
-                >
-                    <span className='inline-flex items-center align-middle flex-shrink-0'>
-                        {icon}
-                    </span>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span className='inline-flex items-center align-middle flex-shrink-0'>
+                            {icon}
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent className={tooltipColorClass}>
+                        {tooltipContent}
+                    </TooltipContent>
                 </Tooltip>
             );
         }
 
         return (
-            <Tooltip content={tooltipContent} showArrow={false}>
-                <span className='inline-flex items-center align-middle flex-shrink-0'>
-                    {icon}
-                </span>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className='inline-flex items-center align-middle flex-shrink-0'>
+                        {icon}
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {tooltipContent}
+                </TooltipContent>
             </Tooltip>
         );
     };
 
-    // Row Actions Button Component
-    const RowActionsButton = ({ report }: { report: ReportListModel }) => {
-        const menuButtonClasses =
-            'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
 
-        const handleView = async () => {
-            let details = await execute(() =>
-                reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }),
-            );
-            if (details.reportUrl) {
-                window.open(details.reportUrl, '_blank');
-            } else {
-                notify({
-                    type: 'error',
-                    text: 'No report location available',
-                });
-            }
-        };
-
-        const handleEdit = () => {
-            navigate(`/publish?report=${report.id}`);
-        };
-
-        const handleRetry = async () => {
-            try {
-                await reportsApi.reportsRetryCreate({
-                    id: report.id!,
-                });
-                fetchReports();
-                notify({
-                    type: 'success',
-                    text: 'Retrying to build report!',
-                });
-            } catch (error) {
-                console.error('Retry report failed:', error);
-                notify({
-                    type: 'error',
-                    text: 'Failed to retry report',
-                });
-            }
-        };
-
-        const handleDelete = () => {
-            setModal(ConfirmDeletionModal, {
-                text: `Are you sure you want to delete this report?`,
-                onConfirm: async () => {
-                    try {
-                        await reportsApi.reportsDestroy({
-                            id: report.id!,
-                        });
-                        fetchReports();
-                        notify({
-                            type: 'success',
-                            text: 'Report deleted successfully',
-                        });
-                    } catch (error) {
-                        console.error('Delete report failed:', error);
-                        notify({
-                            type: 'error',
-                            text: 'Failed to delete report',
-                        });
-                    }
-                },
-            });
-        };
-
-        return (
-            <TableActionsButton>
-                {report.status === 'done' && (
-                    <button onClick={handleView} className={menuButtonClasses}>
-                        <Eye width='18' height='18' />
-                        View Report
-                    </button>
-                )}
-                {report.status !== 'working' && (
-                    <button onClick={handleEdit} className={menuButtonClasses}>
-                        <Edit width='18' height='18' />
-                        Edit Report
-                    </button>
-                )}
-                {report.status === 'error' && (
-                    <button onClick={handleRetry} className={menuButtonClasses}>
-                        <RefreshCircle width='18' height='18' />
-                        Retry
-                    </button>
-                )}
-                <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1 -mx-1' />
-                <button
-                    onClick={handleDelete}
-                    className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
-                >
-                    <Trash width='18' height='18' className='text-red-500' />
-                    Delete
-                </button>
-            </TableActionsButton>
-        );
-    };
-
-    const renderRow = (
-        report: ReportListModel,
-        index: number,
-        selectProps: SelectProps = {},
-    ) => {
-        const { enableMultiSelect, isSelected, onSelect } = selectProps;
-
-        return (
-            <tr key={report.id}>
-                {enableMultiSelect && onSelect && (
-                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo<ColumnDef<ReportListModel>[]>(
+        () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                id: 'status',
+                header: 'Status',
+                cell: ({ row }) => (
+                    <div className='w-20'>
                         <div className='flex items-center'>
-                            <input
-                                type='checkbox'
-                                className='cradle-checkbox'
-                                checked={isSelected}
-                                onChange={onSelect}
-                            />
+                            {getStatusIcon(row.original.status, row.original.errorMessage || undefined)}
                         </div>
-                    </td>
-                )}
-                <td className='w-20'>
-                    <div className='flex items-center'>
-                        {getStatusIcon(report.status, report.errorMessage || undefined)}
                     </div>
-                </td>
-                <td className='truncate max-w-xs font-medium' title={report.title}>
-                    {report.title}
-                </td>
-                <td className='truncate w-24' title={report?.strategyLabel}>
-                    {truncateText(report?.strategyLabel, 24)}
-                </td>
-                <td className='w-36'>{formatDate(new Date(report.createdAt || ''))}</td>
-                <td className='w-24'>{report?.anonymized ? 'Yes' : 'No'}</td>
-                <td className='w-12 text-right'>
-                    <div className='flex justify-end'>
-                        <RowActionsButton report={report} />
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'title',
+                id: 'title',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Title" />
+                ),
+                cell: ({ row }) => (
+                    <div className='truncate max-w-xs font-medium' title={row.original.title}>
+                        {row.original.title}
                     </div>
-                </td>
-            </tr>
-        );
-    };
+                ),
+            },
+            {
+                accessorKey: 'strategy',
+                id: 'strategy',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Strategy" />
+                ),
+                cell: ({ row }) => (
+                    <div className='truncate w-24' title={row.original?.strategyLabel}>
+                        {truncateText(row.original?.strategyLabel, 24)}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'createdAt',
+                id: 'createdAt',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title="Created At" />
+                ),
+                cell: ({ row }) => (
+                    <div className='w-36'>{formatDate(new Date(row.original.createdAt || ''))}</div>
+                ),
+            },
+            {
+                accessorKey: 'anonymized',
+                id: 'anonymized',
+                header: 'Anonymized',
+                cell: ({ row }) => (
+                    <div className='w-24'>{row.original?.anonymized ? 'Yes' : 'No'}</div>
+                ),
+                enableSorting: false,
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    const report = row.original;
+                    const handleView = async () => {
+                        let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }));
+                        if (details.reportUrl) {
+                            window.open(details.reportUrl, '_blank');
+                        } else {
+                            toast.error('No report location available');
+                        }
+                    };
+
+                    const handleEdit = () => {
+                        navigate(`/publish?report=${report.id}`);
+                    };
+
+                    const handleRetry = async () => {
+                        try {
+                            await reportsApi.reportsRetryCreate({
+                                id: report.id!,
+                            });
+                            fetchReports();
+                            toast.success('Retrying to build report!');
+                        } catch (error) {
+                            console.error('Retry report failed:', error);
+                            toast.error('Failed to retry report');
+                        }
+                    };
+
+                    const handleDelete = () => {
+                        setModal(ConfirmDeletionModal, {
+                            text: `Are you sure you want to delete this report?`,
+                            onConfirm: async () => {
+                                try {
+                                    await reportsApi.reportsDestroy({
+                                        id: report.id!,
+                                    });
+                                    fetchReports();
+                                    toast.success('Report deleted successfully');
+                                } catch (error) {
+                                    console.error('Delete report failed:', error);
+                                    toast.error('Failed to delete report');
+                                }
+                            },
+                        });
+                    };
+
+                    return (
+                        <div className='w-12 text-right' onClick={(e) => e.stopPropagation()}>
+                            <div className='flex justify-end'>
+                                <TableActionsButton>
+                                    {report.status === 'done' && (
+                                        <DropdownMenuItem onClick={handleView}>
+                                            <Eye width='18' height='18' />
+                                            View Report
+                                        </DropdownMenuItem>
+                                    )}
+                                    {report.status !== 'working' && (
+                                        <DropdownMenuItem onClick={handleEdit}>
+                                            <Edit width='18' height='18' />
+                                            Edit Report
+                                        </DropdownMenuItem>
+                                    )}
+                                    {report.status === 'error' && (
+                                        <DropdownMenuItem onClick={handleRetry}>
+                                            <RefreshCircle width='18' height='18' />
+                                            Retry
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                                        <Trash width='18' height='18' />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </TableActionsButton>
+                            </div>
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [handleStatusChange, statusFilter, getStatusIcon, execute, reportsApi, fetchReports, navigate, setModal],
+    );
+
+    // Handle row selection
+    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
+        setSelectedReports(selectedIds);
+    }, []);
 
     return (
         <div className='w-full h-full flex flex-col space-y-3'>
@@ -459,12 +481,14 @@ export default function ReportList() {
                 ) : (
                     <div className='flex items-center'>
                         Reports
-                        <button
-                            className='justify-center ml-2 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
+                        <Button
+                            variant='ghost'
+                            size='icon'
+                            className='justify-center ml-2 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
                             onClick={navigateLink('/publish')}
                         >
                             <PlusCircle width={24} height={24} />
-                        </button>
+                        </Button>
                     </div>
                 )}
             </h1>
@@ -474,54 +498,53 @@ export default function ReportList() {
                     {!loading && (
                         <ActionBar
                             left={
-                                <CollapsibleActionGroup
-                                    selectedCount={selectedReports.length}
-                                    itemLabel='report'
-                                    actions={[
-                                        {
-                                            id: 'create',
-                                            tooltip: 'Create new report',
-                                            icon: <PlusCircle width={20} height={20} />,
-                                            onClick: () => navigate('/publish'),
-                                            iconActive: true,
-                                            alwaysVisible: true,
-                                        },
-                                        {
-                                            id: 'delete',
-                                            tooltip:
-                                                selectedReports.length > 0
-                                                    ? `Delete ${selectedReports.length} report${selectedReports.length > 1 ? 's' : ''}`
-                                                    : 'Select reports to delete',
-                                            icon: <Trash width={20} height={20} />,
-                                            onClick: () => {
-                                                if (selectedReports.length > 0) {
-                                                    actions[0].handler(selectedReports);
-                                                }
-                                            },
-                                            disabled:
-                                                selectedReports.length === 0 ||
-                                                reports.length === 0,
-                                            iconActive: selectedReports.length > 0,
-                                        },
-                                    ]}
+                                <ActionBarButton
+                                    tooltip='Create new report'
+                                    variant='circle'
+                                    icon={<PlusCircle width={18} height={18} />}
+                                    iconActive={true}
+                                    onClick={() => navigate('/publish')}
                                 />
+                            }
+                            right={
+                                <>
+                                    <StatusHeaderDropdown
+                                        onStatusChange={handleStatusChange}
+                                        status={statusFilter}
+                                        statusOptions={['all', 'done', 'working', 'error']}
+                                    />
+                                </>
                             }
                         />
                     )}
 
-                    <ListView
-                        data={reports}
+                    <DataTable
                         columns={columns}
-                        renderRow={renderRow}
+                        data={reports}
                         loading={loading}
-                        sortField={sortField}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                        sortFieldMapping={sortFieldMapping}
                         emptyMessage='No reports found.'
-                        tableClassName='table table-hover'
-                        enableMultiSelect={true}
-                        setSelected={setSelectedReports}
+                        enableRowSelection={true}
+                        selectedRows={selectedReports}
+                        onRowSelectionChange={handleRowSelectionChange}
+                        sorting={sorting}
+                        onSortingChange={handleSortingChange}
+                        manualPagination={true}
+                        manualSorting={true}
+                        bulkActions={[
+                            {
+                                id: 'delete',
+                                label: 'Delete reports',
+                                icon: <Trash width={18} height={18} />,
+                                onClick: () => {
+                                    if (selectedReports.length > 0) {
+                                        actions[0].handler(selectedReports);
+                                    }
+                                },
+                                disabled: selectedReports.length === 0 || reports.length === 0,
+                                variant: 'destructive',
+                            },
+                        ]}
+                        itemLabel="report"
                     />
 
                     <PaginationWrapper

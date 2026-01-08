@@ -5,7 +5,8 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { ClockRotateRight, Lock } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
-import Card from '../../../base/Card/Card';
+import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import ActivityList from '../../activity/ActivityList';
 import AccountSettings from '../../user/AccountSettings';
 import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
@@ -54,30 +55,40 @@ export default function AdminPanelCardUser({
         );
     };
 
-    const actions = [
-        {
-            icon: <ClockRotateRight />,
-            onClick: handleActivityClick,
-            tooltip: 'View Activity',
-            show: isAdmin(),
-            variant: 'ghost' as const,
-        },
-        {
-            icon: <Lock height={30} width={30} />,
-            onClick: handlePermissionsClick,
-            tooltip: 'Edit',
-            variant: 'ghost' as const,
-        },
-    ];
-
     return (
-        <>
-            <Card
-                title={name}
-                actions={actions}
-                onClick={handleUserClick}
-                className='bg-cradle3 bg-opacity-20'
-            />
-        </>
+        <Card
+            className='bg-cradle3 bg-opacity-20 cursor-pointer hover:shadow-lg transition-shadow'
+            onClick={handleUserClick}
+        >
+            <CardHeader>
+                <CardTitle>{name}</CardTitle>
+                <CardAction>
+                    {isAdmin() && (
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleActivityClick();
+                            }}
+                            title='View Activity'
+                        >
+                            <ClockRotateRight />
+                        </Button>
+                    )}
+                    <Button
+                        variant='ghost'
+                        size='icon-sm'
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handlePermissionsClick();
+                        }}
+                        title='Edit'
+                    >
+                        <Lock height={20} width={20} />
+                    </Button>
+                </CardAction>
+            </CardHeader>
+        </Card>
     );
 }

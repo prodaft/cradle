@@ -1,10 +1,14 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
-import useApi from '@/hooks/api/useApi';
-import { yupResolver } from '@hookform/resolvers/yup';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
 import * as Yup from 'yup';
-import { SettingsCard, SettingsSeparator, SettingsToggle } from '../../../forms';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
+import useApi from '@/hooks/api/useApi';
+import { SettingsCard } from '../../../forms';
 
 interface UserSettingsFormProps {
     onAdd?: () => void;
@@ -24,7 +28,6 @@ const accountSettingsSchema = Yup.object().shape({
 
 export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     const { managementApi } = useApi();
-    const { notify } = useNotif();
     const [isLoading, setIsLoading] = useState(true);
 
     const {
@@ -32,6 +35,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         handleSubmit,
         reset,
         watch,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
         resolver: yupResolver(accountSettingsSchema),
@@ -75,16 +79,10 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                     },
                 },
             });
-            notify({
-                type: 'success',
-                text: 'Account settings updated successfully!',
-            });
+            toast.success('Account settings updated successfully!');
             if (onAdd) onAdd();
         } catch (error) {
-            notify({
-                type: 'error',
-                text: 'Failed to save settings',
-            });
+            toast.error('Failed to save settings');
         }
     };
 
@@ -97,16 +95,12 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     }
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        User Settings
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Configure user registration and authentication
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>User Settings</h2>
+                    <p className='text-muted-foreground'>Configure user registration and authentication</p>
                 </div>
             </div>
 
@@ -125,46 +119,100 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
 
                             <div className='space-y-4'>
                                 <SettingsCard>
-                                    <SettingsToggle
-                                        label='Allow Registration'
-                                        description='Allow new users to register for accounts'
-                                        {...register('allowRegistration')}
-                                        watch={watch}
-                                        error={errors.allowRegistration}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor='allowRegistration' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Allow Registration
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>Allow new users to register for accounts</p>
+                                                {errors.allowRegistration && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.allowRegistration.message}</p>
+                                                )}
+                                            </div>
+                                            <Controller
+                                                name='allowRegistration'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='allowRegistration'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
-                                    <SettingsToggle
-                                        label='Require Email Activation'
-                                        description='Users must verify their email before accessing the system'
-                                        {...register('requireEmailActivation')}
-                                        watch={watch}
-                                        error={errors.requireEmailActivation}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor='requireEmailActivation' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Require Email Activation
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>Users must verify their email before accessing the system</p>
+                                                {errors.requireEmailActivation && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.requireEmailActivation.message}</p>
+                                                )}
+                                            </div>
+                                            <Controller
+                                                name='requireEmailActivation'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='requireEmailActivation'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
-                                    <SettingsToggle
-                                        label='Require Admin Confirmation'
-                                        description='New accounts must be approved by an administrator'
-                                        {...register('requireAdminConfirmation')}
-                                        watch={watch}
-                                        error={errors.requireAdminConfirmation}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor='requireAdminConfirmation' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Require Admin Confirmation
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>New accounts must be approved by an administrator</p>
+                                                {errors.requireAdminConfirmation && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.requireAdminConfirmation.message}</p>
+                                                )}
+                                            </div>
+                                            <Controller
+                                                name='requireAdminConfirmation'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='requireAdminConfirmation'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
                                 </SettingsCard>
                             </div>
                         </section>
 
                         {/* Save Button */}
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <button
+                            <Button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
+                                variant='default'
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Saving...' : 'Save Settings'}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>

@@ -1,54 +1,15 @@
-import Logo from '@components/base/Logo/Logo';
 import SearchDialog from '@components/domain/search/SearchDialog';
-import { useProfile } from '@contexts';
-import { useNotif } from '@contexts/ui';
-import { useApi, useCradleNavigate } from '@hooks';
-import { handleAPIError, parseAPIError } from '@utils/api';
-import { Search } from 'iconoir-react';
-import { ReactNode, useState } from 'react';
+import { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
+import { Button } from '@/components/ui/button';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Search } from 'iconoir-react';
 
 /**
- * Navbar component props
+ * Navbar component - simplified navbar with sidebar trigger and search
  */
-export interface NavbarProps {
-    /** Additional contents to display in the navbar (buttons, dropdowns, etc.) */
-    contents: ReactNode[];
-}
-
-/**
- * Navbar component - the main navigation bar for the application
- *
- * Includes logo, navigation buttons, search functionality, and custom content.
- *
- * @example
- * ```tsx
- * <Navbar contents={[<CustomButton />, <CustomDropdown />]} />
- * ```
- */
-export default function Navbar({ contents }: NavbarProps): JSX.Element {
+export default function Navbar(): JSX.Element {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const { navigate, navigateLink } = useCradleNavigate();
-    const { profile } = useProfile();
-    const { fleetingNotesApi } = useApi();
-    const { notify } = useNotif();
-
-    const handleCreateNewNote = async () => {
-        try {
-            const defaultContent =
-                profile?.defaultNoteTemplate ||
-                '# Untitled\n\nStart writing your note here...';
-            const response = await fleetingNotesApi.fleetingNotesCreate({
-                fleetingNoteRequest: {
-                    content: defaultContent,
-                },
-            });
-            navigate(`/notes/${response.id}`);
-        } catch (error) {
-            const parsed = await parseAPIError(error);
-            handleAPIError(parsed, notify);
-        }
-    };
 
     useHotkeys(
         'ctrl+k, cmd+k',
@@ -64,64 +25,30 @@ export default function Navbar({ contents }: NavbarProps): JSX.Element {
         [],
     );
 
-    useHotkeys(
-        'ctrl+l, cmd+l',
-        (event) => {
-            event.preventDefault();
-            handleCreateNewNote();
-        },
-        {
-            enableOnFormTags: true,
-            preventDefault: true,
-        },
-        [],
-    );
-
     return (
-        <div
-            className='sticky top-0 w-full z-40 cradle-border-b h-14 shrink-0'
-            style={{
-                backgroundColor: 'var(--cradle-bg-topbar)',
-                color: 'var(--cradle-sidebar-text)',
-            }}
-            data-testid='navbar-test'
-        >
-            <div className='px-4 h-full grid grid-cols-3 items-center gap-4'>
-                <div className='flex items-center space-x-3 justify-start'>
-                    <Logo text={false} height='1.5em' onClick={navigateLink('/')} />
-                </div>
-
-                <div className='flex items-center justify-center space-x-2'>
-                    <div className='relative w-full max-w-lg'>
-                        <input
-                            className='w-full py-1.5 pl-10 pr-3 text-sm border bg-transparent rounded-full'
-                            style={{
-                                borderColor: 'var(--cradle-border-accent)',
-                                color: 'var(--cradle-sidebar-text)',
-                                outline: 'none',
-                            }}
-                            placeholder='Search (Ctrl+K)'
-                            onClick={() => setIsDialogOpen(true)}
-                            readOnly
-                        />
-                        <Search
-                            className='absolute left-3 top-1/2 transform -translate-y-1/2'
-                            style={{ color: 'var(--cradle-sidebar-icon)' }}
-                            width='1em'
-                            height='1em'
-                            strokeWidth='1.5'
-                        />
+        <div className='relative flex h-14 items-center gap-3 p-4 sm:gap-4 border-b border-border shrink-0'>
+            <div className='flex-1 flex justify-center'>
+                <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => setIsDialogOpen(true)}
+                    className='rounded-full max-w-xs w-full justify-between text-muted-foreground'
+                >
+                    <div className='flex items-center gap-2'>
+                        <Search className='h-4 w-4' />
+                        <span className='text-sm'>Search...</span>
                     </div>
-                    <SearchDialog
-                        isOpen={isDialogOpen}
-                        onClose={() => setIsDialogOpen(false)}
-                    />
-                </div>
-
-                <div className='flex items-center space-x-2 justify-end'>
-                    {contents}
-                </div>
+                    <KbdGroup className='hidden sm:flex'>
+                        <Kbd>Ctrl</Kbd>
+                        <span>+</span>
+                        <Kbd>K</Kbd>
+                    </KbdGroup>
+                </Button>
             </div>
+            <SearchDialog
+                isOpen={isDialogOpen}
+                onClose={() => setIsDialogOpen(false)}
+            />
         </div>
     );
 }

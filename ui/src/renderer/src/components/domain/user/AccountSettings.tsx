@@ -5,7 +5,7 @@ import ActionConfirmationModal from '@/components/modals/base/ActionConfirmation
 import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@/components/modals/notes/MarkdownEditorModal';
 import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
@@ -17,22 +17,21 @@ import {
     UserUpdateRequestRoleEnum
 } from '@/services/cradle/models';
 import { displayError } from '@/utils/api';
-import AlertBox from '@components/base/Alert/AlertBox';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
-import {
-    SettingsButton,
-    SettingsCard,
-    SettingsField,
-    SettingsSelect,
-    SettingsSeparator,
-    SettingsToggle,
-} from '@components/forms';
+import { SettingsButton, SettingsCard, SettingsField, SettingsSelect } from '@components/forms';
+import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { yupResolver } from '@hookform/resolvers/yup';
 import bytes from 'bytes';
 import { HalfMoon, SunLight } from 'iconoir-react';
 import { debounce } from 'lodash'; // Import lodash debounce
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import ActiveSessions from './ActiveSessions';
 
@@ -107,7 +106,6 @@ export default function AccountSettings({
     const { execute } = useAPICall();
     const { profile, setProfile, isAdmin } = useProfile();
     const { setModal } = useModal();
-    const { notify } = useNotif();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [user, setUser] = useState<UserRetrieve | null>(null);
     const isOwnAccount = isEdit ? target === 'me' || profile?.id === target : false;
@@ -151,6 +149,7 @@ export default function AccountSettings({
         getValues,
         watch,
         setValue,
+        control,
         formState: { errors, isDirty },
     } = useForm<AccountFormData>({
         resolver: yupResolver(accountSettingsSchema, {
@@ -369,10 +368,7 @@ export default function AccountSettings({
                 }),
             );
 
-            notify({
-                type: 'success',
-                text: 'User created successfully',
-            });
+            toast.success('User created successfully');
             reset();
             if (onAdd) onAdd(newUser);
         }
@@ -400,12 +396,9 @@ export default function AccountSettings({
             isDisabling: twoFactorEnabled,
             onSuccess: () => {
                 setTwoFactorEnabled((prev) => !prev);
-                notify({
-                    type: 'success',
-                    text: twoFactorEnabled
-                        ? 'Two-Factor Auth has been disabled.'
-                        : 'Two-Factor Auth has been enabled.',
-                });
+                toast.success(twoFactorEnabled
+                    ? 'Two-Factor Auth has been disabled.'
+                    : 'Two-Factor Auth has been enabled.');
             },
         });
     };
@@ -415,13 +408,6 @@ export default function AccountSettings({
             onConfirm: handleDelete,
             confirmText: 'DELETE',
             text: 'Deleting your account will permanently remove all your data, including notes, entries, and settings. This action cannot be undone.',
-        });
-    };
-
-    const openLogoutConfirmationModal = () => {
-        setModal(ActionConfirmationModal, {
-            onConfirm: () => auth.logOut(),
-            text: 'Are you sure you want to log out? You will need to sign in again to access your account.',
         });
     };
 
@@ -455,10 +441,7 @@ export default function AccountSettings({
                             defaultNoteTemplateRequest: { template: content },
                         });
 
-                        notify({
-                            type: 'success',
-                            text: 'Default note template updated successfully!',
-                        });
+                        toast.success('Default note template updated successfully!');
                     } catch (err) {
                         displayError(setAlert)(err);
                     }
@@ -505,10 +488,7 @@ export default function AccountSettings({
 
     const handleDeleteUser = async () => {
         await execute(() => usersApi.usersDestroy({ userId: target }));
-        notify({
-            type: 'success',
-            text: 'User deleted successfully',
-        });
+        toast.success('User deleted successfully');
         navigate('/admin/users');
     };
 
@@ -523,14 +503,14 @@ export default function AccountSettings({
     if (!user) return <div></div>;
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                    <h2 className='text-2xl font-bold tracking-tight'>
                         {isEdit ? 'Settings' : 'Add New User'}
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                    </h2>
+                    <p className='text-muted-foreground'>
                         {isEdit
                             ? 'Manage account preferences and security'
                             : 'Create a new user account'}
@@ -563,7 +543,7 @@ export default function AccountSettings({
                                         onClick={simulateSession}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsButton
                                         label='Email Confirmation'
@@ -572,7 +552,7 @@ export default function AccountSettings({
                                         onClick={sendEmailConfirmation}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsButton
                                         label='Password Reset'
@@ -581,7 +561,7 @@ export default function AccountSettings({
                                         onClick={sendPasswordResetEmail}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsButton
                                         label='Delete User'
@@ -615,7 +595,10 @@ export default function AccountSettings({
                                 {/* Alert */}
                                 {alert.show && (
                                     <div className='pt-4'>
-                                        <AlertBox alert={alert} />
+                                        <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                                            <WarningCircle />
+                                            <AlertDescription>{alert.message}</AlertDescription>
+                                        </AlertComponent>
                                     </div>
                                 )}
 
@@ -630,7 +613,7 @@ export default function AccountSettings({
                                         disabled={!isAdminAndNotOwn && isEdit}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='Email'
@@ -642,33 +625,31 @@ export default function AccountSettings({
                                         disabled={!isAdminAndNotOwn && isEdit}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='User ID'
                                         description='Unique identifier for API integrations'
                                     >
-                                        <input
+                                        <Input
                                             type='text'
                                             value={profile?.id || ''}
-                                            className='cradle-input inline-block text-sm h-8 rounded-full opacity-60'
-                                            style={{ width: 'auto' }}
+                                            className='opacity-60'
                                             disabled
                                             readOnly
                                         />
                                     </SettingsField>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='Role'
                                         description='Determines your access permissions'
                                     >
-                                        <input
+                                        <Input
                                             type='text'
                                             value={profile?.role || ''}
-                                            className='cradle-input inline-block text-sm h-8 rounded-full opacity-60'
-                                            style={{ width: 'auto' }}
+                                            className='opacity-60'
                                             disabled
                                             readOnly
                                         />
@@ -714,40 +695,61 @@ export default function AccountSettings({
                                                 <option value='admin'>Admin</option>
                                             </SettingsSelect>
 
-                                            <SettingsSeparator />
+                                            <Separator />
 
-                                            <SettingsToggle
-                                                label='Email Confirmed'
-                                                description="User's email confirmation status"
-                                                id='emailConfirmed'
-                                                data-testid='emailConfirmed-toggle'
-                                                {...register('emailConfirmed')}
-                                                watch={watch}
-                                            />
+                                            <div className='py-2'>
+                                                <div className='flex items-center justify-between gap-4'>
+                                                    <div className='flex-1'>
+                                                        <Label htmlFor='emailConfirmed' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                            Email Confirmed
+                                                        </Label>
+                                                        <p className='text-sm cradle-text-muted'>User's email confirmation status</p>
+                                                    </div>
+                                                    <Controller
+                                                        name='emailConfirmed'
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Switch
+                                                                id='emailConfirmed'
+                                                                name={field.name}
+                                                                data-testid='emailConfirmed-toggle'
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
 
-                                            <SettingsSeparator />
+                                            <Separator />
 
-                                            <SettingsToggle
-                                                label='Active'
-                                                description='Disabled accounts cannot log in'
-                                                id='isActive'
-                                                data-testid='isActive-toggle'
-                                                {...register('isActive')}
-                                                watch={watch}
-                                            />
+                                            <div className='py-2'>
+                                                <div className='flex items-center justify-between gap-4'>
+                                                    <div className='flex-1'>
+                                                        <Label htmlFor='isActive' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                            Active
+                                                        </Label>
+                                                        <p className='text-sm cradle-text-muted'>Disabled accounts cannot log in</p>
+                                                    </div>
+                                                    <Controller
+                                                        name='isActive'
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Switch
+                                                                id='isActive'
+                                                                name={field.name}
+                                                                data-testid='isActive-toggle'
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        )}
+                                                    />
+                                                </div>
+                                            </div>
 
                                             {isAdminAndNotOwn && (
                                                 <>
-                                                    <SettingsSeparator />
-                                                    <SettingsField
-                                                        label='Upload Limit'
-                                                        description='Maximum file size allowed for uploads (leave empty to use global default)'
-                                                        placeholder='e.g. 100MB, 1GB'
-                                                        inputWidth='w-48'
-                                                        {...register('fileUploadLimit')}
-                                                        error={errors.fileUploadLimit}
-                                                    />
-                                                    <SettingsSeparator />
+                                                    <Separator />
                                                     <SettingsField
                                                         label='Password'
                                                         description='Set a new password for this user'
@@ -789,7 +791,7 @@ export default function AccountSettings({
                                                     title='Change Password'
                                                 />
 
-                                                <SettingsSeparator />
+                                                <Separator />
 
                                                 <SettingsButton
                                                     label='API Key'
@@ -803,7 +805,7 @@ export default function AccountSettings({
 
                                         {(twoFactorEnabled || isOwnAccount) && (
                                             <>
-                                                {isOwnAccount && <SettingsSeparator />}
+                                                {isOwnAccount && <Separator />}
                                                 <div className='flex items-center justify-between py-2'>
                                                     <div>
                                                         <span className='text-sm cradle-text-tertiary block mb-0.5'>
@@ -815,27 +817,21 @@ export default function AccountSettings({
                                                             authenticator app
                                                         </span>
                                                     </div>
-                                                    <button
+                                                    <Button
                                                         type='button'
-                                                        className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${twoFactorEnabled
-                                                            ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent'
-                                                            : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                                                            }`}
+                                                        variant={twoFactorEnabled ? 'destructive' : 'outline'}
+                                                        size='sm'
                                                         onClick={openTwoFactorModal}
                                                     >
-                                                        <span>
-                                                            {twoFactorEnabled
-                                                                ? 'Disable'
-                                                                : 'Enable'}
-                                                        </span>
-                                                    </button>
+                                                        {twoFactorEnabled ? 'Disable' : 'Enable'}
+                                                    </Button>
                                                 </div>
                                             </>
                                         )}
 
                                         {isOwnAccount && (
                                             <>
-                                                <SettingsSeparator />
+                                                <Separator />
                                                 <SettingsButton
                                                     label='Delete Account'
                                                     description='Permanently remove account and data'
@@ -857,18 +853,6 @@ export default function AccountSettings({
                                             </div>
                                             <SettingsCard>
                                                 <ActiveSessions userId={target} />
-                                            </SettingsCard>
-
-                                            <SettingsCard>
-                                                <SettingsButton
-                                                    label='Logout'
-                                                    description='Sign out of your account'
-                                                    buttonText='Logout'
-                                                    variant='danger'
-                                                    onClick={
-                                                        openLogoutConfirmationModal
-                                                    }
-                                                />
                                             </SettingsCard>
                                         </>
                                     )}
@@ -900,38 +884,48 @@ export default function AccountSettings({
                                                 Choose your preferred color scheme
                                             </p>
                                         </div>
-                                        <button
+                                        <Button
                                             type='button'
-                                            onClick={() =>
-                                                setValue(
-                                                    'theme',
-                                                    watch('theme') === 'dark'
-                                                        ? 'light'
-                                                        : 'dark',
-                                                )
-                                            }
-                                            className='p-2 rounded-full transition-colors bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                                            variant='ghost'
+                                            size='icon'
+                                            onClick={() => setValue('theme', watch('theme') === 'dark' ? 'light' : 'dark')}
+                                            className='bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
                                         >
                                             {watch('theme') === 'dark' ? (
                                                 <SunLight className='w-5 h-5' />
                                             ) : (
                                                 <HalfMoon className='w-5 h-5' />
                                             )}
-                                        </button>
+                                        </Button>
                                     </div>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
-                                    <SettingsToggle
-                                        label='Vim Mode'
-                                        description='Use Vim keybindings in the markdown editor'
-                                        id={vimModeId}
-                                        data-testid='vim-toggle'
-                                        {...register('vimMode')}
-                                        watch={watch}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor={vimModeId} className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Vim Mode
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>Use Vim keybindings in the markdown editor</p>
+                                            </div>
+                                            <Controller
+                                                name='vimMode'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id={vimModeId}
+                                                        name={field.name}
+                                                        data-testid='vim-toggle'
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsButton
                                         label='Note Template'
@@ -942,7 +936,7 @@ export default function AccountSettings({
                                         loading={noteTemplateLoading}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsButton
                                         label='Note Snippets'
@@ -964,13 +958,14 @@ export default function AccountSettings({
                         {/* Save Button - Only for new user creation */}
                         {!isEdit && (
                             <div className='border-t border-white/5 pt-5 flex justify-end'>
-                                <button
+                                <Button
                                     type='submit'
-                                    className='cradle-btn cradle-btn-primary px-6 rounded-lg'
+                                    variant='default'
+                                    size='default'
                                     disabled={!isDirty}
                                 >
                                     Create User
-                                </button>
+                                </Button>
                             </div>
                         )}
                     </form>

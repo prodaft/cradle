@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 /**
  * ActionConfirmationModal component props
@@ -34,7 +38,7 @@ export default function ActionConfirmationModal({
     text = 'Are you sure you want to proceed with this action? Please confirm to continue.',
     confirmText,
     closeModal,
-}: ActionConfirmationModalProps): JSX.Element {
+}: ActionConfirmationModalProps): React.JSX.Element {
     const [userInput, setUserInput] = useState('');
 
     // If confirmText is provided, enable confirm only when the input matches exactly.
@@ -48,34 +52,21 @@ export default function ActionConfirmationModal({
     };
 
     return (
-        <div className='min-w-[320px] max-w-md'>
-            {/* Header with title and close button */}
-            <div className='flex items-end justify-between mb-4'>
-                <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                        Confirm Action
-                    </h2>
-                </div>
-            </div>
-
-            {/* Body text */}
-            <p className='text-sm text-cradle-text-secondary mb-3 leading-relaxed'>
-                {text}
-            </p>
+        <>
+            <DialogHeader>
+                <DialogTitle>Confirm Action</DialogTitle>
+                <DialogDescription>{text}</DialogDescription>
+            </DialogHeader>
 
             {/* Confirmation input */}
             {confirmText && (
-                <div className='mb-5'>
-                    <label className='cradle-label mb-2 block'>
-                        Type "
-                        <span className='text-cradle-accent-primary'>
-                            {confirmText}
-                        </span>
-                        " to confirm
-                    </label>
-                    <input
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='confirm-input'>
+                        Type "<span className='text-cradle-accent-primary'>{confirmText}</span>" to confirm
+                    </Label>
+                    <Input
+                        id='confirm-input'
                         type='text'
-                        className='cradle-input'
                         placeholder={confirmText}
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
@@ -84,23 +75,25 @@ export default function ActionConfirmationModal({
             )}
 
             {/* Action buttons */}
-            <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                <button
+            <div className='flex justify-end gap-2 mt-4'>
+                <Button
                     type='button'
-                    className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    variant='outline'
+                    size='sm'
                     onClick={closeModal}
                 >
-                    <span>Cancel</span>
-                </button>
-                <button
+                    Cancel
+                </Button>
+                <Button
                     type='button'
-                    className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                    variant='default'
+                    size='sm'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >
-                    <span>Confirm</span>
-                </button>
+                    Confirm
+                </Button>
             </div>
-        </div>
+        </>
     );
 }

@@ -10,7 +10,7 @@
    ============================================ */
 @theme {
     /* Primary color for bg-primary, fill-primary, etc. */
-    --color-primary: #ff8c00;
+    /* --color-primary: #ff8c00; */ /* Commented out - using shadcn primary from globals.css instead */
 
     /* Extended Colors */
     --color-cradle1: #151515;
@@ -167,29 +167,29 @@
    ============================================ */
 @layer base {
     :root {
-        /* Backgrounds - White and Light Greys */
-        --cradle-bg-primary: #ffffff;
-        --cradle-bg-secondary: #f5f5f5;
-        --cradle-bg-tertiary: #eeeeee;
-        --cradle-bg-elevated: #ffffff;
+        /* Backgrounds - Map to shadcn variables */
+        --cradle-bg-primary: var(--background);
+        --cradle-bg-secondary: var(--secondary);
+        --cradle-bg-tertiary: var(--muted);
+        --cradle-bg-elevated: var(--card);
 
-        /* Sidebar & Topbar - Light Mode */
-        --cradle-bg-sidebar: #ffffff;
-        --cradle-bg-topbar: #ffffff;
-        --cradle-sidebar-text: #666666;
-        --cradle-sidebar-icon: #999999;
-        --cradle-sidebar-hover-bg: #f5f5f5;
+        /* Sidebar & Topbar - Map to shadcn sidebar variables */
+        --cradle-bg-sidebar: var(--sidebar);
+        --cradle-bg-topbar: var(--background);
+        --cradle-sidebar-text: var(--sidebar-foreground);
+        --cradle-sidebar-icon: #ff8c00; /* Keep orange accent */
+        --cradle-sidebar-hover-bg: var(--sidebar-accent);
 
-        /* Borders & Dividers */
-        --cradle-border-primary: #e0e0e0;
-        --cradle-border-accent: #cccccc;
-        --cradle-border-interactive: #999999;
+        /* Borders & Dividers - Map to shadcn border */
+        --cradle-border-primary: var(--border);
+        --cradle-border-accent: var(--border);
+        --cradle-border-interactive: var(--ring);
 
-        /* Text - Black and Greys */
-        --cradle-text-primary: #000000;
-        --cradle-text-secondary: #333333;
-        --cradle-text-tertiary: #666666;
-        --cradle-text-muted: #999999;
+        /* Text - Map to shadcn foreground variables */
+        --cradle-text-primary: var(--foreground);
+        --cradle-text-secondary: var(--foreground);
+        --cradle-text-tertiary: var(--muted-foreground);
+        --cradle-text-muted: var(--muted-foreground);
 
         /* Accent Colors - Orange Primary */
         --cradle-accent-primary: #ff8c00;
@@ -254,13 +254,13 @@
         --cradle-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.08);
         --cradle-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.12);
 
-        /* Markdown/Editor Colors - Light Mode (non-ProseMark) */
-        --cradle-md-text: #1f2328;
-        --cradle-md-border: #d1d9e0;
-        --cradle-md-border-light: #d1d9e0b3;
-        --cradle-md-table-row: #ffffff;
-        --cradle-md-table-row-alt: #f6f8fa;
-        --cradle-md-kbd-bg: #f6f8fa;
+        /* Markdown/Editor Colors - Map to shadcn variables */
+        --cradle-md-text: var(--foreground);
+        --cradle-md-border: var(--border);
+        --cradle-md-border-light: var(--border);
+        --cradle-md-table-row: var(--background);
+        --cradle-md-table-row-alt: var(--muted);
+        --cradle-md-kbd-bg: var(--muted);
         --cradle-md-selection: rgba(255, 140, 0, 0.2);
 
         /* Spacing System */
@@ -272,32 +272,32 @@
     }
 
     /* ============================================
-       DARK MODE - TECHNICAL DARK THEME
+       DARK MODE - Map to shadcn dark variables
        ============================================ */
     [data-theme='dark'] {
-        /* Backgrounds - Dark Greys (not pure black) */
-        --cradle-bg-primary: #1a1a1a;
-        --cradle-bg-secondary: #2a2a2a;
-        --cradle-bg-tertiary: #1a1a1a;
-        --cradle-bg-elevated: #1f1f1f;
+        /* Backgrounds - Map to shadcn dark variables */
+        --cradle-bg-primary: var(--background);
+        --cradle-bg-secondary: var(--secondary);
+        --cradle-bg-tertiary: var(--muted);
+        --cradle-bg-elevated: var(--card);
 
-        /* Sidebar & Topbar - Dark Mode */
-        --cradle-bg-sidebar: #151515;
-        --cradle-bg-topbar: #151515;
-        --cradle-sidebar-text: #999999;
-        --cradle-sidebar-icon: #999999;
-        --cradle-sidebar-hover-bg: #1f1f1f;
+        /* Sidebar & Topbar - Map to shadcn dark sidebar variables */
+        --cradle-bg-sidebar: var(--sidebar);
+        --cradle-bg-topbar: var(--background);
+        --cradle-sidebar-text: var(--sidebar-foreground);
+        --cradle-sidebar-icon: #ff8c00; /* Keep orange accent */
+        --cradle-sidebar-hover-bg: var(--sidebar-accent);
 
-        /* Borders & Dividers */
-        --cradle-border-primary: #2a2a2a;
-        --cradle-border-accent: #404040;
-        --cradle-border-interactive: #555555;
+        /* Borders & Dividers - Map to shadcn dark border */
+        --cradle-border-primary: var(--border);
+        --cradle-border-accent: var(--border);
+        --cradle-border-interactive: var(--ring);
 
-        /* Text - White and Light Greys */
-        --cradle-text-primary: #ffffff;
-        --cradle-text-secondary: #cccccc;
-        --cradle-text-tertiary: #999999;
-        --cradle-text-muted: #666666;
+        /* Text - Map to shadcn dark foreground variables */
+        --cradle-text-primary: var(--foreground);
+        --cradle-text-secondary: var(--foreground);
+        --cradle-text-tertiary: var(--muted-foreground);
+        --cradle-text-muted: var(--muted-foreground);
 
         /* Accent Colors - Orange Primary (same in dark mode) */
         --cradle-accent-primary: #ff8c00;
@@ -362,13 +362,13 @@
         --cradle-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.6);
         --cradle-shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.7);
 
-        /* Markdown/Editor Colors - Dark Mode (non-ProseMark) */
-        --cradle-md-text: #f0f6fc;
-        --cradle-md-border: #3d444d;
-        --cradle-md-border-light: #3d444db3;
-        --cradle-md-table-row: #0d1117;
-        --cradle-md-table-row-alt: #151b23;
-        --cradle-md-kbd-bg: #151b23;
+        /* Markdown/Editor Colors - Map to shadcn dark variables */
+        --cradle-md-text: var(--foreground);
+        --cradle-md-border: var(--border);
+        --cradle-md-border-light: var(--border);
+        --cradle-md-table-row: var(--background);
+        --cradle-md-table-row-alt: var(--muted);
+        --cradle-md-kbd-bg: var(--muted);
         --cradle-md-selection: rgba(255, 140, 0, 0.3);
     }
 
@@ -440,11 +440,6 @@
         overflow: hidden;
     }
 
-    /* Allow dropdowns to escape card overflow */
-    .cradle-card:has(.cradle-dropdown),
-    .cradle-card-with-dropdown {
-        overflow: visible;
-    }
 
     .cradle-card-hover:hover {
         border-color: var(--cradle-border-interactive);
@@ -660,218 +655,10 @@
         background: var(--cradle-accent-info);
     }
 
-    /* ============================================
-   BUTTON SYSTEM - TECHNICAL INTERFACE
-   ============================================ */
-    .cradle-btn {
-        padding: 0.625rem 1.25rem;
-        border: 1px solid var(--cradle-border-accent);
-        background: transparent;
-        color: var(--cradle-accent-primary);
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        cursor: pointer;
-        font-weight: 500;
-    }
-
-    .cradle-btn:hover {
-        border-color: var(--cradle-accent-primary);
-        background: transparent !important;
-    }
-
-    .cradle-btn:active {
-        opacity: 0.8;
-    }
-
-    /* Button Variants */
-    .cradle-btn-primary {
-        border-color: var(--cradle-border-accent);
-        background: transparent;
-        color: var(--cradle-accent-primary);
-    }
-
-    .cradle-btn-primary:hover {
-        border-color: var(--cradle-accent-primary);
-        background: transparent !important;
-    }
-
-    .cradle-btn-secondary {
-        border-color: var(--cradle-border-accent);
-        background: transparent;
-        color: var(--cradle-accent-primary);
-    }
-
-    .cradle-btn-secondary:hover {
-        border-color: var(--cradle-accent-primary);
-        background: transparent !important;
-    }
-
-    .cradle-btn-ghost {
-        border-color: transparent;
-        background: transparent;
-        color: var(--cradle-accent-primary);
-    }
-
-    .cradle-btn-ghost:hover {
-        border-color: var(--cradle-accent-primary);
-        background: transparent !important;
-    }
-
-    /* Button text color logic: grey/white when icons are orange, orange when no icons */
-    .cradle-btn:has(svg) {
-        color: var(--cradle-text-secondary);
-    }
-
-    .cradle-btn:has(svg):hover {
-        color: var(--cradle-text-primary);
-    }
-
-    .cradle-btn:not(:has(svg)) {
-        color: var(--cradle-accent-primary);
-    }
-
-    .cradle-btn:not(:has(svg)):hover {
-        color: var(--cradle-accent-primary);
-    }
-
-    .cradle-btn-error {
-        border-color: var(--cradle-border-accent);
-        background: transparent;
-        color: var(--cradle-accent-error);
-    }
-
-    .cradle-btn-error:hover {
-        border-color: var(--cradle-accent-error);
-        background: transparent !important;
-    }
-
-    .cradle-btn-danger {
-        border-color: var(--cradle-border-accent);
-        background: transparent;
-        color: var(--cradle-accent-error);
-    }
-
-    .cradle-btn-danger:hover {
-        border-color: var(--cradle-accent-error);
-        background: transparent !important;
-    }
-
-    /* Button Sizes */
-    .cradle-btn-sm {
-        padding: 0.375rem 0.875rem;
-        font-size: 0.75rem;
-        letter-spacing: 1px;
-    }
-
-    /* Button circle variant */
-    .btn-circle {
-        width: 2rem;
-        height: 2rem;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
 
     /* ============================================
-   MODAL/DIALOG SYSTEM - TECHNICAL INTERFACE
+   MODAL/DIALOG SYSTEM - Now using shadcn Dialog
    ============================================ */
-    .modal {
-        display: none;
-    }
-
-    .modal-state:checked ~ .modal {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 9999;
-    }
-
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        cursor: pointer;
-    }
-
-    .modal-content {
-        position: relative;
-        z-index: 10000;
-        background: var(--cradle-bg-elevated);
-        border: 1px solid var(--cradle-border-accent);
-        padding: 2rem;
-        max-width: 600px;
-        max-height: 90vh;
-        overflow-y: auto;
-        /* Removed drop shadow for modal content */
-        box-shadow: none;
-    }
-
-    .modal-content h2,
-    .modal-content h3 {
-        font-family:
-            'SF Pro Display',
-            -apple-system,
-            BlinkMacSystemFont,
-            'Segoe UI',
-            sans-serif;
-        color: var(--cradle-text-primary);
-        text-transform: none;
-        letter-spacing: 0;
-    }
-
-    .modal-content label {
-        font-size: 0.75rem;
-        text-transform: uppercase;
-        letter-spacing: 1.5px;
-        font-weight: 600;
-        color: var(--cradle-text-tertiary);
-        display: block;
-        margin-bottom: 0.5rem;
-    }
-
-    .modal-content p {
-        color: var(--cradle-text-secondary);
-        line-height: 1.6;
-    }
-
-    .modal-close {
-        position: absolute;
-        right: 0.5rem;
-        top: 0.5rem;
-        width: 2rem;
-        height: 2rem;
-        border: 1px solid var(--cradle-border-accent);
-        background: transparent;
-        color: var(--cradle-accent-primary);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-    }
-
-    .modal-close:hover {
-        border-color: var(--cradle-accent-primary);
-        background: transparent !important;
-    }
-
-    /* Modal State Checkbox - Hide it */
-    .modal-state {
-        position: absolute;
-        opacity: 0;
-        pointer-events: none;
-    }
 
     /* ============================================
    DATA DISPLAY - METRICS & CHARTS
@@ -965,36 +752,6 @@
         color: var(--cradle-text-secondary);
     }
 
-    .cradle-table td.action button {
-        width: 2rem !important;
-        height: 2rem !important;
-        min-width: 2rem !important;
-        min-height: 2rem !important;
-        border-radius: 50% !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        border: none !important;
-        background: transparent !important;
-        cursor: pointer;
-        transition: background 0.15s ease-in-out;
-        line-height: 0 !important;
-    }
-
-    .cradle-table td.action button svg,
-    .cradle-table td.action button > * {
-        display: block !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        flex-shrink: 0 !important;
-    }
-
-    .cradle-table td.action button:hover {
-        background: rgba(255, 140, 0, 0.1) !important;
-        border-radius: 50% !important;
-    }
 
     .cradle-table tbody tr {
         border-bottom: 1px solid var(--cradle-border-primary);
@@ -1291,99 +1048,6 @@
         box-shadow: 0 0 0 2px var(--cradle-glow-primary);
     }
 
-    /* Custom Dropdown Styles */
-    .cradle-dropdown {
-        position: relative;
-        display: inline-block;
-        z-index: 1;
-    }
-
-    .cradle-dropdown-menu {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        min-width: 100%;
-        margin-top: 0.25rem;
-        background: var(--cradle-bg-elevated);
-        border: 1px solid var(--cradle-border-accent);
-        border-radius: 0.375rem;
-        box-shadow:
-            0 10px 15px -3px rgba(0, 0, 0, 0.1),
-            0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        z-index: 9999;
-        box-sizing: border-box;
-    }
-
-    .cradle-dropdown-option {
-        width: 100%;
-        text-align: left;
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-        color: var(--cradle-text-primary);
-        background: transparent;
-        border: 1px solid transparent;
-        cursor: pointer;
-        transition: background-color 0.15s ease-in-out;
-        box-sizing: border-box;
-    }
-
-    .cradle-dropdown-option:hover,
-    .cradle-dropdown-option:focus {
-        background: transparent;
-        border: 1px solid var(--cradle-accent-primary);
-        outline: none;
-    }
-
-    .cradle-dropdown-option:first-child {
-        border-top-left-radius: 0.375rem;
-        border-top-right-radius: 0.375rem;
-    }
-
-    .cradle-dropdown-option:last-child {
-        border-bottom-left-radius: 0.375rem;
-        border-bottom-right-radius: 0.375rem;
-    }
-
-    /* ============================================
-   SEPARATOR & DIVIDERS
-   ============================================ */
-    .cradle-separator-minimal {
-        width: 100%;
-        height: 1px;
-        background: var(--cradle-border-primary);
-        margin: 0.5rem 0;
-        position: relative;
-    }
-
-    .cradle-separator {
-        width: 100%;
-        height: 1px;
-        background: var(--cradle-border-primary);
-        margin: 1.5rem 0;
-        position: relative;
-    }
-
-    .cradle-separator-labeled {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin: 1.5rem 0;
-    }
-
-    .cradle-separator-labeled::before,
-    .cradle-separator-labeled::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: var(--cradle-border-primary);
-    }
-
-    .cradle-separator-labeled span {
-        font-size: 0.7rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--cradle-text-muted);
-    }
 
     /* ============================================
    SCROLLBAR CUSTOMIZATION
@@ -1551,18 +1215,18 @@
     }
 
     /* Sidebar menu items - remove all spacing */
-    .menu-items {
+    .cradle-menu-items {
         gap: 0 !important;
     }
 
-    .menu-items > li {
+    .cradle-menu-items > li {
         margin: 0 !important;
         padding-top: 0 !important;
         padding-bottom: 0 !important;
     }
 
     /* Sidebar active indicator line */
-    .menu-items > li[data-active='true']::before {
+    .cradle-menu-items > li[data-active='true']::before {
         content: '';
         position: absolute;
         left: 0;
@@ -1574,194 +1238,25 @@
     }
 
     /* Alert dismiss button - ensure icon is always white */
-    .alert-dismiss-button svg {
+    .cradle-alert-dismiss-button svg {
         stroke: var(--cradle-text-secondary) !important;
         color: var(--cradle-text-secondary) !important;
         fill: none !important;
     }
 
     /* Lists */
-    ul.menu {
+    .cradle-menu {
         list-style: none;
     }
 
-    /* ============================================
-   SONNER TOAST NOTIFICATIONS - CRADLE STYLE
-   ============================================ */
-
-    /* Override sonner default styles to match CRADLE design */
-    [data-sonner-toaster] {
-        --normal-bg: var(--cradle-bg-elevated) !important;
-        --normal-border: var(--cradle-border-accent) !important;
-        --normal-text: var(--cradle-text-primary) !important;
-
-        --success-bg: var(--cradle-bg-elevated) !important;
-        --success-border: var(--cradle-accent-success) !important;
-        --success-text: var(--cradle-text-primary) !important;
-
-        --error-bg: var(--cradle-bg-elevated) !important;
-        --error-border: var(--cradle-accent-error) !important;
-        --error-text: var(--cradle-text-primary) !important;
-
-        --info-bg: var(--cradle-bg-elevated) !important;
-        --info-border: var(--cradle-accent-info) !important;
-        --info-text: var(--cradle-text-primary) !important;
-    }
-
-    /* Toast container */
-    [data-sonner-toast] {
-        background: var(--cradle-bg-elevated) !important;
-        border: 1px solid var(--cradle-border-accent) !important;
-        border-radius: var(--cradle-radius-lg) !important;
-        box-shadow: var(--cradle-shadow-lg) !important;
-        padding: 1rem 1.25rem !important;
-        font-family: 'JetBrains Mono', monospace !important;
-        min-width: 400px !important;
-        max-width: 500px !important;
-        width: auto !important;
-        cursor: pointer !important;
-        opacity: 0.95 !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 0.75rem !important;
-    }
-
-    /* Remove yellow border/outline */
-    [data-sonner-toast]:focus,
-    [data-sonner-toast]:focus-visible,
-    [data-sonner-toast]:focus-within {
-        outline: none !important;
-        box-shadow: var(--cradle-shadow-lg) !important;
-    }
-
-    /* Success toast - green background */
-    [data-sonner-toast][data-type='success'] {
-        background: rgba(16, 185, 129, 0.95) !important;
-        border: 1px solid #059669 !important;
-        border-left: 3px solid #059669 !important;
-    }
-
-    [data-sonner-toast][data-type='success'] [data-title],
-    [data-sonner-toast][data-type='success'] [data-description] {
-        color: var(--cradle-text-secondary) !important;
-    }
-
-    [data-sonner-toast][data-type='success'] [data-icon] {
-        color: var(--cradle-text-secondary) !important;
-    }
-
-    [data-sonner-toast][data-type='success'] [data-icon] svg {
-        color: var(--cradle-text-secondary) !important;
-        fill: var(--cradle-text-secondary) !important;
-        stroke: var(--cradle-text-secondary) !important;
-    }
-
-    /* Error toast - red background */
-    [data-sonner-toast][data-type='error'] {
-        background: rgba(239, 68, 68, 0.95) !important;
-        border: 1px solid #dc2626 !important;
-        border-left: 3px solid #dc2626 !important;
-    }
-
-    [data-sonner-toast][data-type='error'] [data-title],
-    [data-sonner-toast][data-type='error'] [data-description] {
-        color: var(--cradle-text-secondary) !important;
-    }
-
-    [data-sonner-toast][data-type='error'] [data-icon] {
-        color: var(--cradle-text-secondary) !important;
-    }
-
-    [data-sonner-toast][data-type='error'] [data-icon] svg {
-        color: var(--cradle-text-secondary) !important;
-        fill: var(--cradle-text-secondary) !important;
-        stroke: var(--cradle-text-secondary) !important;
-    }
-
-    /* Info toast - gray background */
-    [data-sonner-toast][data-type='info'] {
-        background: rgba(107, 114, 128, 0.95) !important;
-        border: 1px solid #4b5563 !important;
-        border-left: 3px solid #4b5563 !important;
-    }
-
-    [data-sonner-toast][data-type='info'] [data-title],
-    [data-sonner-toast][data-type='info'] [data-description] {
-        color: var(--cradle-text-secondary) !important;
-    }
-
-    [data-sonner-toast][data-type='info'] [data-icon] {
-        color: var(--cradle-text-secondary) !important;
-    }
-
-    [data-sonner-toast][data-type='info'] [data-icon] svg {
-        color: var(--cradle-text-secondary) !important;
-        fill: var(--cradle-text-secondary) !important;
-        stroke: var(--cradle-text-secondary) !important;
-    }
-
-    /* Toast title */
-    [data-sonner-toast] [data-title] {
-        color: var(--cradle-text-secondary) !important;
-        font-weight: 600 !important;
-        font-size: 0.875rem !important;
-        letter-spacing: 0.5px !important;
-        line-height: 1 !important;
-    }
-
-    /* Toast description */
-    [data-sonner-toast] [data-description] {
-        color: var(--cradle-text-secondary) !important;
-        font-size: 0.8rem !important;
-        margin-top: 0.25rem !important;
-        line-height: 1 !important;
-    }
-
-    /* Icon */
-    [data-sonner-toast] [data-icon] {
-        color: var(--cradle-text-secondary) !important;
-        display: flex !important;
-        align-items: center !important;
-        flex-shrink: 0 !important;
-    }
-
-    [data-sonner-toast] [data-icon] svg {
-        color: var(--cradle-text-secondary) !important;
-        fill: var(--cradle-text-secondary) !important;
-        stroke: var(--cradle-text-secondary) !important;
-    }
-
-    /* Responsive toast width */
-    @media (max-width: 1024px) {
-        [data-sonner-toast] {
-            min-width: 350px !important;
-            max-width: 450px !important;
-        }
-    }
-
-    @media (max-width: 640px) {
-        [data-sonner-toast] {
-            min-width: 300px !important;
-            max-width: 90% !important;
-        }
-    }
 
     /* ============================================
    ROUNDED CORNERS - CONSISTENT BORDER RADIUS
    Applied globally for a softer, modern look
    ============================================ */
 
-    /* Buttons get rounded corners */
-    button,
-    .btn,
-    .cradle-btn {
-        border-radius: var(--cradle-radius-md);
-    }
 
     /* Inputs get rounded corners */
-    input,
-    textarea,
-    select,
     .cradle-input,
     .cradle-textarea,
     .cradle-select {
@@ -1769,36 +1264,28 @@
     }
 
     /* Cards get rounded corners */
-    .card,
     .cradle-card {
         border-radius: var(--cradle-radius-lg);
     }
 
-    /* Modals get rounded corners */
-    .modal-content,
-    .dialog {
+    /* Dialogs get rounded corners */
+    .cradle-dialog {
         border-radius: var(--cradle-radius-lg);
     }
 
-    /* Dropdowns get rounded corners */
-    .dropdown-content,
-    .cradle-dropdown-menu {
-        border-radius: var(--cradle-radius-md);
-    }
 
     /* Badges and status indicators get rounded corners */
-    .badge,
     .cradle-status {
         border-radius: var(--cradle-radius-sm);
     }
 
     /* Switches get rounded toggle elements */
-    .switch::before,
-    .switch::after,
-    input.switch::before,
-    input.switch::after,
-    input[type='checkbox'].switch::before,
-    input[type='checkbox'].switch::after {
+    .cradle-switch::before,
+    .cradle-switch::after,
+    input.cradle-switch::before,
+    input.cradle-switch::after,
+    input[type='checkbox'].cradle-switch::before,
+    input[type='checkbox'].cradle-switch::after {
         border-radius: var(--cradle-radius-sm);
     }
 
@@ -1848,38 +1335,40 @@
    ============================================ */
 
     /* All icons use orange as primary color */
-    svg:not(.sidebar svg) {
+    .cradle-icon svg,
+    svg {
         color: var(--cradle-accent-primary);
     }
 
-    /* Icon links and buttons */
-    a svg,
-    button svg {
-        /* No transitions for strict square style */
+    /* Icon links */
+    .cradle-link svg,
+    a svg {
+        color: var(--cradle-accent-primary);
     }
 
-    a:hover svg,
-    button:hover svg {
+    .cradle-link:hover svg,
+    a:hover svg {
         color: var(--cradle-accent-secondary);
     }
 
     /* Icons in text */
-    .text-primary svg,
-    .cradle-text-primary svg {
+    .cradle-text-primary svg,
+    .cradle-text-secondary svg,
+    .cradle-text-tertiary svg {
         color: var(--cradle-accent-primary);
     }
 
     /* ============================================
    SPINNER SYSTEM - LOADING INDICATORS
    ============================================ */
-    .spinner-ring {
+    .cradle-spinner-ring {
         display: inline-block;
         width: 2rem;
         height: 2rem;
         animation: spinner-rotate 1s linear infinite;
     }
 
-    .spinner-ring circle {
+    .cradle-spinner-ring circle {
         fill: none;
         stroke: var(--spinner-color, var(--cradle-accent-primary));
         stroke-linecap: round;
@@ -1890,22 +1379,22 @@
     }
 
     /* Spinner ring sizes */
-    .spinner-ring.spinner-sm {
+    .cradle-spinner-ring.cradle-spinner-sm {
         width: 1rem;
         height: 1rem;
     }
 
-    .spinner-ring.spinner-md {
+    .cradle-spinner-ring.cradle-spinner-md {
         width: 1.5rem;
         height: 1.5rem;
     }
 
-    .spinner-ring.spinner-lg {
+    .cradle-spinner-ring.cradle-spinner-lg {
         width: 2rem;
         height: 2rem;
     }
 
-    .spinner-ring.spinner-xl {
+    .cradle-spinner-ring.cradle-spinner-xl {
         width: 3rem;
         height: 3rem;
     }
@@ -1935,43 +1424,43 @@
     }
 
     /* Spinner colors */
-    .spinner-primary {
+    .cradle-spinner-primary {
         --spinner-color: var(--cradle-accent-primary);
     }
 
-    .spinner-secondary {
+    .cradle-spinner-secondary {
         --spinner-color: var(--cradle-text-secondary);
     }
 
     /* Generic spinner sizes (for dot-pulse etc) */
-    .spinner-sm {
+    .cradle-spinner-sm {
         width: 1rem;
         height: 1rem;
     }
 
-    .spinner-md {
+    .cradle-spinner-md {
         width: 1.5rem;
         height: 1.5rem;
     }
 
-    .spinner-lg {
+    .cradle-spinner-lg {
         width: 2rem;
         height: 2rem;
     }
 
-    .spinner-xl {
+    .cradle-spinner-xl {
         width: 3rem;
         height: 3rem;
     }
 
     /* Dot pulse spinner */
-    .spinner-dot-pulse {
+    .cradle-spinner-dot-pulse {
         display: flex;
         align-items: center;
         justify-content: center;
     }
 
-    .spinner-dot-pulse .spinner-pulse-dot {
+    .cradle-spinner-dot-pulse .cradle-spinner-pulse-dot {
         position: relative;
         width: 10px;
         height: 10px;
@@ -1980,8 +1469,8 @@
         animation: spinner-dot-pulse-animation 1.5s infinite linear;
     }
 
-    .spinner-dot-pulse .spinner-pulse-dot::before,
-    .spinner-dot-pulse .spinner-pulse-dot::after {
+    .cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::before,
+    .cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::after {
         content: '';
         display: inline-block;
         position: absolute;
@@ -1992,43 +1481,43 @@
         background-color: var(--cradle-accent-primary);
     }
 
-    .spinner-dot-pulse .spinner-pulse-dot::before {
+    .cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::before {
         left: -15px;
         animation: spinner-dot-pulse-before 1.5s infinite linear;
     }
 
-    .spinner-dot-pulse .spinner-pulse-dot::after {
+    .cradle-spinner-dot-pulse .cradle-spinner-pulse-dot::after {
         left: 15px;
         animation: spinner-dot-pulse-after 1.5s infinite linear;
     }
 
-    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot,
-    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::before,
-    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::after {
+    .cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot,
+    .cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::before,
+    .cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::after {
         width: 6px;
         height: 6px;
     }
 
-    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::before {
+    .cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::before {
         left: -10px;
     }
 
-    .spinner-dot-pulse.spinner-sm .spinner-pulse-dot::after {
+    .cradle-spinner-dot-pulse.cradle-spinner-sm .cradle-spinner-pulse-dot::after {
         left: 10px;
     }
 
-    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot,
-    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::before,
-    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::after {
+    .cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot,
+    .cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::before,
+    .cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::after {
         width: 14px;
         height: 14px;
     }
 
-    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::before {
+    .cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::before {
         left: -20px;
     }
 
-    .spinner-dot-pulse.spinner-xl .spinner-pulse-dot::after {
+    .cradle-spinner-dot-pulse.cradle-spinner-xl .cradle-spinner-pulse-dot::after {
         left: 20px;
     }
 

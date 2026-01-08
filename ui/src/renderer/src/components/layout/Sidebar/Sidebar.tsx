@@ -95,10 +95,10 @@ export default function Sidebar({
     return (
         <div className='h-full shrink-0' data-testid='sidebar-test'>
             <aside
-                className={`cradle-border-r !h-full w-14 overflow-visible group/sidebar`}
+                className={`border-r border-border !h-full w-14 overflow-visible group/sidebar`}
                 style={{
-                    backgroundColor: 'var(--cradle-bg-sidebar)',
-                    color: 'var(--cradle-sidebar-text)',
+                    backgroundColor: 'var(--sidebar)',
+                    color: 'var(--sidebar-foreground)',
                 }}
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}

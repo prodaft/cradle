@@ -1,4 +1,5 @@
 import { useTheme } from '@/contexts/ui/ThemeContext';
+import { Button } from '@/components/ui/button';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Cosmograph } from '@cosmograph/react';
 import { PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';
@@ -412,60 +413,65 @@ export default function GraphViewer({
                     <div className='absolute top-2 left-2 z-10 flex flex-col gap-1'>
                         {/* Search Panel Toggle Button */}
                         {onTogglePanel && (
-                            <button
+                            <Button
                                 type='button'
-                                className={`cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border flex items-center justify-center ${
+                                variant={activePanel === 'explorer' ? 'outline' : 'outline'}
+                                size='icon'
+                                className={`p-1.5 w-8 h-8 ${
                                     activePanel === 'explorer'
-                                        ? 'border-cradle-accent-primary'
-                                        : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
+                                        ? 'border-cradle-accent-primary' 
+                                        : ''
                                 }`}
                                 title='Toggle explorer panel'
                                 onClick={() => onTogglePanel('explorer')}
                             >
-                                <Search width='16' height='16' />
-                            </button>
+                                <Search width="16" height="16" />
+                            </Button>
                         )}
 
                         {/* Display Panel Toggle Button */}
                         {onTogglePanel && (
-                            <button
+                            <Button
                                 type='button'
-                                className={`cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border flex items-center justify-center ${
+                                variant={activePanel === 'display' ? 'outline' : 'outline'}
+                                size='icon'
+                                className={`p-1.5 w-8 h-8 ${
                                     activePanel === 'display'
-                                        ? 'border-cradle-accent-primary'
-                                        : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
+                                        ? 'border-cradle-accent-primary' 
+                                        : ''
                                 }`}
                                 title='Toggle display panel'
                                 onClick={() => onTogglePanel('display')}
                             >
                                 <Settings width={16} height={16} />
-                            </button>
+                            </Button>
                         )}
 
                         {/* Simulation Toggle Button - Non-functional, kept for future use */}
-                        <button
+                        <Button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center opacity-50 cursor-not-allowed'
+                            variant='outline'
+                            size='icon'
+                            className='p-1.5 w-8 h-8 opacity-50 cursor-not-allowed'
                             title='Toggle simulation (coming soon)'
                             onClick={() => {
                                 // Non-functional - simulation is always disabled
                                 // Kept for future implementation
                             }}
+                            disabled
                         >
-                            {disableSimulation ? (
-                                <PlaySolid width='16' height='16' />
-                            ) : (
-                                <PauseSolid width='16' height='16' />
-                            )}
-                        </button>
+                            {disableSimulation ? <PlaySolid width="16" height="16" /> : <PauseSolid width="16" height="16" />}
+                        </Button>
                     </div>
 
                     {/* Zoom controls - top right */}
                     <div className='absolute top-2 right-2 z-10 flex flex-col gap-1'>
                         {/* Fit View Button */}
-                        <button
+                        <Button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
+                            variant='outline'
+                            size='icon'
+                            className='p-1.5 w-8 h-8'
                             title='Fit view to show all nodes'
                             onClick={() => {
                                 try {
@@ -507,11 +513,13 @@ export default function GraphViewer({
                                 <path d='M21 7.8V3m0 0h-4.8M21 3l-6 6'></path>
                                 <path d='M3 7.8V3m0 0h4.8M3 3l6 6'></path>
                             </svg>
-                        </button>
-
-                        <button
+                        </Button>
+                        
+                        <Button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
+                            variant='outline'
+                            size='icon'
+                            className='p-1.5 w-8 h-8'
                             title='Zoom in'
                             onClick={() => {
                                 try {
@@ -563,10 +571,12 @@ export default function GraphViewer({
                                     strokeLinejoin='round'
                                 ></path>
                             </svg>
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                             type='button'
-                            className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
+                            variant='outline'
+                            size='icon'
+                            className='p-1.5 w-8 h-8'
                             title='Zoom out'
                             onClick={() => {
                                 try {
@@ -618,7 +628,7 @@ export default function GraphViewer({
                                     strokeLinejoin='round'
                                 ></path>
                             </svg>
-                        </button>
+                        </Button>
                     </div>
                     <Cosmograph
                         ref={cosmographRef}

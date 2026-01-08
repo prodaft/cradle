@@ -1,3 +1,6 @@
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { capitalizeString } from '@/utils/dashboard';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -5,15 +8,14 @@ import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import {
-    FormAlert,
-    FormAlertState,
     SelectOption,
     SettingsCard,
     SettingsField,
-    SettingsSeparator,
-    SettingsToggle,
 } from '../../../forms';
-import Selector from '../../../forms/Selector';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
+import { Separator } from '@/components/ui/separator';
+import ShadcnSelect from '../../../forms/ShadcnSelect';
 
 interface EnrichmentSettingsFormProps {
     enrichment_class: string;
@@ -81,7 +83,7 @@ export default function EnrichmentSettingsForm({
 }: EnrichmentSettingsFormProps) {
     const { intelioApi, entriesApi } = useApi();
     const [displayName, setDisplayName] = useState('');
-    const [alert, setAlert] = useState<FormAlertState>({ type: null, message: '' });
+    const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({ type: null, message: '' });
     const [formFields, setFormFields] = useState<FormFields>({});
     const [loading, setLoading] = useState(true);
     const [validationSchema, setValidationSchema] = useState(
@@ -229,7 +231,8 @@ export default function EnrichmentSettingsForm({
                                 control={control}
                                 name={`settings.${key}`}
                                 render={({ field: { onChange, value } }) => (
-                                    <Selector
+                                    <ShadcnSelect
+                                        staticOptions={field.options?.map(o => ({ label: o, value: o })) || []}
                                         value={
                                             field.options
                                                 ?.map((o) => ({ label: o, value: o }))
@@ -268,7 +271,7 @@ export default function EnrichmentSettingsForm({
                             required={field.required}
                         />
                     )}
-                    {!isLast && <SettingsSeparator minimal={true} />}
+                    {!isLast && <Separator className="my-2" />}
                 </div>
             );
             return content;
@@ -286,14 +289,14 @@ export default function EnrichmentSettingsForm({
     }
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                    <h2 className='text-2xl font-bold tracking-tight'>
                         {displayName} Settings
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                    </h2>
+                    <p className='text-muted-foreground'>
                         Manage configuration for {displayName}
                     </p>
                 </div>
@@ -305,10 +308,14 @@ export default function EnrichmentSettingsForm({
                     {' '}
                     {/* Removed max-w-4xl here */}
                     <form onSubmit={handleSubmit(onSubmit)}>
-                        <FormAlert
-                            alert={alert}
-                            onDismiss={() => setAlert({ type: null, message: '' })}
-                        />
+                        {alert.type && (
+                            <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
+                                {alert.type === 'success' && <CheckCircle />}
+                                {alert.type === 'error' && <WarningCircle />}
+                                {alert.type === 'warning' && <InfoCircle />}
+                                <AlertDescription>{alert.message}</AlertDescription>
+                            </Alert>
+                        )}
 
                         {/* General Section */}
                         <section id='general' className='pb-8'>
@@ -321,14 +328,30 @@ export default function EnrichmentSettingsForm({
 
                             <div className='space-y-4'>
                                 <SettingsCard>
-                                    <SettingsToggle
-                                        label='Enabled'
-                                        description='Enable or disable this enrichment source'
-                                        {...register('enabled')}
-                                        watch={watch}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor='enabled' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Enabled
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>Enable or disable this enrichment source</p>
+                                            </div>
+                                            <Controller
+                                                name='enabled'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='enabled'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
@@ -355,13 +378,14 @@ export default function EnrichmentSettingsForm({
                                                     name='for_eclasses'
                                                     control={control}
                                                     render={({ field }) => (
-                                                        <Selector
-                                                            {...field}
-                                                            fetchOptions={
-                                                                fetchEntryClasses
-                                                            }
+                                                        <ShadcnSelect
+                                                            fetchOptions={fetchEntryClasses}
+                                                            values={field.value || []}
                                                             isMulti={true}
                                                             placeholder='Select entry classes...'
+                                                            onMultiChange={(newValues) => {
+                                                                field.onChange(newValues);
+                                                            }}
                                                         />
                                                     )}
                                                 />
@@ -395,13 +419,13 @@ export default function EnrichmentSettingsForm({
 
                         {/* Save Button */}
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <button
+                            <Button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
+                                variant='default'
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Saving...' : 'Save Changes'}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>

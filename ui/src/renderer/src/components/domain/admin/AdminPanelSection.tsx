@@ -1,8 +1,11 @@
+import { Button } from '@/components/ui/button';
 import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { PlusCircle, Search, Xmark } from 'iconoir-react';
 import { useMemo, useState } from 'react';
+import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AdminPanelSectionProps {
     title: string;
@@ -49,34 +52,28 @@ export default function AdminPanelSection({
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>
             <div className='w-full flex flex-row items-center justify-between pt-3 pr-3 pb-3 gap-3'>
-                <div className='flex items-center gap-2 flex-grow bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                    <button
-                        className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                        title='Search'
-                    >
-                        <Search className='w-4 h-4' />
-                    </button>
-                    <input
+                <InputGroup className='flex-grow'>
+                    <InputGroupInput
                         type='text'
                         placeholder='Search'
-                        className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
                         onChange={(e) => setSearchVal(e.target.value)}
                         value={searchVal}
                     />
+                    <InputGroupAddon>
+                        <Search />
+                    </InputGroupAddon>
                     {searchVal && (
-                        <button
-                            onClick={() => setSearchVal('')}
-                            className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                            title='Clear search'
-                        >
-                            <Xmark className='w-4 h-4' />
-                        </button>
+                        <InputGroupAddon align='inline-end' onClick={() => setSearchVal('')} className='cursor-pointer'>
+                            <Xmark />
+                        </InputGroupAddon>
                     )}
-                </div>
+                </InputGroup>
                 {addEnabled && (
-                    <Tooltip content={addTooltipText}>
-                        <span>
-                            <button
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant='ghost'
+                                size='icon'
                                 className='h-fit pt-1'
                                 onClick={() =>
                                     handleAdd((x) =>
@@ -85,17 +82,20 @@ export default function AdminPanelSection({
                                 }
                             >
                                 <PlusCircle />
-                            </button>
-                        </span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {addTooltipText}
+                        </TooltipContent>
                     </Tooltip>
                 )}
             </div>
-            <div className='w-full flex-grow overflow-y-auto space-y-4 gap-1 h-[80vh]'>
+            <ScrollArea className='w-full flex-grow space-y-4 gap-1 h-[80vh]'>
                 {isLoading ? (
                     // Loading spinner
                     <div className='flex items-center justify-center min-h-[200px]'>
-                        <div className='spinner-dot-pulse spinner-xl'>
-                            <div className='spinner-pulse-dot'></div>
+                        <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                            <div className='cradle-spinner-pulse-dot'></div>
                         </div>
                     </div>
                 ) : sortedFilteredChildren && sortedFilteredChildren.length > 0 ? (
@@ -107,7 +107,7 @@ export default function AdminPanelSection({
                         </p>
                     </div>
                 )}
-            </div>
+            </ScrollArea>
         </div>
     );
 }

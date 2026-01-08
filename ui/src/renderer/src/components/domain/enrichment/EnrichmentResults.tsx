@@ -1,10 +1,11 @@
 import PaginationWrapper from '@/components/base/Pagination/PaginationWrapper';
-import Tooltip from '@/components/base/Tooltip/Tooltip';
-import { useTabContext } from '@/hooks';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { formatDate } from '@/utils/dates';
-import Badge from '@components/base/Badge/Badge';
+import { Badge } from '@/components/ui/badge';
 import ReactJson from '@microlink/react-json-view';
 import {
     EnrichmentRelation,
@@ -27,8 +28,8 @@ import {
     Xmark,
 } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { Tab, Tabs } from '../../layout/Tabs/Tabs';
+import { useParams } from 'react-router-dom';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
 /**
  * EnrichmentResults component - displays enrichment results in a split-pane view
@@ -41,15 +42,15 @@ import { Tab, Tabs } from '../../layout/Tabs/Tabs';
  * <EnrichmentResults />
  * ```
  */
-export default function EnrichmentResults(): JSX.Element {
+export default function EnrichmentResults() {
     const { intelioApi } = useApi();
-    const { params } = useTabContext();
-    const id = Number(params.id);
+    const { id: idParam } = useParams<{ id: string }>();
+    const id = Number(idParam);
 
     if (isNaN(id)) {
         return (
             <div className='flex items-center justify-center h-full'>
-                <p className='cradle-text-tertiary'>Invalid enrichment ID</p>
+                <p className='text-muted-foreground'>Invalid enrichment ID</p>
             </div>
         );
     }
@@ -260,7 +261,10 @@ export default function EnrichmentResults(): JSX.Element {
         }
 
         return (
-            <Badge color={entry.color || '#ccc'} shape='pill'>
+            <Badge 
+                className="rounded-full"
+                style={{ backgroundColor: entry.color || '#ccc' }}
+            >
                 {entry.subtype}: {entry.name}
             </Badge>
         );
@@ -361,21 +365,26 @@ export default function EnrichmentResults(): JSX.Element {
         <div className='w-full h-full flex flex-col overflow-hidden'>
             {/* Title Section */}
             {enrichmentDetails && (
-                <div className='w-full cradle-border-b px-4 py-4'>
+                <div className='w-full border-b border-border px-4 py-4'>
                     <div>
-                        <h1 className='text-2xl font-medium break-all cradle-text-primary mb-2'>
+                        <h1 className='text-2xl font-medium break-all text-foreground mb-2'>
                             {enrichmentDetails.title || `Enrichment Request #${id}`}
                         </h1>
-                        <div className='h-px cradle-bg-elevated mb-2' />
-                        <div className='flex items-center gap-4 text-xs cradle-text-tertiary'>
+                        <div className='h-px bg-card mb-2' />
+                        <div className='flex items-center gap-4 text-xs text-muted-foreground'>
                             {enrichmentDetails.status && (
-                                <Tooltip content={errorMsg()}>
-                                    <div className='flex items-center gap-1.5'>
-                                        {getStatusIcon(enrichmentDetails.status)}
-                                        <span className='capitalize'>
-                                            {enrichmentDetails.status}
-                                        </span>
-                                    </div>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div className='flex items-center gap-1.5'>
+                                            {getStatusIcon(enrichmentDetails.status)}
+                                            <span className='capitalize'>
+                                                {enrichmentDetails.status}
+                                            </span>
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        {errorMsg()}
+                                    </TooltipContent>
                                 </Tooltip>
                             )}
                             {enrichmentDetails.createdAt && (
@@ -407,14 +416,14 @@ export default function EnrichmentResults(): JSX.Element {
 
             {/* Main Content */}
             <div className='flex-1 overflow-hidden'>
-                <PanelGroup direction='horizontal' className='h-full'>
+                <ResizablePanelGroup direction='horizontal' className='h-full'>
                     {/* Left Panel - Enrichment Techniques */}
-                    <Panel defaultSize={25} minSize={15} maxSize={40}>
-                        <div className='h-full overflow-y-auto px-3 pt-3'>
+                    <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
+                        <ScrollArea className='h-full px-3 pt-3'>
                             {loadingDetails ? (
                                 <div className='flex items-center justify-center min-h-[200px]'>
-                                    <div className='spinner-dot-pulse spinner-xl'>
-                                        <div className='spinner-pulse-dot'></div>
+                                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                                        <div className='cradle-spinner-pulse-dot'></div>
                                     </div>
                                 </div>
                             ) : (
@@ -423,18 +432,15 @@ export default function EnrichmentResults(): JSX.Element {
                                     {ignoredArtifacts.length > 0 && (
                                         <>
                                             {/* Separator */}
-                                            {enrichmentDetails?.enrichers &&
-                                                enrichmentDetails.enrichers.length >
-                                                    0 && (
-                                                    <div className='h-px cradle-bg-elevated my-2' />
-                                                )}
+                                            {enrichmentDetails?.enrichers && enrichmentDetails.enrichers.length > 0 && (
+                                                <div className='h-px bg-card my-2' />
+                                            )}
 
                                             <div
-                                                className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
-                                                    showIgnored
-                                                        ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
-                                                        : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
-                                                }`}
+                                                className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${showIgnored
+                                                    ? 'bg-secondary border-primary shadow-sm'
+                                                    : 'bg-card border-transparent hover:bg-secondary hover:border-border'
+                                                    }`}
                                                 onClick={handleIgnoredSelect}
                                             >
                                                 <EyeClosed
@@ -442,10 +448,10 @@ export default function EnrichmentResults(): JSX.Element {
                                                     width='16'
                                                     height='16'
                                                 />
-                                                <span className='text-sm font-medium truncate text-cradle-text-primary'>
+                                                <span className='text-sm font-medium truncate text-foreground'>
                                                     Ignored Artifacts
                                                 </span>
-                                                <span className='ml-auto text-xs text-cradle-text-muted'>
+                                                <span className='ml-auto text-xs text-muted-foreground'>
                                                     ({ignoredArtifacts.length})
                                                 </span>
                                             </div>
@@ -456,18 +462,11 @@ export default function EnrichmentResults(): JSX.Element {
                                     {enrichmentDetails?.enrichers?.map((enricher) => (
                                         <div
                                             key={enricher.enricherType}
-                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
-                                                selectedEnricher ===
-                                                    enricher.enricherType &&
-                                                !showIgnored
-                                                    ? 'bg-cradle-bg-secondary border-cradle-accent-primary shadow-sm'
-                                                    : 'bg-cradle-bg-elevated border-transparent hover:bg-cradle-bg-secondary hover:border-cradle-border-primary'
-                                            }`}
-                                            onClick={() =>
-                                                handleEnricherSelect(
-                                                    enricher.enricherType!,
-                                                )
-                                            }
+                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${selectedEnricher === enricher.enricherType && !showIgnored
+                                                ? 'bg-secondary border-primary shadow-sm'
+                                                    : 'bg-card border-transparent hover:bg-secondary hover:border-border'
+                                                }`}
+                                            onClick={() => handleEnricherSelect(enricher.enricherType!)}
                                         >
                                             {getEnricherStatusIcon(enricher.status!)}
                                             <span className='text-sm font-medium truncate text-cradle-text-primary'>
@@ -477,18 +476,18 @@ export default function EnrichmentResults(): JSX.Element {
                                     ))}
                                 </div>
                             )}
-                        </div>
-                    </Panel>
+                        </ScrollArea>
+                    </ResizablePanel>
 
-                    <PanelResizeHandle className='w-[2px] cradle-bg-elevated cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                    <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
 
                     {/* Right Panel - Tabs */}
-                    <Panel defaultSize={75} minSize={60}>
+                    <ResizablePanel defaultSize={75} minSize={60}>
                         <div className='h-full flex flex-col'>
                             {showIgnored ? (
                                 /* Ignored Artifacts View */
                                 <div className='h-full flex flex-col overflow-hidden'>
-                                    <div className='p-4 cradle-border-b'>
+                                    <div className='p-4 border-b border-border'>
                                         <h2 className='text-lg font-medium text-cradle-text-primary'>
                                             Ignored Artifacts
                                         </h2>
@@ -498,7 +497,7 @@ export default function EnrichmentResults(): JSX.Element {
                                             technique.
                                         </p>
                                     </div>
-                                    <div className='flex-1 overflow-y-auto min-h-0'>
+                                    <ScrollArea className='flex-1 min-h-0'>
                                         <div className='divide-y divide-cradle-border-primary'>
                                             {ignoredArtifacts.map(
                                                 (artifact: any, index: number) => (
@@ -527,32 +526,35 @@ export default function EnrichmentResults(): JSX.Element {
                                                 ),
                                             )}
                                         </div>
-                                    </div>
+                                    </ScrollArea>
                                 </div>
                             ) : selectedEnricher ? (
                                 /* Enricher Tabs View */
                                 loadingEnricher ? (
                                     <div className='flex items-center justify-center h-full'>
-                                        <div className='spinner-dot-pulse spinner-xl'>
-                                            <div className='spinner-pulse-dot'></div>
+                                        <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                                            <div className='cradle-spinner-pulse-dot'></div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <Tabs defaultTab={0} queryParam='enricherTab'>
-                                        {/* Relations Tab */}
-                                        <Tab title='Relations'>
-                                            <div className='px-3 pt-3 h-full flex flex-col overflow-hidden'>
+                                    <div className='flex flex-col h-full'>
+                                        {/* Relations Section */}
+                                        <div className='flex-1 overflow-hidden flex flex-col'>
+                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Relations</h3>
+                                            <div className='px-3 pb-3 flex-1 flex flex-col overflow-hidden'>
                                                 {/* Search Bars */}
                                                 <div className='flex gap-2 items-center pb-3'>
                                                     {/* Search Entries */}
-                                                    <div className='flex items-center gap-2 flex-grow bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full focus-within:border-cradle-accent-primary focus-within:shadow-[0_0_0_1px_var(--cradle-accent-primary)] transition-all'>
-                                                        <button
-                                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:shadow-[0_0_0_1px_#ff8c00] transition-all'>
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='icon-sm'
+                                                            className='p-1 flex-shrink-0'
                                                             title='Search'
                                                             onClick={handleSearch}
                                                         >
                                                             <Search className='w-4 h-4' />
-                                                        </button>
+                                                        </Button>
                                                         <input
                                                             type='text'
                                                             className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
@@ -570,30 +572,34 @@ export default function EnrichmentResults(): JSX.Element {
                                                             }
                                                         />
                                                         {searchInput.query && (
-                                                            <button
+                                                            <Button
+                                                                variant='ghost'
+                                                                size='icon-sm'
                                                                 onClick={() => {
                                                                     setSearchInput({
                                                                         ...searchInput,
                                                                         query: '',
                                                                     });
                                                                 }}
-                                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                                                className='p-1 flex-shrink-0'
                                                                 title='Clear'
                                                             >
                                                                 <Xmark className='w-4 h-4' />
-                                                            </button>
+                                                            </Button>
                                                         )}
                                                     </div>
 
                                                     {/* Search Details */}
-                                                    <div className='flex items-center gap-2 flex-grow bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full focus-within:border-cradle-accent-primary focus-within:shadow-[0_0_0_1px_var(--cradle-accent-primary)] transition-all'>
-                                                        <button
-                                                            className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:shadow-[0_0_0_1px_#ff8c00] transition-all'>
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='icon-sm'
+                                                            className='p-1 flex-shrink-0'
                                                             title='Search Details'
                                                             onClick={handleSearch}
                                                         >
                                                             <Search className='w-4 h-4' />
-                                                        </button>
+                                                        </Button>
                                                         <input
                                                             type='text'
                                                             className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
@@ -611,29 +617,33 @@ export default function EnrichmentResults(): JSX.Element {
                                                             }
                                                         />
                                                         {searchInput.details && (
-                                                            <button
+                                                            <Button
+                                                                variant='ghost'
+                                                                size='icon-sm'
                                                                 onClick={() => {
                                                                     setSearchInput({
                                                                         ...searchInput,
                                                                         details: '',
                                                                     });
                                                                 }}
-                                                                className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                                                className='p-1 flex-shrink-0'
                                                                 title='Clear'
                                                             >
                                                                 <Xmark className='w-4 h-4' />
-                                                            </button>
+                                                            </Button>
                                                         )}
                                                     </div>
 
-                                                    <button
-                                                        className='h-10 px-6 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg text-cradle-text-secondary'
+                                                    <Button
+                                                        variant='outline'
+                                                        size='default'
                                                         onClick={handleSearch}
                                                     >
                                                         Search
-                                                    </button>
-                                                    <button
-                                                        className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg text-cradle-accent-primary'
+                                                    </Button>
+                                                    <Button
+                                                        variant='outline'
+                                                        size='icon'
                                                         onClick={handleDownloadResults}
                                                         disabled={
                                                             !results ||
@@ -641,11 +651,9 @@ export default function EnrichmentResults(): JSX.Element {
                                                         }
                                                         title='Download results as JSON'
                                                     >
-                                                        <Download
-                                                            width='18'
-                                                            height='18'
-                                                        />
-                                                    </button>
+                                                        <Download width='18' height='18' />
+                                                    </Button>
+
 
                                                     {/* Pagination */}
                                                     <PaginationWrapper
@@ -663,11 +671,11 @@ export default function EnrichmentResults(): JSX.Element {
                                                 </div>
 
                                                 {/* Results */}
-                                                <div className='flex-grow overflow-y-auto'>
+                                                <ScrollArea className='flex-grow'>
                                                     {loadingResults ? (
                                                         <div className='flex items-center justify-center min-h-[200px]'>
-                                                            <div className='spinner-dot-pulse spinner-xl'>
-                                                                <div className='spinner-pulse-dot'></div>
+                                                            <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                                                                <div className='cradle-spinner-pulse-dot'></div>
                                                             </div>
                                                         </div>
                                                     ) : results.length === 0 ? (
@@ -742,65 +750,55 @@ export default function EnrichmentResults(): JSX.Element {
                                                             </div>
                                                         </>
                                                     )}
+                                                </ScrollArea>
+                                            </div>
+                                        </div>
+
+                                        {/* Artifacts Section */}
+                                        <div className='flex-1 overflow-hidden flex flex-col border-t'>
+                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Artifacts</h3>
+                                            {!enricherDetails?.artifacts ||
+                                                enricherDetails.artifacts.length === 0 ? (
+                                                <div className='flex flex-col items-center justify-center flex-1'>
+                                                    <p className='text-sm cradle-text-tertiary'>
+                                                        No artifacts found.
+                                                    </p>
                                                 </div>
-                                            </div>
-                                        </Tab>
-
-                                        {/* Artifacts Tab */}
-                                        <Tab title='Artifacts'>
-                                            <div className='h-full flex flex-col overflow-hidden'>
-                                                {!enricherDetails?.artifacts ||
-                                                enricherDetails.artifacts.length ===
-                                                    0 ? (
-                                                    <div className='flex flex-col items-center justify-center h-full'>
-                                                        <p className='text-sm cradle-text-tertiary'>
-                                                            No artifacts found.
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <div className='flex-1 overflow-y-auto min-h-0'>
-                                                        <div className='divide-y divide-cradle-border-primary'>
-                                                            {enricherDetails.artifacts.map(
-                                                                (
-                                                                    artifact: any,
-                                                                    index: number,
-                                                                ) => (
-                                                                    <div
-                                                                        key={index}
-                                                                        className='px-4 py-3 flex items-center gap-3'
-                                                                    >
-                                                                        {/* Entry class indicator */}
-                                                                        {artifact.entry_class && (
-                                                                            <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
-                                                                                {
-                                                                                    artifact.entry_class
-                                                                                }
-                                                                            </span>
-                                                                        )}
-
-                                                                        {/* Name */}
-                                                                        <span className='flex-1 text-sm text-cradle-text-primary truncate'>
-                                                                            {typeof artifact ===
-                                                                            'string'
-                                                                                ? artifact
-                                                                                : artifact.name ||
-                                                                                  JSON.stringify(
-                                                                                      artifact,
-                                                                                  )}
+                                            ) : (
+                                                <ScrollArea className='flex-1 min-h-0 px-3 pb-3'>
+                                                    <div className='divide-y divide-cradle-border-primary'>
+                                                        {enricherDetails.artifacts.map(
+                                                            (artifact: any, index: number) => (
+                                                                <div
+                                                                    key={index}
+                                                                    className='px-4 py-3 flex items-center gap-3'
+                                                                >
+                                                                    {/* Entry class indicator */}
+                                                                    {artifact.entry_class && (
+                                                                        <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
+                                                                            {artifact.entry_class}
                                                                         </span>
-                                                                    </div>
-                                                                ),
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </Tab>
+                                                                    )}
 
-                                        {/* Warnings Tab - Conditional */}
+                                                                    {/* Name */}
+                                                                    <span className='flex-1 text-sm text-cradle-text-primary truncate'>
+                                                                        {typeof artifact === 'string'
+                                                                            ? artifact
+                                                                            : artifact.name || JSON.stringify(artifact)}
+                                                                    </span>
+                                                                </div>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                </ScrollArea>
+                                            )}
+                                        </div>
+
+                                        {/* Warnings Section - Conditional */}
                                         {hasWarnings && (
-                                            <Tab title='Warnings'>
-                                                <div className='h-full overflow-y-auto'>
+                                            <div className='flex-1 overflow-hidden flex flex-col border-t'>
+                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Warnings</h3>
+                                                <ScrollArea className='flex-1 px-3 pb-3'>
                                                     <div className='divide-y divide-cradle-border-primary'>
                                                         {enricherDetails!.warnings!.map(
                                                             (
@@ -828,14 +826,15 @@ export default function EnrichmentResults(): JSX.Element {
                                                             ),
                                                         )}
                                                     </div>
-                                                </div>
-                                            </Tab>
+                                                </ScrollArea>
+                                            </div>
                                         )}
 
-                                        {/* Errors Tab - Conditional */}
+                                        {/* Errors Section - Conditional */}
                                         {hasErrors && (
-                                            <Tab title='Errors'>
-                                                <div className='h-full overflow-y-auto'>
+                                            <div className='flex-1 overflow-hidden flex flex-col border-t'>
+                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Errors</h3>
+                                                <ScrollArea className='flex-1 px-3 pb-3'>
                                                     <div className='divide-y divide-cradle-border-primary'>
                                                         {enricherDetails!.errors!.map(
                                                             (
@@ -863,10 +862,10 @@ export default function EnrichmentResults(): JSX.Element {
                                                             ),
                                                         )}
                                                     </div>
-                                                </div>
-                                            </Tab>
+                                                </ScrollArea>
+                                            </div>
                                         )}
-                                    </Tabs>
+                                    </div>
                                 )
                             ) : (
                                 <div className='flex items-center justify-center h-full'>
@@ -876,8 +875,8 @@ export default function EnrichmentResults(): JSX.Element {
                                 </div>
                             )}
                         </div>
-                    </Panel>
-                </PanelGroup>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
             </div>
         </div>
     );

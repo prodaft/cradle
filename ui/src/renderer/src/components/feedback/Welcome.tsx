@@ -1,4 +1,6 @@
 import { useAPICall } from '@/hooks';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { StatisticsNote } from '@/services/cradle';
 import Logo from '@components/base/Logo/Logo';
 import { useProfile } from '@contexts/user/ProfileContext';
@@ -64,38 +66,42 @@ function RecentItemsCard({
     totalCount,
 }: RecentItemsCardProps) {
     return (
-        <div className='cradle-card h-full'>
-            <div className='cradle-card-header flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
-                    <div className={`${color} p-1.5 rounded`}>{icon}</div>
-                    <span className='font-medium'>{title}</span>
+        <Card className='h-full'>
+            <CardHeader>
+                <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2'>
+                        <div className={`${color} p-1.5 rounded`}>{icon}</div>
+                        <CardTitle className='font-medium'>{title}</CardTitle>
+                    </div>
+                    <div className={`${color} px-3 py-1 rounded-md`}>
+                        <span className='font-bold text-lg'>{totalCount}</span>
+                    </div>
                 </div>
-                <div className={`${color} px-3 py-1 rounded-md`}>
-                    <span className='font-bold text-lg'>{totalCount}</span>
-                </div>
-            </div>
-            <div className='cradle-card-body space-y-2'>
+            </CardHeader>
+            <CardContent className='space-y-2'>
                 {items.length === 0 ? (
                     <div className='text-center py-8'>
                         <p className='text-sm cradle-text-muted'>{emptyMessage}</p>
                     </div>
                 ) : (
                     items.map((item, index) => (
-                        <div
+                        <Card
                             key={index}
+                            className='p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
                             onClick={onItemClick(item)}
-                            className='cradle-card p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
                         >
-                            <div className='flex items-center justify-between'>
-                                <span className='cradle-text-primary font-medium truncate'>
-                                    {truncateText(item.name || 'Unnamed', 40)}
-                                </span>
-                            </div>
-                        </div>
+                            <CardContent className='p-0'>
+                                <div className='flex items-center justify-between'>
+                                    <span className='cradle-text-primary font-medium truncate'>
+                                        {truncateText(item.name || 'Unnamed', 40)}
+                                    </span>
+                                </div>
+                            </CardContent>
+                        </Card>
                     ))
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -112,55 +118,61 @@ function RecentNotesCard({
     totalCount,
 }: RecentNotesCardProps) {
     return (
-        <div className='cradle-card h-full'>
-            <div className='cradle-card-header flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
-                    <div className={`${color} p-1.5 rounded`}>{icon}</div>
-                    <span className='font-medium'>{title}</span>
+        <Card className='h-full'>
+            <CardHeader>
+                <div className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2'>
+                        <div className={`${color} p-1.5 rounded`}>{icon}</div>
+                        <CardTitle className='font-medium'>{title}</CardTitle>
+                    </div>
+                    <div className={`${color} px-3 py-1 rounded-md`}>
+                        <span className='font-bold text-lg'>{totalCount}</span>
+                    </div>
                 </div>
-                <div className={`${color} px-3 py-1 rounded-md`}>
-                    <span className='font-bold text-lg'>{totalCount}</span>
-                </div>
-            </div>
-            <div className='cradle-card-body space-y-2'>
+            </CardHeader>
+            <CardContent className='space-y-2'>
                 {notes.length === 0 ? (
                     <div className='text-center py-8'>
                         <p className='text-sm cradle-text-muted'>{emptyMessage}</p>
                     </div>
                 ) : (
                     notes.map((note, index) => (
-                        <div
+                        <Card
                             key={index}
+                            className='p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
                             onClick={onNoteClick(note)}
-                            className='cradle-card p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
                         >
-                            <div className='space-y-1'>
-                                <div className='cradle-text-primary font-medium truncate'>
-                                    {truncateText(
-                                        parseMarkdownInline(note.title || 'Untitled'),
-                                        50,
-                                    )}
-                                </div>
-                                <div className='flex items-center gap-3 text-xs cradle-text-tertiary'>
-                                    <div className='flex items-center gap-1'>
-                                        <User width={12} height={12} />
-                                        <span>
-                                            {note.author?.username || 'Unknown'}
-                                        </span>
+                            <CardContent className='p-0'>
+                                <div className='space-y-1'>
+                                    <div className='cradle-text-primary font-medium truncate'>
+                                        {truncateText(
+                                            parseMarkdownInline(
+                                                note.title || 'Untitled',
+                                            ),
+                                            50,
+                                        )}
                                     </div>
-                                    <div className='flex items-center gap-1'>
-                                        <Clock width={12} height={12} />
-                                        <span>
-                                            {formatDate(new Date(note.timestamp))}
-                                        </span>
+                                    <div className='flex items-center gap-3 text-xs cradle-text-tertiary'>
+                                        <div className='flex items-center gap-1'>
+                                            <User width={12} height={12} />
+                                            <span>
+                                                {note.author?.username || 'Unknown'}
+                                            </span>
+                                        </div>
+                                        <div className='flex items-center gap-1'>
+                                            <Clock width={12} height={12} />
+                                            <span>
+                                                {formatDate(new Date(note.timestamp))}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
+                            </CardContent>
+                        </Card>
                     ))
                 )}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -268,25 +280,27 @@ export default function Welcome() {
                         </h2>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
                             {quickActions.map((action, index) => (
-                                <button
+                                <Card
                                     key={index}
+                                    className='p-6 text-left hover:bg-cradle-bg-secondary transition-colors cursor-pointer h-auto'
                                     onClick={action.onClick}
-                                    className='cradle-card p-6 text-left hover:bg-cradle-bg-secondary transition-colors cursor-pointer'
                                 >
-                                    <div className='flex items-center gap-3 mb-3'>
-                                        <div
-                                            className={`${action.color} p-2 rounded-md`}
-                                        >
-                                            {action.icon}
+                                    <CardContent className='p-0'>
+                                        <div className='flex items-center gap-3 mb-3'>
+                                            <div
+                                                className={`${action.color} p-2 rounded-md`}
+                                            >
+                                                {action.icon}
+                                            </div>
+                                            <h3 className='font-medium cradle-text-primary'>
+                                                {action.title}
+                                            </h3>
                                         </div>
-                                        <h3 className='font-medium cradle-text-primary'>
-                                            {action.title}
-                                        </h3>
-                                    </div>
-                                    <p className='text-sm cradle-text-tertiary'>
-                                        {action.description}
-                                    </p>
-                                </button>
+                                        <p className='text-sm cradle-text-tertiary'>
+                                            {action.description}
+                                        </p>
+                                    </CardContent>
+                                </Card>
                             ))}
                         </div>
                     </div>

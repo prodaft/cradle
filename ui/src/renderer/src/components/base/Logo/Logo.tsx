@@ -55,9 +55,13 @@ export default function Logo({
         }
     }, [isDarkMode, text]);
 
+    if (!logo) {
+        return <div style={{ width, height }} />;
+    }
+
     return (
         <img
-            src={logo || ''}
+            src={logo}
             alt='CRADLE'
             onClick={onClick || (() => {})}
             style={{

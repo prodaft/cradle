@@ -1,21 +1,20 @@
+import { useState } from 'react';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
-import { Refresh, Server } from 'iconoir-react';
-import { useState } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, WarningCircle, InfoCircle, Refresh, Server } from 'iconoir-react';
+import { Separator } from '@/components/ui/separator';
 import {
-    FormAlert,
-    FormAlertState,
     SettingsButton,
     SettingsCard,
-    SettingsSeparator,
 } from '../../../forms';
 
 export default function GraphSettingsForm() {
     const { managementApi } = useApi();
     const { execute } = useAPICall();
 
-    const [actionAlert, setActionAlert] = useState<FormAlertState>({
+    const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({
         type: null,
         message: '',
     });
@@ -64,16 +63,12 @@ export default function GraphSettingsForm() {
     };
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        Graph Settings
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Manage graph visualization and computation
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>Graph Settings</h2>
+                    <p className='text-muted-foreground'>Manage graph visualization and computation</p>
                 </div>
             </div>
 
@@ -91,12 +86,12 @@ export default function GraphSettingsForm() {
 
                         <div className='space-y-4'>
                             {actionAlert.type && (
-                                <FormAlert
-                                    alert={actionAlert}
-                                    onDismiss={() =>
-                                        setActionAlert({ type: null, message: '' })
-                                    }
-                                />
+                                <Alert variant={actionAlert.type === 'error' ? 'destructive' : 'default'}>
+                                    {actionAlert.type === 'success' && <CheckCircle />}
+                                    {actionAlert.type === 'error' && <WarningCircle />}
+                                    {actionAlert.type === 'warning' && <InfoCircle />}
+                                    <AlertDescription>{actionAlert.message}</AlertDescription>
+                                </Alert>
                             )}
                             <SettingsCard>
                                 <SettingsButton
@@ -107,7 +102,7 @@ export default function GraphSettingsForm() {
                                     onClick={handleRefreshMaterializedGraph}
                                 />
 
-                                <SettingsSeparator />
+                                <Separator />
 
                                 <SettingsButton
                                     label='Recalculate Node Positions'

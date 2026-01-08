@@ -1,5 +1,7 @@
 import { SubtypeHierarchy } from '@/utils/dashboard';
-import Collapsible from '@components/base/Collapsible/Collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Button } from '@/components/ui/button';
+import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { ReactNode } from 'react';
 
 interface GraphLegendProps {
@@ -57,86 +59,117 @@ const GraphLegend = ({
 
     return (
         <div className='px-4 pt-2'>
-            <Collapsible
-                label='Legend'
-                open={true}
-                buttonText={allItemsDisabled ? 'Show All' : 'Hide All'}
-                onButtonClick={toggleAll}
-            >
-                <div className='flex flex-wrap gap-1'>
-                    {new SubtypeHierarchy(Object.keys(entryGraphColors)).convert(
-                        // --- Render for internal nodes (categories that have child categories) ---
-                        (value: string, children: ReactNode, childValues: string[]) => {
-                            const path =
-                                childValues.length > 0 && childValues[0].includes('/')
-                                    ? childValues[0].substring(
-                                          0,
-                                          childValues[0].lastIndexOf('/') + 1,
-                                      )
-                                    : '';
-
-                            const leafNodes = childValues.filter(
-                                (cv) =>
-                                    entryGraphColors[cv] &&
-                                    !childValues.some(
-                                        (other) => other !== cv && cv.startsWith(other),
-                                    ),
-                            );
-
-                            const allDisabled = leafNodes.every((node) =>
-                                disabledTypes.has(node),
-                            );
-
-                            return (
-                                <div className='mt-1.5 w-full relative' key={value}>
-                                    <div className='absolute left-1 top-1.5 bottom-0 w-px bg-cradle-border-accent' />
-                                    <div className='pl-4'>
-                                        <Collapsible
-                                            label={value}
-                                            buttonText={allDisabled ? 'Show' : 'Hide'}
-                                            onButtonClick={() =>
-                                                toggleAllAtPath(
-                                                    path,
-                                                    leafNodes.map((ln) =>
-                                                        ln.substring(path.length),
-                                                    ),
-                                                )
-                                            }
-                                        >
-                                            <div className='flex flex-wrap gap-1'>
-                                                {children}
-                                            </div>
-                                        </Collapsible>
-                                    </div>
-                                </div>
-                            );
-                        },
-                        // --- Render for leaf nodes ---
-                        (value: string, path: string) => {
-                            const fullSubtype = path + value;
-                            return (
-                                <div
-                                    key={fullSubtype}
-                                    className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded cursor-pointer transition-all text-xs ${
-                                        disabledTypes.has(fullSubtype)
-                                            ? 'opacity-50 line-through'
-                                            : 'hover:bg-cradle-bg-elevated'
-                                    }`}
-                                    onClick={() => toggleDisabledType(fullSubtype)}
-                                >
-                                    <div
-                                        className='w-2 h-2 rounded-full flex-shrink-0'
-                                        style={{
-                                            backgroundColor:
-                                                entryGraphColors[fullSubtype],
-                                        }}
-                                    />
-                                    <span className='truncate'>{value}</span>
-                                </div>
-                            );
-                        },
-                    )}
+            <Collapsible defaultOpen={true}>
+                <div className='flex justify-between items-center'>
+                    <CollapsibleTrigger asChild>
+                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
+                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                            <span>Legend</span>
+                        </Button>
+                    </CollapsibleTrigger>
+                    <Button 
+                        variant='ghost'
+                        size='sm'
+                        className='text-xs px-2 py-1 hover:bg-cradle-bg-elevated'
+                        onClick={toggleAll}
+                    >
+                        {allItemsDisabled ? 'Show All' : 'Hide All'}
+                    </Button>
                 </div>
+                <CollapsibleContent>
+                    <div className='flex flex-wrap gap-1 mt-4'>
+                        {new SubtypeHierarchy(
+                            Object.keys(entryGraphColors),
+                        ).convert(
+                            // --- Render for internal nodes (categories that have child categories) ---
+                            (
+                                value: string,
+                                children: ReactNode,
+                                childValues: string[],
+                            ) => {
+                                const path =
+                                    childValues.length > 0 &&
+                                    childValues[0].includes('/')
+                                        ? childValues[0].substring(
+                                              0,
+                                              childValues[0].lastIndexOf('/') + 1,
+                                          )
+                                        : '';
+
+                                const leafNodes = childValues.filter(
+                                    (cv) =>
+                                        entryGraphColors[cv] &&
+                                        !childValues.some(
+                                            (other) => other !== cv && cv.startsWith(other),
+                                        ),
+                                );
+
+                                const allDisabled = leafNodes.every((node) =>
+                                    disabledTypes.has(node),
+                                );
+
+                                return (
+                                    <div className='mt-1.5 w-full relative' key={value}>
+                                        <div className='absolute left-1 top-1.5 bottom-0 w-px bg-cradle-border-accent' />
+                                        <div className='pl-4'>
+                                            <Collapsible>
+                                                <div className='flex justify-between items-center'>
+                                                    <CollapsibleTrigger asChild>
+                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
+                                                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                                            <span>{value}</span>
+                                                        </Button>
+                                                    </CollapsibleTrigger>
+                                                    <Button 
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        className='text-xs px-2 py-1 hover:bg-cradle-bg-elevated'
+                                                        onClick={() =>
+                                                            toggleAllAtPath(
+                                                                path,
+                                                                leafNodes.map((ln) => ln.substring(path.length)),
+                                                            )
+                                                        }
+                                                    >
+                                                        {allDisabled ? 'Show' : 'Hide'}
+                                                    </Button>
+                                                </div>
+                                                <CollapsibleContent>
+                                                    <div className='flex flex-wrap gap-1 mt-4'>
+                                                        {children}
+                                                    </div>
+                                                </CollapsibleContent>
+                                            </Collapsible>
+                                        </div>
+                                    </div>
+                                );
+                            },
+                            // --- Render for leaf nodes ---
+                            (value: string, path: string) => {
+                                const fullSubtype = path + value;
+                                return (
+                                    <div
+                                        key={fullSubtype}
+                                        className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded cursor-pointer transition-all text-xs ${
+                                            disabledTypes.has(fullSubtype)
+                                                ? 'opacity-50 line-through'
+                                                : 'hover:bg-cradle-bg-elevated'
+                                        }`}
+                                        onClick={() => toggleDisabledType(fullSubtype)}
+                                    >
+                                        <div
+                                            className='w-2 h-2 rounded-full flex-shrink-0'
+                                            style={{ backgroundColor: entryGraphColors[fullSubtype] }}
+                                        />
+                                        <span className='truncate'>{value}</span>
+                                    </div>
+                                );
+                            },
+                        )}
+                    </div>
+                </CollapsibleContent>
             </Collapsible>
         </div>
     );

@@ -5,6 +5,8 @@
 
 import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
 import { FieldError } from 'react-hook-form';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export interface SettingsFieldProps extends Omit<
     InputHTMLAttributes<HTMLInputElement>,
@@ -41,7 +43,7 @@ export interface SettingsFieldProps extends Omit<
  *     {...register('username')}
  *     error={errors.username}
  *   />
- *   <SettingsSeparator />
+ *   <Separator />
  *   <SettingsField
  *     label="Email"
  *     description="Used for login and notifications"
@@ -66,18 +68,18 @@ const SettingsField = forwardRef<HTMLInputElement, SettingsFieldProps>(
             ...props
         },
         ref,
-    ): JSX.Element {
+    ): React.JSX.Element {
         const errorMessage = typeof error === 'string' ? error : error?.message;
 
         return (
             <div className='flex items-center justify-between gap-4 py-2'>
                 <div className='flex-1'>
-                    <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                    <Label htmlFor={props.id || props.name} className='text-sm text-muted-foreground block mb-0.5'>
                         {label}
                         {required && <span className='text-red-500 ml-1'>*</span>}
-                    </label>
+                    </Label>
                     {description && (
-                        <p className='text-sm cradle-text-muted'>{description}</p>
+                        <p className='text-sm text-muted-foreground'>{description}</p>
                     )}
                     {errorMessage && (
                         <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
@@ -85,12 +87,11 @@ const SettingsField = forwardRef<HTMLInputElement, SettingsFieldProps>(
                 </div>
                 <div className={inputWidth}>
                     {children || (
-                        <input
+                        <Input
                             ref={ref}
                             type={type}
-                            className={`cradle-input w-fit text-sm h-8 rounded-full ${
-                                errorMessage ? 'border-red-500' : ''
-                            } ${className || ''}`}
+                            id={props.id || props.name}
+                            className={className}
                             aria-invalid={Boolean(errorMessage)}
                             aria-describedby={
                                 errorMessage ? `${props.name}-error` : undefined

@@ -1,6 +1,7 @@
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { EditPencil } from 'iconoir-react';
+import { Button } from '@/components/ui/button';
 
 interface EditNoteProps {
     note: NoteRetrieve;
@@ -26,12 +27,14 @@ export default function EditNote({ note, classNames }: EditNoteProps) {
 
     return (
         <span className='pb-1 space-x-1 flex flex-row pl-2 text-blue-500 hover:text-blue-600'>
-            <button className=''>
-                <EditPencil
-                    className={classNames}
-                    onClick={navigateLink(`/notes/${note.id}`)}
-                />
-            </button>
+            <Button
+                variant='ghost'
+                size='icon-sm'
+                className='text-blue-500 hover:text-blue-600'
+                onClick={navigateLink(`/notes/${note.id}`)}
+            >
+                <EditPencil className={classNames} />
+            </Button>
         </span>
     );
 }

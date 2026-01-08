@@ -1,6 +1,7 @@
 import useApi from '@/hooks/api/useApi';
 import { displayError } from '@/utils/api';
-import AlertBox from '@components/base/Alert/AlertBox';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 
@@ -57,7 +58,12 @@ export default function ConfirmEmail() {
         <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
             <div className='bg-cradle3 p-4 bg-opacity-20 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
                 <div className='flex min-h-full flex-1 flex-col justify-center px-3 py-6 lg:px-4 text-gray-500'>
-                    <AlertBox alert={alert} />
+                    {alert.show && (
+                        <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                            <WarningCircle />
+                            <AlertDescription>{alert.message}</AlertDescription>
+                        </AlertComponent>
+                    )}
                     <p className='mt-10 text-center text-sm text-gray-500'>
                         <Link
                             to='/login'

@@ -1,4 +1,5 @@
 import { ChangeEvent } from 'react';
+import { Button } from '@/components/ui/button';
 
 /**
  * Pagination component props
@@ -110,10 +111,12 @@ export default function Pagination({
 
                 {/* Navigation buttons */}
                 <div className='flex items-center space-x-2'>
-                    <button
+                    <Button
+                        variant='outline'
+                        size='icon'
                         onClick={() => onPageChange(1)}
                         disabled={!canGoFirst}
-                        className='items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cradle-accent-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-white text-white hidden h-8 w-8 p-0 lg:flex'
+                        className='hidden lg:flex text-white hover:text-white'
                         title='Go to first page'
                     >
                         <span className='sr-only'>Go to first page</span>
@@ -132,11 +135,13 @@ export default function Pagination({
                             <path d='m11 17-5-5 5-5'></path>
                             <path d='m18 17-5-5 5-5'></path>
                         </svg>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant='outline'
+                        size='icon'
                         onClick={() => onPageChange(currentPage - 1)}
                         disabled={!canGoPrevious}
-                        className='inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cradle-accent-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary text-white hover:text-white h-8 w-8 p-0'
+                        className='text-white hover:text-white'
                         title='Go to previous page'
                     >
                         <span className='sr-only'>Go to previous page</span>
@@ -154,11 +159,13 @@ export default function Pagination({
                         >
                             <path d='m15 18-6-6 6-6'></path>
                         </svg>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant='outline'
+                        size='icon'
                         onClick={() => onPageChange(currentPage + 1)}
                         disabled={!canGoNext}
-                        className='inline-flex items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cradle-accent-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary text-white hover:text-white h-8 w-8 p-0'
+                        className='text-white hover:text-white'
                         title='Go to next page'
                     >
                         <span className='sr-only'>Go to next page</span>
@@ -176,11 +183,13 @@ export default function Pagination({
                         >
                             <path d='m9 18 6-6-6-6'></path>
                         </svg>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        variant='outline'
+                        size='icon'
                         onClick={() => onPageChange(totalPages)}
                         disabled={!canGoLast}
-                        className='items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cradle-accent-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary text-white hover:text-white hidden h-8 w-8 p-0 lg:flex'
+                        className='hidden lg:flex text-white hover:text-white'
                         title='Go to last page'
                     >
                         <span className='sr-only'>Go to last page</span>
@@ -199,7 +208,7 @@ export default function Pagination({
                             <path d='m6 17 5-5-5-5'></path>
                             <path d='m13 17 5-5-5-5'></path>
                         </svg>
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

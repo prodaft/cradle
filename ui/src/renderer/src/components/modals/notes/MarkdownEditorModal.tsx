@@ -5,6 +5,9 @@ import { EditorView } from '@codemirror/view';
 import { eclipse } from '@uiw/codemirror-theme-eclipse';
 import CodeMirror from '@uiw/react-codemirror';
 import { useState } from 'react';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 /**
  * MarkdownEditorModal component props
@@ -82,31 +85,26 @@ export default function MarkdownEditorModal({
     };
 
     return (
-        <div className='w-full min-w-[500px] max-w-3xl'>
-            {/* Header */}
-            <div className='flex items-end justify-between mb-4'>
-                <div className='flex items-center gap-3 w-full'>
+        <>
+            <DialogHeader>
                     {titleEditable ? (
                         <input
                             type='text'
                             value={noteTitle}
                             onChange={handleTitleChange}
                             placeholder='Enter title'
-                            className='text-xl font-semibold text-cradle-text-primary tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-cradle-text-tertiary'
+                        className='text-lg font-semibold text-cradle-text-primary tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-cradle-text-tertiary'
                         />
                     ) : (
-                        <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                            {noteTitle}
-                        </h2>
+                    <DialogTitle>{noteTitle}</DialogTitle>
                     )}
-                </div>
-            </div>
+            </DialogHeader>
 
             {/* Editor Section */}
-            <div className='mb-6'>
-                <label htmlFor='markdown-content' className='cradle-label mb-2 block'>
+            <div className='grid w-full items-center gap-3 mb-6'>
+                <Label htmlFor='markdown-content'>
                     Content
-                </label>
+                </Label>
                 <div className='border border-cradle-border-accent rounded-lg overflow-hidden w-full'>
                     <CodeMirror
                         value={userInput}
@@ -134,22 +132,24 @@ export default function MarkdownEditorModal({
             )}
 
             {/* Actions */}
-            <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                <button
+            <div className='flex justify-end gap-2 mt-4'>
+                <Button
                     type='button'
-                    className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    variant='outline'
+                    size='sm'
                     onClick={closeModal}
                 >
-                    <span>Cancel</span>
-                </button>
-                <button
+                    Cancel
+                </Button>
+                <Button
                     type='button'
-                    className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                    variant='default'
+                    size='sm'
                     onClick={handleConfirm}
                 >
-                    <span>Save</span>
-                </button>
+                    Save
+                </Button>
             </div>
-        </div>
+        </>
     );
 }

@@ -6,7 +6,7 @@
  */
 
 import { FetchError } from '@/services/cradle/runtime';
-import type { NotificationOptions } from '@/types/index';
+import { toast } from 'sonner';
 
 /**
  * Parsed API error structure
@@ -120,16 +120,13 @@ export interface HandleAPIErrorOptions {
  */
 export function handleAPIError(
     parsed: ParsedAPIError,
-    notify: (options: NotificationOptions) => void,
     options: HandleAPIErrorOptions = {},
 ): ParsedAPIError {
     if (parsed.isValidationError && !options.notifyValidation) {
         return parsed;
     }
 
-    notify({
-        type: 'error',
-        text: options.message || parsed.detail,
+    toast.error(options.message || parsed.detail, {
         duration: options.duration || 5000,
     });
 

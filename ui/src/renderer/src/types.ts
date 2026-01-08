@@ -30,7 +30,7 @@ export type {
 export type StateSetter<T> = React.Dispatch<React.SetStateAction<T>>;
 
 /**
- * An object representing an alert. Used in AlertDismissible and AlertBox components.
+ * An object representing an alert. Used with Alert components.
  */
 export interface Alert {
     /** A boolean value indicating whether the alert should be displayed. */

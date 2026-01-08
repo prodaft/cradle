@@ -12,14 +12,8 @@ export type { FormProps } from './Form';
 export { default as FormCheckbox } from './FormCheckbox';
 export { default as FormInput } from './FormInput';
 export { default as FormRadioGroup } from './FormRadioGroup';
-export { default as FormSelect } from './FormSelect';
-export { default as FormSlider } from './FormSlider';
-export { default as FormSwitch } from './FormSwitch';
 export { default as FormTextArea } from './FormTextArea';
 
-// Form alert
-export { default as FormAlert } from './FormAlert';
-export type { FormAlertProps, FormAlertState } from './FormAlert';
 
 // Shared types
 export type {
@@ -29,8 +23,6 @@ export type {
     RadioOption,
     SelectFieldProps,
     SelectOption,
-    SliderFieldProps,
-    SwitchFieldProps,
     TextAreaFieldProps,
     TextFieldProps,
 } from './shared/types';
@@ -43,13 +35,8 @@ export type { FormFieldWrapperProps } from './shared/FormFieldWrapper';
 export { default as SettingsCard } from './SettingsCard';
 export type { SettingsCardProps } from './SettingsCard';
 
-export { default as SettingsSeparator } from './SettingsSeparator';
-
 export { default as SettingsField } from './SettingsField';
 export type { SettingsFieldProps } from './SettingsField';
-
-export { default as SettingsToggle } from './SettingsToggle';
-export type { SettingsToggleProps } from './SettingsToggle';
 
 export { default as SettingsSelect } from './SettingsSelect';
 export type { SettingsSelectProps } from './SettingsSelect';
@@ -71,8 +58,8 @@ export type {
 export { default as FormField } from './FormField';
 export type { FormFieldProps } from './FormField';
 
-export { default as Selector } from './Selector';
-export type { SelectOption as SelectorOption, SelectorProps } from './Selector';
+export { default as ShadcnSelect } from './ShadcnSelect';
+export type { SelectOption, ShadcnSelectProps } from './ShadcnSelect';
 
 export { default as SearchFilter } from './SearchFilter';
 export type { SearchFilterProps } from './SearchFilter';

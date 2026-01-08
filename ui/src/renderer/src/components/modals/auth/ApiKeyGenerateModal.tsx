@@ -1,9 +1,12 @@
-import AlertBox from '@/components/base/Alert/AlertBox';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import { displayError } from '@/utils/api';
 import { Copy, Eye, EyeClosed } from 'iconoir-react';
 import { useState } from 'react';
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 /**
  * ApiKeyGenerateModal component props
@@ -67,54 +70,44 @@ export default function ApiKeyGenerateModal({
     };
 
     return (
-        <div className='min-w-[500px] max-w-2xl'>
-            {/* Header */}
-            <div className='flex items-end justify-between mb-4'>
-                <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                        Generate API Key
-                    </h2>
-                </div>
-            </div>
+        <>
+            <DialogHeader>
+                <DialogTitle>Generate API Key</DialogTitle>
+                {!apiKey && (
+                    <DialogDescription>
+                        Generating a new API key will invalidate your current key. Any applications using the old key will stop working.
+                    </DialogDescription>
+                )}
+            </DialogHeader>
 
             {!apiKey ? (
                 <>
-                    {/* Warning Section */}
-                    <div className='mb-6 p-4 border border-cradle-border-accent bg-cradle-bg-secondary/30 rounded-lg'>
-                        <div className='flex items-start gap-3'>
-                            <div className='w-2 h-2 rounded-full bg-yellow-500 mt-1.5 flex-shrink-0'></div>
-                            <div>
-                                <h3 className='text-sm font-semibold text-cradle-text-primary mb-1'>
-                                    Important Notice
-                                </h3>
-                                <p className='text-xs text-cradle-text-tertiary leading-relaxed'>
-                                    Generating a new API key will invalidate your
-                                    current key. Any applications using the old key will
-                                    stop working.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+                    {alert.show && (
+                        <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                            <WarningCircle />
+                            <AlertDescription>{alert.message}</AlertDescription>
+                        </AlertComponent>
+                    )}
 
-                    <AlertBox alert={alert} />
-
-                    <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                        <button
+                    <div className='flex justify-end gap-2 mt-4'>
+                        <Button
                             type='button'
-                            className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                            variant='outline'
+                            size='sm'
                             onClick={closeModal}
                             disabled={loading}
                         >
-                            <span>Cancel</span>
-                        </button>
-                        <button
+                            Cancel
+                        </Button>
+                        <Button
                             type='button'
-                            className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                            variant='default'
+                            size='sm'
                             onClick={handleGenerate}
                             disabled={loading}
                         >
-                            <span>{loading ? 'Generating...' : 'Generate'}</span>
-                        </button>
+                            {loading ? 'Generating...' : 'Generate'}
+                        </Button>
                     </div>
                 </>
             ) : (
@@ -137,9 +130,10 @@ export default function ApiKeyGenerateModal({
                                     <code className='flex-1 font-mono text-sm text-cradle-text-primary select-all break-all'>
                                         {showApiKey ? apiKey : maskApiKey(apiKey)}
                                     </code>
-                                    <button
+                                    <Button
                                         type='button'
-                                        className='p-1.5 hover:bg-cradle-bg-secondary rounded-md text-cradle-text-secondary transition-colors'
+                                        variant='ghost'
+                                        size='icon-sm'
                                         onClick={() => setShowApiKey(!showApiKey)}
                                         title={
                                             showApiKey ? 'Hide API key' : 'Show API key'
@@ -150,15 +144,16 @@ export default function ApiKeyGenerateModal({
                                         ) : (
                                             <EyeClosed className='w-4 h-4' />
                                         )}
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         type='button'
-                                        className='p-1.5 hover:bg-cradle-bg-secondary rounded-md text-cradle-text-secondary transition-colors'
+                                        variant='ghost'
+                                        size='icon-sm'
                                         onClick={handleCopy}
                                         title={copied ? 'Copied!' : 'Copy API key'}
                                     >
                                         <Copy className='w-4 h-4' />
-                                    </button>
+                                    </Button>
                                 </div>
                                 {copied && (
                                     <p className='text-xs text-green-500 mt-2 font-medium'>
@@ -168,17 +163,18 @@ export default function ApiKeyGenerateModal({
                             </div>
                         </div>
                     </div>
-                    <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                        <button
+                    <div className='flex justify-end gap-2 mt-4'>
+                        <Button
                             type='button'
-                            className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                            variant='outline'
+                            size='sm'
                             onClick={closeModal}
                         >
-                            <span>Close</span>
-                        </button>
+                            Close
+                        </Button>
                     </div>
                 </>
             )}
-        </div>
+        </>
     );
 }

@@ -1,5 +1,6 @@
 import type { NoteRetrieve } from '@services/cradle/models';
 import { PlusCircle } from 'iconoir-react';
+import { Button } from '@/components/ui/button';
 
 interface AddNoteProps {
     note: NoteRetrieve;
@@ -14,8 +15,12 @@ export default function AddNote({ note, setSelectedNotes }: AddNoteProps) {
     };
 
     return (
-        <button className=''>
-            <PlusCircle onClick={handleSelectNote} />
-        </button>
+        <Button
+            variant='ghost'
+            size='icon-sm'
+            onClick={handleSelectNote}
+        >
+            <PlusCircle />
+        </Button>
     );
 }

@@ -1,4 +1,4 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -15,10 +15,11 @@ import {
     SelectOption,
     SettingsCard,
     SettingsField,
-    SettingsSeparator,
     SettingsTextArea,
 } from '../../../forms';
-import Selector from '../../../forms/Selector';
+import { Separator } from '@/components/ui/separator';
+import ShadcnSelect from '../../../forms/ShadcnSelect';
+import { Button } from '@/components/ui/button';
 
 interface EntryTypeFormProps {
     id?: string | null;
@@ -98,7 +99,6 @@ export default function EntryTypeForm({
     onAdd,
 }: EntryTypeFormProps) {
     const { entriesApi } = useApi();
-    const { notify } = useNotif();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -208,26 +208,17 @@ export default function EntryTypeForm({
                     classSubtype: id,
                     entryClassRequest: payload,
                 });
-                notify({
-                    type: 'success',
-                    text: 'Entry type updated successfully!',
-                });
+                toast.success('Entry type updated successfully!');
             } else {
                 result = await entriesApi.entryClassesCreate({
                     entryClassRequest: payload,
                 });
-                notify({
-                    type: 'success',
-                    text: 'Entry type created successfully!',
-                });
+                toast.success('Entry type created successfully!');
             }
 
             if (!isEdit && onAdd) onAdd(result);
         } catch (error) {
-            notify({
-                type: 'error',
-                text: `Failed to ${isEdit ? 'update' : 'create'} entry type`,
-            });
+            toast.error(`Failed to ${isEdit ? 'update' : 'create'} entry type`);
         }
     };
 
@@ -252,17 +243,15 @@ export default function EntryTypeForm({
     }
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                    <h2 className='text-2xl font-bold tracking-tight'>
                         {isEdit ? 'Edit Entry Type' : 'New Entry Type'}
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        {isEdit
-                            ? 'Modify entry class definition'
-                            : 'Create new entry class'}
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        {isEdit ? 'Modify entry class definition' : 'Create new entry class'}
                     </p>
                 </div>
             </div>
@@ -293,16 +282,19 @@ export default function EntryTypeForm({
                                             name='type'
                                             control={control}
                                             render={({ field }) => (
-                                                <Selector
-                                                    {...field}
+                                                <ShadcnSelect
                                                     staticOptions={typeOptions}
+                                                    value={field.value}
                                                     placeholder='Select type'
+                                                    onChange={(newValue) => {
+                                                        field.onChange(newValue);
+                                                    }}
                                                 />
                                             )}
                                         />
                                     </SettingsField>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label={isEdit ? 'Name' : 'Subtype'}
@@ -312,7 +304,7 @@ export default function EntryTypeForm({
                                         required
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsTextArea
                                         label='Description'
@@ -324,7 +316,7 @@ export default function EntryTypeForm({
                                         layout='vertical'
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <div className='py-2'>
                                         <label className='text-sm cradle-text-tertiary block mb-0.5'>
@@ -354,9 +346,11 @@ export default function EntryTypeForm({
                                                     setShowColorPicker(!showColorPicker)
                                                 }
                                             />
-                                            <button
+                                            <Button
                                                 type='button'
-                                                className='cradle-btn cradle-btn-secondary h-10 px-3 flex-shrink-0'
+                                                variant='outline'
+                                                size='default'
+                                                className='h-10 px-3 flex-shrink-0'
                                                 onClick={generateRandomColor}
                                             >
                                                 <svg
@@ -373,7 +367,7 @@ export default function EntryTypeForm({
                                                         d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
                                                     />
                                                 </svg>
-                                            </button>
+                                            </Button>
                                         </div>
                                         {showColorPicker &&
                                             colorButtonRef.current &&
@@ -483,13 +477,14 @@ export default function EntryTypeForm({
                                                     name='typeFormat'
                                                     control={control}
                                                     render={({ field }) => (
-                                                        <Selector
-                                                            {...field}
-                                                            staticOptions={
-                                                                formatOptions
-                                                            }
+                                                        <ShadcnSelect
+                                                            staticOptions={formatOptions}
+                                                            value={field.value}
                                                             placeholder='Select format'
                                                             isClearable
+                                                            onChange={(newValue) => {
+                                                                field.onChange(newValue);
+                                                            }}
                                                         />
                                                     )}
                                                 />
@@ -497,7 +492,7 @@ export default function EntryTypeForm({
 
                                             {isOptions && (
                                                 <>
-                                                    <SettingsSeparator />
+                                                    <Separator />
                                                     <SettingsTextArea
                                                         label='Options'
                                                         description='Allowed values (one per line)'
@@ -512,7 +507,7 @@ export default function EntryTypeForm({
 
                                             {isRegex && (
                                                 <>
-                                                    <SettingsSeparator />
+                                                    <Separator />
                                                     <SettingsTextArea
                                                         label='Regex'
                                                         description='Regular expression for validation'
@@ -527,7 +522,7 @@ export default function EntryTypeForm({
 
                                             {!isOptions && (
                                                 <>
-                                                    <SettingsSeparator />
+                                                    <Separator />
                                                     <SettingsTextArea
                                                         label='Generative Regex'
                                                         description='Regex used to generate random sample values'
@@ -542,8 +537,9 @@ export default function EntryTypeForm({
                                         </>
                                     )}
 
-                                    {((isEntity && isArtifact === false) ||
-                                        isArtifact) && <SettingsSeparator />}
+                                    {((isEntity && isArtifact === false) || isArtifact) && (
+                                        <Separator />
+                                    )}
 
                                     <div className='py-2'>
                                         <label className='text-sm cradle-text-tertiary block mb-0.5'>
@@ -557,11 +553,14 @@ export default function EntryTypeForm({
                                             name='children'
                                             control={control}
                                             render={({ field }) => (
-                                                <Selector
-                                                    {...field}
+                                                <ShadcnSelect
                                                     staticOptions={entryTypes}
+                                                    values={field.value || []}
                                                     placeholder='Select child entry types...'
                                                     isMulti
+                                                    onMultiChange={(newValues) => {
+                                                        field.onChange(newValues);
+                                                    }}
                                                 />
                                             )}
                                         />
@@ -577,17 +576,13 @@ export default function EntryTypeForm({
 
                         {/* Save Button */}
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <button
+                            <Button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
+                                variant='default'
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting
-                                    ? 'Saving...'
-                                    : isEdit
-                                      ? 'Save Changes'
-                                      : 'Create Entry Type'}
-                            </button>
+                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entry Type'}
+                            </Button>
                         </div>
                     </form>
                 </div>

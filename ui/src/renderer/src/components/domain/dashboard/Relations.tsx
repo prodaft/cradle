@@ -1,25 +1,31 @@
-import Tooltip from '@/components/base/Tooltip/Tooltip';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { handleAPIError } from '@/utils/api';
+import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
-import AlertBox from '@components/base/Alert/AlertBox';
-import TableCard from '@components/base/Card/TableCard';
-import ListView from '@components/base/ListView/ListView';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { DataTable } from '@/components/ui/data-table';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
-import { Check, Copy, Search, Xmark } from 'iconoir-react';
+import { Check, Copy, Search } from 'iconoir-react';
 import {
     ChangeEvent,
     KeyboardEvent,
     MouseEvent,
+    useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from 'react';
+import { Button } from '@/components/ui/button';
+import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
+import { ColumnDef } from '@tanstack/react-table';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface Alert {
     show: boolean;
@@ -54,7 +60,6 @@ export default function Relations({ obj }: RelationsProps) {
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
     const [results, setResults] = useState<Result[] | null>(null);
-    const { notify } = useNotif();
     const [alert, setAlert] = useState<Alert>({
         show: false,
         message: '',
@@ -67,7 +72,6 @@ export default function Relations({ obj }: RelationsProps) {
     const [inaccessibleEntities, setInaccessibleEntities] = useState<string[]>([]);
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
-    const [isSearchExpanded, setIsSearchExpanded] = useState(false);
     const [pageSize, setPageSize] = useState(10); // Default page size
 
     const { profile } = useProfile();
@@ -77,7 +81,8 @@ export default function Relations({ obj }: RelationsProps) {
     const dialogRoot = document.getElementById('portal-root');
     const { navigate, navigateLink } = useCradleNavigate();
     const handleError = (err: any) => {
-        handleAPIError(err, notify);
+        const parsed = await parseAPIError(err);
+        handleAPIError(parsed);
     };
     const [isLoading, setIsLoading] = useState(false);
 
@@ -97,10 +102,6 @@ export default function Relations({ obj }: RelationsProps) {
             event.preventDefault();
             setPage(1);
             performSearch(depth, 1);
-        } else if (event.key === 'Escape') {
-            if (!searchQuery) {
-                setIsSearchExpanded(false);
-            }
         }
     };
 
@@ -171,7 +172,7 @@ export default function Relations({ obj }: RelationsProps) {
                 if (response.inaccessible && response.inaccessible.length > 0) {
                     setInaccessibleEntities(response.inaccessible);
 
-                    // Use AlertBox to show inaccessible entities warning
+                    // Use Alert to show inaccessible entities warning
                     setAlert({
                         show: true,
                         message: `${response.inaccessible.length} related ${response.inaccessible.length === 1 ? 'entity is' : 'entities are'} not accessible`,
@@ -275,101 +276,131 @@ export default function Relations({ obj }: RelationsProps) {
         performSearch(depth, 1);
     }, [pageSize]);
 
-    useEffect(() => {
-        if (isSearchExpanded && inputRef.current) {
-            inputRef.current.focus();
-        }
-    }, [isSearchExpanded]);
-
-    const columns = [
-        { key: 'subtype', label: 'Type', className: 'w-32' },
-        { key: 'name', label: 'Name' },
-        { key: 'depth', label: 'Depth', className: 'w-20' },
-    ];
-
-    const renderRow = (result: Result, index: number, selectProps: any = {}) => {
-        const { enableMultiSelect, isSelected, onSelect } = selectProps;
-        const dashboardLink = createDashboardLink(result);
-
-        return (
-            <tr
-                key={result.id}
-                className='cursor-pointer hover:bg-cradle-bg-elevated transition-colors'
-                onClick={navigateLink(dashboardLink)}
-            >
-                {enableMultiSelect && (
-                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                        <div className='flex items-center'>
-                            <input
-                                type='checkbox'
-                                className='cradle-checkbox'
-                                checked={isSelected}
-                                onChange={onSelect}
-                            />
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo<ColumnDef<Result>[]>(
+        () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                accessorKey: 'subtype',
+                id: 'subtype',
+                header: 'Type',
+                cell: ({ row }) => {
+                    const dashboardLink = createDashboardLink(row.original);
+                    return (
+                        <div className='py-3 px-4 cursor-pointer' onClick={navigateLink(dashboardLink)}>
+                            <span
+                                className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white shadow-sm'
+                                style={{
+                                    backgroundColor: row.original.color || '#71717a',
+                                }}
+                            >
+                                {row.original.subtype}
+                            </span>
                         </div>
-                    </td>
-                )}
-                <td className='py-3 px-4'>
-                    <span
-                        className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white shadow-sm'
-                        style={{
-                            backgroundColor: result.color || '#71717a',
-                        }}
-                    >
-                        {result.subtype}
-                    </span>
-                </td>
-                <td className='py-3 px-4'>{result.name}</td>
-                <td className='py-3 px-4'>
-                    <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
-                        {result.depth}
-                    </span>
-                </td>
-            </tr>
-        );
-    };
+                    );
+                },
+            },
+            {
+                accessorKey: 'name',
+                id: 'name',
+                header: 'Name',
+                cell: ({ row }) => {
+                    const dashboardLink = createDashboardLink(row.original);
+                    return (
+                        <div className='py-3 px-4 cursor-pointer' onClick={navigateLink(dashboardLink)}>
+                            {row.original.name}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'depth',
+                id: 'depth',
+                header: 'Depth',
+                cell: ({ row }) => {
+                    const dashboardLink = createDashboardLink(row.original);
+                    return (
+                        <div className='py-3 px-4 cursor-pointer' onClick={navigateLink(dashboardLink)}>
+                            <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
+                                {row.original.depth}
+                            </span>
+                        </div>
+                    );
+                },
+            },
+        ],
+        [createDashboardLink, navigateLink],
+    );
+
+    // Handle row selection - convert string[] to number[]
+    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
+        setSelectedIds(selectedIds.map(id => Number(id)));
+    }, []);
 
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
     return (
         <div className='flex flex-col h-full gap-4'>
-            <TableCard>
-                <div className='flex flex-wrap items-center justify-between gap-4'>
+            <Card className='cradle-card-compact'>
+                <CardContent className='p-3'>
+                    <div className='flex flex-wrap items-center justify-between gap-4'>
                     <div className='flex items-center gap-2 flex-shrink-0'>
                         {/* Copy CSV Action */}
-                        <Tooltip content='Copy to CSV'>
-                            <button
-                                onClick={copyToCSV}
-                                disabled={selectedIds.length === 0}
-                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-full'
-                                title={
-                                    selectedIds.length > 0
-                                        ? `Copy ${selectedIds.length} selected to CSV`
-                                        : 'Select items to copy'
-                                }
-                            >
-                                {isCopied ? (
-                                    <Check className='w-4 h-4 text-green-500' />
-                                ) : (
-                                    <Copy
-                                        className={
-                                            selectedIds.length > 0
-                                                ? 'text-[#FF8C00]'
-                                                : 'text-cradle-text-secondary'
-                                        }
-                                        width={18}
-                                        height={18}
-                                    />
-                                )}
-                            </button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={copyToCSV}
+                                    disabled={selectedIds.length === 0}
+                                    variant='outline'
+                                    size='icon'
+                                    className='rounded-full'
+                                    title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
+                                >
+                                    {isCopied ? (
+                                        <Check className='w-4 h-4 text-green-500' />
+                                    ) : (
+                                        <Copy
+                                            className={selectedIds.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                            width={18}
+                                            height={18}
+                                        />
+                                    )}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Copy to CSV
+                            </TooltipContent>
                         </Tooltip>
                         <div className='h-8 w-px bg-cradle-border-accent' />
 
                         {/* Depth Control */}
                         <div className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent rounded-full bg-transparent'>
-                            <Tooltip content='Depth'>
-                                <input
-                                    id='depth-input'
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <input
+                                        id='depth-input'
                                     type='number'
                                     min='0'
                                     max='5'
@@ -377,64 +408,37 @@ export default function Relations({ obj }: RelationsProps) {
                                     value={depth}
                                     onChange={handleDepthChange}
                                 />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Depth
+                                </TooltipContent>
                             </Tooltip>
                         </div>
 
                         <div className='h-8 w-px bg-cradle-border-accent' />
 
                         {/* Search */}
-                        {!isSearchExpanded ? (
-                            <button
-                                onClick={() => setIsSearchExpanded(true)}
-                                className='flex items-center justify-center w-10 h-10 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary rounded-full'
-                                title='Search'
-                            >
-                                <Search className='w-4 h-4' />
-                            </button>
-                        ) : (
-                            <div className='flex items-center gap-2 min-w-[280px] bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                <button
-                                    onClick={() => {
-                                        setPage(1);
-                                        performSearch(depth, 1);
-                                    }}
-                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
-                                    title='Search'
-                                >
-                                    <Search className='w-4 h-4' />
-                                </button>
-                                <input
-                                    ref={inputRef}
-                                    type='text'
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    onBlur={() => {
-                                        if (!searchQuery) {
-                                            setIsSearchExpanded(false);
-                                        }
-                                    }}
-                                    placeholder='Search relations...'
-                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                                />
-                                {searchQuery && (
-                                    <button
-                                        onClick={() => {
-                                            setSearchQuery('');
-                                            setPage(1);
-                                            performSearch(depth, 1);
-                                        }}
-                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
-                                        title='Clear search'
-                                    >
-                                        <Xmark className='w-4 h-4' />
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                        <InputGroup className='min-w-[280px]'>
+                            <InputGroupInput
+                                ref={inputRef}
+                                placeholder='Search relations...'
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                            />
+                            <InputGroupAddon>
+                                <Search />
+                            </InputGroupAddon>
+                            {results && (
+                                <InputGroupAddon align='inline-end'>
+                                    {results.length} {results.length === 1 ? 'result' : 'results'}
+                                </InputGroupAddon>
+                            )}
+                        </InputGroup>
                     </div>
                 </div>
-            </TableCard>
+                </CardContent>
+            </Card>
 
             <SearchFilterSection
                 showFilters={showFilters}
@@ -444,19 +448,25 @@ export default function Relations({ obj }: RelationsProps) {
                 setEntrySubtypeFilters={setEntrySubtypeFilters}
             />
 
-            <AlertBox alert={alert} />
+            {alert.show && (
+                <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                    <WarningCircle />
+                    <AlertDescription>{alert.message}</AlertDescription>
+                </AlertComponent>
+            )}
 
             <div className='flex-grow overflow-hidden flex flex-col'>
                 <div className='flex-grow overflow-auto'>
-                    <ListView
-                        data={results || []}
+                    <DataTable
                         columns={columns}
-                        renderRow={renderRow}
+                        data={results || []}
                         loading={isLoading}
                         emptyMessage='No relations found'
-                        tableClassName='table w-full'
-                        enableMultiSelect={true}
-                        setSelected={(ids) => setSelectedIds(ids as number[])}
+                        enableRowSelection={true}
+                        selectedRows={selectedIds.map(id => String(id))}
+                        onRowSelectionChange={handleRowSelectionChange}
+                        manualPagination={true}
+                        manualSorting={true}
                     />
                 </div>
             </div>

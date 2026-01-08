@@ -5,7 +5,6 @@
  * - api/ - API interaction hooks (useApi, useAPICall, useFormValidation)
  * - auth/ - Authentication and user hooks (useAuth, useProfile)
  * - navigation/ - Navigation hooks (useCradleNavigate)
- * - tabs/ - Tab management hooks (useTabContext, TabContextProvider)
  * - theme/ - Theme hooks (useTheme)
  * - search/ - Search hooks (useFrontendSearch)
  *
@@ -28,9 +27,6 @@ export * from './auth';
 
 // Navigation hooks
 export * from './navigation';
-
-// Tab management hooks
-export * from './tabs';
 
 // Theme hooks
 export * from './theme';

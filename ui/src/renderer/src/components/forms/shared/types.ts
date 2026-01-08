@@ -102,24 +102,6 @@ export interface RadioGroupFieldProps<
 }
 
 /**
- * Props for slider/range fields
- */
-export interface SliderFieldProps<
-    TFieldValues extends FieldValues = FieldValues,
-> extends BaseFieldProps<TFieldValues> {
-    /** Minimum value */
-    min?: number;
-    /** Maximum value */
-    max?: number;
-    /** Step increment */
-    step?: number;
-    /** Whether to show the current value */
-    showValue?: boolean;
-    /** Format function for displayed value */
-    formatValue?: (value: number) => string;
-}
-
-/**
  * Select option type (matches existing Selector)
  */
 export interface SelectOption<T = string | number> {

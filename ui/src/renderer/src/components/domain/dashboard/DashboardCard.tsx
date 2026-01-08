@@ -1,4 +1,5 @@
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface DashboardCardProps {
     name: string;
@@ -19,16 +20,16 @@ interface DashboardCardProps {
 export default function DashboardCard({ name, link, type }: DashboardCardProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     return (
-        <div
-            className={`cradle-card cradle-card-hover cradle-card-brackets ${link ? 'cursor-pointer' : ''}`}
+        <Card
+            className={`cradle-card-hover cradle-card-brackets ${link ? 'cursor-pointer' : ''}`}
             onClick={link ? navigateLink(link) : undefined}
         >
-            <div className='cradle-card-body'>
+            <CardContent>
                 <div className='cradle-text-primary cradle-mono font-medium mb-2'>
                     {name}
                 </div>
                 {type && <div className='cradle-label text-xs'>{type}</div>}
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }

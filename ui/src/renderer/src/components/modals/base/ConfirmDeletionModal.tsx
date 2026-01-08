@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 /**
  * ConfirmDeletionModal component props
@@ -49,34 +53,21 @@ export default function ConfirmDeletionModal({
     };
 
     return (
-        <div className='min-w-[320px] max-w-md'>
-            {/* Header with title and close button */}
-            <div className='flex items-end justify-between mb-4'>
-                <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                        Confirm Deletion
-                    </h2>
-                </div>
-            </div>
-
-            {/* Body text */}
-            <p className='text-sm text-cradle-text-secondary mb-3 leading-relaxed'>
-                {text}
-            </p>
+        <>
+            <DialogHeader>
+                <DialogTitle>Confirm Deletion</DialogTitle>
+                <DialogDescription>{text}</DialogDescription>
+            </DialogHeader>
 
             {/* Confirmation input */}
             {confirmText && (
-                <div className='mb-5'>
-                    <label className='cradle-label mb-2 block'>
-                        Type "
-                        <span className='text-cradle-accent-primary'>
-                            {confirmText}
-                        </span>
-                        " to confirm
-                    </label>
-                    <input
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='confirm-input'>
+                        Type "<span className='text-cradle-accent-primary'>{confirmText}</span>" to confirm
+                    </Label>
+                    <Input
+                        id='confirm-input'
                         type='text'
-                        className='cradle-input'
                         value={userInput}
                         onChange={(e) => setUserInput(e.target.value)}
                         placeholder={confirmText}
@@ -85,23 +76,25 @@ export default function ConfirmDeletionModal({
             )}
 
             {/* Action buttons */}
-            <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                <button
+            <div className='flex justify-end gap-2 mt-4'>
+                <Button
                     type='button'
-                    className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    variant='outline'
+                    size='sm'
                     onClick={closeModal}
                 >
-                    <span>Cancel</span>
-                </button>
-                <button
+                    Cancel
+                </Button>
+                <Button
                     type='button'
-                    className='rounded-lg border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    variant='destructive'
+                    size='sm'
                     onClick={handleConfirm}
                     disabled={!isConfirmEnabled}
                 >
-                    <span>Delete</span>
-                </button>
+                    Delete
+                </Button>
             </div>
-        </div>
+        </>
     );
 }

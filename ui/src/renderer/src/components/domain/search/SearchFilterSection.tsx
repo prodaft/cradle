@@ -1,8 +1,9 @@
-import Collapsible from '@components/base/Collapsible/Collapsible';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import SearchFilter from '@components/forms/SearchFilter';
 import { SubtypeHierarchy } from '@utils/dashboard';
-import { FilterList, NavArrowDown, NavArrowUp } from 'iconoir-react';
-import { Dispatch, SetStateAction } from 'react';
+import { FilterList, NavArrowDown, NavArrowUp, NavArrowRight } from 'iconoir-react';
+import React, { Dispatch, SetStateAction } from 'react';
 
 /**
  * SearchFilterSection component props
@@ -41,7 +42,7 @@ export default function SearchFilterSection({
     entrySubtypes,
     entrySubtypeFilters,
     setEntrySubtypeFilters,
-}: SearchFilterSectionProps): JSX.Element {
+}: SearchFilterSectionProps): React.JSX.Element {
     const toggleFilters = () => {
         setShowFilters(!showFilters);
     };
@@ -52,9 +53,10 @@ export default function SearchFilterSection({
     return (
         <div className='cradle-border-b'>
             {/* Filter Toggle Button */}
-            <button
+            <Button
+                variant='ghost'
                 onClick={toggleFilters}
-                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-cradle-bg-secondary transition-colors group'
+                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-cradle-bg-secondary group h-auto'
             >
                 <div className='flex items-center gap-2'>
                     <FilterList className='w-4 h-4 text-cradle-text-muted group-hover:text-cradle-accent-primary transition-colors' />
@@ -72,7 +74,7 @@ export default function SearchFilterSection({
                 ) : (
                     <NavArrowDown className='w-4 h-4 text-cradle-text-muted' />
                 )}
-            </button>
+            </Button>
 
             {/* Collapsible Filter Content */}
             <div
@@ -84,14 +86,19 @@ export default function SearchFilterSection({
                     <div className='space-y-2'>
                         {hierarchy.convert(
                             (value, children) => (
-                                <Collapsible
-                                    className='text-cradle-text-secondary'
-                                    label={value}
-                                    key={value}
-                                >
-                                    <div className='pl-4 pt-2 flex flex-wrap gap-1.5'>
-                                        {children}
-                                    </div>
+                                <Collapsible key={value} className='text-cradle-text-secondary'>
+                                    <CollapsibleTrigger asChild>
+                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
+                                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                            <span>{value}</span>
+                                        </Button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        <div className='pl-4 pt-2 flex flex-wrap gap-1.5'>
+                                            {children}
+                                        </div>
+                                    </CollapsibleContent>
                                 </Collapsible>
                             ),
                             (value, path) => (

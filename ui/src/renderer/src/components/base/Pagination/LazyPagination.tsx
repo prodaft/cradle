@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+
 interface LazyPaginationProps {
     currentPage: number;
     hasNextPage: boolean;
@@ -21,34 +23,37 @@ export default function LazyPagination({
     return (
         <div className='pagination flex justify-center mt-4 mb-4 items-center'>
             {/* Left Arrow */}
-            <button
+            <Button
+                variant='outline'
+                size='default'
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className='btn'
             >
                 &lt;
-            </button>
+            </Button>
 
             {/* Page Numbers */}
             {pages.map((page) => (
-                <button
+                <Button
                     key={page}
+                    variant={page === currentPage ? 'default' : 'outline'}
+                    size='default'
                     onClick={() => onPageChange(page)}
                     disabled={page === currentPage}
-                    className={`btn ${page === currentPage ? 'btn-disabled' : ''}`}
                 >
                     {page}
-                </button>
+                </Button>
             ))}
 
             {/* Right Arrow */}
-            <button
+            <Button
+                variant='outline'
+                size='default'
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={!hasNextPage}
-                className='btn'
             >
                 &gt;
-            </button>
+            </Button>
         </div>
     );
 }

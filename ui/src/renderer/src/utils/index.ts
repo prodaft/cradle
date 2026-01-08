@@ -22,9 +22,6 @@ export * from './graph';
 // Link utilities
 export * from './links';
 
-// Tab utilities
-export * from './tabs';
-
 // Color utilities
 export * from './colors';
 

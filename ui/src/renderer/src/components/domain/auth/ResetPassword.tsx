@@ -3,6 +3,7 @@ import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Form, FormInput } from '@components/forms';
 import { Link, useSearchParams } from 'react-router-dom';
 import * as Yup from 'yup';
+import { Button } from '@/components/ui/button';
 
 interface FormData {
     password: string;
@@ -61,13 +62,15 @@ export default function ResetPassword() {
                                 label='Confirm Password'
                                 type='password'
                             />
-                            <button
+                            <Button
                                 type='submit'
+                                variant='default'
+                                size='default'
+                                className='w-full'
                                 data-testid='login-register-button'
-                                className='btn btn-primary btn-block'
                             >
                                 Change Password
-                            </button>
+                            </Button>
                         </Form>
                         <p className='mt-10 text-center text-sm text-gray-500'>
                             <Link

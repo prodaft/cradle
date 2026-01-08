@@ -184,7 +184,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const markdownContentRef = useRef(markdownContent);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
     const { executor } = useAPICall();
-    const { notify } = useNotif();
 
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
@@ -409,10 +408,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     setMarkdownContent(cm.cm6.state.doc.toString());
                     saveNote(true);
                 } catch (error) {
-                    notify({
-                        type: 'error',
-                        text: 'Failed to save note. Please try again with Ctrl-S.',
-                    });
+                    toast.error("Failed to save note. Please try again with Ctrl-S.");
                     console.error('Failed to save note:', error);
                 }
                 return true;
@@ -436,7 +432,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         pasteHandler,
         referenceMappings,
         fileDownloadFn,
-        notify,
     ]);
 
     // Reconfigure extensions when they change
@@ -480,13 +475,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 editorViewRef.current = view;
             } catch (error) {
                 console.error('Failed to initialize RichEditor:', error);
-                notify({
-                    type: 'error',
-                    text: `Failed to initialize editor: ${error instanceof Error ? error.message : 'Unknown error'}. Please refresh the page.`,
-                });
+                toast.error(`Failed to initialize editor: ${error instanceof Error ? error.message : 'Unknown error'}. Please refresh the page.`);
             }
         }
-    }, [extensions, notify]);
+    }, [extensions]);
 
     // Cleanup on unmount
     useEffect(() => {

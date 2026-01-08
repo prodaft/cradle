@@ -1,4 +1,4 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { useProfile } from '@/hooks/auth/useProfile';
@@ -9,6 +9,7 @@ import { Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DigestList from './DigestList';
+import { Button } from '@/components/ui/button';
 
 interface DataTypeOption {
     value: string;
@@ -35,7 +36,6 @@ type DateRange = {
 export default function UploadExternal() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [dataTypeOptions, setDataTypeOptions] = useState<DataTypeOption[]>([]);
-    const { notify } = useNotif();
     const { profile } = useProfile();
     const { intelioApi } = useApi();
     const { execute } = useAPICall();
@@ -96,10 +96,7 @@ export default function UploadExternal() {
                     );
                     setDataTypeOptions(dataTypes);
                 } else {
-                    notify({
-                        type: 'error',
-                        text: 'Failed to load data types',
-                    });
+                    toast.error('Failed to load data types');
                 }
             })
             .catch(() => {});
@@ -324,9 +321,9 @@ export default function UploadExternal() {
                             placeholder='Search by user'
                             className='input !max-w-full w-full'
                         />
-                        <button type='submit' className='btn'>
+                        <Button type='submit' variant='default' size='default'>
                             <Search /> Search
-                        </button>
+                        </Button>
                     </form>
                 </div>
 

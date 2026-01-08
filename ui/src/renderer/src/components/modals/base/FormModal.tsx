@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 /**
  * Form field configuration
@@ -76,37 +80,30 @@ export default function FormModal({
     };
 
     return (
-        <div className='min-w-[400px] max-w-lg'>
-            {/* Header with title */}
-            <div className='flex items-end justify-between mb-5'>
-                <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                        {title}
-                    </h2>
-                </div>
-            </div>
-
+        <>
+            <DialogHeader>
+                <DialogTitle>{title}</DialogTitle>
+            </DialogHeader>
             <form onSubmit={handleSubmit}>
                 {fields.map((field, index) => (
-                    <div key={index} className='mb-5'>
-                        <label htmlFor={field.name} className='cradle-label mb-2 block'>
+                    <div key={index} className='grid w-full items-center gap-3 mb-5'>
+                        <Label htmlFor={field.name}>
                             {field.label}
-                        </label>
+                        </Label>
                         {field.type === 'textarea' ? (
                             <textarea
                                 id={field.name}
                                 name={field.name}
-                                className='cradle-input w-full min-h-[100px] py-2'
+                                className='flex min-h-[100px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
                                 placeholder={field.placeholder || ''}
                                 value={formData[field.name]}
                                 onChange={handleChange}
                             />
                         ) : (
-                            <input
+                            <Input
                                 id={field.name}
                                 name={field.name}
                                 type={field.type}
-                                className='cradle-input w-full'
                                 placeholder={field.placeholder || ''}
                                 value={formData[field.name]}
                                 onChange={handleChange}
@@ -116,22 +113,24 @@ export default function FormModal({
                 ))}
 
                 {/* Action buttons */}
-                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                    <button
+                <div className='flex justify-end gap-2 mt-4'>
+                    <Button
                         type='button'
-                        className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                        variant='outline'
+                        size='sm'
                         onClick={closeModal}
                     >
                         Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type='submit'
-                        className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                        variant='default'
+                        size='sm'
                     >
                         Submit
-                    </button>
+                    </Button>
                 </div>
             </form>
-        </div>
+        </>
     );
 }

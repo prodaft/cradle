@@ -1,17 +1,19 @@
-import { useNotif } from '@/contexts';
+import { toast } from 'sonner';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import { DigestSubclass } from '@/services/cradle/models/DigestSubclass';
 import { DigestUploadFinalizeCreateRequest } from '@/services/cradle/models/DigestUploadFinalizeCreateRequest';
 import type { Alert } from '@/types';
-import { uploadFile } from '@/utils/files';
-import AlertBox from '@components/base/Alert/AlertBox';
-import Selector from '@components/forms/Selector';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
+import ShadcnSelect from '@components/forms/ShadcnSelect';
 import { Upload } from 'iconoir-react';
 import { useCallback, useRef, useState } from 'react';
-import { MultiValue } from 'react-select';
 import * as Yup from 'yup';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 interface DataTypeOption {
     value: string;
@@ -116,8 +118,6 @@ export default function UploadDigestModal({
     const [errors, setErrors] = useState<FormErrors>({});
     const { queryApi, intelioApi, basePath } = useApi();
     const { execute } = useAPICall();
-    const { notify } = useNotif();
-    const { getAccessToken } = useAuth();
     const [formValues, setFormValues] = useState<FormValues>({
         title: '',
         dataType: null,
@@ -157,10 +157,7 @@ export default function UploadDigestModal({
                     label: `${entry.subtype}:${entry.name}`,
                 }));
             } else {
-                notify({
-                    type: 'error',
-                    text: 'Failed to load associated entries',
-                });
+                toast.error('Failed to load associated entries');
                 return [];
             }
         } catch (error) {
@@ -180,7 +177,7 @@ export default function UploadDigestModal({
     };
 
     const handleAssociatedEntriesChange = (
-        value: MultiValue<AssociatedEntryOption>,
+        value: AssociatedEntryOption[],
     ) => {
         updateFormValue('associatedEntry', Array.from(value));
         markFieldTouched('associatedEntry');
@@ -258,19 +255,11 @@ export default function UploadDigestModal({
                     // Close modal after successful upload
                     setTimeout(() => {
                         closeModal();
-                    }, 1500);
-                },
-                {
-                    onError: (err: any) => {
-                        console.error('Upload error:', err);
-                        setAlert({
-                            color: 'red',
-                            message: `Upload failed: ${err.message || 'Unknown error'} `,
-                            show: true,
-                        });
-                    },
+                    }, 1000);
                 },
             );
+        } catch (error) {
+            toast.error(`Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsUploading(false);
         }
@@ -347,20 +336,16 @@ export default function UploadDigestModal({
 
             <form onSubmit={onSubmit} className='w-full'>
                 {/* Digest Title Field */}
-                <div className='mb-5'>
-                    <label
-                        className={`cradle-label mb-2 block ${titleError ? 'text-red-700' : ''}`}
-                    >
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='digest-title' className={titleError ? 'text-red-700' : ''}>
                         Digest Title *
-                    </label>
-                    <input
+                    </Label>
+                    <Input
+                        id='digest-title'
                         type='text'
                         value={formValues.title}
                         onChange={handleTitleChange}
-                        className={getFieldErrorClasses(
-                            !!titleError,
-                            'cradle-input w-full',
-                        )}
+                        className={titleError ? 'border-red-300' : ''}
                         placeholder='Enter digest title'
                         aria-invalid={titleError ? 'true' : 'false'}
                         aria-describedby={titleError ? 'title-error' : undefined}
@@ -372,12 +357,10 @@ export default function UploadDigestModal({
                 </div>
 
                 {/* Data Type Selector */}
-                <div className='mb-5'>
-                    <label
-                        className={`cradle-label mb-2 block ${dataTypeError ? 'text-red-700' : ''}`}
-                    >
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='data-type' className={dataTypeError ? 'text-red-700' : ''}>
                         Data Type *
-                    </label>
+                    </Label>
                     <div
                         className={
                             dataTypeError
@@ -385,19 +368,14 @@ export default function UploadDigestModal({
                                 : ''
                         }
                     >
-                        <Selector
+                        <ShadcnSelect
                             value={formValues.dataType}
                             onChange={handleDataTypeChange}
                             fetchOptions={fetchDigestTypes}
                             placeholder='Select digest type'
                             className='w-full'
-                            usePortal={false}
-                            isMulti={false}
-                            aria-invalid={dataTypeError ? 'true' : 'false'}
-                            aria-describedby={
-                                dataTypeError ? 'dataType-error' : undefined
-                            }
-                            isDisabled={isUploading}
+                            width='w-full'
+                            disabled={isUploading}
                         />
                     </div>
                     {dataTypeError && (
@@ -409,14 +387,13 @@ export default function UploadDigestModal({
 
                 {/* File Upload Area */}
                 <div className='mb-5'>
-                    <label
-                        className={`cradle-label mb-2 block ${filesError ? 'text-red-700' : ''}`}
-                    >
+                    <Label htmlFor='file-upload' className={filesError ? 'text-red-700' : ''}>
                         Upload File *
-                    </label>
+                    </Label>
                     <div className='flex gap-2 items-stretch'>
                         <input
                             ref={fileInputRef}
+                            id='file-upload'
                             type='file'
                             onChange={handleFileChange}
                             className={`flex-1 text-sm text-cradle-text-primary cursor-pointer
@@ -441,12 +418,10 @@ export default function UploadDigestModal({
                 </div>
 
                 {/* Associated Entries Selector */}
-                <div className='mb-5'>
-                    <label
-                        className={`cradle-label mb-2 block ${associatedEntryError ? 'text-red-700' : ''}`}
-                    >
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='associated-entries' className={associatedEntryError ? 'text-red-700' : ''}>
                         Associated Entries
-                    </label>
+                    </Label>
                     <div
                         className={
                             associatedEntryError
@@ -454,20 +429,19 @@ export default function UploadDigestModal({
                                 : ''
                         }
                     >
-                        <Selector
-                            value={formValues.associatedEntry}
-                            onChange={handleAssociatedEntriesChange}
+                        <ShadcnSelect
+                            values={formValues.associatedEntry || []}
+                            onMultiChange={handleAssociatedEntriesChange}
                             fetchOptions={fetchRelatedEntries}
-                            isLoading={entriesLoading}
                             isMulti={true}
-                            usePortal={false}
                             placeholder={
                                 formValues.dataType?.inferEntities
                                     ? 'Select entries (disabled)'
                                     : 'Select entries'
                             }
                             className='w-full'
-                            isDisabled={
+                            width='w-full'
+                            disabled={
                                 !formValues.dataType ||
                                 formValues.dataType.inferEntities ||
                                 isUploading
@@ -487,22 +461,29 @@ export default function UploadDigestModal({
                     )}
                 </div>
 
-                <AlertBox alert={alert} />
+                {alert.show && (
+                    <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                        <WarningCircle />
+                        <AlertDescription>{alert.message}</AlertDescription>
+                    </AlertComponent>
+                )}
 
                 {/* Footer */}
-                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                    <button
+                <div className='flex justify-end gap-2 mt-4'>
+                    <Button
                         onClick={closeModal}
                         disabled={isUploading}
                         type='button'
-                        className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                        variant='outline'
+                        size='sm'
                     >
                         Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type='submit'
                         disabled={isUploading}
-                        className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                        variant='default'
+                        size='sm'
                         aria-label={isUploading ? 'Uploading file' : 'Upload file'}
                     >
                         {isUploading ? (
@@ -516,7 +497,7 @@ export default function UploadDigestModal({
                                 Upload
                             </>
                         )}
-                    </button>
+                    </Button>
                 </div>
             </form>
         </div>

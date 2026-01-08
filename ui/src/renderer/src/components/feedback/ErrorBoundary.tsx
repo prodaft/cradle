@@ -1,4 +1,6 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -35,18 +37,19 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             // Fallback UI
             return (
                 <div className='flex flex-col items-center justify-center h-full p-8 text-center'>
-                    <div className='cradle-card cradle-card-compact max-w-md'>
-                        <div className='cradle-card-header'>
-                            <span className='cradle-text-error'>
+                    <Card className='cradle-card-compact max-w-md'>
+                        <CardHeader>
+                            <CardTitle className='cradle-text-error'>
                                 Something went wrong
-                            </span>
-                        </div>
-                        <div className='cradle-card-body'>
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
                             <p className='cradle-text-secondary mb-4'>
                                 This tab encountered an error and couldn't be displayed.
                             </p>
-                            <button
-                                className='cradle-btn cradle-btn-primary'
+                            <Button
+                                variant='default'
+                                size='default'
                                 onClick={() => {
                                     this.setState({
                                         hasError: false,
@@ -56,9 +59,9 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                                 }}
                             >
                                 Try Again
-                            </button>
-                        </div>
-                    </div>
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </div>
             );
         }

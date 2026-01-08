@@ -1,11 +1,12 @@
+import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
 import type { Alert } from '@/types';
-import AlertBox from '@components/base/Alert/AlertBox';
-import Selector from '@components/forms/Selector';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
+import ShadcnSelect from '@components/forms/ShadcnSelect';
 import { Upload } from 'iconoir-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { MultiValue } from 'react-select';
 import * as Yup from 'yup';
 
 interface DataTypeOption {
@@ -176,7 +177,7 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
     };
 
     const handleAssociatedEntriesChange = (
-        value: MultiValue<AssociatedEntryOption>,
+        value: AssociatedEntryOption[],
     ) => {
         updateFormValue('associatedEntry', Array.from(value));
         markFieldTouched('associatedEntry');
@@ -358,17 +359,13 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                                 : ''
                         }
                     >
-                        <Selector
+                        <ShadcnSelect
                             value={formValues.dataType}
                             onChange={handleDataTypeChange}
                             staticOptions={dataTypeOptions}
                             placeholder='Select digest type'
                             className='w-full'
-                            isMulti={false}
-                            aria-invalid={dataTypeError ? 'true' : 'false'}
-                            aria-describedby={
-                                dataTypeError ? 'dataType-error' : undefined
-                            }
+                            width='w-full'
                         />
                     </div>
                     {dataTypeError && (
@@ -423,11 +420,10 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                                 : ''
                         }
                     >
-                        <Selector
-                            value={formValues.associatedEntry}
-                            onChange={handleAssociatedEntriesChange}
+                        <ShadcnSelect
+                            values={formValues.associatedEntry || []}
+                            onMultiChange={handleAssociatedEntriesChange}
                             fetchOptions={fetchRelatedEntries}
-                            isLoading={entriesLoading}
                             isMulti={true}
                             placeholder={
                                 formValues.dataType?.inferEntities
@@ -435,11 +431,11 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                                     : 'Select entries'
                             }
                             className='w-full'
-                            isDisabled={
+                            width='w-full'
+                            disabled={
                                 !formValues.dataType ||
                                 formValues.dataType.inferEntities
                             }
-                            aria-invalid={associatedEntryError ? 'true' : 'false'}
                             aria-describedby={
                                 associatedEntryError
                                     ? 'associatedEntry-error'
@@ -456,15 +452,12 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
 
                 {/* Submit Button */}
                 <div className='col-span-1 flex items-end'>
-                    <button
+                    <Button
                         type='submit'
+                        variant='default'
                         disabled={isUploading}
-                        className={`w-full btn flex items-center justify-center  ${
-                            isUploading
-                                ? 'opacity-50 cursor-not-allowed'
-                                : hasErrors
-                                  ? 'hover:bg-red-800 text-white'
-                                  : 'text-white'
+                        className={`w-full flex items-center justify-center ${
+                            hasErrors ? 'hover:bg-red-800' : ''
                         }`}
                         aria-label={isUploading ? 'Uploading file' : 'Upload file'}
                     >
@@ -479,10 +472,15 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                                 Upload
                             </>
                         )}
-                    </button>
+                    </Button>
                 </div>
             </div>
-            <AlertBox alert={alert} />
+            {alert.show && (
+                <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                    <WarningCircle />
+                    <AlertDescription>{alert.message}</AlertDescription>
+                </AlertComponent>
+            )}
         </form>
     );
 }

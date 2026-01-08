@@ -1,29 +1,23 @@
 import { useModal } from '@/contexts/ui/ModalContext';
+import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
-import {
-    ActionBar,
-    ActionBarDivider,
-    ActionBarSearch,
-    CollapsibleActionGroup,
-} from '@components/base/ActionBar/ActionBar';
-import ListView, { DateRangeFilter } from '@components/base/ListView/ListView';
+import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { DataTable, type BulkAction } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DateRangeFilter } from '@components/base/ListView/types';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
-import {
-    InfoCircleSolid,
-    Trash,
-    WarningCircleSolid,
-    WarningTriangleSolid,
-} from 'iconoir-react';
-import React, { useMemo, useState } from 'react';
+import { InfoCircleSolid, PlusCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import React, { useCallback, useMemo, useState } from 'react';
+import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface DataTypeOption {
     value: string;
@@ -132,35 +126,30 @@ function DigestList({
         }
     };
 
-    const columns: Array<{
-        key: string;
-        label: string | React.ReactNode;
-        filterType?: 'text' | 'date';
-        sortable?: boolean;
-    }> = [
-        {
-            key: 'title',
-            label: (
-                <div className='flex items-center gap-2'>
-                    <StatusHeaderDropdown
-                        onStatusChange={handleStatusChange}
-                        status={columnFilters.status || 'all'}
-                        statusOptions={['all', 'done', 'working', 'error']}
-                    />
-                    <span>Title</span>
-                </div>
-            ),
+    // Convert sortField and sortDirection to TanStack Table sorting state
+    const sorting = useMemo<SortingState>(() => {
+        const columnId = Object.keys(sortFieldMapping).find(
+            (key) => sortFieldMapping[key] === sortField
+        ) || sortField;
+        
+        return columnId ? [{
+            id: columnId,
+            desc: sortDirection === 'desc',
+        }] : [];
+    }, [sortField, sortDirection]);
+
+    const handleSortingChange = useCallback(
+        (newSorting: SortingState) => {
+            if (newSorting.length === 0) {
+                onSort('created_at', 'desc');
+            } else {
+                const sort = newSorting[0];
+                const apiField = sortFieldMapping[sort.id] || sort.id;
+                onSort(apiField, sort.desc ? 'desc' : 'asc');
+            }
         },
-        {
-            key: 'type',
-            label: 'Type',
-        },
-        { key: 'user', label: 'User', filterType: 'text' as const },
-        { key: 'warnings', label: 'Warnings' },
-        { key: 'errors', label: 'Errors' },
-        { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
-        { key: 'actions', label: '', sortable: false },
-    ];
+        [onSort],
+    );
 
     // Define filterable columns with their handlers
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
@@ -240,122 +229,223 @@ function DigestList({
 
         const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
         const tooltipContent = errorMessage || statusCapitalized;
-        const tooltipColor =
-            status === 'error' ? 'error' : status === 'waiting' ? 'warning' : 'primary';
+        const tooltipColorClass = status === 'error' ? 'bg-red-500 text-white' : status === 'waiting' ? 'bg-yellow-500 text-white' : '';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
-                <Tooltip
-                    content={tooltipContent}
-                    color={tooltipColor}
-                    showArrow={false}
-                >
-                    <span className='inline-flex items-center align-middle flex-shrink-0'>
-                        {icon}
-                    </span>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span className='inline-flex items-center align-middle flex-shrink-0'>
+                            {icon}
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent className={tooltipColorClass}>
+                        {tooltipContent}
+                    </TooltipContent>
                 </Tooltip>
             );
         }
 
         return (
-            <Tooltip content={tooltipContent} showArrow={false}>
-                <span className='inline-flex items-center align-middle flex-shrink-0'>
-                    {icon}
-                </span>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className='inline-flex items-center align-middle flex-shrink-0'>
+                        {icon}
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {tooltipContent}
+                </TooltipContent>
             </Tooltip>
         );
     };
 
-    const renderRow = (
-        digest: BaseDigest,
-        index: number,
-        selectProps: SelectProps = {},
-    ) => {
-        const { enableMultiSelect, isSelected, onSelect } = selectProps;
-
-        return (
-            <tr key={digest.id}>
-                {enableMultiSelect && (
-                    <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                        <div className='flex items-center'>
-                            <input
-                                type='checkbox'
-                                className='cradle-checkbox'
-                                checked={isSelected}
-                                onChange={onSelect}
-                            />
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo<ColumnDef<BaseDigest>[]>(
+        () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                accessorKey: 'title',
+                id: 'title',
+                header: () => (
+                    <span>Title</span>
+                ),
+                cell: ({ row }) => (
+                    <div className='truncate max-w-xs' title={row.original.title}>
+                        <div className='flex items-center gap-2 min-w-0'>
+                            <span className='inline-flex items-center flex-shrink-0'>
+                                {getStatusIcon(row.original.status, (row.original as any).errorMessage)}
+                            </span>
+                            <span className='truncate'>{row.original.title}</span>
                         </div>
-                    </td>
-                )}
-                <td className='truncate max-w-xs' title={digest.title}>
-                    <div className='flex items-center gap-2 min-w-0'>
-                        <span className='inline-flex items-center flex-shrink-0'>
-                            {getStatusIcon(digest.status, (digest as any).errorMessage)}
-                        </span>
-                        <span className='truncate'>{digest.title}</span>
                     </div>
-                </td>
-                <td className='truncate w-24' title={digest.displayName}>
-                    {truncateText(digest.displayName || '', 24)}
-                </td>
-                <td className='truncate w-32' title={digest.userDetail?.username}>
-                    {truncateText(digest.userDetail?.username || '', 16)}
-                </td>
-                <td className='w-8'>
-                    <Tooltip
-                        content={
-                            digest.warnings?.length > 0
-                                ? digest.warnings.slice(0, 10).join('\n') +
-                                  (digest.warnings.length > 10 ? '...' : '')
-                                : undefined
-                        }
-                        side='left'
-                        color='warning'
-                    >
-                        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-yellow-600'>
-                            {digest.warnings?.length || 0}
-                        </span>
-                    </Tooltip>
-                </td>
-                <td className='w-8'>
-                    <Tooltip
-                        content={
-                            digest.errors?.length > 0
-                                ? digest.errors.slice(0, 10).join('\n') +
-                                  (digest.errors.length > 10 ? '\n...' : '')
-                                : undefined
-                        }
-                        side='left'
-                        color='error'
-                    >
-                        <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-red-600'>
-                            {digest.errors?.length || 0}
-                        </span>
-                    </Tooltip>
-                </td>
-                <td className='w-36'>
-                    {digest.createdAt ? formatDate(digest.createdAt) : 'N/A'}
-                </td>
-                <td className='w-8 text-right'>
-                    <div className='flex justify-end'>
-                        <Tooltip content='Delete Digest'>
-                            <button
-                                className='btn btn-ghost btn-xs text-red-600 hover:text-red-500  p-1'
-                                onClick={() =>
-                                    setModal(ConfirmDeletionModal, {
-                                        text: 'Are you sure you want to delete this digest?',
-                                        onConfirm: () => handleDelete(digest.id!),
-                                    })
-                                }
-                            >
-                                <Trash width='18' height='18' />
-                            </button>
+                ),
+            },
+            {
+                accessorKey: 'type',
+                id: 'type',
+                header: 'Type',
+                cell: ({ row }) => (
+                    <div className='truncate w-24' title={row.original.displayName}>
+                        {truncateText(row.original.displayName || '', 24)}
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'user',
+                id: 'user',
+                header: ({ column }) => {
+                    const filterValue = columnFilters.user as string;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DataTableColumnHeader column={column} title="User" />
+                            {filterValue && (
+                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            )}
+                        </div>
+                    );
+                },
+                cell: ({ row }) => (
+                    <div className='truncate w-32' title={row.original.userDetail?.username}>
+                        {truncateText(row.original.userDetail?.username || '', 16)}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'warnings',
+                id: 'warnings',
+                header: 'Warnings',
+                cell: ({ row }) => (
+                    <div className='w-8'>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-yellow-600'
+                                >
+                                    {row.original.warnings?.length || 0}
+                                </span>
+                            </TooltipTrigger>
+                            {row.original.warnings?.length > 0 && (
+                                <TooltipContent side='left' className='bg-yellow-500 text-white'>
+                                    {row.original.warnings.slice(0, 10).join('\n') +
+                                        (row.original.warnings.length > 10 ? '...' : '')}
+                                </TooltipContent>
+                            )}
                         </Tooltip>
                     </div>
-                </td>
-            </tr>
-        );
-    };
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'errors',
+                id: 'errors',
+                header: 'Errors',
+                cell: ({ row }) => (
+                    <div className='w-8'>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-red-600'
+                                >
+                                    {row.original.errors?.length || 0}
+                                </span>
+                            </TooltipTrigger>
+                            {row.original.errors?.length > 0 && (
+                                <TooltipContent side='left' className='bg-red-500 text-white'>
+                                    {row.original.errors.slice(0, 10).join('\n') +
+                                        (row.original.errors.length > 10 ? '\n...' : '')}
+                                </TooltipContent>
+                            )}
+                        </Tooltip>
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'createdAt',
+                id: 'createdAt',
+                header: ({ column }) => {
+                    const filterValue = columnFilters.createdAt as DateRangeFilter;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DataTableColumnHeader column={column} title="Created At" />
+                            {(filterValue?.from && filterValue?.to) && (
+                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            )}
+                        </div>
+                    );
+                },
+                cell: ({ row }) => (
+                    <div className='w-36'>
+                        {row.original.createdAt ? formatDate(row.original.createdAt) : 'N/A'}
+                    </div>
+                ),
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    const digest = row.original;
+                    return (
+                        <div className='w-8 text-right' onClick={(e) => e.stopPropagation()}>
+                            <div className='flex justify-end'>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='text-red-600 hover:text-red-500 p-1'
+                                            onClick={() =>
+                                                setModal(ConfirmDeletionModal, {
+                                                    text: 'Are you sure you want to delete this digest?',
+                                                    onConfirm: () => handleDelete(digest.id!),
+                                                })
+                                            }
+                                        >
+                                            <Trash width='18' height='18' />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Delete Digest
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [columnFilters, handleStatusChange, getStatusIcon, setModal, handleDelete],
+    );
+
+    // Handle row selection
+    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
+        setSelectedDigests(selectedIds);
+    }, [setSelectedDigests]);
 
     const handleDeleteSelected = async (selectedIds: string[]) => {
         setModal(ConfirmDeletionModal, {
@@ -415,29 +505,6 @@ function DigestList({
             <ActionBar
                 left={
                     <>
-                        <CollapsibleActionGroup
-                            selectedCount={selectedDigests.length}
-                            itemLabel='digest'
-                            actions={[
-                                {
-                                    id: 'delete',
-                                    tooltip:
-                                        selectedDigests.length > 0
-                                            ? `Delete ${selectedDigests.length} digest${selectedDigests.length > 1 ? 's' : ''}`
-                                            : 'Select digests to delete',
-                                    icon: <Trash width={20} height={20} />,
-                                    onClick: () =>
-                                        handleDeleteSelected(selectedDigests),
-                                    disabled:
-                                        loading ||
-                                        digests.length === 0 ||
-                                        selectedDigests.length === 0,
-                                    iconActive: selectedDigests.length > 0,
-                                },
-                            ]}
-                        />
-
-                        <ActionBarDivider />
 
                         <ActionBarSearch
                             placeholder='Search by title...'
@@ -463,45 +530,38 @@ function DigestList({
                 }
                 right={
                     <>
-                        <Tooltip content='Upload new digest'>
-                            <button
-                                type='button'
-                                onClick={() => {
-                                    setModal(UploadDigestModal, {
-                                        dataTypeOptions,
-                                        onUpload: onUpload || onDigestDelete,
-                                    });
-                                }}
-                                disabled={loading}
-                                className='flex items-center gap-1.5 px-4 h-9 text-sm rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                            >
-                                New
-                            </button>
-                        </Tooltip>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status || 'all'}
+                            statusOptions={['all', 'done', 'working', 'error']}
+                        />
                     </>
                 }
             />
 
-            <ListView
-                data={digests}
+            <DataTable
                 columns={columns}
-                renderRow={renderRow}
+                data={digests}
                 loading={loading}
-                sortField={sortField}
-                sortDirection={sortDirection}
-                onSort={onSort}
-                sortFieldMapping={sortFieldMapping}
                 emptyMessage='No digests found!'
-                tableClassName='table table-zebra'
-                enableMultiSelect={true}
-                selectedIds={selectedDigests}
-                setSelected={(ids) =>
-                    setSelectedDigests(
-                        ids.filter((id): id is string => typeof id === 'string'),
-                    )
-                }
-                filterableColumns={filterableColumns}
-                filterValues={columnFilters}
+                enableRowSelection={true}
+                selectedRows={selectedDigests}
+                onRowSelectionChange={handleRowSelectionChange}
+                sorting={sorting}
+                onSortingChange={handleSortingChange}
+                manualPagination={true}
+                bulkActions={[
+                    {
+                        id: 'delete',
+                        label: 'Delete digests',
+                        icon: <Trash width={18} height={18} />,
+                        onClick: () => handleDeleteSelected(selectedDigests),
+                        disabled: loading || digests.length === 0 || selectedDigests.length === 0,
+                        variant: 'destructive',
+                    },
+                ]}
+                itemLabel="digest"
+                manualSorting={true}
             />
 
             <PaginationWrapper

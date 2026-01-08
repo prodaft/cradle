@@ -3,8 +3,10 @@ import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
-import Collapsible from '@components/base/Collapsible/Collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 
 interface ReferenceTreeProps {
@@ -92,78 +94,106 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
     return (
         <>
             {note?.entries && note.entries.length > 0 && (
-                <div
-                    className={`dark:text-zinc-300 text-xs w-full pt-1 pl-3 ${className}`}
-                >
-                    <Collapsible label='References' open={false}>
-                        {new SubtypeHierarchy(note.entries).convert(
-                            // --- Render for internal nodes (categories that have child categories) ---
-                            (value, children) => (
-                                <div
-                                    className='dark:text-zinc-300 text-xs w-full pt-1'
-                                    key={value}
-                                >
-                                    <Collapsible label={value}>
-                                        <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
-                                            {children}
-                                        </div>
-                                    </Collapsible>
-                                </div>
-                            ),
-                            // --- Render for leaf nodes (concrete subtypes that reference actual entries) ---
-                            (value, path) => (
-                                <div
-                                    className='dark:text-zinc-300 text-xs w-full pt-1'
-                                    key={value}
-                                >
-                                    <Collapsible
-                                        label={value}
-                                        onChangeCollapse={() =>
-                                            fetchReferences(`${path}${value}`, false)
-                                        }
-                                    >
-                                        <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center'>
-                                            {/* Render the actual references */}
-                                            {references[`${path}${value}`]?.map(
-                                                (entry) => (
-                                                    <Link
-                                                        key={`${entry.name}:${entry.subtype}`}
-                                                        to={createDashboardLink(entry)}
-                                                        className='text-zinc-100 dark:text-zinc-300 hover:underline hover:text-cradle2 bg-cradle3 bg-opacity-60 h-6 px-1 py-1 mx-1 my-1 rounded-md'
-                                                    >
-                                                        {truncateText(entry.name, 30)}
-                                                    </Link>
-                                                ),
-                                            )}
-
-                                            <span className='h-6 px-1 py-1 mx-1 my-1'>
-                                                {/* Render pagination logic */}
-                                                {nextPageStatus[`${path}${value}`] ===
-                                                'loading' ? (
-                                                    <div className='spinner-dot-pulse spinner-sm'>
-                                                        <div className='spinner-pulse-dot spinner-sm '></div>
+                <div className={`dark:text-zinc-300 text-xs w-full pt-1 pl-3 ${className}`}>
+                    <Collapsible defaultOpen={false}>
+                        <CollapsibleTrigger asChild>
+                            <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
+                                <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                <span>References</span>
+                            </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                            <div className='mt-4'>
+                                {new SubtypeHierarchy(note.entries).convert(
+                                    // --- Render for internal nodes (categories that have child categories) ---
+                                    (value, children) => (
+                                        <div
+                                            className='dark:text-zinc-300 text-xs w-full pt-1'
+                                            key={value}
+                                        >
+                                            <Collapsible>
+                                                <CollapsibleTrigger asChild>
+                                                    <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                                        <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
+                                                        <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                                        <span>{value}</span>
+                                                    </Button>
+                                                </CollapsibleTrigger>
+                                                <CollapsibleContent>
+                                                    <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
+                                                        {children}
                                                     </div>
-                                                ) : nextPageStatus[
-                                                      `${path}${value}`
-                                                  ] !== 'end' ? (
-                                                    <span
-                                                        onClick={() =>
-                                                            fetchReferences(
-                                                                `${path}${value}`,
-                                                                true,
-                                                            )
-                                                        }
-                                                        className='dark:text-zinc-300 underline hover:text-cradle2 cursor-pointer'
-                                                    >
-                                                        Load more...
-                                                    </span>
-                                                ) : null}
-                                            </span>
+                                                </CollapsibleContent>
+                                            </Collapsible>
                                         </div>
-                                    </Collapsible>
-                                </div>
-                            ),
-                        )}
+                                    ),
+                                    // --- Render for leaf nodes (concrete subtypes that reference actual entries) ---
+                                    (value, path) => {
+                                        const fullPath = `${path}${value}`;
+                                        return (
+                                            <div
+                                                className='dark:text-zinc-300 text-xs w-full pt-1'
+                                                key={fullPath}
+                                            >
+                                                <Collapsible
+                                                    onOpenChange={(open) => {
+                                                        if (open) {
+                                                            fetchReferences(fullPath, false);
+                                                        }
+                                                    }}
+                                                >
+                                                    <CollapsibleTrigger asChild>
+                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
+                                                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                                            <span>{value}</span>
+                                                        </Button>
+                                                    </CollapsibleTrigger>
+                                                    <CollapsibleContent>
+                                                        <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
+                                                            {/* Render the actual references */}
+                                                            {references[fullPath]?.map((entry) => (
+                                                                <Link
+                                                                    key={`${entry.name}:${entry.subtype}`}
+                                                                    to={createDashboardLink(entry)}
+                                                                    className='text-zinc-100 dark:text-zinc-300 hover:underline hover:text-cradle2 bg-cradle3 bg-opacity-60 h-6 px-1 py-1 mx-1 my-1 rounded-md'
+                                                                >
+                                                                    {truncateText(entry.name, 30)}
+                                                                </Link>
+                                                            ))}
+
+                                                            <span className='h-6 px-1 py-1 mx-1 my-1'>
+                                                                {/* Render pagination logic */}
+                                                                {nextPageStatus[fullPath] ===
+                                                                    'loading' ? (
+                                                                    <div className='cradle-spinner-dot-pulse cradle-spinner-sm'>
+                                                                        <div className='cradle-spinner-pulse-dot cradle-spinner-sm '></div>
+                                                                    </div>
+                                                                ) : nextPageStatus[fullPath] !==
+                                                                    'end' ? (
+                                                                    <span
+                                                                        onClick={() =>
+                                                                            fetchReferences(
+                                                                                fullPath,
+                                                                                true,
+                                                                            )
+                                                                        }
+                                                                        className='dark:text-zinc-300 underline hover:text-cradle2 cursor-pointer'
+                                                                    >
+                                                                        Load more...
+                                                                    </span>
+                                                                ) : null}
+                                                            </span>
+                                                        </div>
+                                                    </CollapsibleContent>
+                                                </Collapsible>
+                                            </div>
+                                        );
+                                    },
+                                )}
+                            </div>
+                        </CollapsibleContent>
                     </Collapsible>
                 </div>
             )}

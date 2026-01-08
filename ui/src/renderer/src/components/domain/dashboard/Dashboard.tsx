@@ -1,15 +1,12 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { EntryResponse } from '@services/cradle/models';
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useParams } from 'react-router-dom';
 import NotFound from '../../feedback/NotFound';
-import { Tab, Tabs } from '../../layout/Tabs/Tabs';
-import { TabClasses } from '../../layout/Tabs/types';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './Relations';
@@ -32,12 +29,9 @@ import Relations from './Relations';
 export default function Dashboard() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const location = useLocation();
-    const { params } = useTabContext();
-    const subtype = params.subtype;
-    const name = params.name;
+    const { subtype, name } = useParams<{ subtype: string; name: string }>();
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState<EntryResponse | null>(null);
-    const { notify } = useNotif();
     const { queryApi, entriesApi } = useApi();
     const { navigate } = useCradleNavigate();
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -76,10 +70,7 @@ export default function Dashboard() {
         if (!contentObject) return;
         // Only entities can be deleted (not artifacts)
         if (contentObject.type !== 'entity') {
-            notify({
-                type: 'error',
-                text: 'Only entities can be deleted.',
-            });
+            toast.error('Only entities can be deleted.');
             return;
         }
 
@@ -110,8 +101,8 @@ export default function Dashboard() {
             >
                 {contentObject == null ? (
                     <div className='flex items-center justify-center h-full'>
-                        <div className='spinner-dot-pulse spinner-xl'>
-                            <div className='spinner-pulse-dot'></div>
+                        <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                            <div className='cradle-spinner-pulse-dot'></div>
                         </div>
                     </div>
                 ) : (
@@ -135,22 +126,20 @@ export default function Dashboard() {
                         )}
                         {contentObject.id && (
                             <div className='cradle-card'>
-                                <Tabs
-                                    defaultTab={0}
-                                    queryParam={'tab'}
-                                    tabClass={TabClasses.UNDERLINE}
-                                    perTabClass='w-[33%] justify-center'
-                                >
-                                    <Tab title='Notes' classes='pt-4'>
+                                <div className='flex flex-col space-y-4 pt-4'>
+                                    <div>
+                                        <h2 className='text-lg font-semibold mb-4'>Notes</h2>
                                         <Notes obj={contentObject} />
-                                    </Tab>
-                                    <Tab title='Relations' classes='pt-4'>
+                                    </div>
+                                    <div>
+                                        <h2 className='text-lg font-semibold mb-4'>Relations</h2>
                                         <Relations obj={contentObject} />
-                                    </Tab>
-                                    <Tab title='Files' classes='pt-4'>
+                                    </div>
+                                    <div>
+                                        <h2 className='text-lg font-semibold mb-4'>Files</h2>
                                         <Files obj={contentObject} />
-                                    </Tab>
-                                </Tabs>
+                                    </div>
+                                </div>
                             </div>
                         )}
                     </div>

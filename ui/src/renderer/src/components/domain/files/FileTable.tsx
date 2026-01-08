@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { ConfirmDeletionModal } from '@/components/modals';
 import { useModal } from '@/contexts';
 import { useApi } from '@/hooks';
@@ -5,8 +6,11 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import useAuth from '@/hooks/auth/useAuth';
 import type { FileReference, StateSetter } from '@/types';
 import { createDownloadPath } from '@/utils/links';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
+import { DataTable } from '@/components/ui/data-table';
+import { useMemo } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
 
 /**
  * This component is used to display a table of fileData.
@@ -70,93 +74,151 @@ export default function FileTable({
         document.body.removeChild(link);
     };
 
-    return (
-        <>
-            <div className='w-full h-full mx-auto bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
-                <div className='overflow-x-auto'>
-                    <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>
-                        {(!fileData || fileData.length === 0) && (
-                            <p className='ml-4 mt-2 dark:text-zinc-200'>
-                                No files uploaded yet.
-                            </p>
-                        )}
-                        {Array.from(fileData).map((data, index) => (
-                            <div
-                                key={index}
-                                className='py-1 border-b dark:border-zinc-600'
-                            >
-                                <div className='dark:text-zinc-200 flex items-center justify-between w-full'>
-                                    <div className='truncate px-3'>{data.fileName}</div>
-                                    <div className='dark:text-zinc-200 flex items-center justify-end pr-4 ml-auto'>
-                                        <Tooltip content='Insert link into text'>
-                                            <span>
-                                                <button
-                                                    id={`insert-${index}`}
-                                                    data-testid={`insert-${index}`}
-                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
-                                                    onClick={() =>
-                                                        insertTextCallback(
-                                                            `[${data.fileName}][${data.id}-${data.fileName}]`,
-                                                        )
-                                                    }
-                                                >
-                                                    <InputField width='20px' />
-                                                </button>
-                                            </span>
-                                        </Tooltip>
-                                        <Tooltip content='Copy to clipboard'>
-                                            <span>
-                                                <button
-                                                    id={`copy-${index}`}
-                                                    data-testid={`copy-${index}`}
-                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
-                                                    onClick={() =>
-                                                        copyToClipboard(
-                                                            `[${data.fileName}][${data.id}-${data.fileName}]`,
-                                                        )
-                                                    }
-                                                >
-                                                    <PasteClipboard width='20px' />
-                                                </button>
-                                            </span>
-                                        </Tooltip>
-                                        <Tooltip content='Download'>
-                                            <span>
-                                                <button
-                                                    id={`download-${index}`}
-                                                    data-testid={`download-${index}`}
-                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
-                                                    onClick={() => handleDownload(data)}
-                                                >
-                                                    <Download width='20px' />
-                                                </button>
-                                            </span>
-                                        </Tooltip>
-                                        <Tooltip content='Remove'>
-                                            <span>
-                                                <button
-                                                    id={`delete-${index}`}
-                                                    data-testid={`delete-${index}`}
-                                                    className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors bg-zinc-3'
-                                                    onClick={() => {
-                                                        setModal(ConfirmDeletionModal, {
-                                                            text: 'Are you sure you want to delete this file?',
-                                                            onConfirm: () =>
-                                                                handleDelete(data),
-                                                        });
-                                                    }}
-                                                >
-                                                    <Trash width='20px' />
-                                                </button>
-                                            </span>
-                                        </Tooltip>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo<ColumnDef<FileReference>[]>(
+        () => [
+            {
+                accessorKey: 'tag',
+                id: 'tag',
+                header: 'Tag',
+                cell: ({ row }) => (
+                    <div className='dark:text-zinc-200 flex items-center'>
+                        <div className='max-w-150px truncate px-3'>
+                            {row.original.minioFileName}
+                        </div>
                     </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'fileName',
+                id: 'fileName',
+                header: 'File Name',
+                cell: ({ row }) => {
+                    const data = row.original;
+                    return (
+                        <div className='dark:text-zinc-200 flex items-center justify-between'>
+                            <div className='max-w-150px truncate pr-3'>
+                                {data.fileName}
+                            </div>
+                            <div className='dark:text-zinc-200 flex items-center justify-end pr-4'>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            id={`insert-${row.index}`}
+                                            data-testid={`insert-${row.index}`}
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                insertTextCallback(
+                                                    `[${data.fileName}][${data.minioFileName}]`,
+                                                );
+                                            }}
+                                        >
+                                            <InputField width='20px' />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Insert link into text
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            id={`copy-${row.index}`}
+                                            data-testid={`copy-${row.index}`}
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                copyToClipboard(
+                                                    `[${data.fileName}][${data.minioFileName}]`,
+                                                );
+                                            }}
+                                        >
+                                            <PasteClipboard width='20px' />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Copy to clipboard
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            id={`download-${row.index}`}
+                                            data-testid={`download-${row.index}`}
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await handleDownload(data);
+                                            }}
+                                        >
+                                            <Download width='20px' />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Download
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            id={`delete-${row.index}`}
+                                            data-testid={`delete-${row.index}`}
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setModal(ConfirmDeletionModal, {
+                                                    text: 'Are you sure you want to delete this file?',
+                                                    onConfirm: () => handleDelete(data),
+                                                });
+                                            }}
+                                        >
+                                            <Trash width='20px' />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Remove
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [copyToClipboard, handleDownload, handleDelete, insertTextCallback, setModal],
+    );
+
+    return (
+        <div className='w-full h-full mx-auto bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
+            <div className='overflow-x-auto'>
+                <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>
+                    {(!fileData || fileData.length === 0) ? (
+                        <p className='ml-4 mt-2 dark:text-zinc-200'>
+                            No files uploaded yet.
+                        </p>
+                    ) : (
+                        <DataTable
+                            columns={columns}
+                            data={fileData}
+                            loading={false}
+                            emptyMessage='No files uploaded yet.'
+                            manualPagination={true}
+                            manualSorting={true}
+                        />
+                    )}
                 </div>
             </div>
-        </>
+        </div>
     );
 }

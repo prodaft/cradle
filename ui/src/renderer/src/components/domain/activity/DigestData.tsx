@@ -1,9 +1,15 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
+import { useModal } from '@/contexts/ui/ModalContext';
 import type { Alert } from '@/types';
 import DigestList from '@components/domain/files/DigestList';
+import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { FilePlus } from 'lucide-react';
 import { debounce } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -37,9 +43,9 @@ type Digest = BaseDigest;
 
 export default function DigestData() {
     const [searchParams, setSearchParams] = useSearchParams();
-    const { notify } = useNotif();
     const { profile } = useProfile();
     const { intelioApi } = useApi();
+    const { setModal } = useModal();
 
     // Digest list state
     const [digests, setDigests] = useState<Digest[]>([]);
@@ -313,10 +319,7 @@ export default function DigestData() {
             setTotalCount(response.count || 0);
         } catch (error: any) {
             console.error('Failed to fetch digests', error);
-            notify({
-                type: 'error',
-                text: `Error fetching digests: ${error.message}`,
-            });
+            toast.error(`Error fetching digests: ${error.message}`);
             setDigests([]);
         } finally {
             setLoading(false);
@@ -355,26 +358,43 @@ export default function DigestData() {
         setPage(1); // Reset to first page when filters change
     };
 
+    const handleCreateDigest = () => {
+        setModal(UploadDigestModal, {
+            onUpload: () => {
+                fetchDigests();
+            },
+        });
+    };
+
     return (
         <div className='w-full h-full'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        Digest Data
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Browse & Manage Imported Data
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>Digest Data</h2>
+                    <p className='text-muted-foreground'>Browse & Manage Imported Data</p>
                 </div>
-                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
-                    <span className='font-semibold'>
-                        {digests.length === totalCount ||
-                        (digests.length === 0 && totalCount === 0)
-                            ? totalCount
-                            : `${digests.length}/${totalCount}`}
-                    </span>
-                    <span className='opacity-70'>digests</span>
+                <div className='flex gap-2'>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                onClick={handleCreateDigest}
+                                variant='default'
+                                className='space-x-1'
+                            >
+                                <span>New Digest</span>
+                                <FilePlus className='size-4' />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Upload a new digest file{' '}
+                            <KbdGroup>
+                                <Kbd>Ctrl</Kbd>
+                                <span>+</span>
+                                <Kbd>D</Kbd>
+                            </KbdGroup>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
 

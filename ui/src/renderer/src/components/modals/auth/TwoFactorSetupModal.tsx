@@ -1,8 +1,20 @@
-import AlertBox from '@/components/base/Alert/AlertBox';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import { QRCodeSVG } from 'qrcode.react';
 import { useEffect, useState } from 'react';
+import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+    Field,
+    FieldLabel,
+} from '@/components/ui/field';
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSlot,
+} from '@/components/ui/input-otp';
 
 /**
  * TwoFactorSetupModal component props
@@ -97,31 +109,22 @@ export default function TwoFactorSetupModal({
 
     if (loading) {
         return (
-            <div className='min-w-[450px] max-w-lg'>
-                <div className='flex items-end justify-between mb-4'>
-                    <div className='flex items-center gap-3'>
-                        <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                            Setting up Two-Factor Auth
-                        </h2>
-                    </div>
-                </div>
+            <>
+                <DialogHeader>
+                    <DialogTitle>Setting up Two-Factor Auth</DialogTitle>
+                </DialogHeader>
                 <div className='flex justify-center py-12'>
                     <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-cradle-accent-primary'></div>
                 </div>
-            </div>
+            </>
         );
     }
 
     return (
-        <div className='min-w-[450px] max-w-lg'>
-            {/* Header */}
-            <div className='flex items-end justify-between mb-4'>
-                <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                        {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
-                    </h2>
-                </div>
-            </div>
+        <>
+            <DialogHeader>
+                <DialogTitle>{isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth</DialogTitle>
+            </DialogHeader>
 
             {!isDisabling && (
                 <>
@@ -154,99 +157,55 @@ export default function TwoFactorSetupModal({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className='space-y-5'>
-                <div>
-                    <div className='flex gap-2 justify-center w-full'>
-                        {[0, 1, 2, 3, 4, 5].map((index) => (
-                            <input
-                                key={index}
-                                id={`twoFactorToken-${index}`}
-                                name={`twoFactorToken-${index}`}
-                                type='text'
-                                autoComplete='twoFactorToken'
-                                className='w-12 h-12 text-center text-lg font-mono rounded-lg border border-cradle-border-accent bg-cradle-bg-secondary/50 text-cradle-text-primary focus:border-cradle-accent-primary focus:ring-1 focus:ring-cradle-accent-primary outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                placeholder='0'
-                                pattern='[0-9]*'
-                                maxLength={1}
-                                value={verificationCode[index] || ''}
-                                onChange={(e) => {
-                                    const value = e.target.value.replace(/\D/g, '');
-                                    if (value.length <= 1) {
-                                        const newCode = verificationCode.split('');
-                                        newCode[index] = value;
-                                        setVerificationCode(newCode.join(''));
+                <DialogDescription>
+                    {isDisabling
+                        ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
+                        : 'Enter the 6-digit code from your authenticator app'}
+                </DialogDescription>
+                <Field>
+                    <InputOTP
+                        maxLength={6}
+                        value={verificationCode}
+                        onChange={(value) => setVerificationCode(value)}
+                        containerClassName="w-full"
+                    >
+                        <InputOTPGroup className="w-full">
+                            <InputOTPSlot index={0} className="flex-1 h-12" />
+                            <InputOTPSlot index={1} className="flex-1 h-12" />
+                            <InputOTPSlot index={2} className="flex-1 h-12" />
+                            <InputOTPSlot index={3} className="flex-1 h-12" />
+                            <InputOTPSlot index={4} className="flex-1 h-12" />
+                            <InputOTPSlot index={5} className="flex-1 h-12" />
+                        </InputOTPGroup>
+                    </InputOTP>
+                </Field>
 
-                                        // Auto-focus next input
-                                        if (value && index < 5) {
-                                            document
-                                                .getElementById(
-                                                    `twoFactorToken-${index + 1}`,
-                                                )
-                                                ?.focus();
-                                        }
-                                    }
-                                }}
-                                onKeyDown={(e) => {
-                                    // Handle backspace to go to previous input
-                                    if (
-                                        e.key === 'Backspace' &&
-                                        !verificationCode[index] &&
-                                        index > 0
-                                    ) {
-                                        document
-                                            .getElementById(
-                                                `twoFactorToken-${index - 1}`,
-                                            )
-                                            ?.focus();
-                                    }
-                                }}
-                                onPaste={(e) => {
-                                    e.preventDefault();
-                                    const pastedData = e.clipboardData
-                                        .getData('text')
-                                        .replace(/\D/g, '')
-                                        .slice(0, 6);
-                                    setVerificationCode(pastedData);
-                                    // Focus the last filled input or the first empty one
-                                    const focusIndex = Math.min(pastedData.length, 5);
-                                    document
-                                        .getElementById(`twoFactorToken-${focusIndex}`)
-                                        ?.focus();
-                                }}
-                                autoFocus={index === 0}
-                                required
-                            />
-                        ))}
-                    </div>
-                    <p className='text-xs text-cradle-text-tertiary text-center mt-3'>
-                        {isDisabling
-                            ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
-                            : 'Enter the 6-digit code from your authenticator app'}
-                    </p>
-                </div>
+                {alert.show && (
+                    <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                        <WarningCircle />
+                        <AlertDescription>{alert.message}</AlertDescription>
+                    </AlertComponent>
+                )}
 
-                <AlertBox alert={alert} />
-
-                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                    <button
+                <div className='flex justify-end gap-2 mt-4'>
+                    <Button
                         type='button'
-                        className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                        variant='outline'
+                        size='sm'
                         onClick={closeModal}
                     >
-                        <span>Cancel</span>
-                    </button>
-                    <button
+                        Cancel
+                    </Button>
+                    <Button
                         type='submit'
-                        className={`rounded-lg border bg-transparent transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5 ${
-                            isDisabling
-                                ? 'border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10'
-                                : 'border-cradle-accent-primary hover:bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                        }`}
+                        variant={isDisabling ? 'destructive' : 'default'}
+                        size='sm'
                         disabled={verificationCode.length !== 6}
                     >
-                        <span>{isDisabling ? 'Disable 2FA' : 'Enable'}</span>
-                    </button>
+                        {isDisabling ? 'Disable 2FA' : 'Enable'}
+                    </Button>
                 </div>
             </form>
-        </div>
+        </>
     );
 }

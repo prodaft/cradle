@@ -1,4 +1,5 @@
 import { EdgeRelation } from '@/services/cradle';
+import { Button } from '@/components/ui/button';
 import { ComponentType, MutableRefObject } from 'react';
 import GraphControl from './GraphControl';
 import { Edge, Node } from './graphFilterUtils';
@@ -68,29 +69,18 @@ export default function GraphQuery({
                 {/* Header with title and close button */}
                 <div className='flex justify-between items-center pl-4 pr-3 py-3'>
                     <h2 className='text-lg font-semibold'>{panelTitle}</h2>
-                    <button
+                    <Button
                         type='button'
-                        className='cradle-btn cradle-btn-secondary p-1.5 w-8 h-8 border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary flex items-center justify-center'
+                        variant='outline'
+                        size='icon'
+                        className='p-1.5 w-8 h-8'
                         title='Close panel'
                         onClick={onClosePanel}
                     >
-                        <svg
-                            width='16'
-                            height='16'
-                            stroke-width='1.5'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            xmlns='http://www.w3.org/2000/svg'
-                            color='currentColor'
-                        >
-                            <path
-                                d='M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426'
-                                stroke='currentColor'
-                                stroke-linecap='round'
-                                stroke-linejoin='round'
-                            ></path>
+                        <svg width="16" height="16" strokeWidth="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor">
+                            <path d="M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round"></path>
                         </svg>
-                    </button>
+                    </Button>
                 </div>
                 <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800' />
                 <GraphControl

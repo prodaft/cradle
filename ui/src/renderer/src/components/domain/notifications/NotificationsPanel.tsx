@@ -1,10 +1,11 @@
 import Loading from '@/components/base/Loading/Loading';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { Notification } from '@/services/cradle';
 import { useEffect, useState } from 'react';
 import NotificationCard from './NotificationCard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface NotificationsPanelProps {
     unreadNotificationsCount: number;
@@ -22,7 +23,6 @@ export default function NotificationsPanel({
     setUnreadNotificationsCount,
 }: NotificationsPanelProps) {
     const { notificationsApi } = useApi();
-    const { notify } = useNotif();
     const [loading, setLoading] = useState(false);
     const { execute } = useAPICall();
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -62,7 +62,7 @@ export default function NotificationsPanel({
             data-testid='notifications-panel'
         >
             {/* Notifications list */}
-            <div className='flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-2'>
+            <ScrollArea className='flex-1 overflow-x-hidden p-3 space-y-2'>
                 {notifications && notifications.length > 0 ? (
                     notifications.map((notification, index) => (
                         <NotificationCard
@@ -79,7 +79,7 @@ export default function NotificationsPanel({
                         {loading && <Loading />}
                     </div>
                 )}
-            </div>
+            </ScrollArea>
         </div>
     );
 }

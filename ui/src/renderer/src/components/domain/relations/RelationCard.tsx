@@ -7,7 +7,8 @@ import { capitalizeString, createDashboardLink } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { Trash } from 'iconoir-react';
 import { ReactNode, useEffect, useState } from 'react';
-import Card from '../../base/Card/Card';
+import { Card, CardHeader, CardTitle, CardAction, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface RelationCardProps {
     relation: Relation;
@@ -40,16 +41,6 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
             navigate(link, { event: e });
         };
 
-    const actions = [
-        {
-            icon: <Trash className='w-5 h-5' />,
-            onClick: handleDelete,
-            tooltip: 'Delete Relation',
-            show: isAdmin(),
-            variant: 'danger' as const,
-        },
-    ];
-
     const cardDetails = {
         'Created At': formattedCreated,
         'Last Seen': formattedSeen,
@@ -61,40 +52,64 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
         ),
     };
 
+    if (!visible) return null;
+
     return (
-        <Card
-            title={capitalizeString(relation.reason || 'Relation')}
-            actions={actions}
-            visible={visible}
-            slug={`ID: ${relation.id}`}
-            details={cardDetails}
-        >
-            <div className='text-cradle-text-secondary text-sm space-y-1 mx-2 -mt-1 mb-2'>
-                <InfoRow label='Entity 1'>
-                    <span
-                        className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
-                        style={{ color: relation.e1?.color || '#FF8C00' }}
-                        onClick={handleEntryClick(
-                            relation.e1?.name || '',
-                            relation.e1?.subtype || '',
-                        )}
-                    >
-                        [{relation.e1?.subtype}] {relation.e1?.name}
-                    </span>
-                </InfoRow>
-                <InfoRow label='Entity 2'>
-                    <span
-                        className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
-                        style={{ color: relation.e2?.color || '#FF8C00' }}
-                        onClick={handleEntryClick(
-                            relation.e2?.name || '',
-                            relation.e2?.subtype || '',
-                        )}
-                    >
-                        [{relation.e2?.subtype}] {relation.e2?.name}
-                    </span>
-                </InfoRow>
-            </div>
+        <Card>
+            <CardHeader>
+                <CardTitle>{capitalizeString(relation.reason || 'Relation')}</CardTitle>
+                {isAdmin() && (
+                    <CardAction>
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            onClick={handleDelete}
+                            title='Delete Relation'
+                        >
+                            <Trash className='w-5 h-5' />
+                        </Button>
+                    </CardAction>
+                )}
+            </CardHeader>
+            <CardContent>
+                <div className='text-cradle-text-secondary text-sm space-y-1 mb-2'>
+                    {Object.entries(cardDetails).map(([key, value]) => (
+                        <div key={key} className='items-start gap-2'>
+                            <strong className='text-cradle-accent-primary mr-1'>{key}:</strong>
+                            {value}
+                        </div>
+                    ))}
+                </div>
+                <div className='text-cradle-text-secondary text-sm space-y-1 -mt-1 mb-2'>
+                    <InfoRow label='Entity 1'>
+                        <span
+                            className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
+                            style={{ color: relation.e1?.color || '#FF8C00' }}
+                            onClick={handleEntryClick(
+                                relation.e1?.name || '',
+                                relation.e1?.subtype || '',
+                            )}
+                        >
+                            [{relation.e1?.subtype}] {relation.e1?.name}
+                        </span>
+                    </InfoRow>
+                    <InfoRow label='Entity 2'>
+                        <span
+                            className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
+                            style={{ color: relation.e2?.color || '#FF8C00' }}
+                            onClick={handleEntryClick(
+                                relation.e2?.name || '',
+                                relation.e2?.subtype || '',
+                            )}
+                        >
+                            [{relation.e2?.subtype}] {relation.e2?.name}
+                        </span>
+                    </InfoRow>
+                </div>
+                <div className='text-[10px] text-cradle-text-muted select-text mt-2'>
+                    ID: {relation.id}
+                </div>
+            </CardContent>
         </Card>
     );
 }

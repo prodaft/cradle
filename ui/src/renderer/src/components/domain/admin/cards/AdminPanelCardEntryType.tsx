@@ -5,7 +5,8 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
-import Card from '../../../base/Card/Card';
+import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
 import EntryTypeForm from '../forms/EntryTypeForm';
@@ -54,42 +55,62 @@ export default function AdminPanelCardEntryType({
         setRightPane(<EntryTypeForm id={id} isEdit={true} />);
     };
 
-    const actions = [
-        {
-            icon: <ClockRotateRight />,
-            onClick: handleActivityClick,
-            tooltip: 'View Activity',
-            show: isAdmin(),
-            variant: 'ghost' as const,
-        },
-        {
-            icon: <EditPencil />,
-            onClick: handleEditClick,
-            tooltip: 'Edit',
-            variant: 'ghost' as const,
-        },
-        {
-            icon: <Trash />,
-            onClick: () =>
-                setModal(ConfirmDeletionModal, {
-                    onConfirm: handleDelete,
-                    confirmText: name,
-                    text: 'Are you sure you want to delete this entry type? This action is irreversible.',
-                }),
-            tooltip: 'Delete',
-            show: isAdmin(),
-            variant: 'danger' as const,
-        },
-    ];
-
     return (
-        <>
-            <Card
-                title={name}
-                prefix={`(${count >= 0 ? (count == 100 ? '99+' : count) : 0}) `}
-                actions={actions}
-                onClick={handleEditClick}
-            />
-        </>
+        <Card
+            className='cursor-pointer hover:shadow-lg transition-shadow'
+            onClick={handleEditClick}
+        >
+            <CardHeader>
+                <CardTitle>
+                    <span className='text-cradle-text-muted mr-2'>
+                        ({count >= 0 ? (count == 100 ? '99+' : count) : 0}){' '}
+                    </span>
+                    {name}
+                </CardTitle>
+                <CardAction>
+                    {isAdmin() && (
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleActivityClick();
+                            }}
+                            title='View Activity'
+                        >
+                            <ClockRotateRight />
+                        </Button>
+                    )}
+                    <Button
+                        variant='ghost'
+                        size='icon-sm'
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditClick();
+                        }}
+                        title='Edit'
+                    >
+                        <EditPencil />
+                    </Button>
+                    {isAdmin() && (
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setModal(ConfirmDeletionModal, {
+                                    onConfirm: handleDelete,
+                                    confirmText: name,
+                                    text: 'Are you sure you want to delete this entry type? This action is irreversible.',
+                                });
+                            }}
+                            title='Delete'
+                        >
+                            <Trash />
+                        </Button>
+                    )}
+                </CardAction>
+            </CardHeader>
+        </Card>
     );
 }

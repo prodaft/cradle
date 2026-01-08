@@ -5,7 +5,8 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
-import Card from '../../../base/Card/Card';
+import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
 import EntityForm from '../forms/EntityForm';
@@ -56,42 +57,60 @@ export default function AdminPanelCardEntity({
         setRightPane(<EntityForm id={Number(id)} isEdit={true} />);
     };
 
-    const actions = [
-        {
-            icon: <ClockRotateRight />,
-            onClick: handleActivityClick,
-            tooltip: 'View Activity',
-            show: isAdmin(),
-            variant: 'ghost' as const,
-        },
-        {
-            icon: <EditPencil />,
-            onClick: handleEditClick,
-            tooltip: 'Edit',
-            variant: 'ghost' as const,
-        },
-        {
-            icon: <Trash />,
-            onClick: () =>
-                setModal(ConfirmDeletionModal, {
-                    onConfirm: handleDelete,
-                    confirmText: `${typename}:${name}`,
-                    text: 'Are you sure you want to delete this entity? This will keep its related notes but remove the links to it.',
-                }),
-            tooltip: 'Delete',
-            show: isAdmin(),
-            variant: 'danger' as const,
-        },
-    ];
-
     return (
-        <>
-            <Card
-                title={name}
-                prefix={`${typename}:`}
-                actions={actions}
-                onClick={handleEditClick}
-            />
-        </>
+        <Card
+            className='cursor-pointer hover:shadow-lg transition-shadow'
+            onClick={handleEditClick}
+        >
+            <CardHeader>
+                <CardTitle>
+                    <span className='text-cradle-text-muted mr-2'>{typename}:</span>
+                    {name}
+                </CardTitle>
+                <CardAction>
+                    {isAdmin() && (
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleActivityClick();
+                            }}
+                            title='View Activity'
+                        >
+                            <ClockRotateRight />
+                        </Button>
+                    )}
+                    <Button
+                        variant='ghost'
+                        size='icon-sm'
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditClick();
+                        }}
+                        title='Edit'
+                    >
+                        <EditPencil />
+                    </Button>
+                    {isAdmin() && (
+                        <Button
+                            variant='ghost'
+                            size='icon-sm'
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setModal(ConfirmDeletionModal, {
+                                    onConfirm: handleDelete,
+                                    confirmText: `${typename}:${name}`,
+                                    text: 'Are you sure you want to delete this entity? This will keep its related notes but remove the links to it.',
+                                });
+                            }}
+                            title='Delete'
+                        >
+                            <Trash />
+                        </Button>
+                    )}
+                </CardAction>
+            </CardHeader>
+        </Card>
     );
 }

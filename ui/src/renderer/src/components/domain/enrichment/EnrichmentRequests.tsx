@@ -1,13 +1,17 @@
 import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import useAPICall from '@/hooks/api/useAPICall';
 import InProgress from '@components/feedback/InProgress';
 import EnrichmentRequestModal from '@components/modals/enrichment/EnrichmentRequestModal';
 import { EnrichmentRequestList } from '@services/cradle';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Sparkles } from 'lucide-react';
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { DateRangeFilter } from '../../base/ListView/ListView';
+import { DateRangeFilter } from '../../base/ListView/types';
 import EnrichmentRequestsList from './EnrichmentRequestsList';
 
 interface SearchFilters {
@@ -27,7 +31,6 @@ export default function EnrichmentRequests() {
     }
 
     const [searchParams, setSearchParams] = useSearchParams();
-    const { notify } = useNotif();
     const { intelioApi } = useApi();
     const { execute } = useAPICall();
     const { setModal } = useModal();
@@ -96,10 +99,7 @@ export default function EnrichmentRequests() {
             setTotalCount(response.count || 0);
         } catch (error: any) {
             console.error('Failed to fetch enrichment requests', error);
-            notify({
-                type: 'error',
-                text: `Error fetching enrichment requests: ${error.message}`,
-            });
+            toast.error(`Error fetching enrichment requests: ${error.message}`);
             setEnrichmentRequests([]);
             setTotalPages(1);
         } finally {
@@ -112,7 +112,6 @@ export default function EnrichmentRequests() {
         columnFilters,
         sortField,
         sortDirection,
-        notify,
     ]);
 
     useEffect(() => {
@@ -215,17 +214,11 @@ export default function EnrichmentRequests() {
     const handleCreateRequest = () => {
         setModal(EnrichmentRequestModal, {
             onSuccess: () => {
-                notify({
-                    type: 'success',
-                    text: 'Enrichment request created successfully',
-                });
+                toast.success('Enrichment request created successfully');
                 fetchEnrichmentRequests();
             },
             onError: (error: Error) => {
-                notify({
-                    type: 'error',
-                    text: `Error creating enrichment request: ${error.message}`,
-                });
+                toast.error(`Error creating enrichment request: ${error.message}`);
             },
         });
     };
@@ -241,17 +234,11 @@ export default function EnrichmentRequests() {
                 ),
             );
 
-            notify({
-                type: 'success',
-                text: `Deleted ${selectedRequests.length} enrichment request(s)`,
-            });
+            toast.success(`Deleted ${selectedRequests.length} enrichment request(s)`);
             setSelectedRequests([]);
             fetchEnrichmentRequests();
         } catch (error: any) {
-            notify({
-                type: 'error',
-                text: `Error deleting enrichment requests: ${error.message}`,
-            });
+            toast.error(`Error deleting enrichment requests: ${error.message}`);
         }
     };
 
@@ -265,34 +252,40 @@ export default function EnrichmentRequests() {
             ),
         );
 
-        notify({
-            type: 'success',
-            text: `Retrying ${selectedRequests.length} enrichment request${selectedRequests.length > 1 ? 's' : ''}`,
-        });
+        toast.success(`Retrying ${selectedRequests.length} enrichment request${selectedRequests.length > 1 ? 's' : ''}`);
         setSelectedRequests([]);
         fetchEnrichmentRequests();
     };
 
     return (
         <div className='w-full h-full'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        Enrichment Requests
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Browse & Manage Enrichment Requests
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>Enrichment Requests</h2>
+                    <p className='text-muted-foreground'>Browse & Manage Enrichment Requests</p>
                 </div>
-                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
-                    <span className='font-semibold'>
-                        {enrichmentRequests.length === totalCount ||
-                        (enrichmentRequests.length === 0 && totalCount === 0)
-                            ? totalCount
-                            : `${enrichmentRequests.length}/${totalCount}`}
-                    </span>
-                    <span className='opacity-70'>requests</span>
+                <div className='flex gap-2'>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                onClick={handleCreateRequest}
+                                variant='default'
+                                className='space-x-1'
+                            >
+                                <span>New Request</span>
+                                <Sparkles className='size-4' />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Create a new enrichment request{' '}
+                            <KbdGroup>
+                                <Kbd>Ctrl</Kbd>
+                                <span>+</span>
+                                <Kbd>E</Kbd>
+                            </KbdGroup>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
 

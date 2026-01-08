@@ -1,4 +1,5 @@
-import { useNotif } from '@/contexts';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -30,7 +31,6 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
     const { fileTransferApi } = useApi();
     const [hidden, setHidden] = useState(false);
     const { execute } = useAPICall();
-    const { notify } = useNotif();
 
     const downloadFile = async () => {
         if (file.id) {
@@ -58,16 +58,10 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
         navigator.clipboard
             .writeText(text)
             .then(() => {
-                notify({
-                    text: 'Copied to clipboard',
-                    type: 'success',
-                });
+                toast.success('Copied to clipboard');
             })
             .catch((error) => {
-                notify({
-                    text: 'Failed to copy to clipboard',
-                    type: 'error',
-                });
+                toast.error('Failed to copy to clipboard');
             });
     };
 
@@ -127,13 +121,15 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                     </div>
                 </div>
                 <div className='flex space-x-2 ml-4'>
-                    <button
+                    <Button
+                        variant='ghost'
+                        size='icon'
                         onClick={() => downloadFile()}
-                        className='text-white hover:bg-white/20 p-2 rounded-full '
+                        className='text-white hover:bg-white/20 p-2 rounded-full'
                         title='Download file'
                     >
                         <Download />
-                    </button>
+                    </Button>
                 </div>
             </div>
         </div>

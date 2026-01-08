@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import { truncateText } from '@/utils/dashboard';
@@ -5,7 +6,11 @@ import { formatDate } from '@/utils/dates';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import bytes from 'bytes';
 import { Download } from 'iconoir-react';
-import ListView from '../../base/ListView/ListView';
+import { DataTable } from '@/components/ui/data-table';
+import { useMemo } from 'react';
+import { ColumnDef } from '@tanstack/react-table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Alert {
     show: boolean;
@@ -45,108 +50,146 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
         document.body.removeChild(link);
     };
 
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo<ColumnDef<FileReferenceWithNote>[]>(
+        () => [
+            {
+                accessorKey: 'name',
+                id: 'name',
+                header: 'Name',
+                cell: ({ row }) => (
+                    <div className='truncate w-32'>
+                        {truncateText(row.original.fileName, 32)}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'entities',
+                id: 'entities',
+                header: 'Entities',
+                cell: ({ row }) => (
+                    <div className=''>
+                        <div className='flex flex-wrap gap-1'>
+                            {row.original.entities?.slice(0, 3).map((entity) => (
+                                <span
+                                    key={entity.name}
+                                    className='badge badge-xs px-1 text-white'
+                                    style={{
+                                        backgroundColor:
+                                            entity.color || '#ccc',
+                                    }}
+                                >
+                                    {entity.name}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'mimetype',
+                id: 'mimetype',
+                header: 'MimeType',
+                cell: ({ row }) => (
+                    <div className='truncate w-32'>
+                        {row.original.mimetype
+                            ? truncateText(row.original.mimetype, 32)
+                            : '-'}
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'sha256',
+                id: 'sha256',
+                header: 'SHA256',
+                cell: ({ row }) => (
+                    <div className=''>
+                        {row.original.sha256Hash ? (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span
+                                        className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            copyToClipboard(row.original.sha256Hash!);
+                                        }}
+                                    >
+                                        {row.original.sha256Hash.substring(0, 21)}...
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Click to copy
+                                </TooltipContent>
+                            </Tooltip>
+                        ) : (
+                            '-'
+                        )}
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'uploadedAt',
+                id: 'uploadedAt',
+                header: 'Uploaded At',
+                cell: ({ row }) => (
+                    <div className=''>
+                        {row.original.timestamp &&
+                            formatDate(new Date(row.original.timestamp))}
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    const file = row.original;
+                    return (
+                        <div className='w-32 text-right' onClick={(e) => e.stopPropagation()}>
+                            <div className='flex justify-end space-x-1'>
+                                {file.bucketName && file.minioFileName && (
+                                    <Button
+                                        variant='ghost'
+                                        size='icon-sm'
+                                        onClick={async () =>
+                                            await handleDownload(file)
+                                        }
+                                        className='text-green-600 hover:text-green-500'
+                                        title='Download'
+                                    >
+                                        <Download
+                                            className='w-4 h-4'
+                                            aria-hidden='true'
+                                        />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [copyToClipboard, handleDownload],
+    );
+
     return (
         <div>
-            <div className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-scroll'>
+            <ScrollArea className='w-full h-full'>
                 <div className='w-[95%] h-full flex flex-col p-6'>
-                    <ListView
+                    <DataTable
+                        columns={columns}
                         data={files}
-                        columns={[
-                            { key: 'name', label: 'Name', className: 'w-64' },
-                            { key: 'entities', label: 'Entities', className: 'w-32' },
-                            { key: 'mimetype', label: 'MimeType', className: 'w-32' },
-                            { key: 'sha256', label: 'SHA256' },
-                            { key: 'fileSize', label: 'File Size' },
-                            {
-                                key: 'uploadedAt',
-                                label: 'Uploaded At',
-                                className: 'w-32',
-                            },
-                            {
-                                key: 'actions',
-                                label: '',
-                                className: 'w-32',
-                                sortable: false,
-                            },
-                        ]}
-                        renderRow={(file: FileReferenceWithNote, index: number) => (
-                            <tr key={file.id || index}>
-                                <td className='truncate w-32'>
-                                    {truncateText(file.fileName, 32)}
-                                </td>
-                                <td className=''>
-                                    <div className='flex flex-wrap gap-1'>
-                                        {file.entities?.slice(0, 3).map((entity) => (
-                                            <span
-                                                key={entity.name}
-                                                className='badge badge-xs px-1 text-white'
-                                                style={{
-                                                    backgroundColor:
-                                                        entity.color || '#ccc',
-                                                }}
-                                            >
-                                                {entity.name}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </td>
-                                <td className='truncate w-32'>
-                                    {file.mimetype
-                                        ? truncateText(file.mimetype, 32)
-                                        : '-'}
-                                </td>
-                                <td className=''>
-                                    {file.sha256Hash ? (
-                                        <span
-                                            className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
-                                            onClick={() =>
-                                                copyToClipboard(file.sha256Hash!)
-                                            }
-                                            title='Click to copy'
-                                        >
-                                            {file.sha256Hash.substring(0, 21)}...
-                                        </span>
-                                    ) : (
-                                        '-'
-                                    )}
-                                </td>
-                                <td className=''>
-                                    {file.fileSize
-                                        ? bytes.format(file.fileSize, {
-                                              unitSeparator: ' ',
-                                          })
-                                        : '-'}
-                                </td>
-                                <td className=''>
-                                    {file.timestamp &&
-                                        formatDate(new Date(file.timestamp))}
-                                </td>
-                                <td className='w-32 text-right'>
-                                    <div className='flex justify-end space-x-1'>
-                                        {file.id && (
-                                            <button
-                                                onClick={async () =>
-                                                    await handleDownload(file)
-                                                }
-                                                className='btn btn-ghost btn-xs text-green-600 hover:bg-cradle-accent-primary/5 p-2 ml-2'
-                                                title='Download'
-                                            >
-                                                <Download
-                                                    className='w-4 h-4'
-                                                    aria-hidden='true'
-                                                />
-                                            </button>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
                         loading={false}
                         emptyMessage='No files found!'
-                        tableClassName='table'
+                        manualPagination={true}
+                        manualSorting={true}
                     />
                 </div>
-            </div>
+            </ScrollArea>
         </div>
     );
 }

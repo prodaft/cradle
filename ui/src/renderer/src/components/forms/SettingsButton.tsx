@@ -4,6 +4,7 @@
  */
 
 import { ButtonHTMLAttributes, ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 export interface SettingsButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /** Label text for the button row */
@@ -65,14 +66,16 @@ export default function SettingsButton({
                     <span className='text-sm cradle-text-muted'>{description}</span>
                 )}
             </div>
-            <button
+            <Button
                 type='button'
-                className={`${variantClasses[variant]} text-sm px-3 py-1.5 flex items-center gap-1.5 ${className || ''}`}
+                variant={variant === 'danger' ? 'destructive' : 'outline'}
+                size='sm'
+                className={className}
                 {...props}
             >
                 {icon}
-                <span>{loading ? 'Loading...' : buttonText}</span>
-            </button>
+                {loading ? 'Loading...' : buttonText}
+            </Button>
         </div>
     );
 }

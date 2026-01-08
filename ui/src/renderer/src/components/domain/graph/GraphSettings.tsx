@@ -1,4 +1,6 @@
 import type { GraphEdge } from '@/types/index';
+import { Button } from '@/components/ui/button';
+import { Slider } from '@/components/ui/slider';
 import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { ChangeEvent, useState } from 'react';
 
@@ -31,9 +33,11 @@ export default function GraphSettings({
 
     return (
         <div className='px-4 pt-3'>
-            <button
+            <Button
+                variant='ghost'
+                size='sm'
                 onClick={() => setIsExpanded(!isExpanded)}
-                className='flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary transition-colors'
+                className='flex items-center gap-2 text-sm font-medium hover:text-cradle-accent-primary'
             >
                 {isExpanded ? (
                     <NavArrowDown width='16' height='16' />
@@ -41,7 +45,7 @@ export default function GraphSettings({
                     <NavArrowRight width='16' height='16' />
                 )}
                 <span>Settings</span>
-            </button>
+            </Button>
             {isExpanded && (
                 <div className='mt-4 space-y-4'>
                     {/* Layout Mode Selector */}
@@ -109,19 +113,18 @@ export default function GraphSettings({
                                     className='cradle-input w-16 text-xs px-2 py-1'
                                 />
                             </div>
-                            <input
-                                type='range'
+                            <Slider
                                 min={min}
                                 max={max}
                                 step={step}
-                                value={value}
-                                onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                                value={[value]}
+                                onValueChange={(values) =>
                                     setConfig((prev) => ({
                                         ...prev,
-                                        [key]: Number(e.target.value),
+                                        [key]: values[0],
                                     }))
                                 }
-                                className='w-full accent-cradle-accent-primary'
+                                className='w-full'
                             />
                         </div>
                     ))}

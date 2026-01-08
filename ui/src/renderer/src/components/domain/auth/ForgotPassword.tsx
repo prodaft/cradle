@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
 import { Form, FormInput } from '@components/forms';
 import { useWindowSize } from '@uidotdev/usehooks';
@@ -60,13 +62,15 @@ export default function ForgotPassword() {
                                         replace={true}
                                         state={location.state}
                                     >
-                                        <button
-                                            className='cradle-btn p-2 rounded-lg'
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            className='p-2 rounded-lg'
                                             data-testid='back-button'
                                             title='Back to Login'
                                         >
                                             <Undo width={18} height={18} />
-                                        </button>
+                                        </Button>
                                     </Link>
                                 </div>
                             </div>
@@ -89,17 +93,18 @@ export default function ForgotPassword() {
                                         label='Email'
                                         type='email'
                                     />
-                                    <button
+                                    <Button
                                         type='submit'
+                                        variant='default'
                                         data-testid='login-register-button'
-                                        className='cradle-btn cradle-btn-primary w-full'
+                                        className='w-full'
                                     >
                                         Send Reset Link
-                                    </button>
+                                    </Button>
                                 </Form>
 
                                 {/* Footer Link */}
-                                <div className='cradle-separator mt-8'></div>
+                                <Separator className="mt-8" />
                                 <div className='text-center text-xs cradle-mono mt-6'>
                                     <Link
                                         to='/login'

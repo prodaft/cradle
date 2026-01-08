@@ -1,8 +1,9 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
-import Datepicker from '@components/base/Datepicker/Datepicker';
+import { useParams } from 'react-router-dom';
 import Pagination from '@components/base/Pagination/Pagination';
+import Datepicker from '@components/base/Datepicker/Datepicker';
 import type { EventLog } from '@services/cradle/models';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
@@ -46,8 +47,8 @@ export default function ActivityList({
     username,
 }: ActivityListProps) {
     const { logsApi } = useApi();
-    const { params } = useTabContext();
-    const effectiveUsername = username || params.username || '';
+    const { username: usernameParam } = useParams<{ username?: string }>();
+    const effectiveUsername = username || usernameParam || '';
 
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         username: effectiveUsername,
@@ -65,7 +66,6 @@ export default function ActivityList({
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
-    const { notify } = useNotif();
 
     // Convert EventLog to ActivityLog format
     const convertEventLogToActivityLog = (eventLog: EventLog): ActivityLog => {
@@ -111,12 +111,10 @@ export default function ActivityList({
                 setLoading(false);
             })
             .catch((error: any) => {
-                notify({
-                    type: 'error',
-                    text:
-                        error.response?.data?.detail ||
+                toast.error(
+                    error.response?.data?.detail ||
                         'Failed to fetch event logs. Please try again.',
-                });
+                );
                 setLoading(false);
             });
     }, [page, submittedFilters, logsApi]);
@@ -144,13 +142,11 @@ export default function ActivityList({
 
     return (
         <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        Event Logs
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                    <h2 className='text-2xl font-bold tracking-tight'>Event Logs</h2>
+                    <p className='text-muted-foreground'>
                         {name ? `Activity for ${name}` : 'System Activity'}
                     </p>
                 </div>
@@ -226,20 +222,21 @@ export default function ActivityList({
 
                         {/* Search button */}
                         <div className='flex-shrink-0'>
-                            <button
+                            <Button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary h-10 rounded-full flex items-center px-6'
+                                variant='default'
+                                className='h-10 rounded-full flex items-center px-6'
                             >
                                 <Search className='mr-2 w-4 h-4' /> Search
-                            </button>
+                            </Button>
                         </div>
                     </form>
 
                     <div className='flex flex-col space-y-4'>
                         {loading ? (
                             <div className='flex items-center justify-center min-h-[200px]'>
-                                <div className='spinner-dot-pulse spinner-xl'>
-                                    <div className='spinner-pulse-dot'></div>
+                                <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                                    <div className='cradle-spinner-pulse-dot'></div>
                                 </div>
                             </div>
                         ) : events.length > 0 ? (

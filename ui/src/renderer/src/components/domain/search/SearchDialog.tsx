@@ -1,10 +1,19 @@
 import type { Alert } from '@/types';
-import AlertBox from '@components/base/Alert/AlertBox';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
 import Pagination from '@components/base/Pagination/Pagination';
 import SearchResult from '@components/base/SearchResult/SearchResult';
-import { useNotif } from '@contexts/ui';
+import { Button } from '@/components/ui/button';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import { useApi, useAPICall, useCradleNavigate } from '@hooks';
-import { handleAPIError } from '@utils/api';
+import { handleAPIError, parseAPIError } from '@utils/api';
 import { createDashboardLink } from '@utils/dashboard';
 import { Search, Xmark } from 'iconoir-react';
 import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
@@ -73,7 +82,6 @@ export default function SearchDialog({
     const dialogRoot = document.getElementById('portal-root');
     const { navigate, navigateLink } = useCradleNavigate();
     const { queryApi, entriesApi } = useApi();
-    const { notify } = useNotif();
     const [isLoading, setIsLoading] = useState(false);
     const { execute } = useAPICall();
 
@@ -95,8 +103,9 @@ export default function SearchDialog({
             .then((entities) => {
                 setEntrySubtypes(entities.map((c) => c.subtype));
             })
-            .catch((error) => {
-                handleAPIError(error, notify);
+            .catch(async (error) => {
+                const parsed = await parseAPIError(error);
+                handleAPIError(parsed);
             });
     };
 
@@ -199,26 +208,17 @@ export default function SearchDialog({
             }}
         >
             <div
-                className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] cradle-bg-elevated cradle-border flex flex-col relative overflow-hidden'
+                className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] bg-card border flex flex-col relative overflow-hidden rounded-lg'
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Search Header */}
-                <div className='p-4 cradle-border-b'>
-                    <div className='flex items-center gap-3'>
-                        <div className='flex-grow flex items-center gap-2 cradle-bg-secondary cradle-border px-3 py-2 rounded'>
-                            <button
-                                onClick={() => {
-                                    setPage(1);
-                                    performSearch();
-                                }}
-                                className='py-1.5 pr-1.5 pl-1 hover:cradle-bg-elevated rounded flex-shrink-0 transition-colors border-0'
-                                title='Search'
-                            >
-                                <Search className='w-4 h-4' />
-                            </button>
+                <Command className='h-full flex flex-col'>
+                    {/* Search Input - styled like CommandInput but with textarea for multi-line */}
+                    <div className='border-b px-3'>
+                        <div className='flex items-center gap-2 py-3'>
+                            <Search className='h-4 w-4 shrink-0 opacity-50' />
                             <textarea
                                 ref={inputRef}
-                                className='flex-grow bg-transparent text-cradle-text-primary placeholder:text-cradle-text-muted text-base resize-none outline-none max-h-[15vh] overflow-y-auto leading-relaxed'
+                                className='flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground resize-none max-h-[15vh] overflow-y-auto leading-relaxed'
                                 placeholder='Search entries...'
                                 value={searchQuery}
                                 rows={1}
@@ -229,30 +229,29 @@ export default function SearchDialog({
                                 onKeyDown={handleKeyDown}
                             />
                             {searchQuery && (
-                                <button
+                                <Button
+                                    variant='ghost'
+                                    size='icon-sm'
                                     onClick={() => {
                                         setSearchQuery('');
-                                        const event = {
-                                            target: { name: 'title', value: '' },
-                                        } as ChangeEvent<HTMLTextAreaElement>;
                                         if (inputRef.current) {
                                             autoResize(inputRef.current);
                                         }
                                         setPage(1);
                                         performSearch();
                                     }}
-                                    className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                    className='h-4 w-4 p-0'
                                     title='Clear search'
                                 >
                                     <svg
-                                        width='1.5em'
-                                        height='1.5em'
+                                        width='1em'
+                                        height='1em'
                                         strokeWidth='1.5'
                                         viewBox='0 0 24 24'
                                         fill='none'
                                         xmlns='http://www.w3.org/2000/svg'
                                         color='currentColor'
-                                        className='w-4 h-4'
+                                        className='h-3 w-3'
                                     >
                                         <path
                                             d='M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426'
@@ -261,113 +260,130 @@ export default function SearchDialog({
                                             strokeLinejoin='round'
                                         ></path>
                                     </svg>
-                                </button>
+                                </Button>
                             )}
+                        </div>
+                        {/* Keyboard hint */}
+                        <div className='flex items-center gap-4 pb-3 text-xs text-muted-foreground'>
+                            <span className='flex items-center gap-1.5'>
+                                <Kbd>Enter</Kbd>
+                                <span>search</span>
+                            </span>
+                            <span className='flex items-center gap-1.5'>
+                                <KbdGroup>
+                                    <Kbd>Shift</Kbd>
+                                    <span>+</span>
+                                    <Kbd>Enter</Kbd>
+                                </KbdGroup>
+                                <span>new line</span>
+                            </span>
+                            <span className='flex items-center gap-1.5'>
+                                <Kbd>Esc</Kbd>
+                                <span>close</span>
+                            </span>
                         </div>
                     </div>
 
-                    {/* Keyboard hint */}
-                    <div className='flex items-center gap-4 mt-3 text-xs text-cradle-text-muted'>
-                        <span className='flex items-center gap-1.5'>
-                            <kbd className='px-1.5 py-0.5 cradle-bg-secondary cradle-border text-[10px] font-mono'>
-                                Enter
-                            </kbd>
-                            <span>search</span>
-                        </span>
-                        <span className='flex items-center gap-1.5'>
-                            <kbd className='px-1.5 py-0.5 cradle-bg-secondary cradle-border text-[10px] font-mono'>
-                                Shift+Enter
-                            </kbd>
-                            <span>new line</span>
-                        </span>
-                        <span className='flex items-center gap-1.5'>
-                            <kbd className='px-1.5 py-0.5 cradle-bg-secondary cradle-border text-[10px] font-mono'>
-                                Esc
-                            </kbd>
-                            <span>close</span>
-                        </span>
-                    </div>
-                </div>
+                    {/* Filters Section */}
+                    <SearchFilterSection
+                        showFilters={showFilters}
+                        setShowFilters={setShowFilters}
+                        entrySubtypes={entrySubtypes}
+                        entrySubtypeFilters={entrySubtypeFilters}
+                        setEntrySubtypeFilters={setEntrySubtypeFilters}
+                    />
 
-                {/* Filters Section */}
-                <SearchFilterSection
-                    showFilters={showFilters}
-                    setShowFilters={setShowFilters}
-                    entrySubtypes={entrySubtypes}
-                    entrySubtypeFilters={entrySubtypeFilters}
-                    setEntrySubtypeFilters={setEntrySubtypeFilters}
-                />
-
-                {/* Active Filters Display */}
-                {hasActiveFilters && (
-                    <div className='px-4 py-2 cradle-border-b flex items-center gap-2 flex-wrap'>
-                        <span className='text-xs text-cradle-text-muted uppercase tracking-wider'>
-                            Active:
-                        </span>
-                        {entrySubtypeFilters.map((filter) => (
-                            <button
-                                key={filter}
-                                onClick={() =>
-                                    setEntrySubtypeFilters((prev) =>
-                                        prev.filter((f) => f !== filter),
-                                    )
-                                }
-                                className='inline-flex items-center gap-1 px-2 py-0.5 text-xs bg-cradle-accent-primary/10 text-cradle-accent-primary border border-cradle-accent-primary/30 hover:bg-cradle-accent-primary/20 transition-colors'
+                    {/* Active Filters Display */}
+                    {hasActiveFilters && (
+                        <div className='px-4 py-2 border-b flex items-center gap-2 flex-wrap'>
+                            <span className='text-xs text-muted-foreground uppercase tracking-wider'>
+                                Active:
+                            </span>
+                            {entrySubtypeFilters.map((filter) => (
+                                <Button
+                                    key={filter}
+                                    variant='outline'
+                                    size='sm'
+                                    onClick={() =>
+                                        setEntrySubtypeFilters((prev) =>
+                                            prev.filter((f) => f !== filter),
+                                        )
+                                    }
+                                    className='inline-flex items-center gap-1 px-2 py-0.5 text-xs h-auto'
+                                >
+                                    <span>{filter}</span>
+                                    <Xmark className='w-3 h-3' />
+                                </Button>
+                            ))}
+                            <Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={() => setEntrySubtypeFilters([])}
+                                className='text-xs h-auto'
                             >
-                                <span>{filter}</span>
-                                <Xmark className='w-3 h-3' />
-                            </button>
-                        ))}
-                        <button
-                            onClick={() => setEntrySubtypeFilters([])}
-                            className='text-xs text-cradle-text-muted hover:text-cradle-accent-primary transition-colors'
-                        >
-                            Clear all
-                        </button>
-                    </div>
-                )}
-
-                <AlertBox alert={alert} />
-
-                {/* Results Section */}
-                <div className='flex-1 overflow-y-auto min-h-0'>
-                    {isLoading ? (
-                        <div className='flex items-center justify-center py-12'>
-                            <div className='spinner-dot-pulse spinner-xl'>
-                                <div className='spinner-pulse-dot'></div>
-                            </div>
-                        </div>
-                    ) : results && results.length > 0 ? (
-                        <div className='divide-y divide-cradle-border-primary'>
-                            {results.map((result) => {
-                                const dashboardLink = createDashboardLink(result);
-                                return (
-                                    <div
-                                        key={result.id}
-                                        className='group hover:bg-cradle-bg-secondary transition-colors'
-                                    >
-                                        <SearchResult
-                                            name={result.name}
-                                            type={result.type}
-                                            subtype={result.subtype}
-                                            onClick={handleResultClick(dashboardLink)}
-                                        />
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className='flex flex-col items-center justify-center py-12 text-cradle-text-muted'>
-                            <Search className='w-10 h-10 mb-3 opacity-30' />
-                            <span className='text-sm'>No results found</span>
-                            {searchQuery && (
-                                <span className='text-xs mt-1 opacity-70'>
-                                    Try a different search term
-                                </span>
-                            )}
+                                Clear all
+                            </Button>
                         </div>
                     )}
-                </div>
+
+                    {alert.show && (
+                        <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                            <WarningCircle />
+                            <AlertDescription>{alert.message}</AlertDescription>
+                        </AlertComponent>
+                    )}
+
+                    {/* Results Section */}
+                    <div className='flex-1 overflow-hidden min-h-0'>
+                        <CommandList className='max-h-none'>
+                            {isLoading ? (
+                                <div className='flex items-center justify-center py-12'>
+                                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                                        <div className='cradle-spinner-pulse-dot'></div>
+                                    </div>
+                                </div>
+                            ) : results && results.length > 0 ? (
+                                <CommandGroup>
+                                    {results.map((result) => {
+                                        const dashboardLink = createDashboardLink(result);
+                                        return (
+                                            <CommandItem
+                                                key={result.id}
+                                                onSelect={() => {
+                                                    handleResultClick(dashboardLink)(
+                                                        {} as React.MouseEvent,
+                                                    );
+                                                }}
+                                                className='px-4 py-3'
+                                            >
+                                                {result.subtype && (
+                                                    <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-muted border border-border min-w-[60px] text-center mr-3'>
+                                                        {result.subtype}
+                                                    </span>
+                                                )}
+                                                <span className='flex-1 text-sm truncate'>
+                                                    {result.name}
+                                                </span>
+                                            </CommandItem>
+                                        );
+                                    })}
+                                </CommandGroup>
+                            ) : (
+                                <CommandEmpty>
+                                    <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
+                                        <Search className='w-10 h-10 mb-3 opacity-30' />
+                                        <span className='text-sm'>No results found</span>
+                                        {searchQuery && (
+                                            <span className='text-xs mt-1 opacity-70'>
+                                                Try a different search term
+                                            </span>
+                                        )}
+                                    </div>
+                                </CommandEmpty>
+                            )}
+                        </CommandList>
+                    </div>
+                </Command>
 
                 {/* Footer with Pagination */}
                 {results && results.length > 0 && (

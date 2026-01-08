@@ -1,4 +1,4 @@
-import { useNotif } from '@/contexts';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -18,8 +18,10 @@ import {
 import React, { forwardRef, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Preview from '../../base/Preview/Preview';
-import Tooltip from '../../base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import ReferenceTree from '../relations/ReferenceTree';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Alert {
     show: boolean;
@@ -69,7 +71,6 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');
     const [metadataExpanded, setMetadataExpanded] = useState(true);
-    const { notify } = useNotif();
 
     const getStatusIcon = (status?: NoteRetrieveStatusEnum) => {
         if (!status) return null;
@@ -123,10 +124,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
         parseContent(note.content, entriesApi, fileTransferApi, basePath, note.files)
             .then((result) => setParsedContent(result.html))
             .catch((err) =>
-                notify({
-                    text: 'Cannot parse note!',
-                    type: 'error',
-                }),
+                toast.error('Cannot parse note!'),
             );
     }, [
         note.content,
@@ -151,27 +149,34 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                 <div className='flex items-center justify-between border-b border-cradle-border-primary pb-3 mb-4 w-full min-w-0'>
                     <div className='flex items-center gap-3 cradle-mono text-xs min-w-0 flex-1'>
                         {note.fleeting && (
-                            <Tooltip content='Fleeting Note'>
-                                <span className='inline-flex items-center align-middle'>
-                                    <DesignNib
-                                        className='text-[#FF8C00]'
-                                        width='18'
-                                        height='18'
-                                    />
-                                </span>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className='inline-flex items-center align-middle'>
+                                        <DesignNib
+                                            className='text-[#FF8C00]'
+                                            width='18'
+                                            height='18'
+                                        />
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    Fleeting Note
+                                </TooltipContent>
                             </Tooltip>
                         )}
                         {note.status && (
-                            <Tooltip
-                                content={
-                                    note.statusMessage ||
-                                    capitalizeString(note.status) ||
-                                    null
-                                }
-                            >
-                                <span className='inline-flex items-center align-middle'>
-                                    {getStatusIcon(note.status)}
-                                </span>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className='inline-flex items-center align-middle'>
+                                        {getStatusIcon(note.status)}
+                                    </span>
+                                </TooltipTrigger>
+                                {(note.statusMessage || capitalizeString(note.status)) && (
+                                    <TooltipContent>
+                                        {note.statusMessage ||
+                                            capitalizeString(note.status)}
+                                    </TooltipContent>
+                                )}
                             </Tooltip>
                         )}
                         {!note.editor && (
@@ -213,8 +218,8 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
 
                 {!parsedContent && (
                     <div className='flex items-center justify-center min-h-screen'>
-                        <div className='spinner-dot-pulse'>
-                            <div className='spinner-pulse-dot'></div>
+                        <div className='cradle-spinner-dot-pulse'>
+                            <div className='cradle-spinner-pulse-dot'></div>
                         </div>
                     </div>
                 )}
@@ -261,7 +266,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                                     </div>
                                 </div>
                             )}
-                            <div className='cradle-separator my-4'></div>
+                            <Separator className="my-4" />
                         </div>
                     )}
 
@@ -274,9 +279,9 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                             })
                         }
                     >
-                        <div className='max-h-[36rem] overflow-y-auto overflow-x-hidden cradle-scrollbar w-full min-w-0'>
+                        <ScrollArea className='max-h-[36rem] w-full min-w-0'>
                             <Preview htmlContent={parsedContent} />
-                        </div>
+                        </ScrollArea>
                     </div>
                 </div>
 

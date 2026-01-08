@@ -1,14 +1,12 @@
-import Tooltip from '@/components/base/Tooltip/Tooltip';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import FileUploadModal from '@/components/modals/notes/FileUploadModal';
-import { usePaneTabs } from '@/contexts/tabs/PaneTabsContext';
-import { useLayout } from '@/contexts/ui/LayoutContext';
 import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { useTabContext } from '@/hooks/tabs/useTabContext';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
 import { Prec } from '@codemirror/state';
@@ -19,8 +17,9 @@ import { debounce } from 'lodash';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useLocation, useParams, useSearchParams } from 'react-router-dom';
 import FileInput from '../../forms/FileInput';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
@@ -50,8 +49,8 @@ interface LocationState {
  * NoteViewer component - displays note content with editing capabilities
  */
 export default function NoteViewer() {
-    const { params } = useTabContext();
-    const id = params.id || '';
+    const { id } = useParams<{ id: string }>();
+    const noteId = id || '';
     const { navigate } = useCradleNavigate();
     const location = useLocation();
     const locationState = (location.state as LocationState) || {};
@@ -67,12 +66,10 @@ export default function NoteViewer() {
     const [enableEditing, setEnableEditing] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
     const { setModal } = useModal();
-    const { notify } = useNotif();
     const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState<ViewMode>(ViewMode.CONTENT);
-    const [showActionsMenu, setShowActionsMenu] = useState(false);
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -92,19 +89,7 @@ export default function NoteViewer() {
     const editorRef = useRef<any>(null);
     const lastLoadedNoteIdRef = useRef<string | null>(null);
     const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
-    const { updateCurrentTabTitle } = usePaneTabs();
-    const { activePaneId } = useLayout();
     const { execute, handleError } = useAPICall();
-
-    // Refs to avoid dependency issues in effects
-    const activePaneIdRef = useRef(activePaneId);
-    const updateCurrentTabTitleRef = useRef(updateCurrentTabTitle);
-
-    // Keep refs updated
-    useEffect(() => {
-        activePaneIdRef.current = activePaneId;
-        updateCurrentTabTitleRef.current = updateCurrentTabTitle;
-    }, [activePaneId, updateCurrentTabTitle]);
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
@@ -112,23 +97,17 @@ export default function NoteViewer() {
         return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, (error) =>
             handleError(error, { suppressNotification: false }),
         );
-    }, [notify, notesApi, lspApi]);
+    }, [notesApi, lspApi]);
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard
             .writeText(text)
             .then(() => {
-                notify({
-                    type: 'success',
-                    text: 'Copied to clipboard',
-                });
+                toast.success('Copied to clipboard');
             })
             .catch((error) => {
                 console.error('Failed to copy text: ', error);
-                notify({
-                    type: 'error',
-                    text: 'Failed to copy to clipboard',
-                });
+                toast.error('Failed to copy to clipboard');
             });
     };
 
@@ -149,10 +128,7 @@ export default function NoteViewer() {
         }
 
         toggleEditing();
-        notify({
-            type: 'info',
-            text: 'Double click detected. Enabling editing mode.',
-        });
+        toast.info('Double click detected. Enabling editing mode.');
     }, [enableEditing]);
 
     const smartLink = useCallback(
@@ -190,12 +166,13 @@ export default function NoteViewer() {
             });
 
             setMarkdownContent(linked);
-            notify({
-                type: changes > 0 ? 'success' : 'info',
-                text: `${changes > 0 ? changes : 'No'} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`,
-            });
+            if (changes > 0) {
+                toast.success(`${changes} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`);
+            } else {
+                toast.info(`No link${onlyTimestamps ? 's timestamped.' : 's found in text.'}`);
+            }
         },
-        [editorUtils, setMarkdownContent, notify],
+        [editorUtils, setMarkdownContent],
     );
 
     const handleEnrichData = useCallback(async () => {
@@ -226,7 +203,7 @@ export default function NoteViewer() {
     }, [editorUtils, setModal]);
 
     useEffect(() => {
-        if (!id) {
+        if (!noteId) {
             console.warn('NoteViewer - No note ID provided');
             setIsLoading(false);
             lastLoadedNoteIdRef.current = null;
@@ -235,19 +212,19 @@ export default function NoteViewer() {
 
         // Skip loading if we've already loaded this exact note ID
         // This prevents re-fetching when only search params change
-        if (lastLoadedNoteIdRef.current === id) {
+        if (lastLoadedNoteIdRef.current === noteId) {
             return;
         }
 
         setIsLoading(true);
-        lastLoadedNoteIdRef.current = id;
+        lastLoadedNoteIdRef.current = noteId || null;
 
         // Try to load as regular note first, then fallback to fleeting note if it fails
         const loadNote = async () => {
             try {
                 // First try to load as a regular note
                 const responseNote = await execute(() =>
-                    notesApi.notesRetrieve({ noteId: id, footnotes: false }),
+                    notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
                 );
 
                 // Check if this is a fleeting note using the fleeting field
@@ -256,7 +233,7 @@ export default function NoteViewer() {
 
                 // Debug logging
                 console.log('NoteViewer - Note loaded successfully:', {
-                    id: id,
+                    id: noteId,
                     isFleetingNote: isFleetingNote,
                     fleeting: responseNote.fleeting,
                     hasAuthor: !!responseNote.author,
@@ -271,9 +248,9 @@ export default function NoteViewer() {
                     'NoteViewer - Regular note failed, trying fleeting note. Error:',
                     error,
                 );
-                console.log('NoteViewer - Attempting fleeting note with ID:', id);
+                console.log('NoteViewer - Attempting fleeting note with ID:', noteId);
                 const responseNote = await execute(
-                    () => fleetingNotesApi.fleetingNotesRetrieve({ id }),
+                    () => fleetingNotesApi.fleetingNotesRetrieve({ id: noteId }),
                     { errorMessage: 'Note not found!' },
                 );
                 setIsFleeting(true);
@@ -291,12 +268,7 @@ export default function NoteViewer() {
                 setFileData(responseNote.files || []);
                 setHasUnsavedChanges(false);
                 // Update tab title with note title (use refs to avoid dependency issues)
-                if (responseNote.title && activePaneIdRef.current) {
-                    updateCurrentTabTitleRef.current(
-                        activePaneIdRef.current,
-                        responseNote.title,
-                    );
-                }
+                // Note loaded successfully
                 return responseNote;
             })
             .catch(() => {})
@@ -304,7 +276,12 @@ export default function NoteViewer() {
                 // Turn off loading spinner regardless of success or failure
                 setIsLoading(false);
             });
-    }, [id, execute, notesApi, fleetingNotesApi]);
+    }, [
+        noteId,
+        execute,
+        notesApi,
+        fleetingNotesApi,
+    ]);
 
     const handleDelete = useCallback(async () => {
         if (!note || !id) return;
@@ -312,9 +289,9 @@ export default function NoteViewer() {
         execute(async () => {
             // Use the appropriate delete function based on whether the note is fleeting
             if (note.fleeting) {
-                await fleetingNotesApi.fleetingNotesDestroy({ id });
+                await fleetingNotesApi.fleetingNotesDestroy({ id: noteId });
             } else {
-                await notesApi.notesDelete({ noteId: id });
+                await notesApi.notesDelete({ noteId: noteId });
             }
 
             if (!state) {
@@ -328,8 +305,8 @@ export default function NoteViewer() {
             const stateNotes = state.notes.filter((n) => n.id !== id);
             const newState = { ...state, notes: stateNotes };
             navigate(from?.pathname || '/', { replace: true, state: newState });
-        }).catch(() => {});
-    }, [id, execute, navigate, note, fleetingNotesApi, notesApi, state, from]);
+        }).catch(() => { });
+    }, [noteId, execute, navigate, note, fleetingNotesApi, notesApi, state, from]);
 
     // Use a ref to store the latest values for the save function
     const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
@@ -349,7 +326,7 @@ export default function NoteViewer() {
             } = saveDataRef.current;
 
             if (!content || content.trim().length === 0) {
-                notify({ type: 'error', text: 'Cannot save empty note.' });
+                toast.error('Cannot save empty note.');
                 return;
             }
 
@@ -367,7 +344,7 @@ export default function NoteViewer() {
                     if (fleeting) {
                         // Update existing fleeting note
                         await fleetingNotesApi.fleetingNotesUpdate({
-                            id,
+                            id: noteId,
                             fleetingNoteRequest: {
                                 content,
                             },
@@ -375,7 +352,7 @@ export default function NoteViewer() {
                     } else {
                         // Update regular note
                         await notesApi.notesUpdate({
-                            noteId: id,
+                            noteId: noteId || '',
                             noteEditRequest: {
                                 content: content,
                             },
@@ -393,17 +370,17 @@ export default function NoteViewer() {
                     setSaving(false);
                 });
         },
-        [id, execute, fleetingNotesApi, notesApi, notify],
+        [noteId, execute, fleetingNotesApi, notesApi],
     );
 
     const handleSaveAsFinal = useCallback(async () => {
         if (!id || !markdownContent || markdownContent.trim().length === 0) {
-            notify({ type: 'error', text: 'Cannot save empty note.' });
+            toast.error('Cannot save empty note.');
             return;
         }
 
         setSaving(true);
-        execute(() => fleetingNotesApi.fleetingNotesFinalUpdate({ id }), {
+        execute(() => fleetingNotesApi.fleetingNotesFinalUpdate({ id: noteId }), {
             successMessage: 'Note finalized successfully.',
         })
             .then((response) => {
@@ -414,7 +391,7 @@ export default function NoteViewer() {
             .finally(() => {
                 setSaving(false);
             });
-    }, [id, markdownContent, fileData, navigate, fleetingNotesApi, execute, notify]);
+    }, [noteId, markdownContent, fileData, navigate, fleetingNotesApi, execute]);
 
     const handleRelinkNote = useCallback(() => {
         if (!id) return;
@@ -423,16 +400,13 @@ export default function NoteViewer() {
             .managementActionsCreate({
                 actionName: 'relinkNotes',
                 requestBody: {
-                    note_id: id,
+                    note_id: noteId,
                 },
             })
             .then(() => {
-                notify({
-                    type: 'info',
-                    text: 'Relinking note...',
-                });
+                toast.info('Relinking note...');
             });
-    }, [id, managementApi, notify]);
+    }, [noteId, managementApi]);
 
     const handlePublish = useCallback(() => {
         if (!note || !id) return;
@@ -441,7 +415,7 @@ export default function NoteViewer() {
             noteId: id,
             noteTitle: note.title,
         });
-    }, [id, note, setModal]);
+    }, [noteId, note, setModal]);
 
     const handleDeleteWithConfirmation = useCallback(() => {
         setModal(ConfirmDeletionModal, {
@@ -450,12 +424,27 @@ export default function NoteViewer() {
         });
     }, [handleDelete, setModal]);
 
-    const handleFilesChange = useCallback(
-        (files: FileReferenceWithNote[]) => {
-            setFileData(files);
-        },
-        [setFileData, isFleeting],
-    );
+    const handleFilesChange = useCallback((files: FileReferenceWithNote[]) => {
+        (async () => {
+            if (isFleeting) {
+                await execute(() => fleetingNotesApi.fleetingNotesUpdate({
+                    id: noteId || '',
+                    fleetingNoteRequest: {
+                        files: files,
+                    },
+                }));
+            } else {
+                await execute(() => notesApi.notesUpdate({
+                    noteId: noteId || '',
+                    noteEditRequest: {
+                        files: files,
+                    },
+                }));
+            }
+        })();
+
+        setFileData(files);
+    }, [setFileData, isFleeting, noteId, execute, fleetingNotesApi, notesApi]);
 
     const handleUploadFiles = useCallback(
         (filesList?: any[]) => {
@@ -578,7 +567,7 @@ export default function NoteViewer() {
             <div className='w-[100%] h-full flex flex-col'>
                 <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
-                        {!id?.startsWith('guide_') && note && (
+                        {!noteId?.startsWith('guide_') && note && (
                             <StatusIndicators
                                 markdownContent={markdownContent}
                                 saving={saving}
@@ -592,28 +581,30 @@ export default function NoteViewer() {
                     </div>
 
                     <div className='flex items-center gap-2'>
-                        <Tooltip
-                            content={enableEditing ? 'Editing mode' : 'Reading mode'}
-                        >
-                            <button
-                                onClick={() => toggleEditing()}
-                                className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cradle-border'
-                                data-testid='actions-dropdown-btn'
-                            >
-                                {enableEditing ? (
-                                    <EditPencil width='20' height='20' />
-                                ) : (
-                                    <Book width='20' height='20' />
-                                )}
-                            </button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant='ghost'
+                                    size='icon'
+                                    onClick={() => toggleEditing()}
+                                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary cradle-border'
+                                    data-testid='actions-dropdown-btn'
+                                >
+                                    {
+                                        enableEditing ? <EditPencil width='20' height='20' /> : <Book width='20' height='20' />
+                                    }
+
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {enableEditing ? 'Editing mode' : 'Reading mode'}
+                            </TooltipContent>
                         </Tooltip>
-                        {!id?.startsWith('guide_') && (
+                        {!noteId?.startsWith('guide_') && (
                             <>
                                 <ActionsDropdown
                                     activeView={activeView}
                                     richEditor={richEditor}
-                                    showActionsMenu={showActionsMenu}
-                                    setShowActionsMenu={setShowActionsMenu}
                                     enableEditing={enableEditing}
                                     toggleEditing={toggleEditing}
                                     setActiveView={setActiveView}
@@ -660,28 +651,28 @@ export default function NoteViewer() {
                         <div className='w-full h-full overflow-hidden flex flex-col'>
                             <div className='h-full w-full pb-4 overflow-y-hidden'>
                                 {showOutline ? (
-                                    <PanelGroup
+                                    <ResizablePanelGroup
                                         direction='horizontal'
                                         className='h-full'
                                     >
                                         {/* Outline sidebar - rendered once */}
-                                        <Panel
+                                        <ResizablePanel
                                             defaultSize={15}
                                             minSize={10}
                                             maxSize={30}
                                         >
-                                            <div className='h-full pr-2 overflow-y-auto'>
+                                            <ScrollArea className='h-full pr-2'>
                                                 <NoteOutline
                                                     data={noteOutline}
                                                     title='Note Outline'
                                                     showSeparators={true}
                                                     currentLine={lineNumber}
                                                 />
-                                            </div>
-                                        </Panel>
-                                        <PanelResizeHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                                            </ScrollArea>
+                                        </ResizablePanel>
+                                        <ResizableHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
-                                        <Panel defaultSize={85} minSize={50}>
+                                        <ResizablePanel defaultSize={85} minSize={50}>
                                             <div
                                                 className='h-full flex flex-col border-l cradle-border relative'
                                                 onDoubleClick={
@@ -713,7 +704,7 @@ export default function NoteViewer() {
                                                                 : 'source'
                                                         }
                                                         ref={editorRef}
-                                                        noteid={id}
+                                                        noteid={noteId || ''}
                                                         markdownContent={
                                                             markdownContent
                                                         }
@@ -737,32 +728,38 @@ export default function NoteViewer() {
                                                     />
                                                 )}
                                             </div>
-                                        </Panel>
-                                    </PanelGroup>
-                                ) : (
-                                    <div
-                                        className='h-full flex flex-col border-l cradle-border relative'
-                                        onDoubleClick={
-                                            handleEnableEditingWithConfirmation
-                                        }
-                                    >
-                                        {showFind && (
-                                            <FindReplace
-                                                view={
-                                                    editorRef.current?.view ||
-                                                    editorRef.current
-                                                }
-                                                onClose={() => setShowFind(false)}
-                                                initialReplace={findReplaceMode}
-                                            />
-                                        )}
-                                        {/* Embedded Rich Editor */}
-                                        <div className='flex-1 min-h-0'>
-                                            <RichEditor
-                                                additionalExtensions={customKeymap}
-                                                key={richEditor ? 'rich' : 'source'}
+                                        </ResizablePanel>
+                                    </ResizablePanelGroup>
+                                                                ) : (
+                                                                    <div
+                                                                        className='h-full flex flex-col border-l cradle-border relative'
+                                                                        onDoubleClick={handleEnableEditingWithConfirmation}
+                                                                    >
+                                                                        {showFind && (
+                                                                            <FindReplace
+                                                                                view={
+                                                                                    editorRef.current?.view ||
+                                                                                    editorRef.current
+                                                                                }
+                                                                                onClose={() =>
+                                                                                    setShowFind(false)
+                                                                                }
+                                                                                initialReplace={findReplaceMode}
+                                                                            />
+                                                                        )}
+                                                                        {/* Embedded Rich Editor */}
+                                                                        <div className='flex-1 min-h-0'>
+                                                                            <RichEditor
+                                                                                additionalExtensions={
+                                                                                    customKeymap
+                                                                                }
+                                                                                key={
+                                                                                    richEditor
+                                                                                        ? 'rich'
+                                                                                        : 'source'
+                                                                                }
                                                 ref={editorRef}
-                                                noteid={id}
+                                                noteid={noteId || ''}
                                                 markdownContent={markdownContent}
                                                 setMarkdownContent={setMarkdownContent}
                                                 fileData={fileData}
@@ -789,8 +786,8 @@ export default function NoteViewer() {
                     )}
 
                     {/* Graph View */}
-                    {activeView === ViewMode.GRAPH && note && id && (
-                        <GraphExplorer GraphSearchComponent={NoteGraphSearch(id)} />
+                    {activeView === ViewMode.GRAPH && note && noteId && (
+                        <GraphExplorer GraphSearchComponent={NoteGraphSearch(noteId)} />
                     )}
 
                     {activeView === ViewMode.FILES && note && (
@@ -800,9 +797,9 @@ export default function NoteViewer() {
                         />
                     )}
 
-                    {isAdmin() && activeView === ViewMode.HISTORY && id && (
+                    {isAdmin() && activeView === ViewMode.HISTORY && noteId && (
                         <div className='pt-2'>
-                            <ActivityList content_type='note' objectId={id} />
+                            <ActivityList content_type='note' objectId={noteId} />
                         </div>
                     )}
                 </div>

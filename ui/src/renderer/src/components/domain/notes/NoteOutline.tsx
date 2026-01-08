@@ -1,4 +1,6 @@
 import { HeaderNode } from '@/utils/editor/outline';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import React, { useState } from 'react';
 
@@ -42,9 +44,11 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                 onClick={handleNodeClick}
             >
                 {hasChildren ? (
-                    <button
+                    <Button
+                        variant='ghost'
+                        size='icon-sm'
                         onClick={toggleExpand}
-                        className='w-4 flex items-center justify-center mr-2 text-cradle2 focus:outline-none'
+                        className='w-4 h-4 flex items-center justify-center mr-2 text-cradle2 p-0'
                         title={expanded ? 'Collapse' : 'Expand'}
                     >
                         {expanded ? (
@@ -60,7 +64,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                                 height='14'
                             />
                         )}
-                    </button>
+                    </Button>
                 ) : (
                     <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>
                         #
@@ -78,7 +82,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                     {nodeData.children!.map((child, index) => (
                         <React.Fragment key={`${index}_${child.nodeName}`}>
                             {showSeparators && child.separatorBefore && (
-                                <div className='border-b border-gray-700 my-2 mx-2 opacity-70'></div>
+                                <Separator className='my-2 mx-2 opacity-70' />
                             )}
                             <TreeNode
                                 nodeData={child}
@@ -113,7 +117,7 @@ const NoteOutline: React.FC<NoteOutlineProps> = ({
                 {data.map((node, index) => (
                     <React.Fragment key={`${index}_${node.nodeName}`}>
                         {showSeparators && node.separatorBefore && (
-                            <div className='border-b border-gray-700 my-2 mx-1 opacity-50'></div>
+                            <Separator className='my-2 mx-1 opacity-50' />
                         )}
                         <TreeNode
                             nodeData={node}

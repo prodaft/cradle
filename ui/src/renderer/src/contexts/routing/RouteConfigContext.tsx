@@ -37,7 +37,7 @@ const ReportList = React.lazy(
 const AccountSettings = React.lazy(
     () => import('@/components/domain/user/AccountSettings.jsx'),
 );
-const AdminPanel = React.lazy(() => import('@/components/domain/admin/AdminPanel.jsx'));
+const EntitiesPage = React.lazy(() => import('@/components/domain/admin/pages/EntitiesPage.jsx'));
 const DigestData = React.lazy(
     () => import('@/components/domain/activity/DigestData.jsx'),
 );
@@ -65,7 +65,7 @@ export const routeConfigs: RouteConfig[] = [
     { path: '/notes', component: Documents },
     { path: '/dashboards/:subtype/:name', component: Dashboard },
     { path: '/manage/add/user', component: () => <AccountSettings isEdit={false} /> },
-    { path: '/manage', component: AdminPanel },
+    { path: '/manage', component: EntitiesPage },
     { path: '/reports/:report_id', component: ReportList },
     {
         path: '/knowledge-graph',

@@ -1,9 +1,9 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { EdgeRelation } from '@/services/cradle';
 import InProgress from '@components/feedback/InProgress';
 import { CosmographProvider } from '@cosmograph/react';
 import { ComponentType, useMemo, useRef, useState } from 'react';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import Graph from './Graph';
 import { filterGraph, Node } from './graphFilterUtils';
 import GraphQuery from './GraphQuery';
@@ -41,7 +41,6 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         linkWidthCoefficient: 1,
         layoutMode: 'circular',
     });
-    const { notify } = useNotif();
     const [selectedNodes, setSelectedNodes] = useState<Set<Node>>(new Set());
     const [activePanel, setActivePanel] = useState<'explorer' | 'display' | null>(null);
     const cosmographRef = useRef<any>(null);
@@ -183,11 +182,11 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     return (
         <CosmographProvider>
             <div className='w-full h-full overflow-y-hidden relative'>
-                <PanelGroup direction='horizontal' className='h-full'>
+                <ResizablePanelGroup direction='horizontal' className='h-full'>
                     {/* Always render panel but hide it when closed */}
-                    <Panel
-                        defaultSize={30}
-                        minSize={20}
+                    <ResizablePanel 
+                        defaultSize={30} 
+                        minSize={20} 
                         maxSize={50}
                         className={activePanel ? '' : 'hidden'}
                     >
@@ -209,11 +208,11 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                             onClosePanel={() => setActivePanel(null)}
                             cosmographRef={cosmographRef}
                         />
-                    </Panel>
+                    </ResizablePanel>
                     {activePanel && (
-                        <PanelResizeHandle className='w-[2px] cradle-bg-elevated cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                        <ResizableHandle className='w-[2px] cradle-bg-elevated cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
                     )}
-                    <Panel defaultSize={activePanel ? 70 : 100} minSize={50}>
+                    <ResizablePanel defaultSize={activePanel ? 70 : 100} minSize={50}>
                         <div className='relative h-full'>
                             <Graph
                                 selectedNodes={selectedNodes}
@@ -235,8 +234,8 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                                 cosmographRef={cosmographRef}
                             />
                         </div>
-                    </Panel>
-                </PanelGroup>
+                    </ResizablePanel>
+                </ResizablePanelGroup>
             </div>
         </CosmographProvider>
     );

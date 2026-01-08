@@ -1,6 +1,7 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import TableCard from '@components/base/Card/TableCard';
+import { Card, CardContent } from '@/components/ui/card';
 import FilesList from '@components/domain/files/FilesList';
 import { Search } from 'iconoir-react';
 import { ChangeEvent, FormEvent, useState } from 'react';
@@ -31,7 +32,6 @@ interface FilesProps {
  */
 export default function Files({ obj }: FilesProps) {
     const { navigate, navigateLink } = useCradleNavigate();
-    const { notify } = useNotif();
     const [searchParams, setSearchParams] = useSearchParams();
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
         linked_to: obj?.id || '',
@@ -42,10 +42,7 @@ export default function Files({ obj }: FilesProps) {
 
     // Error handler function
     const handleError = (error: any) => {
-        notify({
-            type: 'error',
-            text: error.response?.data?.detail || 'An error occurred',
-        });
+        toast.error(error.response?.data?.detail || 'An error occurred');
     };
 
     const handleSearchChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -68,11 +65,12 @@ export default function Files({ obj }: FilesProps) {
 
     return (
         <div className='w-full h-full flex flex-col gap-4'>
-            <TableCard>
-                <form
-                    onSubmit={handleSearchSubmit}
-                    className='flex items-center gap-4 w-full'
-                >
+            <Card className='cradle-card-compact'>
+                <CardContent className='p-3'>
+                    <form
+                        onSubmit={handleSearchSubmit}
+                        className='flex items-center gap-4 w-full'
+                    >
                     <div className='relative flex-grow'>
                         <input
                             type='text'
@@ -82,12 +80,14 @@ export default function Files({ obj }: FilesProps) {
                             placeholder='Search files by name or hash...'
                             className='w-full bg-transparent border border-cradle-border-accent hover:border-cradle-accent-primary text-cradle-text-primary rounded-full px-4 pr-10 h-10 outline-none transition-colors'
                         />
-                        <button
+                        <Button
                             type='submit'
-                            className='absolute right-3 top-1/2 transform -translate-y-1/2 text-cradle-text-secondary hover:text-cradle-text-primary transition-colors'
+                            variant='ghost'
+                            size='icon-sm'
+                            className='absolute right-3 top-1/2 transform -translate-y-1/2 text-cradle-text-secondary hover:text-cradle-text-primary'
                         >
                             <Search width={16} height={16} />
-                        </button>
+                        </Button>
                     </div>
 
                     <div className='w-80'>
@@ -101,7 +101,8 @@ export default function Files({ obj }: FilesProps) {
                         />
                     </div>
                 </form>
-            </TableCard>
+                </CardContent>
+            </Card>
 
             <FilesList query={query} onError={handleError} />
         </div>

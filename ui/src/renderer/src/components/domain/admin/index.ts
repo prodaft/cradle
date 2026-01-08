@@ -1,4 +1,3 @@
-export { default as AdminPanel } from './AdminPanel';
 export { default as AdminPanelSection } from './AdminPanelSection';
 export { default as AdminPanelUserPermissions } from './AdminPanelUserPermissions';
 export { default as AdminPanelCardEnrichment } from './cards/AdminPanelCardEnrichment';

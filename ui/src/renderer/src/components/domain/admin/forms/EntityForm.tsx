@@ -1,4 +1,7 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { AccessUser, Entity } from '@services/cradle/models';
@@ -9,11 +12,10 @@ import {
     SelectOption,
     SettingsCard,
     SettingsField,
-    SettingsSeparator,
     SettingsTextArea,
-    SettingsToggle,
 } from '../../../forms';
-import Selector from '../../../forms/Selector';
+import { Separator } from '@/components/ui/separator';
+import ShadcnSelect from '../../../forms/ShadcnSelect';
 import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 
 interface EntityFormProps {
@@ -67,7 +69,6 @@ export default function EntityForm({
     onAdd,
 }: EntityFormProps) {
     const { accessApi, entriesApi, queryApi } = useApi();
-    const { notify } = useNotif();
 
     const [accesses, setAccessUsers] = useState<AccessUser[]>([]);
     const [entity, setEntity] = useState<Entity | null>(null);
@@ -197,25 +198,16 @@ export default function EntityForm({
                     entityId: Number(id),
                     entityRequest: payload,
                 });
-                notify({
-                    type: 'success',
-                    text: 'Entity updated successfully!',
-                });
+                toast.success('Entity updated successfully!');
             } else {
                 const result = await entriesApi.entitiesCreate({
                     entityRequest: payload,
                 });
-                notify({
-                    type: 'success',
-                    text: 'Entity created successfully!',
-                });
+                toast.success('Entity created successfully!');
                 if (onAdd) onAdd(result);
             }
         } catch (error) {
-            notify({
-                type: 'error',
-                text: `Failed to ${isEdit ? 'update' : 'create'} entity`,
-            });
+            toast.error(`Failed to ${isEdit ? 'update' : 'create'} entity`);
         }
     };
 
@@ -243,14 +235,14 @@ export default function EntityForm({
     }
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
+                    <h2 className='text-2xl font-bold tracking-tight'>
                         {isEdit ? 'Edit Entity' : 'New Entity'}
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
+                    </h2>
+                    <p className='text-muted-foreground'>
                         {isEdit ? 'Modify entity details' : 'Create new entity'}
                     </p>
                 </div>
@@ -280,7 +272,7 @@ export default function EntityForm({
                                         required
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='Subtype'
@@ -293,11 +285,11 @@ export default function EntityForm({
                                             name='subtype'
                                             control={control}
                                             render={({ field }) => (
-                                                <Selector
-                                                    {...field}
+                                                <ShadcnSelect
                                                     staticOptions={subtypeOptions}
+                                                    value={field.value}
                                                     placeholder='Select subtype'
-                                                    isDisabled={isEdit}
+                                                    disabled={isEdit}
                                                     onChange={(newValue) => {
                                                         field.onChange(newValue);
                                                         handleSubtypeChange(
@@ -309,17 +301,35 @@ export default function EntityForm({
                                         />
                                     </SettingsField>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
-                                    <SettingsToggle
-                                        label='Publicly Available'
-                                        description='Allow public access to this entity'
-                                        {...register('isPublic')}
-                                        watch={watch}
-                                        error={errors.isPublic}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor='isPublic' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Publicly Available
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>Allow public access to this entity</p>
+                                                {errors.isPublic && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.isPublic.message}</p>
+                                                )}
+                                            </div>
+                                            <Controller
+                                                name='isPublic'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='isPublic'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsTextArea
                                         label='Description'
@@ -331,7 +341,7 @@ export default function EntityForm({
                                         layout='vertical'
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <div className='py-2'>
                                         <label className='text-sm cradle-text-tertiary block mb-0.5'>
@@ -345,11 +355,14 @@ export default function EntityForm({
                                             name='aliases'
                                             control={control}
                                             render={({ field }) => (
-                                                <Selector
-                                                    {...field}
+                                                <ShadcnSelect
                                                     fetchOptions={fetchAliases}
+                                                    values={field.value || []}
                                                     placeholder='Select aliases...'
                                                     isMulti
+                                                    onMultiChange={(newValues) => {
+                                                        field.onChange(newValues);
+                                                    }}
                                                 />
                                             )}
                                         />
@@ -396,17 +409,13 @@ export default function EntityForm({
 
                         {/* Save Button */}
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <button
+                            <Button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
+                                variant='default'
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting
-                                    ? 'Saving...'
-                                    : isEdit
-                                      ? 'Save Changes'
-                                      : 'Create Entity'}
-                            </button>
+                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entity'}
+                            </Button>
                         </div>
                     </form>
                 </div>

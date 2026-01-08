@@ -1,8 +1,13 @@
-import { useNotif } from '@/contexts';
+import { toast } from 'sonner';
 import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import { Code, Download, Page } from 'iconoir-react';
 import { useEffect, useState } from 'react';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 /**
  * Report format types
@@ -53,7 +58,6 @@ export default function ReportGenerationModal({
     const [format, setFormat] = useState<ReportFormat>('html');
     const [mode, setMode] = useState<ReportMode>('anonymized');
     const [isGenerating, setIsGenerating] = useState(false);
-    const { notify } = useNotif();
     const { execute } = useAPICall();
 
     const targets =
@@ -82,20 +86,14 @@ export default function ReportGenerationModal({
 
     const handleGenerate = async () => {
         if (!title.trim()) {
-            notify({
-                type: 'error',
-                text: 'Please enter a report title.',
-            });
+            toast.error('Please enter a report title.');
             return;
         }
 
         const validTargets = targets.filter((t) => selectedIds.has(t.id));
 
         if (validTargets.length === 0) {
-            notify({
-                type: 'error',
-                text: 'No notes selected for report generation.',
-            });
+            toast.error('No notes selected for report generation.');
             return;
         }
 
@@ -123,21 +121,17 @@ export default function ReportGenerationModal({
     };
 
     return (
-        <div className='min-w-[400px] max-w-lg'>
-            <div className='flex items-end justify-between mb-4'>
-                <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                        Generate Report
-                    </h2>
-                </div>
-            </div>
+        <>
+            <DialogHeader>
+                <DialogTitle>Generate Report</DialogTitle>
+            </DialogHeader>
 
             {/* Selected Notes List */}
             {targets.length > 0 && (
                 <div className='mb-5'>
-                    <label className='cradle-label mb-2 block'>
+                    <Label>
                         Selected Notes ({selectedIds.size})
-                    </label>
+                    </Label>
                     <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
                         {targets.map((note) => {
                             const isSelected = selectedIds.has(note.id);
@@ -173,13 +167,15 @@ export default function ReportGenerationModal({
             )}
 
             {/* Title Input */}
-            <div className='mb-5'>
-                <label className='cradle-label mb-2 block'>Report Title</label>
-                <input
+            <div className='grid w-full items-center gap-3 mb-5'>
+                <Label htmlFor='report-title'>
+                    Report Title
+                </Label>
+                <Input
+                    id='report-title'
                     type='text'
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
-                    className='cradle-input w-full'
                     placeholder='Enter report title...'
                     disabled={isGenerating}
                 />
@@ -187,103 +183,94 @@ export default function ReportGenerationModal({
 
             {/* Format Selection */}
             <div className='mb-5'>
-                <label className='cradle-label mb-2 block'>Format</label>
+                <Label>
+                    Format
+                </Label>
                 <div className='grid grid-cols-3 gap-3'>
-                    <button
+                    <Button
                         onClick={() => setFormat('html')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
-                            format === 'html'
-                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                        } disabled:opacity-50`}
+                        variant={format === 'html' ? 'default' : 'outline'}
+                        className='p-3 flex flex-col items-center gap-2'
                     >
                         <Page width='20' height='20' />
                         <span className='text-sm font-medium'>HTML</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => setFormat('json')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
-                            format === 'json'
-                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                        } disabled:opacity-50`}
+                        variant={format === 'json' ? 'default' : 'outline'}
+                        className='p-3 flex flex-col items-center gap-2'
                     >
                         <Code width='20' height='20' />
                         <span className='text-sm font-medium'>JSON</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => setFormat('plain')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex flex-col items-center gap-2 transition-colors ${
-                            format === 'plain'
-                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                        } disabled:opacity-50`}
+                        variant={format === 'plain' ? 'default' : 'outline'}
+                        className='p-3 flex flex-col items-center gap-2'
                     >
                         <Download width='20' height='20' />
                         <span className='text-sm font-medium'>Plain Text</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Mode Selection */}
             <div className='mb-6'>
-                <label className='cradle-label mb-2 block'>Mode</label>
+                <Label>
+                    Mode
+                </Label>
                 <div className='grid grid-cols-2 gap-3'>
-                    <button
+                    <Button
                         onClick={() => setMode('anonymized')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
-                            mode === 'anonymized'
-                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                        } disabled:opacity-50`}
+                        variant={mode === 'anonymized' ? 'default' : 'outline'}
+                        className='p-3 flex items-center justify-center gap-2'
                     >
                         <span className='text-sm font-medium'>Anonymized</span>
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         onClick={() => setMode('transparent')}
                         disabled={isGenerating}
                         type='button'
-                        className={`p-3 border rounded-xl flex items-center justify-center gap-2 transition-colors ${
-                            mode === 'transparent'
-                                ? 'border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary'
-                                : 'border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary text-cradle-text-secondary'
-                        } disabled:opacity-50`}
+                        variant={mode === 'transparent' ? 'default' : 'outline'}
+                        className='p-3 flex items-center justify-center gap-2'
                     >
                         <span className='text-sm font-medium'>Transparent</span>
-                    </button>
+                    </Button>
                 </div>
             </div>
 
             {/* Footer */}
-            <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                <button
+            <div className='flex justify-end gap-2 mt-4'>
+                <Button
                     onClick={closeModal}
                     disabled={isGenerating}
                     type='button'
-                    className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                    variant='outline'
+                    size='sm'
                 >
                     Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                     onClick={handleGenerate}
                     disabled={isGenerating || !title.trim()}
                     type='button'
-                    className='rounded-lg border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                    variant='default'
+                    size='sm'
                 >
                     {isGenerating && (
                         <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
                     )}
                     {isGenerating ? 'Generating...' : 'Generate Report'}
-                </button>
+                </Button>
             </div>
-        </div>
+        </>
     );
 }

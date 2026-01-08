@@ -5,13 +5,9 @@ import MarkdownEditorModal from '@components/modals/notes/MarkdownEditorModal';
 import { useModal } from '@contexts/ui/ModalContext';
 import useApi from '@hooks/api/useApi';
 import { Edit, Plus, Trash } from 'iconoir-react/regular';
-import {
-    forwardRef,
-    MouseEvent,
-    useEffect,
-    useImperativeHandle,
-    useState,
-} from 'react';
+import { forwardRef, MouseEvent, useEffect, useImperativeHandle, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Snippet {
     id: string;
@@ -29,14 +25,12 @@ export interface SnippetListRef {
     handleAddSnippet: () => void;
 }
 
-const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
-    ({ userId = null, showTitle = true, description }, ref) => {
-        const [snippets, setSnippets] = useState<Snippet[]>([]);
-        const [loading, setLoading] = useState(true);
-        const { execute } = useAPICall();
-        const { notify } = useNotif();
-        const { setModal } = useModal();
-        const { notesApi } = useApi();
+const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = null, showTitle = true, description }, ref) => {
+    const [snippets, setSnippets] = useState<Snippet[]>([]);
+    const [loading, setLoading] = useState(true);
+    const { execute } = useAPICall();
+    const { setModal } = useModal();
+    const { notesApi } = useApi();
 
         useEffect(() => {
             loadSnippets();
@@ -86,32 +80,27 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                 content: content.trim(),
                             };
 
-                            await execute(
-                                () =>
-                                    notesApi.notesSnippetsUserCreate({
-                                        userId:
-                                            userId === null ? 'null' : String(userId),
-                                        snippetRequest: snippetData,
-                                    }),
-                                {
-                                    successMessage: 'Snippet created successfully',
-                                    errorMessage: 'Failed to create snippet',
-                                },
-                            );
-                            await loadSnippets();
-                        } catch (error) {
-                            console.error('Error creating snippet:', error);
-                        }
-                    } else if (title.trim() === '') {
-                        notify({ type: 'error', text: 'Title is required' });
-                        throw new Error('Title is required');
-                    } else if (content.trim() === '') {
-                        notify({ type: 'error', text: 'Content is required' });
-                        throw new Error('Content is required');
+                        await execute(() => notesApi.notesSnippetsUserCreate({
+                            userId: userId === null ? 'null' : String(userId),
+                            snippetRequest: snippetData,
+                        }), {
+                            successMessage: 'Snippet created successfully',
+                            errorMessage: 'Failed to create snippet',
+                        });
+                        await loadSnippets();
+                    } catch (error) {
+                        console.error('Error creating snippet:', error);
                     }
-                },
-            });
-        };
+                } else if (title.trim() === '') {
+                    toast.error('Title is required');
+                    throw new Error('Title is required');
+                } else if (content.trim() === '') {
+                    toast.error('Content is required');
+                    throw new Error('Content is required');
+                }
+            },
+        });
+    };
 
         useImperativeHandle(ref, () => ({
             handleAddSnippet: () => handleAddSnippet(),
@@ -170,74 +159,75 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
             });
         };
 
-        return (
-            <div className='w-full pb-2'>
-                {/* Header with title and add button */}
-                {showTitle && (
-                    <div className='flex items-center justify-between mb-3'>
-                        <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono'>
-                            Note Snippets
-                        </h3>
-                        <button
-                            onClick={handleAddSnippet}
-                            className='btn btn-sm btn-primary flex items-center gap-2'
-                        >
-                            <Plus className='w-4 h-4' />
-                            New Snippet
-                        </button>
+    return (
+        <div className='w-full pb-2'>
+            {/* Header with title and add button */}
+            {showTitle && (
+                <div className='flex items-center justify-between mb-3'>
+                    <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono'>
+                        Note Snippets
+                    </h3>
+                    <Button
+                        onClick={handleAddSnippet}
+                        variant='default'
+                        size='sm'
+                        className='flex items-center gap-2'
+                    >
+                        <Plus className='w-4 h-4' />
+                        New Snippet
+                    </Button>
+                </div>
+            )}
+
+            {/* Snippets list */}
+            <ScrollArea className='max-h-40 border border-cradle-border-primary'>
+                {loading ? (
+                    <div className='p-3 text-center'>
+                        <div className='loading loading-spinner loading-sm'></div>
+                        <p className='text-sm text-gray-500 mt-2'>Loading...</p>
+                    </div>
+                ) : snippets.length === 0 ? (
+                    <div className='p-3 text-center text-gray-500'>
+                        <p className='text-sm'>No snippets yet</p>
+                    </div>
+                ) : (
+                    <div className='divide-y divide-gray-200'>
+                        {snippets.map((snippet) => (
+                            <div
+                                key={snippet.id}
+                                className='px-3 py-2 cursor-pointer flex items-center justify-between'
+                            >
+                                <div className='font-medium text-sm truncate flex-1 mr-2'>
+                                    {snippet.name}
+                                </div>
+                                <div className='flex items-center gap-1'>
+                                    <Button
+                                        onClick={(e) => handleEditSnippet(snippet, e)}
+                                        variant='ghost'
+                                        size='icon-sm'
+                                        className='p-1 hover:bg-gray-200'
+                                        title='Edit snippet'
+                                    >
+                                        <Edit className='w-4 h-4 dark:text-cradle2' />
+                                    </Button>
+                                    <Button
+                                        onClick={(e) => handleDeleteSnippet(snippet, e)}
+                                        variant='ghost'
+                                        size='icon-sm'
+                                        className='p-1 hover:bg-red-100'
+                                        title='Delete snippet'
+                                    >
+                                        <Trash className='w-4 h-4 text-red-600' />
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 )}
-
-                {/* Snippets list */}
-                <div className='max-h-40 overflow-y-auto border border-cradle-border-primary'>
-                    {loading ? (
-                        <div className='p-3 text-center'>
-                            <div className='loading loading-spinner loading-sm'></div>
-                            <p className='text-sm text-gray-500 mt-2'>Loading...</p>
-                        </div>
-                    ) : snippets.length === 0 ? (
-                        <div className='p-3 text-center text-gray-500'>
-                            <p className='text-sm'>No snippets yet</p>
-                        </div>
-                    ) : (
-                        <div className='divide-y divide-gray-200'>
-                            {snippets.map((snippet) => (
-                                <div
-                                    key={snippet.id}
-                                    className='px-3 py-2 cursor-pointer flex items-center justify-between'
-                                >
-                                    <div className='font-medium text-sm truncate flex-1 mr-2'>
-                                        {snippet.name}
-                                    </div>
-                                    <div className='flex items-center gap-1'>
-                                        <button
-                                            onClick={(e) =>
-                                                handleEditSnippet(snippet, e)
-                                            }
-                                            className='p-1 hover:bg-gray-200 rounded'
-                                            title='Edit snippet'
-                                        >
-                                            <Edit className='w-4 h-4 dark:text-cradle2' />
-                                        </button>
-                                        <button
-                                            onClick={(e) =>
-                                                handleDeleteSnippet(snippet, e)
-                                            }
-                                            className='p-1 hover:bg-red-100 rounded'
-                                            title='Delete snippet'
-                                        >
-                                            <Trash className='w-4 h-4 text-red-600' />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    },
-);
+            </ScrollArea>
+        </div>
+    );
+});
 
 SnippetList.displayName = 'SnippetList';
 

@@ -127,40 +127,6 @@ export interface LayoutContextValue {
 }
 
 // ============================================================================
-// Tab Types
-// ============================================================================
-
-export interface Tab {
-    id: string;
-    label: string;
-    content: ReactNode;
-    closable?: boolean;
-}
-
-export interface TabContextValue {
-    // Tab content context properties
-    params?: Record<string, string>;
-    location?: {
-        pathname: string;
-        search: string;
-        hash: string;
-        state: any;
-        key: string;
-    };
-    navigate?: (to: string, opts?: any) => void;
-    isActive?: boolean;
-    isPaneActive?: boolean;
-    isBackgroundTab?: boolean;
-    capturedParams?: Record<string, string>;
-    capturedPathname?: string;
-
-    // Legacy/Unused? properties
-    tabs?: Tab[];
-    activeTab?: string | null;
-    addTab?: (tab: Tab) => void;
-    removeTab?: (id: string) => void;
-    setActiveTab?: (id: string) => void;
-}
 
 // ============================================================================
 // API Response Types

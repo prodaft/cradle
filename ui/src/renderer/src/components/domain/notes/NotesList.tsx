@@ -1,5 +1,5 @@
 import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import useAPICall from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -7,6 +7,7 @@ import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { parseMarkdownInline } from '@/utils/parser';
 import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
+import { Button } from '@/components/ui/button';
 import {
     DesignNib,
     InfoCircleSolid,
@@ -18,25 +19,25 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-    ActionBar,
-    ActionBarButton,
-    ActionBarDivider,
-    ActionBarSearch,
-    CollapsibleActionGroup,
-} from '../../base/ActionBar/ActionBar';
-import ListView, { DateRangeFilter, SortDirection } from '../../base/ListView/ListView';
+import { ActionBar, ActionBarButton, ActionBarSearch } from '../../base/ActionBar/ActionBar';
+import { DataTable, type BulkAction } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '../../base/TableActionsButton';
-import Tooltip from '../../base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import EnrichmentRequestModal from '../../modals/enrichment/EnrichmentRequestModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
 import { NotePreviewContent } from './NotePreviewContent';
+import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DateRangeFilter } from '../../base/ListView/types';
 
 interface Alert {
     show: boolean;
@@ -115,9 +116,8 @@ export default function NotesList({
     const [sortDirection, setSortDirection] = useState<SortDirection>(
         (searchParams.get('notes_sort_direction') as SortDirection) || 'desc',
     );
-    const { navigateLink } = useCradleNavigate();
+    const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
-    const { notify } = useNotif();
     const { fleetingNotesApi, notesApi, managementApi } = useApi();
     const { execute } = useAPICall();
     const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
@@ -211,17 +211,31 @@ export default function NotesList({
         }
     };
 
-    const handleSort = (field: string, direction: SortDirection) => {
-        setSortField(field);
-        setSortDirection(direction);
+    const handleSortingChange = useCallback(
+        (sorting: SortingState) => {
+            if (sorting.length === 0) {
+                setSortField('timestamp');
+                setSortDirection('desc');
+            } else {
+                const sort = sorting[0];
+                const apiField = sortFieldMapping[sort.id] || sort.id;
+                setSortField(apiField);
+                setSortDirection(sort.desc ? 'desc' : 'asc');
+            }
 
         setPage(1);
         const newParams = new URLSearchParams(searchParams);
         newParams.set('notes_page', '1');
-        newParams.set('notes_sort_field', field);
-        newParams.set('notes_sort_direction', direction);
+            if (sorting.length > 0) {
+                const sort = sorting[0];
+                const apiField = sortFieldMapping[sort.id] || sort.id;
+                newParams.set('notes_sort_field', apiField);
+                newParams.set('notes_sort_direction', sort.desc ? 'desc' : 'asc');
+            }
         setSearchParams(newParams, { replace: true });
-    };
+        },
+        [searchParams, setSearchParams],
+    );
 
     const handleColumnFilter = (column: string, value: string | DateRangeFilter) => {
         setColumnFilters((prev) => ({
@@ -302,14 +316,9 @@ export default function NotesList({
 
             await Promise.all(promises);
 
-            notify({
-                type: 'success',
-                text: `Retrying ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}...`,
-            });
-            setSelectedNotes([]);
-        },
-        [managementApi, execute, notify],
-    );
+        toast.success(`Retrying ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}...`);
+        setSelectedNotes([]);
+    }, [managementApi, execute]);
 
     // Notes to display (same as fetched notes since filters were removed)
     const displayedNotes = notes;
@@ -494,147 +503,213 @@ export default function NotesList({
         },
     ];
 
-    const columns: Array<{
-        key: string;
-        label: string | React.ReactNode;
-        filterType?: 'text' | 'date';
-    }> = [
-        {
-            key: 'title',
-            label: (
-                <div className='flex items-center gap-2'>
-                    <StatusHeaderDropdown
-                        onStatusChange={handleStatusChange}
-                        status={columnFilters.status}
-                        statusOptions={[
-                            'all',
-                            'fleeting',
-                            'healthy',
-                            'warning',
-                            'invalid',
-                            'processing',
-                        ]}
-                    />
-                    <span>Title</span>
-                </div>
-            ),
-        },
-        { key: 'description', label: 'Description' },
-        { key: 'author', label: 'Author', filterType: 'text' as const },
-        { key: 'editor', label: 'Editor', filterType: 'text' as const },
-        { key: 'createdAt', label: 'Created At', filterType: 'date' as const },
-        { key: 'lastChanged', label: 'Updated At', filterType: 'date' as const },
-        { key: 'actions', label: '' },
-    ];
+    // Convert sortField and sortDirection to TanStack Table sorting state
+    const sorting = useMemo<SortingState>(() => {
+        const columnId = Object.keys(sortFieldMapping).find(
+            (key) => sortFieldMapping[key] === sortField
+        ) || sortField;
+        
+        return columnId ? [{
+            id: columnId,
+            desc: sortDirection === 'desc',
+        }] : [];
+    }, [sortField, sortDirection]);
+
+    // Filter out filtered notes
+    const filteredData = useMemo(() => {
+        return displayedNotes.filter((note) => {
+            return !filteredNotes.some((n) => n.id === note.id);
+        });
+    }, [displayedNotes, filteredNotes]);
 
     const renderNotePreview = (note: NoteRetrieve) => {
         return <NotePreviewContent note={note} />;
     };
 
-    const renderRow = (note: NoteRetrieve, index: number, selectProps: any = {}) => {
-        for (const n of filteredNotes) {
-            if (n.id === note.id) return null;
-        }
-
-        const { enableMultiSelect, isSelected, onSelect } = selectProps;
-
-        return (
+    // Memoize columns to prevent recreation on every render
+    const columns = useMemo<ColumnDef<NoteRetrieve>[]>(
+        () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                accessorKey: 'title',
+                id: 'title',
+                header: () => (
+                    <span>Title</span>
+                ),
+                cell: ({ row }) => (
             <PreviewTip
-                content={renderNotePreview(note)}
+                        content={renderNotePreview(row.original)}
                 side='top'
                 align='start'
                 sideOffset={32}
                 size='lg'
-                key={note.id}
-            >
-                <tr
-                    className='cursor-pointer'
-                    onClick={navigateLink(`/notes/${note.id}`)}
-                >
-                    {enableMultiSelect && (
-                        <td className='w-12' onClick={(e) => e.stopPropagation()}>
-                            <div className='flex items-center'>
-                                <input
-                                    type='checkbox'
-                                    className='cradle-checkbox'
-                                    checked={isSelected}
-                                    onChange={onSelect}
-                                />
-                            </div>
-                        </td>
-                    )}
-                    <td className='truncate w-64'>
+                    >
+                        <div className='truncate w-64 cursor-pointer' onClick={navigateLink(`/notes/${row.original.id}`)}>
                         <div className='flex items-center gap-2 min-w-0'>
-                            {note.fleeting ? (
-                                <Tooltip content='Fleeting Note'>
-                                    <span className='inline-flex items-center align-middle flex-shrink-0'>
-                                        <DesignNib
-                                            className='text-[#FF8C00]'
-                                            width='18'
-                                            height='18'
-                                        />
-                                    </span>
+                                {row.original.fleeting ? (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span className='inline-flex items-center align-middle flex-shrink-0'>
+                                            <DesignNib
+                                                className='text-[#FF8C00]'
+                                                width='18'
+                                                height='18'
+                                            />
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Fleeting Note
+                                    </TooltipContent>
                                 </Tooltip>
                             ) : (
-                                note.status && (
-                                    <Tooltip
-                                        content={
-                                            note.statusMessage ||
-                                            capitalizeString(note.status)
-                                        }
-                                    >
-                                        <span className='inline-flex items-center align-middle flex-shrink-0'>
-                                            {getStatusIcon(note.status)}
-                                        </span>
+                                    row.original.status && (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <span className='inline-flex items-center align-middle flex-shrink-0'>
+                                                {getStatusIcon(row.original.status)}
+                                            </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            {row.original.statusMessage ||
+                                                capitalizeString(row.original.status)}
+                                        </TooltipContent>
                                     </Tooltip>
                                 )
                             )}
 
                             <span className='truncate'>
                                 {truncateText(
-                                    parseMarkdownInline(note.metadata?.title || ''),
+                                        parseMarkdownInline(row.original.metadata?.title || ''),
                                     64,
                                 )}
                             </span>
                         </div>
-                    </td>
-                    <td className='truncate max-w-xs'>
-                        {note.metadata?.description
-                            ? parseMarkdownInline(note.metadata?.description)
-                            : '-'}
-                    </td>
-                    <td className='truncate w-32'>
-                        {truncateText(note.author?.username || '', 16)}
-                    </td>
-                    <td className='truncate w-32'>
-                        {truncateText(note.editor?.username || '', 16)}
-                    </td>
-                    <td className='w-36'>
-                        {note.timestamp && formatDate(new Date(note.timestamp))}
-                    </td>
-                    <td className='w-36'>
-                        {note.editTimestamp
-                            ? formatDate(new Date(note.editTimestamp))
-                            : '-'}
-                    </td>
-                    <td
-                        className='w-12 text-right'
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <div className='flex justify-end'>
-                            <RowActionsButton note={note} />
                         </div>
-                    </td>
-                </tr>
             </PreviewTip>
-        );
-    };
-
-    // Row Actions Button Component
-    const RowActionsButton = ({ note }: { note: NoteRetrieve }) => {
-        const menuButtonClasses =
-            'w-full text-left px-4 py-2 text-sm cradle-text-secondary border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2';
-
+                ),
+            },
+            {
+                accessorKey: 'description',
+                id: 'description',
+                header: 'Description',
+                cell: ({ row }) => (
+                    <div className='truncate max-w-xs'>
+                        {row.original.metadata?.description
+                            ? parseMarkdownInline(row.original.metadata?.description)
+                            : '-'}
+                    </div>
+                ),
+                enableSorting: false,
+            },
+            {
+                accessorKey: 'author',
+                id: 'author',
+                header: ({ column }) => {
+                    const filterValue = columnFilters.author as string;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DataTableColumnHeader column={column} title="Author" />
+                            {filterValue && (
+                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            )}
+                        </div>
+                    );
+                },
+                cell: ({ row }) => (
+                    <div className='truncate w-32'>
+                        {truncateText(row.original.author?.username || '', 16)}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'editor',
+                id: 'editor',
+                header: ({ column }) => {
+                    const filterValue = columnFilters.editor as string;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DataTableColumnHeader column={column} title="Editor" />
+                            {filterValue && (
+                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            )}
+                        </div>
+                    );
+                },
+                cell: ({ row }) => (
+                    <div className='truncate w-32'>
+                        {truncateText(row.original.editor?.username || '', 16)}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'createdAt',
+                id: 'createdAt',
+                header: ({ column }) => {
+                    const filterValue = columnFilters.createdAt as DateRangeFilter;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DataTableColumnHeader column={column} title="Created At" />
+                            {(filterValue?.from && filterValue?.to) && (
+                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            )}
+                        </div>
+                    );
+                },
+                cell: ({ row }) => (
+                    <div className='w-36'>
+                        {row.original.timestamp && formatDate(new Date(row.original.timestamp))}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'lastChanged',
+                id: 'lastChanged',
+                header: ({ column }) => {
+                    const filterValue = columnFilters.lastChanged as DateRangeFilter;
+                    return (
+                        <div className="flex items-center gap-2">
+                            <DataTableColumnHeader column={column} title="Updated At" />
+                            {(filterValue?.from && filterValue?.to) && (
+                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                            )}
+                        </div>
+                    );
+                },
+                cell: ({ row }) => (
+                    <div className='w-36'>
+                        {row.original.editTimestamp
+                            ? formatDate(new Date(row.original.editTimestamp))
+                            : '-'}
+                    </div>
+                ),
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    const note = row.original;
         const handleDelete = () => {
             actions[0].handler([note.id!]);
         };
@@ -665,30 +740,41 @@ export default function NotesList({
         };
 
         return (
+                        <div className='w-12 text-right' onClick={(e) => e.stopPropagation()}>
+                            <div className='flex justify-end'>
             <TableActionsButton>
-                <button onClick={handleRetry} className={menuButtonClasses}>
+                <DropdownMenuItem onClick={handleRetry}>
                     <RefreshCircle width='18' height='18' />
                     Retry
-                </button>
-                <button onClick={handleReport} className={menuButtonClasses}>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleReport}>
                     <StatsReport width='18' height='18' />
                     Generate Report
-                </button>
-                <button onClick={handleEnrich} className={menuButtonClasses}>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleEnrich}>
                     <Sparks width='18' height='18' />
                     Enrich
-                </button>
-                <div className='border-t border-gray-600/40 dark:border-gray-500/40 my-1 -mx-1' />
-                <button
-                    onClick={handleDelete}
-                    className='w-full text-left px-4 py-2 text-sm text-red-500 border border-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors rounded-lg flex items-center gap-2'
-                >
-                    <Trash width='18' height='18' className='text-red-500' />
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                    <Trash width='18' height='18' />
                     Delete
-                </button>
+                </DropdownMenuItem>
             </TableActionsButton>
-        );
-    };
+                            </div>
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [columnFilters, handleStatusChange, handleColumnFilter, getStatusIcon, actions, handleRetrySelected, setModal],
+    );
+
+    // Handle row selection
+    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
+        setSelectedNotes(selectedIds);
+    }, []);
 
     return (
         <PreviewTipProvider delayDuration={800}>
@@ -696,138 +782,18 @@ export default function NotesList({
                 <ActionBar
                     left={
                         <>
-                            {!hideActionBar && (
-                                <>
-                                    <CollapsibleActionGroup
-                                        selectedCount={selectedNotes.length}
-                                        itemLabel='note'
-                                        actions={[
-                                            {
-                                                id: 'delete',
-                                                tooltip:
-                                                    selectedNotes.length > 0
-                                                        ? `Delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''} (Del)`
-                                                        : 'Select notes to delete',
-                                                icon: <Trash width={18} height={18} />,
-                                                onClick: () => {
-                                                    if (selectedNotes.length > 0)
-                                                        actions[0].handler(
-                                                            selectedNotes,
-                                                        );
-                                                },
-                                                disabled:
-                                                    loading ||
-                                                    selectedNotes.length === 0 ||
-                                                    notes.length === 0,
-                                                iconActive: selectedNotes.length > 0,
-                                            },
-                                            {
-                                                id: 'retry',
-                                                tooltip:
-                                                    selectedNotes.length > 0
-                                                        ? `Retry ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
-                                                        : 'Select notes to retry',
-                                                icon: (
-                                                    <RefreshCircle
-                                                        width={18}
-                                                        height={18}
-                                                    />
-                                                ),
-                                                onClick: () =>
-                                                    handleRetrySelected(selectedNotes),
-                                                disabled:
-                                                    loading ||
-                                                    selectedNotes.length === 0 ||
-                                                    notes.length === 0,
-                                                iconActive: selectedNotes.length > 0,
-                                            },
-                                            {
-                                                id: 'report',
-                                                tooltip:
-                                                    selectedNotes.length > 0
-                                                        ? `Generate report for ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
-                                                        : 'Select notes to generate report',
-                                                icon: (
-                                                    <StatsReport
-                                                        width={18}
-                                                        height={18}
-                                                    />
-                                                ),
-                                                onClick: () => {
-                                                    if (selectedNotes.length === 0)
-                                                        return;
-                                                    const selectedNoteObjects = notes
-                                                        .filter(
-                                                            (n) =>
-                                                                n.id &&
-                                                                selectedNotes.includes(
-                                                                    n.id,
-                                                                ),
-                                                        )
-                                                        .map((n) => ({
-                                                            id: n.id!,
-                                                            title:
-                                                                n.metadata?.title ||
-                                                                n.title ||
-                                                                'Untitled',
-                                                        }));
-                                                    setModal(ReportGenerationModal, {
-                                                        selectedNotes:
-                                                            selectedNoteObjects,
-                                                    });
-                                                },
-                                                disabled:
-                                                    loading ||
-                                                    selectedNotes.length === 0 ||
-                                                    notes.length === 0,
-                                                iconActive: selectedNotes.length > 0,
-                                            },
-                                            {
-                                                id: 'enrich',
-                                                tooltip:
-                                                    selectedNotes.length > 0
-                                                        ? `Enrich ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}`
-                                                        : 'Select notes to enrich',
-                                                icon: <Sparks width={18} height={18} />,
-                                                onClick: () => {
-                                                    if (selectedNotes.length === 0)
-                                                        return;
-                                                    const selectedNoteObjects = notes
-                                                        .filter(
-                                                            (n) =>
-                                                                n.id &&
-                                                                selectedNotes.includes(
-                                                                    n.id,
-                                                                ),
-                                                        )
-                                                        .map((n) => ({
-                                                            id: n.id!,
-                                                            title:
-                                                                n.metadata?.title ||
-                                                                n.title ||
-                                                                'Untitled',
-                                                            entities: n.entities || [],
-                                                        }));
-                                                    setModal(EnrichmentRequestModal, {
-                                                        notesList: selectedNoteObjects,
-                                                    });
-                                                },
-                                                disabled:
-                                                    loading ||
-                                                    selectedNotes.length === 0 ||
-                                                    notes.length === 0,
-                                                iconActive: selectedNotes.length > 0,
-                                            },
-                                        ]}
-                                    />
-
-                                    <ActionBarDivider />
-                                </>
-                            )}
 
                             {onCreateNote && hideActionBar && (
                                 <ActionBarButton
-                                    tooltip='Create new note (Ctrl+N)'
+                                    tooltip={
+                                        <>
+                                            Create new note{' '}
+                                            <KbdGroup>
+                                                <Kbd>Ctrl</Kbd>
+                                                <Kbd>N</Kbd>
+                                            </KbdGroup>
+                                        </>
+                                    }
                                     variant='circle'
                                     icon={<PlusCircle width={18} height={18} />}
                                     iconActive={true}
@@ -854,38 +820,85 @@ export default function NotesList({
                     }
                     right={
                         <>
-                            {onCreateNote && (
-                                <Tooltip content='Create new note (Ctrl+N)'>
-                                    <button
-                                        type='button'
-                                        onClick={onCreateNote}
-                                        disabled={loading}
-                                        className='flex items-center gap-1.5 px-4 h-9 text-sm rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
-                                    >
-                                        New
-                                    </button>
-                                </Tooltip>
-                            )}
+                            <StatusHeaderDropdown
+                                onStatusChange={handleStatusChange}
+                                status={columnFilters.status}
+                                statusOptions={['all', 'fleeting', 'healthy', 'warning', 'invalid', 'processing']}
+                            />
                         </>
                     }
                 />
 
-                <ListView
-                    data={displayedNotes}
+                <DataTable
                     columns={columns}
-                    renderRow={renderRow}
+                    data={filteredData}
                     loading={loading}
-                    sortField={sortField}
-                    sortDirection={sortDirection}
-                    onSort={handleSort}
-                    sortFieldMapping={sortFieldMapping}
                     emptyMessage='No notes found!'
-                    tableClassName='table table-hover'
-                    enableMultiSelect={true}
-                    selectedIds={selectedNotes}
-                    setSelected={setSelectedNotes}
-                    filterableColumns={filterableColumns}
-                    filterValues={columnFilters}
+                    enableRowSelection={true}
+                    selectedRows={selectedNotes}
+                    onRowSelectionChange={handleRowSelectionChange}
+                    sorting={sorting}
+                    onSortingChange={handleSortingChange}
+                    manualPagination={true}
+                    manualSorting={true}
+                    onRowClick={(note) => navigate(`/notes/${note.id}`)}
+                    bulkActions={[
+                        {
+                            id: 'delete',
+                            label: 'Delete notes',
+                            icon: <Trash width={18} height={18} />,
+                            onClick: () => {
+                                if (selectedNotes.length > 0) actions[0].handler(selectedNotes);
+                            },
+                            disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                            variant: 'destructive',
+                        },
+                        {
+                            id: 'retry',
+                            label: 'Retry notes',
+                            icon: <RefreshCircle width={18} height={18} />,
+                            onClick: () => handleRetrySelected(selectedNotes),
+                            disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                        },
+                        {
+                            id: 'report',
+                            label: 'Generate report',
+                            icon: <StatsReport width={18} height={18} />,
+                            onClick: () => {
+                                if (selectedNotes.length === 0) return;
+                                const selectedNoteObjects = notes
+                                    .filter((n) => n.id && selectedNotes.includes(n.id))
+                                    .map((n) => ({
+                                        id: n.id!,
+                                        title: n.metadata?.title || n.title || 'Untitled',
+                                    }));
+                                setModal(ReportGenerationModal, {
+                                    selectedNotes: selectedNoteObjects,
+                                });
+                            },
+                            disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                        },
+                        {
+                            id: 'enrich',
+                            label: 'Enrich notes',
+                            icon: <Sparks width={18} height={18} />,
+                            onClick: () => {
+                                if (selectedNotes.length === 0) return;
+                                const selectedNoteObjects = notes
+                                    .filter((n) => n.id && selectedNotes.includes(n.id))
+                                    .map((n) => ({
+                                        id: n.id!,
+                                        title: n.metadata?.title || n.title || 'Untitled',
+                                        entities: n.entities,
+                                    }));
+                                setModal(EnrichmentRequestModal, {
+                                    notesList: selectedNoteObjects,
+                                });
+                            },
+                            disabled: loading || selectedNotes.length === 0 || notes.length === 0,
+                        },
+                    ]}
+                    itemLabel="note"
                 />
 
                 <PaginationWrapper

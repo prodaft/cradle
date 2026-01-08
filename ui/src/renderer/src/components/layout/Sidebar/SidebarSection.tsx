@@ -67,7 +67,7 @@ export default function SidebarSection({
         >
             <nav className='menu rounded-md'>
                 <section className='menu-section gap-0'>
-                    <ul className='menu-items'>{children}</ul>
+                    <ul className='cradle-menu-items'>{children}</ul>
                 </section>
             </nav>
         </section>

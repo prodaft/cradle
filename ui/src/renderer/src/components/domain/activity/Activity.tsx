@@ -1,5 +1,5 @@
 import { formatDate } from '@/utils/dates';
-import Card from '@components/base/Card/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { diff_match_patch } from 'diff-match-patch';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-diff';
@@ -158,37 +158,46 @@ export default function Activity({ log }: ActivityProps) {
     };
 
     return (
-        <Card
-            className='mt-3 dark:!bg-cradle-bg-elevated/70'
-            badge={log.type}
-            badgeClass='border border-cradle-accent-primary text-cradle-accent-primary'
-            details={{
-                User: log.user.username,
-                Timestamp: formattedTimestamp,
-                Object: log.objectRepr,
-            }}
-        >
-            {log.details && (
-                <div className='text-gray-700 dark:text-gray-300 text-sm'>
-                    <strong className='text-cradle-accent-primary text-sm'>
-                        Details:
-                    </strong>
-                    <div
-                        className='mt-2'
-                        dangerouslySetInnerHTML={{
-                            __html: formatDiff(log.details),
-                        }}
-                    />
+        <Card className='mt-3 dark:!bg-cradle-bg-elevated/70 relative'>
+            <div className='absolute top-2 right-2 cradle-status cradle-status-info border border-cradle-accent-primary text-cradle-accent-primary z-10'>
+                {log.type}
+            </div>
+            <CardHeader>
+                <CardTitle>Activity</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className='text-cradle-text-secondary text-sm space-y-1 mb-2'>
+                    <div className='items-start gap-2'>
+                        <strong className='text-cradle-accent-primary mr-1'>User:</strong>
+                        {log.user.username}
+                    </div>
+                    <div className='items-start gap-2'>
+                        <strong className='text-cradle-accent-primary mr-1'>Timestamp:</strong>
+                        {formattedTimestamp}
+                    </div>
+                    <div className='items-start gap-2'>
+                        <strong className='text-cradle-accent-primary mr-1'>Object:</strong>
+                        {log.objectRepr}
+                    </div>
                 </div>
-            )}
-            {log.srcLog && (
-                <div className='mt-3'>
-                    <strong className='text-cradle-accent-primary text-sm'>
-                        Caused by:
-                    </strong>
-                    <Activity log={log.src_log!} />
-                </div>
-            )}
+                {log.details && (
+                    <div className='text-gray-700 dark:text-gray-300 text-sm'>
+                        <strong className='text-cradle-accent-primary text-sm'>Details:</strong>
+                        <div
+                            className='mt-2'
+                            dangerouslySetInnerHTML={{
+                                __html: formatDiff(log.details),
+                            }}
+                        />
+                    </div>
+                )}
+                {log.srcLog && (
+                    <div className='mt-3'>
+                        <strong className='text-cradle-accent-primary text-sm'>Caused by:</strong>
+                        <Activity log={log.src_log!} />
+                    </div>
+                )}
+            </CardContent>
         </Card>
     );
 }

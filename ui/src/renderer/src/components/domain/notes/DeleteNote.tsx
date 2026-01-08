@@ -1,10 +1,11 @@
 import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import { Trash } from 'iconoir-react/regular';
+import { Button } from '@/components/ui/button';
 
 interface Note {
     id: string;
@@ -32,7 +33,6 @@ interface DeleteNoteProps {
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
 export default function DeleteNote({ note, setHidden, classNames }: DeleteNoteProps) {
-    const { notify } = useNotif();
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
     const { fleetingNotesApi, notesApi } = useApi();
@@ -53,19 +53,21 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
 
     return (
         <span className='pb-1 space-x-1 flex flex-row pl-2 text-red-500 hover:text-red-600'>
-            <button className=''>
-                <Trash
-                    className={classNames}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        setModal(ConfirmDeletionModal, {
-                            onConfirm: handleDelete,
-                            text: 'Are you sure you want to delete this note? This action is irreversible.',
-                        });
-                    }}
-                />
-            </button>
+            <Button
+                variant='ghost'
+                size='icon-sm'
+                className='text-red-500 hover:text-red-600'
+                onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setModal(ConfirmDeletionModal, {
+                        onConfirm: handleDelete,
+                        text: 'Are you sure you want to delete this note? This action is irreversible.',
+                    });
+                }}
+            >
+                <Trash className={classNames} />
+            </Button>
         </span>
     );
 }

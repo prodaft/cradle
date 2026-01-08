@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Edge, Node } from './graphFilterUtils';
 
 interface ExplorerPanelProps {
@@ -68,7 +70,7 @@ export default function ExplorerPanel({
             <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3'>
                 Selected Nodes ({nodesArray.length})
             </h3>
-            <div className='space-y-3 max-h-[60vh] overflow-y-auto'>
+            <ScrollArea className='space-y-3 max-h-[60vh]'>
                 {nodesArray.map((node, index) => (
                     <div
                         key={node.id}
@@ -139,28 +141,26 @@ export default function ExplorerPanel({
                                             Connections ({connectedNodes.length}):
                                         </span>
                                         {showCollapse && (
-                                            <button
+                                            <Button
+                                                variant='link'
+                                                size='sm'
                                                 type='button'
-                                                onClick={() =>
-                                                    toggleConnections(node.id)
-                                                }
-                                                className='text-xs text-cradle-accent-primary hover:underline'
+                                                onClick={() => toggleConnections(node.id)}
+                                                className='text-xs h-auto p-0'
                                             >
-                                                {isExpanded
-                                                    ? 'Show less'
-                                                    : `Show all (${connectedNodes.length})`}
-                                            </button>
+                                                {isExpanded ? 'Show less' : `Show all (${connectedNodes.length})`}
+                                            </Button>
                                         )}
                                     </div>
                                     <div className='flex flex-wrap gap-1.5'>
                                         {displayedNodes.map((connectedNode) => (
-                                            <button
+                                            <Button
                                                 key={connectedNode.id}
+                                                variant='outline'
+                                                size='sm'
                                                 type='button'
-                                                onClick={() =>
-                                                    onNodeClick?.(connectedNode)
-                                                }
-                                                className='inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-md border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors cursor-pointer'
+                                                onClick={() => onNodeClick?.(connectedNode)}
+                                                className='inline-flex items-center gap-1.5 px-2 py-1 text-xs h-auto'
                                                 title={`Click to select ${connectedNode.label || connectedNode.name || connectedNode.id}`}
                                             >
                                                 {connectedNode.color && (
@@ -177,7 +177,7 @@ export default function ExplorerPanel({
                                                         connectedNode.name ||
                                                         connectedNode.id}
                                                 </span>
-                                            </button>
+                                            </Button>
                                         ))}
                                     </div>
                                 </div>
@@ -213,7 +213,7 @@ export default function ExplorerPanel({
                             ))}
                     </div>
                 ))}
-            </div>
+            </ScrollArea>
         </div>
     );
 }

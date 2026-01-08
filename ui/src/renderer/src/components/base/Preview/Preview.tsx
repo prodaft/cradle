@@ -6,11 +6,12 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 // import '@/utils/parser.js'; // TODO: Fix parser import
 
-import { useNotif } from '@contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
 import { handleLinkClick, NavigateHandler } from '@utils/editor/textEditor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PreviewProps {
     htmlContent: string;
@@ -26,7 +27,6 @@ export default function Preview({
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
     const { navigate, navigateLink } = useCradleNavigate();
     const preventScrollRef = useRef(false);
-    const { notify } = useNotif();
     const [isLoading, setIsLoading] = useState(true);
     const [previewElement, setPreviewElement] = useState<HTMLDivElement | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -141,19 +141,21 @@ export default function Preview({
         <>
             {isLoading ? (
                 <div className='flex items-center justify-center min-h-screen'>
-                    <div className='spinner-dot-pulse spinner-xl'>
-                        <div className='spinner-pulse-dot'></div>
+                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                        <div className='cradle-spinner-pulse-dot'></div>
                     </div>
                 </div>
             ) : (
-                <div
-                    className='h-full w-full p-4 bg-transparent prose max-w-none break-words whitespace-normal dark:prose-invert overflow-y-auto rounded-lg flex-1 overflow-x-hidden line-numbers'
-                    style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-                    data-testid='preview'
-                    ref={previewRef}
-                    onClick={handleLineClick}
-                    id='preview-pane'
-                ></div>
+                <ScrollArea className='h-full w-full rounded-lg flex-1'>
+                    <div
+                        className='h-full w-full p-4 bg-transparent prose max-w-none break-words whitespace-normal dark:prose-invert line-numbers'
+                        style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                        data-testid='preview'
+                        ref={previewRef}
+                        onClick={handleLineClick}
+                        id='preview-pane'
+                    ></div>
+                </ScrollArea>
             )}
         </>
     );

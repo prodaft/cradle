@@ -1,8 +1,9 @@
 import ActionConfirmationModal from '@/components/modals/base/ActionConfirmationModal';
 import { useModal } from '@/contexts/ui/ModalContext';
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { useAuth } from '@hooks';
 import { useCallback, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 /**
  * Get the base URL from localStorage or environment variable
@@ -32,7 +33,6 @@ interface ActiveSessionsProps {
 export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const [sessions, setSessions] = useState<UserSession[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const { notify } = useNotif();
     const { setModal } = useModal();
     const auth = useAuth();
     const basePath = getBaseUrl();
@@ -97,43 +97,29 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     },
                 );
 
-                if (response.ok) {
-                    notify({
-                        type: 'success',
-                        text: 'Session revoked successfully',
-                    });
-
-                    // Check if this is the current session by comparing JTI
-                    const session = sessions.find((s) => s.id === sessionId);
-                    const currentJti = getCurrentSessionJti();
-                    const isCurrentSession =
-                        session &&
-                        currentJti &&
-                        session.refresh_token_jti === currentJti;
-
-                    // If current session was revoked, log out immediately
-                    if (isCurrentSession || session?.is_current) {
-                        // Clear tokens and log out
-                        auth.logOut();
-                    } else {
-                        fetchSessions();
-                    }
+            if (response.ok) {
+                toast.success('Session revoked successfully');
+                
+                // Check if this is the current session by comparing JTI
+                const session = sessions.find(s => s.id === sessionId);
+                const currentJti = getCurrentSessionJti();
+                const isCurrentSession = session && currentJti && session.refresh_token_jti === currentJti;
+                
+                // If current session was revoked, log out immediately
+                if (isCurrentSession || session?.is_current) {
+                    // Clear tokens and log out
+                    auth.logOut();
                 } else {
-                    notify({
-                        type: 'error',
-                        text: 'Failed to revoke session',
-                    });
+                    fetchSessions();
                 }
-            } catch (error) {
-                console.error('Error revoking session:', error);
-                notify({
-                    type: 'error',
-                    text: 'Failed to revoke session',
-                });
+            } else {
+                toast.error('Failed to revoke session');
             }
-        },
-        [userId, basePath, auth, sessions, fetchSessions, notify, getCurrentSessionJti],
-    );
+        } catch (error) {
+            console.error('Error revoking session:', error);
+            toast.error('Failed to revoke session');
+        }
+    }, [userId, basePath, auth, sessions, fetchSessions, getCurrentSessionJti]);
 
     const openRevokeConfirmationModal = useCallback(
         (sessionId: string) => {
@@ -221,14 +207,16 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                 </span>
                             </div>
                         </div>
-                        <button
+                        <Button
                             type='button'
                             onClick={() => openRevokeConfirmationModal(session.id)}
-                            className='ml-4 px-3 py-1.5 text-xs rounded-lg border border-cradle-border-accent text-white bg-transparent transition-colors'
+                            variant='outline'
+                            size='sm'
+                            className='ml-4'
                             title='Revoke session'
                         >
-                            <span>Revoke</span>
-                        </button>
+                            Revoke
+                        </Button>
                     </div>
                     {index < sessionsWithCurrent.length - 1 && (
                         <div className='h-px bg-white/5 my-3' />

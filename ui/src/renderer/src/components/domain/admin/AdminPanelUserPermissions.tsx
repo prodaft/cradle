@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useAuth from '@/hooks/auth/useAuth';
@@ -7,6 +8,7 @@ import { naturalSort } from '@/utils/dashboard';
 import { Search, Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import AdminPanelPermissionCard from './cards/AdminPanelPermissionCard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AdminPanelUserPermissionsProps {
     username: string;
@@ -102,16 +104,12 @@ export default function AdminPanelUserPermissions({
     });
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        User Permissions: {username}
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Manage entity access and user actions
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>User Permissions: {username}</h2>
+                    <p className='text-muted-foreground'>Manage entity access and user actions</p>
                 </div>
             </div>
 
@@ -130,12 +128,14 @@ export default function AdminPanelUserPermissions({
                         {/* Search Bar */}
                         <div className='mb-4'>
                             <div className='flex items-center gap-2 bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
-                                <button
-                                    className='p-1 flex-shrink-0 transition-colors text-cradle-text-muted hover:text-cradle-text-primary'
+                                <Button
+                                    variant='ghost'
+                                    size='icon-sm'
+                                    className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary'
                                     title='Search'
                                 >
                                     <Search className='w-4 h-4' />
-                                </button>
+                                </Button>
                                 <input
                                     type='text'
                                     placeholder='Search entities'
@@ -144,19 +144,21 @@ export default function AdminPanelUserPermissions({
                                     value={searchVal}
                                 />
                                 {searchVal && (
-                                    <button
+                                    <Button
+                                        variant='ghost'
+                                        size='icon-sm'
                                         onClick={() => setSearchVal('')}
-                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
+                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary'
                                         title='Clear search'
                                     >
                                         <Xmark className='w-4 h-4' />
-                                    </button>
+                                    </Button>
                                 )}
                             </div>
                         </div>
 
                         {/* Permissions List */}
-                        <div className='space-y-2 max-h-[60vh] overflow-y-auto'>
+                        <ScrollArea className='space-y-2 max-h-[60vh]'>
                             {filteredEntities.length > 0 ? (
                                 filteredEntities.sort((a, b) => {
                                     const aKey = a.key?.toString() || '';
@@ -172,7 +174,7 @@ export default function AdminPanelUserPermissions({
                                     </p>
                                 </div>
                             )}
-                        </div>
+                        </ScrollArea>
                     </section>
                 </div>
             </div>

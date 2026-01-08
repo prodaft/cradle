@@ -4,6 +4,7 @@ import { parseContent } from '@/utils/editor/textEditor';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
 import Preview from '../../base/Preview/Preview';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface NotePreviewContentProps {
     note: NoteRetrieve;
@@ -37,14 +38,14 @@ export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
         <div className='w-[450px] max-h-[450px] overflow-hidden'>
             {loading ? (
                 <div className='flex items-center justify-center h-32'>
-                    <div className='spinner-dot-pulse'>
-                        <div className='spinner-pulse-dot'></div>
+                    <div className='cradle-spinner-dot-pulse'>
+                        <div className='cradle-spinner-pulse-dot'></div>
                     </div>
                 </div>
             ) : (
-                <div className='max-h-[450px] overflow-y-auto cradle-scrollbar'>
+                <ScrollArea className='max-h-[450px]'>
                     <Preview htmlContent={parsedContent} />
-                </div>
+                </ScrollArea>
             )}
         </div>
     );

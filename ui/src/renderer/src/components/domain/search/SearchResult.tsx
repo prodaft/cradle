@@ -1,4 +1,5 @@
-import Card from '@components/base/Card/Card';
+import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ReactNode } from 'react';
 
 interface Action {
@@ -31,19 +32,39 @@ export default function SearchResult({
     actions = [],
     depth,
 }: SearchResultProps) {
-    // Convert actions from old format to new Card format
-    const cardActions = actions.map((action) => ({
-        icon: action.icon,
-        onClick: action.callback,
-    }));
-
     return (
         <Card
+            className='cursor-pointer hover:shadow-lg transition-shadow relative'
             onClick={onClick}
-            actions={cardActions}
-            title={name}
-            prefix={subtype ? `${subtype}:` : undefined}
-            badge={depth != null ? `Depth: ${depth}` : undefined}
-        />
+        >
+            {depth != null && (
+                <div className='absolute top-2 right-2 cradle-status cradle-status-info z-10'>
+                    Depth: {depth}
+                </div>
+            )}
+            <CardHeader>
+                <CardTitle>
+                    {subtype && <span className='text-cradle-text-muted mr-2'>{subtype}:</span>}
+                    {name}
+                </CardTitle>
+                {actions.length > 0 && (
+                    <CardAction>
+                        {actions.map((action, index) => (
+                            <Button
+                                key={index}
+                                variant='ghost'
+                                size='icon-sm'
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    action.callback();
+                                }}
+                            >
+                                {action.icon}
+                            </Button>
+                        ))}
+                    </CardAction>
+                )}
+            </CardHeader>
+        </Card>
     );
 }

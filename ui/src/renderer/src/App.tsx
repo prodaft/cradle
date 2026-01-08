@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { HashRouter, Outlet, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 
 // Lazy-loaded route components
 const Login = React.lazy(() => import('./components/domain/auth/Login'));
@@ -21,7 +21,12 @@ const Welcome = React.lazy(() => import('./components/feedback/Welcome'));
 const FeatureNotImplemented = React.lazy(
     () => import('./components/feedback/FeatureNotImplemented'),
 );
-const AdminPanel = React.lazy(() => import('./components/domain/admin/AdminPanel'));
+const EntitiesPage = React.lazy(() => import('./components/domain/admin/pages/EntitiesPage'));
+const EntryTypesPage = React.lazy(() => import('./components/domain/admin/pages/EntryTypesPage'));
+const TypeMappingsPage = React.lazy(() => import('./components/domain/admin/pages/TypeMappingsPage'));
+const UsersPage = React.lazy(() => import('./components/domain/admin/pages/UsersPage'));
+const EnrichmentPage = React.lazy(() => import('./components/domain/admin/pages/EnrichmentPage'));
+const ManagementPage = React.lazy(() => import('./components/domain/admin/pages/ManagementPage'));
 const AccountSettings = React.lazy(
     () => import('./components/domain/user/AccountSettings'),
 );
@@ -47,42 +52,32 @@ import NotFound from './components/feedback/NotFound';
 // Auth components
 import PrivateRoute from './components/domain/auth/PrivateRoute';
 
-// Layout components
-import GlobalTabPortals from './components/layout/GlobalTabPortals/GlobalTabPortals';
-
 // Context providers
 import { ProfileProvider } from '@/contexts';
 import CradleLoading from './components/base/Loading/CradleLoading';
-import { TooltipProvider } from './components/base/Tooltip/Tooltip';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthProvider } from './components/domain/auth/AuthProvider';
 import { ApiProvider } from './contexts/api/ApiProvider';
 import { RouteConfigProvider } from './contexts/routing/RouteConfigContext';
-import { PaneTabsProvider } from './contexts/tabs/PaneTabsContext';
-import { TabHostProvider } from './contexts/tabs/TabHostContext';
-import { LayoutProvider } from './contexts/ui/LayoutContext';
 import { ModalProvider } from './contexts/ui/ModalContext';
-import { NotificationProvider } from './contexts/ui/NotificationContext';
 import { ThemeProvider } from './contexts/ui/ThemeContext';
+import { Toaster } from './components/ui/sonner';
 
 function App() {
     return (
         <HashRouter>
             <AuthProvider>
                 <ApiProvider>
-                    <NotificationProvider>
                         <ProfileProvider>
                             <ThemeProvider>
+                            <Toaster />
                                 <TooltipProvider>
                                     <RouteConfigProvider>
-                                        <TabHostProvider>
-                                            <LayoutProvider>
-                                                <PaneTabsProvider>
-                                                    <ModalProvider>
-                                                        <Suspense
-                                                            fallback={<CradleLoading />}
-                                                        >
-                                                            <GlobalTabPortals />
-                                                            <Routes>
+                                        <ModalProvider>
+                                            <Suspense
+                                                fallback={<CradleLoading />}
+                                            >
+                                                <Routes>
                                                                 <Route
                                                                     element={
                                                                         <PrivateRoute
@@ -190,11 +185,47 @@ function App() {
                                                                             <Route
                                                                                 index
                                                                                 element={
-                                                                                    <AdminPanel />
+                                                                                    <Navigate to="/manage/entities" replace />
                                                                                 }
                                                                             />
                                                                             <Route
-                                                                                path='/manage/add/user'
+                                                                                path='entities'
+                                                                                element={
+                                                                                    <EntitiesPage />
+                                                                                }
+                                                                            />
+                                                                            <Route
+                                                                                path='entry-types'
+                                                                                element={
+                                                                                    <EntryTypesPage />
+                                                                                }
+                                                                            />
+                                                                            <Route
+                                                                                path='type-mappings'
+                                                                                element={
+                                                                                    <TypeMappingsPage />
+                                                                                }
+                                                                            />
+                                                                            <Route
+                                                                                path='users'
+                                                                                element={
+                                                                                    <UsersPage />
+                                                                                }
+                                                                            />
+                                                                            <Route
+                                                                                path='enrichment'
+                                                                                element={
+                                                                                    <EnrichmentPage />
+                                                                                }
+                                                                            />
+                                                                            <Route
+                                                                                path='management'
+                                                                                element={
+                                                                                    <ManagementPage />
+                                                                                }
+                                                                            />
+                                                                            <Route
+                                                                                path='add/user'
                                                                                 element={
                                                                                     <AccountSettings
                                                                                         isEdit={
@@ -247,14 +278,10 @@ function App() {
                                                             </Routes>
                                                         </Suspense>
                                                     </ModalProvider>
-                                                </PaneTabsProvider>
-                                            </LayoutProvider>
-                                        </TabHostProvider>
                                     </RouteConfigProvider>
                                 </TooltipProvider>
                             </ThemeProvider>
                         </ProfileProvider>
-                    </NotificationProvider>
                 </ApiProvider>
             </AuthProvider>
         </HashRouter>

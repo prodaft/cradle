@@ -1,5 +1,6 @@
 import { NavArrowRight } from 'iconoir-react';
 import React, { ReactNode } from 'react';
+import { Button } from '@/components/ui/button';
 
 /**
  * Action for search result
@@ -55,9 +56,10 @@ export default function SearchResult({
     depth,
 }: SearchResultProps): JSX.Element {
     return (
-        <button
+        <Button
+            variant='ghost'
             onClick={onClick}
-            className='w-full px-4 py-3 flex items-center gap-3 text-left cursor-pointer group'
+            className='w-full px-4 py-3 flex items-center gap-3 text-left cursor-pointer group h-auto'
         >
             {/* Type indicator */}
             {subtype && (
@@ -85,19 +87,21 @@ export default function SearchResult({
                     onClick={(e) => e.stopPropagation()}
                 >
                     {actions.map((action, index) => (
-                        <button
+                        <Button
                             key={index}
+                            variant='ghost'
+                            size='icon-sm'
                             onClick={action.callback}
-                            className='p-1 hover:bg-cradle-bg-secondary transition-colors'
+                            className='p-1'
                         >
                             {action.icon}
-                        </button>
+                        </Button>
                     ))}
                 </div>
             )}
 
             {/* Arrow indicator */}
             <NavArrowRight className='w-4 h-4 text-cradle-text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all' />
-        </button>
+        </Button>
     );
 }

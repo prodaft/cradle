@@ -1,11 +1,15 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { toast } from 'sonner';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { DateRangeFilter } from '@components/base/ListView/ListView';
+import { DateRangeFilter } from '@components/base/ListView/types';
 import DeleteNote from '@components/domain/notes/DeleteNote';
 import NotesList from '@components/domain/notes/NotesList';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { FilePlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -30,7 +34,6 @@ interface SearchFilters {
  * @constructor
  */
 export default function Notes() {
-    const { notify } = useNotif();
     const [searchParams, setSearchParams] = useSearchParams();
     const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
@@ -162,24 +165,33 @@ export default function Notes() {
 
     return (
         <div className='w-full h-full flex flex-col space-y-4'>
-            {/* Header Section - Minimal Design */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        All Notes
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Search & Manage Your Notes
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>All Notes</h2>
+                    <p className='text-muted-foreground'>Search & Manage Your Notes</p>
                 </div>
-                <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
-                    <span className='font-semibold'>
-                        {notesCount.current === notesCount.total ||
-                        (notesCount.current === 0 && notesCount.total === 0)
-                            ? notesCount.total
-                            : `${notesCount.current}/${notesCount.total}`}
-                    </span>
-                    <span className='opacity-70'>notes</span>
+                <div className='flex gap-2'>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                onClick={handleCreateNewNote}
+                                variant='default'
+                                className='space-x-1'
+                            >
+                                <span>New Note</span>
+                                <FilePlus className='size-4' />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            Create new note{' '}
+                            <KbdGroup>
+                                <Kbd>Ctrl</Kbd>
+                                <span>+</span>
+                                <Kbd>N</Kbd>
+                            </KbdGroup>
+                        </TooltipContent>
+                    </Tooltip>
                 </div>
             </div>
 

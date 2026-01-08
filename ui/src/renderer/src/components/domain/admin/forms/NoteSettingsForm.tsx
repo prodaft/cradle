@@ -1,21 +1,19 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { Plus, Refresh } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import * as Yup from 'yup';
 import SnippetList, { SnippetListRef } from '../../../base/SnippetList/SnippetList';
-import {
-    FormAlert,
-    FormAlertState,
-    SettingsButton,
-    SettingsCard,
-    SettingsField,
-    SettingsSeparator,
-    SettingsToggle,
-} from '../../../forms';
+import { SettingsButton, SettingsCard, SettingsField } from '../../../forms';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
+import { Separator } from '@/components/ui/separator';
 
 interface FormData {
     minEntries: number;
@@ -43,10 +41,9 @@ const noteSettingsSchema = Yup.object().shape({
 export default function NoteSettingsForm() {
     const { managementApi } = useApi();
     const { execute } = useAPICall();
-    const { notify } = useNotif();
     const [isLoading, setIsLoading] = useState(true);
     const snippetListRef = useRef<SnippetListRef>(null);
-    const [actionAlert, setActionAlert] = useState<FormAlertState>({
+    const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({
         type: null,
         message: '',
     });
@@ -56,6 +53,7 @@ export default function NoteSettingsForm() {
         handleSubmit: handleFormSubmit,
         reset,
         watch,
+        control,
         formState: { errors, isSubmitting },
     } = useForm<FormData>({
         resolver: yupResolver(noteSettingsSchema),
@@ -102,15 +100,9 @@ export default function NoteSettingsForm() {
                     },
                 },
             });
-            notify({
-                type: 'success',
-                text: 'Settings updated successfully!',
-            });
+            toast.success('Settings updated successfully!');
         } catch (error) {
-            notify({
-                type: 'error',
-                text: 'Failed to save settings',
-            });
+            toast.error('Failed to save settings');
         }
     };
 
@@ -141,16 +133,12 @@ export default function NoteSettingsForm() {
     }
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+        <div className='w-full h-full'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        Note Settings
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Configure note creation and linking behavior
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>Note Settings</h2>
+                    <p className='text-muted-foreground'>Configure note creation and linking behavior</p>
                 </div>
             </div>
 
@@ -177,7 +165,7 @@ export default function NoteSettingsForm() {
                                         error={errors.minEntries}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='Minimum Entities'
@@ -187,7 +175,7 @@ export default function NoteSettingsForm() {
                                         error={errors.minEntities}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='Maximum Clique Size'
@@ -197,15 +185,33 @@ export default function NoteSettingsForm() {
                                         error={errors.maxCliqueSize}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
-                                    <SettingsToggle
-                                        label='Dynamic Entry Class Creation'
-                                        description='Allow automatic creation of new entry classes'
-                                        {...register('allowDynamicEntryClassCreation')}
-                                        watch={watch}
-                                        error={errors.allowDynamicEntryClassCreation}
-                                    />
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label htmlFor='allowDynamicEntryClassCreation' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                    Dynamic Entry Class Creation
+                                                </Label>
+                                                <p className='text-sm cradle-text-muted'>Allow automatic creation of new entry classes</p>
+                                                {errors.allowDynamicEntryClassCreation && (
+                                                    <p className='text-sm text-red-500 mt-1'>{errors.allowDynamicEntryClassCreation.message}</p>
+                                                )}
+                                            </div>
+                                            <Controller
+                                                name='allowDynamicEntryClassCreation'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='allowDynamicEntryClassCreation'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                    </div>
                                 </SettingsCard>
                             </div>
                         </section>
@@ -256,12 +262,12 @@ export default function NoteSettingsForm() {
 
                             <div className='space-y-4'>
                                 {actionAlert.type && (
-                                    <FormAlert
-                                        alert={actionAlert}
-                                        onDismiss={() =>
-                                            setActionAlert({ type: null, message: '' })
-                                        }
-                                    />
+                                    <Alert variant={actionAlert.type === 'error' ? 'destructive' : 'default'}>
+                                        {actionAlert.type === 'success' && <CheckCircle />}
+                                        {actionAlert.type === 'error' && <WarningCircle />}
+                                        {actionAlert.type === 'warning' && <InfoCircle />}
+                                        <AlertDescription>{actionAlert.message}</AlertDescription>
+                                    </Alert>
                                 )}
                                 <SettingsCard>
                                     <SettingsButton
@@ -277,13 +283,13 @@ export default function NoteSettingsForm() {
 
                         {/* Save Button */}
                         <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <button
+                            <Button
                                 type='submit'
-                                className='cradle-btn cradle-btn-primary px-6 rounded-lg'
+                                variant='default'
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? 'Saving...' : 'Save Settings'}
-                            </button>
+                            </Button>
                         </div>
                     </form>
                 </div>

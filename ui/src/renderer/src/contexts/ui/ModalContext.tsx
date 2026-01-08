@@ -1,10 +1,14 @@
 /**
  * Modal Context Provider
- * Manages global modal state and rendering
+ * Manages global modal state and rendering using shadcn Dialog
  */
 
 import type { ModalContextValue, ModalData } from '@/types/index';
-import { ComponentType, createContext, ReactNode, useContext, useState } from 'react';
+import React, { ComponentType, createContext, ReactNode, useContext, useState } from 'react';
+import {
+    Dialog,
+    DialogContent,
+} from '@/components/ui/dialog';
 
 const ModalContext = createContext<ModalContextValue | undefined>(undefined);
 
@@ -31,13 +35,15 @@ export const useModal = (): ModalContextValue => {
 
 /**
  * ModalProvider component
- * Provides modal functionality to the application
+ * Provides modal functionality to the application using shadcn Dialog
  */
-export const ModalProvider = ({ children }: ModalProviderProps): JSX.Element => {
+export const ModalProvider = ({ children }: ModalProviderProps): React.JSX.Element => {
     const [modalData, setModalData] = useState<ModalData>({
         Component: null,
         props: {},
     });
+
+    const isOpen = modalData.Component !== null;
 
     /**
      * Show a modal with the specified component and props
@@ -62,30 +68,16 @@ export const ModalProvider = ({ children }: ModalProviderProps): JSX.Element => 
     return (
         <ModalContext.Provider value={{ setModal, closeModal }}>
             {children}
-            {/* Hidden checkbox is part of RippleUI's modal pattern */}
-            <input
-                type='checkbox'
-                id='global-modal'
-                className='modal-state'
-                checked={modalData.Component !== null}
-                onChange={() => {}}
-            />
-            <div className='modal w-screen'>
-                {/* Clicking the overlay will close the modal */}
-                <label
-                    htmlFor='global-modal'
-                    className='modal-overlay'
-                    onClick={closeModal}
-                />
+            <Dialog open={isOpen} onOpenChange={(open) => !open && closeModal()}>
+                <DialogContent>
                 {modalData.Component && (
-                    <div className='modal-content cradle-bg-elevated cradle-border p-5'>
                         <modalData.Component
                             {...modalData.props}
                             closeModal={closeModal}
                         />
-                    </div>
                 )}
-            </div>
+                </DialogContent>
+            </Dialog>
         </ModalContext.Provider>
     );
 };

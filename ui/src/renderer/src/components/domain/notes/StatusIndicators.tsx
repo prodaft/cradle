@@ -1,5 +1,5 @@
 import { capitalizeString } from '@/utils/dashboard';
-import Tooltip from '@components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
     DesignNib,
     InfoCircleSolid,
@@ -100,46 +100,48 @@ export default function StatusIndicators({
 
     return (
         <>
-            <Tooltip
-                content={
-                    saveStatus === 'saved'
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div
+                        className='flex items-center justify-center'
+                        data-testid='save-status-dot'
+                    >
+                        <div
+                            className={`w-1.5 h-1.5 rounded-full ${
+                                saveStatus === 'saved'
+                                    ? 'bg-green-500'
+                                    : saveStatus === 'saving'
+                                      ? 'bg-yellow-500'
+                                      : saveStatus === 'unsaved'
+                                        ? 'bg-red-500'
+                                        : 'bg-gray-400'
+                            }`}
+                        />
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {saveStatus === 'saved'
                         ? 'All changes saved'
                         : saveStatus === 'saving'
                           ? 'Saving...'
                           : saveStatus === 'unsaved'
                             ? 'Unsaved changes'
-                            : 'Cannot save empty note'
-                }
-            >
-                <div
-                    className='flex items-center justify-center'
-                    data-testid='save-status-dot'
-                >
-                    <div
-                        className={`w-1.5 h-1.5 rounded-full ${
-                            saveStatus === 'saved'
-                                ? 'bg-green-500'
-                                : saveStatus === 'saving'
-                                  ? 'bg-yellow-500'
-                                  : saveStatus === 'unsaved'
-                                    ? 'bg-red-500'
-                                    : 'bg-gray-400'
-                        }`}
-                    />
-                </div>
+                            : 'Cannot save empty note'}
+                </TooltipContent>
             </Tooltip>
 
             {noteStatus && (
-                <Tooltip
-                    content={
-                        isFleeting
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className='flex items-center justify-center cradle-text-tertiary'>
+                            {getStatusIcon(isFleeting, noteStatus)}
+                        </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        {isFleeting
                             ? 'Fleeting note'
-                            : noteStatusMessage || capitalizeString(noteStatus)
-                    }
-                >
-                    <div className='flex items-center justify-center cradle-text-tertiary'>
-                        {getStatusIcon(isFleeting, noteStatus)}
-                    </div>
+                            : noteStatusMessage || capitalizeString(noteStatus)}
+                    </TooltipContent>
                 </Tooltip>
             )}
         </>

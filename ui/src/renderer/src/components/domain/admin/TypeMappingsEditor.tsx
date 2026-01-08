@@ -1,9 +1,10 @@
-import { useNotif } from '@/contexts/ui/NotificationContext';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { capitalizeString } from '@/utils/dashboard';
 import { useEffect, useState } from 'react';
-import Selector from '../../forms/Selector';
+import ShadcnSelect from '../../forms/ShadcnSelect';
 
 interface Option {
     value: string;
@@ -47,7 +48,6 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         useState<ColumnDefinitions | null>(null);
     const [rows, setRows] = useState<RowData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const { notify } = useNotif();
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const { intelioApi, entriesApi } = useApi();
     const { execute } = useAPICall();
@@ -370,10 +370,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
         // Check if there are any errors
         if (Object.keys(rowErrors).length > 0) {
-            notify({
-                type: 'error',
-                text: 'Please fix validation errors before saving',
-            });
+            toast.error('Please fix validation errors before saving');
             return;
         }
 
@@ -432,10 +429,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
         // If there are errors, show alert and return
         if (hasErrors) {
-            notify({
-                type: 'error',
-                text: 'Please fix validation errors before saving',
-            });
+            toast.error('Please fix validation errors before saving');
             return;
         }
 
@@ -454,10 +448,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             });
 
         if (dataToSave.length === 0) {
-            notify({
-                type: 'info',
-                text: 'No changes to save',
-            });
+            toast.info('No changes to save');
             return;
         }
 
@@ -491,8 +482,8 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     if (isLoading || !columnDefinitions) {
         return (
             <div className='flex items-center justify-center h-full'>
-                <div className='spinner-dot-pulse spinner-xl'>
-                    <div className='spinner-pulse-dot'></div>
+                <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
+                    <div className='cradle-spinner-pulse-dot'></div>
                 </div>
             </div>
         );
@@ -500,16 +491,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
     return (
         <div className='w-full h-full overflow-auto'>
-            {/* Page Header */}
-            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4 pt-4'>
+            {/* Header Section */}
+            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h1 className='text-3xl font-medium cradle-text-primary cradle-mono tracking-tight'>
-                        {name ? capitalizeString(name) : 'Edit Type Mappings'}
-                    </h1>
-                    <p className='text-xs cradle-text-tertiary uppercase tracking-wider mt-1'>
-                        Map {name ? `${capitalizeString(name)} ` : ''}types to internal
-                        entry classes
-                    </p>
+                    <h2 className='text-2xl font-bold tracking-tight'>Edit Type Mappings</h2>
+                    <p className='text-muted-foreground'>Manage data type transformations</p>
                 </div>
             </div>
 
@@ -517,16 +503,13 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 <div className='rounded-lg cradle-border bg-white/[0.02] p-4'>
                     {/* Save All button moved to the left */}
                     <div className='flex justify-start mb-4'>
-                        <button
+                        <Button
+                            variant='default'
                             onClick={handleSaveAll}
                             disabled={!rows.some((row) => row.edited)}
-                            className={`cradle-btn cradle-btn-primary flex flex-row items-center rounded-lg px-6 hover:bg-cradle-bg-secondary ${
-                                !rows.some((row) => row.edited) &&
-                                'opacity-50 cursor-not-allowed'
-                            }`}
                         >
                             Save All
-                        </button>
+                        </Button>
                     </div>
 
                     {/* Table container with fixed height and scrollable */}
@@ -567,24 +550,26 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                         <td className='px-4 py-2 whitespace-nowrap'>
                                             <div className='flex space-x-2'>
                                                 {index !== rows.length - 1 && (
-                                                    <button
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
                                                         onClick={() =>
                                                             handleDeleteRow(index)
                                                         }
                                                         className='text-red-600 hover:text-red-900'
                                                     >
                                                         Delete
-                                                    </button>
+                                                    </Button>
                                                 )}
                                                 {row.edited && (
-                                                    <button
-                                                        onClick={() =>
-                                                            handleSaveRow(index)
-                                                        }
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        onClick={() => handleSaveRow(index)}
                                                         className='text-green-600 hover:text-green-900'
                                                     >
                                                         Save
-                                                    </button>
+                                                    </Button>
                                                 )}
                                             </div>
                                         </td>
@@ -600,7 +585,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         key={`${index}-${column}`}
                                                         className='px-2 py-2'
                                                     >
-                                                        <Selector
+                                                        <ShadcnSelect
                                                             value={row[column]}
                                                             onChange={(option) =>
                                                                 handleCellChange(
@@ -622,16 +607,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     ? 'Required...'
                                                                     : 'Select...'
                                                             }
-                                                            isClearable={
-                                                                !colDef.required
-                                                            }
-                                                            classNames={{
-                                                                control: () =>
-                                                                    hasError
-                                                                        ? 'border-red-500'
-                                                                        : '',
-                                                            }}
-                                                            menuPosition='fixed'
+                                                            isClearable={!colDef.required}
                                                         />
                                                     </td>
                                                 );

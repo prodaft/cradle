@@ -5,6 +5,7 @@
 import { FieldValues, Path, useFormContext } from 'react-hook-form';
 import FormFieldWrapper from './shared/FormFieldWrapper';
 import { TextFieldProps } from './shared/types';
+import { Input } from '@/components/ui/input';
 
 /**
  * Text input component that integrates with react-hook-form via useFormContext.
@@ -33,7 +34,7 @@ export default function FormInput<TFieldValues extends FieldValues = FieldValues
     max,
     step,
     row = false,
-}: TextFieldProps<TFieldValues>): JSX.Element {
+}: TextFieldProps<TFieldValues>): React.JSX.Element {
     const {
         register,
         formState: { errors },
@@ -53,7 +54,7 @@ export default function FormInput<TFieldValues extends FieldValues = FieldValues
             row={row}
             className={className}
         >
-            <input
+            <Input
                 id={name}
                 type={type}
                 placeholder={placeholder}
@@ -62,9 +63,7 @@ export default function FormInput<TFieldValues extends FieldValues = FieldValues
                 min={min}
                 max={max}
                 step={step}
-                className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${
-                    errorMessage ? 'border-red-500 focus:ring-red-500' : ''
-                } ${className}`}
+                className={className}
                 aria-invalid={Boolean(errorMessage)}
                 aria-describedby={errorMessage ? `${name}-error` : undefined}
                 {...register(name as Path<TFieldValues>, {

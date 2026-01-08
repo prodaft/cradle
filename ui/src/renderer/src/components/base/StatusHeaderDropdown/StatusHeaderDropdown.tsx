@@ -1,12 +1,14 @@
+import { Button } from '@/components/ui/button';
 import {
-    DesignNib,
-    InfoCircleSolid,
-    WarningCircleSolid,
-    WarningTriangleSolid,
-} from 'iconoir-react';
-import { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import Tooltip from '../Tooltip/Tooltip';
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { DesignNib, InfoCircleSolid, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
+import { useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export type StatusOption =
     | 'all'
@@ -33,11 +35,7 @@ export default function StatusHeaderDropdown({
     status = null,
     statusOptions,
 }: StatusHeaderDropdownProps) {
-    const [currentStatus, setCurrentStatus] = useState(status || 'all');
-    const [isOpen, setIsOpen] = useState(false);
-    const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-    const buttonRef = useRef<HTMLButtonElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+  const [currentStatus, setCurrentStatus] = useState(status || 'all');
 
     // Default status options based on context
     const options = statusOptions;
@@ -126,89 +124,41 @@ export default function StatusHeaderDropdown({
         }
     };
 
-    const handleStatusSelect = (selectedStatus: string) => {
-        setCurrentStatus(selectedStatus);
-        onStatusChange(selectedStatus);
-        setIsOpen(false);
-    };
+  const handleStatusSelect = (selectedStatus: string) => {
+    setCurrentStatus(selectedStatus);
+    onStatusChange(selectedStatus);
+  };
 
-    const toggleDropdown = (e: React.MouseEvent) => {
-        e.stopPropagation();
-
-        if (!isOpen && buttonRef.current) {
-            const rect = buttonRef.current.getBoundingClientRect();
-            setDropdownPosition({
-                top: rect.bottom + 8,
-                left: rect.left + rect.width / 2,
-            });
-        }
-
-        setIsOpen(!isOpen);
-    };
-
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                buttonRef.current &&
-                !dropdownRef.current.contains(event.target as Node) &&
-                !buttonRef.current.contains(event.target as Node)
-            ) {
-                setIsOpen(false);
-            }
-        };
-
-        if (isOpen) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [isOpen]);
-
-    return (
-        <>
-            <button
-                ref={buttonRef}
-                onClick={toggleDropdown}
-                className='inline-flex items-center justify-center hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
-            >
-                {getStatusIcon(currentStatus)}
-            </button>
-
-            {isOpen &&
-                createPortal(
-                    <div
-                        ref={dropdownRef}
-                        className='fixed bg-cradle-bg-elevated border border-cradle-border-accent rounded-lg shadow-lg p-2 z-[9999] flex flex-col gap-1'
-                        style={{
-                            top: `${dropdownPosition.top}px`,
-                            left: `${dropdownPosition.left}px`,
-                            transform: 'translateX(-50%)',
-                        }}
-                    >
-                        {options.map((statusOption) => (
-                            <Tooltip
-                                key={statusOption}
-                                content={getStatusLabel(statusOption)}
-                                side='right'
-                            >
-                                <button
-                                    onClick={() => handleStatusSelect(statusOption)}
-                                    className={`flex items-center justify-center w-9 h-9 rounded-md hover:bg-cradle-bg-secondary transition-colors ${
-                                        currentStatus === statusOption
-                                            ? 'bg-cradle-bg-secondary ring-1 ring-cradle-accent-primary'
-                                            : ''
-                                    }`}
-                                >
-                                    {getStatusIcon(statusOption)}
-                                </button>
-                            </Tooltip>
-                        ))}
-                    </div>,
-                    document.body,
-                )}
-        </>
-    );
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant='ghost'
+          size='icon-sm'
+          className='inline-flex items-center justify-center hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
+        >
+          {getStatusIcon(currentStatus)}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="center" className="p-2">
+        <DropdownMenuRadioGroup value={currentStatus} onValueChange={handleStatusSelect}>
+          {options.map((statusOption) => (
+            <Tooltip key={statusOption}>
+              <TooltipTrigger asChild>
+                <DropdownMenuRadioItem
+                  value={statusOption}
+                  className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-cradle-bg-secondary ring-1 ring-cradle-accent-primary' : ''}`}
+                >
+                  {getStatusIcon(statusOption)}
+                </DropdownMenuRadioItem>
+              </TooltipTrigger>
+              <TooltipContent side='right'>
+                {getStatusLabel(statusOption)}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 }

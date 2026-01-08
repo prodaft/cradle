@@ -6,7 +6,8 @@ import { displayError } from '@/utils/api';
 import useApi from '@/hooks/api/useApi';
 import useAuth from '@/hooks/auth/useAuth';
 import { LinkTreeFlattener } from '@/utils/dashboard';
-import AlertBox from '@components/base/Alert/AlertBox';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { WarningCircle } from 'iconoir-react';
 import type { EdgeRelation } from '@services/cradle/models';
 import { Node } from './graphFilterUtils';
 
@@ -163,7 +164,12 @@ export default function KnowledgeGraphSearch({
 
     return (
         <div className='px-2 mt-2 w-full'>
-            <AlertBox alert={alert} />
+            {alert.show && (
+                <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                    <WarningCircle />
+                    <AlertDescription>{alert.message}</AlertDescription>
+                </AlertComponent>
+            )}
         </div>
     );
 }

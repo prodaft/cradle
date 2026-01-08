@@ -1,5 +1,6 @@
 import { MinusCircle } from 'iconoir-react';
 import { MouseEvent } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Note {
     id: string;
@@ -19,8 +20,8 @@ export default function RemoveNote({ note, setSelectedNotes }: RemoveNoteProps) 
     };
 
     return (
-        <button>
+        <Button variant='ghost' size='icon-sm' className='p-0'>
             <MinusCircle onClick={handleSelectNote} />
-        </button>
+        </Button>
     );
 }

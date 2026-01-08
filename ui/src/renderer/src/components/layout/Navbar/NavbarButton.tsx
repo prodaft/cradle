@@ -1,5 +1,6 @@
-import Tooltip from '@components/base/Tooltip/Tooltip';
-import { ReactNode, useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import React, { ReactNode, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 /**
  * NavbarButton component props
@@ -39,7 +40,7 @@ export default function NavbarButton({
     testid,
     tooltipDirection = 'bottom',
     awaitOnClick = false,
-}: NavbarButtonProps): JSX.Element {
+}: NavbarButtonProps): React.JSX.Element {
     const [isLoading, setIsLoading] = useState(false);
 
     const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -55,24 +56,26 @@ export default function NavbarButton({
     return (
         <>
             {isLoading ? (
-                <div className='spinner-dot-pulse spinner-sm'>
-                    <div className='spinner-pulse-dot'></div>
+                <div className='cradle-spinner-dot-pulse cradle-spinner-sm'>
+                    <div className='cradle-spinner-pulse-dot'></div>
                 </div>
             ) : (
-                <Tooltip content={text}>
-                    <button
-                        className={
-                            'p-2 group flex items-center justify-center cradle-border hover:border-[#FF8C00]'
-                        }
-                        style={{
-                            color: 'var(--cradle-sidebar-icon)',
-                            backgroundColor: 'transparent',
-                        }}
-                        onClick={handleClick}
-                        data-testid={testid || ''}
-                    >
-                        {icon}
-                    </button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant='ghost'
+                            size='icon'
+                            onClick={handleClick}
+                            data-testid={testid || ''}
+                        >
+                            {icon}
+                        </Button>
+                    </TooltipTrigger>
+                    {text && (
+                        <TooltipContent side={tooltipDirection}>
+                            {text}
+                        </TooltipContent>
+                    )}
                 </Tooltip>
             )}
         </>

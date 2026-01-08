@@ -1,6 +1,10 @@
-import { useNotif } from '@contexts/ui';
-import { useApi } from '@hooks';
-import type { FileReference } from '@services/cradle/models';
+import { toast } from 'sonner';
+import { useApi, useCradleNavigate } from '@hooks';
+import type {
+    FileReference,
+    FileUploadFinalizeRequest,
+} from '@services/cradle/models';
+import { handleAPIError, parseAPIError } from '@utils/api';
 import { uploadFile } from '@utils/files';
 import { Check, CloudUpload, Xmark } from 'iconoir-react';
 import {
@@ -13,17 +17,7 @@ import {
     useRef,
     useState,
 } from 'react';
-
-/**
- * Upload status for individual files
- */
-type FileUploadStatus = 'pending' | 'uploading' | 'success' | 'error';
-
-interface FileWithStatus {
-    file: File;
-    status: FileUploadStatus;
-    error?: string;
-}
+import { Button } from '@/components/ui/button';
 
 /**
  * FileInput component props
@@ -75,7 +69,6 @@ export default function FileInput({
     noteId,
 }: FileInputProps): JSX.Element {
     const { fileTransferApi } = useApi();
-    const { notify } = useNotif();
     const [isUploading, setIsUploading] = useState(false);
     const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -113,94 +106,83 @@ export default function FileInput({
 
     const handleUpload = async () => {
         if (!pendingFiles || pendingFiles.length === 0) {
-            notify({ type: 'error', text: 'No files selected.' });
+            toast.error('No files selected.');
             return;
         }
 
         setIsUploading(true);
         const succeededFileData: FileReference[] = [];
+        const failedFiles: File[] = [];
 
-        // Upload files sequentially
-        for (let i = 0; i < filesWithStatus.length; i++) {
-            const { file, status } = filesWithStatus[i];
+        try {
+            // Upload files sequentially
+            for (let i = 0; i < filesWithStatus.length; i++) {
+                const { file, status } = filesWithStatus[i];
 
-            // Skip already processed files
-            if (status === 'success' || status === 'error') {
-                continue;
-            }
+                // Skip already processed files
+                if (status === 'success' || status === 'error') {
+                    continue;
+                }
 
-            // Mark as uploading
-            updateFileStatus(i, 'uploading');
+                // Mark as uploading
+                updateFileStatus(i, 'uploading');
 
-            try {
-                // Step 1: Request presigned URL
-                const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve(
-                    {
+                try {
+                    // Step 1: Request presigned URL
+                    const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve({
                         fileName: file.name,
                         fileSize: file.size,
-                    },
-                );
-
-                // Step 2: Upload file to presigned URL
-                await uploadFile(uploadResponse.presignedUrl, file);
-
-                // Step 3: Finalize upload with backend
-                const finalizeResponse =
-                    await fileTransferApi.fileTransferUploadFinalizeCreate({
-                        uploadId: uploadResponse.uploadId,
-                        fileUploadFinalizeRequest: noteId ? { noteId } : undefined,
                     });
 
-                // Mark as success
-                updateFileStatus(i, 'success');
+                    // Step 2: Upload file directly to presigned URL
+                    await uploadFile(uploadResponse.presignedUrl, file);
 
-                // Add to succeeded files
-                succeededFileData.push({
-                    id: finalizeResponse.fileId,
-                    fileName: finalizeResponse.fileName,
-                    fileSize: file.size,
-                });
-            } catch (err) {
-                console.error(`Failed to upload file ${file.name}:`, err);
-                updateFileStatus(
-                    i,
-                    'error',
-                    err instanceof Error ? err.message : 'Upload failed',
-                );
+                    // Step 3: Finalize upload
+                    const finalizeRequest: FileUploadFinalizeRequest = noteId
+                        ? { noteId }
+                        : {};
+
+                    const finalizeResponse = await fileTransferApi.fileTransferUploadFinalizeCreate({
+                        uploadId: uploadResponse.uploadId,
+                        fileUploadFinalizeRequest: finalizeRequest,
+                    });
+
+                    // Add to succeeded files
+                    succeededFileData.push({
+                        fileId: finalizeResponse.fileId,
+                        fileName: finalizeResponse.fileName,
+                        objectKey: finalizeResponse.objectKey,
+                    });
+
+                    updateFileStatus(i, 'success');
+                } catch (error) {
+                    // Mark file as failed
+                    const errorMessage =
+                        error instanceof Error ? error.message : 'Unknown error';
+                    updateFileStatus(i, 'error', errorMessage);
+                    failedFiles.push(file);
+                }
             }
+
+            // Add the files that succeeded to the list of files
+            setFileData(fileData.concat(succeededFileData));
+
+            // Handle failures
+            if (failedFiles.length > 0) {
+                setPendingFiles(failedFiles);
+                toast.error(
+                    `Failed to upload ${failedFiles.length} file(s): ${failedFiles.map((file) => file.name).join(', ')}`,
+                );
+            } else {
+                setPendingFiles([]);
+                toast.success('All files uploaded successfully!');
+            }
+        } catch (error) {
+            const parsed = await parseAPIError(error);
+            handleAPIError(parsed);
+        } finally {
+            setIsUploading(false);
         }
-
-        // Update file data with all successful uploads
-        if (succeededFileData.length > 0) {
-            setFileData((prev) => [...prev, ...succeededFileData]);
-        }
-
-        // Check results
-        const successCount =
-            filesWithStatus.filter((f) => f.status === 'success').length +
-            succeededFileData.length;
-        const errorCount = filesWithStatus.filter((f) => f.status === 'error').length;
-
-        if (errorCount === 0 && succeededFileData.length > 0) {
-            notify({
-                type: 'success',
-                text: `${succeededFileData.length} file${succeededFileData.length > 1 ? 's' : ''} uploaded successfully!`,
-            });
-            // Clear pending files on full success
-            setPendingFiles([]);
-        } else if (succeededFileData.length > 0) {
-            notify({
-                type: 'info',
-                text: `${succeededFileData.length} uploaded, ${errorCount} failed.`,
-            });
-        } else if (errorCount > 0) {
-            notify({
-                type: 'error',
-                text: `Failed to upload ${errorCount} file${errorCount > 1 ? 's' : ''}.`,
-            });
-        }
-
-        setIsUploading(false);
     };
 
     const handleFileChange = useCallback(
@@ -260,18 +242,18 @@ export default function FileInput({
                     ref={inputRef}
                     disabled={isUploading}
                 />
-                <button
+                <Button
                     type='button'
-                    className='rounded-xl border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-4 py-2 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed'
+                    variant='outline'
+                    size='sm'
                     onClick={handleUpload}
                     disabled={isUploading || pendingFiles.length === 0}
                 >
-                    {isUploading ? (
-                        <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
-                    ) : (
-                        <CloudUpload className='w-5 h-5' strokeWidth={2} />
+                    {isUploading && (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                     )}
-                </button>
+                    <CloudUpload className='w-5 h-5' strokeWidth={2} />
+                </Button>
             </div>
 
             {/* Files List with Status */}

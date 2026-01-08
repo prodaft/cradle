@@ -16,7 +16,8 @@ import {
     UseFormReturn,
 } from 'react-hook-form';
 import type { ObjectSchema } from 'yup';
-import FormAlert, { FormAlertState } from './FormAlert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
 
 /**
  * Props for the Form component
@@ -121,7 +122,7 @@ export default function Form<TFieldValues extends FieldValues = FieldValues>({
     showAlerts = true,
 }: FormProps<TFieldValues>): JSX.Element {
     const { execute } = useAPICall();
-    const [alert, setAlert] = useState<FormAlertState>({ type: null, message: '' });
+    const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({ type: null, message: '' });
 
     const methods = useForm<TFieldValues>({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -229,11 +230,12 @@ export default function Form<TFieldValues extends FieldValues = FieldValues>({
                 {...formProps}
             >
                 {showAlerts && alert.type && (
-                    <FormAlert
-                        alert={alert}
-                        onDismiss={clearAlert}
-                        timeout={alertTimeout}
-                    />
+                    <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
+                        {alert.type === 'success' && <CheckCircle />}
+                        {alert.type === 'error' && <WarningCircle />}
+                        {alert.type === 'warning' && <InfoCircle />}
+                        <AlertDescription>{alert.message}</AlertDescription>
+                    </Alert>
                 )}
                 {renderedChildren}
             </form>

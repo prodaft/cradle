@@ -1,11 +1,14 @@
-import Tooltip from '@/components/base/Tooltip/Tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNotif } from '@/contexts';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { OptimizedEntryResponse } from '@/services/cradle';
-import Selector from '@components/forms/Selector';
+import ShadcnSelect from '@components/forms/ShadcnSelect';
 import { useEffect, useState } from 'react';
-import { MultiValue } from 'react-select';
+import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 /**
  * Enricher type option for selector
@@ -89,16 +92,13 @@ export default function EnrichmentRequestModal({
     entitiesList,
     artifactsList,
     notesList,
-}: EnrichmentRequestModalProps): JSX.Element {
+}: EnrichmentRequestModalProps): React.JSX.Element {
     const { intelioApi, entriesApi } = useApi();
     const { execute } = useAPICall();
     const [loading, setLoading] = useState(false);
     const [enricherTypes, setEnricherTypes] = useState<EnricherOption[]>([]);
     const [loadingEnrichers, setLoadingEnrichers] = useState(true);
-    const { notify } = useNotif();
-    const [selectedEntities, setSelectedEntities] = useState<
-        Array<{ value: number; label: string }>
-    >([]);
+    const [selectedEntities, setSelectedEntities] = useState<Array<{ value: number, label: string }>>([]);
     const [initialDataLoading, setInitialDataLoading] = useState(false);
     const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(
         () => new Set(notesList?.map((n) => n.id) || []),
@@ -253,15 +253,15 @@ export default function EnrichmentRequestModal({
         }));
     };
 
-    const handleEnricherChange = (selectedOptions: MultiValue<EnricherOption>) => {
-        const enricherNames = Array.from(selectedOptions).map((opt) => opt.value);
+    const handleEnricherChange = (selectedOptions: EnricherOption[]) => {
+        const enricherNames = selectedOptions.map((opt) => opt.value);
         setFormData((prev) => ({
             ...prev,
             enricherNames,
         }));
     };
 
-    const handleEntityChange = (selectedOptions) => {
+    const handleEntityChange = (selectedOptions: Array<{ value: number, label: string }>) => {
         const entities = selectedOptions ? selectedOptions.map((opt) => opt.value) : [];
         setSelectedEntities(selectedOptions || []);
         setFormData((prev) => ({
@@ -318,32 +318,26 @@ export default function EnrichmentRequestModal({
         try {
             // Validate form data
             if (!formData.title.trim()) {
-                notify({ type: 'error', text: 'Title is required' });
+                toast.error('Title is required');
                 return;
             }
             if (!formData.enricherNames || formData.enricherNames.length === 0) {
-                notify({
-                    type: 'error',
-                    text: 'At least one enrichment technique must be selected',
-                });
+                toast.error('At least one enrichment technique must be selected');
                 return;
             }
             if (!formData.entities || formData.entities.length === 0) {
-                notify({ type: 'error', text: 'At least one entity must be selected' });
+                toast.error('At least one entity must be selected');
                 return;
             }
             if (!formData.request.trim() && selectedNoteIds.size === 0) {
-                notify({ type: 'error', text: 'Request artifacts are required' });
+                toast.error('Request artifacts are required');
                 return;
             }
 
             // Parse the request text
             const parsedRequest = parseRequestText(formData.request);
             if (parsedRequest.length === 0 && selectedNoteIds.size === 0) {
-                notify({
-                    type: 'error',
-                    text: 'Request must contain at least one valid entry in format <type>:<artifact>',
-                });
+                toast.error('Request must contain at least one valid entry in format <type>:<artifact>');
                 return;
             }
 
@@ -374,22 +368,18 @@ export default function EnrichmentRequestModal({
     };
 
     return (
-        <div className='min-w-[500px] max-w-2xl'>
-            <div className='flex items-end justify-between mb-4'>
-                <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
-                        Create Enrichment Request
-                    </h2>
-                </div>
-            </div>
+        <>
+            <DialogHeader>
+                <DialogTitle>Create Enrichment Request</DialogTitle>
+            </DialogHeader>
 
             <form onSubmit={handleSubmit}>
                 {/* Selected Notes List */}
                 {notesList && notesList.length > 0 && (
                     <div className='mb-5'>
-                        <label className='cradle-label mb-2 block'>
+                        <Label>
                             Selected Notes ({selectedNoteIds.size})
-                        </label>
+                        </Label>
                         <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
                             {notesList.map((note) => {
                                 const isSelected = selectedNoteIds.has(note.id);
@@ -427,15 +417,14 @@ export default function EnrichmentRequestModal({
                 )}
 
                 {/* Title */}
-                <div className='mb-5'>
-                    <label htmlFor='title' className='cradle-label mb-2 block'>
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='title'>
                         Title <span className='text-red-500'>*</span>
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                         id='title'
                         name='title'
                         type='text'
-                        className='cradle-input w-full'
                         placeholder='Enter request title'
                         value={formData.title}
                         onChange={handleChange}
@@ -444,17 +433,15 @@ export default function EnrichmentRequestModal({
                 </div>
 
                 {/* Enrichment Techniques */}
-                <div className='mb-5'>
-                    <label htmlFor='enricherNames' className='cradle-label mb-2 block'>
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='enricherNames'>
                         Enrichment Techniques <span className='text-red-500'>*</span>
-                    </label>
-                    <Selector
+                    </Label>
+                    <ShadcnSelect
                         isMulti={true}
                         staticOptions={enricherTypes}
                         placeholder='Select enrichment techniques...'
-                        usePortal={false}
-                        menuPosition='absolute'
-                        onChange={handleEnricherChange}
+                        onMultiChange={handleEnricherChange}
                     />
                     <p className='text-xs text-cradle-text-tertiary mt-1'>
                         Select one or more enrichment techniques to apply
@@ -462,43 +449,40 @@ export default function EnrichmentRequestModal({
                 </div>
 
                 {/* Entities */}
-                <div className='mb-5'>
-                    <label htmlFor='entity' className='cradle-label mb-2 block'>
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='entity'>
                         Entities <span className='text-red-500'>*</span>
-                    </label>
-                    <Tooltip
-                        content={
-                            selectedNoteIds.size > 0
-                                ? 'Entities will be selected from the selected notes'
-                                : undefined
-                        }
-                        color='info'
-                        showArrow={false}
-                        usePortal={false}
-                    >
-                        <Selector
-                            isMulti={true}
-                            fetchOptions={fetchEntities}
-                            placeholder='Select entities to enrich...'
-                            usePortal={false}
-                            menuPosition='absolute'
-                            onChange={handleEntityChange}
-                            value={selectedEntities}
-                            isLoading={initialDataLoading}
-                            isDisabled={selectedNoteIds.size > 0}
-                        />
+                    </Label>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div>
+                                <ShadcnSelect
+                                    isMulti={true}
+                                    fetchOptions={fetchEntities}
+                                    placeholder='Select entities to enrich...'
+                                    values={selectedEntities}
+                                    disabled={selectedNoteIds.size > 0}
+                                    onMultiChange={handleEntityChange}
+                                />
+                            </div>
+                        </TooltipTrigger>
+                        {selectedNoteIds.size > 0 && (
+                            <TooltipContent className='bg-blue-500 text-white'>
+                                Entities will be selected from the selected notes
+                            </TooltipContent>
+                        )}
                     </Tooltip>
                 </div>
 
                 {/* Request Artifacts */}
-                <div className='mb-5 w-full'>
-                    <label htmlFor='request' className='cradle-label mb-2 block'>
+                <div className='grid w-full items-center gap-3 mb-5'>
+                    <Label htmlFor='request'>
                         Request Artifacts <span className='text-red-500'>*</span>
-                    </label>
+                    </Label>
                     <textarea
                         id='request'
                         name='request'
-                        className='cradle-input w-full h-32 py-2'
+                        className='flex min-h-[128px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
                         placeholder='Enter artifacts in format:&#10;type:artifact&#10;type:artifact'
                         value={formData.request}
                         onChange={handleChange}
@@ -507,28 +491,26 @@ export default function EnrichmentRequestModal({
                 </div>
 
                 {/* Actions */}
-                <div className='flex justify-end gap-2 mt-4 pt-3 cradle-border-t'>
-                    <button
+                <div className='flex justify-end gap-2 mt-4'>
+                    <Button
                         type='button'
-                        className='rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary text-sm px-3 py-1.5 flex items-center gap-1.5'
+                        variant='outline'
+                        size='sm'
                         onClick={closeModal}
                         disabled={loading || initialDataLoading}
                     >
                         Cancel
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                         type='submit'
-                        className='rounded-full border border-cradle-accent-primary bg-cradle-accent-primary/10 text-cradle-accent-primary hover:bg-cradle-accent-primary/20 transition-colors text-sm px-4 py-1.5 flex items-center gap-1.5'
+                        variant='default'
+                        size='sm'
                         disabled={loading || initialDataLoading}
                     >
-                        {loading
-                            ? 'Creating...'
-                            : initialDataLoading
-                              ? 'Loading...'
-                              : 'Create Request'}
-                    </button>
+                        {loading ? 'Creating...' : initialDataLoading ? 'Loading...' : 'Create Request'}
+                    </Button>
                 </div>
             </form>
-        </div>
+        </>
     );
 }
