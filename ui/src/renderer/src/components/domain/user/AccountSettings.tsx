@@ -527,10 +527,10 @@ export default function AccountSettings({
                             id='admin-actions'
                             className='border-b border-white/5 pb-8'
                         >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 User Management
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Administrative actions for this user
                             </p>
 
@@ -584,10 +584,10 @@ export default function AccountSettings({
                             id='account'
                             className={`pb-8 ${isEdit && isAdminAndNotOwn ? 'pt-5' : ''}`}
                         >
-                            <h2 className='text-lg cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg text-foreground tracking-tight'>
                                 Account
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Basic account details and credentials
                             </p>
 
@@ -674,10 +674,10 @@ export default function AccountSettings({
                                         id='interface'
                                         className='border-t border-white/5 pt-5'
                                     >
-                                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                             Administrative
                                         </h2>
-                                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                             Manage user permissions and settings
                                         </p>
 
@@ -700,10 +700,10 @@ export default function AccountSettings({
                                             <div className='py-2'>
                                                 <div className='flex items-center justify-between gap-4'>
                                                     <div className='flex-1'>
-                                                        <Label htmlFor='emailConfirmed' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                        <Label htmlFor='emailConfirmed' className='text-sm text-muted-foreground block mb-0.5'>
                                                             Email Confirmed
                                                         </Label>
-                                                        <p className='text-sm cradle-text-muted'>User's email confirmation status</p>
+                                                        <p className='text-sm text-muted-foreground'>User's email confirmation status</p>
                                                     </div>
                                                     <Controller
                                                         name='emailConfirmed'
@@ -726,10 +726,10 @@ export default function AccountSettings({
                                             <div className='py-2'>
                                                 <div className='flex items-center justify-between gap-4'>
                                                     <div className='flex-1'>
-                                                        <Label htmlFor='isActive' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                        <Label htmlFor='isActive' className='text-sm text-muted-foreground block mb-0.5'>
                                                             Active
                                                         </Label>
-                                                        <p className='text-sm cradle-text-muted'>Disabled accounts cannot log in</p>
+                                                        <p className='text-sm text-muted-foreground'>Disabled accounts cannot log in</p>
                                                     </div>
                                                     <Controller
                                                         name='isActive'
@@ -771,10 +771,10 @@ export default function AccountSettings({
                                 id='security'
                                 className='border-t border-white/5 pt-5 pb-8'
                             >
-                                <h2 className='text-lg cradle-text-primary tracking-tight'>
+                                <h2 className='text-lg text-foreground tracking-tight'>
                                     Security
                                 </h2>
-                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                     Authentication, API keys, and account security
                                 </p>
 
@@ -808,10 +808,10 @@ export default function AccountSettings({
                                                 {isOwnAccount && <Separator />}
                                                 <div className='flex items-center justify-between py-2'>
                                                     <div>
-                                                        <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                        <span className='text-sm text-muted-foreground block mb-0.5'>
                                                             Two-Factor Auth
                                                         </span>
-                                                        <span className='text-sm cradle-text-muted'>
+                                                        <span className='text-sm text-muted-foreground'>
                                                             Protect your account with
                                                             one-time codes from an
                                                             authenticator app
@@ -847,7 +847,7 @@ export default function AccountSettings({
                                     {isOwnAccount && isEdit && (
                                         <>
                                             <div className='mb-3'>
-                                                <h3 className='text-sm font-medium cradle-text-tertiary'>
+                                                <h3 className='text-sm font-medium text-muted-foreground'>
                                                     Active Sessions
                                                 </h3>
                                             </div>
@@ -865,10 +865,10 @@ export default function AccountSettings({
                             id='interface'
                             className='border-t border-white/5 pt-5 pb-8'
                         >
-                            <h2 className='text-lg cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg text-foreground tracking-tight'>
                                 Interface
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Customize your editing and viewing experience
                             </p>
 
@@ -877,10 +877,10 @@ export default function AccountSettings({
                                 <SettingsCard>
                                     <div className='flex items-center justify-between gap-4 py-2'>
                                         <div className='flex-1'>
-                                            <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                            <label className='text-sm text-muted-foreground block mb-0.5'>
                                                 Theme
                                             </label>
-                                            <p className='text-sm cradle-text-muted'>
+                                            <p className='text-sm text-muted-foreground'>
                                                 Choose your preferred color scheme
                                             </p>
                                         </div>
@@ -889,7 +889,7 @@ export default function AccountSettings({
                                             variant='ghost'
                                             size='icon'
                                             onClick={() => setValue('theme', watch('theme') === 'dark' ? 'light' : 'dark')}
-                                            className='bg-orange-500/20 text-orange-400 hover:bg-orange-500/30'
+                                            className='bg-accent text-accent-foreground hover:bg-accent/80'
                                         >
                                             {watch('theme') === 'dark' ? (
                                                 <SunLight className='w-5 h-5' />
@@ -904,10 +904,10 @@ export default function AccountSettings({
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor={vimModeId} className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor={vimModeId} className='text-sm text-muted-foreground block mb-0.5'>
                                                     Vim Mode
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>Use Vim keybindings in the markdown editor</p>
+                                                <p className='text-sm text-muted-foreground'>Use Vim keybindings in the markdown editor</p>
                                             </div>
                                             <Controller
                                                 name='vimMode'

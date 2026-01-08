@@ -39,12 +39,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 <div className='flex flex-col items-center justify-center h-full p-8 text-center'>
                     <Card className='cradle-card-compact max-w-md'>
                         <CardHeader>
-                            <CardTitle className='cradle-text-error'>
+                            <CardTitle className='text-destructive'>
                                 Something went wrong
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className='cradle-text-secondary mb-4'>
+                            <p className='text-foreground mb-4'>
                                 This tab encountered an error and couldn't be displayed.
                             </p>
                             <Button

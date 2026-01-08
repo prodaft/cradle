@@ -42,30 +42,30 @@ export default function FormCheckbox<TFieldValues extends FieldValues = FieldVal
                     id={name}
                     type='checkbox'
                     disabled={disabled}
-                    className={`mt-0.5 ${hasError ? 'border-red-500' : ''}`}
+                    className={`mt-0.5 ${hasError ? 'border-destructive' : ''}`}
                     aria-invalid={hasError}
                     aria-describedby={hasError ? `${name}-error` : undefined}
                     {...register(name as Path<TFieldValues>)}
                 />
                 <div className='flex flex-col'>
-                    <span className='cradle-label cradle-text-tertiary'>
+                    <span className='cradle-label text-muted-foreground'>
                         {label}
-                        {required && <span className='text-red-500 ml-1'>*</span>}
+                        {required && <span className='text-destructive ml-1'>*</span>}
                     </span>
                     {description && (
-                        <span className='text-xs cradle-text-muted mt-0.5'>
+                        <span className='text-xs text-muted-foreground mt-0.5'>
                             {description}
                         </span>
                     )}
                 </div>
             </label>
             {helperText && !hasError && (
-                <p className='text-xs cradle-text-muted mt-1 ml-6'>{helperText}</p>
+                <p className='text-xs text-muted-foreground mt-1 ml-6'>{helperText}</p>
             )}
             {hasError && (
                 <p
                     id={`${name}-error`}
-                    className='text-xs text-red-500 mt-1 ml-6'
+                    className='text-xs text-destructive mt-1 ml-6'
                     role='alert'
                 >
                     {errorMessage}

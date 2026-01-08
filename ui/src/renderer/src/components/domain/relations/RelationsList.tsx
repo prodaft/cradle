@@ -4,6 +4,7 @@ import { Relation } from '@/services/cradle';
 import Pagination from '@components/base/Pagination/Pagination';
 import { useEffect, useState } from 'react';
 import RelationCard from './RelationCard';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Entity {
     name: string;
@@ -71,12 +72,10 @@ export default function RelationsList({ query }: RelationsListProps) {
         <div className='p-4'>
             {loading ? (
                 <div className='flex items-center justify-center min-h-[200px]'>
-                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                        <div className='cradle-spinner-pulse-dot'></div>
-                    </div>
+                    <Spinner className='size-10' />
                 </div>
             ) : relations.length === 0 ? (
-                <p className='text-center text-cradle-text-muted text-sm'>
+                <p className='text-center text-text-muted-foreground text-sm'>
                     No relations found.
                 </p>
             ) : (

@@ -21,7 +21,7 @@ export default function AdminPageLayout({ children, rightPane }: AdminPageLayout
                 </ResizablePanel>
                 {rightPane && (
                     <>
-                        <ResizableHandle className='w-[2px] cradle-bg-elevated cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                        <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                         <ResizablePanel defaultSize={30} minSize={20}>
                             <ScrollArea className='max-h-[calc(100vh-5rem)]'>
                                 {rightPane}

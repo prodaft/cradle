@@ -52,11 +52,11 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
     );
 
     return (
-        <span className='pb-1 space-x-1 flex flex-row pl-2 text-red-500 hover:text-red-600'>
+        <span className='pb-1 space-x-1 flex flex-row pl-2 text-destructive hover:text-destructive/80'>
             <Button
                 variant='ghost'
                 size='icon-sm'
-                className='text-red-500 hover:text-red-600'
+                className='text-destructive hover:text-destructive/80'
                 onClick={(e) => {
                     e.stopPropagation();
                     e.preventDefault();

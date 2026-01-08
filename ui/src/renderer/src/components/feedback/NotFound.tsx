@@ -21,7 +21,7 @@ export default function NotFound({ message }: NotFoundProps) {
                     <code>{location.pathname}</code>.
                 </p>
             )}
-            <Link to='/' className='underline text-cradle2 text-center w-full'>
+            <Link to='/' className='underline text-primary text-center w-full'>
                 Go back to Welcome
             </Link>
         </div>

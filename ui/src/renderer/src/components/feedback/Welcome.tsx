@@ -81,18 +81,18 @@ function RecentItemsCard({
             <CardContent className='space-y-2'>
                 {items.length === 0 ? (
                     <div className='text-center py-8'>
-                        <p className='text-sm cradle-text-muted'>{emptyMessage}</p>
+                        <p className='text-sm text-muted-foreground'>{emptyMessage}</p>
                     </div>
                 ) : (
                     items.map((item, index) => (
                         <Card
                             key={index}
-                            className='p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
+                            className='p-3 cursor-pointer hover:bg-bg-secondary transition-colors'
                             onClick={onItemClick(item)}
                         >
                             <CardContent className='p-0'>
                                 <div className='flex items-center justify-between'>
-                                    <span className='cradle-text-primary font-medium truncate'>
+                                    <span className='text-foreground font-medium truncate'>
                                         {truncateText(item.name || 'Unnamed', 40)}
                                     </span>
                                 </div>
@@ -133,18 +133,18 @@ function RecentNotesCard({
             <CardContent className='space-y-2'>
                 {notes.length === 0 ? (
                     <div className='text-center py-8'>
-                        <p className='text-sm cradle-text-muted'>{emptyMessage}</p>
+                        <p className='text-sm text-muted-foreground'>{emptyMessage}</p>
                     </div>
                 ) : (
                     notes.map((note, index) => (
                         <Card
                             key={index}
-                            className='p-3 cursor-pointer hover:bg-cradle-bg-secondary transition-colors'
+                            className='p-3 cursor-pointer hover:bg-bg-secondary transition-colors'
                             onClick={onNoteClick(note)}
                         >
                             <CardContent className='p-0'>
                                 <div className='space-y-1'>
-                                    <div className='cradle-text-primary font-medium truncate'>
+                                    <div className='text-foreground font-medium truncate'>
                                         {truncateText(
                                             parseMarkdownInline(
                                                 note.title || 'Untitled',
@@ -152,7 +152,7 @@ function RecentNotesCard({
                                             50,
                                         )}
                                     </div>
-                                    <div className='flex items-center gap-3 text-xs cradle-text-tertiary'>
+                                    <div className='flex items-center gap-3 text-xs text-muted-foreground'>
                                         <div className='flex items-center gap-1'>
                                             <User width={12} height={12} />
                                             <span>
@@ -252,16 +252,16 @@ export default function Welcome() {
 
     return (
         <>
-            <div className='h-full w-full overflow-auto cradle-bg-primary'>
+            <div className='h-full w-full overflow-auto bg-background'>
                 {/* Header Section */}
-                <div className='cradle-border-b px-6 py-8'>
+                <div className='border-border-b px-6 py-8'>
                     <div className='max-w-7xl mx-auto'>
                         <div className='flex items-center justify-between'>
                             <div>
-                                <h1 className='text-4xl font-medium cradle-text-primary cradle-mono tracking-tight mb-2'>
+                                <h1 className='text-4xl font-medium text-foreground cradle-mono tracking-tight mb-2'>
                                     CRADLE
                                 </h1>
-                                <p className='text-sm cradle-text-tertiary uppercase tracking-wider'>
+                                <p className='text-sm text-muted-foreground uppercase tracking-wider'>
                                     Welcome to your intelligence workspace
                                 </p>
                             </div>
@@ -275,14 +275,14 @@ export default function Welcome() {
                 <div className='max-w-7xl mx-auto px-6 py-8'>
                     {/* Quick Actions */}
                     <div className='mb-12'>
-                        <h2 className='text-xl font-medium cradle-text-primary cradle-mono mb-6'>
+                        <h2 className='text-xl font-medium text-foreground cradle-mono mb-6'>
                             Quick Actions
                         </h2>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
                             {quickActions.map((action, index) => (
                                 <Card
                                     key={index}
-                                    className='p-6 text-left hover:bg-cradle-bg-secondary transition-colors cursor-pointer h-auto'
+                                    className='p-6 text-left hover:bg-bg-secondary transition-colors cursor-pointer h-auto'
                                     onClick={action.onClick}
                                 >
                                     <CardContent className='p-0'>
@@ -292,11 +292,11 @@ export default function Welcome() {
                                             >
                                                 {action.icon}
                                             </div>
-                                            <h3 className='font-medium cradle-text-primary'>
+                                            <h3 className='font-medium text-foreground'>
                                                 {action.title}
                                             </h3>
                                         </div>
-                                        <p className='text-sm cradle-text-tertiary'>
+                                        <p className='text-sm text-muted-foreground'>
                                             {action.description}
                                         </p>
                                     </CardContent>
@@ -307,7 +307,7 @@ export default function Welcome() {
 
                     {/* Recent Activity */}
                     <div>
-                        <h2 className='text-xl font-medium cradle-text-primary cradle-mono mb-6'>
+                        <h2 className='text-xl font-medium text-foreground cradle-mono mb-6'>
                             Recent Activity
                         </h2>
 
@@ -359,11 +359,11 @@ export default function Welcome() {
                 </div>
 
                 {/* Footer */}
-                <footer className='cradle-border-t mt-16'>
+                <footer className='border-border-t mt-16'>
                     <div className='max-w-7xl mx-auto px-6 py-6'>
                         <div className='flex flex-col items-center'>
                             <p
-                                className='text-sm cradle-text-muted cursor-pointer'
+                                className='text-sm text-muted-foreground cursor-pointer'
                                 onClick={() => window.open('https://prodaft.com')}
                             >
                                 Copyright &copy; 2025 PRODAFT | v2.10.2-beta.a070af1b

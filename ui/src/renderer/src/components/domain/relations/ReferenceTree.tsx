@@ -8,6 +8,7 @@ import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
+import { Spinner } from '@/components/ui/spinner';
 
 interface ReferenceTreeProps {
     note: NoteRetrieve;
@@ -94,10 +95,10 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
     return (
         <>
             {note?.entries && note.entries.length > 0 && (
-                <div className={`dark:text-zinc-300 text-xs w-full pt-1 pl-3 ${className}`}>
+                <div className={`text-muted-foreground text-xs w-full pt-1 pl-3 ${className}`}>
                     <Collapsible defaultOpen={false}>
                         <CollapsibleTrigger asChild>
-                            <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                            <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
                                 <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                 <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                 <span>References</span>
@@ -109,19 +110,19 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                     // --- Render for internal nodes (categories that have child categories) ---
                                     (value, children) => (
                                         <div
-                                            className='dark:text-zinc-300 text-xs w-full pt-1'
+                                            className='text-muted-foreground text-xs w-full pt-1'
                                             key={value}
                                         >
                                             <Collapsible>
                                                 <CollapsibleTrigger asChild>
-                                                    <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                                    <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
                                                         <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                                         <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                                         <span>{value}</span>
                                                     </Button>
                                                 </CollapsibleTrigger>
                                                 <CollapsibleContent>
-                                                    <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
+                                                    <div className='text-muted-foreground text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
                                                         {children}
                                                     </div>
                                                 </CollapsibleContent>
@@ -133,7 +134,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                         const fullPath = `${path}${value}`;
                                         return (
                                             <div
-                                                className='dark:text-zinc-300 text-xs w-full pt-1'
+                                                className='text-muted-foreground text-xs w-full pt-1'
                                                 key={fullPath}
                                             >
                                                 <Collapsible
@@ -144,20 +145,20 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                     }}
                                                 >
                                                     <CollapsibleTrigger asChild>
-                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
                                                             <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                                             <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                                             <span>{value}</span>
                                                         </Button>
                                                     </CollapsibleTrigger>
                                                     <CollapsibleContent>
-                                                        <div className='dark:text-zinc-300 text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
+                                                        <div className='text-muted-foreground text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
                                                             {/* Render the actual references */}
                                                             {references[fullPath]?.map((entry) => (
                                                                 <Link
                                                                     key={`${entry.name}:${entry.subtype}`}
                                                                     to={createDashboardLink(entry)}
-                                                                    className='text-zinc-100 dark:text-zinc-300 hover:underline hover:text-cradle2 bg-cradle3 bg-opacity-60 h-6 px-1 py-1 mx-1 my-1 rounded-md'
+                                                                    className='text-foreground hover:underline hover:text-primary bg-muted h-6 px-1 py-1 mx-1 my-1 rounded-md'
                                                                 >
                                                                     {truncateText(entry.name, 30)}
                                                                 </Link>
@@ -167,9 +168,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                                 {/* Render pagination logic */}
                                                                 {nextPageStatus[fullPath] ===
                                                                     'loading' ? (
-                                                                    <div className='cradle-spinner-dot-pulse cradle-spinner-sm'>
-                                                                        <div className='cradle-spinner-pulse-dot cradle-spinner-sm '></div>
-                                                                    </div>
+                                                                    <Spinner className='size-3' />
                                                                 ) : nextPageStatus[fullPath] !==
                                                                     'end' ? (
                                                                     <span
@@ -179,7 +178,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                                                 true,
                                                                             )
                                                                         }
-                                                                        className='dark:text-zinc-300 underline hover:text-cradle2 cursor-pointer'
+                                                                        className='text-muted-foreground underline hover:text-primary cursor-pointer'
                                                                     >
                                                                         Load more...
                                                                     </span>

@@ -229,7 +229,7 @@ export default function EntityForm({
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
+                <div className='animate-pulse text-foreground'>Loading...</div>
             </div>
         );
     }
@@ -254,10 +254,10 @@ export default function EntityForm({
                     <form onSubmit={handleFormSubmit(onSubmit)}>
                         {/* Basic Section */}
                         <section id='basic' className='pb-8'>
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Basic Information
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Core entity properties
                             </p>
 
@@ -306,12 +306,12 @@ export default function EntityForm({
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='isPublic' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor='isPublic' className='text-sm text-muted-foreground block mb-0.5'>
                                                     Publicly Available
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>Allow public access to this entity</p>
+                                                <p className='text-sm text-muted-foreground'>Allow public access to this entity</p>
                                                 {errors.isPublic && (
-                                                    <p className='text-sm text-red-500 mt-1'>{errors.isPublic.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>{errors.isPublic.message}</p>
                                                 )}
                                             </div>
                                             <Controller
@@ -344,10 +344,10 @@ export default function EntityForm({
                                     <Separator />
 
                                     <div className='py-2'>
-                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                        <label className='text-sm text-muted-foreground block mb-0.5'>
                                             Aliases
                                         </label>
-                                        <p className='text-sm cradle-text-muted mb-2'>
+                                        <p className='text-sm text-muted-foreground mb-2'>
                                             Alternate names or references for this
                                             entity
                                         </p>
@@ -367,7 +367,7 @@ export default function EntityForm({
                                             )}
                                         />
                                         {errors.aliases && (
-                                            <p className='text-sm text-red-500 mt-1'>
+                                            <p className='text-sm text-destructive mt-1'>
                                                 {errors.aliases.message}
                                             </p>
                                         )}
@@ -382,10 +382,10 @@ export default function EntityForm({
                                 id='access'
                                 className='border-t border-white/5 pt-5 pb-8'
                             >
-                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                     Access Control
                                 </h2>
-                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                     User permissions for this entity
                                 </p>
 

@@ -48,7 +48,7 @@ export default function SearchFilter({
                 checked={filters.includes(option)}
                 onChange={handleCheckboxChange}
             />
-            <span className='text-zinc-300'>{text}</span>
+            <span className='text-muted-foreground'>{text}</span>
         </label>
     );
 }

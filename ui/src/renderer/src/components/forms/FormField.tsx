@@ -62,17 +62,17 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                     ref={ref}
                     type={type}
                     className={`cradle-input w-full ${
-                        hasError ? 'border-cradle-accent-error' : ''
+                        hasError ? 'border-destructive' : ''
                     } ${className || ''}`}
                     aria-invalid={hasError}
                     aria-describedby={hasError ? `${props.name}-error` : undefined}
                     {...props}
                 />
                 {helperText && !hasError && (
-                    <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
+                    <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
                 )}
                 {hasError && (
-                    <p id={`${props.name}-error`} className='text-xs text-red-500 mt-1'>
+                    <p id={`${props.name}-error`} className='text-xs text-destructive mt-1'>
                         {errorMessage}
                     </p>
                 )}
@@ -89,24 +89,24 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                         ref={ref}
                         type={type === 'radio' ? 'radio' : 'checkbox'}
                         className={`${
-                            hasError ? 'border-red-500' : ''
+                            hasError ? 'border-destructive' : ''
                         } ${className || ''}`}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${props.name}-error` : undefined}
                         {...props}
                     />
-                    <span className='cradle-label cradle-text-tertiary'>
+                    <span className='cradle-label text-muted-foreground'>
                         {label}
-                        {required && <span className='text-red-500 ml-1'>*</span>}
+                        {required && <span className='text-destructive ml-1'>*</span>}
                     </span>
                 </label>
                 {helperText && !hasError && (
-                    <p className='text-xs cradle-text-muted mt-1 ml-6'>{helperText}</p>
+                    <p className='text-xs text-muted-foreground mt-1 ml-6'>{helperText}</p>
                 )}
                 {hasError && (
                     <p
                         id={`${props.name}-error`}
-                        className='text-xs text-red-500 mt-1 ml-6'
+                        className='text-xs text-destructive mt-1 ml-6'
                     >
                         {errorMessage}
                     </p>
@@ -123,28 +123,28 @@ const FormField = forwardRef<HTMLInputElement, FormFieldProps>(function FormFiel
                     row ? 'flex-row items-center' : 'flex-col'
                 } justify-between w-full gap-2`}
             >
-                <span className='cradle-label cradle-text-tertiary'>
+                <span className='cradle-label text-muted-foreground'>
                     {label}
-                    {required && <span className='text-red-500 ml-1'>*</span>}
+                    {required && <span className='text-destructive ml-1'>*</span>}
                 </span>
                 <div className={`${row ? '' : 'w-full'}`}>
                     <input
                         ref={ref}
                         type={type}
                         className={`cradle-input w-full ${
-                            hasError ? 'border-cradle-accent-error' : ''
+                            hasError ? 'border-destructive' : ''
                         } ${className || ''}`}
                         aria-invalid={hasError}
                         aria-describedby={hasError ? `${props.name}-error` : undefined}
                         {...props}
                     />
                     {helperText && !hasError && (
-                        <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
+                        <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
                     )}
                     {hasError && (
                         <p
                             id={`${props.name}-error`}
-                            className='text-xs text-red-500 mt-1'
+                            className='text-xs text-destructive mt-1'
                         >
                             {errorMessage}
                         </p>

@@ -71,22 +71,22 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
         <div ref={ref} {...props}>
             <div
                 key={file.id}
-                className='relative h-fit w-full bg-cradle3 px-3 py-4 bg-opacity-20 rounded-xl my-2 flex items-center'
+                className='relative h-fit w-full bg-card/20 px-3 py-4 rounded-xl my-2 flex items-center'
             >
                 <div className='flex-grow text-xs'>
                     <div className='flex flex-wrap gap-2 mb-2 ml-1'>
-                        <h2 className='card-header dark:text-white ml-1'>
+                        <h2 className='card-header text-foreground ml-1'>
                             {file.fileName}
                         </h2>
                         {file.entities?.map((entry) => (
                             <a
                                 key={entry.name}
-                                className='hover:underline badge badge-flat-primary badge-xs px-2 mx-1 my-1 py-1 text-white'
+                                className={`hover:underline badge badge-flat-primary badge-xs px-2 mx-1 my-1 py-1 text-primary-foreground ${!entry.color ? 'bg-muted' : ''}`}
                                 href={`#${createDashboardLink(entry)}`}
                                 data-custom-href={`#${createDashboardLink(entry)}`}
-                                style={{
-                                    backgroundColor: entry.color || '#ccc',
-                                }}
+                                style={entry.color ? {
+                                    backgroundColor: entry.color,
+                                } : undefined}
                             >
                                 {entry.name}
                             </a>
@@ -96,20 +96,20 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                         <a
                             href={`/notes/${file.noteId}`}
                             onClick={navigateLink(`/notes/${file.noteId}`)}
-                            className='text-zinc-500 hover:text-zinc-600 ml-2'
+                            className='text-muted-foreground hover:text-foreground ml-2'
                         >
                             View Note
                         </a>
-                        <span className='text-zinc-700 mx-1'>|</span>
-                        <span className='text-zinc-500'>
+                        <span className='text-muted-foreground mx-1'>|</span>
+                        <span className='text-muted-foreground'>
                             {file.timestamp ? formatDate(file.timestamp) : 'N/A'}
                         </span>
 
                         {file.sha256Hash && (
                             <>
-                                <span className='text-zinc-700 mx-1'>|</span>
+                                <span className='text-muted-foreground mx-1'>|</span>
                                 <span
-                                    className='text-zinc-500 cursor-pointer hover:dark:bg-zinc-800 hover:bg-zinc-400'
+                                    className='text-muted-foreground cursor-pointer hover:bg-muted'
                                     onClick={() => copyToClipboard(file.sha256Hash!)}
                                     title='Click to copy'
                                 >
@@ -125,7 +125,7 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                         variant='ghost'
                         size='icon'
                         onClick={() => downloadFile()}
-                        className='text-white hover:bg-white/20 p-2 rounded-full'
+                        className='text-foreground hover:bg-accent p-2 rounded-full'
                         title='Download file'
                     >
                         <Download />

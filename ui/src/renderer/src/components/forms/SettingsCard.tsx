@@ -31,7 +31,7 @@ export default function SettingsCard({
     className = '',
 }: SettingsCardProps): JSX.Element {
     return (
-        <Card className={`rounded-lg cradle-border bg-white/[0.02] space-y-0 ${className}`}>
+        <Card className={`rounded-lg border-border bg-muted/5 space-y-0 ${className}`}>
             <CardContent className='px-4 py-1'>
                 {children}
             </CardContent>

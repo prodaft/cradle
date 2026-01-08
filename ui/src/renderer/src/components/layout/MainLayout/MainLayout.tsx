@@ -83,7 +83,7 @@ export default function MainLayout(): React.JSX.Element {
                             >
                                 {/* Resize handle */}
                                 <div 
-                                    className='w-[3px] h-full bg-zinc-600 hover:bg-[#FF8C00] cursor-col-resize transition-colors flex-shrink-0'
+                                    className='w-[3px] h-full bg-muted hover:bg-primary cursor-col-resize transition-colors flex-shrink-0'
                                     onMouseDown={handleMouseDown}
                                 />
                                 

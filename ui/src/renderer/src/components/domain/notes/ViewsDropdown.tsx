@@ -60,7 +60,7 @@ export default function ViewsDropdown({
                         <Button
                             variant='ghost'
                             size='icon'
-                            className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary cradle-border'
+                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-bg-secondary hover:text-text-foreground border-border'
                             data-testid='views-dropdown-btn'
                         >
                             {getViewIcon()}

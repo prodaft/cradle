@@ -46,12 +46,12 @@ export default function FormFieldWrapper({
             <div className={`w-full ${className}`}>
                 {children}
                 {helperText && !hasError && (
-                    <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
+                    <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
                 )}
                 {hasError && (
                     <p
                         id={`${name}-error`}
-                        className='text-xs text-red-500 mt-1'
+                        className='text-xs text-destructive mt-1'
                         role='alert'
                     >
                         {error}
@@ -71,17 +71,17 @@ export default function FormFieldWrapper({
                         className='text-muted-foreground whitespace-nowrap'
                     >
                         {label}
-                        {required && <span className='text-red-500 ml-1'>*</span>}
+                        {required && <span className='text-destructive ml-1'>*</span>}
                     </Label>
                     <div className='flex-1'>{children}</div>
                 </div>
                 {helperText && !hasError && (
-                    <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
+                    <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
                 )}
                 {hasError && (
                     <p
                         id={`${name}-error`}
-                        className='text-xs text-red-500 mt-1'
+                        className='text-xs text-destructive mt-1'
                         role='alert'
                     >
                         {error}
@@ -97,17 +97,17 @@ export default function FormFieldWrapper({
             <div className='flex flex-col w-full gap-2'>
                 <Label htmlFor={name} className='text-muted-foreground'>
                     {label}
-                    {required && <span className='text-red-500 ml-1'>*</span>}
+                    {required && <span className='text-destructive ml-1'>*</span>}
                 </Label>
                 {children}
             </div>
             {helperText && !hasError && (
-                <p className='text-xs cradle-text-muted mt-1'>{helperText}</p>
+                <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
             )}
             {hasError && (
                 <p
                     id={`${name}-error`}
-                    className='text-xs text-red-500 mt-1'
+                    className='text-xs text-destructive mt-1'
                     role='alert'
                 >
                     {error}

@@ -44,8 +44,8 @@ export default function SidebarItem({
             location.pathname.startsWith(highlightedLocation + '/'));
 
     const itemStyle = isHighlighted
-        ? { color: '#ff8c00' }
-        : { color: 'var(--primary)' };
+        ? { color: 'var(--color-primary)' }
+        : { color: 'var(--color-muted-foreground)' };
 
     return (
         <Tooltip>

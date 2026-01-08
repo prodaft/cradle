@@ -62,7 +62,7 @@ const GraphLegend = ({
             <Collapsible defaultOpen={true}>
                 <div className='flex justify-between items-center'>
                     <CollapsibleTrigger asChild>
-                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
                             <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                             <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                             <span>Legend</span>
@@ -71,7 +71,7 @@ const GraphLegend = ({
                     <Button 
                         variant='ghost'
                         size='sm'
-                        className='text-xs px-2 py-1 hover:bg-cradle-bg-elevated'
+                        className='text-xs px-2 py-1 hover:bg-bg-card'
                         onClick={toggleAll}
                     >
                         {allItemsDisabled ? 'Show All' : 'Hide All'}
@@ -111,12 +111,12 @@ const GraphLegend = ({
 
                                 return (
                                     <div className='mt-1.5 w-full relative' key={value}>
-                                        <div className='absolute left-1 top-1.5 bottom-0 w-px bg-cradle-border-accent' />
+                                        <div className='absolute left-1 top-1.5 bottom-0 w-px bg-border-border' />
                                         <div className='pl-4'>
                                             <Collapsible>
                                                 <div className='flex justify-between items-center'>
                                                     <CollapsibleTrigger asChild>
-                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-cradle-accent-primary'>
+                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
                                                             <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                                             <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                                             <span>{value}</span>
@@ -125,7 +125,7 @@ const GraphLegend = ({
                                                     <Button 
                                                         variant='ghost'
                                                         size='sm'
-                                                        className='text-xs px-2 py-1 hover:bg-cradle-bg-elevated'
+                                                        className='text-xs px-2 py-1 hover:bg-bg-card'
                                                         onClick={() =>
                                                             toggleAllAtPath(
                                                                 path,
@@ -155,7 +155,7 @@ const GraphLegend = ({
                                         className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded cursor-pointer transition-all text-xs ${
                                             disabledTypes.has(fullSubtype)
                                                 ? 'opacity-50 line-through'
-                                                : 'hover:bg-cradle-bg-elevated'
+                                                : 'hover:bg-bg-card'
                                         }`}
                                         onClick={() => toggleDisabledType(fullSubtype)}
                                     >

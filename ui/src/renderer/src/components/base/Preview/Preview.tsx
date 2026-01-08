@@ -12,6 +12,7 @@ import { handleLinkClick, NavigateHandler } from '@utils/editor/textEditor';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 
 interface PreviewProps {
     htmlContent: string;
@@ -141,9 +142,7 @@ export default function Preview({
         <>
             {isLoading ? (
                 <div className='flex items-center justify-center min-h-screen'>
-                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                        <div className='cradle-spinner-pulse-dot'></div>
-                    </div>
+                    <Spinner className='size-10' />
                 </div>
             ) : (
                 <ScrollArea className='h-full w-full rounded-lg flex-1'>

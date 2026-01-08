@@ -48,7 +48,7 @@ const PreviewTip = ({
                     side={side}
                     align={align}
                     sideOffset={sideOffset}
-                    className={`z-[99999] ${sizeClass} bg-cradle3 rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 ${className}`}
+                    className={`z-[99999] ${sizeClass} bg-popover rounded-lg shadow-2xl border border-border ${className}`}
                 >
                     {content}
                 </RadixTooltip.Content>

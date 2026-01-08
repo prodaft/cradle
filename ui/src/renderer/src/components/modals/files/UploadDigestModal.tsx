@@ -81,7 +81,7 @@ const UploadSchema = Yup.object().shape({
 // Utility function to get error styling classes
 const getFieldErrorClasses = (hasError: boolean, baseClasses: string = ''): string => {
     if (hasError) {
-        return `${baseClasses} border-red-300`.trim();
+        return `${baseClasses} border-destructive`.trim();
     }
     return `${baseClasses}`.trim();
 };
@@ -91,7 +91,7 @@ const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({
     children,
     id,
 }) => (
-    <p id={id} className='mt-1 text-xs text-red-600 flex items-center'>
+    <p id={id} className='mt-1 text-xs text-destructive flex items-center'>
         <svg
             className='w-3 h-3 mr-1 flex-shrink-0'
             fill='currentColor'
@@ -328,7 +328,7 @@ export default function UploadDigestModal({
             {/* Header */}
             <div className='flex items-end justify-between mb-4'>
                 <div className='flex items-center gap-3'>
-                    <h2 className='text-xl font-semibold text-cradle-text-primary tracking-wide'>
+                    <h2 className='text-xl font-semibold text-text-foreground tracking-wide'>
                         Upload Digest
                     </h2>
                 </div>
@@ -337,7 +337,7 @@ export default function UploadDigestModal({
             <form onSubmit={onSubmit} className='w-full'>
                 {/* Digest Title Field */}
                 <div className='grid w-full items-center gap-3 mb-5'>
-                    <Label htmlFor='digest-title' className={titleError ? 'text-red-700' : ''}>
+                    <Label htmlFor='digest-title' className={titleError ? 'text-destructive' : ''}>
                         Digest Title *
                     </Label>
                     <Input
@@ -345,7 +345,7 @@ export default function UploadDigestModal({
                         type='text'
                         value={formValues.title}
                         onChange={handleTitleChange}
-                        className={titleError ? 'border-red-300' : ''}
+                        className={titleError ? 'border-destructive' : ''}
                         placeholder='Enter digest title'
                         aria-invalid={titleError ? 'true' : 'false'}
                         aria-describedby={titleError ? 'title-error' : undefined}
@@ -358,7 +358,7 @@ export default function UploadDigestModal({
 
                 {/* Data Type Selector */}
                 <div className='grid w-full items-center gap-3 mb-5'>
-                    <Label htmlFor='data-type' className={dataTypeError ? 'text-red-700' : ''}>
+                    <Label htmlFor='data-type' className={dataTypeError ? 'text-destructive' : ''}>
                         Data Type *
                     </Label>
                     <div
@@ -387,7 +387,7 @@ export default function UploadDigestModal({
 
                 {/* File Upload Area */}
                 <div className='mb-5'>
-                    <Label htmlFor='file-upload' className={filesError ? 'text-red-700' : ''}>
+                    <Label htmlFor='file-upload' className={filesError ? 'text-destructive' : ''}>
                         Upload File *
                     </Label>
                     <div className='flex gap-2 items-stretch'>
@@ -396,16 +396,16 @@ export default function UploadDigestModal({
                             id='file-upload'
                             type='file'
                             onChange={handleFileChange}
-                            className={`flex-1 text-sm text-cradle-text-primary cursor-pointer
-                                border rounded-xl bg-cradle-bg-secondary/5 p-0
+                            className={`flex-1 text-sm text-text-foreground cursor-pointer
+                                border rounded-xl bg-bg-secondary/5 p-0
                                 file:mr-4 file:py-2 file:px-4
                                 file:rounded-l-[11px] file:rounded-r-none
-                                file:border-0 file:border-r file:border-cradle-border-accent
-                                file:bg-cradle-accent-primary/10 file:text-cradle-accent-primary
+                                file:border-0 file:border-r file:border-border-border
+                                file:bg-border-primary/10 file:text-border-primary
                                 file:text-sm file:font-medium
                                 file:cursor-pointer file:transition-colors
-                                hover:file:bg-cradle-accent-primary/20
-                                ${filesError ? 'border-red-300' : 'border-cradle-border-accent'}
+                                hover:file:bg-border-primary/20
+                                ${filesError ? 'border-destructive' : 'border-border'}
                             `}
                             disabled={isUploading}
                             aria-invalid={filesError ? 'true' : 'false'}
@@ -419,7 +419,7 @@ export default function UploadDigestModal({
 
                 {/* Associated Entries Selector */}
                 <div className='grid w-full items-center gap-3 mb-5'>
-                    <Label htmlFor='associated-entries' className={associatedEntryError ? 'text-red-700' : ''}>
+                    <Label htmlFor='associated-entries' className={associatedEntryError ? 'text-destructive' : ''}>
                         Associated Entries
                     </Label>
                     <div

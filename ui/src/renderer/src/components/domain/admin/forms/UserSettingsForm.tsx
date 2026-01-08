@@ -89,7 +89,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
+                <div className='animate-pulse text-foreground'>Loading...</div>
             </div>
         );
     }
@@ -110,10 +110,10 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                     <form onSubmit={handleSubmit(onSubmit)}>
                         {/* Registration Section */}
                         <section id='registration' className='pb-8'>
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Registration
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Control how new users can join the system
                             </p>
 
@@ -122,12 +122,12 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='allowRegistration' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor='allowRegistration' className='text-sm text-muted-foreground block mb-0.5'>
                                                     Allow Registration
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>Allow new users to register for accounts</p>
+                                                <p className='text-sm text-muted-foreground'>Allow new users to register for accounts</p>
                                                 {errors.allowRegistration && (
-                                                    <p className='text-sm text-red-500 mt-1'>{errors.allowRegistration.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>{errors.allowRegistration.message}</p>
                                                 )}
                                             </div>
                                             <Controller
@@ -150,12 +150,12 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='requireEmailActivation' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor='requireEmailActivation' className='text-sm text-muted-foreground block mb-0.5'>
                                                     Require Email Activation
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>Users must verify their email before accessing the system</p>
+                                                <p className='text-sm text-muted-foreground'>Users must verify their email before accessing the system</p>
                                                 {errors.requireEmailActivation && (
-                                                    <p className='text-sm text-red-500 mt-1'>{errors.requireEmailActivation.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>{errors.requireEmailActivation.message}</p>
                                                 )}
                                             </div>
                                             <Controller
@@ -178,12 +178,12 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='requireAdminConfirmation' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor='requireAdminConfirmation' className='text-sm text-muted-foreground block mb-0.5'>
                                                     Require Admin Confirmation
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>New accounts must be approved by an administrator</p>
+                                                <p className='text-sm text-muted-foreground'>New accounts must be approved by an administrator</p>
                                                 {errors.requireAdminConfirmation && (
-                                                    <p className='text-sm text-red-500 mt-1'>{errors.requireAdminConfirmation.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>{errors.requireAdminConfirmation.message}</p>
                                                 )}
                                             </div>
                                             <Controller

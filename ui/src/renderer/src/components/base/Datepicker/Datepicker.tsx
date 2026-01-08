@@ -135,7 +135,7 @@ const Datepicker = ({
         >
             <PopoverTrigger asChild>
                 <div className={cn('relative flex items-center w-full', className)}>
-                    <Calendar className='absolute left-3 w-4 h-4 text-cradle-text-muted z-10 pointer-events-none' />
+                    <Calendar className='absolute left-3 w-4 h-4 text-text-muted-foreground z-10 pointer-events-none' />
                     <Button
                         variant='outline'
                         className={cn(
@@ -171,7 +171,7 @@ const Datepicker = ({
                     />
                     <div className='flex gap-4 p-3 border-t'>
                         <div className='flex flex-col gap-2'>
-                            <label className='text-sm font-medium text-cradle-text-secondary'>
+                            <label className='text-sm font-medium text-text-foreground'>
                                 Start Time
                             </label>
                             <Input
@@ -182,7 +182,7 @@ const Datepicker = ({
                             />
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <label className='text-sm font-medium text-cradle-text-secondary'>
+                            <label className='text-sm font-medium text-text-foreground'>
                                 End Time
                             </label>
                             <Input

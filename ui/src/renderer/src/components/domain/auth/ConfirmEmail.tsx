@@ -56,18 +56,18 @@ export default function ConfirmEmail() {
 
     return (
         <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
-            <div className='bg-cradle3 p-4 bg-opacity-20 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
-                <div className='flex min-h-full flex-1 flex-col justify-center px-3 py-6 lg:px-4 text-gray-500'>
+            <div className='bg-card/20 p-4 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
+                <div className='flex min-h-full flex-1 flex-col justify-center px-3 py-6 lg:px-4 text-muted-foreground'>
                     {alert.show && (
                         <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
                             <WarningCircle />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>
                     )}
-                    <p className='mt-10 text-center text-sm text-gray-500'>
+                    <p className='mt-10 text-center text-sm text-muted-foreground'>
                         <Link
                             to='/login'
-                            className='font-semibold leading-6 text-cradle2 px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors hover:shadow-gray-400'
+                            className='font-semibold leading-6 text-primary px-2 py-1 rounded hover:bg-secondary hover:text-foreground transition-colors'
                             replace={true}
                         >
                             Go back to login

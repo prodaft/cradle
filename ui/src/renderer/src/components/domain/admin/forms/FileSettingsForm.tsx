@@ -219,7 +219,7 @@ export default function FileSettingsForm() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
+                <div className='animate-pulse text-foreground'>Loading...</div>
             </div>
         );
     }
@@ -240,10 +240,10 @@ export default function FileSettingsForm() {
                     <form onSubmit={handleFormSubmit(onSubmit)}>
                         {/* Processing Section */}
                         <section id='processing' className='pb-8'>
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Processing
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Configure automatic file processing and hash subtypes
                             </p>
 
@@ -252,12 +252,12 @@ export default function FileSettingsForm() {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='autoprocessFiles' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor='autoprocessFiles' className='text-sm text-muted-foreground block mb-0.5'>
                                                     Autoprocess Files
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>Automatically process uploaded files</p>
+                                                <p className='text-sm text-muted-foreground'>Automatically process uploaded files</p>
                                                 {errors.autoprocessFiles && (
-                                                    <p className='text-sm text-red-500 mt-1'>{errors.autoprocessFiles.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>{errors.autoprocessFiles.message}</p>
                                                 )}
                                             </div>
                                             <Controller
@@ -373,10 +373,10 @@ export default function FileSettingsForm() {
                             id='actions'
                             className='border-t border-white/5 pt-5 pb-8'
                         >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Actions
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Maintenance operations for files
                             </p>
 

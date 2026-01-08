@@ -58,7 +58,7 @@ export default function ExplorerPanel({
     if (nodesArray.length === 0) {
         return (
             <div className='px-4 py-3'>
-                <div className='text-sm text-gray-500 dark:text-gray-400 text-center py-8'>
+                <div className='text-sm text-muted-foreground text-center py-8'>
                     Click on a node or connection to explore
                 </div>
             </div>
@@ -67,24 +67,24 @@ export default function ExplorerPanel({
 
     return (
         <div className='px-4 py-3 space-y-4'>
-            <h3 className='text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3'>
+            <h3 className='text-sm font-semibold text-foreground mb-3'>
                 Selected Nodes ({nodesArray.length})
             </h3>
             <ScrollArea className='space-y-3 max-h-[60vh]'>
                 {nodesArray.map((node, index) => (
                     <div
                         key={node.id}
-                        className='cradle-bg-primary border border-cradle-border-accent rounded-lg p-3 space-y-2'
+                        className='bg-card border border-border rounded-lg p-3 space-y-2'
                     >
                         {/* Node Label/Name */}
                         <div className='flex items-start justify-between gap-2'>
                             <div className='flex-1 min-w-0'>
-                                <div className='text-sm font-semibold text-gray-900 dark:text-gray-100 break-words'>
+                                <div className='text-sm font-semibold text-foreground break-words'>
                                     {node.label || node.name || node.id}
                                 </div>
                                 {(node.label || node.name) &&
                                     node.id !== (node.label || node.name) && (
-                                        <div className='text-xs text-gray-500 dark:text-gray-400 mt-1 font-mono break-all'>
+                                        <div className='text-xs text-muted-foreground mt-1 font-mono break-all'>
                                             ID: {node.id}
                                         </div>
                                     )}
@@ -92,7 +92,7 @@ export default function ExplorerPanel({
                             {/* Color indicator */}
                             {node.color && (
                                 <div
-                                    className='w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 flex-shrink-0'
+                                    className='w-4 h-4 rounded-full border border-border flex-shrink-0'
                                     style={{ backgroundColor: node.color }}
                                     title={`Color: ${node.color}`}
                                 />
@@ -102,10 +102,10 @@ export default function ExplorerPanel({
                         {/* Node Type */}
                         {node.type && (
                             <div className='flex items-center gap-2'>
-                                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                <span className='text-xs text-muted-foreground'>
                                     Type:
                                 </span>
-                                <span className='text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded'>
+                                <span className='text-xs px-2 py-0.5 bg-muted rounded'>
                                     {node.type}
                                 </span>
                             </div>
@@ -114,10 +114,10 @@ export default function ExplorerPanel({
                         {/* Node Subtype */}
                         {node.subtype && (
                             <div className='flex items-center gap-2'>
-                                <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                <span className='text-xs text-muted-foreground'>
                                     Subtype:
                                 </span>
-                                <span className='text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-800 rounded'>
+                                <span className='text-xs px-2 py-0.5 bg-muted rounded'>
                                     {node.subtype}
                                 </span>
                             </div>
@@ -137,7 +137,7 @@ export default function ExplorerPanel({
                             return (
                                 <div className='space-y-2'>
                                     <div className='flex items-center gap-2'>
-                                        <span className='text-xs text-gray-500 dark:text-gray-400'>
+                                        <span className='text-xs text-muted-foreground'>
                                             Connections ({connectedNodes.length}):
                                         </span>
                                         {showCollapse && (
@@ -201,10 +201,10 @@ export default function ExplorerPanel({
                             )
                             .map(([key, value]) => (
                                 <div key={key} className='flex items-start gap-2'>
-                                    <span className='text-xs text-gray-500 dark:text-gray-400 capitalize'>
+                                    <span className='text-xs text-muted-foreground capitalize'>
                                         {key}:
                                     </span>
-                                    <span className='text-xs text-gray-700 dark:text-gray-300 break-words flex-1'>
+                                    <span className='text-xs text-foreground break-words flex-1'>
                                         {typeof value === 'object'
                                             ? JSON.stringify(value, null, 2)
                                             : String(value)}

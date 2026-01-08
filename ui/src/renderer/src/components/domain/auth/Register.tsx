@@ -220,7 +220,7 @@ export default function Register() {
 
                         {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
-                            <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                            <span className='text-xs text-muted-foreground cradle-mono tracking-wider'>
                                 v2.10.2-beta.a070af1b
                             </span>
                         </div>

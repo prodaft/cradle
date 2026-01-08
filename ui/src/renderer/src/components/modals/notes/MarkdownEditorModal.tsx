@@ -93,7 +93,7 @@ export default function MarkdownEditorModal({
                             value={noteTitle}
                             onChange={handleTitleChange}
                             placeholder='Enter title'
-                        className='text-lg font-semibold text-cradle-text-primary tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-cradle-text-tertiary'
+                        className='text-lg font-semibold text-text-foreground tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-text-muted-foreground'
                         />
                     ) : (
                     <DialogTitle>{noteTitle}</DialogTitle>
@@ -105,7 +105,7 @@ export default function MarkdownEditorModal({
                 <Label htmlFor='markdown-content'>
                     Content
                 </Label>
-                <div className='border border-cradle-border-accent rounded-lg overflow-hidden w-full'>
+                <div className='border border-border-border rounded-lg overflow-hidden w-full'>
                     <CodeMirror
                         value={userInput}
                         onChange={handleContentChange}
@@ -121,10 +121,10 @@ export default function MarkdownEditorModal({
 
             {/* Help Text Section */}
             {helpText && (
-                <div className='mb-6 p-4 border border-cradle-border-accent bg-cradle-bg-secondary/30 rounded-lg'>
+                <div className='mb-6 p-4 border border-border-border bg-bg-secondary/30 rounded-lg'>
                     <div className='flex items-start gap-3'>
-                        <div className='w-2 h-2 rounded-full bg-cradle-accent-primary mt-1.5 flex-shrink-0'></div>
-                        <div className='text-xs text-cradle-text-tertiary leading-relaxed'>
+                        <div className='w-2 h-2 rounded-full bg-border-primary mt-1.5 flex-shrink-0'></div>
+                        <div className='text-xs text-text-muted-foreground leading-relaxed'>
                             {helpText}
                         </div>
                     </div>

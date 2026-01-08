@@ -118,20 +118,20 @@ export default function AdminPanelUserPermissions({
                 <div className='w-full'>
                     {/* Permissions Section */}
                     <section id='permissions'>
-                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                             Entity Permissions
                         </h2>
-                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                             Configure access levels for each entity
                         </p>
 
                         {/* Search Bar */}
                         <div className='mb-4'>
-                            <div className='flex items-center gap-2 bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full'>
+                            <div className='flex items-center gap-2 bg-bg-card border border-border-border h-10 px-2 rounded-full'>
                                 <Button
                                     variant='ghost'
                                     size='icon-sm'
-                                    className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary'
+                                    className='p-1 flex-shrink-0 text-text-muted-foreground hover:text-text-foreground'
                                     title='Search'
                                 >
                                     <Search className='w-4 h-4' />
@@ -139,7 +139,7 @@ export default function AdminPanelUserPermissions({
                                 <input
                                     type='text'
                                     placeholder='Search entities'
-                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                    className='flex-grow bg-transparent text-sm outline-none text-text-foreground placeholder:text-text-muted-foreground rounded-none font-mono'
                                     onChange={(e) => setSearchVal(e.target.value)}
                                     value={searchVal}
                                 />
@@ -148,7 +148,7 @@ export default function AdminPanelUserPermissions({
                                         variant='ghost'
                                         size='icon-sm'
                                         onClick={() => setSearchVal('')}
-                                        className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary'
+                                        className='p-1 flex-shrink-0 text-text-muted-foreground hover:text-text-foreground'
                                         title='Clear search'
                                     >
                                         <Xmark className='w-4 h-4' />
@@ -167,7 +167,7 @@ export default function AdminPanelUserPermissions({
                                 })
                             ) : (
                                 <div className='text-center py-8'>
-                                    <p className='text-sm cradle-text-muted'>
+                                    <p className='text-sm text-muted-foreground'>
                                         {searchVal
                                             ? 'No entities found matching your search'
                                             : 'No entities available'}

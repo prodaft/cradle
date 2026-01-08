@@ -54,8 +54,8 @@ export default function SearchFilter({
                 px-2.5 py-1 text-xs font-mono transition-all duration-150
                 ${
                     isActive
-                        ? 'bg-cradle-accent-primary/15 text-cradle-accent-primary border-cradle-accent-primary/40'
-                        : 'bg-transparent text-cradle-text-secondary border-cradle-border-primary hover:border-cradle-border-interactive hover:text-cradle-text-primary'
+                        ? 'bg-border-primary/15 text-border-primary border-border-primary/40'
+                        : 'bg-transparent text-text-foreground border-border-border hover:border-border-border-interactive hover:text-text-foreground'
                 }
             `}
         >

@@ -67,7 +67,7 @@ export default function Pagination({
         <div className='flex items-center justify-between px-2'>
             {/* Left side: Selection info */}
             {selectedCount !== undefined && totalRows !== undefined && (
-                <div className='flex-1 text-sm cradle-text-tertiary'>
+                <div className='flex-1 text-sm text-muted-foreground'>
                     {selectedCount} of {totalRows} row{totalRows !== 1 ? 's' : ''}{' '}
                     selected.
                 </div>
@@ -80,7 +80,7 @@ export default function Pagination({
                     <div className='flex items-center space-x-2'>
                         <p className='text-sm font-medium'>Rows per page</p>
                         <select
-                            className='h-8 px-3 text-sm rounded-md border border-cradle-border-accent bg-transparent text-cradle-text-primary focus:outline-none focus:ring-2 focus:ring-cradle-accent-primary focus:ring-offset-2 cursor-pointer appearance-none'
+                            className='h-8 px-3 text-sm rounded-md border border-border-border bg-transparent text-text-foreground focus:outline-none focus:ring-2 focus:ring-border-primary focus:ring-offset-2 cursor-pointer appearance-none'
                             style={{
                                 backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
                                 backgroundPosition: 'right 0.5rem center',

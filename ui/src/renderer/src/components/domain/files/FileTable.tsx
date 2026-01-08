@@ -82,7 +82,7 @@ export default function FileTable({
                 id: 'tag',
                 header: 'Tag',
                 cell: ({ row }) => (
-                    <div className='dark:text-zinc-200 flex items-center'>
+                    <div className='text-foreground flex items-center'>
                         <div className='max-w-150px truncate px-3'>
                             {row.original.minioFileName}
                         </div>
@@ -97,11 +97,11 @@ export default function FileTable({
                 cell: ({ row }) => {
                     const data = row.original;
                     return (
-                        <div className='dark:text-zinc-200 flex items-center justify-between'>
+                            <div className='text-foreground flex items-center justify-between'>
                             <div className='max-w-150px truncate pr-3'>
                                 {data.fileName}
                             </div>
-                            <div className='dark:text-zinc-200 flex items-center justify-end pr-4'>
+                            <div className='text-foreground flex items-center justify-end pr-4'>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button
@@ -109,7 +109,7 @@ export default function FileTable({
                                             data-testid={`insert-${row.index}`}
                                             variant='ghost'
                                             size='icon-sm'
-                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            className='px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground bg-muted'
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 insertTextCallback(
@@ -131,7 +131,7 @@ export default function FileTable({
                                             data-testid={`copy-${row.index}`}
                                             variant='ghost'
                                             size='icon-sm'
-                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            className='px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground bg-muted'
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 copyToClipboard(
@@ -153,7 +153,7 @@ export default function FileTable({
                                             data-testid={`download-${row.index}`}
                                             variant='ghost'
                                             size='icon-sm'
-                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            className='px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground bg-muted'
                                             onClick={async (e) => {
                                                 e.stopPropagation();
                                                 await handleDownload(data);
@@ -173,7 +173,7 @@ export default function FileTable({
                                             data-testid={`delete-${row.index}`}
                                             variant='ghost'
                                             size='icon-sm'
-                                            className='px-2 py-1 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary bg-zinc-3'
+                                            className='px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground bg-muted'
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 setModal(ConfirmDeletionModal, {
@@ -202,9 +202,9 @@ export default function FileTable({
     return (
         <div className='w-full h-full mx-auto bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
             <div className='overflow-x-auto'>
-                <div className='w-full bg-gray-2 rounded-md overflow-x-hidden overflow-y-auto'>
+                <div className='w-full bg-muted rounded-md overflow-x-hidden overflow-y-auto'>
                     {(!fileData || fileData.length === 0) ? (
-                        <p className='ml-4 mt-2 dark:text-zinc-200'>
+                        <p className='ml-4 mt-2 text-foreground'>
                             No files uploaded yet.
                         </p>
                     ) : (

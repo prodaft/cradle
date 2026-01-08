@@ -52,18 +52,18 @@ export default function SettingsButton({
 }: SettingsButtonProps): JSX.Element {
     const variantClasses = {
         default:
-            'rounded-lg border border-cradle-border-accent bg-transparent hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors text-cradle-text-secondary',
-        danger: 'rounded-lg border border-red-500/50 text-red-400 hover:border-red-500 hover:bg-red-500/10 bg-transparent transition-colors',
+            'rounded-lg border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors text-text-foreground',
+        danger: 'rounded-lg border border-destructive/50 text-destructive hover:border-destructive hover:bg-destructive/10 bg-transparent transition-colors',
     };
 
     return (
         <div className='flex items-center justify-between py-2'>
             <div>
-                <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                <span className='text-sm text-muted-foreground block mb-0.5'>
                     {label}
                 </span>
                 {description && (
-                    <span className='text-sm cradle-text-muted'>{description}</span>
+                    <span className='text-sm text-muted-foreground'>{description}</span>
                 )}
             </div>
             <Button

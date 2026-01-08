@@ -5,6 +5,7 @@ import type { NoteRetrieve } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
 import Preview from '../../base/Preview/Preview';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 
 interface NotePreviewContentProps {
     note: NoteRetrieve;
@@ -38,9 +39,7 @@ export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
         <div className='w-[450px] max-h-[450px] overflow-hidden'>
             {loading ? (
                 <div className='flex items-center justify-center h-32'>
-                    <div className='cradle-spinner-dot-pulse'>
-                        <div className='cradle-spinner-pulse-dot'></div>
-                    </div>
+                    <Spinner className='size-6' />
                 </div>
             ) : (
                 <ScrollArea className='max-h-[450px]'>

@@ -56,10 +56,10 @@ export default function FormFieldWithError({
             {label && (
                 <label
                     htmlFor={name}
-                    className='block text-sm font-medium cradle-text-secondary mb-1'
+                    className='block text-sm font-medium text-foreground mb-1'
                 >
                     {label}
-                    {required && <span className='text-red-500 ml-1'>*</span>}
+                    {required && <span className='text-destructive ml-1'>*</span>}
                 </label>
             )}
 
@@ -75,7 +75,7 @@ export default function FormFieldWithError({
                 placeholder={placeholder}
                 className={`
                     cradle-input w-full
-                    ${hasError ? 'border-red-500 focus:ring-red-500' : ''}
+                    ${hasError ? 'border-destructive focus:ring-destructive' : ''}
                     ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
                 {...props}
@@ -84,7 +84,7 @@ export default function FormFieldWithError({
             {hasError && (
                 <div className='mt-1 space-y-1'>
                     {error.map((errorMsg, idx) => (
-                        <p key={idx} className='text-sm text-red-500 cradle-text-error'>
+                        <p key={idx} className='text-sm text-destructive'>
                             {errorMsg}
                         </p>
                     ))}

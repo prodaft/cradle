@@ -78,15 +78,15 @@ const SettingsRadio = forwardRef<HTMLInputElement, SettingsRadioProps>(
             <div className='py-2'>
                 <div className='flex items-center justify-between gap-4'>
                     <div className='flex-1'>
-                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                        <label className='text-sm text-muted-foreground block mb-0.5'>
                             {label}
-                            {required && <span className='text-red-500 ml-1'>*</span>}
+                            {required && <span className='text-destructive ml-1'>*</span>}
                         </label>
                         {description && (
-                            <p className='text-sm cradle-text-muted'>{description}</p>
+                            <p className='text-sm text-muted-foreground'>{description}</p>
                         )}
                         {errorMessage && (
-                            <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+                            <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
                         )}
                     </div>
                     <div
@@ -108,11 +108,11 @@ const SettingsRadio = forwardRef<HTMLInputElement, SettingsRadioProps>(
                                             onChange(option.value);
                                         }
                                     }}
-                                    className='w-4 h-4 text-cradle-accent-primary bg-transparent border-gray-600 focus:ring-cradle-accent-primary focus:ring-2'
+                                    className='w-4 h-4 text-primary bg-transparent border-border focus:ring-primary focus:ring-2'
                                     aria-invalid={Boolean(errorMessage)}
                                     {...props}
                                 />
-                                <span className='text-sm cradle-text-secondary'>
+                                <span className='text-sm text-foreground'>
                                     {option.label}
                                 </span>
                             </label>

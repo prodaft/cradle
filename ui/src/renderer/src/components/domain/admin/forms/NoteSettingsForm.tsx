@@ -127,7 +127,7 @@ export default function NoteSettingsForm() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
+                <div className='animate-pulse text-foreground'>Loading...</div>
             </div>
         );
     }
@@ -148,10 +148,10 @@ export default function NoteSettingsForm() {
                     <form onSubmit={handleFormSubmit(onSubmit)}>
                         {/* General Section */}
                         <section id='general' className='pb-8'>
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 General
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Basic note configuration and validation rules
                             </p>
 
@@ -190,12 +190,12 @@ export default function NoteSettingsForm() {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='allowDynamicEntryClassCreation' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor='allowDynamicEntryClassCreation' className='text-sm text-muted-foreground block mb-0.5'>
                                                     Dynamic Entry Class Creation
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>Allow automatic creation of new entry classes</p>
+                                                <p className='text-sm text-muted-foreground'>Allow automatic creation of new entry classes</p>
                                                 {errors.allowDynamicEntryClassCreation && (
-                                                    <p className='text-sm text-red-500 mt-1'>{errors.allowDynamicEntryClassCreation.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>{errors.allowDynamicEntryClassCreation.message}</p>
                                                 )}
                                             </div>
                                             <Controller
@@ -221,10 +221,10 @@ export default function NoteSettingsForm() {
                             id='snippets'
                             className='border-t border-white/5 pt-5 pb-8'
                         >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Global Snippets
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Reusable text blocks available to all users
                             </p>
 
@@ -253,10 +253,10 @@ export default function NoteSettingsForm() {
                             id='actions'
                             className='border-t border-white/5 pt-5 pb-8'
                         >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Actions
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Maintenance operations for notes
                             </p>
 

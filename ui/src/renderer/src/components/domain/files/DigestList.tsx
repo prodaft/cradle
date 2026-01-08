@@ -187,7 +187,7 @@ function DigestList({
                             viewBox='0 0 24 24'
                             fill='none'
                             xmlns='http://www.w3.org/2000/svg'
-                            className='text-green-500'
+                            className='text-primary'
                         >
                             <path
                                 d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
@@ -201,7 +201,7 @@ function DigestList({
                 case 'waiting':
                     return (
                         <WarningTriangleSolid
-                            className='text-amber-500'
+                            className='text-muted-foreground'
                             width='18'
                             height='18'
                         />
@@ -209,7 +209,7 @@ function DigestList({
                 case 'error':
                     return (
                         <WarningCircleSolid
-                            className='text-red-500'
+                            className='text-destructive'
                             width='18'
                             height='18'
                         />
@@ -217,7 +217,7 @@ function DigestList({
                 case 'working':
                     return (
                         <InfoCircleSolid
-                            className='text-blue-500'
+                            className='text-primary'
                             width='18'
                             height='18'
                         />
@@ -229,7 +229,7 @@ function DigestList({
 
         const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
         const tooltipContent = errorMessage || statusCapitalized;
-        const tooltipColorClass = status === 'error' ? 'bg-red-500 text-white' : status === 'waiting' ? 'bg-yellow-500 text-white' : '';
+        const tooltipColorClass = status === 'error' ? 'bg-destructive text-destructive-foreground' : status === 'waiting' ? 'bg-accent text-accent-foreground' : '';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
@@ -323,7 +323,7 @@ function DigestList({
                         <div className="flex items-center gap-2">
                             <DataTableColumnHeader column={column} title="User" />
                             {filterValue && (
-                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
                     );
@@ -343,13 +343,13 @@ function DigestList({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span
-                                    className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-yellow-600'
+                                    className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-accent-foreground shadow-sm bg-accent'
                                 >
                                     {row.original.warnings?.length || 0}
                                 </span>
                             </TooltipTrigger>
                             {row.original.warnings?.length > 0 && (
-                                <TooltipContent side='left' className='bg-yellow-500 text-white'>
+                                <TooltipContent side='left' className='bg-accent text-accent-foreground'>
                                     {row.original.warnings.slice(0, 10).join('\n') +
                                         (row.original.warnings.length > 10 ? '...' : '')}
                                 </TooltipContent>
@@ -368,13 +368,13 @@ function DigestList({
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <span
-                                    className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white shadow-sm bg-red-600'
+                                    className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-destructive-foreground shadow-sm bg-destructive'
                                 >
                                     {row.original.errors?.length || 0}
                                 </span>
                             </TooltipTrigger>
                             {row.original.errors?.length > 0 && (
-                                <TooltipContent side='left' className='bg-red-500 text-white'>
+                                <TooltipContent side='left' className='bg-destructive text-destructive-foreground'>
                                     {row.original.errors.slice(0, 10).join('\n') +
                                         (row.original.errors.length > 10 ? '\n...' : '')}
                                 </TooltipContent>
@@ -393,7 +393,7 @@ function DigestList({
                         <div className="flex items-center gap-2">
                             <DataTableColumnHeader column={column} title="Created At" />
                             {(filterValue?.from && filterValue?.to) && (
-                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
                     );
@@ -417,7 +417,7 @@ function DigestList({
                                         <Button
                                             variant='ghost'
                                             size='icon-sm'
-                                            className='text-red-600 hover:text-red-500 p-1'
+                                            className='text-destructive hover:text-destructive/80 p-1'
                                             onClick={() =>
                                                 setModal(ConfirmDeletionModal, {
                                                     text: 'Are you sure you want to delete this digest?',

@@ -74,7 +74,7 @@ export default function NotificationsPanel({
                         />
                     ))
                 ) : (
-                    <div className='flex flex-col items-center justify-center h-full text-cradle-text-muted'>
+                    <div className='flex flex-col items-center justify-center h-full text-text-muted-foreground'>
                         {!loading && <span className='text-sm'>No notifications</span>}
                         {loading && <Loading />}
                     </div>

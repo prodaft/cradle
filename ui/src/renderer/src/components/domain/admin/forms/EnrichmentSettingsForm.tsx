@@ -281,7 +281,7 @@ export default function EnrichmentSettingsForm({
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse cradle-text-secondary'>
+                <div className='animate-pulse text-foreground'>
                     Loading enrichment settings...
                 </div>
             </div>
@@ -319,10 +319,10 @@ export default function EnrichmentSettingsForm({
 
                         {/* General Section */}
                         <section id='general' className='pb-8'>
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 General Information
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Core configuration for this enrichment
                             </p>
 
@@ -331,10 +331,10 @@ export default function EnrichmentSettingsForm({
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='enabled' className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <Label htmlFor='enabled' className='text-sm text-muted-foreground block mb-0.5'>
                                                     Enabled
                                                 </Label>
-                                                <p className='text-sm cradle-text-muted'>Enable or disable this enrichment source</p>
+                                                <p className='text-sm text-muted-foreground'>Enable or disable this enrichment source</p>
                                             </div>
                                             <Controller
                                                 name='enabled'
@@ -358,15 +358,15 @@ export default function EnrichmentSettingsForm({
                                             {' '}
                                             {/* Added flex container */}
                                             <div className='flex-1'>
-                                                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                <label className='text-sm text-muted-foreground block mb-0.5'>
                                                     Entry Classes
                                                 </label>
-                                                <p className='text-sm cradle-text-muted'>
+                                                <p className='text-sm text-muted-foreground'>
                                                     Entry classes to apply this
                                                     enrichment to
                                                 </p>
                                                 {errors.for_eclasses && (
-                                                    <p className='text-red-600 text-sm mt-1'>
+                                                    <p className='text-destructive text-sm mt-1'>
                                                         {errors.for_eclasses.message}
                                                     </p>
                                                 )}
@@ -402,10 +402,10 @@ export default function EnrichmentSettingsForm({
                                 id='settings'
                                 className='border-t border-white/5 pt-5 pb-8'
                             >
-                                <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                                <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                     Enrichment Parameters
                                 </h2>
-                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                     Specific settings for the enrichment provider
                                 </p>
 

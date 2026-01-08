@@ -7,6 +7,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Download, Trash } from 'iconoir-react';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Action {
     value: string;
@@ -101,7 +102,7 @@ export default function ActionBar({
                 </DropdownMenuContent>
             </DropdownMenu>
             {loadingAction && (
-                <span className='loading loading-spinner loading-sm'></span>
+                <Spinner className='size-3' />
             )}
         </div>
     );

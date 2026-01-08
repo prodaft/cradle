@@ -76,13 +76,13 @@ const SettingsField = forwardRef<HTMLInputElement, SettingsFieldProps>(
                 <div className='flex-1'>
                     <Label htmlFor={props.id || props.name} className='text-sm text-muted-foreground block mb-0.5'>
                         {label}
-                        {required && <span className='text-red-500 ml-1'>*</span>}
+                        {required && <span className='text-destructive ml-1'>*</span>}
                     </Label>
                     {description && (
                         <p className='text-sm text-muted-foreground'>{description}</p>
                     )}
                     {errorMessage && (
-                        <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+                        <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
                     )}
                 </div>
                 <div className={inputWidth}>

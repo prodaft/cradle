@@ -167,7 +167,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     if (isLoading) {
         return (
             <div className='py-2'>
-                <div className='text-sm cradle-text-muted'>Loading sessions...</div>
+                <div className='text-sm text-muted-foreground'>Loading sessions...</div>
             </div>
         );
     }
@@ -175,7 +175,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     if (sessions.length === 0) {
         return (
             <div className='py-2'>
-                <div className='text-sm cradle-text-muted'>No active sessions</div>
+                <div className='text-sm text-muted-foreground'>No active sessions</div>
             </div>
         );
     }
@@ -187,16 +187,16 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     <div className='flex items-center justify-between'>
                         <div className='flex-1'>
                             <div className='flex items-center gap-2'>
-                                <span className='text-sm cradle-text-tertiary'>
+                                <span className='text-sm text-muted-foreground'>
                                     {formatDeviceInfo(session.device_info)}
                                 </span>
                                 {session.is_current && (
-                                    <span className='text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30'>
+                                    <span className='text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30'>
                                         Current
                                     </span>
                                 )}
                             </div>
-                            <div className='text-xs cradle-text-muted mt-0.5'>
+                            <div className='text-xs text-muted-foreground mt-0.5'>
                                 {session.ip_address && (
                                     <span className='mr-3'>
                                         IP: {session.ip_address}
@@ -219,7 +219,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         </Button>
                     </div>
                     {index < sessionsWithCurrent.length - 1 && (
-                        <div className='h-px bg-white/5 my-3' />
+                        <div className='h-px bg-border/50 my-3' />
                     )}
                 </div>
             ))}

@@ -25,7 +25,7 @@ export default function DashboardCard({ name, link, type }: DashboardCardProps) 
             onClick={link ? navigateLink(link) : undefined}
         >
             <CardContent>
-                <div className='cradle-text-primary cradle-mono font-medium mb-2'>
+                <div className='text-foreground cradle-mono font-medium mb-2'>
                     {name}
                 </div>
                 {type && <div className='cradle-label text-xs'>{type}</div>}

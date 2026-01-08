@@ -210,7 +210,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                         />
                     </ResizablePanel>
                     {activePanel && (
-                        <ResizableHandle className='w-[2px] cradle-bg-elevated cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                        <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                     )}
                     <ResizablePanel defaultSize={activePanel ? 70 : 100} minSize={50}>
                         <div className='relative h-full'>

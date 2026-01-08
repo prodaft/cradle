@@ -96,7 +96,7 @@ export function renderCradleLink(
     const hidden = (token as any).hidden;
     const displayedName = alias || name;
     const url = createDashboardLink({ name, subtype: type });
-    const colorClass = entryColors.get(type) || '#000000';
+    const colorClass = entryColors.get(type) || 'hsl(var(--foreground))';
 
     let displayText = displayedName;
 

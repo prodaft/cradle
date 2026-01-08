@@ -71,10 +71,10 @@ export default function EntriesManagement() {
                 <div className='w-full'>
                     {/* Actions Section */}
                     <section id='actions' className='pb-8'>
-                        <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                             Actions
                         </h2>
-                        <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                             Maintenance operations for entries and artifacts
                         </p>
 

@@ -420,8 +420,8 @@ export default function FilesList({
                                 title={`View ${entity.subtype || 'entity'}: ${entity.name}`}
                             >
                                 <Badge 
-                                    className="rounded-full"
-                                    style={{ backgroundColor: entity.color || '#ccc' }}
+                                    className={`rounded-full ${!entity.color ? 'bg-muted' : ''}`}
+                                    style={entity.color ? { backgroundColor: entity.color } : undefined}
                                 >
                                     {entity.name}
                                 </Badge>
@@ -465,7 +465,7 @@ export default function FilesList({
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <span
-                                        className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded truncate block'
+                                        className='cursor-pointer hover:bg-muted px-1 rounded truncate block'
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             copyToClipboard(row.original.sha256Hash!);
