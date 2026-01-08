@@ -1,5 +1,4 @@
 import { toast } from 'sonner';
-import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
@@ -36,8 +35,7 @@ interface SearchFilters {
 export default function Notes() {
     const [searchParams, setSearchParams] = useSearchParams();
     const { navigate, navigateLink } = useCradleNavigate();
-    const { profile } = useProfile();
-    const { fleetingNotesApi } = useApi();
+    const { notesApi } = useApi();
     const { execute } = useAPICall();
 
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -94,13 +92,10 @@ export default function Notes() {
     };
 
     const handleCreateNewNote = async () => {
-        const defaultContent =
-            profile?.defaultNoteTemplate ||
-            '# Untitled\n\nStart writing your note here...';
         execute(() =>
-            fleetingNotesApi.fleetingNotesCreate({
+            notesApi.notesCreate({
                 fleetingNoteRequest: {
-                    content: defaultContent,
+                    content: '',
                 },
             }),
         )

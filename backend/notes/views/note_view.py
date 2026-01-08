@@ -1,8 +1,8 @@
 from typing import cast
 from uuid import UUID
 
+from django.db import transaction
 from django.db.models import Count, Prefetch, Q
-from django.http import QueryDict
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -39,10 +39,10 @@ from ..exceptions import (
 from ..filters import NoteFilter
 from ..models import Note
 from ..serializers import (
+    FleetingNoteSerializer,
     FileReferenceListSerializer,
     FileReferenceWithNoteSerializer,
     NoteCreateSerializer,
-    NoteEditSerializer,
     NoteListSerializer,
     NoteRetrieveSerializer,
 )
@@ -148,15 +148,12 @@ from ..serializers import (
     ),
     post=extend_schema(
         operation_id="notes_create",
-        summary="Create note",
-        description="Creates a new note. User must have read-write access to all referenced entities.",  # noqa: E501
-        request=NoteCreateSerializer,
+        summary="Create fleeting note",
+        description="Creates a new fleeting note for the authenticated user.",
+        request=FleetingNoteSerializer,
         responses={
-            200: NoteRetrieveSerializer,
+            200: FleetingNoteSerializer,
             **get_validation_error_response(),
-            **get_error_responses(
-                NotesErrorCodes.NO_ACCESS_TO_ENTRIES,
-            ),
             **get_common_error_responses(),
         },
     ),
@@ -168,7 +165,16 @@ class NoteList(APIView):
 
     def get(self, request: Request) -> Response:
         user = cast(CradleUser, request.user)
-        queryset = Note.objects.get_accessible_notes(user)
+        status_filter = request.query_params.get("status")
+        if status_filter == "fleeting":
+            queryset = Note.objects.filter(author=user, fleeting=True)
+        else:
+            queryset = Note.objects.get_accessible_notes(user)
+            if status_filter is None:
+                author_fleeting = Note.objects.filter(
+                    author=user, fleeting=True
+                ).distinct()
+                queryset = (queryset | author_fleeting).distinct()
 
         try:
             page_size = int(request.query_params.get("page_size", 10))
@@ -220,15 +226,10 @@ class NoteList(APIView):
                 aliasset = entry.aliasqs(user)
                 queryset = queryset.filter(entries__in=aliasset).distinct()
 
-        if "status" in request.query_params:
-            if request.query_params.get("status") == "fleeting":
-                queryset = queryset.filter(fleeting=True)
-            elif request.query_params.get("status") == "finalized":
-                queryset = queryset.filter(fleeting=False)
-            else:
-                queryset = queryset.filter(
-                    status=request.query_params.get("status"), fleeting=False
-                )
+        if status_filter == "finalized":
+            queryset = queryset.filter(fleeting=False)
+        elif status_filter not in (None, "fleeting"):
+            queryset = queryset.filter(status=status_filter, fleeting=False)
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
@@ -312,7 +313,7 @@ class NoteList(APIView):
 
     def post(self, request: Request) -> Response:
         """
-        Create a new non-fleeting note based on the request data.
+        Create a new fleeting note based on the request data.
         The user field is set to correspond to the authenticated user.
 
         Args:
@@ -320,24 +321,18 @@ class NoteList(APIView):
 
         Returns:
             Response(serializer.data, status=200):
-                The created note entry
+                The created fleeting note entry
             Response(serializer.errors, status=400):
                 if the request was unsuccessful
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
         """
-        # Ensure note is created as non-fleeting
-        if isinstance(request.data, QueryDict):
-            request.data._mutable = True
-        request.data["fleeting"] = False
-
-        serializer = NoteCreateSerializer(
+        serializer = FleetingNoteSerializer(
             data=request.data, context={"request": request}
         )
         serializer.is_valid(raise_exception=True)
-        note = serializer.save()
-        json_note = NoteRetrieveSerializer(note, many=False).data
-        return Response(json_note, status=status.HTTP_200_OK)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -364,29 +359,6 @@ class NoteList(APIView):
             200: NoteRetrieveSerializer,
             **get_error_responses(
                 NotesErrorCodes.NOTE_DOES_NOT_EXIST,
-            ),
-            **get_common_error_responses(),
-        },
-    ),
-    post=extend_schema(
-        operation_id="notes_update",
-        summary="Update note",
-        description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
-        request=NoteEditSerializer,
-        parameters=[
-            OpenApiParameter(
-                name="note_id",
-                type=UUID,
-                location=OpenApiParameter.PATH,
-                description="ID of the note to update. Must be a valid UUID",
-            )
-        ],
-        responses={
-            200: NoteRetrieveSerializer,
-            **get_validation_error_response(),
-            **get_error_responses(
-                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
-                NotesErrorCodes.CANNOT_EDIT_NOTE,
             ),
             **get_common_error_responses(),
         },
@@ -419,10 +391,20 @@ class NoteDetail(APIView):
     serializer_class = NoteRetrieveSerializer
 
     def get(self, request: Request, note_id: UUID) -> Response:
+        user = cast(CradleUser, request.user)
         try:
-            note: Note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
+            note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             raise NoteDoesNotExistException(detail="Note was not found.")
+
+        if note.fleeting:
+            if note.author_id != user.id:
+                raise NoteDoesNotExistException(detail="Note was not found.")
+        else:
+            try:
+                note = Note.objects.get_accessible_notes(request.user).get(id=note_id)
+            except Note.DoesNotExist:
+                raise NoteDoesNotExistException(detail="Note was not found.")
 
         if request.query_params.get("footnotes", "true") == "true":
             return Response(
@@ -431,56 +413,82 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
-    def post(self, request: Request, note_id: UUID) -> Response:
-        try:
-            note: Note = Note.objects.non_fleeting().get(id=note_id)
-        except Note.DoesNotExist:
-            raise NoteDoesNotExistException(detail="Note was not found.")
-
-        user = cast(CradleUser, request.user)
-
-        if not Access.objects.has_access_to_entities(
-            user,
-            set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
-            {AccessType.READ, AccessType.READ_WRITE},
-        ):
-            raise NoteDoesNotExistException(detail="Note was not found.")
-
-        if not user.is_cradle_admin and note.author != user:
-            raise CannotEditNoteException(detail="You cannot edit this note")
-
-        serializer = NoteEditSerializer(
-            note, data=request.data, context={"request": request}
-        )
-        serializer.is_valid(raise_exception=True)
-        note = serializer.save()
-        json_note = NoteRetrieveSerializer(note, many=False).data
-        return Response(json_note, status=status.HTTP_200_OK)
-
     def delete(self, request: Request, note_id: UUID) -> Response:
         from entries.tasks import refresh_edges_materialized_view
 
         try:
-            note_to_delete = Note.objects.non_fleeting().get(id=note_id)
+            note_to_delete = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             raise NoteDoesNotExistException(detail="Note not found.")
 
-        if not Access.objects.has_access_to_entities(
-            cast(CradleUser, request.user),
-            set(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
-            {AccessType.READ, AccessType.READ_WRITE},
-        ):
-            raise NoAccessToEntriesException(
-                detail="User does not have Read-Write access to all referenced entities",
-                links=list(
-                    note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)
-                ),
-            )
+        if note_to_delete.fleeting:
+            if note_to_delete.author_id != request.user.id:
+                raise NoteDoesNotExistException(detail="Note not found.")
+        else:
+            if not Access.objects.has_access_to_entities(
+                cast(CradleUser, request.user),
+                set(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
+                {AccessType.READ, AccessType.READ_WRITE},
+            ):
+                raise NoAccessToEntriesException(
+                    detail="User does not have Read-Write access to all referenced entities",
+                    links=list(
+                        note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)
+                    ),
+                )
         note_to_delete.delete()
 
         refresh_edges_materialized_view.apply_async()
 
         return Response("Note was deleted.", status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    put=extend_schema(
+        summary="Convert fleeting note to regular note",
+        description="Converts a fleeting note to a regular note. Only the owner can convert it.",
+        parameters=[
+            OpenApiParameter(
+                name="note_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the fleeting note to convert",
+            )
+        ],
+        request=None,
+        responses={
+            200: NoteRetrieveSerializer,
+            **get_error_responses(NotesErrorCodes.NOTE_DOES_NOT_EXIST),
+            **get_validation_error_response(),
+            **get_common_error_responses(),
+        },
+    )
+)
+class NoteFinalize(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request: Request, note_id: UUID) -> Response:
+        try:
+            note = Note.objects.get(id=note_id, author=request.user, fleeting=True)
+        except Note.DoesNotExist:
+            raise NoteDoesNotExistException(detail="Note was not found.")
+
+        note_data = {
+            "content": note.content,
+            "files": [file.to_dict() for file in note.files.all()],
+        }
+
+        with transaction.atomic():
+            serializer = NoteCreateSerializer(
+                data=note_data, context={"request": request}
+            )
+            serializer.is_valid(raise_exception=True)
+            new_note = serializer.save()
+            note.delete()
+            return Response(
+                NoteRetrieveSerializer(new_note).data, status=status.HTTP_200_OK
+            )
 
 
 @extend_schema_view(

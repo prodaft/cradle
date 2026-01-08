@@ -11,6 +11,8 @@ type Config = {
   djangoApiBasePath: string;
   collabBasePath: string;
   collabHmacSecret: string;
+  cacheMaxEntries: number;
+  cacheMaxAgeMs: number;
 };
 
 const stripTrailingSlash = (value: string): string => value.replace(/\/+$/, "");
@@ -32,6 +34,18 @@ function getEnv(name: string, fallback = ""): string {
   return value;
 }
 
+function getNumberEnv(name: string, fallback: number): number {
+  const value = process.env[name];
+  if (value === undefined || value.trim() === "") {
+    return fallback;
+  }
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return fallback;
+  }
+  return parsed;
+}
+
 const normalizeBasePath = (value: string): string =>
   stripLeadingSlash(stripTrailingSlash(value));
 
@@ -40,5 +54,7 @@ export const config: Config = {
   djangoBaseUrl: requireEnv("DJANGO_BASE_URL", "http://localhost:8000"),
   djangoApiBasePath: normalizeBasePath(getEnv("DJANGO_API_BASE_PATH", "api")),
   collabBasePath: normalizeBasePath(getEnv("BASE_URL", "collab/")),
-  collabHmacSecret: requireEnv("COLLAB_HMAC_SECRET")
+  collabHmacSecret: requireEnv("COLLAB_HMAC_SECRET"),
+  cacheMaxEntries: getNumberEnv("COLLAB_CACHE_MAX_ENTRIES", 100),
+  cacheMaxAgeMs: getNumberEnv("COLLAB_CACHE_MAX_AGE_MS", 0)
 };

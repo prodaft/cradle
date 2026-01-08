@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { StatisticsNote } from '@/services/cradle';
 import Logo from '@components/base/Logo/Logo';
-import { useProfile } from '@contexts/user/ProfileContext';
 import useApi from '@hooks/api/useApi';
 import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
 import { truncateText } from '@utils/dashboard';
@@ -186,8 +185,7 @@ export default function Welcome() {
     const [entities, setEntities] = useState<ItemWithName[]>([]);
     const [notes, setNotes] = useState<StatisticsNote[]>([]);
     const { navigate, navigateLink } = useCradleNavigate();
-    const { profile } = useProfile();
-    const { fleetingNotesApi, statisticsApi } = useApi();
+    const { notesApi, statisticsApi } = useApi();
 
     useEffect(() => {
         (async () => {
@@ -202,14 +200,11 @@ export default function Welcome() {
     }, []);
 
     const handleCreateNewNote = async () => {
-        const defaultContent =
-            profile?.defaultNoteTemplate ||
-            '# Untitled\n\nStart writing your note here...';
         const response = await execute(
             () =>
-                fleetingNotesApi.fleetingNotesCreate({
+                notesApi.notesCreate({
                     fleetingNoteRequest: {
-                        content: defaultContent,
+                        content: '',
                     },
                 }),
             {

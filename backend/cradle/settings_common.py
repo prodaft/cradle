@@ -34,7 +34,6 @@ INSTALLED_APPS = [
     "query.apps.QueryConfig",
     "access.apps.AccessConfig",
     "entries.apps.EntriesConfig",
-    "fleeting_notes.apps.FleetingNotesConfig",
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",
     "mail.apps.MailConfig",

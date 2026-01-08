@@ -25,6 +25,12 @@ export interface CollabNoteApplyRequestRequest {
      * @memberof CollabNoteApplyRequestRequest
      */
     content: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CollabNoteApplyRequestRequest
+     */
+    userId: string;
 }
 
 /**
@@ -32,6 +38,7 @@ export interface CollabNoteApplyRequestRequest {
  */
 export function instanceOfCollabNoteApplyRequestRequest(value: object): value is CollabNoteApplyRequestRequest {
     if (!('content' in value) || value['content'] === undefined) return false;
+    if (!('userId' in value) || value['userId'] === undefined) return false;
     return true;
 }
 
@@ -46,6 +53,7 @@ export function CollabNoteApplyRequestRequestFromJSONTyped(json: any, ignoreDisc
     return {
         
         'content': json['content'],
+        'userId': json['user_id'],
     };
 }
 
@@ -61,6 +69,7 @@ export function CollabNoteApplyRequestRequestToJSONTyped(value?: CollabNoteApply
     return {
         
         'content': value['content'],
+        'user_id': value['userId'],
     };
 }
 

@@ -7,7 +7,6 @@ import type {
     CradleStatisticsApi,
     EntriesApi,
     FileTransferApi,
-    FleetingNotesApi,
     IntelioApi,
     KnowledgeGraphApi,
     LogsApi,
@@ -28,7 +27,6 @@ export interface ApiContextValue {
     accessApi: AccessApi;
     entriesApi: EntriesApi;
     fileTransferApi: FileTransferApi;
-    fleetingNotesApi: FleetingNotesApi;
     intelioApi: IntelioApi;
     knowledgeGraphApi: KnowledgeGraphApi;
     logsApi: LogsApi;

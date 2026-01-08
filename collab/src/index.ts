@@ -6,7 +6,10 @@ import { NoteStateCache } from "./storage/NoteStateCache.js";
 import { logger } from "./logging/logger.js";
 
 const backend = new CollabBackendClient();
-const cache = new NoteStateCache();
+const cache = new NoteStateCache({
+  maxEntries: config.cacheMaxEntries,
+  maxAgeMs: config.cacheMaxAgeMs
+});
 const rooms = new RoomManager({ backend, cache });
 
 const server = new CollabServer({

@@ -78,7 +78,7 @@ services:
     ports:
       - "8081:8080"
     volumes:
-      - ./keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./dev/keycloak-realm.json:/opt/keycloak/data/import/realm.json:ro
     networks:
       default:
         ipv4_address: 192.168.31.45

@@ -198,7 +198,7 @@ export default function Login() {
             return '';
         }
 
-        const redirectUri = `${window.location.origin}/`;
+        const redirectUri = `${window.location.origin}/oauth/callback`;
         const redirectUrl = new URL(url);
         redirectUrl.searchParams.set('redirect_uri', redirectUri);
         redirectUrl.searchParams.set('state', `oauth_login:${provider}`);

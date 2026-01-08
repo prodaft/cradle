@@ -86,9 +86,13 @@ export class CollabBackendClient {
     }
   }
 
-  async applyNoteState(noteId: string, content: string): Promise<void> {
-    const payload: CollabNoteApplyRequest = { content };
-    logger.info("apply note state", { noteId, size: content.length });
+  async applyNoteState(
+    noteId: string,
+    content: string,
+    userId: string
+  ): Promise<void> {
+    const payload: CollabNoteApplyRequest = { content, userId };
+    logger.info("apply note state", { noteId, size: content.length, userId });
     try {
       const body = JSON.stringify(CollabNoteApplyRequestRequestToJSON(payload));
       const path = `/internal/collab/notes/${noteId}/apply/`;

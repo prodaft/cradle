@@ -338,7 +338,7 @@ export default function AccountSettings({
         const connectUrl = new URL(url);
         connectUrl.searchParams.set(
             'redirect_uri',
-            `${window.location.origin}/#/oauth/callback`,
+            `${window.location.origin}/oauth/callback`,
         );
         connectUrl.searchParams.set('state', `oauth_connect:${provider}`);
         return connectUrl.toString();

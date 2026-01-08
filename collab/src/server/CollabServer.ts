@@ -92,6 +92,11 @@ export class CollabServer {
         this.reject(socket, 401, "Unauthorized");
         return;
       }
+      if (!auth.userId) {
+        logger.error("authorize missing user_id", { noteId: params.value.noteId });
+        this.reject(socket, 401, "Unauthorized");
+        return;
+      }
 
       let room;
       try {
@@ -108,7 +113,8 @@ export class CollabServer {
         const connection: Connection = {
           socket: ws,
           awarenessIds: new Set(),
-          readOnly: auth.access === "READ"
+          readOnly: auth.access === "READ",
+          userId: auth.userId
         };
         room.addConnection(connection);
         ws.on("message", (data) => {

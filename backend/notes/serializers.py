@@ -11,6 +11,7 @@ from entries.serializers import (
     EntryTypesCompressedTreeSerializer,
 )
 from file_transfer.models import FileReference
+from management.settings import cradle_settings
 from file_transfer.serializers import FileReferenceSerializer
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
@@ -317,11 +318,13 @@ class NoteListSerializer:
 
     def _truncate_content(self, note):
         """Truncate content if needed"""
+        if note.content_offset >= len(note.content):
+            return ""
         if (
             self.truncate == -1
             or len(note.content) - note.content_offset <= self.truncate
         ):
-            return note.content[note.content_offset]
+            return note.content[note.content_offset:]
         return (
             note.content[note.content_offset : note.content_offset + self.truncate]
             + "..."
@@ -524,6 +527,13 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
         validated_data["fleeting"] = True
         validated_data["author"] = user
         validated_data["editor"] = user
+
+        content = validated_data.get("content")
+        if not content:
+            validated_data["content"] = (
+                user.default_note_template
+                or cradle_settings.notes.default_note_template
+            )
 
         # Extract title and description from content if not provided
         content = validated_data.get("content", "")

@@ -17,8 +17,8 @@
 import * as runtime from '../runtime';
 import type {
   AccessEntityList404Response,
-  NoteCreateRequest,
-  NoteEditRequest,
+  FleetingNote,
+  FleetingNoteRequest,
   NoteRetrieve,
   PaginatedFileReferenceWithNoteSerializerResponse,
   PaginatedNoteRetrieveSerializerResponse,
@@ -30,10 +30,10 @@ import type {
 import {
     AccessEntityList404ResponseFromJSON,
     AccessEntityList404ResponseToJSON,
-    NoteCreateRequestFromJSON,
-    NoteCreateRequestToJSON,
-    NoteEditRequestFromJSON,
-    NoteEditRequestToJSON,
+    FleetingNoteFromJSON,
+    FleetingNoteToJSON,
+    FleetingNoteRequestFromJSON,
+    FleetingNoteRequestToJSON,
     NoteRetrieveFromJSON,
     NoteRetrieveToJSON,
     PaginatedFileReferenceWithNoteSerializerResponseFromJSON,
@@ -51,7 +51,7 @@ import {
 } from '../models/index';
 
 export interface NotesCreateRequest {
-    noteCreateRequest?: NoteCreateRequest;
+    fleetingNoteRequest?: FleetingNoteRequest;
 }
 
 export interface NotesDeleteRequest {
@@ -70,6 +70,10 @@ export interface NotesFilesRetrieveRequest {
     references?: Array<string>;
     timestampGte?: string;
     timestampLte?: string;
+}
+
+export interface NotesFinalUpdateRequest {
+    noteId: string;
 }
 
 export interface NotesGraphRetrieveRequest {
@@ -122,21 +126,16 @@ export interface NotesSnippetsUserListRequest {
     userId: string;
 }
 
-export interface NotesUpdateRequest {
-    noteId: string;
-    noteEditRequest?: NoteEditRequest;
-}
-
 /**
  * 
  */
 export class NotesApi extends runtime.BaseAPI {
 
     /**
-     * Creates a new note. User must have read-write access to all referenced entities.
-     * Create note
+     * Creates a new fleeting note for the authenticated user.
+     * Create fleeting note
      */
-    async notesCreateRaw(requestParameters: NotesCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<NoteRetrieve>> {
+    async notesCreateRaw(requestParameters: NotesCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FleetingNote>> {
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -159,17 +158,17 @@ export class NotesApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: NoteCreateRequestToJSON(requestParameters['noteCreateRequest']),
+            body: FleetingNoteRequestToJSON(requestParameters['fleetingNoteRequest']),
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => NoteRetrieveFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response, (jsonValue) => FleetingNoteFromJSON(jsonValue));
     }
 
     /**
-     * Creates a new note. User must have read-write access to all referenced entities.
-     * Create note
+     * Creates a new fleeting note for the authenticated user.
+     * Create fleeting note
      */
-    async notesCreate(requestParameters: NotesCreateRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NoteRetrieve> {
+    async notesCreate(requestParameters: NotesCreateRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FleetingNote> {
         const response = await this.notesCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }
@@ -305,6 +304,53 @@ export class NotesApi extends runtime.BaseAPI {
      */
     async notesFilesRetrieve(requestParameters: NotesFilesRetrieveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedFileReferenceWithNoteSerializerResponse> {
         const response = await this.notesFilesRetrieveRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Converts a fleeting note to a regular note. Only the owner can convert it.
+     * Convert fleeting note to regular note
+     */
+    async notesFinalUpdateRaw(requestParameters: NotesFinalUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<NoteRetrieve>> {
+        if (requestParameters['noteId'] == null) {
+            throw new runtime.RequiredError(
+                'noteId',
+                'Required parameter "noteId" was null or undefined when calling notesFinalUpdate().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/notes/{note_id}/final/`;
+        urlPath = urlPath.replace(`{${"note_id"}}`, encodeURIComponent(String(requestParameters['noteId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => NoteRetrieveFromJSON(jsonValue));
+    }
+
+    /**
+     * Converts a fleeting note to a regular note. Only the owner can convert it.
+     * Convert fleeting note to regular note
+     */
+    async notesFinalUpdate(requestParameters: NotesFinalUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NoteRetrieve> {
+        const response = await this.notesFinalUpdateRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -857,56 +903,6 @@ export class NotesApi extends runtime.BaseAPI {
      */
     async notesSnippetsUserList(requestParameters: NotesSnippetsUserListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Snippet>> {
         const response = await this.notesSnippetsUserListRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Updates an existing note. User must have read-write access to referenced entities.
-     * Update note
-     */
-    async notesUpdateRaw(requestParameters: NotesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<NoteRetrieve>> {
-        if (requestParameters['noteId'] == null) {
-            throw new runtime.RequiredError(
-                'noteId',
-                'Required parameter "noteId" was null or undefined when calling notesUpdate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("jwtAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-
-        let urlPath = `/notes/{note_id}/`;
-        urlPath = urlPath.replace(`{${"note_id"}}`, encodeURIComponent(String(requestParameters['noteId'])));
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: NoteEditRequestToJSON(requestParameters['noteEditRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => NoteRetrieveFromJSON(jsonValue));
-    }
-
-    /**
-     * Updates an existing note. User must have read-write access to referenced entities.
-     * Update note
-     */
-    async notesUpdate(requestParameters: NotesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NoteRetrieve> {
-        const response = await this.notesUpdateRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

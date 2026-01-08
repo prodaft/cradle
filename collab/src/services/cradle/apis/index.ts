@@ -4,7 +4,6 @@ export * from './AccessApi';
 export * from './CradleStatisticsApi';
 export * from './EntriesApi';
 export * from './FileTransferApi';
-export * from './FleetingNotesApi';
 export * from './IntelioApi';
 export * from './InternalApi';
 export * from './KnowledgeGraphApi';

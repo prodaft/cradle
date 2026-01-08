@@ -25,6 +25,14 @@ bun install
 bun run dev
 ```
 
+## Cache tuning
+
+The collab server caches note documents after clients disconnect to reduce backend fetches.
+To keep memory use low, configure the cache size and TTL:
+
+- `COLLAB_CACHE_MAX_ENTRIES` (default `100`)
+- `COLLAB_CACHE_MAX_AGE_MS` (default `0`, disabled)
+
 ## Quick start
 
 With the backend running locally on port 8000:

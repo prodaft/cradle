@@ -19,8 +19,28 @@ if (sentryDsn) {
 const container = document.getElementById('root')!;
 const root = createRoot(container);
 
-root.render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>,
-);
+const shouldRewriteOAuth = (() => {
+    const url = new URL(window.location.href);
+    const hasOAuthParams =
+        url.searchParams.has('code') ||
+        url.searchParams.has('state') ||
+        url.searchParams.has('error');
+
+    if (
+        hasOAuthParams &&
+        (url.pathname === '/' || url.pathname === '/oauth/callback')
+    ) {
+        window.location.replace(`${url.origin}/#/oauth/callback${url.search}`);
+        return true;
+    }
+
+    return false;
+})();
+
+if (!shouldRewriteOAuth) {
+    root.render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>,
+    );
+}

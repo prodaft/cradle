@@ -11,9 +11,10 @@ import {
   createSyncMessage,
   handleIncomingMessage
 } from "../yjs/protocol.js";
-import { getDocContent } from "../yjs/doc.js";
+import { createDocFromContent, getDocContent } from "../yjs/doc.js";
 import { logger } from "../logging/logger.js";
 import { messageSync } from "../yjs/constants.js";
+import { ChangeQueue } from "./ChangeQueue.js";
 
 type RoomOptions = {
   noteId: string;
@@ -21,6 +22,7 @@ type RoomOptions = {
   backend: CollabBackendClient;
   cache: NoteStateCache;
   flushDebounceMs?: number;
+  maxFlushIntervalMs?: number;
 };
 
 export class Room {
@@ -32,7 +34,21 @@ export class Room {
   private readonly cache: NoteStateCache;
   private readonly connections = new Set<Connection>();
   private flushTimeout: NodeJS.Timeout | null = null;
+  private maxFlushTimeout: NodeJS.Timeout | null = null;
   private readonly flushDebounceMs: number;
+  private readonly maxFlushIntervalMs: number;
+  private readonly changeQueue: ChangeQueue;
+  private flushInFlight = false;
+  private flushPending = false;
+  private pendingChanges = false;
+  private activeUserId: string | null = null;
+  private pendingFlushReason: "debounce" | "max-interval" | "user-change" | null =
+    null;
+  private pendingContent: string | null = null;
+  private inFlightContent: string | null = null;
+  private pendingUserId: string | null = null;
+  private inFlightUserId: string | null = null;
+  private readonly persistedDoc: Y.Doc;
 
   constructor(options: RoomOptions) {
     this.noteId = options.noteId;
@@ -41,10 +57,25 @@ export class Room {
     this.backend = options.backend;
     this.cache = options.cache;
     this.flushDebounceMs = options.flushDebounceMs ?? 2000;
+    this.maxFlushIntervalMs = options.maxFlushIntervalMs ?? 15000;
+    this.persistedDoc = createDocFromContent(getDocContent(this.doc));
+    this.changeQueue = new ChangeQueue({
+      onDrain: (items) => {
+        this.handleDrainedChanges(items);
+      }
+    });
 
-    this.doc.on("update", () => {
-      this.cache.touch(this.noteId);
-      this.scheduleFlush();
+    this.doc.on("update", (update, origin) => {
+      const connection = origin as Connection | undefined;
+      if (!connection) {
+        logger.warn("missing update origin", { noteId: this.noteId });
+        return;
+      }
+      const userId = connection.userId;
+      this.changeQueue.enqueue({
+        update: new Uint8Array(update),
+        userId
+      });
     });
 
     this.awareness.on("update", (payload, origin) => {
@@ -141,16 +172,153 @@ export class Room {
     }
     this.flushTimeout = setTimeout(() => {
       this.flushTimeout = null;
-      void this.flushToBackend();
+      this.flushNow("debounce");
     }, this.flushDebounceMs);
   }
 
-  private async flushToBackend(): Promise<void> {
-    const content = getDocContent(this.doc);
+  private handleDrainedChanges(
+    items: { update: Uint8Array; userId: string }[]
+  ): void {
+    if (items.length === 0) {
+      return;
+    }
+
+    this.cache.touch(this.noteId);
+    let applied = false;
+
+    for (const item of items) {
+      if (!this.activeUserId) {
+        this.activeUserId = item.userId;
+      }
+
+      if (
+        this.activeUserId &&
+        item.userId !== this.activeUserId &&
+        this.pendingContent
+      ) {
+        this.flushNow("user-change");
+        this.activeUserId = item.userId;
+      }
+      if (
+        this.activeUserId &&
+        item.userId !== this.activeUserId &&
+        this.flushInFlight
+      ) {
+        this.flushPending = true;
+        this.pendingFlushReason = "user-change";
+      }
+
+      Y.applyUpdate(this.persistedDoc, item.update);
+      applied = true;
+      this.activeUserId = item.userId;
+      this.pendingUserId = item.userId;
+    }
+
+    if (applied) {
+      this.pendingContent = getDocContent(this.persistedDoc);
+      this.pendingChanges = true;
+      this.ensureMaxFlush();
+      this.scheduleFlush();
+    }
+  }
+
+  private ensureMaxFlush(): void {
+    if (this.maxFlushTimeout || !this.pendingChanges) {
+      return;
+    }
+    this.maxFlushTimeout = setTimeout(() => {
+      this.maxFlushTimeout = null;
+      this.flushNow("max-interval");
+    }, this.maxFlushIntervalMs);
+  }
+
+  private clearFlushTimers(): void {
+    if (this.flushTimeout) {
+      clearTimeout(this.flushTimeout);
+      this.flushTimeout = null;
+    }
+    if (this.maxFlushTimeout) {
+      clearTimeout(this.maxFlushTimeout);
+      this.maxFlushTimeout = null;
+    }
+  }
+
+  private flushNow(reason: "debounce" | "max-interval" | "user-change"): void {
+    if (this.flushInFlight) {
+      this.flushPending = true;
+      this.pendingFlushReason =
+        this.pendingFlushReason === "user-change"
+          ? this.pendingFlushReason
+          : reason;
+      return;
+    }
+    if (!this.pendingChanges) {
+      return;
+    }
+    if (!this.pendingUserId) {
+      logger.error("missing user id for flush", { noteId: this.noteId });
+      return;
+    }
+    this.clearFlushTimers();
+    this.inFlightContent = this.pendingContent ?? getDocContent(this.persistedDoc);
+    this.inFlightUserId = this.pendingUserId;
+    this.pendingContent = null;
+    this.pendingUserId = null;
+    this.pendingChanges = false;
+    void this.flushToBackend(reason);
+  }
+
+  private async flushToBackend(reason: string): Promise<void> {
+    if (this.flushInFlight) {
+      this.flushPending = true;
+      this.pendingFlushReason =
+        this.pendingFlushReason === "user-change"
+          ? this.pendingFlushReason
+          : "debounce";
+      return;
+    }
+    if (!this.inFlightContent) {
+      return;
+    }
+    this.flushInFlight = true;
+    const content = this.inFlightContent;
+    const userId = this.inFlightUserId;
+    if (!userId) {
+      logger.error("missing user id for apply", { noteId: this.noteId, reason });
+      this.inFlightContent = null;
+      this.inFlightUserId = null;
+      this.flushInFlight = false;
+      return;
+    }
     try {
-      await this.backend.applyNoteState(this.noteId, content);
+      await this.backend.applyNoteState(
+        this.noteId,
+        content,
+        userId
+      );
     } catch (error) {
-      logger.error("flush failed", { noteId: this.noteId });
+      logger.error("flush failed", { noteId: this.noteId, reason });
+    }
+    this.inFlightContent = null;
+    this.inFlightUserId = null;
+    this.flushInFlight = false;
+    if (this.flushPending) {
+      this.flushPending = false;
+      const pendingReason = this.pendingFlushReason ?? "debounce";
+      this.pendingFlushReason = null;
+      if (pendingReason === "user-change") {
+        this.flushNow("user-change");
+        return;
+      }
+      if (this.pendingChanges) {
+        this.ensureMaxFlush();
+        this.scheduleFlush();
+      }
+      return;
+    }
+    if (this.pendingChanges) {
+      this.ensureMaxFlush();
+      this.scheduleFlush();
     }
   }
 

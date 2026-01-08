@@ -185,7 +185,7 @@ export default function Register() {
             return '';
         }
 
-        const redirectUri = `${window.location.origin}/#/oauth/callback`;
+        const redirectUri = `${window.location.origin}/oauth/callback`;
         const redirectUrl = new URL(url);
         redirectUrl.searchParams.set('redirect_uri', redirectUri);
         redirectUrl.searchParams.set('state', `oauth_login:${provider}`);

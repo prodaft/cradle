@@ -10,6 +10,7 @@ type RoomManagerOptions = {
   backend: CollabBackendClient;
   cache: NoteStateCache;
   flushDebounceMs?: number;
+  maxFlushIntervalMs?: number;
 };
 
 export class RoomManager {
@@ -17,11 +18,13 @@ export class RoomManager {
   private readonly cache: NoteStateCache;
   private readonly rooms = new Map<string, Room>();
   private readonly flushDebounceMs?: number;
+  private readonly maxFlushIntervalMs?: number;
 
   constructor(options: RoomManagerOptions) {
     this.backend = options.backend;
     this.cache = options.cache;
     this.flushDebounceMs = options.flushDebounceMs;
+    this.maxFlushIntervalMs = options.maxFlushIntervalMs;
   }
 
   async getOrCreate(noteId: string): Promise<Room> {
@@ -37,7 +40,8 @@ export class RoomManager {
       doc,
       backend: this.backend,
       cache: this.cache,
-      flushDebounceMs: this.flushDebounceMs
+      flushDebounceMs: this.flushDebounceMs,
+      maxFlushIntervalMs: this.maxFlushIntervalMs
     });
     this.rooms.set(noteId, room);
     logger.info("room created", { noteId });

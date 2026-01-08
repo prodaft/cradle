@@ -3,7 +3,6 @@ apis/AccessApi.ts
 apis/CradleStatisticsApi.ts
 apis/EntriesApi.ts
 apis/FileTransferApi.ts
-apis/FleetingNotesApi.ts
 apis/IntelioApi.ts
 apis/InternalApi.ts
 apis/KnowledgeGraphApi.ts
@@ -72,14 +71,12 @@ models/EssentialUserRetrieveRequest.ts
 models/EventLog.ts
 models/FileDownload.ts
 models/FileProcessRequest.ts
-models/FileReference.ts
 models/FileReferenceWithNote.ts
 models/FileUploadFinalizeRequest.ts
 models/FileUploadFinalizeResponse.ts
 models/FileUploadResponse.ts
 models/FleetingNote.ts
 models/FleetingNoteRequest.ts
-models/FleetingNoteRetrieve.ts
 models/GraphInaccessibleResponse.ts
 models/HomePageStatistics.ts
 models/LazyPaginatedEntryWithDepthSerializerViewResponse.ts
@@ -88,8 +85,6 @@ models/MappingSubclass.ts
 models/MessageNotification.ts
 models/NewUserNotification.ts
 models/NextNameResponse.ts
-models/NoteCreateRequest.ts
-models/NoteEditRequest.ts
 models/NoteRetrieve.ts
 models/Notification.ts
 models/OAuthConnectRequest.ts

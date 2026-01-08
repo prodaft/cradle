@@ -13,7 +13,6 @@ import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
 import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
 import { Book, EditPencil } from 'iconoir-react';
-import { debounce } from 'lodash';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -88,9 +87,8 @@ export default function NoteViewer() {
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
     const initialContentSetRef = useRef(false);
-    const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
+    const { managementApi, notesApi, lspApi } = useApi();
     const { execute, handleError } = useAPICall();
-    const enableCollab = true;
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
@@ -251,6 +249,33 @@ export default function NoteViewer() {
     }, [noteId, state?.notes]);
 
     useEffect(() => {
+        if (!noteId) return;
+        let isMounted = true;
+
+        const loadNoteMetadata = async () => {
+            try {
+                const responseNote = await execute(
+                    () => notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
+                    { errorMessage: 'Note not found!' },
+                );
+                if (!isMounted) return;
+
+                setNote(responseNote);
+                setIsFleeting(Boolean(responseNote.fleeting));
+                setFileData(responseNote.files || []);
+            } catch (error) {
+                // Errors are handled by execute.
+            }
+        };
+
+        loadNoteMetadata();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [noteId, execute, notesApi]);
+
+    useEffect(() => {
         if (initialContentSetRef.current) {
             return;
         }
@@ -266,17 +291,7 @@ export default function NoteViewer() {
         if (!id) return;
 
         execute(async () => {
-            const shouldUseFleeting = Boolean(note?.fleeting ?? isFleeting);
-            if (shouldUseFleeting) {
-                await fleetingNotesApi.fleetingNotesDestroy({ id: noteId });
-            } else {
-                try {
-                    await notesApi.notesDelete({ noteId: noteId });
-                } catch (error) {
-                    await fleetingNotesApi.fleetingNotesDestroy({ id: noteId });
-                    setIsFleeting(true);
-                }
-            }
+            await notesApi.notesDelete({ noteId: noteId });
 
             if (!state) {
                 navigate(from?.pathname || '/', { replace: true });
@@ -290,81 +305,7 @@ export default function NoteViewer() {
             const newState = { ...state, notes: stateNotes };
             navigate(from?.pathname || '/', { replace: true, state: newState });
         }).catch(() => { });
-    }, [noteId, execute, navigate, note, isFleeting, fleetingNotesApi, notesApi, state, from]);
-
-    // Use a ref to store the latest values for the save function
-    const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
-
-    useEffect(() => {
-        saveDataRef.current = { markdownContent, fileData, isFleeting };
-    }, [markdownContent, fileData, isFleeting]);
-
-    const handleSaveNote = useCallback(
-        async (showAlert = false) => {
-            if (!id) return;
-
-            const {
-                markdownContent: content,
-                fileData: files,
-                isFleeting: fleeting,
-            } = saveDataRef.current;
-
-            if (!content || content.trim().length === 0) {
-                toast.error('Cannot save empty note.');
-                return;
-            }
-
-            setSaving(true);
-            const successMessage = fleeting
-                ? showAlert
-                    ? 'Fleeting note saved.'
-                    : undefined
-                : showAlert
-                  ? 'Note saved successfully.'
-                  : undefined;
-
-            execute(
-                async () => {
-                    if (fleeting) {
-                        await fleetingNotesApi.fleetingNotesUpdate({
-                            id: noteId,
-                            fleetingNoteRequest: {
-                                content,
-                            },
-                        });
-                        return;
-                    }
-
-                    try {
-                        await notesApi.notesUpdate({
-                            noteId: noteId || '',
-                            noteEditRequest: {
-                                content: content,
-                            },
-                        });
-                    } catch (error) {
-                        await fleetingNotesApi.fleetingNotesUpdate({
-                            id: noteId,
-                            fleetingNoteRequest: {
-                                content,
-                            },
-                        });
-                        setIsFleeting(true);
-                    }
-                },
-                successMessage ? { successMessage } : undefined,
-            )
-                .then(() => {
-                    setInitialMarkdown(content);
-                    setHasUnsavedChanges(false);
-                })
-                .catch(() => {})
-                .finally(() => {
-                    setSaving(false);
-                });
-        },
-        [noteId, execute, fleetingNotesApi, notesApi],
-    );
+    }, [noteId, execute, navigate, note, isFleeting, notesApi, state, from]);
 
     const handleSaveAsFinal = useCallback(async () => {
         if (!id || !markdownContent || markdownContent.trim().length === 0) {
@@ -373,7 +314,7 @@ export default function NoteViewer() {
         }
 
         setSaving(true);
-        execute(() => fleetingNotesApi.fleetingNotesFinalUpdate({ id: noteId }), {
+        execute(() => notesApi.notesFinalUpdate({ noteId: noteId }), {
             successMessage: 'Note finalized successfully.',
         })
             .then((response) => {
@@ -384,7 +325,7 @@ export default function NoteViewer() {
             .finally(() => {
                 setSaving(false);
             });
-    }, [noteId, markdownContent, fileData, navigate, fleetingNotesApi, execute]);
+    }, [noteId, markdownContent, fileData, navigate, notesApi, execute]);
 
     const handleRelinkNote = useCallback(() => {
         if (!id) return;
@@ -418,37 +359,8 @@ export default function NoteViewer() {
     }, [handleDelete, setModal]);
 
     const handleFilesChange = useCallback((files: FileReferenceWithNote[]) => {
-        (async () => {
-            if (isFleeting) {
-                await execute(() => fleetingNotesApi.fleetingNotesUpdate({
-                    id: noteId || '',
-                    fleetingNoteRequest: {
-                        files: files,
-                    },
-                }));
-                return;
-            }
-
-            try {
-                await execute(() => notesApi.notesUpdate({
-                    noteId: noteId || '',
-                    noteEditRequest: {
-                        files: files,
-                    },
-                }));
-            } catch (error) {
-                await execute(() => fleetingNotesApi.fleetingNotesUpdate({
-                    id: noteId || '',
-                    fleetingNoteRequest: {
-                        files: files,
-                    },
-                }));
-                setIsFleeting(true);
-            }
-        })();
-
         setFileData(files);
-    }, [setFileData, isFleeting, noteId, execute, fleetingNotesApi, notesApi]);
+    }, [setFileData]);
 
     const handleUploadFiles = useCallback(
         (filesList?: any[]) => {
@@ -494,30 +406,6 @@ export default function NoteViewer() {
         ],
         [handleFind, handleReplace],
     );
-
-    const debouncedSaveNote = useMemo(
-        () => debounce(handleSaveNote, 1500),
-        [handleSaveNote],
-    );
-
-    // Auto-save for fleeting notes only
-    useEffect(() => {
-        if (!markdownContent || markdownContent === initialMarkdown) {
-            // Clear any pending debounced calls if content matches initial
-            debouncedSaveNote.cancel();
-            return;
-        }
-
-        // Update unsaved status after a short delay
-        setHasUnsavedChanges(true);
-        // Trigger save after a longer delay
-        debouncedSaveNote();
-
-        // Cleanup function to cancel pending debounced calls
-        return () => {
-            debouncedSaveNote.cancel();
-        };
-    }, [markdownContent, initialMarkdown, debouncedSaveNote]);
 
     useEffect(() => {
         localStorage.setItem('richEditor', richEditor.toString());
@@ -714,9 +602,7 @@ export default function NoteViewer() {
                                                         fileData={fileData}
                                                         setFileData={handleFilesChange}
                                                         source={!richEditor}
-                                                        saveNote={handleSaveNote}
                                                         enableEditing={enableEditing}
-                                                        enableCollab={enableCollab}
                                                         setLineNumber={setLineNumber}
                                                     />
                                                 </div>
@@ -762,9 +648,7 @@ export default function NoteViewer() {
                                                 fileData={fileData}
                                                 setFileData={handleFilesChange}
                                                 source={!richEditor}
-                                                saveNote={handleSaveNote}
                                                 enableEditing={enableEditing}
-                                                enableCollab={enableCollab}
                                                 editorUtils={editorUtils}
                                                 setLineNumber={setLineNumber}
                                             />

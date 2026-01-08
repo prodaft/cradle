@@ -118,7 +118,7 @@ export default function NotesList({
     );
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
-    const { fleetingNotesApi, notesApi, managementApi } = useApi();
+    const { notesApi, managementApi } = useApi();
     const { execute } = useAPICall();
     const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
     const [pageSize, setPageSize] = useState(
@@ -447,16 +447,9 @@ export default function NotesList({
                 setModal(ConfirmDeletionModal, {
                     onConfirm: async () => {
                         try {
-                            const deletePromises = selectedIds.map((id) => {
-                                const note = notes.find((n) => n.id === id);
-                                if (note && note.fleeting) {
-                                    return fleetingNotesApi.fleetingNotesDestroy({
-                                        id,
-                                    });
-                                } else {
-                                    return notesApi.notesDelete({ noteId: id });
-                                }
-                            });
+                            const deletePromises = selectedIds.map((id) =>
+                                notesApi.notesDelete({ noteId: id })
+                            );
                             const results = await Promise.allSettled(deletePromises);
 
                             const successes = results.filter(

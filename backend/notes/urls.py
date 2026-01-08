@@ -1,4 +1,4 @@
-from .views.note_view import NoteList, NoteDetail, NoteFiles, NoteGraph
+from .views.note_view import NoteList, NoteDetail, NoteFiles, NoteGraph, NoteFinalize
 from .views.snippet_view import (
     UserSnippetsListCreateView,
     AllAccessibleSnippetsListView,
@@ -24,5 +24,6 @@ urlpatterns = [
         name="snippet_detail",
     ),
     path("<uuid:note_id>/", NoteDetail.as_view(), name="note_detail"),
+    path("<uuid:note_id>/final/", NoteFinalize.as_view(), name="note_final"),
     path("<uuid:note_id>/graph", NoteGraph.as_view(), name="note_graph"),
 ]

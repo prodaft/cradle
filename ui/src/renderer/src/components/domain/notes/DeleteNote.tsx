@@ -35,17 +35,12 @@ interface DeleteNoteProps {
 export default function DeleteNote({ note, setHidden, classNames }: DeleteNoteProps) {
     const { navigate, navigateLink } = useCradleNavigate();
     const { setModal } = useModal();
-    const { fleetingNotesApi, notesApi } = useApi();
+    const { notesApi } = useApi();
     const { executor } = useAPICall();
 
     const handleDelete = executor(
         async () => {
-            // Use the appropriate delete function based on whether the note is fleeting
-            if (note.fleeting) {
-                await fleetingNotesApi.fleetingNotesDestroy({ id: note.id });
-            } else {
-                await notesApi.notesDelete({ noteId: note.id });
-            }
+            await notesApi.notesDelete({ noteId: note.id });
             setHidden(true);
         },
         { successMessage: 'Note deleted successfully' },

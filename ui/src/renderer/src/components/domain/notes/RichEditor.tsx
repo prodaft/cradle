@@ -1,9 +1,8 @@
-import { useNotif } from '@/contexts';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import { useAPICall } from '@/hooks';
-import { useCollabExtension } from '@/hooks/collab/useCollabExtension';
 import useApi from '@/hooks/api/useApi';
+import { useCollabExtension } from '@/hooks/collab/useCollabExtension';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
@@ -55,7 +54,7 @@ import {
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
-import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
+import { vim, Vim } from '@replit/codemirror-vim';
 import { FileReference, FileReferenceWithNote } from '@services/cradle/models';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
@@ -78,14 +77,12 @@ interface RichEditorProps {
     setMarkdownContent: (content: string) => void;
     fileData: FileReference[];
     setFileData: (data: FileReference[]) => void;
-    saveNote: (autoSave?: boolean) => void;
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
     source?: boolean;
     setLineNumber: (lineNumber: number) => void;
     editorUtils: CradleEditor;
     referenceMappings?: Record<string, FileReference>;
-    enableCollab?: boolean;
 }
 
 export interface RichEditorRef {
@@ -164,14 +161,12 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         setMarkdownContent,
         fileData,
         setFileData,
-        saveNote,
         additionalExtensions = [],
         enableEditing = true,
         source = false,
         editorUtils,
         setLineNumber,
         referenceMappings: propReferenceMappings,
-        enableCollab = false,
     },
     ref,
 ) {
@@ -185,12 +180,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
     const markdownContentRef = useRef(markdownContent);
+    const collabAppliedRef = useRef(false);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
     const { executor } = useAPICall();
-    const { extension: collabExtension, status: collabStatus } = useCollabExtension(
-        noteid,
-        enableCollab,
-    );
+    const collabEnabled = !!noteid;
+    const {
+        extension: collabExtension,
+        status: collabStatus,
+        synced: collabSynced,
+        yText: collabYText,
+    } = useCollabExtension(noteid, collabEnabled);
 
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
@@ -242,15 +241,52 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     useEffect(() => {
         markdownContentRef.current = markdownContent;
-    }, [markdownContent, enableCollab, noteid]);
+    }, [markdownContent, noteid]);
 
     useEffect(() => {
-        if (!enableCollab) return;
         console.debug('[RichEditor] collab status update', {
             noteId: noteid,
             status: collabStatus,
         });
-    }, [collabStatus, enableCollab, noteid]);
+    }, [collabStatus, noteid]);
+
+    useEffect(() => {
+        collabAppliedRef.current = false;
+    }, [noteid, collabSynced]);
+
+    useEffect(() => {
+        const view = editorViewRef.current;
+        if (!view || !collabSynced || !collabYText) return;
+        if (collabAppliedRef.current) return;
+
+        const collabContent = collabYText.toString();
+        if (collabEnabled) return;
+
+        const currentContent = view.state.doc.toString();
+        if (currentContent === collabContent) {
+            collabAppliedRef.current = true;
+            return;
+        }
+
+        const cursorPos = view.state.selection.main.head;
+        const nextCursorPos = Math.min(cursorPos, collabContent.length);
+        console.debug('[RichEditor] applying collab content as source of truth', {
+            noteId: noteid,
+            fromLength: currentContent.length,
+            toLength: collabContent.length,
+        });
+
+        view.dispatch({
+            changes: {
+                from: 0,
+                to: currentContent.length,
+                insert: collabContent,
+            },
+            selection: { anchor: nextCursorPos, head: nextCursorPos },
+        });
+        setMarkdownContent(collabContent);
+        collabAppliedRef.current = true;
+    }, [collabSynced, collabYText, noteid, setMarkdownContent]);
 
     // Memoize code block copy handler
     const codeBlockCopyExtension = useMemo(() => {
@@ -351,16 +387,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             }),
             ...(!source
                 ? [
-                      prosemarkBasicSetup(),
-                      prosemarkBaseThemeSetup(),
-                      htmlBlockExtension,
-                      codeBlockCopyExtension,
-                      clickLinkHandler.of((url: string) => {
-                          window.open(url, '_blank', 'noopener,noreferrer');
-                      }),
-                      // Syntax highlighting for both modes
-                      baseSyntaxHighlights,
-                  ]
+                    prosemarkBasicSetup(),
+                    prosemarkBaseThemeSetup(),
+                    htmlBlockExtension,
+                    codeBlockCopyExtension,
+                    clickLinkHandler.of((url: string) => {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                    }),
+                    // Syntax highlighting for both modes
+                    baseSyntaxHighlights,
+                ]
                 : [sourceModeSyntaxHighlighting]),
             pasteHandler,
             Prec.high(cradleTheme),
@@ -384,17 +420,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             ]),
             EditorState.readOnly.of(!enableEditing),
             EditorView.editable.of(enableEditing),
-            keymap.of([
-                {
-                    key: 'Ctrl-s',
-                    run: (cm: EditorView) => {
-                        if (!enableEditing) return false;
-                        setMarkdownContent(cm.state.doc.toString());
-                        saveNote(true);
-                        return true;
-                    },
-                },
-            ]),
             autocompletion(),
             ...editorUtils.autocomplete(),
             editorUtils.lint(),
@@ -422,16 +447,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
 
         if (profile?.vimMode) {
-            Vim.defineEx('write', 'w', (cm: CodeMirror) => {
-                try {
-                    setMarkdownContent(cm.cm6.state.doc.toString());
-                    saveNote(true);
-                } catch (error) {
-                    toast.error("Failed to save note. Please try again with Ctrl-S.");
-                    console.error('Failed to save note:', error);
-                }
-                return true;
-            });
+            Vim.defineEx('write', 'w', () => true);
             exts = exts.concat(vim());
         }
 
@@ -445,7 +461,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         source,
         enableEditing,
         cradleTheme,
-        saveNote,
         setMarkdownContent,
         codeBlockCopyExtension,
         pasteHandler,
@@ -461,23 +476,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 effects: [StateEffect.reconfigure.of(extensions)],
             });
         }
-    }, [collabExtension, enableCollab, extensions, markdownContent, noteid]);
+    }, [collabExtension, extensions, markdownContent, noteid]);
 
     // Initialize editor
     useEffect(() => {
-        if (enableCollab && !collabExtension) {
-            console.debug('[RichEditor] waiting for collab extension before init', {
-                noteId: noteid,
-            });
-            return;
-        }
-
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             try {
-                const initialDoc = enableCollab ? (markdownContent || '') : markdownContent;
+                const initialDoc = collabEnabled ? '' : markdownContent || '';
                 console.debug('[RichEditor] initializing editor', {
                     noteId: noteid,
-                    enableCollab,
                     initialDocLength: initialDoc.length,
                     extensionsCount: extensions.length,
                 });
@@ -532,7 +539,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         const currentContent = view.state.doc.toString();
         if (currentContent === markdownContent) return;
 
-        if (enableCollab && currentContent.length > 0) {
+        if (currentContent.length > 0) {
             console.debug('[RichEditor] skipping external sync while collab active', {
                 noteId: noteid,
                 currentLength: currentContent.length,
@@ -557,7 +564,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             },
             selection: { anchor: nextCursorPos, head: nextCursorPos },
         });
-    }, [markdownContent]);
+    }, [collabEnabled, markdownContent]);
 
     // Update search panel labels - only observe when editor exists
     useEffect(() => {
@@ -698,7 +705,6 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.source === nextProps.source &&
         prevProps.enableEditing === nextProps.enableEditing &&
         prevProps.editorUtils === nextProps.editorUtils &&
-        prevProps.saveNote === nextProps.saveNote &&
         prevProps.setMarkdownContent === nextProps.setMarkdownContent &&
         prevProps.setFileData === nextProps.setFileData &&
         prevProps.referenceMappings === nextProps.referenceMappings
