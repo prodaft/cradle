@@ -62,7 +62,7 @@ export default function AdminPanelCardEntryType({
         >
             <CardHeader>
                 <CardTitle>
-                    <span className='text-cradle-text-muted mr-2'>
+                    <span className='text-text-muted-foreground mr-2'>
                         ({count >= 0 ? (count == 100 ? '99+' : count) : 0}){' '}
                     </span>
                     {name}

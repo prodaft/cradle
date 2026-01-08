@@ -8,6 +8,7 @@ import { Upload } from 'iconoir-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import * as Yup from 'yup';
+import { Spinner } from '@/components/ui/spinner';
 
 interface DataTypeOption {
     value: string;
@@ -72,7 +73,7 @@ const UploadSchema = Yup.object().shape({
 // Utility function to get error styling classes
 const getFieldErrorClasses = (hasError: boolean, baseClasses: string = ''): string => {
     if (hasError) {
-        return `${baseClasses} border-red-300`.trim();
+        return `${baseClasses} border-destructive`.trim();
     }
     return `${baseClasses}`.trim();
 };
@@ -82,7 +83,7 @@ const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({
     children,
     id,
 }) => (
-    <p id={id} className='mt-1 text-xs text-red-600 flex items-center'>
+    <p id={id} className='mt-1 text-xs text-destructive flex items-center'>
         <svg
             className='w-3 h-3 mr-1 flex-shrink-0'
             fill='currentColor'
@@ -98,10 +99,6 @@ const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({
     </p>
 );
 
-// Loading spinner component
-const LoadingSpinner: React.FC = () => (
-    <div className='h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin' />
-);
 
 function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
     const [entriesLoading, setEntriesLoading] = useState(false);
@@ -324,7 +321,7 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                 {/* Digest Title Field */}
                 <div className='col-span-1'>
                     <label
-                        className={`block text-sm font-medium mb-1 ${titleError ? 'text-red-700' : 'text-gray-700'}`}
+                        className={`block text-sm font-medium mb-1 ${titleError ? 'text-destructive' : 'text-foreground'}`}
                     >
                         Digest Title *
                     </label>
@@ -348,7 +345,7 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                 {/* Data Type Selector */}
                 <div className='col-span-1'>
                     <label
-                        className={`block text-sm font-medium mb-1 ${dataTypeError ? 'text-red-700' : 'text-gray-700'}`}
+                        className={`block text-sm font-medium mb-1 ${dataTypeError ? 'text-destructive' : 'text-foreground'}`}
                     >
                         Data Type *
                     </label>
@@ -378,7 +375,7 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                 {/* File Upload Area */}
                 <div className='col-span-1'>
                     <label
-                        className={`block text-sm font-medium mb-1 ${filesError ? 'text-red-700' : 'text-gray-700'}`}
+                        className={`block text-sm font-medium mb-1 ${filesError ? 'text-destructive' : 'text-foreground'}`}
                     >
                         Upload File *
                     </label>
@@ -386,17 +383,17 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                         {...getRootProps()}
                         className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center  ${
                             filesError
-                                ? 'border-red-300 bg-red-50 hover:border-red-400'
+                                ? 'border-destructive bg-destructive/10 hover:border-destructive'
                                 : isDragActive
-                                  ? 'bg-blue-50 border-blue-300'
-                                  : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                                  ? 'bg-primary/10 border-primary'
+                                  : 'border-border hover:border-primary hover:bg-muted'
                         }`}
                         aria-invalid={filesError ? 'true' : 'false'}
                         aria-describedby={filesError ? 'files-error' : undefined}
                     >
                         <input {...getInputProps()} />
                         <p
-                            className={`text-sm truncate ${filesError ? 'text-red-600' : 'text-gray-500'}`}
+                            className={`text-sm truncate ${filesError ? 'text-destructive' : 'text-muted-foreground'}`}
                         >
                             {getFileDisplayText()}
                         </p>
@@ -409,7 +406,7 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                 {/* Associated Entries Selector */}
                 <div className='col-span-1'>
                     <label
-                        className={`block text-sm font-medium mb-1 ${associatedEntryError ? 'text-red-700' : 'text-gray-700'}`}
+                        className={`block text-sm font-medium mb-1 ${associatedEntryError ? 'text-destructive' : 'text-foreground'}`}
                     >
                         Associated Entries
                     </label>
@@ -457,18 +454,18 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                         variant='default'
                         disabled={isUploading}
                         className={`w-full flex items-center justify-center ${
-                            hasErrors ? 'hover:bg-red-800' : ''
+                            hasErrors ? 'hover:bg-destructive/90' : ''
                         }`}
                         aria-label={isUploading ? 'Uploading file' : 'Upload file'}
                     >
                         {isUploading ? (
                             <>
-                                <LoadingSpinner />
+                                <Spinner className='size-4 text-white' />
                                 <span className='ml-2'>Uploading...</span>
                             </>
                         ) : (
                             <>
-                                <Upload className='mr-2 text-cradle2' />
+                                <Upload className='mr-2 text-primary' />
                                 Upload
                             </>
                         )}

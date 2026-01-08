@@ -175,7 +175,7 @@ export default function NotesList({
                         viewBox='0 0 24 24'
                         fill='none'
                         xmlns='http://www.w3.org/2000/svg'
-                        className='text-green-500'
+                        className='text-primary'
                     >
                         <path
                             d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
@@ -188,12 +188,12 @@ export default function NotesList({
                 );
             case 'processing':
                 return (
-                    <InfoCircleSolid className='text-blue-500' width='18' height='18' />
+                    <InfoCircleSolid className='text-primary' width='18' height='18' />
                 );
             case 'warning':
                 return (
                     <WarningTriangleSolid
-                        className='text-amber-500'
+                        className='text-muted-foreground'
                         width='18'
                         height='18'
                     />
@@ -201,7 +201,7 @@ export default function NotesList({
             case 'invalid':
                 return (
                     <WarningCircleSolid
-                        className='text-red-500'
+                        className='text-destructive'
                         width='18'
                         height='18'
                     />
@@ -566,7 +566,7 @@ export default function NotesList({
                                     <TooltipTrigger asChild>
                                         <span className='inline-flex items-center align-middle flex-shrink-0'>
                                             <DesignNib
-                                                className='text-[#FF8C00]'
+                                                className='text-primary'
                                                 width='18'
                                                 height='18'
                                             />
@@ -625,7 +625,7 @@ export default function NotesList({
                         <div className="flex items-center gap-2">
                             <DataTableColumnHeader column={column} title="Author" />
                             {filterValue && (
-                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
                     );
@@ -645,7 +645,7 @@ export default function NotesList({
                         <div className="flex items-center gap-2">
                             <DataTableColumnHeader column={column} title="Editor" />
                             {filterValue && (
-                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
                     );
@@ -665,7 +665,7 @@ export default function NotesList({
                         <div className="flex items-center gap-2">
                             <DataTableColumnHeader column={column} title="Created At" />
                             {(filterValue?.from && filterValue?.to) && (
-                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
                     );
@@ -685,7 +685,7 @@ export default function NotesList({
                         <div className="flex items-center gap-2">
                             <DataTableColumnHeader column={column} title="Updated At" />
                             {(filterValue?.from && filterValue?.to) && (
-                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
                     );

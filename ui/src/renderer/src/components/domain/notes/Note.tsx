@@ -21,6 +21,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import ReferenceTree from '../relations/ReferenceTree';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Alert {
     show: boolean;
@@ -82,7 +83,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                         viewBox='0 0 24 24'
                         fill='none'
                         xmlns='http://www.w3.org/2000/svg'
-                        className='text-green-500'
+                        className='text-primary'
                     >
                         <path
                             d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
@@ -95,12 +96,12 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                 );
             case 'processing':
                 return (
-                    <InfoCircleSolid className='text-blue-500' width='18' height='18' />
+                    <InfoCircleSolid className='text-primary' width='18' height='18' />
                 );
             case 'warning':
                 return (
                     <WarningTriangleSolid
-                        className='text-amber-500'
+                        className='text-muted-foreground'
                         width='18'
                         height='18'
                     />
@@ -108,7 +109,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
             case 'invalid':
                 return (
                     <WarningCircleSolid
-                        className='text-red-500'
+                        className='text-destructive'
                         width='18'
                         height='18'
                     />
@@ -144,14 +145,14 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
         <div ref={ref} {...props} className='w-full min-w-0'>
             <div style={style} className='mb-4 w-full min-w-0'>
                 {/* Header row with timestamp and configurable controls */}
-                <div className='flex items-center justify-between border-b border-cradle-border-primary pb-3 mb-4 w-full min-w-0'>
+                <div className='flex items-center justify-between border-b border-border pb-3 mb-4 w-full min-w-0'>
                     <div className='flex items-center gap-3 cradle-mono text-xs min-w-0 flex-1'>
                         {note.fleeting && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <span className='inline-flex items-center align-middle'>
                                         <DesignNib
-                                            className='text-[#FF8C00]'
+                                            className='text-primary'
                                             width='18'
                                             height='18'
                                         />
@@ -179,24 +180,24 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                         )}
                         {!note.editor && (
                             <>
-                                <span className='cradle-text-tertiary'>
+                                <span className='text-muted-foreground'>
                                     {note.timestamp &&
                                         formatDate(new Date(note.timestamp))}
                                 </span>
-                                <span className='cradle-text-muted'>·</span>
-                                <span className='cradle-text-secondary'>
+                                <span className='text-muted-foreground'>·</span>
+                                <span className='text-foreground'>
                                     {note?.author ? note.author.username : 'Unknown'}
                                 </span>
                             </>
                         )}
                         {note.editor && (
                             <>
-                                <span className='cradle-text-tertiary'>
+                                <span className='text-muted-foreground'>
                                     {note.editTimestamp &&
                                         formatDate(new Date(note.editTimestamp))}
                                 </span>
-                                <span className='cradle-text-muted'>·</span>
-                                <span className='cradle-text-secondary'>
+                                <span className='text-muted-foreground'>·</span>
+                                <span className='text-foreground'>
                                     {note?.editor ? note.editor.username : 'Unknown'}
                                 </span>
                             </>
@@ -216,9 +217,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
 
                 {!parsedContent && (
                     <div className='flex items-center justify-center min-h-screen'>
-                        <div className='cradle-spinner-dot-pulse'>
-                            <div className='cradle-spinner-pulse-dot'></div>
-                        </div>
+                        <Spinner className='size-6' />
                     </div>
                 )}
 
@@ -243,15 +242,15 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
                             </div>
 
                             {metadataExpanded && (
-                                <div className='border border-cradle-border-primary bg-transparent p-4 mt-2'>
+                                <div className='border border-border bg-transparent p-4 mt-2'>
                                     <div className='grid grid-cols-[auto_1fr] gap-x-4 gap-y-2'>
                                         {Object.entries(note.metadata).map(
                                             ([key, value]) => (
                                                 <React.Fragment key={key}>
-                                                    <div className='text-sm font-semibold cradle-text-secondary cradle-mono'>
+                                                    <div className='text-sm font-semibold text-foreground cradle-mono'>
                                                         {capitalizeString(key)}:
                                                     </div>
-                                                    <div className='text-sm cradle-text-tertiary'>
+                                                    <div className='text-sm text-muted-foreground'>
                                                         {typeof value === 'object'
                                                             ? JSON.stringify(value)
                                                             : parseMarkdownInline(

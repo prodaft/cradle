@@ -37,7 +37,7 @@ export default function GraphSettings({
                 variant='ghost'
                 size='sm'
                 onClick={() => setIsExpanded(!isExpanded)}
-                className='flex items-center gap-2 text-sm font-medium hover:text-cradle-accent-primary'
+                className='flex items-center gap-2 text-sm font-medium hover:text-border-primary'
             >
                 {isExpanded ? (
                     <NavArrowDown width='16' height='16' />

@@ -15,7 +15,7 @@ export async function parseMarkdown(
         const entries = await entriesApi.entryClassesList({});
         const entryColors = new Map<string, string>();
         for (const entry of entries) {
-            entryColors.set(entry.subtype, entry.color || '#0000FF'); // TODO: better default color
+            entryColors.set(entry.subtype, entry.color || 'hsl(var(--primary))');
         }
 
         const md = new MarkdownIt({

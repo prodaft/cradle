@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import { Search } from 'iconoir-react';
 import { useCallback, useEffect, useState } from 'react';
 import Activity from './Activity';
+import { Spinner } from '@/components/ui/spinner';
 
 // Local ActivityLog interface to match Activity component expectations
 interface ActivityLog {
@@ -161,8 +162,8 @@ export default function ActivityList({
                     >
                         {/* Username input - Search Bar Style */}
                         <div className='flex-1 min-w-[200px]'>
-                            <div className='flex items-center gap-2 w-full bg-cradle-bg-elevated border border-cradle-border-accent h-10 px-2 rounded-full focus-within:border-cradle-accent-primary transition-colors'>
-                                <Search className='w-4 h-4 text-cradle-text-muted flex-shrink-0' />
+                            <div className='flex items-center gap-2 w-full bg-bg-card border border-border-border h-10 px-2 rounded-full focus-within:border-border-primary transition-colors'>
+                                <Search className='w-4 h-4 text-text-muted-foreground flex-shrink-0' />
                                 <input
                                     type='text'
                                     id='username'
@@ -170,7 +171,7 @@ export default function ActivityList({
                                     value={searchFilters.username}
                                     onChange={handleSearchChange}
                                     placeholder='Search by username...'
-                                    className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono min-w-0'
+                                    className='flex-grow bg-transparent text-sm outline-none text-text-foreground placeholder:text-text-muted-foreground rounded-none font-mono min-w-0'
                                 />
                             </div>
                         </div>
@@ -235,9 +236,7 @@ export default function ActivityList({
                     <div className='flex flex-col space-y-4'>
                         {loading ? (
                             <div className='flex items-center justify-center min-h-[200px]'>
-                                <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                                    <div className='cradle-spinner-pulse-dot'></div>
-                                </div>
+                                <Spinner className='size-10' />
                             </div>
                         ) : events.length > 0 ? (
                             <div>
@@ -255,7 +254,7 @@ export default function ActivityList({
                             </div>
                         ) : (
                             <div className='container mx-auto flex flex-col items-center py-10'>
-                                <p className='text-sm font-normal text-cradle-text-muted'>
+                                <p className='text-sm font-normal text-text-muted-foreground'>
                                     No event logs found!
                                 </p>
                             </div>

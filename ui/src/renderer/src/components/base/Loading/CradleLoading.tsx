@@ -1,4 +1,5 @@
 import Logo from '../Logo/Logo';
+import { Spinner } from '@/components/ui/spinner';
 
 const CradleLoading = () => {
     return (
@@ -6,13 +7,7 @@ const CradleLoading = () => {
             <div className='mb-8 w-[370px]'>
                 <Logo text={true} />
             </div>
-            <svg
-                className='cradle-spinner-ring cradle-spinner-primary cradle-spinner-xl dark:[--spinner-color:#ffffff]'
-                viewBox='25 25 50 50'
-                strokeWidth='5'
-            >
-                <circle cx='50' cy='50' r='20' />
-            </svg>
+            <Spinner className='size-10' />
         </div>
     );
 };

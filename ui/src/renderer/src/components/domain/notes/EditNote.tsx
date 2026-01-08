@@ -26,11 +26,11 @@ export default function EditNote({ note, classNames }: EditNoteProps) {
     const { navigateLink } = useCradleNavigate();
 
     return (
-        <span className='pb-1 space-x-1 flex flex-row pl-2 text-blue-500 hover:text-blue-600'>
+        <span className='pb-1 space-x-1 flex flex-row pl-2 text-primary hover:text-primary/80'>
             <Button
                 variant='ghost'
                 size='icon-sm'
-                className='text-blue-500 hover:text-blue-600'
+                className='text-primary hover:text-primary/80'
                 onClick={navigateLink(`/notes/${note.id}`)}
             >
                 <EditPencil className={classNames} />

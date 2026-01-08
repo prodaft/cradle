@@ -6,6 +6,7 @@ import { PlusCircle, Search, Xmark } from 'iconoir-react';
 import { useMemo, useState } from 'react';
 import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 
 interface AdminPanelSectionProps {
     title: string;
@@ -94,15 +95,13 @@ export default function AdminPanelSection({
                 {isLoading ? (
                     // Loading spinner
                     <div className='flex items-center justify-center min-h-[200px]'>
-                        <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                            <div className='cradle-spinner-pulse-dot'></div>
-                        </div>
+                        <Spinner className='size-10' />
                     </div>
                 ) : sortedFilteredChildren && sortedFilteredChildren.length > 0 ? (
                     sortedFilteredChildren
                 ) : (
                     <div className='container mx-auto flex flex-col items-center'>
-                        <p className='mt-6 !text-sm !font-normal text-zinc-500'>
+                        <p className='mt-6 !text-sm !font-normal text-muted-foreground'>
                             No items found!
                         </p>
                     </div>

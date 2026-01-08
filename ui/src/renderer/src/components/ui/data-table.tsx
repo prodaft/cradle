@@ -32,6 +32,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
+import { Spinner } from "@/components/ui/spinner"
 
 export interface BulkAction {
   id: string
@@ -175,9 +176,7 @@ export function DataTable<TData, TValue>({
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="cradle-spinner-dot-pulse">
-          <div className="cradle-spinner-pulse-dot"></div>
-        </div>
+        <Spinner className="size-6" />
       </div>
     )
   }

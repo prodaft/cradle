@@ -22,7 +22,7 @@ export default function AdminPanelCardTypeMapping({
 
     return (
         <Card
-            className='bg-cradle3 bg-opacity-20 cursor-pointer hover:shadow-lg transition-shadow'
+            className='bg-card/20 cursor-pointer hover:shadow-lg transition-shadow'
             onClick={handleEditClick}
         >
             <CardHeader>

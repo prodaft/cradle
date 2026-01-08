@@ -237,7 +237,7 @@ export default function EntryTypeForm({
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse cradle-text-secondary'>Loading...</div>
+                <div className='animate-pulse text-foreground'>Loading...</div>
             </div>
         );
     }
@@ -262,10 +262,10 @@ export default function EntryTypeForm({
                     <form onSubmit={handleFormSubmit(onSubmit)}>
                         {/* Basic Section */}
                         <section id='basic' className='pb-8'>
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Basic Information
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Core properties of the entry type
                             </p>
 
@@ -319,11 +319,11 @@ export default function EntryTypeForm({
                                     <Separator />
 
                                     <div className='py-2'>
-                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                        <label className='text-sm text-muted-foreground block mb-0.5'>
                                             Color
-                                            <span className='text-red-500 ml-1'>*</span>
+                                            <span className='text-destructive ml-1'>*</span>
                                         </label>
-                                        <p className='text-sm cradle-text-muted mb-2'>
+                                        <p className='text-sm text-muted-foreground mb-2'>
                                             Display color for this entry type
                                         </p>
                                         <div className='flex items-center space-x-2'>
@@ -340,7 +340,7 @@ export default function EntryTypeForm({
                                             />
                                             <div
                                                 ref={colorButtonRef}
-                                                className='h-10 w-12 rounded cursor-pointer border border-gray-300 flex-shrink-0'
+                                                className='h-10 w-12 rounded cursor-pointer border border-border flex-shrink-0'
                                                 style={{ backgroundColor: watchColor }}
                                                 onClick={() =>
                                                     setShowColorPicker(!showColorPicker)
@@ -432,7 +432,7 @@ export default function EntryTypeForm({
                                                 );
                                             })()}
                                         {errors.color && (
-                                            <p className='text-sm text-red-500 mt-1'>
+                                            <p className='text-sm text-destructive mt-1'>
                                                 {errors.color.message}
                                             </p>
                                         )}
@@ -446,10 +446,10 @@ export default function EntryTypeForm({
                             id='advanced'
                             className='border-t border-white/5 pt-5 pb-8'
                         >
-                            <h2 className='text-lg font-semibold cradle-text-primary tracking-tight'>
+                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                                 Advanced Settings
                             </h2>
-                            <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
                                 Additional configuration and validation
                             </p>
 
@@ -542,10 +542,10 @@ export default function EntryTypeForm({
                                     )}
 
                                     <div className='py-2'>
-                                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                                        <label className='text-sm text-muted-foreground block mb-0.5'>
                                             Children
                                         </label>
-                                        <p className='text-sm cradle-text-muted mb-2'>
+                                        <p className='text-sm text-muted-foreground mb-2'>
                                             Entry types that can be children of this
                                             type
                                         </p>
@@ -565,7 +565,7 @@ export default function EntryTypeForm({
                                             )}
                                         />
                                         {errors.children && (
-                                            <p className='text-sm text-red-500 mt-1'>
+                                            <p className='text-sm text-destructive mt-1'>
                                                 {errors.children.message}
                                             </p>
                                         )}

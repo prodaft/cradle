@@ -104,18 +104,18 @@ export default function Activity({ log }: ActivityProps) {
 
                 if (line.deletions.length) {
                     parts.push(`
-                <div class="diff-line diff-deletion flex items-start bg-red-50 dark:bg-red-950 border-l-4 border-red-500 px-2 py-1">
-                    <span class="text-red-600 dark:text-red-400 font-bold mr-2 select-none">-</span>
-                    <span class="text-red-700 dark:text-red-300">${line.deletions.join('')}</span>
+                <div class="diff-line diff-deletion flex items-start bg-destructive/10 dark:bg-destructive/20 border-l-4 border-destructive px-2 py-1">
+                    <span class="text-destructive font-bold mr-2 select-none">-</span>
+                    <span class="text-destructive/90">${line.deletions.join('')}</span>
                 </div>
             `);
                 }
 
                 if (line.additions.length) {
                     parts.push(`
-                <div class="diff-line diff-addition flex items-start bg-green-50 dark:bg-green-950 border-l-4 border-green-500 px-2 py-1">
-                    <span class="text-green-600 dark:text-green-400 font-bold mr-2 select-none">+</span>
-                    <span class="text-green-700 dark:text-green-300">${line.additions.join('')}</span>
+                <div class="diff-line diff-addition flex items-start bg-primary/10 dark:bg-primary/20 border-l-4 border-primary px-2 py-1">
+                    <span class="text-primary font-bold mr-2 select-none">+</span>
+                    <span class="text-primary/90">${line.additions.join('')}</span>
                 </div>
             `);
                 }
@@ -127,8 +127,8 @@ export default function Activity({ log }: ActivityProps) {
                 ) {
                     parts.push(`
                 <div class="diff-line diff-context flex items-start px-2 py-1">
-                    <span class="text-gray-400 mr-2 select-none"> </span>
-                    <span class="text-gray-600 dark:text-gray-400">${line.equals.join('')}</span>
+                    <span class="text-muted-foreground mr-2 select-none"> </span>
+                    <span class="text-foreground">${line.equals.join('')}</span>
                 </div>
             `);
                 }
@@ -138,7 +138,7 @@ export default function Activity({ log }: ActivityProps) {
             .join('');
 
         return `
-        <div class="diff-container font-mono text-sm bg-gray-50 dark:bg-gray-900 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div class="diff-container font-mono text-sm bg-muted rounded-md border border-border overflow-hidden">
             ${html}
         </div>
     `;
@@ -150,7 +150,7 @@ export default function Activity({ log }: ActivityProps) {
         let dmp = new diff_match_patch();
         let patch = dmp.patch_fromText(diffTxt);
         if (!patch || patch.length === 0) {
-            return '<span class="text-gray-500">No changes</span>';
+            return '<span class="text-muted-foreground">No changes</span>';
         }
         // Type assertion needed because diff-match-patch types are incomplete
         let html = diff_prettyDiffLines((patch[0] as any).diffs);
@@ -158,31 +158,31 @@ export default function Activity({ log }: ActivityProps) {
     };
 
     return (
-        <Card className='mt-3 dark:!bg-cradle-bg-elevated/70 relative'>
-            <div className='absolute top-2 right-2 cradle-status cradle-status-info border border-cradle-accent-primary text-cradle-accent-primary z-10'>
+        <Card className='mt-3 dark:!bg-bg-card/70 relative'>
+            <div className='absolute top-2 right-2 cradle-status cradle-status-info border border-border-primary text-border-primary z-10'>
                 {log.type}
             </div>
             <CardHeader>
                 <CardTitle>Activity</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className='text-cradle-text-secondary text-sm space-y-1 mb-2'>
+                <div className='text-text-foreground text-sm space-y-1 mb-2'>
                     <div className='items-start gap-2'>
-                        <strong className='text-cradle-accent-primary mr-1'>User:</strong>
+                        <strong className='text-border-primary mr-1'>User:</strong>
                         {log.user.username}
                     </div>
                     <div className='items-start gap-2'>
-                        <strong className='text-cradle-accent-primary mr-1'>Timestamp:</strong>
+                        <strong className='text-border-primary mr-1'>Timestamp:</strong>
                         {formattedTimestamp}
                     </div>
                     <div className='items-start gap-2'>
-                        <strong className='text-cradle-accent-primary mr-1'>Object:</strong>
+                        <strong className='text-border-primary mr-1'>Object:</strong>
                         {log.objectRepr}
                     </div>
                 </div>
                 {log.details && (
-                    <div className='text-gray-700 dark:text-gray-300 text-sm'>
-                        <strong className='text-cradle-accent-primary text-sm'>Details:</strong>
+                    <div className='text-foreground text-sm'>
+                        <strong className='text-border-primary text-sm'>Details:</strong>
                         <div
                             className='mt-2'
                             dangerouslySetInnerHTML={{
@@ -193,7 +193,7 @@ export default function Activity({ log }: ActivityProps) {
                 )}
                 {log.srcLog && (
                     <div className='mt-3'>
-                        <strong className='text-cradle-accent-primary text-sm'>Caused by:</strong>
+                        <strong className='text-border-primary text-sm'>Caused by:</strong>
                         <Activity log={log.src_log!} />
                     </div>
                 )}

@@ -295,7 +295,7 @@ export const renderDashboardSectionWithInaccessibleEntries = (
             ? [
                   <div
                       key='inaccessible-entries'
-                      className='w-full h-fit mt-1 flex flex-row justify-between items-center text-zinc-400'
+                      className='w-full h-fit mt-1 flex flex-row justify-between items-center text-muted-foreground'
                   >
                       <p>
                           {inaccessibleEntriesMessage}

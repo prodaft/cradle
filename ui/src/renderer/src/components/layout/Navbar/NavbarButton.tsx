@@ -1,6 +1,7 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import React, { ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 /**
  * NavbarButton component props
@@ -56,9 +57,7 @@ export default function NavbarButton({
     return (
         <>
             {isLoading ? (
-                <div className='cradle-spinner-dot-pulse cradle-spinner-sm'>
-                    <div className='cradle-spinner-pulse-dot'></div>
-                </div>
+                <Spinner className='size-3' />
             ) : (
                 <Tooltip>
                     <TooltipTrigger asChild>

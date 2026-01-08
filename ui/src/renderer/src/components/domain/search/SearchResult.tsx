@@ -44,7 +44,7 @@ export default function SearchResult({
             )}
             <CardHeader>
                 <CardTitle>
-                    {subtype && <span className='text-cradle-text-muted mr-2'>{subtype}:</span>}
+                    {subtype && <span className='text-text-muted-foreground mr-2'>{subtype}:</span>}
                     {name}
                 </CardTitle>
                 {actions.length > 0 && (

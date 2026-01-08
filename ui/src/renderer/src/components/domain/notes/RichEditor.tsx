@@ -381,8 +381,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 markerType: 'codeOnly',
                 thickness: 0.5,
                 colors: {
-                    light: 'rgba(100, 100, 100, 0.2)',
-                    dark: 'rgba(200, 200, 200, 0.15)',
+                    light: 'hsl(var(--muted) / 0.3)',
+                    dark: 'hsl(var(--muted-foreground) / 0.2)',
                 },
             }),
             ...(!source
@@ -642,7 +642,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             {fileData && fileData.length > 0 && (
                 <div className='flex-none max-h-[25%] rounded-md flex flex-col justify-end z-30'>
                     <div
-                        className='bg-gray-5 dark:bg-gray-3 dark:text-zinc-200 px-4 py-[2px] hover:cursor-pointer flex flex-row space-x-2 border-b border-cradle-border-primary'
+                        className='bg-muted text-foreground px-4 py-[2px] hover:cursor-pointer flex flex-row space-x-2 border-b border-border'
                         onClick={toggleFileList}
                     >
                         <span>
@@ -679,7 +679,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     onClick={handleFileUploadModalClose}
                 >
                     <div
-                        className='bg-cradle-bg-primary rounded-lg shadow-xl p-6'
+                        className='bg-bg-background rounded-lg shadow-xl p-6'
                         onClick={(e) => e.stopPropagation()}
                     >
                         <FileUploadModal

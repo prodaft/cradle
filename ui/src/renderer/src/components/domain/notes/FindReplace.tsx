@@ -171,14 +171,14 @@ export default function FindReplace({
     if (!view) return null;
 
     return (
-        <div className='absolute top-2 right-4 z-50 w-[28rem] bg-cradle-bg-elevated border border-cradle-border-accent shadow-lg rounded-md p-2 text-sm'>
+        <div className='absolute top-2 right-4 z-50 w-[28rem] bg-card border border-border shadow-lg rounded-md p-2 text-sm'>
             <div className='flex flex-col gap-2'>
                 <div className='flex gap-1 items-start'>
                     {/* Toggle Button - Height matches two fields when replace is shown */}
                     <Button
                         variant='ghost'
                         size='icon-sm'
-                        className={`w-6 flex-shrink-0 cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary ${
+                        className={`w-6 flex-shrink-0 text-foreground hover:bg-secondary hover:text-foreground ${
                             showReplace ? 'self-stretch' : 'h-8 mt-0.5'
                         }`}
                         onClick={() => setShowReplace(!showReplace)}
@@ -191,14 +191,14 @@ export default function FindReplace({
                     {/* Find Input */}
                     <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1 min-w-0">
-                            <div className="flex-1 min-w-0 bg-cradle-bg-secondary border border-cradle-border-accent rounded-md flex items-center focus-within:border-[#FF8C00] focus-within:ring-1 focus-within:ring-[#FF8C00] overflow-hidden">
+                            <div className="flex-1 min-w-0 bg-muted border border-border rounded-md flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden">
                                 <input
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyDown={handleKeyDown}
                                     placeholder="Find"
-                                    className="flex-1 min-w-0 bg-transparent border-0 outline-none px-2 py-1.5 text-cradle-text-primary placeholder:text-cradle-text-muted text-sm"
+                                    className="flex-1 min-w-0 bg-transparent border-0 outline-none px-2 py-1.5 text-foreground placeholder:text-muted-foreground text-sm"
                                     autoFocus
                                 />
                                 {/* Options - Inside the input field */}
@@ -209,8 +209,8 @@ export default function FindReplace({
                                         onClick={() => setCaseSensitive(!caseSensitive)}
                                         className={`w-6 h-6 ${
                                             caseSensitive
-                                                ? 'bg-cradle-bg-primary text-cradle-text-primary'
-                                                : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
+                                                ? 'bg-background text-foreground'
+                                                : 'text-muted-foreground hover:bg-background hover:text-foreground'
                                         }`}
                                         title="Match Case"
                                     >
@@ -222,8 +222,8 @@ export default function FindReplace({
                                         onClick={() => setWholeWord(!wholeWord)}
                                         className={`w-6 h-6 ${
                                             wholeWord
-                                                ? 'bg-cradle-bg-primary text-cradle-text-primary'
-                                                : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
+                                                ? 'bg-bg-background text-text-foreground'
+                                                : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
                                         }`}
                                         title="Match Whole Word"
                                     >
@@ -235,8 +235,8 @@ export default function FindReplace({
                                         onClick={() => setUseRegex(!useRegex)}
                                         className={`w-6 h-6 ${
                                             useRegex
-                                                ? 'bg-cradle-bg-primary text-cradle-text-primary'
-                                                : 'cradle-text-muted hover:bg-cradle-bg-primary hover:text-cradle-text-secondary'
+                                                ? 'bg-bg-background text-text-foreground'
+                                                : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
                                         }`}
                                         title="Use Regular Expression"
                                     >
@@ -249,7 +249,7 @@ export default function FindReplace({
                                     variant='ghost'
                                     size='icon-sm'
                                     onClick={handlePrevious}
-                                    className="w-8 h-8 cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary"
+                                    className="w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground"
                                     title="Previous match (Shift+Enter)"
                                 >
                                     <VscArrowUp className="text-lg" />
@@ -258,7 +258,7 @@ export default function FindReplace({
                                     variant='ghost'
                                     size='icon-sm'
                                     onClick={handleNext}
-                                    className="w-8 h-8 cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary"
+                                    className="w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground"
                                     title="Next match (Enter)"
                                 >
                                     <VscArrowDown className="text-lg" />
@@ -267,7 +267,7 @@ export default function FindReplace({
                                     variant='ghost'
                                     size='icon-sm'
                                     onClick={handleFindAll}
-                                    className="w-8 h-8 cradle-text-secondary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary"
+                                    className="w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground"
                                     title="Find All"
                                 >
                                     <VscListSelection className="text-lg" />
@@ -276,7 +276,7 @@ export default function FindReplace({
                                     variant='ghost'
                                     size='icon-sm'
                                     onClick={onClose}
-                                    className="w-8 h-8 cradle-text-muted hover:bg-cradle-bg-secondary hover:text-cradle-text-primary"
+                                    className="w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground"
                                     aria-label="Close"
                                 >
                                     <Xmark width="18" height="18" />
@@ -299,7 +299,7 @@ export default function FindReplace({
                                         }
                                     }}
                                     placeholder="Replace"
-                                    className="flex-1 min-w-0 bg-cradle-bg-secondary border border-cradle-border-accent rounded-md px-2 py-1.5 outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] text-cradle-text-primary placeholder:text-cradle-text-muted text-sm"
+                                    className="flex-1 min-w-0 bg-muted border border-border rounded-md px-2 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground text-sm"
                                 />
                                 <div className="flex gap-0.5 flex-shrink-0">
                                     <Button
@@ -307,7 +307,7 @@ export default function FindReplace({
                                         size='icon-sm'
                                         onClick={handleReplace}
                                         disabled={!searchTerm.trim()}
-                                        className="w-8 h-8 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-[#FF8C00]"
+                                        className="w-8 h-8 text-primary hover:bg-muted hover:text-primary"
                                         title="Replace"
                                     >
                                         <VscReplace className="text-lg" />
@@ -317,7 +317,7 @@ export default function FindReplace({
                                         size='icon-sm'
                                         onClick={handleReplaceAll}
                                         disabled={!searchTerm.trim()}
-                                        className="w-8 h-8 text-[#FF8C00] hover:bg-cradle-bg-secondary hover:text-[#FF8C00]"
+                                        className="w-8 h-8 text-primary hover:bg-muted hover:text-primary"
                                         title="Replace All"
                                     >
                                         <VscReplaceAll className="text-lg" />

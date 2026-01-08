@@ -7,6 +7,7 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import { formatDate } from '@/utils/dates';
 import { Badge } from '@/components/ui/badge';
 import ReactJson from '@microlink/react-json-view';
+import { Spinner } from '@/components/ui/spinner';
 import {
     EnrichmentRelation,
     EnrichmentRequestDetail,
@@ -191,22 +192,22 @@ export default function EnrichmentResults() {
         switch (status) {
             case 'done':
                 return (
-                    <CheckCircle className='text-green-500' width='18' height='18' />
+                    <CheckCircle className='text-primary' width='18' height='18' />
                 );
             case 'working':
             case 'waiting':
-                return <InfoCircle className='text-blue-500' width='18' height='18' />;
+                return <InfoCircle className='text-primary' width='18' height='18' />;
             case 'warning':
                 return (
                     <WarningTriangle
-                        className='text-amber-500'
+                        className='text-muted-foreground'
                         width='18'
                         height='18'
                     />
                 );
             case 'error':
                 return (
-                    <WarningCircle className='text-red-500' width='18' height='18' />
+                    <WarningCircle className='text-destructive' width='18' height='18' />
                 );
             default:
                 return null;
@@ -219,7 +220,7 @@ export default function EnrichmentResults() {
             case 'done':
                 return (
                     <CheckCircle
-                        className='text-green-500 flex-shrink-0'
+                        className='text-primary flex-shrink-0'
                         width='16'
                         height='16'
                     />
@@ -228,7 +229,7 @@ export default function EnrichmentResults() {
             case 'waiting':
                 return (
                     <InfoCircle
-                        className='text-blue-500 flex-shrink-0'
+                        className='text-primary flex-shrink-0'
                         width='16'
                         height='16'
                     />
@@ -236,7 +237,7 @@ export default function EnrichmentResults() {
             case 'warning':
                 return (
                     <WarningTriangle
-                        className='text-amber-500 flex-shrink-0'
+                        className='text-muted-foreground flex-shrink-0'
                         width='16'
                         height='16'
                     />
@@ -244,7 +245,7 @@ export default function EnrichmentResults() {
             case 'error':
                 return (
                     <WarningCircle
-                        className='text-red-500 flex-shrink-0'
+                        className='text-destructive flex-shrink-0'
                         width='16'
                         height='16'
                     />
@@ -262,8 +263,8 @@ export default function EnrichmentResults() {
 
         return (
             <Badge 
-                className="rounded-full"
-                style={{ backgroundColor: entry.color || '#ccc' }}
+                className={`rounded-full ${!entry.color ? 'bg-muted' : ''}`}
+                style={entry.color ? { backgroundColor: entry.color } : undefined}
             >
                 {entry.subtype}: {entry.name}
             </Badge>
@@ -422,9 +423,7 @@ export default function EnrichmentResults() {
                         <ScrollArea className='h-full px-3 pt-3'>
                             {loadingDetails ? (
                                 <div className='flex items-center justify-center min-h-[200px]'>
-                                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                                        <div className='cradle-spinner-pulse-dot'></div>
-                                    </div>
+                                    <Spinner className='size-10' />
                                 </div>
                             ) : (
                                 <div className='space-y-1 pr-2'>
@@ -444,7 +443,7 @@ export default function EnrichmentResults() {
                                                 onClick={handleIgnoredSelect}
                                             >
                                                 <EyeClosed
-                                                    className='text-gray-500 flex-shrink-0'
+                                                    className='text-muted-foreground flex-shrink-0'
                                                     width='16'
                                                     height='16'
                                                 />
@@ -469,7 +468,7 @@ export default function EnrichmentResults() {
                                             onClick={() => handleEnricherSelect(enricher.enricherType!)}
                                         >
                                             {getEnricherStatusIcon(enricher.status!)}
-                                            <span className='text-sm font-medium truncate text-cradle-text-primary'>
+                                            <span className='text-sm font-medium truncate text-foreground'>
                                                 {enricher.displayName!}
                                             </span>
                                         </div>
@@ -479,7 +478,7 @@ export default function EnrichmentResults() {
                         </ScrollArea>
                     </ResizablePanel>
 
-                    <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                    <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
 
                     {/* Right Panel - Tabs */}
                     <ResizablePanel defaultSize={75} minSize={60}>
@@ -488,17 +487,17 @@ export default function EnrichmentResults() {
                                 /* Ignored Artifacts View */
                                 <div className='h-full flex flex-col overflow-hidden'>
                                     <div className='p-4 border-b border-border'>
-                                        <h2 className='text-lg font-medium text-cradle-text-primary'>
+                                        <h2 className='text-lg font-medium text-foreground'>
                                             Ignored Artifacts
                                         </h2>
-                                        <p className='text-xs text-cradle-text-muted mt-1'>
+                                        <p className='text-xs text-muted-foreground mt-1'>
                                             These artifacts were ignored because they
                                             could not be matched with any enrichment
                                             technique.
                                         </p>
                                     </div>
                                     <ScrollArea className='flex-1 min-h-0'>
-                                        <div className='divide-y divide-cradle-border-primary'>
+                                        <div className='divide-y divide-border'>
                                             {ignoredArtifacts.map(
                                                 (artifact: any, index: number) => (
                                                     <div
@@ -507,13 +506,13 @@ export default function EnrichmentResults() {
                                                     >
                                                         {/* Entry class indicator */}
                                                         {artifact.entry_class && (
-                                                            <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
+                                                            <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-secondary border border-border min-w-[60px] text-center'>
                                                                 {artifact.entry_class}
                                                             </span>
                                                         )}
 
                                                         {/* Name */}
-                                                        <span className='flex-1 text-sm text-cradle-text-primary truncate'>
+                                                        <span className='flex-1 text-sm text-foreground truncate'>
                                                             {typeof artifact ===
                                                             'string'
                                                                 ? artifact
@@ -532,9 +531,7 @@ export default function EnrichmentResults() {
                                 /* Enricher Tabs View */
                                 loadingEnricher ? (
                                     <div className='flex items-center justify-center h-full'>
-                                        <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                                            <div className='cradle-spinner-pulse-dot'></div>
-                                        </div>
+                                        <Spinner className='size-10' />
                                     </div>
                                 ) : (
                                     <div className='flex flex-col h-full'>
@@ -545,7 +542,7 @@ export default function EnrichmentResults() {
                                                 {/* Search Bars */}
                                                 <div className='flex gap-2 items-center pb-3'>
                                                     {/* Search Entries */}
-                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:shadow-[0_0_0_1px_#ff8c00] transition-all'>
+                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
                                                         <Button
                                                             variant='ghost'
                                                             size='icon-sm'
@@ -557,7 +554,7 @@ export default function EnrichmentResults() {
                                                         </Button>
                                                         <input
                                                             type='text'
-                                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono'
                                                             placeholder='Search entries...'
                                                             value={searchInput.query}
                                                             onChange={(e) =>
@@ -590,7 +587,7 @@ export default function EnrichmentResults() {
                                                     </div>
 
                                                     {/* Search Details */}
-                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:shadow-[0_0_0_1px_#ff8c00] transition-all'>
+                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
                                                         <Button
                                                             variant='ghost'
                                                             size='icon-sm'
@@ -602,7 +599,7 @@ export default function EnrichmentResults() {
                                                         </Button>
                                                         <input
                                                             type='text'
-                                                            className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
+                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono'
                                                             placeholder='Search details...'
                                                             value={searchInput.details}
                                                             onChange={(e) =>
@@ -674,13 +671,11 @@ export default function EnrichmentResults() {
                                                 <ScrollArea className='flex-grow'>
                                                     {loadingResults ? (
                                                         <div className='flex items-center justify-center min-h-[200px]'>
-                                                            <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                                                                <div className='cradle-spinner-pulse-dot'></div>
-                                                            </div>
+                                                            <Spinner className='size-10' />
                                                         </div>
                                                     ) : results.length === 0 ? (
                                                         <div className='flex flex-col items-center justify-center min-h-[200px]'>
-                                                            <p className='text-sm cradle-text-tertiary'>
+                                                            <p className='text-sm text-muted-foreground'>
                                                                 No results found.
                                                             </p>
                                                         </div>
@@ -694,7 +689,7 @@ export default function EnrichmentResults() {
                                                                                 result.id ||
                                                                                 index
                                                                             }
-                                                                            className='p-4 cradle-bg-elevated border cradle-border'
+                                                                            className='p-4 bg-card border border-border'
                                                                         >
                                                                             {/* Entry badges */}
                                                                             {(result.e1 ||
@@ -738,7 +733,7 @@ export default function EnrichmentResults() {
                                                                             )}
 
                                                                             {!result.details && (
-                                                                                <p className='text-xs cradle-text-tertiary italic'>
+                                                                                <p className='text-xs text-muted-foreground italic'>
                                                                                     No
                                                                                     details
                                                                                     available
@@ -760,13 +755,13 @@ export default function EnrichmentResults() {
                                             {!enricherDetails?.artifacts ||
                                                 enricherDetails.artifacts.length === 0 ? (
                                                 <div className='flex flex-col items-center justify-center flex-1'>
-                                                    <p className='text-sm cradle-text-tertiary'>
+                                                    <p className='text-sm text-muted-foreground'>
                                                         No artifacts found.
                                                     </p>
                                                 </div>
                                             ) : (
                                                 <ScrollArea className='flex-1 min-h-0 px-3 pb-3'>
-                                                    <div className='divide-y divide-cradle-border-primary'>
+                                                    <div className='divide-y divide-border'>
                                                         {enricherDetails.artifacts.map(
                                                             (artifact: any, index: number) => (
                                                                 <div
@@ -775,13 +770,13 @@ export default function EnrichmentResults() {
                                                                 >
                                                                     {/* Entry class indicator */}
                                                                     {artifact.entry_class && (
-                                                                        <span className='text-[10px] font-mono uppercase tracking-wider text-cradle-text-muted px-1.5 py-0.5 bg-cradle-bg-secondary border border-cradle-border-primary min-w-[60px] text-center'>
+                                                                        <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-secondary border border-border min-w-[60px] text-center'>
                                                                             {artifact.entry_class}
                                                                         </span>
                                                                     )}
 
                                                                     {/* Name */}
-                                                                    <span className='flex-1 text-sm text-cradle-text-primary truncate'>
+                                                                    <span className='flex-1 text-sm text-foreground truncate'>
                                                                         {typeof artifact === 'string'
                                                                             ? artifact
                                                                             : artifact.name || JSON.stringify(artifact)}
@@ -799,7 +794,7 @@ export default function EnrichmentResults() {
                                             <div className='flex-1 overflow-hidden flex flex-col border-t'>
                                                 <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Warnings</h3>
                                                 <ScrollArea className='flex-1 px-3 pb-3'>
-                                                    <div className='divide-y divide-cradle-border-primary'>
+                                                    <div className='divide-y divide-border'>
                                                         {enricherDetails!.warnings!.map(
                                                             (
                                                                 warning: any,
@@ -807,14 +802,14 @@ export default function EnrichmentResults() {
                                                             ) => (
                                                                 <div
                                                                     key={index}
-                                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-amber-500'
+                                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
                                                                 >
                                                                     <WarningTriangle
-                                                                        className='text-amber-500 flex-shrink-0'
+                                                                        className='text-muted-foreground flex-shrink-0'
                                                                         width='16'
                                                                         height='16'
                                                                     />
-                                                                    <span className='flex-1 text-sm text-cradle-text-primary'>
+                                                                    <span className='flex-1 text-sm text-foreground'>
                                                                         {typeof warning ===
                                                                         'string'
                                                                             ? warning
@@ -835,7 +830,7 @@ export default function EnrichmentResults() {
                                             <div className='flex-1 overflow-hidden flex flex-col border-t'>
                                                 <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Errors</h3>
                                                 <ScrollArea className='flex-1 px-3 pb-3'>
-                                                    <div className='divide-y divide-cradle-border-primary'>
+                                                    <div className='divide-y divide-border'>
                                                         {enricherDetails!.errors!.map(
                                                             (
                                                                 error: any,
@@ -846,11 +841,11 @@ export default function EnrichmentResults() {
                                                                     className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
                                                                 >
                                                                     <WarningCircle
-                                                                        className='text-red-500 flex-shrink-0'
+                                                                        className='text-destructive flex-shrink-0'
                                                                         width='16'
                                                                         height='16'
                                                                     />
-                                                                    <span className='flex-1 text-sm text-cradle-text-primary'>
+                                                                    <span className='flex-1 text-sm text-foreground'>
                                                                         {typeof error ===
                                                                         'string'
                                                                             ? error
@@ -869,7 +864,7 @@ export default function EnrichmentResults() {
                                 )
                             ) : (
                                 <div className='flex items-center justify-center h-full'>
-                                    <p className='text-sm cradle-text-tertiary'>
+                                    <p className='text-sm text-muted-foreground'>
                                         Select an enrichment technique to view results
                                     </p>
                                 </div>

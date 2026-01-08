@@ -57,7 +57,7 @@ export default function AdminPanelCardUser({
 
     return (
         <Card
-            className='bg-cradle3 bg-opacity-20 cursor-pointer hover:shadow-lg transition-shadow'
+            className='bg-card/20 cursor-pointer hover:shadow-lg transition-shadow'
             onClick={handleUserClick}
         >
             <CardHeader>

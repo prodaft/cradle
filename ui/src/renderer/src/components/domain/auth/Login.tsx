@@ -363,7 +363,7 @@ export default function Login() {
                                         2FA Authentication
                                     </h1>
                                     <p className='text-muted-foreground text-sm text-balance'>
-                                        Enter the 6-digit code from your authenticator app
+                                        Please verify your identity
                                     </p>
                                 </div>
                             )}
@@ -416,9 +416,6 @@ export default function Login() {
                                                 {requiresTwoFactor ? (
                                                     <>
                                                         <Field>
-                                                            <FieldLabel>
-                                                                6-Digit Code
-                                                            </FieldLabel>
                                                             <InputOTP
                                                                 maxLength={6}
                                                                 value={twoFactorToken}
@@ -639,7 +636,7 @@ export default function Login() {
 
                         {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
-                            <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                            <span className='text-xs text-muted-foreground cradle-mono tracking-wider'>
                                 v2.10.2-beta.a070af1b
                             </span>
                         </div>

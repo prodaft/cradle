@@ -8,6 +8,7 @@ import { Edit, Plus, Trash } from 'iconoir-react/regular';
 import { forwardRef, MouseEvent, useEffect, useImperativeHandle, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Snippet {
     id: string;
@@ -164,7 +165,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
             {/* Header with title and add button */}
             {showTitle && (
                 <div className='flex items-center justify-between mb-3'>
-                    <h3 className='text-sm font-semibold cradle-text-secondary cradle-mono'>
+                    <h3 className='text-sm font-semibold text-foreground cradle-mono'>
                         Note Snippets
                     </h3>
                     <Button
@@ -180,18 +181,18 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
             )}
 
             {/* Snippets list */}
-            <ScrollArea className='max-h-40 border border-cradle-border-primary'>
+            <ScrollArea className='max-h-40 border border-border'>
                 {loading ? (
                     <div className='p-3 text-center'>
-                        <div className='loading loading-spinner loading-sm'></div>
-                        <p className='text-sm text-gray-500 mt-2'>Loading...</p>
+                        <Spinner className='size-3' />
+                        <p className='text-sm text-muted-foreground mt-2'>Loading...</p>
                     </div>
                 ) : snippets.length === 0 ? (
-                    <div className='p-3 text-center text-gray-500'>
+                    <div className='p-3 text-center text-muted-foreground'>
                         <p className='text-sm'>No snippets yet</p>
                     </div>
                 ) : (
-                    <div className='divide-y divide-gray-200'>
+                    <div className='divide-y divide-border'>
                         {snippets.map((snippet) => (
                             <div
                                 key={snippet.id}
@@ -205,19 +206,19 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(({ userId = nul
                                         onClick={(e) => handleEditSnippet(snippet, e)}
                                         variant='ghost'
                                         size='icon-sm'
-                                        className='p-1 hover:bg-gray-200'
+                                        className='p-1 hover:bg-muted'
                                         title='Edit snippet'
                                     >
-                                        <Edit className='w-4 h-4 dark:text-cradle2' />
+                                        <Edit className='w-4 h-4 text-primary' />
                                     </Button>
                                     <Button
                                         onClick={(e) => handleDeleteSnippet(snippet, e)}
                                         variant='ghost'
                                         size='icon-sm'
-                                        className='p-1 hover:bg-red-100'
+                                        className='p-1 hover:bg-destructive/10'
                                         title='Delete snippet'
                                     >
-                                        <Trash className='w-4 h-4 text-red-600' />
+                                        <Trash className='w-4 h-4 text-destructive' />
                                     </Button>
                                 </div>
                             </div>

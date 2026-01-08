@@ -313,10 +313,10 @@ export default function Relations({ obj }: RelationsProps) {
                     return (
                         <div className='py-3 px-4 cursor-pointer' onClick={navigateLink(dashboardLink)}>
                             <span
-                                className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-white shadow-sm'
-                                style={{
-                                    backgroundColor: row.original.color || '#71717a',
-                                }}
+                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-primary-foreground shadow-sm ${!row.original.color ? 'bg-muted' : ''}`}
+                                style={row.original.color ? {
+                                    backgroundColor: row.original.color,
+                                } : undefined}
                             >
                                 {row.original.subtype}
                             </span>
@@ -345,7 +345,7 @@ export default function Relations({ obj }: RelationsProps) {
                     const dashboardLink = createDashboardLink(row.original);
                     return (
                         <div className='py-3 px-4 cursor-pointer' onClick={navigateLink(dashboardLink)}>
-                            <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
+                            <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-secondary text-foreground border border-border'>
                                 {row.original.depth}
                             </span>
                         </div>
@@ -368,28 +368,48 @@ export default function Relations({ obj }: RelationsProps) {
             <Card className='cradle-card-compact'>
                 <CardContent className='p-3'>
                     <div className='flex flex-wrap items-center justify-between gap-4'>
-                        <div className='flex items-center gap-2 flex-shrink-0'>
-                            {/* Copy CSV Action */}
+                    <div className='flex items-center gap-2 flex-shrink-0'>
+                        {/* Copy CSV Action */}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={copyToCSV}
+                                    disabled={selectedIds.length === 0}
+                                    variant='outline'
+                                    size='icon'
+                                    className='rounded-full'
+                                    title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
+                                >
+                                    {isCopied ? (
+                                        <Check className='w-4 h-4 text-primary' />
+                                    ) : (
+                                        <Copy
+                                            className={selectedIds.length > 0 ? 'text-primary' : 'text-muted-foreground'}
+                                            width={18}
+                                            height={18}
+                                        />
+                                    )}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                Copy to CSV
+                            </TooltipContent>
+                        </Tooltip>
+                        <div className='h-8 w-px bg-border-border' />
+
+                        {/* Depth Control */}
+                        <div className='flex items-center gap-2 px-3 h-10 border border-border rounded-full bg-transparent'>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button
-                                        onClick={copyToCSV}
-                                        disabled={selectedIds.length === 0}
-                                        variant='outline'
-                                        size='icon'
-                                        className='rounded-full'
-                                        title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
-                                    >
-                                        {isCopied ? (
-                                            <Check className='w-4 h-4 text-green-500' />
-                                        ) : (
-                                            <Copy
-                                                className={selectedIds.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                                width={18}
-                                                height={18}
-                                            />
-                                        )}
-                                    </Button>
+                                    <input
+                                        id='depth-input'
+                                    type='number'
+                                    min='0'
+                                    max='5'
+                                    className='bg-transparent text-foreground h-full w-8 outline-none text-center font-mono text-sm'
+                                    value={depth}
+                                    onChange={handleDepthChange}
+                                />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     Copy to CSV

@@ -92,7 +92,7 @@ export default function NoteGraphSearch(
                                     label = `note: ${e.name || 'untitled'}`;
                                 }
 
-                                const nodeColor = colors?.[e.subtype] || '#4A90E2';
+                                const nodeColor = colors?.[e.subtype] || 'var(--color-primary)';
                                 console.log(
                                     `[NoteGraphSearch] Node ${e.id} (${e.subtype}): color=${nodeColor}`,
                                 );

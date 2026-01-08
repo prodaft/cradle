@@ -13,12 +13,12 @@ interface NoteMetadataProps {
  */
 export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
     return (
-        <div className='flex items-center gap-4 cradle-mono text-xs cradle-text-tertiary'>
+        <div className='flex items-center gap-4 cradle-mono text-xs text-muted-foreground'>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <span className='inline-flex items-center gap-1.5'>
                         <Clock width='16' height='16' />
-                        <span className='cradle-text-tertiary'>
+                        <span className='text-muted-foreground'>
                             {note.timestamp && formatDate(new Date(note.timestamp))}
                         </span>
                     </span>
@@ -32,7 +32,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                     <TooltipTrigger asChild>
                         <span className='inline-flex items-center gap-1.5'>
                             <User width='16' height='16' />
-                            <span className='cradle-text-secondary'>
+                            <span className='text-foreground'>
                                 {note?.author ? note.author.username : 'Unknown'}
                             </span>
                         </span>
@@ -48,7 +48,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                         <TooltipTrigger asChild>
                             <span className='inline-flex items-center gap-1.5'>
                                 <Clock width='16' height='16' />
-                                <span className='cradle-text-tertiary'>
+                                <span className='text-muted-foreground'>
                                     {note.editTimestamp &&
                                         formatDate(new Date(note.editTimestamp))}
                                 </span>
@@ -62,7 +62,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                         <TooltipTrigger asChild>
                             <span className='inline-flex items-center gap-1.5'>
                                 <User width='16' height='16' />
-                                <span className='cradle-text-secondary'>
+                                <span className='text-foreground'>
                                     {note?.editor ? note.editor.username : 'Unknown'}
                                 </span>
                             </span>
@@ -78,7 +78,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                     <TooltipTrigger asChild>
                         <span className='inline-flex items-center gap-1.5'>
                             <Link width='16' height='16' />
-                            <span className='cradle-text-tertiary'>
+                            <span className='text-muted-foreground'>
                                 {formatDate(new Date(note.lastLinked))}
                             </span>
                         </span>

@@ -10,6 +10,7 @@ import NotFound from '../../feedback/NotFound';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './Relations';
+import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Dashboard component
@@ -101,23 +102,21 @@ export default function Dashboard() {
             >
                 {contentObject == null ? (
                     <div className='flex items-center justify-center h-full'>
-                        <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                            <div className='cradle-spinner-pulse-dot'></div>
-                        </div>
+                        <Spinner className='size-10' />
                     </div>
                 ) : (
                     <div className='w-full h-full flex flex-col p-6 space-y-4'>
                         {contentObject.name && (
-                            <div className='flex justify-between items-center w-full cradle-border-b px-4 pb-4'>
+                            <div className='flex justify-between items-center w-full border-border-b px-4 pb-4'>
                                 <div>
-                                    <h1 className='text-3xl font-medium break-all cradle-text-primary cradle-mono tracking-tight'>
+                                    <h1 className='text-3xl font-medium break-all text-foreground cradle-mono tracking-tight'>
                                         {contentObject.type && (
-                                            <span className='cradle-text-tertiary text-2xl mr-2'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
+                                            <span className='text-muted-foreground text-2xl mr-2'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
                                         )}
                                         {contentObject.name}
                                     </h1>
                                     {contentObject.description && (
-                                        <p className='text-sm cradle-text-secondary mt-2 cradle-mono'>
+                                        <p className='text-sm text-foreground mt-2 cradle-mono'>
                                             {contentObject.description}
                                         </p>
                                     )}

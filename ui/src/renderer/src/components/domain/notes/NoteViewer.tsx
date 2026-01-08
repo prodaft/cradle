@@ -1,5 +1,16 @@
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import FileUploadModal from '@/components/modals/notes/FileUploadModal';
 import { useModal } from '@/contexts/ui/ModalContext';
 import { toast } from 'sonner';
@@ -84,6 +95,7 @@ export default function NoteViewer() {
     const [lineNumber, setLineNumber] = useState(0);
     const [noteOutline, setNoteOutline] = useState<HeaderNode[]>([]);
     const [lspLoaded, setLspLoaded] = useState(false);
+    const [showEditDialog, setShowEditDialog] = useState(false);
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
     const initialContentSetRef = useRef(false);
@@ -126,9 +138,13 @@ export default function NoteViewer() {
             return;
         }
 
-        toggleEditing();
-        toast.info('Double click detected. Enabling editing mode.');
+        setShowEditDialog(true);
     }, [enableEditing]);
+
+    const handleConfirmEdit = useCallback(() => {
+        setShowEditDialog(false);
+        toggleEditing();
+    }, [toggleEditing]);
 
     const smartLink = useCallback(
         async (onlyTimestamps: boolean) => {
@@ -449,15 +465,34 @@ export default function NoteViewer() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center h-full w-full py-8'>
-                <div className='animate-spin rounded-full h-16 w-16 border-b-2 border-gray-900' />
+                <div className='animate-spin rounded-full h-16 w-16 border-b-2 border-foreground' />
             </div>
         );
     }
 
     return (
         <>
+            <AlertDialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Edit Note</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Do you want to edit this note? This could be harmful.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction 
+                            onClick={handleConfirmEdit}
+                            className={cn(buttonVariants({ variant: 'destructive' }))}
+                        >
+                            Edit
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <div className='w-[100%] h-full flex flex-col'>
-                <div className='w-full cradle-border-b px-4 py-3 flex items-center justify-between'>
+                <div className='w-full border-b border-border px-4 py-3 flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
                         {!noteId?.startsWith('guide_') && note && (
                             <StatusIndicators
@@ -479,7 +514,7 @@ export default function NoteViewer() {
                                     variant='ghost'
                                     size='icon'
                                     onClick={() => toggleEditing()}
-                                    className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary cradle-border'
+                                    className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
                                     data-testid='actions-dropdown-btn'
                                 >
                                     {
@@ -525,7 +560,7 @@ export default function NoteViewer() {
 
                 {/* File Upload Section */}
                 {showFileUpload && (
-                    <div className='w-full px-4 py-2 cradle-border-b bg-gray-50 dark:bg-gray-800'>
+                    <div className='w-full px-4 py-2 border-b bg-muted'>
                         <FileInput
                             fileData={fileData}
                             setFileData={setFileData}
@@ -541,7 +576,7 @@ export default function NoteViewer() {
                     {/* Content View */}
                     {activeView === ViewMode.CONTENT && (
                         <div className='w-full h-full overflow-hidden flex flex-col'>
-                            <div className='h-full w-full pb-4 overflow-y-hidden'>
+                            <div className='h-full w-full overflow-y-hidden'>
                                 {showOutline ? (
                                     <ResizablePanelGroup
                                         direction='horizontal'
@@ -562,11 +597,11 @@ export default function NoteViewer() {
                                                 />
                                             </ScrollArea>
                                         </ResizablePanel>
-                                        <ResizableHandle className='w-[2px] cradle-border-x hover:bg-[#FF8C00] hover:bg-opacity-50 transition-colors' />
+                                        <ResizableHandle className='w-[2px] border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
                                         <ResizablePanel defaultSize={85} minSize={50}>
                                             <div
-                                                className='h-full flex flex-col border-l cradle-border relative'
+                                                className='h-full flex flex-col border-l border-border relative'
                                                 onDoubleClick={
                                                     handleEnableEditingWithConfirmation
                                                 }
@@ -619,7 +654,7 @@ export default function NoteViewer() {
                                     </ResizablePanelGroup>
                                                                 ) : (
                                                                     <div
-                                                                        className='h-full flex flex-col border-l cradle-border relative'
+                                                                        className='h-full flex flex-col border-l border-border relative'
                                                                         onDoubleClick={handleEnableEditingWithConfirmation}
                                                                     >
                                                                         {showFind && (

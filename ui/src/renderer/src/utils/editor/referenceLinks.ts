@@ -54,7 +54,7 @@ export class ReferenceLinkWidget extends WidgetType {
         // Styling to make it look like a regular link within the editor
         span.style.cursor = 'pointer';
         span.style.textDecoration = 'underline';
-        span.style.color = 'var(--cradle-link-color, #4a9eff)'; // Fallback color
+        span.style.color = 'var(--cradle-link-color, hsl(var(--primary)))';
 
         span.addEventListener('click', (e) => {
             e.preventDefault();

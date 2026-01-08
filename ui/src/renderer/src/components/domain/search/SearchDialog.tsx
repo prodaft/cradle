@@ -19,6 +19,7 @@ import { Search, Xmark } from 'iconoir-react';
 import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';
+import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Search result from API
@@ -338,9 +339,7 @@ export default function SearchDialog({
                         <CommandList className='max-h-none'>
                             {isLoading ? (
                                 <div className='flex items-center justify-center py-12'>
-                                    <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                                        <div className='cradle-spinner-pulse-dot'></div>
-                                    </div>
+                                    <Spinner className='size-10' />
                                 </div>
                             ) : results && results.length > 0 ? (
                                 <CommandGroup>
@@ -387,8 +386,8 @@ export default function SearchDialog({
 
                 {/* Footer with Pagination */}
                 {results && results.length > 0 && (
-                    <div className='px-4 py-3 cradle-border-t cradle-bg-secondary flex items-center justify-between'>
-                        <span className='text-xs text-cradle-text-muted whitespace-nowrap'>
+                    <div className='px-4 py-3 border-border-t bg-secondary flex items-center justify-between'>
+                        <span className='text-xs text-text-muted-foreground whitespace-nowrap'>
                             Page {page} of {totalPages}
                         </span>
                         <Pagination

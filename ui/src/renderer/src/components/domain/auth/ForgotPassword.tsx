@@ -1,11 +1,24 @@
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
-import { Form, FormInput } from '@components/forms';
-import { useWindowSize } from '@uidotdev/usehooks';
-import { Undo } from 'iconoir-react';
+import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import Logo from '@components/base/Logo/Logo';
+import { Undo, WarningCircle } from 'iconoir-react';
 import { Link, useLocation } from 'react-router-dom';
 import * as Yup from 'yup';
+import { Button } from '@/components/ui/button';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldSeparator,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { cn } from '@/lib/utils';
+import { useForm } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { useState } from 'react';
 
 interface FormData {
     email: string;
@@ -19,111 +32,169 @@ const forgotPasswordSchema = Yup.object().shape({
  * ForgotPassword component - renders the form for a user to get a forgot password email.
  */
 export default function ForgotPassword() {
-    const windowSize = useWindowSize();
     const location = useLocation();
     const { usersApi } = useApi();
+    const { navigate } = useCradleNavigate();
+    const [alert, setAlert] = useState<{
+        show: boolean;
+        message: string;
+        color: string;
+    }>({
+        show: false,
+        message: '',
+        color: 'red',
+    });
 
-    const handleSubmit = async (data: FormData) => {
-        await usersApi.usersResetPasswordCreate({
-            passwordResetRequestRequest: {
-                email: data.email,
-            },
-        });
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<FormData>({
+        resolver: yupResolver(forgotPasswordSchema),
+        defaultValues: {
+            email: '',
+        },
+    });
+
+    const onSubmit = async (data: FormData) => {
+        try {
+            await usersApi.usersResetPasswordCreate({
+                passwordResetRequestRequest: {
+                    email: data.email,
+                },
+            });
+            toast.success('Password change email sent to your inbox!');
+            setAlert({
+                show: false,
+                message: '',
+                color: 'red',
+            });
+        } catch (error: any) {
+            setAlert({
+                show: true,
+                message: error?.message || 'Failed to send reset email',
+                color: 'red',
+            });
+        }
     };
 
     return (
-        <div className='min-h-screen overflow-y-auto cradle-bg-primary'>
-            <div className='flex min-h-screen'>
-                {/* Left Side - Branding */}
-                <div className='hidden lg:flex lg:w-1/2 cradle-bg-secondary relative overflow-hidden'>
-                    <div className='absolute inset-0 cradle-grid-bg opacity-30'></div>
-
-                    <div className='relative z-10 flex flex-col justify-center items-start px-16 py-12'>
-                        <h1 className='text-4xl font-bold cradle-text-primary cradle-mono mb-4 tracking-tight'>
-                            Password Recovery
-                        </h1>
-                        <p className='text-lg cradle-text-tertiary cradle-mono leading-relaxed max-w-md'>
-                            Reset your password to regain access to your account.
-                        </p>
-                    </div>
+        <div className='grid min-h-svh lg:grid-cols-2'>
+            {/* Left Column - Form */}
+            <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
+                {/* Branding */}
+                <div className='flex justify-between items-center gap-2'>
+                    <a href='#' className='flex items-center gap-2 font-medium'>
+                        <Logo text={true} width='120px' />
+                    </a>
+                    <Button
+                        onClick={() => navigate('/login', { replace: true })}
+                        variant='ghost'
+                        size='icon-sm'
+                        className='p-2 rounded-lg'
+                        data-testid='back-button'
+                        title='Back to Login'
+                    >
+                        <Undo width={18} height={18} />
+                    </Button>
                 </div>
 
-                {/* Right Side - Password Reset Form */}
-                <div className='flex-1 flex items-center justify-center px-4 py-12'>
-                    <div className='w-full max-w-md'>
-                        <div className='cradle-border cradle-bg-elevated'>
-                            <div className='cradle-card-header cradle-border-b'>
-                                <span className='cradle-mono text-xs tracking-widest'>
-                                    PASSWORD RECOVERY
-                                </span>
-                                <div className='flex items-center gap-2 -mr-1.5'>
-                                    <Link
-                                        to='/login'
-                                        replace={true}
-                                        state={location.state}
-                                    >
-                                        <Button
-                                            variant='ghost'
-                                            size='icon-sm'
-                                            className='p-2 rounded-lg'
-                                            data-testid='back-button'
-                                            title='Back to Login'
-                                        >
-                                            <Undo width={18} height={18} />
-                                        </Button>
-                                    </Link>
+                {/* Form Container */}
+                <div className='flex flex-1 items-center justify-center'>
+                    <div className='w-full max-w-xs'>
+                        <form
+                            className={cn('flex flex-col gap-6')}
+                            onSubmit={handleSubmit(onSubmit)}
+                        >
+                            <FieldGroup>
+                                <div className='flex flex-col items-center gap-1 text-center'>
+                                    <h1 className='text-2xl font-bold'>
+                                        Reset your password
+                                    </h1>
+                                    <p className='text-muted-foreground text-sm text-balance'>
+                                        Enter your email to receive password reset
+                                        instructions
+                                    </p>
                                 </div>
-                            </div>
-
-                            <div className='p-8'>
-                                <p className='text-sm cradle-text-secondary mb-6 cradle-mono'>
-                                    Enter your email to receive password reset
-                                    instructions.
-                                </p>
-
-                                <Form<FormData>
-                                    schema={forgotPasswordSchema}
-                                    defaultValues={{ email: '' }}
-                                    onSubmit={handleSubmit}
-                                    successMessage='Password change email sent to your inbox!'
-                                    className='space-y-5'
-                                >
-                                    <FormInput<FormData>
-                                        name='email'
-                                        label='Email'
+                                <Field>
+                                    <FieldLabel htmlFor='email'>Email</FieldLabel>
+                                    <Input
+                                        id='email'
                                         type='email'
+                                        {...register('email')}
+                                        aria-invalid={errors.email ? 'true' : 'false'}
+                                        autoFocus={true}
+                                        required
                                     />
+                                    {errors.email && (
+                                        <FieldDescription className='text-destructive'>
+                                            {errors.email.message}
+                                        </FieldDescription>
+                                    )}
+                                </Field>
+                                {alert.show && (
+                                    <Alert
+                                        variant={
+                                            alert.color === 'red' ||
+                                            alert.color === 'error'
+                                                ? 'destructive'
+                                                : 'default'
+                                        }
+                                    >
+                                        <WarningCircle />
+                                        <AlertDescription>
+                                            {alert.message}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                                <Field>
                                     <Button
                                         type='submit'
                                         variant='default'
-                                        data-testid='login-register-button'
+                                        size='default'
                                         className='w-full'
+                                        disabled={isSubmitting}
+                                        data-testid='login-register-button'
                                     >
-                                        Send Reset Link
+                                        {isSubmitting
+                                            ? 'Sending...'
+                                            : 'Send Reset Link'}
                                     </Button>
-                                </Form>
+                                </Field>
+                                <FieldSeparator />
+                                <Field>
+                                    <FieldDescription className='text-center'>
+                                        Remember your password?{' '}
+                                        <Link
+                                            to='/login'
+                                            className='underline underline-offset-4'
+                                            state={location.state}
+                                            replace={true}
+                                        >
+                                            Sign in
+                                        </Link>
+                                    </FieldDescription>
+                                </Field>
+                            </FieldGroup>
+                        </form>
 
-                                {/* Footer Link */}
-                                <Separator className="mt-8" />
-                                <div className='text-center text-xs cradle-mono mt-6'>
-                                    <Link
-                                        to='/login'
-                                        className='cradle-text-tertiary hover:text-cradle2 uppercase tracking-wider'
-                                        replace={true}
-                                    >
-                                        Back to Login
-                                    </Link>
-                                </div>
-                            </div>
-                        </div>
-
+                        {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
-                            <span className='text-xs cradle-text-muted cradle-mono tracking-wider'>
+                            <span className='text-xs text-muted-foreground font-mono tracking-wider'>
                                 v2.10.2-beta.a070af1b
                             </span>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Right Column - Image */}
+            <div className='bg-muted relative hidden lg:block'>
+                <img
+                    src='/auth-image.jpeg'
+                    alt='Image'
+                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale'
+                />
             </div>
         </div>
     );

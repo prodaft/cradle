@@ -327,7 +327,7 @@ export default function Reports() {
                             viewBox='0 0 24 24'
                             fill='none'
                             xmlns='http://www.w3.org/2000/svg'
-                            className='text-green-500'
+                            className='text-primary'
                         >
                             <path
                                 d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
@@ -341,7 +341,7 @@ export default function Reports() {
                 case 'working':
                     return (
                         <InfoCircleSolid
-                            className='text-blue-500'
+                            className='text-primary'
                             width='18'
                             height='18'
                         />
@@ -349,7 +349,7 @@ export default function Reports() {
                 case 'warning':
                     return (
                         <WarningTriangleSolid
-                            className='text-amber-500'
+                            className='text-muted-foreground'
                             width='18'
                             height='18'
                         />
@@ -357,7 +357,7 @@ export default function Reports() {
                 case 'error':
                     return (
                         <WarningCircleSolid
-                            className='text-red-500'
+                            className='text-destructive'
                             width='18'
                             height='18'
                         />
@@ -368,7 +368,7 @@ export default function Reports() {
         })();
 
         const tooltipContent = errorMessage || capitalizeString(status);
-        const tooltipColorClass = status === 'error' ? 'bg-red-500 text-white' : status === 'warning' ? 'bg-yellow-500 text-white' : '';
+        const tooltipColorClass = status === 'error' ? 'bg-destructive text-destructive-foreground' : status === 'warning' ? 'bg-accent text-accent-foreground' : '';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
@@ -432,7 +432,7 @@ export default function Reports() {
                     <span>Title</span>
                 ),
                 cell: ({ row }) => (
-                    <div className='cradle-text-primary cursor-pointer' onClick={async () => {
+                    <div className='text-foreground cursor-pointer' onClick={async () => {
                         let details = await execute(() => reportsApi.reportsRetrieve({ id: row.original.id!, downloadUrl: false }));
                         if (details.reportUrl) {
                             window.open(details.reportUrl, '_blank');
@@ -456,7 +456,7 @@ export default function Reports() {
                     <DataTableColumnHeader column={column} title="Strategy" />
                 ),
                 cell: ({ row }) => (
-                    <div className='cradle-text-secondary'>
+                    <div className='text-foreground'>
                         {capitalizeString(row.original.strategy || 'N/A')}
                     </div>
                 ),
@@ -468,7 +468,7 @@ export default function Reports() {
                     <DataTableColumnHeader column={column} title="Anonymized" />
                 ),
                 cell: ({ row }) => (
-                    <div className='cradle-text-secondary'>
+                    <div className='text-foreground'>
                         {row.original.anonymized ? 'Yes' : 'No'}
                     </div>
                 ),
@@ -482,13 +482,13 @@ export default function Reports() {
                         <div className="flex items-center gap-2">
                             <DataTableColumnHeader column={column} title="Created At" />
                             {(filterValue?.from && filterValue?.to) && (
-                                <span className='text-xs text-orange-600 dark:text-orange-400'>●</span>
+                                <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
                     );
                 },
                 cell: ({ row }) => (
-                    <div className='cradle-text-secondary'>
+                    <div className='text-foreground'>
                         {formatDate(new Date(row.original.createdAt || ''))}
                     </div>
                 ),

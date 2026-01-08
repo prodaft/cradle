@@ -40,7 +40,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     return (
         <div className='ml-4'>
             <div
-                className={`flex items-center py-1 rounded cursor-pointer hover:text-cradle-accent-primary`}
+                className={`flex items-center py-1 rounded cursor-pointer hover:text-border-primary`}
                 onClick={handleNodeClick}
             >
                 {hasChildren ? (
@@ -48,37 +48,37 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                         variant='ghost'
                         size='icon-sm'
                         onClick={toggleExpand}
-                        className='w-4 h-4 flex items-center justify-center mr-2 text-cradle2 p-0'
+                        className='w-4 h-4 flex items-center justify-center mr-2 text-primary p-0'
                         title={expanded ? 'Collapse' : 'Expand'}
                     >
                         {expanded ? (
                             <NavArrowRight
-                                className='text-cradle2'
+                                className='text-primary'
                                 width='14'
                                 height='14'
                             />
                         ) : (
                             <NavArrowDown
-                                className='text-cradle2'
+                                className='text-primary'
                                 width='14'
                                 height='14'
                             />
                         )}
                     </Button>
                 ) : (
-                    <span className='w-4 flex items-center justify-center mr-2 text-cradle2'>
+                    <span className='w-4 flex items-center justify-center mr-2 text-primary'>
                         #
                     </span>
                 )}
                 <span
-                    className={`font-medium ${isCurrent ? 'underline decoration-cradle-accent-primary' : ''}`}
+                    className={`font-medium ${isCurrent ? 'underline decoration-border-primary' : ''}`}
                 >
                     {nodeData.nodeName}
                 </span>
             </div>
 
             {expanded && hasChildren && (
-                <div className='border-l border-gray-600 pl-1 ml-2'>
+                <div className='border-l border-border pl-1 ml-2'>
                     {nodeData.children!.map((child, index) => (
                         <React.Fragment key={`${index}_${child.nodeName}`}>
                             {showSeparators && child.separatorBefore && (
@@ -113,7 +113,7 @@ const NoteOutline: React.FC<NoteOutlineProps> = ({
 }) => {
     return (
         <div className='pt-3'>
-            <div className='text-gray-300 text-base'>
+            <div className='text-muted-foreground text-base'>
                 {data.map((node, index) => (
                     <React.Fragment key={`${index}_${node.nodeName}`}>
                         {showSeparators && node.separatorBefore && (

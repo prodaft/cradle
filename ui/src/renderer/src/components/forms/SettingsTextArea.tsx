@@ -67,15 +67,15 @@ const SettingsTextArea = forwardRef<HTMLTextAreaElement, SettingsTextAreaProps>(
             return (
                 <div className='flex items-start justify-between gap-4 py-2'>
                     <div className='flex-1'>
-                        <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                        <label className='text-sm text-muted-foreground block mb-0.5'>
                             {label}
-                            {required && <span className='text-red-500 ml-1'>*</span>}
+                            {required && <span className='text-destructive ml-1'>*</span>}
                         </label>
                         {description && (
-                            <p className='text-sm cradle-text-muted'>{description}</p>
+                            <p className='text-sm text-muted-foreground'>{description}</p>
                         )}
                         {errorMessage && (
-                            <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+                            <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
                         )}
                     </div>
                     <div className='w-auto flex-1'>
@@ -84,7 +84,7 @@ const SettingsTextArea = forwardRef<HTMLTextAreaElement, SettingsTextAreaProps>(
                                 ref={ref}
                                 rows={rows}
                                 className={`cradle-input w-full text-sm rounded ${
-                                    errorMessage ? 'border-red-500' : ''
+                                    errorMessage ? 'border-destructive' : ''
                                 } ${className || ''}`}
                                 aria-invalid={Boolean(errorMessage)}
                                 aria-describedby={
@@ -101,19 +101,19 @@ const SettingsTextArea = forwardRef<HTMLTextAreaElement, SettingsTextAreaProps>(
         // Vertical layout (stacked)
         return (
             <div className='py-2 w-full'>
-                <label className='text-sm cradle-text-tertiary block mb-0.5'>
+                <label className='text-sm text-muted-foreground block mb-0.5'>
                     {label}
-                    {required && <span className='text-red-500 ml-1'>*</span>}
+                    {required && <span className='text-destructive ml-1'>*</span>}
                 </label>
                 {description && (
-                    <p className='text-sm cradle-text-muted mb-2'>{description}</p>
+                    <p className='text-sm text-muted-foreground mb-2'>{description}</p>
                 )}
                 {children || (
                     <textarea
                         ref={ref}
                         rows={rows}
                         className={`cradle-input w-full text-sm rounded ${
-                            errorMessage ? 'border-red-500' : ''
+                            errorMessage ? 'border-destructive' : ''
                         } ${className || ''}`}
                         aria-invalid={Boolean(errorMessage)}
                         aria-describedby={
@@ -123,7 +123,7 @@ const SettingsTextArea = forwardRef<HTMLTextAreaElement, SettingsTextAreaProps>(
                     />
                 )}
                 {errorMessage && (
-                    <p className='text-sm text-red-500 mt-1'>{errorMessage}</p>
+                    <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
                 )}
             </div>
         );

@@ -29,7 +29,7 @@ import {
 
 export function NavMain({
   items,
-  showLabel = true,
+  showLabel = false,
   label = "Navigation",
 }: {
   items: {

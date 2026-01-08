@@ -62,7 +62,7 @@ export default function ActionConfirmationModal({
             {confirmText && (
                 <div className='grid w-full items-center gap-3 mb-5'>
                     <Label htmlFor='confirm-input'>
-                        Type "<span className='text-cradle-accent-primary'>{confirmText}</span>" to confirm
+                        Type "<span className='text-border-primary'>{confirmText}</span>" to confirm
                     </Label>
                     <Input
                         id='confirm-input'

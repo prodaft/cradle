@@ -380,16 +380,16 @@ export default function EnrichmentRequestModal({
                         <Label>
                             Selected Notes ({selectedNoteIds.size})
                         </Label>
-                        <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
+                        <ul className='border border-border-border rounded-lg max-h-48 overflow-y-auto'>
                             {notesList.map((note) => {
                                 const isSelected = selectedNoteIds.has(note.id);
                                 return (
                                     <li
                                         key={note.id}
-                                        className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${
+                                        className={`flex items-center gap-3 px-4 py-2 border-b border-border-border last:border-b-0 transition-colors ${
                                             isSelected
-                                                ? 'hover:bg-cradle-bg-secondary/50'
-                                                : 'bg-cradle-bg-secondary/10'
+                                                ? 'hover:bg-bg-secondary/50'
+                                                : 'bg-bg-secondary/10'
                                         }`}
                                     >
                                         <input
@@ -403,8 +403,8 @@ export default function EnrichmentRequestModal({
                                         <span
                                             className={`text-sm truncate flex-1 ${
                                                 isSelected
-                                                    ? 'text-cradle-text-primary'
-                                                    : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
+                                                    ? 'text-text-foreground'
+                                                    : 'text-text-muted-foreground line-through decoration-text-muted-foreground'
                                             }`}
                                         >
                                             {note.title || 'Untitled'}
@@ -419,7 +419,7 @@ export default function EnrichmentRequestModal({
                 {/* Title */}
                 <div className='grid w-full items-center gap-3 mb-5'>
                     <Label htmlFor='title'>
-                        Title <span className='text-red-500'>*</span>
+                        Title <span className='text-destructive'>*</span>
                     </Label>
                     <Input
                         id='title'
@@ -435,7 +435,7 @@ export default function EnrichmentRequestModal({
                 {/* Enrichment Techniques */}
                 <div className='grid w-full items-center gap-3 mb-5'>
                     <Label htmlFor='enricherNames'>
-                        Enrichment Techniques <span className='text-red-500'>*</span>
+                        Enrichment Techniques <span className='text-destructive'>*</span>
                     </Label>
                     <ShadcnSelect
                         isMulti={true}
@@ -443,7 +443,7 @@ export default function EnrichmentRequestModal({
                         placeholder='Select enrichment techniques...'
                         onMultiChange={handleEnricherChange}
                     />
-                    <p className='text-xs text-cradle-text-tertiary mt-1'>
+                    <p className='text-xs text-text-muted-foreground mt-1'>
                         Select one or more enrichment techniques to apply
                     </p>
                 </div>
@@ -451,7 +451,7 @@ export default function EnrichmentRequestModal({
                 {/* Entities */}
                 <div className='grid w-full items-center gap-3 mb-5'>
                     <Label htmlFor='entity'>
-                        Entities <span className='text-red-500'>*</span>
+                        Entities <span className='text-destructive'>*</span>
                     </Label>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -467,7 +467,7 @@ export default function EnrichmentRequestModal({
                             </div>
                         </TooltipTrigger>
                         {selectedNoteIds.size > 0 && (
-                            <TooltipContent className='bg-blue-500 text-white'>
+                            <TooltipContent className='bg-primary text-primary-foreground'>
                                 Entities will be selected from the selected notes
                             </TooltipContent>
                         )}
@@ -477,7 +477,7 @@ export default function EnrichmentRequestModal({
                 {/* Request Artifacts */}
                 <div className='grid w-full items-center gap-3 mb-5'>
                     <Label htmlFor='request'>
-                        Request Artifacts <span className='text-red-500'>*</span>
+                        Request Artifacts <span className='text-destructive'>*</span>
                     </Label>
                     <textarea
                         id='request'

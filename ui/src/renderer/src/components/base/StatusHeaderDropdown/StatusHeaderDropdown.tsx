@@ -43,9 +43,9 @@ export default function StatusHeaderDropdown({
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'all':
-                return <div className='w-[18px] h-[18px] rounded-full bg-gray-500' />;
+                return <div className='w-[18px] h-[18px] rounded-full bg-muted' />;
             case 'fleeting':
-                return <DesignNib className='text-[#FF8C00]' width='18' height='18' />;
+                return <DesignNib className='text-primary' width='18' height='18' />;
             case 'healthy':
             case 'done':
                 return (
@@ -55,7 +55,7 @@ export default function StatusHeaderDropdown({
                         viewBox='0 0 24 24'
                         fill='none'
                         xmlns='http://www.w3.org/2000/svg'
-                        className='text-green-500'
+                        className='text-primary'
                     >
                         <path
                             d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
@@ -70,7 +70,7 @@ export default function StatusHeaderDropdown({
             case 'waiting':
                 return (
                     <WarningTriangleSolid
-                        className='text-amber-500'
+                        className='text-muted-foreground'
                         width='18'
                         height='18'
                     />
@@ -79,7 +79,7 @@ export default function StatusHeaderDropdown({
             case 'error':
                 return (
                     <WarningCircleSolid
-                        className='text-red-500'
+                        className='text-destructive'
                         width='18'
                         height='18'
                     />
@@ -88,10 +88,10 @@ export default function StatusHeaderDropdown({
             case 'working':
             case 'info':
                 return (
-                    <InfoCircleSolid className='text-blue-500' width='18' height='18' />
+                    <InfoCircleSolid className='text-primary' width='18' height='18' />
                 );
             default:
-                return <div className='w-[18px] h-[18px] rounded-full bg-gray-500' />;
+                return <div className='w-[18px] h-[18px] rounded-full bg-muted' />;
         }
     };
 
@@ -135,7 +135,7 @@ export default function StatusHeaderDropdown({
         <Button
           variant='ghost'
           size='icon-sm'
-          className='inline-flex items-center justify-center hover:bg-cradle-bg-secondary hover:text-cradle-text-primary'
+          className='inline-flex items-center justify-center hover:bg-bg-secondary hover:text-text-foreground'
         >
           {getStatusIcon(currentStatus)}
         </Button>
@@ -147,7 +147,7 @@ export default function StatusHeaderDropdown({
               <TooltipTrigger asChild>
                 <DropdownMenuRadioItem
                   value={statusOption}
-                  className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-cradle-bg-secondary ring-1 ring-cradle-accent-primary' : ''}`}
+                  className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-bg-secondary ring-1 ring-border-primary' : ''}`}
                 >
                   {getStatusIcon(statusOption)}
                 </DropdownMenuRadioItem>

@@ -132,16 +132,16 @@ export default function ReportGenerationModal({
                     <Label>
                         Selected Notes ({selectedIds.size})
                     </Label>
-                    <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
+                    <ul className='border border-border-border rounded-lg max-h-48 overflow-y-auto'>
                         {targets.map((note) => {
                             const isSelected = selectedIds.has(note.id);
                             return (
                                 <li
                                     key={note.id}
-                                    className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${
+                                    className={`flex items-center gap-3 px-4 py-2 border-b border-border-border last:border-b-0 transition-colors ${
                                         isSelected
-                                            ? 'hover:bg-cradle-bg-secondary/50'
-                                            : 'bg-cradle-bg-secondary/10'
+                                            ? 'hover:bg-bg-secondary/50'
+                                            : 'bg-bg-secondary/10'
                                     }`}
                                 >
                                     <input
@@ -153,8 +153,8 @@ export default function ReportGenerationModal({
                                     <span
                                         className={`text-sm truncate flex-1 ${
                                             isSelected
-                                                ? 'text-cradle-text-primary'
-                                                : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
+                                                ? 'text-text-foreground'
+                                                : 'text-text-muted-foreground line-through decoration-text-muted-foreground'
                                         }`}
                                     >
                                         {note.title || 'Untitled'}

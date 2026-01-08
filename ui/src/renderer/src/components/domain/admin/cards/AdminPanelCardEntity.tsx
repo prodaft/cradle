@@ -64,7 +64,7 @@ export default function AdminPanelCardEntity({
         >
             <CardHeader>
                 <CardTitle>
-                    <span className='text-cradle-text-muted mr-2'>{typename}:</span>
+                    <span className='text-text-muted-foreground mr-2'>{typename}:</span>
                     {name}
                 </CardTitle>
                 <CardAction>

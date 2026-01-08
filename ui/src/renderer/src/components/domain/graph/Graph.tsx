@@ -1,8 +1,10 @@
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Cosmograph } from '@cosmograph/react';
 import { PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';
+import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
 
@@ -225,7 +227,7 @@ export default function GraphViewer({
             const point: any = {
                 ...node,
                 _index: index,
-                _color: node.color || '#4A90E2',
+                _color: node.color || 'var(--color-primary)',
                 _size: normalize(node.degree || 1, 1, 60),
                 _label: node.label || node.id,
                 x: position?.x ?? 512,
@@ -399,13 +401,7 @@ export default function GraphViewer({
 
     return (
         <div
-            style={{
-                width: '100%',
-                height: '100%',
-                backgroundColor: isDarkMode ? '#151515' : '#f9f9f9',
-                position: 'relative',
-                overflow: 'hidden',
-            }}
+            className='w-full h-full bg-background relative overflow-hidden'
         >
             {hasValidData ? (
                 <>
@@ -419,7 +415,7 @@ export default function GraphViewer({
                                 size='icon'
                                 className={`p-1.5 w-8 h-8 ${
                                     activePanel === 'explorer'
-                                        ? 'border-cradle-accent-primary' 
+                                        ? 'border-primary' 
                                         : ''
                                 }`}
                                 title='Toggle explorer panel'
@@ -437,7 +433,7 @@ export default function GraphViewer({
                                 size='icon'
                                 className={`p-1.5 w-8 h-8 ${
                                     activePanel === 'display'
-                                        ? 'border-cradle-accent-primary' 
+                                        ? 'border-primary' 
                                         : ''
                                 }`}
                                 title='Toggle display panel'
@@ -515,120 +511,96 @@ export default function GraphViewer({
                             </svg>
                         </Button>
                         
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            className='p-1.5 w-8 h-8'
-                            title='Zoom in'
-                            onClick={() => {
-                                try {
-                                    if (cosmographRef.current) {
-                                        // Try multiple zoom methods
-                                        if (
-                                            typeof cosmographRef.current
-                                                .setZoomLevel === 'function'
-                                        ) {
-                                            const currentZoom =
-                                                cosmographRef.current.getZoomLevel?.() ||
-                                                1;
-                                            cosmographRef.current.setZoomLevel(
-                                                currentZoom + 0.2,
-                                                250,
-                                            );
-                                        } else if (
-                                            typeof cosmographRef.current.setZoom ===
-                                            'function'
-                                        ) {
-                                            const currentZoom =
-                                                cosmographRef.current.getZoom?.() || 1;
-                                            cosmographRef.current.setZoom(
-                                                currentZoom * 1.2,
-                                            );
-                                        } else if (
-                                            typeof cosmographRef.current.zoomBy ===
-                                            'function'
-                                        ) {
-                                            cosmographRef.current.zoomBy(1.2);
-                                        }
-                                    }
-                                } catch (error) {
-                                    console.error('[Graph] Error zooming in:', error);
-                                }
-                            }}
+                        <ButtonGroup
+                            orientation="vertical"
+                            aria-label="Media controls"
+                            className="h-fit"
                         >
-                            <svg
-                                width='16'
-                                height='16'
-                                viewBox='0 0 24 24'
-                                stroke='currentColor'
-                                xmlns='http://www.w3.org/2000/svg'
-                            >
-                                <path
-                                    d='M4 12H20M12 4V20'
-                                    strokeWidth='2'
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                ></path>
-                            </svg>
-                        </Button>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            className='p-1.5 w-8 h-8'
-                            title='Zoom out'
-                            onClick={() => {
-                                try {
-                                    if (cosmographRef.current) {
-                                        // Try multiple zoom methods
-                                        if (
-                                            typeof cosmographRef.current
-                                                .setZoomLevel === 'function'
-                                        ) {
-                                            const currentZoom =
-                                                cosmographRef.current.getZoomLevel?.() ||
-                                                1;
-                                            cosmographRef.current.setZoomLevel(
-                                                Math.max(0.1, currentZoom - 0.2),
-                                                250,
-                                            );
-                                        } else if (
-                                            typeof cosmographRef.current.setZoom ===
-                                            'function'
-                                        ) {
-                                            const currentZoom =
-                                                cosmographRef.current.getZoom?.() || 1;
-                                            cosmographRef.current.setZoom(
-                                                currentZoom * 0.8,
-                                            );
-                                        } else if (
-                                            typeof cosmographRef.current.zoomBy ===
-                                            'function'
-                                        ) {
-                                            cosmographRef.current.zoomBy(0.8);
+                            <Button
+                                variant="outline"
+                                size="icon-sm"
+                                title="Zoom in"
+                                onClick={() => {
+                                    try {
+                                        if (cosmographRef.current) {
+                                            // Try multiple zoom methods
+                                            if (
+                                                typeof cosmographRef.current
+                                                    .setZoomLevel === 'function'
+                                            ) {
+                                                const currentZoom =
+                                                    cosmographRef.current.getZoomLevel?.() ||
+                                                    1;
+                                                cosmographRef.current.setZoomLevel(
+                                                    currentZoom + 0.2,
+                                                    250,
+                                                );
+                                            } else if (
+                                                typeof cosmographRef.current.setZoom ===
+                                                'function'
+                                            ) {
+                                                const currentZoom =
+                                                    cosmographRef.current.getZoom?.() || 1;
+                                                cosmographRef.current.setZoom(
+                                                    currentZoom * 1.2,
+                                                );
+                                            } else if (
+                                                typeof cosmographRef.current.zoomBy ===
+                                                'function'
+                                            ) {
+                                                cosmographRef.current.zoomBy(1.2);
+                                            }
                                         }
+                                    } catch (error) {
+                                        console.error('[Graph] Error zooming in:', error);
                                     }
-                                } catch (error) {
-                                    console.error('[Graph] Error zooming out:', error);
-                                }
-                            }}
-                        >
-                            <svg
-                                width='16'
-                                height='16'
-                                viewBox='0 0 24 24'
-                                stroke='currentColor'
-                                xmlns='http://www.w3.org/2000/svg'
+                                }}
                             >
-                                <path
-                                    d='M4 12H20'
-                                    strokeWidth='2'
-                                    strokeLinecap='round'
-                                    strokeLinejoin='round'
-                                ></path>
-                            </svg>
-                        </Button>
+                                <PlusIcon />
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="icon-sm"
+                                title="Zoom out"
+                                onClick={() => {
+                                    try {
+                                        if (cosmographRef.current) {
+                                            // Try multiple zoom methods
+                                            if (
+                                                typeof cosmographRef.current
+                                                    .setZoomLevel === 'function'
+                                            ) {
+                                                const currentZoom =
+                                                    cosmographRef.current.getZoomLevel?.() ||
+                                                    1;
+                                                cosmographRef.current.setZoomLevel(
+                                                    Math.max(0.1, currentZoom - 0.2),
+                                                    250,
+                                                );
+                                            } else if (
+                                                typeof cosmographRef.current.setZoom ===
+                                                'function'
+                                            ) {
+                                                const currentZoom =
+                                                    cosmographRef.current.getZoom?.() || 1;
+                                                cosmographRef.current.setZoom(
+                                                    currentZoom * 0.8,
+                                                );
+                                            } else if (
+                                                typeof cosmographRef.current.zoomBy ===
+                                                'function'
+                                            ) {
+                                                cosmographRef.current.zoomBy(0.8);
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.error('[Graph] Error zooming out:', error);
+                                    }
+                                }}
+                            >
+                                <MinusIcon />
+                            </Button>
+                        </ButtonGroup>
                     </div>
                     <Cosmograph
                         ref={cosmographRef}
@@ -645,7 +617,7 @@ export default function GraphViewer({
                         linkTargetBy='target'
                         linkSourceIndexBy='_sourceIndex'
                         linkTargetIndexBy='_targetIndex'
-                        backgroundColor={isDarkMode ? '#151515' : '#f9f9f9'}
+                        backgroundColor='var(--background)'
                         pointGreyoutOpacity={0}
                         pointSizeRange={[
                             15 * (config.nodeRadiusCoefficient ?? 1),
@@ -656,8 +628,8 @@ export default function GraphViewer({
                         enableSimulation={false}
                         fitViewOnInit={true}
                         fitViewDelay={250}
-                        linkColor='#999999'
-                        focusedPointRingColor='#f68d2e'
+                        linkColor='var(--color-muted-foreground)'
+                        focusedPointRingColor='var(--color-primary)'
                         linkWidthRange={[
                             4 * (config.linkWidthCoefficient ?? 1),
                             4 * (config.linkWidthCoefficient ?? 1),
@@ -671,7 +643,7 @@ export default function GraphViewer({
                     />
                 </>
             ) : (
-                <div className='flex items-center justify-center h-full text-gray-500'>
+                <div className='flex items-center justify-center h-full text-muted-foreground'>
                     <div className='text-center'>
                         <p className='text-lg mb-2'>No graph data available</p>
                         <p className='text-sm'>Add nodes to visualize the graph</p>

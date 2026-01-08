@@ -73,11 +73,10 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                             {row.original.entities?.slice(0, 3).map((entity) => (
                                 <span
                                     key={entity.name}
-                                    className='badge badge-xs px-1 text-white'
-                                    style={{
-                                        backgroundColor:
-                                            entity.color || '#ccc',
-                                    }}
+                                    className={`badge badge-xs px-1 text-primary-foreground ${!entity.color ? 'bg-muted' : ''}`}
+                                    style={entity.color ? {
+                                        backgroundColor: entity.color,
+                                    } : undefined}
                                 >
                                     {entity.name}
                                 </span>
@@ -110,7 +109,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <span
-                                        className='cursor-pointer hover:bg-zinc-400 hover:dark:bg-zinc-800 px-1 rounded'
+                                        className='cursor-pointer hover:bg-muted px-1 rounded'
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             copyToClipboard(row.original.sha256Hash!);
@@ -157,7 +156,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                         onClick={async () =>
                                             await handleDownload(file)
                                         }
-                                        className='text-green-600 hover:text-green-500'
+                                        className='text-primary hover:text-primary/80'
                                         title='Download'
                                     >
                                         <Download

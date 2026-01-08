@@ -59,7 +59,7 @@ export default function FormTextArea<TFieldValues extends FieldValues = FieldVal
                 disabled={disabled}
                 rows={rows}
                 className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${resizeClass} ${
-                    errorMessage ? 'border-red-500 focus:ring-red-500' : ''
+                    errorMessage ? 'border-destructive focus:ring-destructive' : ''
                 }`}
                 aria-invalid={Boolean(errorMessage)}
                 aria-describedby={errorMessage ? `${name}-error` : undefined}

@@ -72,19 +72,19 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                 )}
             </CardHeader>
             <CardContent>
-                <div className='text-cradle-text-secondary text-sm space-y-1 mb-2'>
+                <div className='text-foreground text-sm space-y-1 mb-2'>
                     {Object.entries(cardDetails).map(([key, value]) => (
                         <div key={key} className='items-start gap-2'>
-                            <strong className='text-cradle-accent-primary mr-1'>{key}:</strong>
+                            <strong className='text-foreground mr-1'>{key}:</strong>
                             {value}
                         </div>
                     ))}
                 </div>
-                <div className='text-cradle-text-secondary text-sm space-y-1 -mt-1 mb-2'>
+                <div className='text-foreground text-sm space-y-1 -mt-1 mb-2'>
                     <InfoRow label='Entity 1'>
                         <span
-                            className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
-                            style={{ color: relation.e1?.color || '#FF8C00' }}
+                            className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e1?.color ? 'text-primary' : ''}`}
+                            style={relation.e1?.color ? { color: relation.e1.color } : undefined}
                             onClick={handleEntryClick(
                                 relation.e1?.name || '',
                                 relation.e1?.subtype || '',
@@ -95,8 +95,8 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                     </InfoRow>
                     <InfoRow label='Entity 2'>
                         <span
-                            className='underline cursor-pointer px-1 py-0.5 rounded hover:bg-cradle-bg-secondary hover:text-cradle-text-primary transition-colors'
-                            style={{ color: relation.e2?.color || '#FF8C00' }}
+                            className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e2?.color ? 'text-primary' : ''}`}
+                            style={relation.e2?.color ? { color: relation.e2.color } : undefined}
                             onClick={handleEntryClick(
                                 relation.e2?.name || '',
                                 relation.e2?.subtype || '',
@@ -106,7 +106,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                         </span>
                     </InfoRow>
                 </div>
-                <div className='text-[10px] text-cradle-text-muted select-text mt-2'>
+                <div className='text-[10px] text-muted-foreground select-text mt-2'>
                     ID: {relation.id}
                 </div>
             </CardContent>
@@ -122,7 +122,7 @@ interface InfoRowProps {
 function InfoRow({ label, children }: InfoRowProps) {
     return (
         <div className='grid grid-cols-[100px_1fr] items-start gap-2'>
-            <strong className='text-cradle-text-primary'>{label}</strong>
+            <strong className='text-foreground'>{label}</strong>
             <div>{children}</div>
         </div>
     );

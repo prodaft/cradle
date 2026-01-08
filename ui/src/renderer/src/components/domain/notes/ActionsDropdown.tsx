@@ -84,7 +84,7 @@ export default function ActionsDropdown({
                         <Button
                             variant='ghost'
                             size='icon'
-                            className='p-2 w-8 h-8 flex items-center justify-center cradle-text-tertiary hover:bg-cradle-bg-secondary hover:text-cradle-text-primary cradle-border'
+                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-bg-secondary hover:text-text-foreground border-border'
                             data-testid='actions-dropdown-btn'
                         >
                             <MoreVert width='20' height='20' />
@@ -247,7 +247,7 @@ export default function ActionsDropdown({
                         <FloppyDisk width='16' height='16' />
                         <span className='flex-1'>Save As Final</span>
                         {saving && (
-                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900' />
+                            <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-foreground' />
                         )}
                     </DropdownMenuItem>
                 )}

@@ -129,7 +129,7 @@ export default function NotificationCard({
                 <div className='flex-1 min-w-0'>
                 {/* Meta row: date + read/unread */}
                 <div className='flex items-center justify-between'>
-                    <span className='text-cradle-text-muted text-xs'>
+                    <span className='text-text-muted-foreground text-xs'>
                         {formattedDate}
                     </span>
 
@@ -138,21 +138,21 @@ export default function NotificationCard({
                             <Button
                                 variant='ghost'
                                 size='icon-sm'
-                                className='p-1.5 hover:bg-cradle-bg-secondary'
+                                className='p-1.5 hover:bg-bg-secondary'
                                 onClick={() => handleMarkUnread(id!)}
                             >
                                 {unreadStatus ? (
                                     <Mail
                                         width='16'
                                         height='16'
-                                        className='text-[#FF8C00]'
+                                        className='text-primary'
                                         data-testid='mark-read'
                                     />
                                 ) : (
                                     <MailOpen
                                         width='16'
                                         height='16'
-                                        className='text-cradle-text-muted hover:text-cradle-text-primary'
+                                        className='text-text-muted-foreground hover:text-text-foreground'
                                         data-testid='mark-unread'
                                     />
                                 )}
@@ -165,7 +165,7 @@ export default function NotificationCard({
                 </div>
 
                 {/* Message */}
-                <p className='text-cradle-text-primary text-sm leading-relaxed mt-1'>
+                <p className='text-text-foreground text-sm leading-relaxed mt-1'>
                     {message}
                 </p>
             </div>
@@ -175,7 +175,7 @@ export default function NotificationCard({
                         <Button
                             variant='outline'
                             size='sm'
-                            className='px-2.5 py-1 text-xs font-medium text-amber-400 border-amber-400/30 hover:bg-amber-400/10'
+                            className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:bg-accent hover:text-accent-foreground'
                             onClick={handleChangeAccess('read')}
                         >
                             Read
@@ -183,7 +183,7 @@ export default function NotificationCard({
                         <Button
                             variant='outline'
                             size='sm'
-                            className='px-2.5 py-1 text-xs font-medium text-green-400 border-green-400/30 hover:bg-green-400/10'
+                            className='px-2.5 py-1 text-xs font-medium text-primary border-primary/30 hover:bg-primary/10'
                             onClick={handleChangeAccess('read-write')}
                         >
                             Read/Write
@@ -195,7 +195,7 @@ export default function NotificationCard({
                     <Button
                         variant='outline'
                         size='sm'
-                        className='px-2.5 py-1 text-xs font-medium text-green-400 border-green-400/30 hover:bg-green-400/10'
+                        className='px-2.5 py-1 text-xs font-medium text-primary border-primary/30 hover:bg-primary/10'
                         onClick={handleActivateUser}
                     >
                         Activate User
@@ -206,7 +206,7 @@ export default function NotificationCard({
                     <Button
                         variant='outline'
                         size='sm'
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
+                        className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
                         onClick={handleViewReport}
                     >
                         View Report
@@ -217,7 +217,7 @@ export default function NotificationCard({
                     <Button
                         variant='outline'
                         size='sm'
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
+                        className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
                         onClick={(e) => {
                             const notif =
                                 notification as ReportProcessingErrorNotification;
@@ -232,7 +232,7 @@ export default function NotificationCard({
                     <Button
                         variant='outline'
                         size='sm'
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
+                        className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
                         onClick={(e) => {
                             const notif =
                                 notification as EnrichmentCompleteNotification;
@@ -247,7 +247,7 @@ export default function NotificationCard({
                     <Button
                         variant='outline'
                         size='sm'
-                        className='px-2.5 py-1 text-xs font-medium text-cradle-text-secondary border-cradle-border-accent hover:border-[#FF8C00] hover:text-[#FF8C00]'
+                        className='px-2.5 py-1 text-xs font-medium text-muted-foreground border-border hover:border-primary hover:text-primary'
                         onClick={(e) => {
                             const notif = notification as EnrichmentErrorNotification;
                             navigateLink(`/enrichment/${notif.enrichmentRequestId}`)(e);

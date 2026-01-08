@@ -37,7 +37,7 @@ export default function DashboardHorizontalSection({
     }, [location]);
 
     return (
-        <div className='bg-cradle3 p-4 bg-opacity-20 rounded-xl w-full'>
+        <div className='bg-card/20 p-4 rounded-xl w-full'>
             <div
                 className='text-xl font-semibold mb-2 cursor-pointer w-full flex flex-row justify-between items-center'
                 onClick={toggleExpanded}
@@ -60,7 +60,7 @@ export default function DashboardHorizontalSection({
                     children.some((item) => item !== null) ? (
                         children
                     ) : (
-                        <div className='text-zinc-500'>No items to display</div>
+                        <div className='text-muted-foreground'>No items to display</div>
                     )}
                 </div>
             </div>

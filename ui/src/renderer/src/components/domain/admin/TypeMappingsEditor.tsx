@@ -5,6 +5,7 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import { capitalizeString } from '@/utils/dashboard';
 import { useEffect, useState } from 'react';
 import ShadcnSelect from '../../forms/ShadcnSelect';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Option {
     value: string;
@@ -482,9 +483,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     if (isLoading || !columnDefinitions) {
         return (
             <div className='flex items-center justify-center h-full'>
-                <div className='cradle-spinner-dot-pulse cradle-spinner-xl'>
-                    <div className='cradle-spinner-pulse-dot'></div>
-                </div>
+                <Spinner className='size-10' />
             </div>
         );
     }
@@ -500,7 +499,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             </div>
 
             <div className='p-5'>
-                <div className='rounded-lg cradle-border bg-white/[0.02] p-4'>
+                <div className='rounded-lg border-border bg-muted/5 p-4'>
                     {/* Save All button moved to the left */}
                     <div className='flex justify-start mb-4'>
                         <Button
@@ -513,22 +512,22 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                     </div>
 
                     {/* Table container with fixed height and scrollable */}
-                    <div className='overflow-x-auto overflow-y-auto h-[70vh] border border-cradle-border-primary rounded-md'>
+                    <div className='overflow-x-auto overflow-y-auto h-[70vh] border border-border rounded-md'>
                         <table className='table-auto w-full mb-4 w-dvh'>
-                            <thead className='sticky top-0 bg-cradle-bg-elevated z-10'>
+                            <thead className='sticky top-0 bg-card z-10'>
                                 <tr>
                                     {/* Actions column */}
-                                    <th className='px-4 py-3 text-left text-xs font-medium text-cradle-text-tertiary uppercase tracking-wider border-b border-cradle-border-primary'>
+                                    <th className='px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border'>
                                         Actions
                                     </th>
                                     {allColumns.map((column) => (
                                         <th
                                             key={column}
-                                            className='px-4 py-3 text-left text-xs font-medium text-cradle-text-tertiary uppercase tracking-wider w-96 border-b border-cradle-border-primary'
+                                            className='px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-96 border-b border-border'
                                         >
                                             {capitalizeString(column)}
                                             {columnDefinitions[column]?.required && (
-                                                <span className='text-red-500 ml-1'>
+                                                <span className='text-destructive ml-1'>
                                                     *
                                                 </span>
                                             )}
@@ -540,11 +539,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                 {rows.map((row, index) => (
                                     <tr
                                         key={index}
-                                        className={`border-b border-cradle-border-primary/50 ${
+                                        className={`border-b border-border/50 ${
                                             index < rows.length - 1 && !row.edited
                                                 ? 'bg-transparent'
                                                 : ''
-                                        } hover:bg-cradle-bg-secondary/20 transition-colors`}
+                                        } hover:bg-secondary/20 transition-colors`}
                                     >
                                         {/* Actions cell with Delete and Save buttons */}
                                         <td className='px-4 py-2 whitespace-nowrap'>
@@ -556,7 +555,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         onClick={() =>
                                                             handleDeleteRow(index)
                                                         }
-                                                        className='text-red-600 hover:text-red-900'
+                                                        className='text-destructive hover:text-destructive/80'
                                                     >
                                                         Delete
                                                     </Button>
@@ -566,7 +565,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         variant='ghost'
                                                         size='sm'
                                                         onClick={() => handleSaveRow(index)}
-                                                        className='text-green-600 hover:text-green-900'
+                                                        className='text-primary hover:text-primary/80'
                                                     >
                                                         Save
                                                     </Button>
@@ -629,7 +628,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                             }
                                                             className={`cradle-input w-full ${
                                                                 hasError
-                                                                    ? 'border-red-500'
+                                                                    ? 'border-destructive'
                                                                     : ''
                                                             }`}
                                                             min={colDef.min}
@@ -660,7 +659,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                             }
                                                             className={`cradle-input w-full ${
                                                                 hasError
-                                                                    ? 'border-red-500'
+                                                                    ? 'border-destructive'
                                                                     : ''
                                                             }`}
                                                             minLength={colDef.minLength}

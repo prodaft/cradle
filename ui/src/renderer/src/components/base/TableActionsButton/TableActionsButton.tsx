@@ -51,7 +51,7 @@ export default function TableActionsButton({
                         type='button'
                         variant='ghost'
                         size='icon-sm'
-                        className='text-white hover:text-white hover:bg-cradle-bg-secondary'
+                        className='text-primary-foreground hover:text-primary-foreground hover:bg-secondary'
                         onClick={handleButtonClick}
                     >
                         <svg

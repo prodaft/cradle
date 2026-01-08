@@ -113,21 +113,21 @@ export default function ApiKeyGenerateModal({
             ) : (
                 <>
                     {/* Success Section */}
-                    <div className='mb-6 p-4 border border-cradle-border-accent bg-cradle-bg-secondary/30 rounded-lg'>
+                    <div className='mb-6 p-4 border border-border-border bg-bg-secondary/30 rounded-lg'>
                         <div className='flex items-start gap-3'>
-                            <div className='w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0'></div>
+                            <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0'></div>
                             <div className='flex-1'>
-                                <h3 className='text-sm font-semibold text-cradle-text-primary mb-1'>
+                                <h3 className='text-sm font-semibold text-text-foreground mb-1'>
                                     API Key Generated
                                 </h3>
-                                <p className='text-xs text-cradle-text-tertiary mb-3'>
+                                <p className='text-xs text-text-muted-foreground mb-3'>
                                     Copy this key now. For security reasons, you won't
                                     be able to see it again.
                                 </p>
 
                                 {/* API Key Display */}
-                                <div className='flex items-center gap-2 bg-cradle-bg-primary p-3 border border-cradle-border-accent rounded-lg'>
-                                    <code className='flex-1 font-mono text-sm text-cradle-text-primary select-all break-all'>
+                                <div className='flex items-center gap-2 bg-bg-background p-3 border border-border-border rounded-lg'>
+                                    <code className='flex-1 font-mono text-sm text-text-foreground select-all break-all'>
                                         {showApiKey ? apiKey : maskApiKey(apiKey)}
                                     </code>
                                     <Button
@@ -156,7 +156,7 @@ export default function ApiKeyGenerateModal({
                                     </Button>
                                 </div>
                                 {copied && (
-                                    <p className='text-xs text-green-500 mt-2 font-medium'>
+                                    <p className='text-xs text-primary mt-2 font-medium'>
                                         API key copied to clipboard!
                                     </p>
                                 )}

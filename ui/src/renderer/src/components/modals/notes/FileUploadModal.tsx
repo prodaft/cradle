@@ -97,15 +97,15 @@ export default function FileUploadModal({
                     <Label>
                         Queued for Upload ({selectedIndices.size})
                     </Label>
-                    <ul className='border border-cradle-border-accent rounded-lg max-h-48 overflow-y-auto'>
+                    <ul className='border border-border-border rounded-lg max-h-48 overflow-y-auto'>
                         {pendingFiles.map((file, index) => {
                             const isSelected = selectedIndices.has(index);
                             return (
                                 <li
                                     key={index}
-                                    className={`flex items-center gap-3 px-4 py-2 border-b border-cradle-border-accent last:border-b-0 transition-colors ${isSelected
-                                        ? 'hover:bg-cradle-bg-secondary/50'
-                                        : 'bg-cradle-bg-secondary/10'
+                                    className={`flex items-center gap-3 px-4 py-2 border-b border-border-border last:border-b-0 transition-colors ${isSelected
+                                        ? 'hover:bg-bg-secondary/50'
+                                        : 'bg-bg-secondary/10'
                                         }`}
                                 >
                                     <input
@@ -116,8 +116,8 @@ export default function FileUploadModal({
                                     />
                                     <span
                                         className={`text-sm truncate flex-1 ${isSelected
-                                            ? 'text-cradle-text-primary'
-                                            : 'text-cradle-text-tertiary line-through decoration-cradle-text-tertiary'
+                                            ? 'text-text-foreground'
+                                            : 'text-text-muted-foreground line-through decoration-text-muted-foreground'
                                             }`}
                                     >
                                         {file.name}

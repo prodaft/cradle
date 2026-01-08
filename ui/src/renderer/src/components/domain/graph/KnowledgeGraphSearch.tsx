@@ -89,7 +89,7 @@ export default function KnowledgeGraphSearch({
                                 label = `note: ${e.name || 'untitled'}`;
                             }
 
-                            const nodeColor = colors?.[e.subtype] || '#4A90E2';
+                            const nodeColor = colors?.[e.subtype] || 'var(--color-primary)';
                             console.log(
                                 `[KnowledgeGraphSearch] Node ${e.id} (${e.subtype}): color=${nodeColor}`,
                             );
