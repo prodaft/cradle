@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -246,6 +247,45 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             TOTPDevice.objects.filter(user=self).delete()
             self.two_factor_enabled = False
             self.save(update_fields=["two_factor_enabled"])
+
+
+class ExternalIdentity(models.Model):
+    """Links a Cradle user to an external OAuth/OIDC identity."""
+
+    id: models.UUIDField = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False
+    )
+    user: models.ForeignKey = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="external_identities",
+    )
+    provider: models.CharField = models.CharField(max_length=64)
+    subject: models.CharField = models.CharField(max_length=255)
+    issuer: Optional[str] = models.CharField(max_length=255, blank=True, null=True)
+    email: Optional[str] = models.EmailField(blank=True, null=True)
+    email_verified: models.BooleanField = models.BooleanField(default=False)
+    display_name: Optional[str] = models.CharField(max_length=255, blank=True, null=True)
+    raw_claims: Optional[dict] = models.JSONField(blank=True, null=True)
+    last_login_at: Optional[datetime] = models.DateTimeField(blank=True, null=True)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["provider", "subject", "issuer"]),
+            models.Index(fields=["user"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provider", "subject", "issuer"],
+                name="unique_external_identity",
+            ),
+        ]
+
+    def __str__(self):
+        issuer_part = f"@{self.issuer}" if self.issuer else ""
+        return f"{self.provider}:{self.subject}{issuer_part}"
 
 
 class UserSession(models.Model):

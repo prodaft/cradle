@@ -40,3 +40,54 @@ def postprocess_schema_enums(result, generator, request, public):
 
     update_refs(result)
     return result
+
+
+def postprocess_schema_operation_ids(result, generator, request, public):
+    """
+    Post-process schema to remove auto "api" prefixes from operationIds.
+    """
+    paths = result.get("paths", {})
+
+    for path_item in paths.values():
+        if not isinstance(path_item, dict):
+            continue
+        for operation in path_item.values():
+            if not isinstance(operation, dict):
+                continue
+            operation_id = operation.get("operationId")
+            if not operation_id or not isinstance(operation_id, str):
+                continue
+            if operation_id.startswith("api_"):
+                operation["operationId"] = operation_id[4:]
+                continue
+            if operation_id.startswith("api") and len(operation_id) > 3:
+                next_char = operation_id[3]
+                if next_char.isupper():
+                    operation["operationId"] = next_char.lower() + operation_id[4:]
+
+    return result
+
+
+def postprocess_schema_path_prefix(result, generator, request, public):
+    """
+    Post-process schema to remove the leading /api path prefix.
+    """
+    paths = result.get("paths", {})
+    if not paths:
+        return result
+
+    rewritten = {}
+    for path, path_item in paths.items():
+        if not isinstance(path, str):
+            rewritten[path] = path_item
+            continue
+        if path.startswith("/api/"):
+            rewritten_path = "/" + path[5:]
+        elif path == "/api":
+            rewritten_path = "/"
+        else:
+            rewritten_path = path
+        rewritten[rewritten_path] = path_item
+
+    result["paths"] = rewritten
+    return result

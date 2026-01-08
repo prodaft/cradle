@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* tslint:disable */
 /* eslint-disable */
 /**
@@ -65,7 +64,7 @@ export interface ReportsRetryCreateRequest {
 /**
  * 
  */
-export class ReportsApi extends runtime.BaseAPI {
+export class PublishApi extends runtime.BaseAPI {
 
     /**
      * Deletes a specific report belonging to the authenticated user.

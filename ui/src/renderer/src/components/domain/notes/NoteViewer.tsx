@@ -87,9 +87,10 @@ export default function NoteViewer() {
     const [lspLoaded, setLspLoaded] = useState(false);
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
-    const lastLoadedNoteIdRef = useRef<string | null>(null);
+    const initialContentSetRef = useRef(false);
     const { managementApi, fleetingNotesApi, notesApi, lspApi } = useApi();
     const { execute, handleError } = useAPICall();
+    const enableCollab = true;
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
@@ -206,92 +207,75 @@ export default function NoteViewer() {
         if (!noteId) {
             console.warn('NoteViewer - No note ID provided');
             setIsLoading(false);
-            lastLoadedNoteIdRef.current = null;
+            setNote(null);
+            setMarkdownContent('');
+            setInitialMarkdown('');
+            setFileData([]);
+            setIsFleeting(false);
+            setHasUnsavedChanges(false);
+            initialContentSetRef.current = false;
             return;
         }
 
-        // Skip loading if we've already loaded this exact note ID
-        // This prevents re-fetching when only search params change
-        if (lastLoadedNoteIdRef.current === noteId) {
-            return;
-        }
+        setIsLoading(false);
+        setNote(null);
+        setMarkdownContent('');
+        setInitialMarkdown('');
+        setFileData([]);
+        setIsFleeting(false);
+        setHasUnsavedChanges(false);
+        initialContentSetRef.current = false;
 
-        setIsLoading(true);
-        lastLoadedNoteIdRef.current = noteId || null;
+        console.debug('[NoteViewer] opening note with collab enabled', {
+            noteId,
+            hasStateNotes: Boolean(state?.notes?.length),
+        });
 
-        // Try to load as regular note first, then fallback to fleeting note if it fails
-        const loadNote = async () => {
-            try {
-                // First try to load as a regular note
-                const responseNote = await execute(() =>
-                    notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
-                );
-
-                // Check if this is a fleeting note using the fleeting field
-                const isFleetingNote = responseNote.fleeting === true;
-                setIsFleeting(isFleetingNote);
-
-                // Debug logging
-                console.log('NoteViewer - Note loaded successfully:', {
-                    id: noteId,
-                    isFleetingNote: isFleetingNote,
-                    fleeting: responseNote.fleeting,
-                    hasAuthor: !!responseNote.author,
-                    hasEditor: !!responseNote.editor,
-                    hasEntries: !!responseNote.entries,
+        if (state?.notes) {
+            const matchedNote = state.notes.find((item) => item.id === noteId);
+            if (matchedNote) {
+                setNote(matchedNote);
+                setIsFleeting(Boolean(matchedNote.fleeting));
+                setFileData(matchedNote.files || []);
+                console.debug('[NoteViewer] hydrated note metadata from state', {
+                    noteId,
+                    isFleeting: Boolean(matchedNote.fleeting),
+                    fileCount: matchedNote.files?.length || 0,
                 });
-
-                return responseNote;
-            } catch (error) {
-                // If regular note fails, try as fleeting note
-                console.error(
-                    'NoteViewer - Regular note failed, trying fleeting note. Error:',
-                    error,
-                );
-                console.log('NoteViewer - Attempting fleeting note with ID:', noteId);
-                const responseNote = await execute(
-                    () => fleetingNotesApi.fleetingNotesRetrieve({ id: noteId }),
-                    { errorMessage: 'Note not found!' },
-                );
-                setIsFleeting(true);
-                console.log('NoteViewer - Fleeting note loaded successfully');
-                return responseNote as NoteRetrieve;
+            } else {
+                console.debug('[NoteViewer] note metadata not found in state', {
+                    noteId,
+                });
             }
-        };
+        }
+    }, [noteId, state?.notes]);
 
-        execute(() => loadNote())
-            .then((responseNote) => {
-                console.log('NoteViewer - Note loaded successfully:', responseNote);
-                setNote(responseNote);
-                setMarkdownContent(responseNote.content);
-                setInitialMarkdown(responseNote.content);
-                setFileData(responseNote.files || []);
-                setHasUnsavedChanges(false);
-                // Update tab title with note title (use refs to avoid dependency issues)
-                // Note loaded successfully
-                return responseNote;
-            })
-            .catch(() => {})
-            .finally(() => {
-                // Turn off loading spinner regardless of success or failure
-                setIsLoading(false);
-            });
-    }, [
-        noteId,
-        execute,
-        notesApi,
-        fleetingNotesApi,
-    ]);
+    useEffect(() => {
+        if (initialContentSetRef.current) {
+            return;
+        }
+
+        if (markdownContent) {
+            initialContentSetRef.current = true;
+            setInitialMarkdown(markdownContent);
+            setHasUnsavedChanges(false);
+        }
+    }, [markdownContent]);
 
     const handleDelete = useCallback(async () => {
-        if (!note || !id) return;
+        if (!id) return;
 
         execute(async () => {
-            // Use the appropriate delete function based on whether the note is fleeting
-            if (note.fleeting) {
+            const shouldUseFleeting = Boolean(note?.fleeting ?? isFleeting);
+            if (shouldUseFleeting) {
                 await fleetingNotesApi.fleetingNotesDestroy({ id: noteId });
             } else {
-                await notesApi.notesDelete({ noteId: noteId });
+                try {
+                    await notesApi.notesDelete({ noteId: noteId });
+                } catch (error) {
+                    await fleetingNotesApi.fleetingNotesDestroy({ id: noteId });
+                    setIsFleeting(true);
+                }
             }
 
             if (!state) {
@@ -306,7 +290,7 @@ export default function NoteViewer() {
             const newState = { ...state, notes: stateNotes };
             navigate(from?.pathname || '/', { replace: true, state: newState });
         }).catch(() => { });
-    }, [noteId, execute, navigate, note, fleetingNotesApi, notesApi, state, from]);
+    }, [noteId, execute, navigate, note, isFleeting, fleetingNotesApi, notesApi, state, from]);
 
     // Use a ref to store the latest values for the save function
     const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
@@ -342,21 +326,30 @@ export default function NoteViewer() {
             execute(
                 async () => {
                     if (fleeting) {
-                        // Update existing fleeting note
                         await fleetingNotesApi.fleetingNotesUpdate({
                             id: noteId,
                             fleetingNoteRequest: {
                                 content,
                             },
                         });
-                    } else {
-                        // Update regular note
+                        return;
+                    }
+
+                    try {
                         await notesApi.notesUpdate({
                             noteId: noteId || '',
                             noteEditRequest: {
                                 content: content,
                             },
                         });
+                    } catch (error) {
+                        await fleetingNotesApi.fleetingNotesUpdate({
+                            id: noteId,
+                            fleetingNoteRequest: {
+                                content,
+                            },
+                        });
+                        setIsFleeting(true);
                     }
                 },
                 successMessage ? { successMessage } : undefined,
@@ -433,13 +426,24 @@ export default function NoteViewer() {
                         files: files,
                     },
                 }));
-            } else {
+                return;
+            }
+
+            try {
                 await execute(() => notesApi.notesUpdate({
                     noteId: noteId || '',
                     noteEditRequest: {
                         files: files,
                     },
                 }));
+            } catch (error) {
+                await execute(() => fleetingNotesApi.fleetingNotesUpdate({
+                    id: noteId || '',
+                    fleetingNoteRequest: {
+                        files: files,
+                    },
+                }));
+                setIsFleeting(true);
             }
         })();
 
@@ -698,11 +702,7 @@ export default function NoteViewer() {
                                                         additionalExtensions={
                                                             customKeymap
                                                         }
-                                                        key={
-                                                            richEditor
-                                                                ? 'rich'
-                                                                : 'source'
-                                                        }
+                                                        key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
                                                         ref={editorRef}
                                                         noteid={noteId || ''}
                                                         markdownContent={
@@ -716,6 +716,7 @@ export default function NoteViewer() {
                                                         source={!richEditor}
                                                         saveNote={handleSaveNote}
                                                         enableEditing={enableEditing}
+                                                        enableCollab={enableCollab}
                                                         setLineNumber={setLineNumber}
                                                     />
                                                 </div>
@@ -753,11 +754,7 @@ export default function NoteViewer() {
                                                                                 additionalExtensions={
                                                                                     customKeymap
                                                                                 }
-                                                                                key={
-                                                                                    richEditor
-                                                                                        ? 'rich'
-                                                                                        : 'source'
-                                                                                }
+                                                                                key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
                                                 ref={editorRef}
                                                 noteid={noteId || ''}
                                                 markdownContent={markdownContent}
@@ -767,6 +764,7 @@ export default function NoteViewer() {
                                                 source={!richEditor}
                                                 saveNote={handleSaveNote}
                                                 enableEditing={enableEditing}
+                                                enableCollab={enableCollab}
                                                 editorUtils={editorUtils}
                                                 setLineNumber={setLineNumber}
                                             />

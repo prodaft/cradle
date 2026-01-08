@@ -2,15 +2,10 @@ import ActionConfirmationModal from '@/components/modals/base/ActionConfirmation
 import { useModal } from '@/contexts/ui/ModalContext';
 import { toast } from 'sonner';
 import { useAuth } from '@hooks';
+import { getApiBaseUrl } from '@/utils/url';
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 
-/**
- * Get the base URL from localStorage or environment variable
- */
-const getBaseUrl = (): string => {
-    return localStorage.getItem('backendUrl') || import.meta.env.VITE_API_BASE_URL;
-};
 
 interface UserSession {
     id: string;
@@ -35,7 +30,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const [isLoading, setIsLoading] = useState(true);
     const { setModal } = useModal();
     const auth = useAuth();
-    const basePath = getBaseUrl();
+    const basePath = getApiBaseUrl(auth.basePath);
 
     const fetchSessions = useCallback(async () => {
         setIsLoading(true);

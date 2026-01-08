@@ -2,6 +2,7 @@ import {
     AuthTokenException,
     SessionExpiredException,
 } from '@/exceptions/AuthExceptions';
+import { getApiBaseUrl } from '@/utils/url';
 import {
     createContext,
     ReactNode,
@@ -184,7 +185,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         try {
-            const response = await fetch(`${basePath}/users/refresh/`, {
+            const response = await fetch(`${getApiBaseUrl(basePath)}/users/refresh/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -295,7 +296,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     body.two_factor_token = twoFactorToken;
                 }
 
-                const response = await fetch(`${basePath}/users/login/`, {
+                const response = await fetch(`${getApiBaseUrl(basePath)}/users/login/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -388,6 +389,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const setTokensDirectly = useCallback(
         (data: TokenData) => {
             storeTokens(data);
+            if (data.user_id !== undefined) {
+                localStorage.setItem('user_id', data.user_id || '');
+                setUserId(data.user_id || null);
+            }
             scheduleTokenRefresh();
         },
         [storeTokens, scheduleTokenRefresh],

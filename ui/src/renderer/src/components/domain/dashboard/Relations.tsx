@@ -1,3 +1,9 @@
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
@@ -5,13 +11,10 @@ import { useAPICall } from '@/hooks/api/useAPICall';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { WarningCircle } from 'iconoir-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { DataTable } from '@/components/ui/data-table';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
-import { Check, Copy, Search } from 'iconoir-react';
+import { ColumnDef } from '@tanstack/react-table';
+import { Check, Copy, Search, WarningCircle } from 'iconoir-react';
 import {
     ChangeEvent,
     KeyboardEvent,
@@ -22,10 +25,6 @@ import {
     useRef,
     useState,
 } from 'react';
-import { Button } from '@/components/ui/button';
-import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
-import { ColumnDef } from '@tanstack/react-table';
-import { Checkbox } from '@/components/ui/checkbox';
 
 interface Alert {
     show: boolean;
@@ -80,7 +79,7 @@ export default function Relations({ obj }: RelationsProps) {
 
     const dialogRoot = document.getElementById('portal-root');
     const { navigate, navigateLink } = useCradleNavigate();
-    const handleError = (err: any) => {
+    const handleError = async (err: any) => {
         const parsed = await parseAPIError(err);
         handleAPIError(parsed);
     };
@@ -94,7 +93,10 @@ export default function Relations({ obj }: RelationsProps) {
                     setEntrySubtypes(entities.map((c) => c.subtype));
                 }
             })
-            .catch(handleError);
+            .catch(async (err) => {
+                const parsed = await parseAPIError(err);
+                handleAPIError(parsed);
+            });
     };
 
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -149,8 +151,8 @@ export default function Relations({ obj }: RelationsProps) {
                     const filteredResults =
                         entrySubtypeFilters.length > 0
                             ? resultsWithDepth.filter((r) =>
-                                  entrySubtypeFilters.includes(r.subtype),
-                              )
+                                entrySubtypeFilters.includes(r.subtype),
+                            )
                             : resultsWithDepth;
                     setResults(filteredResults);
                 })
@@ -220,7 +222,7 @@ export default function Relations({ obj }: RelationsProps) {
             .then(() => {
                 setInaccessibleEntities([]); // Clear inaccessible entities after request
             })
-            .catch(() => {})
+            .catch(() => { })
             .finally(() => {
                 setIsRequestingAccess(false);
             });
@@ -235,8 +237,8 @@ export default function Relations({ obj }: RelationsProps) {
         const itemsToCopy =
             selectedIds.length > 0
                 ? results.filter(
-                      (r) => r.id !== undefined && selectedIds.includes(r.id),
-                  )
+                    (r) => r.id !== undefined && selectedIds.includes(r.id),
+                )
                 : results;
 
         if (itemsToCopy.length > 0) {
@@ -366,77 +368,77 @@ export default function Relations({ obj }: RelationsProps) {
             <Card className='cradle-card-compact'>
                 <CardContent className='p-3'>
                     <div className='flex flex-wrap items-center justify-between gap-4'>
-                    <div className='flex items-center gap-2 flex-shrink-0'>
-                        {/* Copy CSV Action */}
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    onClick={copyToCSV}
-                                    disabled={selectedIds.length === 0}
-                                    variant='outline'
-                                    size='icon'
-                                    className='rounded-full'
-                                    title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
-                                >
-                                    {isCopied ? (
-                                        <Check className='w-4 h-4 text-green-500' />
-                                    ) : (
-                                        <Copy
-                                            className={selectedIds.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
-                                            width={18}
-                                            height={18}
-                                        />
-                                    )}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                Copy to CSV
-                            </TooltipContent>
-                        </Tooltip>
-                        <div className='h-8 w-px bg-cradle-border-accent' />
-
-                        {/* Depth Control */}
-                        <div className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent rounded-full bg-transparent'>
+                        <div className='flex items-center gap-2 flex-shrink-0'>
+                            {/* Copy CSV Action */}
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <input
-                                        id='depth-input'
-                                    type='number'
-                                    min='0'
-                                    max='5'
-                                    className='bg-transparent text-cradle-text-primary h-full w-8 outline-none text-center font-mono text-sm'
-                                    value={depth}
-                                    onChange={handleDepthChange}
-                                />
+                                    <Button
+                                        onClick={copyToCSV}
+                                        disabled={selectedIds.length === 0}
+                                        variant='outline'
+                                        size='icon'
+                                        className='rounded-full'
+                                        title={selectedIds.length > 0 ? `Copy ${selectedIds.length} selected to CSV` : 'Select items to copy'}
+                                    >
+                                        {isCopied ? (
+                                            <Check className='w-4 h-4 text-green-500' />
+                                        ) : (
+                                            <Copy
+                                                className={selectedIds.length > 0 ? 'text-[#FF8C00]' : 'text-cradle-text-secondary'}
+                                                width={18}
+                                                height={18}
+                                            />
+                                        )}
+                                    </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    Depth
+                                    Copy to CSV
                                 </TooltipContent>
                             </Tooltip>
-                        </div>
+                            <div className='h-8 w-px bg-cradle-border-accent' />
 
-                        <div className='h-8 w-px bg-cradle-border-accent' />
+                            {/* Depth Control */}
+                            <div className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent rounded-full bg-transparent'>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <input
+                                            id='depth-input'
+                                            type='number'
+                                            min='0'
+                                            max='5'
+                                            className='bg-transparent text-cradle-text-primary h-full w-8 outline-none text-center font-mono text-sm'
+                                            value={depth}
+                                            onChange={handleDepthChange}
+                                        />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Depth
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
 
-                        {/* Search */}
-                        <InputGroup className='min-w-[280px]'>
-                            <InputGroupInput
-                                ref={inputRef}
-                                placeholder='Search relations...'
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                            />
-                            <InputGroupAddon>
-                                <Search />
-                            </InputGroupAddon>
-                            {results && (
-                                <InputGroupAddon align='inline-end'>
-                                    {results.length} {results.length === 1 ? 'result' : 'results'}
+                            <div className='h-8 w-px bg-cradle-border-accent' />
+
+                            {/* Search */}
+                            <InputGroup className='min-w-[280px]'>
+                                <InputGroupInput
+                                    ref={inputRef}
+                                    placeholder='Search relations...'
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                />
+                                <InputGroupAddon>
+                                    <Search />
                                 </InputGroupAddon>
-                            )}
-                        </InputGroup>
+                                {results && (
+                                    <InputGroupAddon align='inline-end'>
+                                        {results.length} {results.length === 1 ? 'result' : 'results'}
+                                    </InputGroupAddon>
+                                )}
+                            </InputGroup>
+                        </div>
                     </div>
-                </div>
                 </CardContent>
             </Card>
 

@@ -11,6 +11,20 @@ dns.setDefaultResultOrder('verbatim');
 export default defineConfig(({ mode }) => ({
     base: './',
     plugins: [tailwindcss(), react(), visualizer(), nodePolyfills()],
+    server: {
+        port: 5173,
+        proxy: {
+            '/api': {
+                target: 'http://localhost:8000',
+                changeOrigin: true,
+            },
+            '/collab': {
+                target: 'ws://localhost:1234',
+                ws: true,
+                changeOrigin: true,
+            },
+        },
+    },
     resolve: {
         alias: {
             '@': path.resolve(__dirname, './src/renderer/src'),

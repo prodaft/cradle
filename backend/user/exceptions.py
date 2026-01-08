@@ -69,6 +69,11 @@ class UserErrorCodes(ErrorCode):
         "Email Already Confirmed",
         "email-already-confirmed",
     )
+    EXTERNAL_IDENTITY_CONFLICT = (
+        status.HTTP_409_CONFLICT,
+        "External Identity Conflict",
+        "external-identity-conflict",
+    )
 
 
 class DuplicateUserException(CradleAPIException):
@@ -163,3 +168,9 @@ class EmailAlreadyConfirmedException(CradleAPIException):
     """Exception raised when email is already confirmed"""
 
     error_code = UserErrorCodes.EMAIL_ALREADY_CONFIRMED
+
+
+class ExternalIdentityConflictException(CradleAPIException):
+    """Exception raised when external identity is already linked elsewhere"""
+
+    error_code = UserErrorCodes.EXTERNAL_IDENTITY_CONFLICT

@@ -164,3 +164,6 @@ interface ImportMetaEnv {
 interface ImportMeta {
     readonly env: ImportMetaEnv;
 }
+
+declare module 'y-codemirror.next';
+declare module 'y-websocket';

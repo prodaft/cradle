@@ -1,6 +1,5 @@
 import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
-import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { capitalizeString } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
@@ -65,8 +64,7 @@ const Note = forwardRef<HTMLDivElement, NoteProps>(function Note(
     ref,
 ) {
     const { navigate, navigateLink } = useCradleNavigate();
-    const { entriesApi, fileTransferApi } = useApi();
-    const { basePath } = useAuth();
+    const { entriesApi, fileTransferApi, basePath } = useApi();
     const [hidden, setHidden] = useState(false);
     const location = useLocation();
     const [parsedContent, setParsedContent] = useState('');

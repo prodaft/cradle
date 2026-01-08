@@ -1,5 +1,4 @@
 import useApi from '@/hooks/api/useApi';
-import useAuth from '@/hooks/auth/useAuth';
 import { parseContent } from '@/utils/editor/textEditor';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { useEffect, useState } from 'react';
@@ -19,8 +18,7 @@ interface NotePreviewContentProps {
 export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
     const [parsedContent, setParsedContent] = useState('');
     const [loading, setLoading] = useState(true);
-    const { entriesApi, fileTransferApi } = useApi();
-    const { basePath } = useAuth();
+    const { entriesApi, fileTransferApi, basePath } = useApi();
 
     useEffect(() => {
         parseContent(note.content, entriesApi, fileTransferApi, basePath, note.files)

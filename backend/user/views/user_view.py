@@ -5,6 +5,7 @@ from typing import cast
 
 import bcrypt
 from django.db import transaction
+from django.conf import settings
 from django.utils import timezone
 from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 from rest_framework import status
@@ -50,6 +51,7 @@ from ..serializers import (
     UserCreateSerializerAdmin,
     UserManageResponseSerializer,
     UserRetrieveSerializer,
+    UserConfigSerializer,
     UserSessionSerializer,
     UserUpdateSerializer,
 )
@@ -124,6 +126,28 @@ class UserList(APIView):
         user.send_email_confirmation()
         serializer = UserRetrieveSerializer(user)
 
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="users_config",
+        summary="Get user config",
+        description="Returns OAuth configuration metadata and registration status.",
+        responses={200: UserConfigSerializer},
+    ),
+)
+class UserConfigView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request):
+        payload = {
+            "oauth_methods": settings.OAUTH_METHODS,
+            "registration_enabled": cradle_settings.users.allow_registration,
+        }
+        serializer = UserConfigSerializer(data=payload)
+        serializer.is_valid(raise_exception=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
@@ -680,6 +704,7 @@ class DefaultNoteTemplateView(APIView):
     get=extend_schema(
         summary="List user sessions",
         description="Returns a list of active sessions for the specified user. Users can only view their own sessions.",
+        operation_id="users_sessions_list",
         parameters=[
             OpenApiParameter(
                 name="user_id",
@@ -697,34 +722,8 @@ class DefaultNoteTemplateView(APIView):
             **get_common_error_responses(),
         },
     ),
-    delete=extend_schema(
-        summary="Revoke user session",
-        description="Revokes a specific session by ID. Users can only revoke their own sessions.",
-        parameters=[
-            OpenApiParameter(
-                name="user_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the user, or 'me' to revoke session for the current user",
-            ),
-            OpenApiParameter(
-                name="session_id",
-                type=str,
-                location=OpenApiParameter.PATH,
-                description="UUID of the session to revoke",
-            ),
-        ],
-        responses={
-            204: {"description": "Session revoked successfully"},
-            **get_error_responses(
-                UserErrorCodes.USER_NOT_FOUND,
-                UserErrorCodes.DISALLOWED_ACTION,
-            ),
-            **get_common_error_responses(),
-        },
-    ),
 )
-class UserSessionsView(APIView):
+class UserSessionsListView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -760,6 +759,40 @@ class UserSessionsView(APIView):
 
         serializer = UserSessionSerializer(sessions, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@extend_schema_view(
+    delete=extend_schema(
+        summary="Revoke user session",
+        description="Revokes a specific session by ID. Users can only revoke their own sessions.",
+        operation_id="users_sessions_destroy",
+        parameters=[
+            OpenApiParameter(
+                name="user_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the user, or 'me' to revoke session for the current user",
+            ),
+            OpenApiParameter(
+                name="session_id",
+                type=str,
+                location=OpenApiParameter.PATH,
+                description="UUID of the session to revoke",
+            ),
+        ],
+        responses={
+            204: {"description": "Session revoked successfully"},
+            **get_error_responses(
+                UserErrorCodes.USER_NOT_FOUND,
+                UserErrorCodes.DISALLOWED_ACTION,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
+class UserSessionRevokeView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
 
     def delete(self, request, user_id, session_id):
         """Revoke a specific session."""

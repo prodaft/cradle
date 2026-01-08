@@ -1,16 +1,18 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClassTypeEnum } from '@services/cradle/models';
 import bytes from 'bytes';
-import { Refresh } from 'iconoir-react';
+import { CheckCircle, InfoCircle, Refresh, WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
 import * as Yup from 'yup';
 import {
     SelectOption,
@@ -18,9 +20,6 @@ import {
     SettingsCard,
     SettingsField,
 } from '../../../forms';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
-import { Separator } from '@/components/ui/separator';
 import ShadcnSelect from '../../../forms/ShadcnSelect';
 
 interface SubtypeOption extends SelectOption<string> {
@@ -157,31 +156,31 @@ export default function FileSettingsForm() {
                         autoprocessFiles: settings.files.autoprocess_files ?? true,
                         md5Subtype: settings.files.md5_subtype
                             ? {
-                                  value: settings.files.md5_subtype,
-                                  label: settings.files.md5_subtype,
-                              }
+                                value: settings.files.md5_subtype,
+                                label: settings.files.md5_subtype,
+                            }
                             : null,
                         sha1Subtype: settings.files.sha1_subtype
                             ? {
-                                  value: settings.files.sha1_subtype,
-                                  label: settings.files.sha1_subtype,
-                              }
+                                value: settings.files.sha1_subtype,
+                                label: settings.files.sha1_subtype,
+                            }
                             : null,
                         sha256Subtype: settings.files.sha256_subtype
                             ? {
-                                  value: settings.files.sha256_subtype,
-                                  label: settings.files.sha256_subtype,
-                              }
+                                value: settings.files.sha256_subtype,
+                                label: settings.files.sha256_subtype,
+                            }
                             : null,
                         maxFileSizeForHashing: settings.files.max_file_size_for_hashing
                             ? bytes.format(settings.files.max_file_size_for_hashing, {
-                                  unitSeparator: ' ',
-                              })
+                                unitSeparator: ' ',
+                            })
                             : '10 MB',
                         uploadLimit: settings.files.upload_limit
                             ? bytes.format(settings.files.upload_limit, {
-                                  unitSeparator: ' ',
-                              })
+                                unitSeparator: ' ',
+                            })
                             : '2 GB',
                     });
                 }

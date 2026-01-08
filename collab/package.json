@@ -1,0 +1,32 @@
+{
+  "name": "@cradle/collab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "predev": "test -d src/services/cradle || bun run generate-api -- --input http://localhost:8000/schema/",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "generate-api": "rm -rf src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/api/schema/} -c openapitools.json -o src/services/cradle/",
+    "dev:setup": "bun install && bun run generate-api -- --input http://localhost:8000/api/schema/ && bun run dev"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "lib0": "^0.2.91",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.18",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.12",
+    "@openapitools/openapi-generator-cli": "^2.25.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -3,7 +3,6 @@ import { ConfirmDeletionModal } from '@/components/modals';
 import { useModal } from '@/contexts';
 import { useApi } from '@/hooks';
 import { useAPICall } from '@/hooks/api/useAPICall';
-import useAuth from '@/hooks/auth/useAuth';
 import type { FileReference, StateSetter } from '@/types';
 import { createDownloadPath } from '@/utils/links';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -39,8 +38,7 @@ export default function FileTable({
     insertTextCallback,
 }: FileTableProps) {
     const { execute } = useAPICall();
-    const { fileTransferApi } = useApi();
-    const { basePath } = useAuth();
+    const { fileTransferApi, basePath } = useApi();
     const { setModal } = useModal();
 
     // Pre-configured clipboard copy with automatic error/success handling

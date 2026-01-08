@@ -4,6 +4,9 @@ import { HashRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
 // Lazy-loaded route components
 const Login = React.lazy(() => import('./components/domain/auth/Login'));
 const Register = React.lazy(() => import('./components/domain/auth/Register'));
+const OAuthCallback = React.lazy(
+    () => import('./components/domain/auth/OAuthCallback'),
+);
 const ConfirmEmail = React.lazy(() => import('./components/domain/auth/ConfirmEmail'));
 const ResetPassword = React.lazy(
     () => import('./components/domain/auth/ResetPassword'),
@@ -240,6 +243,10 @@ function App() {
                                                                 <Route
                                                                     path='/login'
                                                                     element={<Login />}
+                                                                />
+                                                                <Route
+                                                                    path='/oauth/callback'
+                                                                    element={<OAuthCallback />}
                                                                 />
                                                                 <Route
                                                                     path='/confirm-email'

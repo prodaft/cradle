@@ -13,6 +13,7 @@
  * Do not edit the class manually.
  */
 
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -85,6 +86,12 @@ export interface UserRetrieve {
      * @memberof UserRetrieve
      */
     theme?: UserRetrieveThemeEnum;
+    /**
+     * 
+     * @type {{ [key: string]: any; }}
+     * @memberof UserRetrieve
+     */
+    readonly oauthConnections?: { [key: string]: any; };
 }
 
 
@@ -127,7 +134,7 @@ export function UserRetrieveFromJSONTyped(json: any, ignoreDiscriminator: boolea
         return json;
     }
     return {
-
+        
         'id': json['id'] == null ? undefined : json['id'],
         'username': json['username'],
         'email': json['email'],
@@ -138,6 +145,7 @@ export function UserRetrieveFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'emailConfirmed': json['email_confirmed'] == null ? undefined : json['email_confirmed'],
         'catalystApiKey': json['catalyst_api_key'] == null ? undefined : json['catalyst_api_key'],
         'theme': json['theme'] == null ? undefined : json['theme'],
+        'oauthConnections': json['oauth_connections'] == null ? undefined : json['oauth_connections'],
     };
 }
 
@@ -145,13 +153,13 @@ export function UserRetrieveToJSON(json: any): UserRetrieve {
     return UserRetrieveToJSONTyped(json, false);
 }
 
-export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id' | 'catalyst_api_key'> | null, ignoreDiscriminator: boolean = false): any {
+export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id'|'catalyst_api_key'|'oauth_connections'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
 
     return {
-
+        
         'username': value['username'],
         'email': value['email'],
         'role': value['role'],

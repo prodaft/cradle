@@ -32,6 +32,7 @@ import { HalfMoon, SunLight } from 'iconoir-react';
 import { debounce } from 'lodash'; // Import lodash debounce
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
+import { useLocation } from 'react-router-dom';
 import * as Yup from 'yup';
 import ActiveSessions from './ActiveSessions';
 
@@ -59,6 +60,18 @@ interface Alert {
     show: boolean;
     message: string;
     color: string;
+}
+
+interface OAuthMethod {
+    id?: string;
+    provider?: string;
+    name?: string;
+    label?: string;
+    display_name?: string;
+    auth_url?: string;
+    authorization_url?: string;
+    login_url?: string;
+    url?: string;
 }
 
 const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().shape({
@@ -101,13 +114,19 @@ export default function AccountSettings({
     onAdd,
 }: AccountSettingsProps) {
     const { navigate, nativeNavigate } = useCradleNavigate();
-    const { usersApi } = useApi();
+    const { usersApi, basePath } = useApi();
     const auth = useAuth();
     const { execute } = useAPICall();
     const { profile, setProfile, isAdmin } = useProfile();
     const { setModal } = useModal();
+    const location = useLocation();
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
     const [user, setUser] = useState<UserRetrieve | null>(null);
+    const [oauthConnections, setOauthConnections] = useState<
+        Record<string, boolean>
+    >({});
+    const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
+    const [oauthBusyProvider, setOauthBusyProvider] = useState<string | null>(null);
     const isOwnAccount = isEdit ? target === 'me' || profile?.id === target : false;
     const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
     const vimModeId = useId();
@@ -181,6 +200,11 @@ export default function AccountSettings({
                     return;
                 }
                 setUser(user);
+                const connections =
+                    (user as any).oauthConnections ||
+                    (user as any).oauth_connections ||
+                    {};
+                setOauthConnections(connections);
 
                 const fileUploadLimitBytes = user.fileUploadLimitOverride;
                 const fileUploadLimitFormatted = fileUploadLimitBytes
@@ -217,6 +241,170 @@ export default function AccountSettings({
             }
         })();
     }, [isEdit, target, reset, navigate, usersApi]);
+
+    useEffect(() => {
+        if (!basePath || !isOwnAccount) {
+            setOauthMethods([]);
+            return;
+        }
+
+        let isMounted = true;
+
+        const loadConfig = async () => {
+            try {
+                const response = await fetch(`${basePath}/users/config/`);
+                if (!response.ok) {
+                    throw new Error('Failed to load auth configuration');
+                }
+
+                const data = await response.json();
+                if (!isMounted) {
+                    return;
+                }
+
+                setOauthMethods(
+                    Array.isArray(data?.oauth_methods) ? data.oauth_methods : [],
+                );
+            } catch (error) {
+                if (!isMounted) {
+                    return;
+                }
+                setOauthMethods([]);
+            }
+        };
+
+        loadConfig();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [basePath, isOwnAccount]);
+
+    const getOAuthKey = (method: OAuthMethod) => {
+        return (
+            method.id ||
+            method.provider ||
+            method.name ||
+            method.label ||
+            method.display_name ||
+            ''
+        );
+    };
+
+    const getOAuthLabel = (method: OAuthMethod) => {
+        return (
+            method.display_name ||
+            method.label ||
+            method.name ||
+            method.provider ||
+            method.id ||
+            'Single Sign-On'
+        );
+    };
+
+    const getOAuthUrl = (method: OAuthMethod) => {
+        const url =
+            method.authorization_url ||
+            method.auth_url ||
+            method.login_url ||
+            method.url;
+
+        if (!url) {
+            return '';
+        }
+
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+
+        const apiRoot = basePath.replace(/\/api\/?$/, '');
+        if (!apiRoot) {
+            return url;
+        }
+
+        if (url.startsWith('/')) {
+            return `${apiRoot}${url}`;
+        }
+
+        return `${apiRoot}/${url}`;
+    };
+
+    const buildConnectUrl = (method: OAuthMethod, provider: string) => {
+        const url = getOAuthUrl(method);
+        if (!url) {
+            return '';
+        }
+
+        const connectUrl = new URL(url);
+        connectUrl.searchParams.set(
+            'redirect_uri',
+            `${window.location.origin}/#/oauth/callback`,
+        );
+        connectUrl.searchParams.set('state', `oauth_connect:${provider}`);
+        return connectUrl.toString();
+    };
+
+    const mergedOAuthConnections = useMemo(() => {
+        const connections = { ...oauthConnections };
+        oauthMethods.forEach((method) => {
+            const key = getOAuthKey(method);
+            if (!key) {
+                return;
+            }
+            if (connections[key] === undefined) {
+                connections[key] = false;
+            }
+        });
+        return connections;
+    }, [oauthConnections, oauthMethods]);
+
+    const handleOAuthConnect = (provider: string) => {
+        const method = oauthMethods.find(
+            (item) => getOAuthKey(item) === provider,
+        );
+        if (!method) {
+            toast.error('OAuth provider configuration not found.');
+            return;
+        }
+
+        const url = buildConnectUrl(method, provider);
+        if (!url) {
+            toast.error('OAuth provider URL is missing.');
+            return;
+        }
+
+        sessionStorage.setItem('oauth_connect_provider', provider);
+        sessionStorage.setItem('oauth_connect_return_path', location.pathname);
+        window.location.href = url;
+    };
+
+    const handleOAuthDisconnect = async (provider: string) => {
+        try {
+            setOauthBusyProvider(provider);
+            const token = await auth.getAccessToken();
+            const response = await fetch(
+                `${basePath}/users/oauth/disconnect/${provider}/`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to disconnect OAuth provider.');
+            }
+
+            setOauthConnections((prev) => ({ ...prev, [provider]: false }));
+            toast.success(`${provider} disconnected.`);
+        } catch (error) {
+            toast.error('Failed to disconnect OAuth provider.');
+        } finally {
+            setOauthBusyProvider(null);
+        }
+    };
+
 
     /**
      * Performs the actual API call and diffing.
@@ -856,6 +1044,83 @@ export default function AccountSettings({
                                             </SettingsCard>
                                         </>
                                     )}
+                                </div>
+                            </section>
+                        )}
+
+                        {isOwnAccount && Object.keys(mergedOAuthConnections).length > 0 && (
+                            <section
+                                id='oauth'
+                                className='border-t border-white/5 pt-5 pb-8'
+                            >
+                                <h2 className='text-lg cradle-text-primary tracking-tight'>
+                                    OAuth Connections
+                                </h2>
+                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
+                                    Link or unlink external identity providers
+                                </p>
+
+                                <div className='space-y-4'>
+                                    <SettingsCard>
+                                        {Object.entries(mergedOAuthConnections).map(
+                                            ([provider, connected], index, all) => {
+                                                const method = oauthMethods.find(
+                                                    (item) =>
+                                                        getOAuthKey(item) === provider,
+                                                );
+                                                const label = method
+                                                    ? getOAuthLabel(method)
+                                                    : provider;
+                                                return (
+                                                    <div key={provider}>
+                                                        <div className='flex items-center justify-between py-2'>
+                                                            <div>
+                                                                <span className='text-sm cradle-text-tertiary block mb-0.5'>
+                                                                    {label}
+                                                                </span>
+                                                                <span className='text-sm cradle-text-muted'>
+                                                                    {connected
+                                                                        ? 'Connected'
+                                                                        : 'Not connected'}
+                                                                </span>
+                                                            </div>
+                                                            <Button
+                                                                type='button'
+                                                                variant={
+                                                                    connected
+                                                                        ? 'destructive'
+                                                                        : 'outline'
+                                                                }
+                                                                size='sm'
+                                                                onClick={() => {
+                                                                    if (connected) {
+                                                                        handleOAuthDisconnect(
+                                                                            provider,
+                                                                        );
+                                                                    } else {
+                                                                        handleOAuthConnect(
+                                                                            provider,
+                                                                        );
+                                                                    }
+                                                                }}
+                                                                disabled={
+                                                                    oauthBusyProvider ===
+                                                                    provider
+                                                                }
+                                                            >
+                                                                {connected
+                                                                    ? 'Disconnect'
+                                                                    : 'Connect'}
+                                                            </Button>
+                                                        </div>
+                                                        {index < all.length - 1 && (
+                                                            <Separator />
+                                                        )}
+                                                    </div>
+                                                );
+                                            },
+                                        )}
+                                    </SettingsCard>
                                 </div>
                             </section>
                         )}

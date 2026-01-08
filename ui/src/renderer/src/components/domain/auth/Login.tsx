@@ -2,6 +2,7 @@ import { useTheme } from '@/contexts/ui/ThemeContext';
 import useAuth from '@/hooks/auth/useAuth';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { strip } from '@/utils/links';
+import { getApiBaseUrl } from '@/utils/url';
 import Logo from '@components/base/Logo/Logo';
 import { HalfMoon, Settings, SunLight, Undo, WarningCircle } from 'iconoir-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -29,6 +30,18 @@ interface Alert {
     color: string;
 }
 
+interface OAuthMethod {
+    id?: string;
+    provider?: string;
+    name?: string;
+    label?: string;
+    display_name?: string;
+    auth_url?: string;
+    authorization_url?: string;
+    login_url?: string;
+    url?: string;
+}
+
 /**
  * Login component - renders the login form.
  * Sets the username and password states for the AuthProvider when successfully logged in with the server
@@ -44,6 +57,10 @@ export default function Login() {
         message: '',
         color: 'red',
     });
+    const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
+    const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(
+        null,
+    );
     const location = useLocation();
 
     const { isDarkMode, toggleTheme } = useTheme();
@@ -70,6 +87,125 @@ export default function Login() {
             setShowSettings(true);
         }
     }, [basePath]);
+
+    useEffect(() => {
+        if (!auth.basePath) {
+            setOauthMethods([]);
+            setRegistrationEnabled(null);
+            return;
+        }
+
+        let isMounted = true;
+
+        const loadConfig = async () => {
+            try {
+                const response = await fetch(
+                    `${getApiBaseUrl(auth.basePath)}/users/config/`,
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to load auth configuration');
+                }
+
+                const data = await response.json();
+                if (!isMounted) {
+                    return;
+                }
+
+                setOauthMethods(
+                    Array.isArray(data?.oauth_methods) ? data.oauth_methods : [],
+                );
+                setRegistrationEnabled(
+                    typeof data?.registration_enabled === 'boolean'
+                        ? data.registration_enabled
+                        : null,
+                );
+            } catch (error) {
+                if (!isMounted) {
+                    return;
+                }
+                setOauthMethods([]);
+                setRegistrationEnabled(null);
+            }
+        };
+
+        loadConfig();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [auth.basePath]);
+
+    const apiBasePath = auth.basePath ? getApiBaseUrl(auth.basePath) : '';
+    const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
+
+    const getOAuthKey = (method: OAuthMethod) => {
+        return (
+            method.id ||
+            method.provider ||
+            method.name ||
+            method.label ||
+            method.display_name ||
+            ''
+        );
+    };
+
+    const getOAuthLabel = (method: OAuthMethod) => {
+        return (
+            method.display_name ||
+            method.label ||
+            method.name ||
+            method.provider ||
+            method.id ||
+            'Single Sign-On'
+        );
+    };
+
+    const getOAuthUrl = (method: OAuthMethod) => {
+        const url =
+            method.authorization_url ||
+            method.auth_url ||
+            method.login_url ||
+            method.url;
+
+        if (!url) {
+            return '';
+        }
+
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+
+        if (!apiRoot) {
+            return url;
+        }
+
+        if (url.startsWith('/')) {
+            return `${apiRoot}${url}`;
+        }
+
+        return `${apiRoot}/${url}`;
+    };
+
+    const buildOAuthRedirectUrl = (method: OAuthMethod) => {
+        const url = getOAuthUrl(method);
+        if (!url) {
+            return '';
+        }
+
+        const provider = getOAuthKey(method);
+        if (!provider) {
+            return '';
+        }
+
+        const redirectUri = `${window.location.origin}/`;
+        const redirectUrl = new URL(url);
+        redirectUrl.searchParams.set('redirect_uri', redirectUri);
+        redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
+        return redirectUrl.toString();
+    };
+
+    const oauthOptions = oauthMethods.filter((method) => buildOAuthRedirectUrl(method));
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -409,7 +545,67 @@ export default function Login() {
                                                                 Log in
                                                             </Button>
                                                         </Field>
-                                                        {auth.basePath && (
+                                                        {oauthOptions.length > 0 && (
+                                                            <>
+                                                                <FieldSeparator />
+                                                                <Field>
+                                                                    <FieldDescription className='text-center'>
+                                                                        Or continue with
+                                                                    </FieldDescription>
+                                                                </Field>
+                                                                {oauthOptions.map(
+                                                                    (method) => (
+                                                                            <Field
+                                                                            key={`${getOAuthKey(method)}-${getOAuthUrl(method)}`}
+                                                                        >
+                                                                            <Button
+                                                                                type='button'
+                                                                                variant='outline'
+                                                                                size='default'
+                                                                                className='w-full'
+                                                                                onClick={() => {
+                                                                                    const redirectPath =
+                                                                                        typeof from ===
+                                                                                        'string'
+                                                                                            ? from.includes(
+                                                                                                  '#',
+                                                                                              )
+                                                                                                ? from.slice(
+                                                                                                      from.indexOf(
+                                                                                                          '#',
+                                                                                                      ) +
+                                                                                                          1,
+                                                                                                  ) ||
+                                                                                                  '/'
+                                                                                                : from
+                                                                                            : from?.pathname ||
+                                                                                              '/';
+                                                                                    sessionStorage.setItem(
+                                                                                        'oauth_login_redirect',
+                                                                                        redirectPath,
+                                                                                    );
+                                                                                    window.location.href =
+                                                                                        buildOAuthRedirectUrl(
+                                                                                            method,
+                                                                                        );
+                                                                                }}
+                                                                            >
+                                                                                {getOAuthLabel(
+                                                                                    method,
+                                                                                )}
+                                                                            </Button>
+                                                                        </Field>
+                                                                    ),
+                                                                )}
+                                                            </>
+                                                        )}
+                                                        {auth.basePath &&
+                                                        registrationEnabled === false ? (
+                                                            <FieldDescription className='text-center text-muted-foreground'>
+                                                                Registration is disabled.
+                                                            </FieldDescription>
+                                                        ) : (
+                                                            auth.basePath && (
                                                             <>
                                                                 <FieldSeparator />
                                                                 <Field>
@@ -432,6 +628,7 @@ export default function Login() {
                                                                     </FieldDescription>
                                                                 </Field>
                                                             </>
+                                                            )
                                                         )}
                                                     </>
                                                 )}

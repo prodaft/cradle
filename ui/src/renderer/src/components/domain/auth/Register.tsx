@@ -3,7 +3,7 @@ import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import Logo from '@components/base/Logo/Logo';
-import { Undo } from 'iconoir-react';
+import { Undo, WarningCircle } from 'iconoir-react';
 import { Link, useLocation } from 'react-router-dom';
 import * as Yup from 'yup';
 import { Button } from '@/components/ui/button';
@@ -18,12 +18,26 @@ import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useEffect, useState } from 'react';
 
 interface FormData {
     username: string;
     email: string;
     password: string;
     passwordCheck: string;
+}
+
+interface OAuthMethod {
+    id?: string;
+    provider?: string;
+    name?: string;
+    label?: string;
+    display_name?: string;
+    auth_url?: string;
+    authorization_url?: string;
+    login_url?: string;
+    url?: string;
 }
 
 const registerSchema = Yup.object().shape({
@@ -44,8 +58,12 @@ const registerSchema = Yup.object().shape({
 export default function Register() {
     const { navigate } = useCradleNavigate();
     const location = useLocation();
-    const { usersApi } = useApi();
+    const { usersApi, basePath } = useApi();
     const { execute } = useAPICall();
+    const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
+    const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(
+        null,
+    );
 
     const {
         register,
@@ -61,7 +79,127 @@ export default function Register() {
         },
     });
 
+    useEffect(() => {
+        if (!basePath) {
+            setOauthMethods([]);
+            setRegistrationEnabled(null);
+            return;
+        }
+
+        let isMounted = true;
+
+        const loadConfig = async () => {
+            try {
+                const response = await fetch(`${basePath}/users/config/`);
+                if (!response.ok) {
+                    throw new Error('Failed to load auth configuration');
+                }
+
+                const data = await response.json();
+                if (!isMounted) {
+                    return;
+                }
+
+                setOauthMethods(
+                    Array.isArray(data?.oauth_methods) ? data.oauth_methods : [],
+                );
+                setRegistrationEnabled(
+                    typeof data?.registration_enabled === 'boolean'
+                        ? data.registration_enabled
+                        : null,
+                );
+            } catch (error) {
+                if (!isMounted) {
+                    return;
+                }
+                setOauthMethods([]);
+                setRegistrationEnabled(null);
+            }
+        };
+
+        loadConfig();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [basePath]);
+
+    const apiRoot = basePath.replace(/\/api\/?$/, '');
+
+    const getOAuthKey = (method: OAuthMethod) => {
+        return (
+            method.id ||
+            method.provider ||
+            method.name ||
+            method.label ||
+            method.display_name ||
+            ''
+        );
+    };
+
+    const getOAuthLabel = (method: OAuthMethod) => {
+        return (
+            method.display_name ||
+            method.label ||
+            method.name ||
+            method.provider ||
+            method.id ||
+            'Single Sign-On'
+        );
+    };
+
+    const getOAuthUrl = (method: OAuthMethod) => {
+        const url =
+            method.authorization_url ||
+            method.auth_url ||
+            method.login_url ||
+            method.url;
+
+        if (!url) {
+            return '';
+        }
+
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+
+        if (!apiRoot) {
+            return url;
+        }
+
+        if (url.startsWith('/')) {
+            return `${apiRoot}${url}`;
+        }
+
+        return `${apiRoot}/${url}`;
+    };
+
+    const buildOAuthRedirectUrl = (method: OAuthMethod) => {
+        const url = getOAuthUrl(method);
+        if (!url) {
+            return '';
+        }
+
+        const provider = getOAuthKey(method);
+        if (!provider) {
+            return '';
+        }
+
+        const redirectUri = `${window.location.origin}/#/oauth/callback`;
+        const redirectUrl = new URL(url);
+        redirectUrl.searchParams.set('redirect_uri', redirectUri);
+        redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
+        return redirectUrl.toString();
+    };
+
+    const oauthOptions = oauthMethods.filter((method) => buildOAuthRedirectUrl(method));
+
     const onSubmit = async (data: FormData) => {
+        if (registrationEnabled === false) {
+            toast.error('Registration is disabled. Contact an administrator.');
+            return;
+        }
+
         let user = await execute(() =>
             usersApi.usersCreate({
                 userCreateRequest: {
@@ -127,6 +265,15 @@ export default function Register() {
                                         Enter your information to create your account
                                     </p>
                                 </div>
+                                {registrationEnabled === false && (
+                                    <Alert>
+                                        <WarningCircle />
+                                        <AlertDescription>
+                                            Registration is disabled. Use single sign-on or
+                                            contact an administrator.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
                                 <Field>
                                     <FieldLabel htmlFor='username'>Username</FieldLabel>
                                     <Input
@@ -135,6 +282,7 @@ export default function Register() {
                                         {...register('username')}
                                         aria-invalid={errors.username ? 'true' : 'false'}
                                         required
+                                        disabled={registrationEnabled === false}
                                     />
                                     {errors.username && (
                                         <FieldDescription className='text-destructive'>
@@ -150,6 +298,7 @@ export default function Register() {
                                         {...register('email')}
                                         aria-invalid={errors.email ? 'true' : 'false'}
                                         required
+                                        disabled={registrationEnabled === false}
                                     />
                                     {errors.email && (
                                         <FieldDescription className='text-destructive'>
@@ -165,6 +314,7 @@ export default function Register() {
                                         {...register('password')}
                                         aria-invalid={errors.password ? 'true' : 'false'}
                                         required
+                                        disabled={registrationEnabled === false}
                                     />
                                     {errors.password && (
                                         <FieldDescription className='text-destructive'>
@@ -182,6 +332,7 @@ export default function Register() {
                                         {...register('passwordCheck')}
                                         aria-invalid={errors.passwordCheck ? 'true' : 'false'}
                                         required
+                                        disabled={registrationEnabled === false}
                                     />
                                     {errors.passwordCheck && (
                                         <FieldDescription className='text-destructive'>
@@ -195,12 +346,50 @@ export default function Register() {
                                         variant='default'
                                         size='default'
                                         className='w-full'
-                                        disabled={isSubmitting}
+                                        disabled={
+                                            isSubmitting || registrationEnabled === false
+                                        }
                                         data-testid='login-register-button'
                                     >
-                                        {isSubmitting ? 'Creating...' : 'Create Account'}
+                                        {registrationEnabled === false
+                                            ? 'Registration Disabled'
+                                            : isSubmitting
+                                              ? 'Creating...'
+                                              : 'Create Account'}
                                     </Button>
                                 </Field>
+                                {oauthOptions.length > 0 && (
+                                    <>
+                                        <FieldSeparator />
+                                        <Field>
+                                            <FieldDescription className='text-center'>
+                                                Or continue with
+                                            </FieldDescription>
+                                        </Field>
+                                        {oauthOptions.map((method) => (
+                                            <Field
+                                                key={`${getOAuthKey(method)}-${getOAuthUrl(method)}`}
+                                            >
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    size='default'
+                                                    className='w-full'
+                                                    onClick={() => {
+                                                        sessionStorage.setItem(
+                                                            'oauth_login_redirect',
+                                                            '/',
+                                                        );
+                                                        window.location.href =
+                                                            buildOAuthRedirectUrl(method);
+                                                    }}
+                                                >
+                                                    {getOAuthLabel(method)}
+                                                </Button>
+                                            </Field>
+                                        ))}
+                                    </>
+                                )}
                                 <FieldSeparator />
                                 <Field>
                                     <FieldDescription className='text-center'>

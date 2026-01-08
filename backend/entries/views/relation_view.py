@@ -22,50 +22,51 @@ from ..models import Relation
 from ..serializers import RelationDetailSerializer, RelationSerializer
 
 
-@extend_schema(
-    summary="List relations between entries",
-    description="Returns a paginated list of relations between specified entries."
-    + "Requires 'relates' query parameter with entry IDs.",
-    parameters=[
-        OpenApiParameter(
-            name="relates",
-            location=OpenApiParameter.QUERY,
-            description="List of entry IDs to find relations between",
-            required=True,
-            type={"type": "array", "items": {"type": "integer"}},
-        ),
-        OpenApiParameter(
-            name="page",
-            location=OpenApiParameter.QUERY,
-            description="Page number for pagination",
-            required=False,
-            type=int,
-        ),
-        OpenApiParameter(
-            name="page_size",
-            location=OpenApiParameter.QUERY,
-            description="Number of relations to return per page",
-            required=False,
-            type=int,
-        ),
-    ],
-    responses={
-        200: TotalPagesPagination().get_paginated_response_serializer(
-            RelationSerializer
-        ),
-        **get_error_responses(
-            EntriesErrorCodes.RELATES_PARAMETER_REQUIRED,
-            EntriesErrorCodes.INVALID_RELATES_PARAMETER,
-            EntriesErrorCodes.INVALID_PAGE_SIZE,
-            EntriesErrorCodes.PAGE_SIZE_TOO_LARGE,
-        ),
-        **get_common_error_responses(),
-    },
-)
 class RelationListView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        summary="List relations between entries",
+        description="Returns a paginated list of relations between specified entries."
+        + "Requires 'relates' query parameter with entry IDs.",
+        operation_id="entries_relations_list",
+        parameters=[
+            OpenApiParameter(
+                name="relates",
+                location=OpenApiParameter.QUERY,
+                description="List of entry IDs to find relations between",
+                required=True,
+                type={"type": "array", "items": {"type": "integer"}},
+            ),
+            OpenApiParameter(
+                name="page",
+                location=OpenApiParameter.QUERY,
+                description="Page number for pagination",
+                required=False,
+                type=int,
+            ),
+            OpenApiParameter(
+                name="page_size",
+                location=OpenApiParameter.QUERY,
+                description="Number of relations to return per page",
+                required=False,
+                type=int,
+            ),
+        ],
+        responses={
+            200: TotalPagesPagination().get_paginated_response_serializer(
+                RelationSerializer
+            ),
+            **get_error_responses(
+                EntriesErrorCodes.RELATES_PARAMETER_REQUIRED,
+                EntriesErrorCodes.INVALID_RELATES_PARAMETER,
+                EntriesErrorCodes.INVALID_PAGE_SIZE,
+                EntriesErrorCodes.PAGE_SIZE_TOO_LARGE,
+            ),
+            **get_common_error_responses(),
+        },
+    )
     def get(self, request):
         page_size = request.query_params.get("page_size", 10)
         if not page_size.isdigit() or int(page_size) <= 0:
@@ -120,6 +121,7 @@ class RelationDetailView(APIView):
     @extend_schema(
         summary="Get relation details",
         description="Retrieves detailed information about a relation including its attachments with presigned URLs.",
+        operation_id="entries_relations_retrieve",
         responses={
             200: RelationDetailSerializer,
             404: {"description": "Relation not found"},
@@ -138,6 +140,7 @@ class RelationDetailView(APIView):
     @extend_schema(
         summary="Delete a relation",
         description="Deletes a specific relation by ID. Only admin users can perform this action.",
+        operation_id="entries_relations_destroy",
         responses={
             204: {"description": "No content - relation deleted successfully"},
             **get_common_error_responses(),

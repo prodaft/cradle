@@ -2,6 +2,7 @@ import { useNotif } from '@/contexts';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { useProfile } from '@/contexts/user/ProfileContext';
 import { useAPICall } from '@/hooks';
+import { useCollabExtension } from '@/hooks/collab/useCollabExtension';
 import useApi from '@/hooks/api/useApi';
 import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { CradleEditor } from '@/utils/editor/enhancements';
@@ -84,6 +85,7 @@ interface RichEditorProps {
     setLineNumber: (lineNumber: number) => void;
     editorUtils: CradleEditor;
     referenceMappings?: Record<string, FileReference>;
+    enableCollab?: boolean;
 }
 
 export interface RichEditorRef {
@@ -169,6 +171,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         editorUtils,
         setLineNumber,
         referenceMappings: propReferenceMappings,
+        enableCollab = false,
     },
     ref,
 ) {
@@ -184,6 +187,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const markdownContentRef = useRef(markdownContent);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
     const { executor } = useAPICall();
+    const { extension: collabExtension, status: collabStatus } = useCollabExtension(
+        noteid,
+        enableCollab,
+    );
 
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
@@ -235,7 +242,15 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     useEffect(() => {
         markdownContentRef.current = markdownContent;
-    }, [markdownContent]);
+    }, [markdownContent, enableCollab, noteid]);
+
+    useEffect(() => {
+        if (!enableCollab) return;
+        console.debug('[RichEditor] collab status update', {
+            noteId: noteid,
+            status: collabStatus,
+        });
+    }, [collabStatus, enableCollab, noteid]);
 
     // Memoize code block copy handler
     const codeBlockCopyExtension = useMemo(() => {
@@ -390,6 +405,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             ...additionalExtensions,
         ];
 
+        if (collabExtension) {
+            exts.push(collabExtension);
+        }
+
         if (source) {
             exts.push(lineNumbers());
         } else {
@@ -432,6 +451,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         pasteHandler,
         referenceMappings,
         fileDownloadFn,
+        collabExtension,
     ]);
 
     // Reconfigure extensions when they change
@@ -441,14 +461,28 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 effects: [StateEffect.reconfigure.of(extensions)],
             });
         }
-    }, [extensions]);
+    }, [collabExtension, enableCollab, extensions, markdownContent, noteid]);
 
     // Initialize editor
     useEffect(() => {
+        if (enableCollab && !collabExtension) {
+            console.debug('[RichEditor] waiting for collab extension before init', {
+                noteId: noteid,
+            });
+            return;
+        }
+
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             try {
+                const initialDoc = enableCollab ? (markdownContent || '') : markdownContent;
+                console.debug('[RichEditor] initializing editor', {
+                    noteId: noteid,
+                    enableCollab,
+                    initialDocLength: initialDoc.length,
+                    extensionsCount: extensions.length,
+                });
                 const state = EditorState.create({
-                    doc: markdownContent,
+                    doc: initialDoc,
                     extensions,
                 });
 
@@ -498,7 +532,31 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         const currentContent = view.state.doc.toString();
         if (currentContent === markdownContent) return;
 
+        if (enableCollab && currentContent.length > 0) {
+            console.debug('[RichEditor] skipping external sync while collab active', {
+                noteId: noteid,
+                currentLength: currentContent.length,
+                incomingLength: markdownContent.length,
+            });
+            return;
+        }
+
         const cursorPos = view.state.selection.main.head;
+        const nextCursorPos = Math.min(cursorPos, markdownContent.length);
+        console.debug('[RichEditor] syncing external content', {
+            noteId: noteid,
+            fromLength: currentContent.length,
+            toLength: markdownContent.length,
+        });
+
+        view.dispatch({
+            changes: {
+                from: 0,
+                to: currentContent.length,
+                insert: markdownContent,
+            },
+            selection: { anchor: nextCursorPos, head: nextCursorPos },
+        });
     }, [markdownContent]);
 
     // Update search panel labels - only observe when editor exists

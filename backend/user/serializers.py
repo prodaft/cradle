@@ -171,6 +171,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class UserRetrieveSerializer(serializers.ModelSerializer):
     catalyst_api_key = serializers.SerializerMethodField()
+    oauth_connections = serializers.SerializerMethodField()
 
     class Meta:
         model = CradleUser
@@ -185,16 +186,53 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "email_confirmed",
             "catalyst_api_key",
             "theme",
+            "oauth_connections",
         ]
 
     def get_catalyst_api_key(self, obj) -> bool:
         return True if obj.catalyst_api_key else False
+
+    def get_oauth_connections(self, obj) -> dict:
+        from django.conf import settings
+
+        from .models import ExternalIdentity
+
+        available = []
+        for method in settings.OAUTH_METHODS:
+            if not isinstance(method, dict):
+                continue
+            method_id = method.get("id") or method.get("provider") or method.get("name")
+            if method_id:
+                available.append(method_id)
+
+        connected = set(
+            ExternalIdentity.objects.filter(user=obj).values_list("provider", flat=True)
+        )
+
+        connections: dict[str, bool] = {}
+        for provider in available:
+            connections[provider] = provider in connected
+        for provider in connected:
+            connections.setdefault(provider, True)
+
+        return connections
 
 
 class EssentialUserRetrieveSerializer(serializers.ModelSerializer):
     class Meta:
         model = CradleUser
         fields = ["id", "username"]
+
+
+class OAuthConnectSerializer(serializers.Serializer):
+    provider = serializers.CharField()
+    code = serializers.CharField()
+    redirect_uri = serializers.URLField()
+
+
+class UserConfigSerializer(serializers.Serializer):
+    oauth_methods = serializers.ListField(child=serializers.DictField())
+    registration_enabled = serializers.BooleanField()
 
 
 class TokenPairRetrieveSerializer(serializers.Serializer):
