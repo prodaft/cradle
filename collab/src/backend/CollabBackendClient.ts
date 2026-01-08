@@ -7,7 +7,7 @@ import {
   Configuration,
   InternalApi,
   NoteRetrieve
-} from "../services/cradle/index.js";
+} from "../services/cradle/index";
 import { config } from "../config.js";
 import { logger } from "../logging/logger.js";
 import { signRequest } from "./signing.js";
