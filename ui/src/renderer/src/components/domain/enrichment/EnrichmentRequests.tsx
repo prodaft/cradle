@@ -2,7 +2,6 @@ import { useModal } from '@/contexts/ui/ModalContext';
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import useApi from '@/hooks/api/useApi';
 import useAPICall from '@/hooks/api/useAPICall';
-import InProgress from '@components/feedback/InProgress';
 import EnrichmentRequestModal from '@components/modals/enrichment/EnrichmentRequestModal';
 import { EnrichmentRequestList } from '@services/cradle';
 import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react';
@@ -22,10 +21,6 @@ interface ColumnFilters {
 }
 
 export default function EnrichmentRequests() {
-    if (import.meta.env.VITE_ENV === 'production') {
-        return <InProgress />;
-    }
-
     const [searchParams, setSearchParams] = useSearchParams();
     const { notify } = useNotif();
     const { intelioApi } = useApi();
@@ -288,7 +283,7 @@ export default function EnrichmentRequests() {
                 <div className='flex items-center gap-1.5 px-3 h-7 text-xs font-mono rounded-full border border-[#FF8C00]/30 bg-[#FF8C00]/10 text-[#FF8C00]'>
                     <span className='font-semibold'>
                         {enrichmentRequests.length === totalCount ||
-                        (enrichmentRequests.length === 0 && totalCount === 0)
+                            (enrichmentRequests.length === 0 && totalCount === 0)
                             ? totalCount
                             : `${enrichmentRequests.length}/${totalCount}`}
                     </span>
