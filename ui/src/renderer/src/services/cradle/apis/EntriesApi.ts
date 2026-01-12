@@ -89,13 +89,13 @@ export interface EntriesRelationsDestroyRequest {
     relationId: string;
 }
 
-export interface EntriesRelationsRetrieveRequest {
+export interface EntriesRelationsListRequest {
     relates: Array<number>;
     page?: number;
     pageSize?: number;
 }
 
-export interface EntriesRelationsRetrieve2Request {
+export interface EntriesRelationsRetrieveRequest {
     relationId: string;
 }
 
@@ -574,11 +574,11 @@ export class EntriesApi extends runtime.BaseAPI {
      * Returns a paginated list of relations between specified entries.Requires \'relates\' query parameter with entry IDs.
      * List relations between entries
      */
-    async entriesRelationsRetrieveRaw(requestParameters: EntriesRelationsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedRelationSerializerResponse>> {
+    async entriesRelationsListRaw(requestParameters: EntriesRelationsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedRelationSerializerResponse>> {
         if (requestParameters['relates'] == null) {
             throw new runtime.RequiredError(
                 'relates',
-                'Required parameter "relates" was null or undefined when calling entriesRelationsRetrieve().'
+                'Required parameter "relates" was null or undefined when calling entriesRelationsList().'
             );
         }
 
@@ -623,8 +623,8 @@ export class EntriesApi extends runtime.BaseAPI {
      * Returns a paginated list of relations between specified entries.Requires \'relates\' query parameter with entry IDs.
      * List relations between entries
      */
-    async entriesRelationsRetrieve(requestParameters: EntriesRelationsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedRelationSerializerResponse> {
-        const response = await this.entriesRelationsRetrieveRaw(requestParameters, initOverrides);
+    async entriesRelationsList(requestParameters: EntriesRelationsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedRelationSerializerResponse> {
+        const response = await this.entriesRelationsListRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -632,11 +632,11 @@ export class EntriesApi extends runtime.BaseAPI {
      * Retrieves detailed information about a relation including its attachments with presigned URLs.
      * Get relation details
      */
-    async entriesRelationsRetrieve2Raw(requestParameters: EntriesRelationsRetrieve2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RelationDetail>> {
+    async entriesRelationsRetrieveRaw(requestParameters: EntriesRelationsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RelationDetail>> {
         if (requestParameters['relationId'] == null) {
             throw new runtime.RequiredError(
                 'relationId',
-                'Required parameter "relationId" was null or undefined when calling entriesRelationsRetrieve2().'
+                'Required parameter "relationId" was null or undefined when calling entriesRelationsRetrieve().'
             );
         }
 
@@ -670,8 +670,8 @@ export class EntriesApi extends runtime.BaseAPI {
      * Retrieves detailed information about a relation including its attachments with presigned URLs.
      * Get relation details
      */
-    async entriesRelationsRetrieve2(requestParameters: EntriesRelationsRetrieve2Request, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RelationDetail> {
-        const response = await this.entriesRelationsRetrieve2Raw(requestParameters, initOverrides);
+    async entriesRelationsRetrieve(requestParameters: EntriesRelationsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<RelationDetail> {
+        const response = await this.entriesRelationsRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

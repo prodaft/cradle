@@ -56,6 +56,7 @@ export default function NoteViewer() {
     const location = useLocation();
     const locationState = (location.state as LocationState) || {};
     const { isAdmin, profile } = useProfile();
+    const vimModeEnabled = Boolean(profile?.vimMode);
     const { from, state } = locationState;
     const [note, setNote] = useState<NoteRetrieve | null>(null);
     const [richEditor, setRichEditor] = useState(
@@ -587,6 +588,14 @@ export default function NoteViewer() {
                                 noteStatus={note.status || null}
                                 noteStatusMessage={note.statusMessage}
                             />
+                        )}
+                        {vimModeEnabled && (
+                            <Tooltip content='Vim mode enabled'>
+                                <span className='inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
+                                    <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
+                                    <span className='cradle-mono'>Vim</span>
+                                </span>
+                            </Tooltip>
                         )}
                         {note && <NoteMetadata note={note} isFleeting={isFleeting} />}
                     </div>

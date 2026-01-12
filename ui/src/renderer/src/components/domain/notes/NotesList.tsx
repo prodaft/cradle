@@ -50,6 +50,8 @@ interface Query {
     editor__username?: string;
     date?: string;
     references?: string[];
+    linked_to?: number | string;
+    linked_to_exact_match?: boolean;
     created_date_from?: string;
     created_date_to?: string;
     updated_date_from?: string;
@@ -358,6 +360,8 @@ export default function NotesList({
                 authorUsername: query.author__username,
                 date: query.date,
                 references: query.references,
+                linkedTo: query.linked_to,
+                linkedToExactMatch: query.linked_to_exact_match,
                 // Only apply timestamp filters when the range is complete.
                 // This prevents "stuck" start dates when loading with only a `*_from` param.
                 timestampGte: hasCompleteCreatedRange
@@ -416,6 +420,8 @@ export default function NotesList({
         query?.author__username,
         query?.date,
         query?.references,
+        query?.linked_to,
+        query?.linked_to_exact_match,
         query?.created_date_from,
         query?.created_date_to,
         query?.timestamp_gte,

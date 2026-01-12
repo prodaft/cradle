@@ -17,6 +17,7 @@ interface AdminPanelCardEntityProps {
     onDelete: () => void;
     typename: string;
     setRightPane: (content: ReactNode) => void;
+    searchKey?: string;
 }
 
 export default function AdminPanelCardEntity({
@@ -26,6 +27,7 @@ export default function AdminPanelCardEntity({
     onDelete,
     typename,
     setRightPane,
+    searchKey,
 }: AdminPanelCardEntityProps) {
     const { executor } = useAPICall();
     const { entriesApi } = useApi();

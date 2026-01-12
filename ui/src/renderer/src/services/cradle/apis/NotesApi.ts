@@ -62,7 +62,6 @@ export interface NotesFilesRetrieveRequest {
     date?: string;
     keyword?: string;
     linkedTo?: string;
-    linkedToExactMatch?: boolean;
     mimetype?: string;
     orderBy?: string;
     page?: number;
@@ -80,6 +79,7 @@ export interface NotesListRequest {
     authorUsername?: string;
     content?: string;
     date?: string;
+    linkedTo?: string;
     orderBy?: string;
     page?: number;
     pageSize?: number;
@@ -244,10 +244,6 @@ export class NotesApi extends runtime.BaseAPI {
             queryParameters['linked_to'] = requestParameters['linkedTo'];
         }
 
-        if (requestParameters['linkedToExactMatch'] != null) {
-            queryParameters['linked_to_exact_match'] = requestParameters['linkedToExactMatch'];
-        }
-
         if (requestParameters['mimetype'] != null) {
             queryParameters['mimetype'] = requestParameters['mimetype'];
         }
@@ -372,6 +368,10 @@ export class NotesApi extends runtime.BaseAPI {
 
         if (requestParameters['date'] != null) {
             queryParameters['date'] = requestParameters['date'];
+        }
+
+        if (requestParameters['linkedTo'] != null) {
+            queryParameters['linked_to'] = requestParameters['linkedTo'];
         }
 
         if (requestParameters['orderBy'] != null) {
