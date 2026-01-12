@@ -5,7 +5,6 @@
 
 import {
     AccessApi,
-    CradleStatisticsApi,
     EntriesApi,
     FileTransferApi,
     IntelioApi,
@@ -15,9 +14,10 @@ import {
     ManagementApi,
     NotesApi,
     NotificationsApi,
-    PublishApi,
     QueryApi,
-    UserApi,
+    ReportsApi,
+    StatisticsApi,
+    UsersApi,
 } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
 
@@ -73,8 +73,8 @@ export function createLoaderApis() {
         notesApi: new NotesApi(configuration),
         notificationsApi: new NotificationsApi(configuration),
         queryApi: new QueryApi(configuration),
-        reportsApi: new PublishApi(configuration),
-        statisticsApi: new CradleStatisticsApi(configuration),
-        usersApi: new UserApi(configuration),
+        reportsApi: new ReportsApi(configuration),
+        statisticsApi: new StatisticsApi(configuration),
+        usersApi: new UsersApi(configuration),
     };
 }
