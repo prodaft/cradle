@@ -29,7 +29,6 @@
 
 // API-related hooks
 export * from './api';
-export * from './collab/useCollabExtension';
 
 // Auth-related hooks
 export * from './auth';

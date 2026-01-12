@@ -1,8 +1,6 @@
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import useApi from '@/hooks/api/useApi';
-import { useCollabExtension } from '@/hooks/collab/useCollabExtension';
 import { useProfile } from '@/hooks/user/useProfile';
-import { FileTransferDownloadRetrieveRequest } from '@/services/cradle/apis/FileTransferApi';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import {
@@ -83,6 +81,7 @@ interface RichEditorProps {
     setMarkdownContent: (content: string) => void;
     fileData: FileReference[];
     setFileData: (data: FileReference[]) => void;
+    saveNote: (autoSave?: boolean) => void;
     additionalExtensions?: Extension[];
     enableEditing?: boolean;
     source?: boolean;
@@ -167,6 +166,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         setMarkdownContent,
         fileData,
         setFileData,
+        saveNote,
         additionalExtensions = [],
         enableEditing = true,
         source = false,
@@ -189,9 +189,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
     const markdownContentRef = useRef(markdownContent);
-    const collabAppliedRef = useRef(false);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
-    const collabEnabled = !!noteid;
 
     const downloadFileMutation = useMutation({
         mutationFn: async (fileId: string) => {
@@ -214,21 +212,12 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             suppressNotification: true,
         },
     });
-    const {
-        extension: collabExtension,
-        status: collabStatus,
-        synced: collabSynced,
-        yText: collabYText,
-    } = useCollabExtension(noteid, collabEnabled);
 
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
-        () =>
-            async (
-                file: FileTransferDownloadRetrieveRequest,
-            ): Promise<FileDownload> => {
-                return await downloadFileMutation.mutateAsync(file.fileId);
-            },
+        () => async (file: { fileId: string }): Promise<FileDownload> => {
+            return await downloadFileMutation.mutateAsync(file.fileId);
+        },
         [downloadFileMutation],
     );
 
@@ -273,52 +262,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     useEffect(() => {
         markdownContentRef.current = markdownContent;
-    }, [markdownContent, noteid]);
-
-    useEffect(() => {
-        logger.debug('[RichEditor] collab status update', {
-            noteId: noteid,
-            status: collabStatus,
-        });
-    }, [collabStatus, noteid]);
-
-    useEffect(() => {
-        collabAppliedRef.current = false;
-    }, [noteid, collabSynced]);
-
-    useEffect(() => {
-        const view = editorViewRef.current;
-        if (!view || !collabSynced || !collabYText) return;
-        if (collabAppliedRef.current) return;
-
-        const collabContent = collabYText.toString();
-        if (collabEnabled) return;
-
-        const currentContent = view.state.doc.toString();
-        if (currentContent === collabContent) {
-            collabAppliedRef.current = true;
-            return;
-        }
-
-        const cursorPos = view.state.selection.main.head;
-        const nextCursorPos = Math.min(cursorPos, collabContent.length);
-        logger.debug('[RichEditor] applying collab content as source of truth', {
-            noteId: noteid,
-            fromLength: currentContent.length,
-            toLength: collabContent.length,
-        });
-
-        view.dispatch({
-            changes: {
-                from: 0,
-                to: currentContent.length,
-                insert: collabContent,
-            },
-            selection: { anchor: nextCursorPos, head: nextCursorPos },
-        });
-        setMarkdownContent(collabContent);
-        collabAppliedRef.current = true;
-    }, [collabSynced, collabYText, noteid, setMarkdownContent]);
+    }, [markdownContent]);
 
     // Memoize code block copy handler
     const codeBlockCopyExtension = useMemo(() => {
@@ -462,10 +406,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             ...additionalExtensions,
         ];
 
-        if (collabExtension) {
-            exts.push(collabExtension);
-        }
-
         if (source) {
             exts.push(lineNumbers());
         } else {
@@ -498,7 +438,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         pasteHandler,
         referenceMappings,
         fileDownloadFn,
-        collabExtension,
     ]);
 
     // Reconfigure extensions when they change
@@ -508,20 +447,19 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 effects: [StateEffect.reconfigure.of(extensions)],
             });
         }
-    }, [collabExtension, extensions, markdownContent, noteid]);
+    }, [extensions]);
 
     // Initialize editor
     useEffect(() => {
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             try {
-                const initialDoc = collabEnabled ? '' : markdownContent || '';
                 logger.debug('[RichEditor] initializing editor', {
                     noteId: noteid,
-                    initialDocLength: initialDoc.length,
+                    initialDocLength: markdownContent.length,
                     extensionsCount: extensions.length,
                 });
                 const state = EditorState.create({
-                    doc: initialDoc,
+                    doc: markdownContent,
                     extensions,
                 });
 
@@ -573,22 +511,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         const currentContent = view.state.doc.toString();
         if (currentContent === markdownContent) return;
 
-        if (currentContent.length > 0) {
-            logger.debug('[RichEditor] skipping external sync while collab active', {
-                noteId: noteid,
-                currentLength: currentContent.length,
-                incomingLength: markdownContent.length,
-            });
-            return;
-        }
-
         const cursorPos = view.state.selection.main.head;
         const nextCursorPos = Math.min(cursorPos, markdownContent.length);
-        logger.debug('[RichEditor] syncing external content', {
-            noteId: noteid,
-            fromLength: currentContent.length,
-            toLength: markdownContent.length,
-        });
 
         view.dispatch({
             changes: {
@@ -598,7 +522,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             },
             selection: { anchor: nextCursorPos, head: nextCursorPos },
         });
-    }, [collabEnabled, markdownContent]);
+    }, [markdownContent]);
 
     // Update search panel labels - only observe when editor exists
     useEffect(() => {
@@ -647,11 +571,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     }, []);
 
     const toggleFileList = useCallback(() => setShowFileList((prev) => !prev), []);
-
-    const handleFileUploadModalClose = useCallback(() => {
-        setShowFileUploadModal(false);
-        setClipboardFiles([]);
-    }, []);
 
     const handleFilesChange = useCallback(
         (files: FileReferenceWithNote[]) => {
@@ -707,25 +626,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             )}
 
             {/* File Upload Modal */}
-            {showFileUploadModal && (
-                <div
-                    className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'
-                    onClick={handleFileUploadModalClose}
-                >
-                    <div
-                        className='bg-bg-background rounded-lg shadow-xl p-6'
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <FileUploadModal
-                            files={fileData as FileReferenceWithNote[]}
-                            onFilesChange={handleFilesChange}
-                            closeModal={handleFileUploadModalClose}
-                            initialFiles={clipboardFiles}
-                            noteId={noteid}
-                        />
-                    </div>
-                </div>
-            )}
+            <FileUploadModal
+                open={showFileUploadModal}
+                onOpenChange={(open) => {
+                    setShowFileUploadModal(open);
+                    if (!open) setClipboardFiles([]);
+                }}
+                files={fileData as FileReferenceWithNote[]}
+                onFilesChange={handleFilesChange}
+                initialFiles={clipboardFiles}
+                noteId={noteid}
+            />
         </div>
     );
 });
@@ -741,6 +652,7 @@ export default memo(RichEditor, (prevProps, nextProps) => {
         prevProps.editorUtils === nextProps.editorUtils &&
         prevProps.setMarkdownContent === nextProps.setMarkdownContent &&
         prevProps.setFileData === nextProps.setFileData &&
+        prevProps.saveNote === nextProps.saveNote &&
         prevProps.referenceMappings === nextProps.referenceMappings
     );
 });

@@ -128,8 +128,8 @@ export default function NoteViewer() {
     const [showEditDialog, setShowEditDialog] = useState(false);
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
-    const initialContentSetRef = useRef(false);
-    const { managementApi, notesApi, lspApi } = useApi();
+    const lastLoadedNoteIdRef = useRef<string | null>(null);
+    const { managementApi, notesApi, lspApi} = useApi();
 
     const finalizeNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
@@ -280,49 +280,21 @@ export default function NoteViewer() {
 
     useEffect(() => {
         if (!noteId) {
+            logger.warn('NoteViewer - No note ID provided');
             setIsLoading(false);
-            setNote(null);
-            setMarkdownContent('');
-            setInitialMarkdown('');
-            setFileData([]);
-            setIsFleeting(false);
-            setHasUnsavedChanges(false);
-            initialContentSetRef.current = false;
+            lastLoadedNoteIdRef.current = null;
             return;
         }
 
-        setIsLoading(false);
-        setNote(null);
-        setMarkdownContent('');
-        setInitialMarkdown('');
-        setFileData([]);
-        setIsFleeting(false);
-        setHasUnsavedChanges(false);
-        initialContentSetRef.current = false;
-
-        logger.debug('[NoteViewer] opening note with collab enabled', {
-            noteId,
-            hasStateNotes: Boolean(state?.notes?.length),
-        });
-
-        if (state?.notes) {
-            const matchedNote = state.notes.find((item) => item.id === noteId);
-            if (matchedNote) {
-                setNote(matchedNote);
-                setIsFleeting(Boolean(matchedNote.fleeting));
-                setFileData(matchedNote.files || []);
-                logger.debug('[NoteViewer] hydrated note metadata from state', {
-                    noteId,
-                    isFleeting: Boolean(matchedNote.fleeting),
-                    fileCount: matchedNote.files?.length || 0,
-                });
-            } else {
-                logger.debug('[NoteViewer] note metadata not found in state', {
-                    noteId,
-                });
-            }
+        // Skip loading if we've already loaded this exact note ID
+        // This prevents re-fetching when only search params change
+        if (lastLoadedNoteIdRef.current === noteId) {
+            return;
         }
-    }, [noteId, state?.notes]);
+
+        setIsLoading(true);
+        lastLoadedNoteIdRef.current = noteId || null;
+    }, [noteId]);
 
     // Query for note metadata
     const { data: noteData, isPending: isPendingNote } = useQuery({
@@ -342,25 +314,19 @@ export default function NoteViewer() {
             setNote(null);
             setIsFleeting(false);
             setFileData([]);
+            setMarkdownContent('');
+            setInitialMarkdown('');
             return;
         }
 
+        logger.info('NoteViewer - Note loaded successfully', { noteData });
         setNote(noteData);
-        setIsFleeting(Boolean(noteData.fleeting));
+        setMarkdownContent(noteData.content);
+        setInitialMarkdown(noteData.content);
         setFileData(noteData.files || []);
+        setHasUnsavedChanges(false);
+        setIsLoading(false);
     }, [noteData]);
-
-    useEffect(() => {
-        if (initialContentSetRef.current) {
-            return;
-        }
-
-        if (markdownContent) {
-            initialContentSetRef.current = true;
-            setInitialMarkdown(markdownContent);
-            setHasUnsavedChanges(false);
-        }
-    }, [markdownContent]);
 
     // Mutation for deleting note
     const deleteMutation = useMutation({
@@ -374,6 +340,62 @@ export default function NoteViewer() {
             errorMessage: 'Failed to delete note',
         },
     });
+
+    // Use a ref to store the latest values for the save function
+    const saveDataRef = useRef({ markdownContent, fileData, isFleeting });
+
+    useEffect(() => {
+        saveDataRef.current = { markdownContent, fileData, isFleeting };
+    }, [markdownContent, fileData, isFleeting]);
+
+    const saveNoteMutation = useMutation({
+        mutationFn: async ({ content }: { content: string }) => {
+            return await notesApi.notesUpdate({
+                noteId: noteId || '',
+                noteEditRequest: {
+                    content: content,
+                },
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const handleSaveNote = useCallback(
+        async (showAlert = false) => {
+            if (!id) return;
+
+            const {
+                markdownContent: content,
+                fileData: files,
+                isFleeting: fleeting,
+            } = saveDataRef.current;
+
+            if (!content || content.trim().length === 0) {
+                toast.error('Cannot save empty note.');
+                return;
+            }
+
+            setSaving(true);
+            const successMessage = showAlert ? 'Note saved successfully.' : undefined;
+
+            try {
+                await saveNoteMutation.mutateAsync({ content });
+                setInitialMarkdown(content);
+                setHasUnsavedChanges(false);
+                if (successMessage) {
+                    toast.success(successMessage);
+                }
+            } catch (error) {
+                const parsed = await parseAPIError(error);
+                toast.error(`Failed to save note: ${parsed.detail}`);
+            } finally {
+                setSaving(false);
+            }
+        },
+        [noteId, saveNoteMutation],
+    );
 
     const handleDelete = useCallback(async () => {
         if (!id) return;
@@ -446,6 +468,13 @@ export default function NoteViewer() {
             Prec.highest(
                 keymap.of([
                     {
+                        key: 'Mod-s',
+                        run: () => {
+                            handleSaveNote(true);
+                            return true;
+                        },
+                    },
+                    {
                         key: 'Mod-f',
                         run: () => {
                             handleFind();
@@ -462,7 +491,7 @@ export default function NoteViewer() {
                 ]),
             ),
         ],
-        [handleFind, handleReplace],
+        [handleFind, handleReplace, handleSaveNote],
     );
 
     useEffect(() => {
@@ -680,6 +709,7 @@ export default function NoteViewer() {
                                                         fileData={fileData}
                                                         setFileData={handleFilesChange}
                                                         source={!richEditor}
+                                                        saveNote={handleSaveNote}
                                                         enableEditing={enableEditing}
                                                         setLineNumber={setLineNumber}
                                                     />
@@ -724,6 +754,7 @@ export default function NoteViewer() {
                                                 fileData={fileData}
                                                 setFileData={handleFilesChange}
                                                 source={!richEditor}
+                                                saveNote={handleSaveNote}
                                                 enableEditing={enableEditing}
                                                 editorUtils={editorUtils}
                                                 setLineNumber={setLineNumber}

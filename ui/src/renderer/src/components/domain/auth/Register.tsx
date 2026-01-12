@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { cn } from '@/lib/utils';
-import { getApiBaseUrl } from '@/utils/url';
 import Logo from '@components/base/Logo/Logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
@@ -141,7 +140,7 @@ export default function Register() {
         const loadConfig = async () => {
             try {
                 const response = await fetch(
-                    `${getApiBaseUrl(basePath)}/users/config/`,
+                    `${basePath}/users/config/`,
                 );
                 if (!response.ok) {
                     throw new Error('Failed to load auth configuration');
@@ -176,7 +175,7 @@ export default function Register() {
         };
     }, [basePath, role, router, isLoggedIn]);
 
-    const apiBasePath = basePath ? getApiBaseUrl(basePath) : '';
+    const apiBasePath = basePath ? basePath : '';
     const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
 
     const getOAuthKey = (method: OAuthMethod) => {
@@ -447,8 +446,8 @@ export default function Register() {
                                         {registrationEnabled === false
                                             ? 'Registration Disabled'
                                             : form.formState.isSubmitting
-                                              ? 'Creating...'
-                                              : 'Create Account'}
+                                                ? 'Creating...'
+                                                : 'Create Account'}
                                     </Button>
                                 </Field>
                                 {oauthOptions.length > 0 && (
@@ -472,7 +471,7 @@ export default function Register() {
                                                         let redirectPath = '/';
                                                         if (
                                                             typeof location.state ===
-                                                                'object' &&
+                                                            'object' &&
                                                             location.state !== null &&
                                                             'from' in location.state
                                                         ) {
@@ -484,15 +483,15 @@ export default function Register() {
                                                                 redirectPath =
                                                                     from.includes('#')
                                                                         ? from.slice(
-                                                                              from.indexOf(
-                                                                                  '#',
-                                                                              ) + 1,
-                                                                          ) || '/'
+                                                                            from.indexOf(
+                                                                                '#',
+                                                                            ) + 1,
+                                                                        ) || '/'
                                                                         : from;
                                                             } else if (
                                                                 from &&
                                                                 typeof from ===
-                                                                    'object' &&
+                                                                'object' &&
                                                                 'pathname' in from
                                                             ) {
                                                                 redirectPath =

@@ -2,7 +2,6 @@ import {
     AuthTokenException,
     SessionExpiredException,
 } from '@/exceptions/AuthExceptions';
-import { getApiBaseUrl } from '@/utils/url';
 import {
     createContext,
     ReactNode,
@@ -58,7 +57,7 @@ export interface AuthActionsValue {
 }
 
 // Combined interface kept for type compatibility (useAuth removed)
-export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
+export interface AuthContextValue extends AuthStateValue, AuthActionsValue { }
 
 /**
  * AuthStateContext - provides authentication state (role, userId, isLoading, basePath)
@@ -195,7 +194,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         try {
-            const response = await fetch(`${getApiBaseUrl(basePath)}/users/refresh/`, {
+            const response = await fetch(`${basePath}/users/refresh/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -307,7 +306,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 }
 
                 const response = await fetch(
-                    `${getApiBaseUrl(basePath)}/users/login/`,
+                    `${basePath}/users/login/`,
                     {
                         method: 'POST',
                         headers: {

@@ -26,7 +26,7 @@ import {
 /**
  * 
  */
-export class CradleStatisticsApi extends runtime.BaseAPI {
+export class StatisticsApi extends runtime.BaseAPI {
 
     /**
      * Returns statistics about the user\'s notes and entries. Includes the 10 most recent notes, 3 most recently referenced entities, and 3 most recently referenced artifacts.

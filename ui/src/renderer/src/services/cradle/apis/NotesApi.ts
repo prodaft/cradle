@@ -19,6 +19,7 @@ import type {
   AccessEntityList404Response,
   FleetingNote,
   FleetingNoteRequest,
+  NoteEditRequest,
   NoteRetrieve,
   PaginatedFileReferenceWithNoteSerializerResponse,
   PaginatedNoteRetrieveSerializerResponse,
@@ -34,6 +35,8 @@ import {
     FleetingNoteToJSON,
     FleetingNoteRequestFromJSON,
     FleetingNoteRequestToJSON,
+    NoteEditRequestFromJSON,
+    NoteEditRequestToJSON,
     NoteRetrieveFromJSON,
     NoteRetrieveToJSON,
     PaginatedFileReferenceWithNoteSerializerResponseFromJSON,
@@ -126,14 +129,19 @@ export interface NotesSnippetsUserListRequest {
     userId: string;
 }
 
+export interface NotesUpdateRequest {
+    noteId: string;
+    noteEditRequest?: NoteEditRequest;
+}
+
 /**
  * 
  */
 export class NotesApi extends runtime.BaseAPI {
 
     /**
-     * Creates a new fleeting note for the authenticated user.
-     * Create fleeting note
+     * Creates a new note for the authenticated user.
+     * Create note
      */
     async notesCreateRaw(requestParameters: NotesCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FleetingNote>> {
         const queryParameters: any = {};
@@ -165,8 +173,8 @@ export class NotesApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates a new fleeting note for the authenticated user.
-     * Create fleeting note
+     * Creates a new note for the authenticated user.
+     * Create note
      */
     async notesCreate(requestParameters: NotesCreateRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<FleetingNote> {
         const response = await this.notesCreateRaw(requestParameters, initOverrides);
@@ -903,6 +911,56 @@ export class NotesApi extends runtime.BaseAPI {
      */
     async notesSnippetsUserList(requestParameters: NotesSnippetsUserListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Snippet>> {
         const response = await this.notesSnippetsUserListRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Updates an existing note. User must have read-write access to referenced entities.
+     * Update note
+     */
+    async notesUpdateRaw(requestParameters: NotesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<NoteRetrieve>> {
+        if (requestParameters['noteId'] == null) {
+            throw new runtime.RequiredError(
+                'noteId',
+                'Required parameter "noteId" was null or undefined when calling notesUpdate().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/notes/{note_id}/`;
+        urlPath = urlPath.replace(`{${"note_id"}}`, encodeURIComponent(String(requestParameters['noteId'])));
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: NoteEditRequestToJSON(requestParameters['noteEditRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => NoteRetrieveFromJSON(jsonValue));
+    }
+
+    /**
+     * Updates an existing note. User must have read-write access to referenced entities.
+     * Update note
+     */
+    async notesUpdate(requestParameters: NotesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<NoteRetrieve> {
+        const response = await this.notesUpdateRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

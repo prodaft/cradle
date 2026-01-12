@@ -177,7 +177,7 @@ export interface UsersUpdateRequest {
 /**
  * 
  */
-export class UserApi extends runtime.BaseAPI {
+export class UsersApi extends runtime.BaseAPI {
 
     /**
      * Disables 2FA for the user

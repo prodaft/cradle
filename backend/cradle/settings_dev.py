@@ -62,7 +62,7 @@ REDIS_URL = "redis://192.168.31.42:6379/0"
 BROKER = RABBITMQ_URL
 RESULT_BACKEND = REDIS_URL
 
-BASE_URL = "api/"
+BASE_URL = ""
 STATIC_URL = "static/"
 FRONTEND_URL = "http://localhost:5173"
 

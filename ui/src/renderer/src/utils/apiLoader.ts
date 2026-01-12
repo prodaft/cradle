@@ -20,7 +20,6 @@ import {
     UserApi,
 } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
-import { getApiBaseUrl } from './url';
 
 /**
  * Get base URL from localStorage
@@ -42,16 +41,16 @@ function getAccessToken(): string | null {
  */
 function createLoaderConfiguration(): Configuration {
     const basePath = getBaseUrl();
-    const apiBasePath = getApiBaseUrl(basePath);
+    const apiBasePath = basePath;
     const accessToken = getAccessToken();
 
     return new Configuration({
         basePath: apiBasePath,
         accessToken: accessToken
             ? async () => {
-                  // Return token from localStorage
-                  return accessToken;
-              }
+                // Return token from localStorage
+                return accessToken;
+            }
             : undefined,
     });
 }

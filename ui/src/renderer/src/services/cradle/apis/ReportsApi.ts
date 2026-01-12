@@ -65,7 +65,7 @@ export interface ReportsRetryCreateRequest {
 /**
  * 
  */
-export class PublishApi extends runtime.BaseAPI {
+export class ReportsApi extends runtime.BaseAPI {
 
     /**
      * Deletes a specific report belonging to the authenticated user.

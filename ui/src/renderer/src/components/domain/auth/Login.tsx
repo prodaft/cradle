@@ -12,7 +12,6 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { cn } from '@/lib/utils';
-import { getApiBaseUrl } from '@/utils/url';
 import Logo from '@components/base/Logo/Logo';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { HalfMoon, Settings, SunLight, Undo, WarningCircle } from 'iconoir-react';
@@ -102,7 +101,7 @@ export default function Login() {
         const loadConfig = async () => {
             try {
                 const response = await fetch(
-                    `${getApiBaseUrl(basePath)}/users/config/`,
+                    `${basePath}/users/config/`,
                 );
 
                 if (!response.ok) {
@@ -138,7 +137,7 @@ export default function Login() {
         };
     }, [basePath]);
 
-    const apiBasePath = basePath ? getApiBaseUrl(basePath) : '';
+    const apiBasePath = basePath ? basePath : '';
     const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
 
     const getOAuthKey = (method: OAuthMethod) => {
@@ -435,7 +434,7 @@ export default function Login() {
                                             <Alert
                                                 variant={
                                                     alert.color === 'red' ||
-                                                    alert.color === 'error'
+                                                        alert.color === 'error'
                                                         ? 'destructive'
                                                         : 'default'
                                                 }
@@ -506,7 +505,7 @@ export default function Login() {
                                                     <Alert
                                                         variant={
                                                             alert.color === 'red' ||
-                                                            alert.color === 'error'
+                                                                alert.color === 'error'
                                                                 ? 'destructive'
                                                                 : 'default'
                                                         }
@@ -585,7 +584,7 @@ export default function Login() {
                                                     <Alert
                                                         variant={
                                                             alert.color === 'red' ||
-                                                            alert.color === 'error'
+                                                                alert.color === 'error'
                                                                 ? 'destructive'
                                                                 : 'default'
                                                         }
@@ -630,20 +629,20 @@ export default function Login() {
                                                                     onClick={() => {
                                                                         const redirectPath =
                                                                             typeof from ===
-                                                                            'string'
+                                                                                'string'
                                                                                 ? from.includes(
-                                                                                      '#',
-                                                                                  )
+                                                                                    '#',
+                                                                                )
                                                                                     ? from.slice(
-                                                                                          from.indexOf(
-                                                                                              '#',
-                                                                                          ) +
-                                                                                              1,
-                                                                                      ) ||
-                                                                                      '/'
+                                                                                        from.indexOf(
+                                                                                            '#',
+                                                                                        ) +
+                                                                                        1,
+                                                                                    ) ||
+                                                                                    '/'
                                                                                     : from
                                                                                 : from?.pathname ||
-                                                                                  '/';
+                                                                                '/';
                                                                         sessionStorage.setItem(
                                                                             'oauth_login_redirect',
                                                                             redirectPath,
@@ -663,7 +662,7 @@ export default function Login() {
                                                     </>
                                                 )}
                                                 {basePath &&
-                                                registrationEnabled === false ? (
+                                                    registrationEnabled === false ? (
                                                     <FieldDescription className='text-center text-muted-foreground'>
                                                         Registration is disabled.
                                                     </FieldDescription>

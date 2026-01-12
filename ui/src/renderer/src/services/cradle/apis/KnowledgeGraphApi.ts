@@ -18,15 +18,15 @@ import * as runtime from '../runtime';
 import type {
   GraphInaccessibleResponse,
   LazyPaginatedEntryWithDepthSerializerViewResponse,
-  SubGraph,
+  PaginatedSubGraphSerializerResponse,
 } from '../models/index';
 import {
     GraphInaccessibleResponseFromJSON,
     GraphInaccessibleResponseToJSON,
     LazyPaginatedEntryWithDepthSerializerViewResponseFromJSON,
     LazyPaginatedEntryWithDepthSerializerViewResponseToJSON,
-    SubGraphFromJSON,
-    SubGraphToJSON,
+    PaginatedSubGraphSerializerResponseFromJSON,
+    PaginatedSubGraphSerializerResponseToJSON,
 } from '../models/index';
 
 export interface KnowledgeGraphInaccessibleRetrieveRequest {
@@ -178,10 +178,10 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns the full knowledge graph accessible to the user.
+     * Returns the knowledge graph accessible to the user with pagination support.
      * Get knowledge graph
      */
-    async knowledgeGraphRetrieveRaw(requestParameters: KnowledgeGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
+    async knowledgeGraphRetrieveRaw(requestParameters: KnowledgeGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedSubGraphSerializerResponse>> {
         const queryParameters: any = {};
 
         if (requestParameters['page'] != null) {
@@ -212,14 +212,14 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedSubGraphSerializerResponseFromJSON(jsonValue));
     }
 
     /**
-     * Returns the full knowledge graph accessible to the user.
+     * Returns the knowledge graph accessible to the user with pagination support.
      * Get knowledge graph
      */
-    async knowledgeGraphRetrieve(requestParameters: KnowledgeGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+    async knowledgeGraphRetrieve(requestParameters: KnowledgeGraphRetrieveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedSubGraphSerializerResponse> {
         const response = await this.knowledgeGraphRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }

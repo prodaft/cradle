@@ -1,10 +1,8 @@
 import { ApiContext } from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { queryClient } from '@/query/queryClient';
-import { getApiBaseUrl } from '@/utils/url';
 import {
     AccessApi,
-    CradleStatisticsApi,
     EntriesApi,
     FileTransferApi,
     IntelioApi,
@@ -14,9 +12,10 @@ import {
     ManagementApi,
     NotesApi,
     NotificationsApi,
-    PublishApi,
     QueryApi,
-    UserApi,
+    ReportsApi,
+    StatisticsApi,
+    UsersApi,
 } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
 import { ReactNode, useEffect, useMemo } from 'react';
@@ -33,11 +32,10 @@ interface ApiProviderProps {
 export function ApiProvider({ children }: ApiProviderProps) {
     const { basePath } = useAuthState();
     const { getAccessToken, isLoggedIn, setBasePath } = useAuthActions();
-    const apiBasePath = useMemo(() => getApiBaseUrl(basePath), [basePath]);
 
     const configuration = useMemo(() => {
         return new Configuration({
-            basePath: apiBasePath,
+            basePath: basePath,
             accessToken: async () => {
                 // Decide at call time, not memo time
                 if (!isLoggedIn()) return '';
@@ -47,7 +45,7 @@ export function ApiProvider({ children }: ApiProviderProps) {
             // Individual API methods set it as needed (e.g., 'application/json' for JSON requests).
             // For file uploads, the browser must set 'multipart/form-data' with the boundary automatically.
         });
-    }, [apiBasePath, getAccessToken, isLoggedIn]);
+    }, [basePath, getAccessToken, isLoggedIn]);
 
     // Create API instances with the configuration
     const apis = useMemo(() => {
@@ -63,9 +61,9 @@ export function ApiProvider({ children }: ApiProviderProps) {
             notesApi: new NotesApi(configuration),
             notificationsApi: new NotificationsApi(configuration),
             queryApi: new QueryApi(configuration),
-            reportsApi: new PublishApi(configuration),
-            statisticsApi: new CradleStatisticsApi(configuration),
-            usersApi: new UserApi(configuration),
+            reportsApi: new ReportsApi(configuration),
+            statisticsApi: new StatisticsApi(configuration),
+            usersApi: new UsersApi(configuration),
         };
     }, [configuration]);
 
@@ -76,10 +74,10 @@ export function ApiProvider({ children }: ApiProviderProps) {
         queryClient.clear();
         // Optional: force re-login on env switch
         // auth.logOut();
-    }, [apiBasePath]);
+    }, [basePath]);
 
     return (
-        <ApiContext.Provider value={{ ...apis, basePath: apiBasePath, setBasePath }}>
+        <ApiContext.Provider value={{ ...apis, basePath: basePath, setBasePath }}>
             {children}
         </ApiContext.Provider>
     );

@@ -8,7 +8,6 @@ import { DataTable, type BulkAction } from '@/components/ui/data-table';
 import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
-import { getApiBaseUrl } from '@/utils/url';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
@@ -45,7 +44,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const [bulkRevokeModalOpen, setBulkRevokeModalOpen] = useState(false);
     const { basePath: authBasePath } = useAuthState();
     const { getAccessToken, logOut } = useAuthActions();
-    const basePath = getApiBaseUrl(authBasePath);
+    const basePath = authBasePath;
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,

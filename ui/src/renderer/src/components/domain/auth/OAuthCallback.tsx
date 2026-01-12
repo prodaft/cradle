@@ -1,6 +1,5 @@
 import { Button } from '@/components/ui/button';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
-import { getApiBaseUrl } from '@/utils/url';
 import Logo from '@components/base/Logo/Logo';
 import { useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -95,7 +94,7 @@ export default function OAuthCallback() {
 
                     const token = await getAccessToken();
                     const response = await fetch(
-                        `${getApiBaseUrl(basePath)}/users/oauth/connect/`,
+                        `${basePath}/users/oauth/connect/`,
                         {
                             method: 'POST',
                             headers: {
@@ -129,7 +128,7 @@ export default function OAuthCallback() {
                 }
 
                 const response = await fetch(
-                    `${getApiBaseUrl(basePath)}/users/oauth/login/`,
+                    `${basePath}/users/oauth/login/`,
                     {
                         method: 'POST',
                         headers: {
@@ -156,7 +155,7 @@ export default function OAuthCallback() {
                     sessionStorage.getItem('oauth_login_redirect') || '/';
                 const normalizedRedirect =
                     redirectPath === '/oauth/callback' ||
-                    redirectPath === '#/oauth/callback'
+                        redirectPath === '#/oauth/callback'
                         ? '/'
                         : redirectPath;
                 sessionStorage.removeItem('oauth_login_redirect');
@@ -173,7 +172,7 @@ export default function OAuthCallback() {
         };
 
         run();
-    }, [auth, location.search, router, redirectUri, location]);
+    }, [location.search, router, redirectUri, location]);
 
     return (
         <div className='grid min-h-svh lg:grid-cols-2'>
