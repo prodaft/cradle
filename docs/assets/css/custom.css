@@ -11,7 +11,7 @@
   --cradle-border-interactive: #999999;
 
   --cradle-text-primary: #000000;
-  --cradle-text-secondary: #333333;
+  --cradle-text-secondary: #2b2b2b;
   --cradle-text-tertiary: #666666;
   --cradle-text-muted: #999999;
 
@@ -38,7 +38,7 @@
   --cradle-border-interactive: #555555;
 
   --cradle-text-primary: #ffffff;
-  --cradle-text-secondary: #cccccc;
+  --cradle-text-secondary: #bfbfbf;
   --cradle-text-tertiary: #999999;
   --cradle-text-muted: #666666;
 
@@ -62,6 +62,8 @@ body {
   background-color: var(--cradle-bg-primary);
   color: var(--cradle-text-primary);
   letter-spacing: 0.01em;
+  font-size: 1.05rem;
+  line-height: 1.7;
 }
 
 main,
@@ -127,6 +129,8 @@ pre {
   background: var(--cradle-bg-tertiary);
   border: 1px solid var(--cradle-border-primary);
   color: var(--cradle-text-secondary);
+  padding: 1rem 1.25rem;
+  border-radius: 0.6rem;
 }
 
 .content pre code,
@@ -207,17 +211,19 @@ header,
 }
 
 .cradle-feature-line {
-  padding: 1.25rem 0;
+  padding: 2rem 0;
   border-top: none;
+  animation: cradle-feature-rise 0.7s ease-out both;
 }
 
-.cradle-feature-line:first-child {
-  border-top: none;
+.cradle-feature-line + .cradle-feature-line {
+  border-top: 1px solid var(--cradle-border-primary);
 }
 
 .cradle-feature-line .hextra-feature-card {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 2.5rem;
   padding: 0;
   background: transparent;
@@ -232,6 +238,7 @@ header,
 .cradle-feature-line .hextra-feature-card > div {
   flex: 1 1 50%;
   width: auto !important;
+  max-width: 520px;
 }
 
 .cradle-feature-card-image {
@@ -241,7 +248,10 @@ header,
   height: auto;
   border-radius: 0.75rem;
   border: 1px solid var(--cradle-border-primary);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+  object-fit: cover;
+  aspect-ratio: 16 / 9;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
 }
 
 .cradle-feature-line .hextra-feature-card img {
@@ -250,7 +260,9 @@ header,
 }
 
 .cradle-feature-line .hextra-feature-card:hover img {
-  transform: none;
+  transform: translateY(-4px);
+  box-shadow: 0 20px 36px rgba(0, 0, 0, 0.12);
+  filter: saturate(1.05);
 }
 
 .cradle-feature-line .hextra-feature-card:hover {
@@ -267,6 +279,27 @@ header,
 
   .cradle-feature-card-image {
     width: 100%;
+  }
+}
+
+@keyframes cradle-feature-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cradle-feature-line {
+    animation: none;
+  }
+
+  .cradle-feature-card-image {
+    transition: none;
   }
 }
 
@@ -313,11 +346,26 @@ footer {
 
 .content {
   color: var(--cradle-text-secondary);
+  max-width: 72ch;
 }
 
 .content p,
 .content li {
   color: var(--cradle-text-secondary);
+}
+
+.content p + p {
+  margin-top: 0.8rem;
+}
+
+.content ul,
+.content ol {
+  margin-top: 0.6rem;
+  margin-bottom: 0.6rem;
+}
+
+.content li + li {
+  margin-top: 0.35rem;
 }
 
 .content strong {

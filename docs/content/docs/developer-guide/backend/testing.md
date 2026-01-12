@@ -1,28 +1,28 @@
 +++
-title = "Structure of Tests"
+title = "Testing"
 date = "2025-03-05T12:55:52+01:00"
-linkTitle = "Testing"
 draft = false
-weight = 3
+weight = 11
 +++
 
-## Structure of Tests
+## Structure of tests
 
-Tests are organized within each application’s `tests` module. Test files should be named following the pattern:
+Tests live in each app's tests module. Test files should follow:
+
 ```
 test_<filename>.py
 ```
-Within each module, a `utils.py` file is typically provided that includes a subclass of Django’s testing class (e.g., `TestEntity`) with mocks and utility methods.
 
-## Setting Up Tests for a New Application
+Each module typically includes a utils.py with a subclass of Django's testing
+class that provides mocks and utilities.
 
-To set up tests for a new application:
+## Setting up tests for a new application
 
-1. Create a `tests` directory.
-2. Add an `__init__.py` file.
-3. Create a `utils.py` file with your test utilities.
+1. Create a tests directory.
+2. Add an __init__.py file.
+3. Create a utils.py file with test utilities.
 
-Example snippet:
+Example:
 
 ```python
 from django.test import TestEntity
@@ -38,9 +38,9 @@ class HelloWorldTestEntity(TestEntity):
         self.patcher.stop()
 ```
 
-## Writing Tests
+## Writing tests
 
-Tests use Django’s testing framework (built on Python’s `unittest`). Override your custom test class from `utils.py` as shown below:
+Override the custom test class from utils.py:
 
 ```python
 from .utils import HelloWorldTestEntity
@@ -55,7 +55,7 @@ class LinkSerializerTest(HelloWorldTestEntity):
         self.assertEqual(response.status_code, 200)
 ```
 
-Run your tests with:
+Run tests with:
 
 ```shell
 python manage.py test newapp

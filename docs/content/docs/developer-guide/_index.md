@@ -1,16 +1,14 @@
 +++
-title = "Developer Guides"
+title = "Developer Guide"
 date = "2025-03-05T12:55:52+01:00"
-linkTitle = "Developer Guides"
+linkTitle = "Developer Guide"
 draft = false
+weight = 3
 +++
 
-Welcome to the **Developer Guides** for CRADLE. This resource is split into two sections to address the needs of our backend and frontend developers:
+The Developer Guide is split by stack area:
 
-- **[Backend Development Guide](/docs/developer-guide/backend)**
-  Learn how to set up and develop CRADLE’s Django-powered API, including database configuration, logging, testing, and more.
-
-- **[Frontend Development Guide](/docs/developer-guide/frontend)**
-  Discover how to get started with CRADLE’s React/Electron application, including environment setup and component development.
-
-Choose the guide that best fits your area of focus and happy coding!
+{{< cards columns="2" >}}
+{{< card link="backend" title="Backend" icon="code-bracket" subtitle="Django, APIs, tasks, storage" >}}
+{{< card link="frontend" title="Frontend" icon="sparkles" subtitle="React, Electron, UI architecture" >}}
+{{< /cards >}}
