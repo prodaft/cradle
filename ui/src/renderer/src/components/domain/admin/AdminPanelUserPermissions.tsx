@@ -75,7 +75,7 @@ export default function AdminPanelUserPermissions({
                                     userId={String(id)}
                                     text={c.name}
                                     entityId={c.id}
-                                    searchKey={c.name}
+                                    searchKey={`${c.name || ''} ${(c as { description?: string }).description || ''}`.trim()}
                                     accessLevel={
                                         (c.accessType ?? 'none') as
                                             | 'none'
