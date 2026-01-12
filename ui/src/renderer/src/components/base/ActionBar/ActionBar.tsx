@@ -37,8 +37,8 @@ export const ActionBarButton = memo(function ActionBarButton({
 }: ActionBarButtonProps) {
     const baseClass =
         variant === 'circle'
-            ? 'flex items-center justify-center w-10 h-10 border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors rounded-lg'
-            : 'flex items-center gap-2 px-3 h-10 border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
+            ? 'flex items-center justify-center w-10 h-10 border border-border bg-transparent hover:bg-secondary hover:text-foreground transition-colors rounded-lg'
+            : 'flex items-center gap-2 px-3 h-10 border border-border bg-transparent hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
     // Many pages rely on icon color toggling based on whether an action is "active" (e.g. selected count > 0).
     const iconWrapperClass = iconActive ? 'text-primary' : 'text-muted-foreground';
@@ -57,7 +57,7 @@ export const ActionBarButton = memo(function ActionBarButton({
                 >
                     <span className={iconWrapperClass}>{icon}</span>
                     {typeof count === 'number' && count > 0 && (
-                        <span className='text-sm text-text-foreground font-mono'>
+                        <span className='text-sm text-foreground font-mono'>
                             {count}
                         </span>
                     )}
@@ -265,11 +265,11 @@ export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
 
     // Circle button style (perfect circle)
     const circleButtonClass =
-        'flex items-center justify-center w-10 h-10 border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
+        'flex items-center justify-center w-10 h-10 border border-border bg-transparent hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
     // Pill button style (for MoreHoriz with count)
     const pillButtonClass =
-        'flex items-center justify-center gap-2 px-3 h-10 border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
+        'flex items-center justify-center gap-2 px-3 h-10 border border-border bg-transparent hover:bg-secondary hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
     const renderActionButton = (
         action: CollapsibleAction,
@@ -341,7 +341,7 @@ export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
                             className={`w-5 h-5 ${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
                         />
                         {selectedCount > 0 && (
-                            <span className='text-sm text-text-foreground font-mono'>
+                            <span className='text-sm text-foreground font-mono'>
                                 {selectedCount}
                             </span>
                         )}

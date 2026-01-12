@@ -79,7 +79,7 @@ const GraphLegend = ({
                     <Button
                         variant='ghost'
                         size='sm'
-                        className='text-xs px-2 py-1 hover:bg-bg-card'
+                        className='text-xs px-2 py-1 hover:bg-card'
                         onClick={toggleAll}
                     >
                         {allItemsDisabled ? 'Show All' : 'Hide All'}
@@ -118,7 +118,7 @@ const GraphLegend = ({
 
                                 return (
                                     <div className='mt-1.5 w-full relative' key={value}>
-                                        <div className='absolute left-1 top-1.5 bottom-0 w-px bg-border-border' />
+                                        <div className='absolute left-1 top-1.5 bottom-0 w-px bg-border' />
                                         <div className='pl-4'>
                                             <Collapsible>
                                                 <div className='flex justify-between items-center'>
@@ -136,7 +136,7 @@ const GraphLegend = ({
                                                     <Button
                                                         variant='ghost'
                                                         size='sm'
-                                                        className='text-xs px-2 py-1 hover:bg-bg-card'
+                                                        className='text-xs px-2 py-1 hover:bg-card'
                                                         onClick={() =>
                                                             toggleAllAtPath(
                                                                 path,
@@ -170,7 +170,7 @@ const GraphLegend = ({
                                         className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded cursor-pointer transition-all text-xs ${
                                             disabledTypes.has(fullSubtype)
                                                 ? 'opacity-50 line-through'
-                                                : 'hover:bg-bg-card'
+                                                : 'hover:bg-card'
                                         }`}
                                         onClick={() => toggleDisabledType(fullSubtype)}
                                     >

@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NavArrowRight } from 'iconoir-react';
 import React, { ReactNode } from 'react';
@@ -54,7 +55,7 @@ export default function SearchResult({
     subtype,
     actions = [],
     depth,
-}: SearchResultProps): JSX.Element {
+}: SearchResultProps): React.ReactElement {
     return (
         <Button
             variant='ghost'
@@ -63,19 +64,19 @@ export default function SearchResult({
         >
             {/* Type indicator */}
             {subtype && (
-                <span className='text-[10px] font-mono uppercase tracking-wider text-text-muted-foreground px-1.5 py-0.5 bg-bg-secondary border border-border-border min-w-[60px] text-center'>
+                <Badge variant="secondary">
                     {subtype}
-                </span>
+                </Badge>
             )}
 
             {/* Name */}
-            <span className='flex-1 text-sm text-text-foreground truncate group-hover:text-border-primary transition-colors'>
+            <span className='flex-1 text-sm text-foreground truncate group-hover:text-border-primary transition-colors'>
                 {name}
             </span>
 
             {/* Depth badge */}
             {depth != null && (
-                <span className='text-[10px] font-mono text-text-muted-foreground'>
+                <span className='text-[10px] font-mono text-muted-foreground'>
                     depth:{depth}
                 </span>
             )}
@@ -101,7 +102,7 @@ export default function SearchResult({
             )}
 
             {/* Arrow indicator */}
-            <NavArrowRight className='w-4 h-4 text-text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all' />
+            <NavArrowRight className='w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all' />
         </Button>
     );
 }

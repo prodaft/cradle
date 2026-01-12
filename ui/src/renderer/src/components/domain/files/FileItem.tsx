@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
@@ -78,16 +79,15 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                 className='relative h-fit w-full bg-card/20 px-3 py-4 rounded-xl my-2 flex items-center'
             >
                 <div className='flex-grow text-xs'>
-                    <div className='flex flex-wrap gap-2 mb-2 ml-1'>
+                    <div className='flex flex-wrap gap-2 mb-2'>
                         <h2 className='card-header text-foreground ml-1'>
                             {file.fileName}
                         </h2>
                         {file.entities?.map((entry) => (
-                            <a
+                            <Badge
                                 key={entry.name}
-                                className={`hover:underline badge badge-flat-primary badge-xs px-2 mx-1 my-1 py-1 text-primary-foreground ${!entry.color ? 'bg-muted' : ''}`}
-                                href={`#${createDashboardLink(entry)}`}
-                                data-custom-href={`#${createDashboardLink(entry)}`}
+                                asChild
+                                variant={!entry.color ? "secondary" : "default"}
                                 style={
                                     entry.color
                                         ? {
@@ -96,8 +96,14 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                                         : undefined
                                 }
                             >
-                                {entry.name}
-                            </a>
+                                <a
+                                    href={`#${createDashboardLink(entry)}`}
+                                    data-custom-href={`#${createDashboardLink(entry)}`}
+                                    className="hover:underline"
+                                >
+                                    {entry.name}
+                                </a>
+                            </Badge>
                         ))}
                     </div>
                     <div className='mt-1'>
@@ -138,17 +144,15 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                         )}
                     </div>
                 </div>
-                <div className='flex space-x-2 ml-4'>
-                    <Button
-                        variant='ghost'
-                        size='icon'
-                        onClick={() => downloadFile()}
-                        className='text-foreground hover:bg-accent p-2 rounded-full'
-                        title='Download file'
-                    >
-                        <Download />
-                    </Button>
-                </div>
+                <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={() => downloadFile()}
+                    className='text-foreground hover:bg-accent p-2 rounded-full ml-4'
+                    title='Download file'
+                >
+                    <Download />
+                </Button>
             </div>
         </div>
     );

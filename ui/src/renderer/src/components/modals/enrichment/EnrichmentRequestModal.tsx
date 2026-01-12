@@ -448,16 +448,16 @@ export default function EnrichmentRequestModal({
                     {notesList && notesList.length > 0 && (
                         <div className='mb-5'>
                             <Label>Selected Notes ({selectedNoteIds.size})</Label>
-                            <ul className='border border-border-border rounded-lg max-h-48 overflow-y-auto'>
+                            <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
                                 {notesList.map((note) => {
                                     const isSelected = selectedNoteIds.has(note.id);
                                     return (
                                         <li
                                             key={note.id}
-                                            className={`flex items-center gap-3 px-4 py-2 border-b border-border-border last:border-b-0 transition-colors ${
+                                            className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
                                                 isSelected
-                                                    ? 'hover:bg-bg-secondary/50'
-                                                    : 'bg-bg-secondary/10'
+                                                    ? 'hover:bg-secondary/50'
+                                                    : 'bg-secondary/10'
                                             }`}
                                         >
                                             <input
@@ -471,8 +471,8 @@ export default function EnrichmentRequestModal({
                                             <span
                                                 className={`text-sm truncate flex-1 ${
                                                     isSelected
-                                                        ? 'text-text-foreground'
-                                                        : 'text-text-muted-foreground line-through decoration-text-muted-foreground'
+                                                        ? 'text-foreground'
+                                                        : 'text-muted-foreground line-through decoration-muted-foreground'
                                                 }`}
                                             >
                                                 {note.title || 'Untitled'}
@@ -537,7 +537,7 @@ export default function EnrichmentRequestModal({
                                 </p>
                             }
                         />
-                        <p className='text-xs text-text-muted-foreground mt-1'>
+                        <p className='text-xs text-muted-foreground mt-1'>
                             Select one or more enrichment techniques to apply
                         </p>
                     </div>

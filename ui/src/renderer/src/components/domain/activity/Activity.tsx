@@ -159,7 +159,7 @@ export default function Activity({ log }: ActivityProps) {
     };
 
     return (
-        <Card className='mt-3 dark:!bg-bg-card/70 relative'>
+        <Card className='mt-3 dark:!bg-card/70 relative'>
             <Badge
                 variant='outline'
                 className='absolute top-2 right-2 text-xs uppercase tracking-wide border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] z-10'
@@ -170,7 +170,7 @@ export default function Activity({ log }: ActivityProps) {
                 <CardTitle>Activity</CardTitle>
             </CardHeader>
             <CardContent>
-                <div className='text-text-foreground text-sm space-y-1 mb-2'>
+                <div className='text-foreground text-sm space-y-1 mb-2'>
                     <div className='items-start gap-2'>
                         <strong className='text-border-primary mr-1'>User:</strong>
                         {log.user.username}

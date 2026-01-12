@@ -86,7 +86,7 @@ function RecentItemsCard({
                     items.map((item, index) => (
                         <Card
                             key={index}
-                            className='p-3 cursor-pointer hover:bg-bg-secondary transition-colors'
+                            className='p-3 cursor-pointer hover:bg-secondary transition-colors'
                             onClick={onItemClick(item)}
                         >
                             <CardContent className='p-0'>
@@ -138,7 +138,7 @@ function RecentNotesCard({
                     notes.map((note, index) => (
                         <Card
                             key={index}
-                            className='p-3 cursor-pointer hover:bg-bg-secondary transition-colors'
+                            className='p-3 cursor-pointer hover:bg-secondary transition-colors'
                             onClick={onNoteClick(note)}
                         >
                             <CardContent className='p-0'>
@@ -264,7 +264,7 @@ export default function Welcome() {
         <>
             <div className='h-full w-full overflow-auto bg-background'>
                 {/* Header Section */}
-                <div className='border-border-b px-6 py-8'>
+                <div className='border-b border-border px-6 py-8'>
                     <div className='max-w-7xl mx-auto'>
                         <div className='flex items-center justify-between'>
                             <div>
@@ -315,7 +315,7 @@ export default function Welcome() {
                                             to={action.to}
                                             className='p-0 h-auto'
                                         >
-                                            <Card className='p-6 text-left hover:bg-bg-secondary transition-colors cursor-pointer h-auto w-full'>
+                                            <Card className='p-6 text-left hover:bg-secondary transition-colors cursor-pointer h-auto w-full'>
                                                 {cardContent}
                                             </Card>
                                         </RouterButton>
@@ -325,7 +325,7 @@ export default function Welcome() {
                                 return (
                                     <Card
                                         key={index}
-                                        className='p-6 text-left hover:bg-bg-secondary transition-colors cursor-pointer h-auto'
+                                        className='p-6 text-left hover:bg-secondary transition-colors cursor-pointer h-auto'
                                         onClick={action.onClick}
                                     >
                                         {cardContent}
@@ -389,7 +389,7 @@ export default function Welcome() {
                 </div>
 
                 {/* Footer */}
-                <footer className='border-border-t mt-16'>
+                <footer className='border-t border-border mt-16'>
                     <div className='max-w-7xl mx-auto px-6 py-6'>
                         <div className='flex flex-col items-center'>
                             <p

@@ -150,7 +150,7 @@ export default function NotificationCard({
                 <div className='flex-1 min-w-0'>
                     {/* Meta row: date + read/unread */}
                     <div className='flex items-center justify-between'>
-                        <span className='text-text-muted-foreground text-xs'>
+                        <span className='text-muted-foreground text-xs'>
                             {formattedDate}
                         </span>
 
@@ -159,7 +159,7 @@ export default function NotificationCard({
                                 <Button
                                     variant='ghost'
                                     size='icon-sm'
-                                    className='p-1.5 hover:bg-bg-secondary'
+                                    className='p-1.5 hover:bg-secondary'
                                     onClick={handleMarkUnread}
                                 >
                                     {unreadStatus ? (
@@ -173,7 +173,7 @@ export default function NotificationCard({
                                         <MailOpen
                                             width='16'
                                             height='16'
-                                            className='text-text-muted-foreground hover:text-text-foreground'
+                                            className='text-muted-foreground hover:text-foreground'
                                             data-testid='mark-unread'
                                         />
                                     )}
@@ -186,7 +186,7 @@ export default function NotificationCard({
                     </div>
 
                     {/* Message */}
-                    <p className='text-text-foreground text-sm leading-relaxed mt-1'>
+                    <p className='text-foreground text-sm leading-relaxed mt-1'>
                         {message}
                     </p>
                 </div>

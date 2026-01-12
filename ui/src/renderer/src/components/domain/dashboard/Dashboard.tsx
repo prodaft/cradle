@@ -72,7 +72,7 @@ export default function Dashboard() {
             >
                 <div className='w-full h-full flex flex-col p-6 space-y-4'>
                     {contentObject.name && (
-                        <div className='flex justify-between items-center w-full border-border-b px-4 pb-4'>
+                        <div className='flex justify-between items-center w-full border-b border-border px-4 pb-4'>
                             <div>
                                 <h1 className='text-3xl font-medium break-all text-foreground font-mono tracking-wide tracking-tight'>
                                     {contentObject.type && (

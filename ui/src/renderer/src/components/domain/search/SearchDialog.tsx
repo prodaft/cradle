@@ -1,4 +1,5 @@
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
     Command,
@@ -77,6 +78,7 @@ export default function SearchDialog({
         color: 'red',
     });
     const [entrySubtypes, setEntrySubtypes] = useState<string[]>([]);
+    const [entryClassColors, setEntryClassColors] = useState<Map<string, string>>(new Map());
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -88,13 +90,26 @@ export default function SearchDialog({
     const fetchEntrySubtypesMutation = useMutation({
         mutationFn: async () => {
             const entities = await entriesApi.entryClassesList({});
-            return entities.map((c) => c.subtype);
+            return entities;
         },
         meta: {
             errorMessage: 'Failed to load entry subtypes',
         },
-        onSuccess: (subtypes) => {
-            setEntrySubtypes(subtypes);
+        onSuccess: (entryClasses) => {
+            setEntrySubtypes(entryClasses.map((c) => c.subtype));
+            const colorMap = new Map<string, string>();
+            entryClasses.forEach((ec) => {
+                if (ec.color) {
+                    // Handle full path subtypes (e.g., "username/rocket.chat")
+                    colorMap.set(ec.subtype, ec.color);
+                    // Also handle just the last part for hierarchy matching
+                    const parts = ec.subtype.split('/');
+                    if (parts.length > 1) {
+                        colorMap.set(parts[parts.length - 1], ec.color);
+                    }
+                }
+            });
+            setEntryClassColors(colorMap);
         },
     });
 
@@ -210,7 +225,7 @@ export default function SearchDialog({
                 className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] bg-card border flex flex-col relative overflow-hidden rounded-lg shadow-md'
                 onClick={(e) => e.stopPropagation()}
             >
-                <Command className='h-full flex flex-col rounded-lg'>
+                <Command className='h-full flex flex-col'>
                     <div className='relative'>
                         <CommandInput
                             ref={inputRef}
@@ -243,6 +258,7 @@ export default function SearchDialog({
                         entrySubtypes={entrySubtypes}
                         entrySubtypeFilters={entrySubtypeFilters}
                         setEntrySubtypeFilters={setEntrySubtypeFilters}
+                        entryClassColors={entryClassColors}
                     />
 
                     {/* Active Filters Display */}
@@ -251,22 +267,25 @@ export default function SearchDialog({
                             <span className='text-xs text-muted-foreground uppercase tracking-wider'>
                                 Active:
                             </span>
-                            {entrySubtypeFilters.map((filter) => (
-                                <Button
-                                    key={filter}
-                                    variant='outline'
-                                    size='sm'
-                                    onClick={() =>
-                                        setEntrySubtypeFilters((prev) =>
-                                            prev.filter((f) => f !== filter),
-                                        )
-                                    }
-                                    className='inline-flex items-center gap-1 px-2 py-0.5 text-xs h-auto'
-                                >
-                                    {filter}
-                                    <Xmark className='w-3 h-3' />
-                                </Button>
-                            ))}
+                            {entrySubtypeFilters.map((filter) => {
+                                const color = entryClassColors.get(filter);
+                                return (
+                                    <Badge
+                                        key={filter}
+                                        variant='outline'
+                                        onClick={() =>
+                                            setEntrySubtypeFilters((prev) =>
+                                                prev.filter((f) => f !== filter),
+                                            )
+                                        }
+                                        className="cursor-pointer"
+                                        style={color ? { backgroundColor: color, borderColor: color, color: '#fff' } : undefined}
+                                    >
+                                        {filter}
+                                        <Xmark className='w-3 h-3' />
+                                    </Badge>
+                                );
+                            })}
                             <Button
                                 variant='ghost'
                                 size='sm'
@@ -312,9 +331,9 @@ export default function SearchDialog({
                                             className='px-4 py-3'
                                         >
                                             {result.subtype && (
-                                                <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-muted border border-border min-w-[60px] text-center mr-3'>
+                                                <Badge variant="outline" className="mr-3">
                                                     {result.subtype}
-                                                </span>
+                                                </Badge>
                                             )}
                                             <span className='flex-1 text-sm truncate'>
                                                 {result.name}
@@ -341,8 +360,8 @@ export default function SearchDialog({
 
                 {/* Footer with Pagination */}
                 {results && results.length > 0 && (
-                    <div className='px-4 py-3 border-border-t bg-secondary flex items-center justify-between'>
-                        <span className='text-xs text-text-muted-foreground whitespace-nowrap'>
+                    <div className='px-4 py-3 border-t bg-secondary flex items-center justify-between'>
+                        <span className='text-xs text-muted-foreground whitespace-nowrap'>
                             Page {page} of {totalPages}
                         </span>
                         <Pagination

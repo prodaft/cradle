@@ -176,16 +176,16 @@ export default function ReportGenerationModal({
                 {targets.length > 0 && (
                     <div className='mb-5'>
                         <Label>Selected Notes ({selectedIds.size})</Label>
-                        <ul className='border border-border-border rounded-lg max-h-48 overflow-y-auto'>
+                        <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
                             {targets.map((note) => {
                                 const isSelected = selectedIds.has(note.id);
                                 return (
                                     <li
                                         key={note.id}
-                                        className={`flex items-center gap-3 px-4 py-2 border-b border-border-border last:border-b-0 transition-colors ${
+                                        className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
                                             isSelected
-                                                ? 'hover:bg-bg-secondary/50'
-                                                : 'bg-bg-secondary/10'
+                                                ? 'hover:bg-secondary/50'
+                                                : 'bg-secondary/10'
                                         }`}
                                     >
                                         <Checkbox
@@ -197,8 +197,8 @@ export default function ReportGenerationModal({
                                         <span
                                             className={`text-sm truncate flex-1 ${
                                                 isSelected
-                                                    ? 'text-text-foreground'
-                                                    : 'text-text-muted-foreground line-through decoration-text-muted-foreground'
+                                                    ? 'text-foreground'
+                                                    : 'text-muted-foreground line-through decoration-muted-foreground'
                                             }`}
                                         >
                                             {note.title || 'Untitled'}

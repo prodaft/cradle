@@ -297,16 +297,15 @@ export default function UploadExternal() {
 
     return (
         <>
-            <div className=''>
-                <div className='flex items-center mb-4'>
-                    <h2 className='text-xl font-semibold flex items-center gap-2 ml-4'>
-                        Upload External Data
-                    </h2>
-                </div>
+            <div className='flex items-center mb-4'>
+                <h2 className='text-xl font-semibold flex items-center gap-2 ml-4'>
+                    Upload External Data
+                </h2>
+            </div>
 
-                {/* Search Section */}
-                <div>
-                    <form
+            {/* Search Section */}
+            <div>
+                <form
                         onSubmit={handleSearchSubmit}
                         className='flex space-x-4 px-3 pb-2'
                     >
@@ -362,7 +361,6 @@ export default function UploadExternal() {
                         dataTypeOptions={dataTypeOptions}
                         onUpload={invalidateDigests}
                     />
-                </div>
             </div>
         </>
     );

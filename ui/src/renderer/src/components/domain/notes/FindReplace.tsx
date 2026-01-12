@@ -245,8 +245,8 @@ export default function FindReplace({
                                             onClick={() => setWholeWord(!wholeWord)}
                                             className={`${
                                                 wholeWord
-                                                    ? 'bg-bg-background text-text-foreground'
-                                                    : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
+                                                    ? 'bg-background text-foreground'
+                                                    : 'text-muted-foreground hover:bg-background hover:text-foreground'
                                             }`}
                                             title='Match Whole Word'
                                         >
@@ -258,8 +258,8 @@ export default function FindReplace({
                                             onClick={() => setUseRegex(!useRegex)}
                                             className={`${
                                                 useRegex
-                                                    ? 'bg-bg-background text-text-foreground'
-                                                    : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
+                                                    ? 'bg-background text-foreground'
+                                                    : 'text-muted-foreground hover:bg-background hover:text-foreground'
                                             }`}
                                             title='Use Regular Expression'
                                         >

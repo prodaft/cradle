@@ -73,7 +73,7 @@ export default function MarkdownEditorModal({
     onOpenChange,
     initialContent = '',
     helpText,
-}: MarkdownEditorModalProps): JSX.Element {
+}: MarkdownEditorModalProps): React.ReactElement {
     const [userInput, setUserInput] = useState(initialContent);
     const [noteTitle, setNoteTitle] = useState(title || '');
     const { isDarkMode } = useTheme();
@@ -106,7 +106,7 @@ export default function MarkdownEditorModal({
                             value={noteTitle}
                             onChange={handleTitleChange}
                             placeholder='Enter title'
-                            className='text-lg font-semibold text-text-foreground tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder-text-muted-foreground shadow-none h-auto'
+                            className='text-lg font-semibold text-foreground tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-muted-foreground shadow-none h-auto'
                         />
                     ) : (
                         <DialogTitle>{noteTitle}</DialogTitle>
@@ -116,7 +116,7 @@ export default function MarkdownEditorModal({
                 {/* Editor Section */}
                 <div className='grid w-full items-center gap-3 mb-6'>
                     <Label htmlFor='markdown-content'>Content</Label>
-                    <div className='border border-border-border rounded-lg overflow-hidden w-full'>
+                    <div className='border border-border rounded-lg overflow-hidden w-full'>
                         <CodeMirror
                             value={userInput}
                             onChange={handleContentChange}
@@ -132,10 +132,10 @@ export default function MarkdownEditorModal({
 
                 {/* Help Text Section */}
                 {helpText && (
-                    <div className='mb-6 p-4 border border-border-border bg-bg-secondary/30 rounded-lg'>
+                    <div className='mb-6 p-4 border border-border bg-secondary/30 rounded-lg'>
                         <div className='flex items-start gap-3'>
-                            <div className='w-2 h-2 rounded-full bg-border-primary mt-1.5 flex-shrink-0'></div>
-                            <div className='text-xs text-text-muted-foreground leading-relaxed'>
+                            <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0'></div>
+                            <div className='text-xs text-muted-foreground leading-relaxed'>
                                 {helpText}
                             </div>
                         </div>

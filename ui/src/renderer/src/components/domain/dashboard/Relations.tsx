@@ -478,7 +478,7 @@ export default function Relations({ obj }: RelationsProps) {
                                 </TooltipTrigger>
                                 <TooltipContent>Copy to CSV</TooltipContent>
                             </Tooltip>
-                            <div className='h-8 w-px bg-border-border' />
+                            <div className='h-8 w-px bg-border' />
 
                             {/* Depth Control */}
                             <div className='flex items-center gap-2 px-3 h-10 border border-border rounded-full bg-transparent'>

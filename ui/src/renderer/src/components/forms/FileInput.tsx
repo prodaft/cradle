@@ -256,7 +256,7 @@ export default function FileInput({
         switch (status) {
             case 'uploading':
                 return (
-                    <div className='w-4 h-4 border-2 border-border-primary border-t-transparent rounded-full animate-spin' />
+                    <div className='w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin' />
                 );
             case 'success':
                 return <Check className='w-4 h-4 text-primary' strokeWidth={2.5} />;
@@ -295,7 +295,7 @@ export default function FileInput({
 
             {/* Files List with Status */}
             {filesWithStatus.length > 0 && (
-                <ul className='border border-border-border rounded-lg max-h-48 overflow-y-auto'>
+                <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
                     {filesWithStatus.map(({ file, status, error }, index) => (
                         <li
                             key={`${file.name}-${index}`}
@@ -324,7 +324,7 @@ export default function FileInput({
                             >
                                 {file.name}
                             </span>
-                            <span className='text-xs text-text-muted-foreground flex-shrink-0'>
+                            <span className='text-xs text-muted-foreground flex-shrink-0'>
                                 {(file.size / 1024).toFixed(1)} KB
                             </span>
                         </li>

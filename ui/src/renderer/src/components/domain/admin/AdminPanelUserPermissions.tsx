@@ -162,11 +162,11 @@ export default function AdminPanelUserPermissions({
 
                         {/* Search Bar */}
                         <div className='mb-4'>
-                            <div className='flex items-center gap-2 bg-bg-card border border-border-border h-10 px-2 rounded-full'>
+                            <div className='flex items-center gap-2 bg-card border border-border h-10 px-2 rounded-full'>
                                 <Button
                                     variant='ghost'
                                     size='icon-sm'
-                                    className='p-1 flex-shrink-0 text-text-muted-foreground hover:text-text-foreground'
+                                    className='p-1 flex-shrink-0 text-muted-foreground hover:text-foreground'
                                     title='Search'
                                 >
                                     <Search className='w-4 h-4' />
@@ -174,7 +174,7 @@ export default function AdminPanelUserPermissions({
                                 <Input
                                     type='text'
                                     placeholder='Search entities'
-                                    className='flex-grow bg-transparent text-sm outline-none text-text-foreground placeholder:text-text-muted-foreground rounded-none font-mono border-0 shadow-none'
+                                    className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
                                     onChange={(e) => setSearchVal(e.target.value)}
                                     value={searchVal}
                                 />
@@ -183,7 +183,7 @@ export default function AdminPanelUserPermissions({
                                         variant='ghost'
                                         size='icon-sm'
                                         onClick={() => setSearchVal('')}
-                                        className='p-1 flex-shrink-0 text-text-muted-foreground hover:text-text-foreground'
+                                        className='p-1 flex-shrink-0 text-muted-foreground hover:text-foreground'
                                         title='Clear search'
                                     >
                                         <Xmark className='w-4 h-4' />

@@ -84,7 +84,7 @@ export default function ActionsDropdown({
                         <Button
                             variant='ghost'
                             size='icon'
-                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-bg-secondary hover:text-text-foreground border-border'
+                            className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
                             data-testid='actions-dropdown-btn'
                         >
                             <MoreVert width='20' height='20' />

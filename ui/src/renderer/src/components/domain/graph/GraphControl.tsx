@@ -84,7 +84,7 @@ export default function GraphControl({
                 />
                 {/* Graph Search - Keep mounted to avoid cleanup errors */}
                 <div className='px-4 mt-4'>
-                    <div className='bg-background border border-border-border rounded-lg p-3'>
+                    <div className='bg-background border border-border rounded-lg p-3'>
                         <CosmographSearch
                             accessor='_label'
                             onSelect={(suggestion: any) => {

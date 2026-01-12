@@ -1,4 +1,4 @@
-import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import React, { Dispatch, SetStateAction } from 'react';
 
 /**
@@ -13,6 +13,8 @@ export interface SearchFilterProps {
     filters: string[];
     /** Function to update the filters */
     setFilters: Dispatch<SetStateAction<string[]>>;
+    /** Color for the badge */
+    color?: string;
 }
 
 /**
@@ -34,6 +36,7 @@ export default function SearchFilter({
     option,
     filters,
     setFilters,
+    color,
 }: SearchFilterProps): React.JSX.Element {
     const isActive = filters.includes(option);
 
@@ -46,20 +49,13 @@ export default function SearchFilter({
     };
 
     return (
-        <Button
-            variant={isActive ? 'outline' : 'outline'}
-            size='sm'
+        <Badge
+            variant={isActive ? 'default' : 'outline'}
             onClick={toggleFilter}
-            className={`
-                px-2.5 py-1 text-xs font-mono transition-all duration-150
-                ${
-                    isActive
-                        ? 'bg-border-primary/15 text-border-primary border-border-primary/40'
-                        : 'bg-transparent text-text-foreground border-border-border hover:border-border-border-interactive hover:text-text-foreground'
-                }
-            `}
+            className="cursor-pointer mr-1.5 mb-1.5"
+            style={color ? { backgroundColor: color, borderColor: color, color: '#fff' } : undefined}
         >
             {text}
-        </Button>
+        </Badge>
     );
 }

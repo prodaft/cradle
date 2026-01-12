@@ -126,16 +126,16 @@ export default function FileUploadModal({
                 {pendingFiles.length > 0 && (
                     <div className='mb-6'>
                         <Label>Queued for Upload ({selectedIndices.size})</Label>
-                        <ul className='border border-border-border rounded-lg max-h-48 overflow-y-auto'>
+                        <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
                             {pendingFiles.map((file, index) => {
                                 const isSelected = selectedIndices.has(index);
                                 return (
                                     <li
                                         key={index}
-                                        className={`flex items-center gap-3 px-4 py-2 border-b border-border-border last:border-b-0 transition-colors ${
+                                        className={`flex items-center gap-3 px-4 py-2 border-b border-border last:border-b-0 transition-colors ${
                                             isSelected
-                                                ? 'hover:bg-bg-secondary/50'
-                                                : 'bg-bg-secondary/10'
+                                                ? 'hover:bg-secondary/50'
+                                                : 'bg-secondary/10'
                                         }`}
                                     >
                                         <Checkbox
@@ -147,8 +147,8 @@ export default function FileUploadModal({
                                         <span
                                             className={`text-sm truncate flex-1 ${
                                                 isSelected
-                                                    ? 'text-text-foreground'
-                                                    : 'text-text-muted-foreground line-through decoration-text-muted-foreground'
+                                                    ? 'text-foreground'
+                                                    : 'text-muted-foreground line-through decoration-muted-foreground'
                                             }`}
                                         >
                                             {file.name}

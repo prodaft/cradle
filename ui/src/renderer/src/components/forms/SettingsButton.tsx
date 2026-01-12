@@ -49,13 +49,7 @@ export default function SettingsButton({
     loading = false,
     className,
     ...props
-}: SettingsButtonProps): JSX.Element {
-    const variantClasses = {
-        default:
-            'rounded-lg border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors text-text-foreground',
-        danger: 'rounded-lg border border-destructive/50 text-destructive hover:border-destructive hover:bg-destructive/10 bg-transparent transition-colors',
-    };
-
+}: SettingsButtonProps): React.ReactElement {
     return (
         <div className='flex items-center justify-between py-2'>
             <div>

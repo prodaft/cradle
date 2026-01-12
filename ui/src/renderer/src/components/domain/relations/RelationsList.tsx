@@ -67,7 +67,7 @@ export default function RelationsList({ query }: RelationsListProps) {
                     <Spinner className='size-10' />
                 </div>
             ) : relations.length === 0 ? (
-                <p className='text-center text-text-muted-foreground text-sm'>
+                <p className='text-center text-muted-foreground text-sm'>
                     No relations found.
                 </p>
             ) : (

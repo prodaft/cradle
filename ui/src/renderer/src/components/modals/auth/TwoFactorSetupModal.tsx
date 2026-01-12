@@ -123,7 +123,7 @@ export default function TwoFactorSetupModal({
                         <DialogTitle>Setting up Two-Factor Auth</DialogTitle>
                     </DialogHeader>
                     <div className='flex justify-center py-12'>
-                        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-border-primary'></div>
+                        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
                     </div>
                 </DialogContent>
             </Dialog>
@@ -148,18 +148,18 @@ export default function TwoFactorSetupModal({
                             </div>
                         </div>
 
-                        <div className='mb-6 p-4 border border-border-border bg-bg-secondary/30 rounded-lg'>
+                        <div className='mb-6 p-4 border border-border bg-secondary/30 rounded-lg'>
                             <div className='flex items-start gap-3'>
-                                <div className='w-2 h-2 rounded-full bg-border-primary mt-1.5 flex-shrink-0'></div>
+                                <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0'></div>
                                 <div className='flex-1'>
-                                    <h3 className='text-sm font-semibold text-text-foreground mb-2'>
+                                    <h3 className='text-sm font-semibold text-foreground mb-2'>
                                         Manual Entry
                                     </h3>
-                                    <p className='text-xs text-text-muted-foreground mb-3'>
+                                    <p className='text-xs text-muted-foreground mb-3'>
                                         Can't scan the QR code? Enter this secret key
                                         manually in your authenticator app:
                                     </p>
-                                    <code className='block bg-bg-background p-2 text-center select-all font-mono text-sm border border-border-border rounded text-text-foreground'>
+                                    <code className='block bg-background p-2 text-center select-all font-mono text-sm border border-border rounded text-foreground'>
                                         {secret}
                                     </code>
                                 </div>

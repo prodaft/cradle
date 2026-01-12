@@ -1,12 +1,7 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import SearchFilter from '@components/forms/SearchFilter';
-import { SubtypeHierarchy } from '@utils/dashboard';
-import { FilterList, NavArrowDown, NavArrowRight, NavArrowUp } from 'iconoir-react';
+import { FilterList, NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React, { Dispatch, SetStateAction } from 'react';
 
 /**
@@ -23,6 +18,8 @@ export interface SearchFilterSectionProps {
     entrySubtypeFilters: string[];
     /** Function to update the entry subtype filters */
     setEntrySubtypeFilters: Dispatch<SetStateAction<string[]>>;
+    /** Map of subtype to color */
+    entryClassColors: Map<string, string>;
 }
 
 /**
@@ -46,37 +43,37 @@ export default function SearchFilterSection({
     entrySubtypes,
     entrySubtypeFilters,
     setEntrySubtypeFilters,
+    entryClassColors,
 }: SearchFilterSectionProps): React.JSX.Element {
     const toggleFilters = () => {
         setShowFilters(!showFilters);
     };
 
-    const hierarchy = new SubtypeHierarchy(entrySubtypes);
     const hasFilters = entrySubtypeFilters.length > 0;
 
     return (
-        <div className='border-border-b'>
+        <div className='border-b border-border'>
             {/* Filter Toggle Button */}
             <Button
                 variant='ghost'
                 onClick={toggleFilters}
-                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-bg-secondary group h-auto'
+                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary group h-auto'
             >
                 <div className='flex items-center gap-2'>
-                    <FilterList className='w-4 h-4 text-text-muted-foreground group-hover:text-border-primary transition-colors' />
-                    <span className='text-sm text-text-foreground font-medium'>
+                    <FilterList className='w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors' />
+                    <span className='text-sm text-foreground font-medium'>
                         Filter by type
                     </span>
                     {hasFilters && (
-                        <span className='px-1.5 py-0.5 text-[10px] bg-border-primary text-white font-mono'>
+                        <Badge variant="default">
                             {entrySubtypeFilters.length}
-                        </span>
+                        </Badge>
                     )}
                 </div>
                 {showFilters ? (
-                    <NavArrowUp className='w-4 h-4 text-text-muted-foreground' />
+                    <NavArrowUp className='w-4 h-4 text-muted-foreground' />
                 ) : (
-                    <NavArrowDown className='w-4 h-4 text-text-muted-foreground' />
+                    <NavArrowDown className='w-4 h-4 text-muted-foreground' />
                 )}
             </Button>
 
@@ -86,42 +83,21 @@ export default function SearchFilterSection({
                     showFilters ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
                 }`}
             >
-                <div className='px-4 py-3 bg-bg-secondary/50 overflow-y-auto max-h-56'>
-                    <div className='space-y-2'>
-                        {hierarchy.convert(
-                            (value, children) => (
-                                <Collapsible
-                                    key={value}
-                                    className='text-text-foreground'
-                                >
-                                    <CollapsibleTrigger asChild>
-                                        <Button
-                                            variant='ghost'
-                                            size='sm'
-                                            className='group hover:text-border-primary'
-                                        >
-                                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
-                                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
-                                            {value}
-                                        </Button>
-                                    </CollapsibleTrigger>
-                                    <CollapsibleContent>
-                                        <div className='pl-4 pt-2 flex flex-wrap gap-1.5'>
-                                            {children}
-                                        </div>
-                                    </CollapsibleContent>
-                                </Collapsible>
-                            ),
-                            (value, path) => (
+                <div className='px-4 py-3 bg-secondary/50 overflow-y-auto max-h-56'>
+                    <div className='flex flex-wrap gap-1.5'>
+                        {entrySubtypes.map((subtype) => {
+                            const color = entryClassColors.get(subtype);
+                            return (
                                 <SearchFilter
-                                    key={value}
-                                    text={value}
-                                    option={`${path}${value}`}
+                                    key={subtype}
+                                    text={subtype}
+                                    option={subtype}
                                     filters={entrySubtypeFilters}
                                     setFilters={setEntrySubtypeFilters}
+                                    color={color}
                                 />
-                            ),
-                        )}
+                            );
+                        })}
                     </div>
                 </div>
             </div>

@@ -140,7 +140,7 @@ export default function StatusHeaderDropdown({
                 <Button
                     variant='ghost'
                     size='icon-sm'
-                    className='inline-flex items-center justify-center hover:bg-bg-secondary hover:text-text-foreground'
+                    className='inline-flex items-center justify-center hover:bg-secondary hover:text-foreground'
                 >
                     {getStatusIcon(currentStatus)}
                 </Button>
@@ -155,7 +155,7 @@ export default function StatusHeaderDropdown({
                             <TooltipTrigger asChild>
                                 <DropdownMenuRadioItem
                                     value={statusOption}
-                                    className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-bg-secondary ring-1 ring-border-primary' : ''}`}
+                                    className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-secondary ring-1 ring-primary' : ''}`}
                                 >
                                     {getStatusIcon(statusOption)}
                                 </DropdownMenuRadioItem>

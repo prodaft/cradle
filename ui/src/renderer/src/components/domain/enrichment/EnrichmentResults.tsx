@@ -329,12 +329,11 @@ export default function EnrichmentResults() {
             {/* Title Section */}
             {enrichmentDetails && (
                 <div className='w-full border-b border-border px-4 py-4'>
-                    <div>
-                        <h1 className='text-2xl font-medium break-all text-foreground mb-2'>
-                            {enrichmentDetails.title || `Enrichment Request #${id}`}
-                        </h1>
-                        <div className='h-px bg-card mb-2' />
-                        <div className='flex items-center gap-4 text-xs text-muted-foreground'>
+                    <h1 className='text-2xl font-medium break-all text-foreground mb-2'>
+                        {enrichmentDetails.title || `Enrichment Request #${id}`}
+                    </h1>
+                    <div className='h-px bg-card mb-2' />
+                    <div className='flex items-center gap-4 text-xs text-muted-foreground'>
                             {enrichmentDetails.status && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -371,7 +370,6 @@ export default function EnrichmentResults() {
                                 </div>
                             )}
                         </div>
-                    </div>
                 </div>
             )}
 
@@ -452,10 +450,9 @@ export default function EnrichmentResults() {
 
                     {/* Right Panel - Tabs */}
                     <ResizablePanel defaultSize={75} minSize={60}>
-                        <div className='h-full flex flex-col'>
-                            {showIgnored ? (
-                                /* Ignored Artifacts View */
-                                <div className='h-full flex flex-col overflow-hidden'>
+                        {showIgnored ? (
+                            /* Ignored Artifacts View */
+                            <div className='h-full flex flex-col overflow-hidden'>
                                     <div className='p-4 border-b border-border'>
                                         <h2 className='text-lg font-medium text-foreground'>
                                             Ignored Artifacts
@@ -476,9 +473,9 @@ export default function EnrichmentResults() {
                                                     >
                                                         {/* Entry class indicator */}
                                                         {artifact.entry_class && (
-                                                            <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-secondary border border-border min-w-[60px] text-center'>
+                                                            <Badge variant="secondary">
                                                                 {artifact.entry_class}
-                                                            </span>
+                                                            </Badge>
                                                         )}
 
                                                         {/* Name */}
@@ -496,15 +493,15 @@ export default function EnrichmentResults() {
                                             )}
                                         </div>
                                     </ScrollArea>
+                            </div>
+                        ) : selectedEnricher ? (
+                            /* Enricher Tabs View */
+                            isPendingEnricher ? (
+                                <div className='flex items-center justify-center h-full'>
+                                    <Spinner className='size-10' />
                                 </div>
-                            ) : selectedEnricher ? (
-                                /* Enricher Tabs View */
-                                isPendingEnricher ? (
-                                    <div className='flex items-center justify-center h-full'>
-                                        <Spinner className='size-10' />
-                                    </div>
-                                ) : (
-                                    <div className='flex flex-col h-full'>
+                            ) : (
+                                <div className='flex flex-col h-full'>
                                         {/* Relations Section */}
                                         <div className='flex-1 overflow-hidden flex flex-col'>
                                             <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
@@ -749,11 +746,11 @@ export default function EnrichmentResults() {
                                                                 >
                                                                     {/* Entry class indicator */}
                                                                     {artifact.entry_class && (
-                                                                        <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-secondary border border-border min-w-[60px] text-center'>
+                                                                        <Badge variant="secondary">
                                                                             {
                                                                                 artifact.entry_class
                                                                             }
-                                                                        </span>
+                                                                        </Badge>
                                                                     )}
 
                                                                     {/* Name */}
@@ -849,16 +846,15 @@ export default function EnrichmentResults() {
                                                 </ScrollArea>
                                             </div>
                                         )}
-                                    </div>
-                                )
-                            ) : (
-                                <div className='flex items-center justify-center h-full'>
-                                    <p className='text-sm text-muted-foreground'>
-                                        Select an enrichment technique to view results
-                                    </p>
                                 </div>
-                            )}
-                        </div>
+                            )
+                        ) : (
+                            <div className='flex items-center justify-center h-full'>
+                                <p className='text-sm text-muted-foreground'>
+                                    Select an enrichment technique to view results
+                                </p>
+                            </div>
+                        )}
                     </ResizablePanel>
                 </ResizablePanelGroup>
             </div>

@@ -282,7 +282,7 @@ export default function ActivityList({
                             </div>
                         ) : (
                             <div className='container mx-auto flex flex-col items-center py-10'>
-                                <p className='text-sm font-normal text-text-muted-foreground'>
+                                <p className='text-sm font-normal text-muted-foreground'>
                                     No event logs found!
                                 </p>
                             </div>

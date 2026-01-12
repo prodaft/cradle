@@ -1,3 +1,4 @@
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -80,24 +81,22 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 id: 'entities',
                 header: 'Entities',
                 cell: ({ row }) => (
-                    <div className=''>
-                        <div className='flex flex-wrap gap-1'>
-                            {row.original.entities?.slice(0, 3).map((entity) => (
-                                <span
-                                    key={entity.name}
-                                    className={`badge badge-xs px-1 text-primary-foreground ${!entity.color ? 'bg-muted' : ''}`}
-                                    style={
-                                        entity.color
-                                            ? {
-                                                  backgroundColor: entity.color,
-                                              }
-                                            : undefined
-                                    }
-                                >
-                                    {entity.name}
-                                </span>
-                            ))}
-                        </div>
+                    <div className='flex flex-wrap gap-1'>
+                        {row.original.entities?.slice(0, 3).map((entity) => (
+                            <Badge
+                                key={entity.name}
+                                variant={!entity.color ? "secondary" : "default"}
+                                style={
+                                    entity.color
+                                        ? {
+                                              backgroundColor: entity.color,
+                                          }
+                                        : undefined
+                                }
+                            >
+                                {entity.name}
+                            </Badge>
+                        ))}
                     </div>
                 ),
                 enableSorting: false,
@@ -119,40 +118,34 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 accessorKey: 'sha256',
                 id: 'sha256',
                 header: 'SHA256',
-                cell: ({ row }) => (
-                    <div className=''>
-                        {row.original.sha256Hash ? (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <span
-                                        className='cursor-pointer hover:bg-muted px-1 rounded'
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            copyToClipboard(row.original.sha256Hash!);
-                                        }}
-                                    >
-                                        {row.original.sha256Hash.substring(0, 21)}...
-                                    </span>
-                                </TooltipTrigger>
-                                <TooltipContent>Click to copy</TooltipContent>
-                            </Tooltip>
-                        ) : (
-                            '-'
-                        )}
-                    </div>
-                ),
+                cell: ({ row }) =>
+                    row.original.sha256Hash ? (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span
+                                    className='cursor-pointer hover:bg-muted px-1 rounded'
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyToClipboard(row.original.sha256Hash!);
+                                    }}
+                                >
+                                    {row.original.sha256Hash.substring(0, 21)}...
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Click to copy</TooltipContent>
+                        </Tooltip>
+                    ) : (
+                        '-'
+                    ),
                 enableSorting: false,
             },
             {
                 accessorKey: 'uploadedAt',
                 id: 'uploadedAt',
                 header: 'Uploaded At',
-                cell: ({ row }) => (
-                    <div className=''>
-                        {row.original.timestamp &&
-                            formatDate(new Date(row.original.timestamp))}
-                    </div>
-                ),
+                cell: ({ row }) =>
+                    row.original.timestamp &&
+                    formatDate(new Date(row.original.timestamp)),
                 enableSorting: false,
             },
             {
@@ -162,25 +155,23 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                     const file = row.original;
                     return (
                         <div
-                            className='w-32 text-right'
+                            className='w-32 text-right flex justify-end space-x-1'
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <div className='flex justify-end space-x-1'>
-                                {file.id && (
-                                    <Button
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        onClick={async () => await handleDownload(file)}
-                                        className='text-primary hover:text-primary/80'
-                                        title='Download'
-                                    >
-                                        <Download
-                                            className='w-4 h-4'
-                                            aria-hidden='true'
-                                        />
-                                    </Button>
-                                )}
-                            </div>
+                            {file.id && (
+                                <Button
+                                    variant='ghost'
+                                    size='icon-sm'
+                                    onClick={async () => await handleDownload(file)}
+                                    className='text-primary hover:text-primary/80'
+                                    title='Download'
+                                >
+                                    <Download
+                                        className='w-4 h-4'
+                                        aria-hidden='true'
+                                    />
+                                </Button>
+                            )}
                         </div>
                     );
                 },
@@ -191,19 +182,17 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     );
 
     return (
-        <div>
-            <ScrollArea className='w-full h-full'>
-                <div className='w-[95%] h-full flex flex-col p-6'>
-                    <DataTable
-                        columns={columns}
-                        data={files}
-                        loading={false}
-                        emptyMessage='No files found!'
-                        manualPagination={true}
-                        manualSorting={true}
-                    />
-                </div>
-            </ScrollArea>
-        </div>
+        <ScrollArea className='w-full h-full'>
+            <div className='w-[95%] h-full flex flex-col p-6'>
+                <DataTable
+                    columns={columns}
+                    data={files}
+                    loading={false}
+                    emptyMessage='No files found!'
+                    manualPagination={true}
+                    manualSorting={true}
+                />
+            </div>
+        </ScrollArea>
     );
 }

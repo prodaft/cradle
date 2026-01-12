@@ -78,13 +78,13 @@ export default function Files({ obj }: FilesProps) {
                                 value={searchFilters.keyword}
                                 onChange={handleSearchChange}
                                 placeholder='Search files by name or hash...'
-                                className='w-full bg-transparent border border-border-border hover:border-border-primary text-text-foreground rounded-full px-4 pr-10 h-10 outline-none transition-colors'
+                                className='w-full bg-transparent border border-border hover:border-primary text-foreground rounded-full px-4 pr-10 h-10 outline-none transition-colors'
                             />
                             <Button
                                 type='submit'
                                 variant='ghost'
                                 size='icon-sm'
-                                className='absolute right-3 top-1/2 transform -translate-y-1/2 text-text-foreground hover:text-text-foreground'
+                                className='absolute right-3 top-1/2 transform -translate-y-1/2 text-foreground hover:text-foreground'
                             >
                                 <Search width={16} height={16} />
                             </Button>
@@ -97,7 +97,7 @@ export default function Files({ obj }: FilesProps) {
                                 value={searchFilters.mimetype}
                                 onChange={handleSearchChange}
                                 placeholder='MIME Type'
-                                className='w-full bg-transparent border border-border-border hover:border-border-primary text-text-foreground rounded-full px-4 h-10 outline-none transition-colors'
+                                className='w-full bg-transparent border border-border hover:border-primary text-foreground rounded-full px-4 h-10 outline-none transition-colors'
                             />
                         </div>
                     </form>
