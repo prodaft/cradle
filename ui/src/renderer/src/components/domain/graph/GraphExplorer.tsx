@@ -1,6 +1,5 @@
 import { useNotif } from '@/contexts/ui/NotificationContext';
 import { EdgeRelation } from '@/services/cradle';
-import InProgress from '@components/feedback/InProgress';
 import { CosmographProvider } from '@cosmograph/react';
 import { ComponentType, useMemo, useRef, useState } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
@@ -26,10 +25,6 @@ interface GraphExplorerProps {
 }
 
 export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerProps) {
-    if (import.meta.env.VITE_ENV === 'production') {
-        return <InProgress />;
-    }
-
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<EdgeRelation[]>([]);
     const [disabledTypes, setDisabledTypes] = useState<Set<string>>(new Set());
@@ -100,8 +95,8 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             if (!srcExists || !dstExists) {
                 console.warn(
                     `[GraphExplorer] Edge references non-existent node(s). Edge: ${edge.id}, ` +
-                        `src: ${edge.src} (exists: ${srcExists}), dst: ${edge.dst} (exists: ${dstExists}). ` +
-                        `Available node IDs: ${Array.from(allNodeIds).join(', ')}`,
+                    `src: ${edge.src} (exists: ${srcExists}), dst: ${edge.dst} (exists: ${dstExists}). ` +
+                    `Available node IDs: ${Array.from(allNodeIds).join(', ')}`,
                 );
                 return false;
             }

@@ -1,13 +1,14 @@
-from entries.enums import EntryType
-from django.db import models
 from typing import Set
-from .enums import AccessType
-from user.models import CradleUser
-from django.db.models import Q, F, FilteredRelation
-from entries.models import Entry
-from django.db.models import QuerySet
-
 from uuid import UUID
+
+from django.db import models
+from django.db.models import F, FilteredRelation, Q, QuerySet
+
+from entries.enums import EntryType
+from entries.models import Entry
+from user.models import CradleUser
+
+from .enums import AccessType
 
 
 class AccessManager(models.Manager):
@@ -148,7 +149,9 @@ class AccessManager(models.Manager):
                     "access", condition=Q(access__user=user_id)
                 )
             )  # left outer join
-            .values("id", "name", "access_type__access_type")  # separate table
+            .values(
+                "id", "name", "access_type__access_type", "description"
+            )  # separate table
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
         )
 

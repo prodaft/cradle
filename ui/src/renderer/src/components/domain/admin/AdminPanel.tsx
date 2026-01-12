@@ -65,6 +65,7 @@ export default function AdminPanel() {
                                 id={c.id?.toString() || ''}
                                 key={`${subtype}:${c.name}`}
                                 name={c.name}
+                                searchKey={`${c.name || ''} ${c.description || ''}`.trim()}
                                 onDelete={displayEntities}
                                 link={createDashboardLink(c)}
                                 typename={subtype}
@@ -200,6 +201,7 @@ export default function AdminPanel() {
                                                                 }
                                                                 key={`${subtype}:${entity.name}`}
                                                                 name={entity.name}
+                                                                searchKey={`${entity.name || ''} ${entity.description || ''}`.trim()}
                                                                 onDelete={
                                                                     displayEntities
                                                                 }

@@ -31,15 +31,12 @@ export default function Notes({ obj }: NotesProps) {
     // On load, fetch the dashboard data for the entry
     useEffect(() => {
         if (!obj) return;
-        setSearchFilters((prev) => ({
-            ...prev,
-            ['linked_to']: obj.id,
-        }));
-
-        setSubmittedFilters({
-            ...searchFilters,
-            ['linked_to']: obj.id,
-        });
+        const nextFilters: SearchFilters = {
+            ...searchFiltersRef.current,
+            linked_to: obj.id,
+        };
+        setSearchFilters(nextFilters);
+        setSubmittedFilters(nextFilters);
     }, [obj]);
 
     const handleSearchSubmit = (value?: string) => {

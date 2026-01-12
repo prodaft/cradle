@@ -176,6 +176,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const [showFileUploadModal, setShowFileUploadModal] = useState(false);
     const [clipboardFiles, setClipboardFiles] = useState<File[]>([]);
     const { profile } = useProfile();
+    const vimModeEnabled = Boolean(profile?.vimMode);
     const { isDarkMode } = useTheme();
     const { entriesApi, fileTransferApi } = useApi();
     const { navigate } = useCradleNavigate();
@@ -403,7 +404,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             );
         }
 
-        if (profile?.vimMode) {
+        if (vimModeEnabled) {
             Vim.defineEx('write', 'w', (cm: CodeMirror) => {
                 try {
                     setMarkdownContent(cm.cm6.state.doc.toString());
@@ -423,7 +424,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         return exts;
     }, [
         editorUtils,
-        profile?.vimMode,
+        vimModeEnabled,
         additionalExtensions,
         entryColors,
         navigate,
