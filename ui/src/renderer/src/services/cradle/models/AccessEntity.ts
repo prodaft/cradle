@@ -38,6 +38,12 @@ export interface AccessEntity {
      * @memberof AccessEntity
      */
     accessType?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof AccessEntity
+     */
+    description: string;
 }
 
 /**
@@ -46,6 +52,7 @@ export interface AccessEntity {
 export function instanceOfAccessEntity(value: object): value is AccessEntity {
     if (!('id' in value) || value['id'] === undefined) return false;
     if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('description' in value) || value['description'] === undefined) return false;
     return true;
 }
 
@@ -62,6 +69,7 @@ export function AccessEntityFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'id': json['id'],
         'name': json['name'],
         'accessType': json['access_type'] == null ? undefined : json['access_type'],
+        'description': json['description'],
     };
 }
 
@@ -79,6 +87,7 @@ export function AccessEntityToJSONTyped(value?: AccessEntity | null, ignoreDiscr
         'id': value['id'],
         'name': value['name'],
         'access_type': value['accessType'],
+        'description': value['description'],
     };
 }
 
