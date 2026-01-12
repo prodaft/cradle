@@ -1,49 +1,36 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { Plus, Refresh } from 'iconoir-react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { CheckCircle, InfoCircle, Plus, Refresh, WarningCircle } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import * as Yup from 'yup';
+import { toast } from 'sonner';
+import { z } from 'zod';
 import SnippetList, { SnippetListRef } from '../../../base/SnippetList/SnippetList';
 import { SettingsButton, SettingsCard, SettingsField } from '../../../forms';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
-import { Separator } from '@/components/ui/separator';
 
-interface FormData {
-    minEntries: number;
-    minEntities: number;
-    maxCliqueSize: number;
-    allowDynamicEntryClassCreation: boolean;
-}
-
-const noteSettingsSchema = Yup.object().shape({
-    minEntries: Yup.number()
-        .typeError('Must be a number')
-        .required('Minimum number of entries is required')
-        .min(1, 'Must be at least 1'),
-    minEntities: Yup.number()
-        .typeError('Must be a number')
-        .required('Minimum number of entities is required')
-        .min(1, 'Must be at least 1'),
-    maxCliqueSize: Yup.number()
-        .typeError('Must be a number')
-        .required('Maximum clique size is required')
-        .min(1, 'Must be at least 1'),
-    allowDynamicEntryClassCreation: Yup.boolean().default(false),
+const noteSettingsSchema = z.object({
+    minEntries: z.coerce.number().min(1, { error: 'Must be at least 1' }),
+    minEntities: z.coerce.number().min(1, { error: 'Must be at least 1' }),
+    maxCliqueSize: z.coerce.number().min(1, { error: 'Must be at least 1' }),
+    allowDynamicEntryClassCreation: z.boolean().default(false),
 });
+
+type NoteSettingsFormData = z.infer<typeof noteSettingsSchema>;
 
 export default function NoteSettingsForm() {
     const { managementApi } = useApi();
-    const { execute } = useAPICall();
     const [isLoading, setIsLoading] = useState(true);
     const snippetListRef = useRef<SnippetListRef>(null);
-    const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({
+    const [actionAlert, setActionAlert] = useState<{
+        type: 'success' | 'error' | 'warning' | null;
+        message: string;
+    }>({
         type: null,
         message: '',
     });
@@ -55,8 +42,8 @@ export default function NoteSettingsForm() {
         watch,
         control,
         formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: yupResolver(noteSettingsSchema),
+    } = useForm<NoteSettingsFormData>({
+        resolver: zodResolver(noteSettingsSchema) as any,
         defaultValues: {
             minEntries: 1,
             minEntities: 1,
@@ -65,30 +52,17 @@ export default function NoteSettingsForm() {
         },
     });
 
-    useEffect(() => {
-        async function fetchSettings() {
-            try {
-                const settings = await managementApi.managementSettingsRetrieve();
-                if (settings && settings.notes) {
-                    reset({
-                        minEntries: settings.notes.min_entries || 1,
-                        minEntities: settings.notes.min_entities || 1,
-                        maxCliqueSize: settings.notes.max_clique_size || 1,
-                        allowDynamicEntryClassCreation:
-                            settings.notes.allow_dynamic_entry_class_creation ?? false,
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to fetch settings:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchSettings();
-    }, [managementApi, reset]);
+    const fetchSettingsMutation = useMutation({
+        mutationFn: async () => {
+            return await managementApi.managementSettingsRetrieve();
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
 
-    const onSubmit = async (data: FormData) => {
-        try {
+    const updateSettingsMutation = useMutation({
+        mutationFn: async (data: NoteSettingsFormData) => {
             await managementApi.managementSettingsCreate({
                 requestBody: {
                     notes: {
@@ -100,28 +74,67 @@ export default function NoteSettingsForm() {
                     },
                 },
             });
-            toast.success('Settings updated successfully!');
-        } catch (error) {
+        },
+        meta: {
+            successMessage: 'Settings updated successfully!',
+            errorMessage: 'Failed to save settings',
+        },
+        onError: () => {
             toast.error('Failed to save settings');
-        }
-    };
+        },
+    });
 
-    const handleReLinkNotes = async () => {
-        try {
-            await execute(
-                () =>
-                    managementApi.managementActionsCreate({
-                        actionName: 'relinkNotes',
-                    }),
-                { suppressNotification: true },
-            );
+    const relinkNotesMutation = useMutation({
+        mutationFn: async () => {
+            await managementApi.managementActionsCreate({
+                actionName: 'relinkNotes',
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: () => {
             setActionAlert({
                 type: 'success',
                 message: 'Re-Link all Notes action triggered!',
             });
-        } catch {
-            setActionAlert({ type: 'error', message: 'Failed to re-link notes' });
+        },
+        onError: () => {
+            setActionAlert({
+                type: 'error',
+                message: 'Failed to trigger Re-Link action',
+            });
+        },
+    });
+
+    useEffect(() => {
+        async function fetchSettings() {
+            try {
+                const settings = await fetchSettingsMutation.mutateAsync();
+                if (settings && settings.notes) {
+                    reset({
+                        minEntries: settings.notes.min_entries || 1,
+                        minEntities: settings.notes.min_entities || 1,
+                        maxCliqueSize: settings.notes.max_clique_size || 1,
+                        allowDynamicEntryClassCreation:
+                            settings.notes.allow_dynamic_entry_class_creation ?? false,
+                    });
+                }
+            } catch (error) {
+                // Error already handled
+            } finally {
+                setIsLoading(false);
+            }
         }
+        fetchSettings();
+    }, [reset]);
+
+    const onSubmit = async (data: NoteSettingsFormData) => {
+        updateSettingsMutation.mutate(data);
+    };
+
+    const handleReLinkNotes = () => {
+        relinkNotesMutation.mutate();
     };
 
     if (isLoading) {
@@ -138,7 +151,9 @@ export default function NoteSettingsForm() {
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
                     <h2 className='text-2xl font-bold tracking-tight'>Note Settings</h2>
-                    <p className='text-muted-foreground'>Configure note creation and linking behavior</p>
+                    <p className='text-muted-foreground'>
+                        Configure note creation and linking behavior
+                    </p>
                 </div>
             </div>
 
@@ -190,12 +205,24 @@ export default function NoteSettingsForm() {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='allowDynamicEntryClassCreation' className='text-sm text-muted-foreground block mb-0.5'>
+                                                <Label
+                                                    htmlFor='allowDynamicEntryClassCreation'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
                                                     Dynamic Entry Class Creation
                                                 </Label>
-                                                <p className='text-sm text-muted-foreground'>Allow automatic creation of new entry classes</p>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Allow automatic creation of new
+                                                    entry classes
+                                                </p>
                                                 {errors.allowDynamicEntryClassCreation && (
-                                                    <p className='text-sm text-destructive mt-1'>{errors.allowDynamicEntryClassCreation.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>
+                                                        {
+                                                            errors
+                                                                .allowDynamicEntryClassCreation
+                                                                .message
+                                                        }
+                                                    </p>
                                                 )}
                                             </div>
                                             <Controller
@@ -262,11 +289,25 @@ export default function NoteSettingsForm() {
 
                             <div className='space-y-4'>
                                 {actionAlert.type && (
-                                    <Alert variant={actionAlert.type === 'error' ? 'destructive' : 'default'}>
-                                        {actionAlert.type === 'success' && <CheckCircle />}
-                                        {actionAlert.type === 'error' && <WarningCircle />}
-                                        {actionAlert.type === 'warning' && <InfoCircle />}
-                                        <AlertDescription>{actionAlert.message}</AlertDescription>
+                                    <Alert
+                                        variant={
+                                            actionAlert.type === 'error'
+                                                ? 'destructive'
+                                                : 'default'
+                                        }
+                                    >
+                                        {actionAlert.type === 'success' && (
+                                            <CheckCircle />
+                                        )}
+                                        {actionAlert.type === 'error' && (
+                                            <WarningCircle />
+                                        )}
+                                        {actionAlert.type === 'warning' && (
+                                            <InfoCircle />
+                                        )}
+                                        <AlertDescription>
+                                            {actionAlert.message}
+                                        </AlertDescription>
                                     </Alert>
                                 )}
                                 <SettingsCard>

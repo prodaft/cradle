@@ -10,10 +10,11 @@ export type { FormProps } from './Form';
 
 // Form field components
 export { default as FormCheckbox } from './FormCheckbox';
+export { FormErrorMessage } from './FormErrorMessage';
+export type { FormErrorMessageProps } from './FormErrorMessage';
 export { default as FormInput } from './FormInput';
 export { default as FormRadioGroup } from './FormRadioGroup';
 export { default as FormTextArea } from './FormTextArea';
-
 
 // Shared types
 export type {
@@ -53,13 +54,8 @@ export type {
     SettingsRadioProps,
 } from './SettingsRadio';
 
-// Legacy components (kept for backwards compatibility)
-/** @deprecated Use FormInput instead */
-export { default as FormField } from './FormField';
-export type { FormFieldProps } from './FormField';
-
-export { default as ShadcnSelect } from './ShadcnSelect';
-export type { SelectOption, ShadcnSelectProps } from './ShadcnSelect';
+export { default as SettingsToggle } from './SettingsToggle';
+export type { SettingsToggleProps } from './SettingsToggle';
 
 export { default as SearchFilter } from './SearchFilter';
 export type { SearchFilterProps } from './SearchFilter';

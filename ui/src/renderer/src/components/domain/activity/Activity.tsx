@@ -1,5 +1,6 @@
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDate } from '@/utils/dates';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { diff_match_patch } from 'diff-match-patch';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-diff';
@@ -159,9 +160,12 @@ export default function Activity({ log }: ActivityProps) {
 
     return (
         <Card className='mt-3 dark:!bg-bg-card/70 relative'>
-            <div className='absolute top-2 right-2 cradle-status cradle-status-info border border-border-primary text-border-primary z-10'>
+            <Badge
+                variant='outline'
+                className='absolute top-2 right-2 text-xs uppercase tracking-wide border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] z-10'
+            >
                 {log.type}
-            </div>
+            </Badge>
             <CardHeader>
                 <CardTitle>Activity</CardTitle>
             </CardHeader>
@@ -182,7 +186,9 @@ export default function Activity({ log }: ActivityProps) {
                 </div>
                 {log.details && (
                     <div className='text-foreground text-sm'>
-                        <strong className='text-border-primary text-sm'>Details:</strong>
+                        <strong className='text-border-primary text-sm'>
+                            Details:
+                        </strong>
                         <div
                             className='mt-2'
                             dangerouslySetInnerHTML={{
@@ -193,7 +199,9 @@ export default function Activity({ log }: ActivityProps) {
                 )}
                 {log.srcLog && (
                     <div className='mt-3'>
-                        <strong className='text-border-primary text-sm'>Caused by:</strong>
+                        <strong className='text-border-primary text-sm'>
+                            Caused by:
+                        </strong>
                         <Activity log={log.src_log!} />
                     </div>
                 )}

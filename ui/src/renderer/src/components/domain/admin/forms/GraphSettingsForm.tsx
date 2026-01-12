@@ -1,65 +1,76 @@
-import { useState } from 'react';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, WarningCircle, InfoCircle, Refresh, Server } from 'iconoir-react';
 import { Separator } from '@/components/ui/separator';
-import {
-    SettingsButton,
-    SettingsCard,
-} from '../../../forms';
+import useApi from '@/hooks/api/useApi';
+import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
+import { useMutation } from '@tanstack/react-query';
+import { CheckCircle, InfoCircle, Refresh, Server, WarningCircle } from 'iconoir-react';
+import { useState } from 'react';
+import { SettingsButton, SettingsCard } from '../../../forms';
 
 export default function GraphSettingsForm() {
     const { managementApi } = useApi();
-    const { execute } = useAPICall();
 
-    const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({
-        type: null,
-        message: '',
-    });
-
-    const handleRefreshMaterializedGraph = async () => {
-        try {
-            await execute(
-                () =>
-                    managementApi.managementActionsCreate({
-                        actionName:
-                            ManagementActionsCreateActionNameEnum.RefreshMaterializedGraph,
-                    }),
-                { suppressNotification: true },
-            );
+    const refreshGraphMutation = useMutation({
+        mutationFn: async () => {
+            await managementApi.managementActionsCreate({
+                actionName:
+                    ManagementActionsCreateActionNameEnum.RefreshMaterializedGraph,
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: () => {
             setActionAlert({
                 type: 'success',
                 message: 'Refresh Materialized Graph action triggered!',
             });
-        } catch {
+        },
+        onError: () => {
             setActionAlert({
                 type: 'error',
                 message: 'Failed to refresh materialized graph',
             });
-        }
-    };
+        },
+    });
 
-    const handleRecalculateNodePositions = async () => {
-        try {
-            await execute(
-                () =>
-                    managementApi.managementActionsCreate({
-                        actionName: 'recalculateNodePositions' as any,
-                    }),
-                { suppressNotification: true },
-            );
+    const recalculatePositionsMutation = useMutation({
+        mutationFn: async () => {
+            await managementApi.managementActionsCreate({
+                actionName: 'recalculateNodePositions' as any,
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: () => {
             setActionAlert({
                 type: 'success',
                 message: 'Re-calculate Node Positions action triggered!',
             });
-        } catch {
+        },
+        onError: () => {
             setActionAlert({
                 type: 'error',
                 message: 'Failed to re-calculate node positions',
             });
-        }
+        },
+    });
+
+    const [actionAlert, setActionAlert] = useState<{
+        type: 'success' | 'error' | 'warning' | null;
+        message: string;
+    }>({
+        type: null,
+        message: '',
+    });
+
+    const handleRefreshMaterializedGraph = () => {
+        refreshGraphMutation.mutate();
+    };
+
+    const handleRecalculateNodePositions = () => {
+        recalculatePositionsMutation.mutate();
     };
 
     return (
@@ -67,8 +78,12 @@ export default function GraphSettingsForm() {
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>Graph Settings</h2>
-                    <p className='text-muted-foreground'>Manage graph visualization and computation</p>
+                    <h2 className='text-2xl font-bold tracking-tight'>
+                        Graph Settings
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        Manage graph visualization and computation
+                    </p>
                 </div>
             </div>
 
@@ -86,11 +101,19 @@ export default function GraphSettingsForm() {
 
                         <div className='space-y-4'>
                             {actionAlert.type && (
-                                <Alert variant={actionAlert.type === 'error' ? 'destructive' : 'default'}>
+                                <Alert
+                                    variant={
+                                        actionAlert.type === 'error'
+                                            ? 'destructive'
+                                            : 'default'
+                                    }
+                                >
                                     {actionAlert.type === 'success' && <CheckCircle />}
                                     {actionAlert.type === 'error' && <WarningCircle />}
                                     {actionAlert.type === 'warning' && <InfoCircle />}
-                                    <AlertDescription>{actionAlert.message}</AlertDescription>
+                                    <AlertDescription>
+                                        {actionAlert.message}
+                                    </AlertDescription>
                                 </Alert>
                             )}
                             <SettingsCard>

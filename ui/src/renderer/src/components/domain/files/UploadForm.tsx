@@ -1,42 +1,36 @@
 import { Button } from '@/components/ui/button';
+import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import MultipleSelector, { type Option } from '@/components/ui/multi-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
-import type { Alert } from '@/types';
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { WarningCircle } from 'iconoir-react';
-import ShadcnSelect from '@components/forms/ShadcnSelect';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Upload } from 'iconoir-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-import * as Yup from 'yup';
-import { Spinner } from '@/components/ui/spinner';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-interface DataTypeOption {
-    value: string;
+interface SelectOption<T = string | number> {
+    value: T;
     label: string;
+    [key: string]: any;
+}
+
+interface DataTypeOption extends SelectOption<string> {
     inferEntities: boolean;
 }
 
-interface AssociatedEntryOption {
-    value: number; // Entry ID (BigAutoField)
-    label: string;
-}
-
-interface FormValues {
-    title: string;
-    dataType: DataTypeOption | null;
-    associatedEntry: AssociatedEntryOption | AssociatedEntryOption[];
-    files: File[];
-}
-
-interface TouchedFields {
-    title?: boolean;
-    dataType?: boolean;
-    associatedEntry?: boolean;
-    files?: boolean;
-}
-
-interface FormErrors {
-    [key: string]: string;
+interface AssociatedEntryOption extends SelectOption<number> {
+    // value: number (inherited from SelectOption<number>)
+    // label: string (inherited from SelectOption<number>)
 }
 
 interface UploadFormProps {
@@ -44,95 +38,51 @@ interface UploadFormProps {
     onUpload?: () => void;
 }
 
-const UploadSchema = Yup.object().shape({
-    title: Yup.string().required('Digest title is required'),
-    dataType: Yup.object()
-        .shape({
-            value: Yup.string().required('Data type is required'),
-            label: Yup.string().required(),
-            inferEntities: Yup.boolean(),
+const UploadSchema = z.object({
+    title: z.string().min(1, { error: 'Digest title is required' }),
+    dataType: z
+        .object({
+            value: z.string().min(1, { error: 'Data type is required' }),
+            label: z.string().min(1),
+            inferEntities: z.boolean(),
         })
-        .required('Please select a data type'),
-    associatedEntry: Yup.mixed().when('dataType', {
-        is: (dataType: DataTypeOption | null) => dataType && !dataType.inferEntities,
-        then: () =>
-            Yup.object()
-                .shape({
-                    value: Yup.string().required(),
-                    label: Yup.string().required(),
-                })
-                .notRequired(),
-        otherwise: () => Yup.array(),
-    }),
-    files: Yup.array()
-        .min(1, 'Please upload a file')
-        .max(1, 'Only a single file is allowed')
-        .required('File is required'),
+        .nullable()
+        .refine((val) => val !== null, {
+            error: 'Please select a data type',
+        }),
+    associatedEntry: z
+        .array(
+            z.object({
+                value: z.number(),
+                label: z.string().min(1),
+            }),
+        )
+        .default([]),
+    files: z
+        .array(z.instanceof(File))
+        .min(1, { error: 'Please upload a file' })
+        .max(1, { error: 'Only a single file is allowed' }),
 });
 
-// Utility function to get error styling classes
-const getFieldErrorClasses = (hasError: boolean, baseClasses: string = ''): string => {
-    if (hasError) {
-        return `${baseClasses} border-destructive`.trim();
-    }
-    return `${baseClasses}`.trim();
-};
-
-// Error message component
-const ErrorMessage: React.FC<{ children: React.ReactNode; id?: string }> = ({
-    children,
-    id,
-}) => (
-    <p id={id} className='mt-1 text-xs text-destructive flex items-center'>
-        <svg
-            className='w-3 h-3 mr-1 flex-shrink-0'
-            fill='currentColor'
-            viewBox='0 0 20 20'
-        >
-            <path
-                fillRule='evenodd'
-                d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
-                clipRule='evenodd'
-            />
-        </svg>
-        {children}
-    </p>
-);
-
+type FormValues = z.infer<typeof UploadSchema>;
 
 function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
     const [entriesLoading, setEntriesLoading] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [alert, setAlert] = useState<Alert>({ show: false, message: '', color: '' });
-    const [touched, setTouched] = useState<TouchedFields>({});
-    const [errors, setErrors] = useState<FormErrors>({});
     const { queryApi, intelioApi } = useApi();
-    const [formValues, setFormValues] = useState<FormValues>({
-        title: '',
-        dataType: null,
-        associatedEntry: [],
-        files: [],
+
+    const form = useForm<FormValues>({
+        resolver: zodResolver(UploadSchema) as any,
+        defaultValues: {
+            title: '',
+            dataType: null as any,
+            associatedEntry: [],
+            files: [],
+        },
     });
-
-    // Helper function to update form values
-    const updateFormValue = useCallback(
-        <K extends keyof FormValues>(field: K, value: FormValues[K]) => {
-            setFormValues((prev) => ({ ...prev, [field]: value }));
-        },
-        [setFormValues],
-    );
-
-    // Helper function to mark field as touched
-    const markFieldTouched = useCallback(
-        (field: keyof TouchedFields) => {
-            setTouched((prev) => ({ ...prev, [field]: true }));
-        },
-        [setTouched],
-    );
 
     const fetchRelatedEntries = async (
         query: string,
-    ): Promise<AssociatedEntryOption[]> => {
+    ): Promise<SelectOption<number>[]> => {
         setEntriesLoading(true);
         try {
             const response = await queryApi.queryList({
@@ -144,340 +94,363 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                     value: entry.id!,
                     label: `${entry.subtype}:${entry.name}`,
                 }));
-            } else {
-                setAlert({
-                    color: 'red',
-                    message: 'Failed to load associated entries',
-                    show: true,
-                });
-                return [];
             }
+            return [];
         } catch (error) {
-            setAlert({
-                color: 'red',
-                message: `Error fetching entries: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                show: true,
-            });
             return [];
         } finally {
             setEntriesLoading(false);
         }
     };
 
-    const handleDataTypeChange = (value: DataTypeOption | null) => {
-        updateFormValue('dataType', value);
-        // Clear associated entries if inferEntities is true
-        if (value?.inferEntities) {
-            updateFormValue('associatedEntry', []);
+    const onSubmit = async (values: z.infer<typeof UploadSchema>) => {
+        const requestParams: any = {
+            digestType: values.dataType!.value,
+            title: values.title,
+            file: values.files[0], // API expects single file, not array
+        };
+
+        // Handle associatedEntry (always an array from multi-select)
+        if (values.associatedEntry.length > 0) {
+            requestParams.entity = values.associatedEntry[0].value;
         }
-        markFieldTouched('dataType');
+
+        await intelioApi.intelioDigestCreate(requestParams);
+
+        if (onUpload) {
+            onUpload();
+        }
+
+        // Reset form on success
+        form.reset();
     };
 
-    const handleAssociatedEntriesChange = (
-        value: AssociatedEntryOption[],
-    ) => {
-        updateFormValue('associatedEntry', Array.from(value));
-        markFieldTouched('associatedEntry');
-    };
+    const dataType = form.watch('dataType') as DataTypeOption | null;
+    const files = form.watch('files');
 
-    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        updateFormValue('title', e.target.value);
-        markFieldTouched('title');
+    // Format file display text
+    const getFileDisplayText = (): string => {
+        if (files && files.length > 0) {
+            const file = files[0];
+            return `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+        }
+        return 'Drag file or click';
     };
 
     const onDrop = useCallback(
         (acceptedFiles: File[]) => {
             if (acceptedFiles.length > 0) {
-                updateFormValue('files', [acceptedFiles[0]]);
-                markFieldTouched('files');
+                form.setValue('files', [acceptedFiles[0]]);
             }
         },
-        [updateFormValue, markFieldTouched],
+        [form],
     );
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         accept: {},
         maxFiles: 1,
+        disabled: form.formState.isSubmitting,
     });
 
-    const resetForm = () => {
-        setFormValues({
-            title: '',
-            dataType: null,
-            associatedEntry: [],
-            files: [],
-        });
-        setTouched({});
-        setErrors({});
-    };
-
-    const handleUpload = async (values: FormValues) => {
-        setIsUploading(true);
-        try {
-            const requestParams: any = {
-                digestType: values.dataType!.value,
-                title: values.title,
-                file: values.files[0], // API expects single file, not array
-            };
-
-            // Handle associatedEntry which could be a single value or array
-            const associatedEntry = Array.isArray(values.associatedEntry)
-                ? values.associatedEntry[0]
-                : values.associatedEntry;
-
-            if (associatedEntry?.value) {
-                requestParams.entity = associatedEntry.value;
-            }
-
-            await intelioApi.intelioDigestCreate(requestParams);
-
-            setAlert({
-                color: 'green',
-                message: 'File uploaded successfully',
-                show: true,
-            });
-            resetForm();
-            if (onUpload) {
-                onUpload();
-            }
-        } catch (error) {
-            setAlert({
-                color: 'red',
-                message: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                show: true,
-            });
-        } finally {
-            setIsUploading(false);
-        }
-    };
-
-    const validateForm = async (): Promise<boolean> => {
-        try {
-            await UploadSchema.validate(formValues, { abortEarly: false });
-            setErrors({});
-            return true;
-        } catch (err) {
-            const formErrors: FormErrors = {};
-            if (err instanceof Yup.ValidationError) {
-                if (err.inner) {
-                    err.inner.forEach((error) => {
-                        if (error.path) {
-                            formErrors[error.path] = error.message;
-                        }
-                    });
-                } else if (err.path) {
-                    formErrors[err.path] = err.message;
-                }
-            }
-
-            setAlert({
-                color: 'red',
-                message: Object.values(formErrors)
-                    .map((msg) => `- ${msg}`)
-                    .join('\n'),
-                show: true,
-            });
-            return false;
-        }
-    };
-
-    const onSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        // Mark all fields as touched for validation display
-        setTouched({
-            title: true,
-            dataType: true,
-            associatedEntry: true,
-            files: true,
-        });
-
-        const isValid = await validateForm();
-        if (isValid) {
-            await handleUpload(formValues);
-        }
-    };
-
-    // Check if form has errors for styling
-    const hasErrors = Object.keys(errors).length > 0;
-    const titleError = touched.title && errors.title;
-    const dataTypeError = touched.dataType && errors.dataType;
-    const filesError = touched.files && errors.files;
-    const associatedEntryError = touched.associatedEntry && errors.associatedEntry;
-
-    // Format file display text
-    const getFileDisplayText = (): string => {
-        if (formValues.files.length > 0) {
-            const file = formValues.files[0];
-            return `${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
-        }
-        return isDragActive ? 'Drop file here' : 'Drag file or click';
-    };
-
     return (
-        <form onSubmit={onSubmit} className='w-full'>
-            <div className='grid grid-cols-5 gap-4 mb-4 px-4'>
-                {/* Digest Title Field */}
-                <div className='col-span-1'>
-                    <label
-                        className={`block text-sm font-medium mb-1 ${titleError ? 'text-destructive' : 'text-foreground'}`}
-                    >
-                        Digest Title *
-                    </label>
-                    <input
-                        type='text'
-                        value={formValues.title}
-                        onChange={handleTitleChange}
-                        className={getFieldErrorClasses(
-                            !!titleError,
-                            'w-full input input-block border-2  ',
-                        )}
-                        placeholder='Enter digest title'
-                        aria-invalid={titleError ? 'true' : 'false'}
-                        aria-describedby={titleError ? 'title-error' : undefined}
-                    />
-                    {titleError && (
-                        <ErrorMessage id='title-error'>{errors.title}</ErrorMessage>
-                    )}
-                </div>
-
-                {/* Data Type Selector */}
-                <div className='col-span-1'>
-                    <label
-                        className={`block text-sm font-medium mb-1 ${dataTypeError ? 'text-destructive' : 'text-foreground'}`}
-                    >
-                        Data Type *
-                    </label>
-                    <div
-                        className={
-                            dataTypeError
-                                ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
-                                : ''
-                        }
-                    >
-                        <ShadcnSelect
-                            value={formValues.dataType}
-                            onChange={handleDataTypeChange}
-                            staticOptions={dataTypeOptions}
-                            placeholder='Select digest type'
-                            className='w-full'
-                            width='w-full'
+        <form onSubmit={form.handleSubmit(onSubmit as any)}>
+            <div className='w-full'>
+                <div className='grid grid-cols-5 gap-4 mb-4 px-4'>
+                    {/* Digest Title Field */}
+                    <div className='col-span-1'>
+                        <Controller
+                            name='title'
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldContent>
+                                        <FieldLabel htmlFor={field.name}>
+                                            Digest Title *
+                                        </FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={field.name}
+                                            placeholder='Enter digest title'
+                                            aria-invalid={fieldState.invalid}
+                                            disabled={form.formState.isSubmitting}
+                                        />
+                                        {fieldState.invalid && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </FieldContent>
+                                </Field>
+                            )}
                         />
                     </div>
-                    {dataTypeError && (
-                        <ErrorMessage id='dataType-error'>
-                            {errors.dataType}
-                        </ErrorMessage>
-                    )}
-                </div>
 
-                {/* File Upload Area */}
-                <div className='col-span-1'>
-                    <label
-                        className={`block text-sm font-medium mb-1 ${filesError ? 'text-destructive' : 'text-foreground'}`}
-                    >
-                        Upload File *
-                    </label>
-                    <div
-                        {...getRootProps()}
-                        className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center  ${
-                            filesError
-                                ? 'border-destructive bg-destructive/10 hover:border-destructive'
-                                : isDragActive
-                                  ? 'bg-primary/10 border-primary'
-                                  : 'border-border hover:border-primary hover:bg-muted'
-                        }`}
-                        aria-invalid={filesError ? 'true' : 'false'}
-                        aria-describedby={filesError ? 'files-error' : undefined}
-                    >
-                        <input {...getInputProps()} />
-                        <p
-                            className={`text-sm truncate ${filesError ? 'text-destructive' : 'text-muted-foreground'}`}
+                    {/* Data Type Selector */}
+                    <div className='col-span-1'>
+                        <Controller
+                            name='dataType'
+                            control={form.control}
+                            render={({ field: { onChange, value }, fieldState }) => {
+                                const isInvalid =
+                                    fieldState.invalid && fieldState.isTouched;
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldContent>
+                                            <FieldLabel htmlFor='data-type'>
+                                                Data Type *
+                                            </FieldLabel>
+                                            <div
+                                                className={
+                                                    isInvalid
+                                                        ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
+                                                        : ''
+                                                }
+                                            >
+                                                <Select
+                                                    value={value?.value || ''}
+                                                    onValueChange={(selectedValue) => {
+                                                        const option =
+                                                            dataTypeOptions.find(
+                                                                (opt) =>
+                                                                    opt.value ===
+                                                                    selectedValue,
+                                                            );
+                                                        onChange(
+                                                            option ? option : null,
+                                                        );
+                                                    }}
+                                                >
+                                                    <SelectTrigger
+                                                        className='w-full'
+                                                        aria-invalid={isInvalid}
+                                                    >
+                                                        <SelectValue placeholder='Select digest type' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {dataTypeOptions.map(
+                                                            (option) => (
+                                                                <SelectItem
+                                                                    key={option.value}
+                                                                    value={option.value}
+                                                                >
+                                                                    {option.label}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            {isInvalid && (
+                                                <FieldError
+                                                    errors={[
+                                                        {
+                                                            message:
+                                                                typeof fieldState.error
+                                                                    ?.message ===
+                                                                'string'
+                                                                    ? fieldState.error
+                                                                          .message
+                                                                    : 'Please select a data type',
+                                                        },
+                                                    ]}
+                                                />
+                                            )}
+                                        </FieldContent>
+                                    </Field>
+                                );
+                            }}
+                        />
+                    </div>
+
+                    {/* File Upload Area */}
+                    <div className='col-span-1'>
+                        <Controller
+                            name='files'
+                            control={form.control}
+                            render={({ field: { onChange }, fieldState }) => {
+                                const isInvalid =
+                                    fieldState.invalid && fieldState.isTouched;
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldContent>
+                                            <FieldLabel htmlFor='file-upload'>
+                                                Upload File *
+                                            </FieldLabel>
+                                            <div
+                                                {...getRootProps()}
+                                                className={`border-2 border-dashed rounded-md p-2 text-center cursor-pointer h-10 flex items-center justify-center ${
+                                                    isInvalid
+                                                        ? 'border-destructive bg-destructive/10 hover:border-destructive'
+                                                        : isDragActive
+                                                          ? 'bg-primary/10 border-primary'
+                                                          : 'border-border hover:border-primary hover:bg-muted'
+                                                }`}
+                                                aria-invalid={isInvalid}
+                                                aria-describedby={
+                                                    isInvalid
+                                                        ? 'files-error'
+                                                        : undefined
+                                                }
+                                            >
+                                                <input
+                                                    {...getInputProps()}
+                                                    onChange={(e) => {
+                                                        if (
+                                                            e.target.files &&
+                                                            e.target.files.length > 0
+                                                        ) {
+                                                            onChange([
+                                                                e.target.files[0],
+                                                            ]);
+                                                        }
+                                                    }}
+                                                />
+                                                <p
+                                                    className={`text-sm truncate ${
+                                                        isInvalid
+                                                            ? 'text-destructive'
+                                                            : 'text-muted-foreground'
+                                                    }`}
+                                                >
+                                                    {isDragActive
+                                                        ? 'Drop file here'
+                                                        : getFileDisplayText()}
+                                                </p>
+                                            </div>
+                                            {isInvalid && (
+                                                <FieldError
+                                                    errors={[
+                                                        {
+                                                            message:
+                                                                typeof fieldState.error
+                                                                    ?.message ===
+                                                                'string'
+                                                                    ? fieldState.error
+                                                                          .message
+                                                                    : 'Please upload a file',
+                                                        },
+                                                    ]}
+                                                />
+                                            )}
+                                        </FieldContent>
+                                    </Field>
+                                );
+                            }}
+                        />
+                    </div>
+
+                    {/* Associated Entries Selector */}
+                    <div className='col-span-1'>
+                        <Controller
+                            name='associatedEntry'
+                            control={form.control}
+                            render={({ field: { onChange, value }, fieldState }) => {
+                                const isInvalid =
+                                    fieldState.invalid && fieldState.isTouched;
+                                return (
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldContent>
+                                            <FieldLabel htmlFor='associated-entries'>
+                                                Associated Entries
+                                            </FieldLabel>
+                                            <div
+                                                className={
+                                                    isInvalid
+                                                        ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
+                                                        : ''
+                                                }
+                                            >
+                                                <MultipleSelector
+                                                    value={
+                                                        (value?.map((e) => ({
+                                                            value: String(e.value),
+                                                            label: e.label,
+                                                        })) || []) as Option[]
+                                                    }
+                                                    defaultOptions={[]}
+                                                    placeholder={
+                                                        dataType?.inferEntities
+                                                            ? 'Select entries (auto-inferred)'
+                                                            : 'Select entries'
+                                                    }
+                                                    disabled={
+                                                        dataType?.inferEntities || false
+                                                    }
+                                                    onSearch={async (query) => {
+                                                        const results =
+                                                            await fetchRelatedEntries(
+                                                                query,
+                                                            );
+                                                        return results.map((e) => ({
+                                                            value: String(e.value),
+                                                            label: e.label,
+                                                        })) as unknown as Option[];
+                                                    }}
+                                                    onChange={(options) => {
+                                                        onChange(
+                                                            options.map((o) => ({
+                                                                value: Number(o.value),
+                                                                label: o.label,
+                                                            })),
+                                                        );
+                                                    }}
+                                                    emptyIndicator={
+                                                        <p className='text-center text-sm'>
+                                                            No entries found
+                                                        </p>
+                                                    }
+                                                    className='w-full'
+                                                />
+                                            </div>
+                                            {isInvalid && (
+                                                <FieldError
+                                                    errors={[
+                                                        {
+                                                            message:
+                                                                typeof fieldState.error
+                                                                    ?.message ===
+                                                                'string'
+                                                                    ? fieldState.error
+                                                                          .message
+                                                                    : 'Invalid associated entries',
+                                                        },
+                                                    ]}
+                                                />
+                                            )}
+                                        </FieldContent>
+                                    </Field>
+                                );
+                            }}
+                        />
+                    </div>
+
+                    {/* Submit Button */}
+                    <div className='col-span-1 flex items-end'>
+                        <Button
+                            type='submit'
+                            variant='default'
+                            disabled={form.formState.isSubmitting}
+                            className='w-full flex items-center justify-center'
+                            aria-label={
+                                form.formState.isSubmitting
+                                    ? 'Uploading file'
+                                    : 'Upload file'
+                            }
                         >
-                            {getFileDisplayText()}
-                        </p>
+                            {form.formState.isSubmitting ? (
+                                <>
+                                    <Spinner className='size-4 text-white' />
+                                    <span className='ml-2'>Uploading...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Upload className='mr-2 text-primary' />
+                                    Upload
+                                </>
+                            )}
+                        </Button>
                     </div>
-                    {filesError && (
-                        <ErrorMessage id='files-error'>{errors.files}</ErrorMessage>
-                    )}
-                </div>
-
-                {/* Associated Entries Selector */}
-                <div className='col-span-1'>
-                    <label
-                        className={`block text-sm font-medium mb-1 ${associatedEntryError ? 'text-destructive' : 'text-foreground'}`}
-                    >
-                        Associated Entries
-                    </label>
-                    <div
-                        className={
-                            associatedEntryError
-                                ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
-                                : ''
-                        }
-                    >
-                        <ShadcnSelect
-                            values={formValues.associatedEntry || []}
-                            onMultiChange={handleAssociatedEntriesChange}
-                            fetchOptions={fetchRelatedEntries}
-                            isMulti={true}
-                            placeholder={
-                                formValues.dataType?.inferEntities
-                                    ? 'Select entries (disabled)'
-                                    : 'Select entries'
-                            }
-                            className='w-full'
-                            width='w-full'
-                            disabled={
-                                !formValues.dataType ||
-                                formValues.dataType.inferEntities
-                            }
-                            aria-describedby={
-                                associatedEntryError
-                                    ? 'associatedEntry-error'
-                                    : undefined
-                            }
-                        />
-                    </div>
-                    {associatedEntryError && (
-                        <ErrorMessage id='associatedEntry-error'>
-                            {errors.associatedEntry}
-                        </ErrorMessage>
-                    )}
-                </div>
-
-                {/* Submit Button */}
-                <div className='col-span-1 flex items-end'>
-                    <Button
-                        type='submit'
-                        variant='default'
-                        disabled={isUploading}
-                        className={`w-full flex items-center justify-center ${
-                            hasErrors ? 'hover:bg-destructive/90' : ''
-                        }`}
-                        aria-label={isUploading ? 'Uploading file' : 'Upload file'}
-                    >
-                        {isUploading ? (
-                            <>
-                                <Spinner className='size-4 text-white' />
-                                <span className='ml-2'>Uploading...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Upload className='mr-2 text-primary' />
-                                Upload
-                            </>
-                        )}
-                    </Button>
                 </div>
             </div>
-            {alert.show && (
-                <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
-                    <WarningCircle />
-                    <AlertDescription>{alert.message}</AlertDescription>
-                </AlertComponent>
-            )}
         </form>
     );
 }

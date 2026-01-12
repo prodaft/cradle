@@ -1,21 +1,23 @@
-import { EditPencil } from 'iconoir-react';
-import { ComponentType, ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
+import { EditPencil } from 'iconoir-react';
+import { ComponentType } from 'react';
 
 interface AdminPanelCardManagementProps {
     name: string;
+    id: string;
     SettingComponent: ComponentType;
-    setRightPane: (content: ReactNode) => void;
+    onNavigate: (id: string) => void;
 }
 
 export default function AdminPanelCardManagement({
     name,
+    id,
     SettingComponent,
-    setRightPane,
+    onNavigate,
 }: AdminPanelCardManagementProps) {
     const handleClick = () => {
-        setRightPane(<SettingComponent />);
+        onNavigate(id);
     };
 
     return (

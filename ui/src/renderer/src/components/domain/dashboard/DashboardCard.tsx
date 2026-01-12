@@ -1,5 +1,5 @@
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Card, CardContent } from '@/components/ui/card';
+import { Link } from '@tanstack/react-router';
 
 interface DashboardCardProps {
     name: string;
@@ -18,17 +18,36 @@ interface DashboardCardProps {
  * @constructor
  */
 export default function DashboardCard({ name, link, type }: DashboardCardProps) {
-    const { navigate, navigateLink } = useCradleNavigate();
+    if (link) {
+        return (
+            <Link to={link as any} className='block'>
+                <Card className='transition-colors hover:border-ring hover:shadow-md cursor-pointer'>
+                    <CardContent>
+                        <div className='text-foreground font-mono tracking-wide font-medium mb-2'>
+                            {name}
+                        </div>
+                        {type && (
+                            <div className='text-xs uppercase tracking-widest font-semibold text-muted-foreground'>
+                                {type}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </Link>
+        );
+    }
+
     return (
-        <Card
-            className={`cradle-card-hover cradle-card-brackets ${link ? 'cursor-pointer' : ''}`}
-            onClick={link ? navigateLink(link) : undefined}
-        >
+        <Card className='transition-colors hover:border-ring hover:shadow-md'>
             <CardContent>
-                <div className='text-foreground cradle-mono font-medium mb-2'>
+                <div className='text-foreground font-mono tracking-wide font-medium mb-2'>
                     {name}
                 </div>
-                {type && <div className='cradle-label text-xs'>{type}</div>}
+                {type && (
+                    <div className='text-xs uppercase tracking-widest font-semibold text-muted-foreground'>
+                        {type}
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

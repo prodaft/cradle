@@ -1,17 +1,18 @@
-import { useModal } from '@/contexts/ui/ModalContext';
-import { useCradleNavigate } from '@/hooks';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import { DataTable, type BulkAction } from '@/components/ui/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { EnrichmentRequestList } from '@services/cradle/models';
+import { useRouter } from '@tanstack/react-router';
+import { ColumnDef, SortingState } from '@tanstack/react-table';
 import {
     InfoCircleSolid,
     RefreshCircle,
@@ -20,10 +21,7 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { capitalize } from 'lodash';
-import { ChangeEvent, FormEvent, useCallback, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
-import { Checkbox } from '@/components/ui/checkbox';
+import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from 'react';
 
 type EnrichmentRequest = EnrichmentRequestList;
 
@@ -93,8 +91,8 @@ function EnrichmentRequestsList({
     onRerunSelected = () => {},
     onCreateRequest = () => {},
 }: EnrichmentRequestsListProps) {
-    const { navigateLink } = useCradleNavigate();
-    const { setModal } = useModal();
+    const router = useRouter();
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -111,14 +109,19 @@ function EnrichmentRequestsList({
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
-        const columnId = Object.keys(sortFieldMapping).find(
-            (key) => sortFieldMapping[key] === sortField
-        ) || sortField;
-        
-        return columnId ? [{
-            id: columnId,
-            desc: sortDirection === 'desc',
-        }] : [];
+        const columnId =
+            Object.keys(sortFieldMapping).find(
+                (key) => sortFieldMapping[key] === sortField,
+            ) || sortField;
+
+        return columnId
+            ? [
+                  {
+                      id: columnId,
+                      desc: sortDirection === 'desc',
+                  },
+              ]
+            : [];
     }, [sortField, sortDirection]);
 
     const handleSortingChange = useCallback(
@@ -226,7 +229,12 @@ function EnrichmentRequestsList({
         })();
 
         const tooltipContent = errorMessage || capitalize(status);
-        const tooltipColorClass = status === 'error' ? 'bg-destructive text-destructive-foreground' : status === 'waiting' ? 'bg-accent text-accent-foreground' : '';
+        const tooltipColorClass =
+            status === 'error'
+                ? 'bg-destructive text-destructive-foreground'
+                : status === 'waiting'
+                  ? 'bg-accent text-accent-foreground'
+                  : '';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
@@ -250,9 +258,7 @@ function EnrichmentRequestsList({
                         {icon}
                     </span>
                 </TooltipTrigger>
-                <TooltipContent>
-                    {tooltipContent}
-                </TooltipContent>
+                <TooltipContent>{tooltipContent}</TooltipContent>
             </Tooltip>
         );
     };
@@ -268,15 +274,17 @@ function EnrichmentRequestsList({
                             table.getIsAllPageRowsSelected() ||
                             (table.getIsSomePageRowsSelected() && 'indeterminate')
                         }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
+                        onCheckedChange={(value) =>
+                            table.toggleAllPageRowsSelected(!!value)
+                        }
+                        aria-label='Select all'
                     />
                 ),
                 cell: ({ row }) => (
                     <Checkbox
                         checked={row.getIsSelected()}
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
+                        aria-label='Select row'
                         onClick={(e) => e.stopPropagation()}
                     />
                 ),
@@ -286,16 +294,28 @@ function EnrichmentRequestsList({
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => (
-                    <span>Title</span>
-                ),
+                header: () => <span>Title</span>,
                 cell: ({ row }) => (
-                    <div className='truncate max-w-xs cursor-pointer' title={row.original.title} onClick={navigateLink(`/enrichment/${row.original.id}`)}>
+                    <div
+                        className='truncate max-w-xs cursor-pointer'
+                        title={row.original.title}
+                        onClick={() =>
+                            router.navigate({
+                                to: '/enrichment/$id',
+                                params: { id: row.original.id.toString() },
+                            })
+                        }
+                    >
                         <div className='flex items-center gap-2 min-w-0'>
                             <span className='inline-flex items-center flex-shrink-0'>
-                                {getStatusIcon(row.original.status, errorMsg(row.original))}
+                                {getStatusIcon(
+                                    row.original.status,
+                                    errorMsg(row.original),
+                                )}
                             </span>
-                            <span className='truncate'>{truncateText(row.original.title, 50)}</span>
+                            <span className='truncate'>
+                                {truncateText(row.original.title, 50)}
+                            </span>
                         </div>
                     </div>
                 ),
@@ -306,8 +326,8 @@ function EnrichmentRequestsList({
                 header: ({ column }) => {
                     const filterValue = columnFilters.user as string;
                     return (
-                        <div className="flex items-center gap-2">
-                            <DataTableColumnHeader column={column} title="User" />
+                        <div className='flex items-center gap-2'>
+                            <DataTableColumnHeader column={column} title='User' />
                             {filterValue && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -315,14 +335,16 @@ function EnrichmentRequestsList({
                     );
                 },
                 cell: ({ row }) => (
-                    <div className='w-32'>{row.original.userDetail?.username || 'N/A'}</div>
+                    <div className='w-32'>
+                        {row.original.userDetail?.username || 'N/A'}
+                    </div>
                 ),
             },
             {
                 accessorKey: 'createdAt',
                 id: 'createdAt',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Created At" />
+                    <DataTableColumnHeader column={column} title='Created At' />
                 ),
                 cell: ({ row }) => (
                     <div className='w-40'>
@@ -344,10 +366,16 @@ function EnrichmentRequestsList({
                     };
 
                     return (
-                        <div className='w-12 text-right' onClick={(e) => e.stopPropagation()}>
+                        <div
+                            className='w-12 text-right'
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className='flex justify-end'>
                                 <TableActionsButton>
-                                    <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                                    <DropdownMenuItem
+                                        onClick={handleDelete}
+                                        variant='destructive'
+                                    >
                                         <Trash width='18' height='18' />
                                         Delete
                                     </DropdownMenuItem>
@@ -359,15 +387,25 @@ function EnrichmentRequestsList({
                 enableSorting: false,
             },
         ],
-        [columnFilters, handleStatusChange, getStatusIcon, errorMsg, onRequestDelete],
+        [
+            columnFilters,
+            handleStatusChange,
+            getStatusIcon,
+            errorMsg,
+            onRequestDelete,
+            router,
+        ],
     );
 
     // Handle row selection - convert number[] to string[]
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        if (setSelectedRequests) {
-            setSelectedRequests(selectedIds.map(id => Number(id)));
-        }
-    }, [setSelectedRequests]);
+    const handleRowSelectionChange = useCallback(
+        (selectedIds: string[]) => {
+            if (setSelectedRequests) {
+                setSelectedRequests(selectedIds.map((id) => Number(id)));
+            }
+        },
+        [setSelectedRequests],
+    );
 
     return (
         <div className='flex flex-col space-y-4'>
@@ -375,7 +413,6 @@ function EnrichmentRequestsList({
             <ActionBar
                 left={
                     <>
-
                         <ActionBarSearch
                             placeholder='Search requests...'
                             initialValue={searchFilters?.title || ''}
@@ -418,7 +455,7 @@ function EnrichmentRequestsList({
                 loading={loading}
                 emptyMessage='No enrichment requests found'
                 enableRowSelection={true}
-                selectedRows={selectedRequests.map(id => String(id))}
+                selectedRows={selectedRequests.map((id) => String(id))}
                 onRowSelectionChange={handleRowSelectionChange}
                 sorting={sorting}
                 onSortingChange={handleSortingChange}
@@ -431,12 +468,12 @@ function EnrichmentRequestsList({
                         icon: <Trash width={18} height={18} />,
                         onClick: () => {
                             if (selectedRequests.length === 0) return;
-                            setModal(ConfirmDeletionModal, {
-                                onConfirm: onDeleteSelected,
-                                text: `Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`,
-                            });
+                            setDeleteModalOpen(true);
                         },
-                        disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                        disabled:
+                            loading ||
+                            enrichmentRequests.length === 0 ||
+                            selectedRequests.length === 0,
                         variant: 'destructive',
                     },
                     {
@@ -444,11 +481,19 @@ function EnrichmentRequestsList({
                         label: 'Rerun enrichments',
                         icon: <RefreshCircle width={18} height={18} />,
                         onClick: onRerunSelected,
-                        disabled: loading || enrichmentRequests.length === 0 || selectedRequests.length === 0,
+                        disabled:
+                            loading ||
+                            enrichmentRequests.length === 0 ||
+                            selectedRequests.length === 0,
                     },
                 ]}
-                itemLabel="request"
-                onRowClick={(request) => navigateLink(`/enrichment/${request.id}`)()}
+                itemLabel='request'
+                onRowClick={(request) =>
+                    router.navigate({
+                        to: '/enrichment/$id',
+                        params: { id: request.id.toString() },
+                    })
+                }
             />
 
             <PaginationWrapper
@@ -460,6 +505,12 @@ function EnrichmentRequestsList({
                 disabled={enrichmentRequests.length === 0}
                 selectedCount={selectedRequests.length}
                 totalRows={enrichmentRequests.length}
+            />
+            <ConfirmDeletionModal
+                open={deleteModalOpen}
+                onOpenChange={setDeleteModalOpen}
+                onConfirm={onDeleteSelected}
+                text={`Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
         </div>
     );

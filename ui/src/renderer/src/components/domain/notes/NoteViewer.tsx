@@ -1,6 +1,4 @@
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import FileUploadModal from '@/components/modals/notes/FileUploadModal';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -11,25 +9,41 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import FileUploadModal from '@/components/modals/notes/FileUploadModal';
-import { useModal } from '@/contexts/ui/ModalContext';
-import { toast } from 'sonner';
-import { useProfile } from '@/contexts/user/ProfileContext';
+import { Button, buttonVariants } from '@/components/ui/button';
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { queryKeys } from '@/hooks/query';
+import { useProfile } from '@/hooks/user/useProfile';
+import { cn } from '@/lib/utils';
+import { parseAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
+import { logger } from '@/utils/logger';
 import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
-import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
+import type {
+    FileReferenceWithNote,
+    FileUploadFinalizeResponse,
+    NoteRetrieve,
+} from '@services/cradle/models';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    useParams,
+    useRouter,
+    useRouterState,
+    useSearch,
+} from '@tanstack/react-router';
 import { Book, EditPencil } from 'iconoir-react';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import FileInput from '../../forms/FileInput';
 import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
 import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
@@ -59,10 +73,13 @@ interface LocationState {
  * NoteViewer component - displays note content with editing capabilities
  */
 export default function NoteViewer() {
-    const { id } = useParams<{ id: string }>();
+    const { id } = useParams({ from: '/_authenticated/notes/$id' });
     const noteId = id || '';
-    const { navigate } = useCradleNavigate();
-    const location = useLocation();
+    const router = useRouter();
+    const queryClient = useQueryClient();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const locationState = (location.state as LocationState) || {};
     const { isAdmin, profile } = useProfile();
     const { from, state } = locationState;
@@ -72,11 +89,24 @@ export default function NoteViewer() {
             ? localStorage.getItem('richEditor') === 'true'
             : true,
     );
-    const [searchParams, setSearchParams] = useSearchParams();
+    const search = useSearch({ from: '/_authenticated/notes/$id' });
     const [enableEditing, setEnableEditing] = useState(false);
     const [markdownContent, setMarkdownContent] = useState('');
-    const { setModal } = useModal();
+    const [enrichmentModalOpen, setEnrichmentModalOpen] = useState(false);
+    const [enrichmentEntities, setEnrichmentEntities] = useState<
+        Promise<Array<{ type: string; value: string }>> | undefined
+    >(undefined);
+    const [enrichmentArtifacts, setEnrichmentArtifacts] = useState<
+        Promise<string> | undefined
+    >(undefined);
+    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
     const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
+    // Separate state for FileInput component (expects FileUploadFinalizeResponse[])
+    const [uploadedFileData, setUploadedFileData] = useState<
+        FileUploadFinalizeResponse[]
+    >([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [activeView, setActiveView] = useState<ViewMode>(ViewMode.CONTENT);
@@ -100,14 +130,45 @@ export default function NoteViewer() {
     const editorRef = useRef<any>(null);
     const initialContentSetRef = useRef(false);
     const { managementApi, notesApi, lspApi } = useApi();
-    const { execute, handleError } = useAPICall();
+
+    const finalizeNoteMutation = useMutation({
+        mutationFn: async (noteId: string) => {
+            return await notesApi.notesFinalUpdate({ noteId });
+        },
+        meta: {
+            successMessage: 'Note finalized successfully.',
+        },
+        onSuccess: (response) => {
+            router.navigate({ to: `/notes/${response.id}` as any, replace: true });
+        },
+    });
+
+    const relinkNoteMutation = useMutation({
+        mutationFn: async (noteId: string) => {
+            await managementApi.managementActionsCreate({
+                actionName: 'relinkNotes',
+                requestBody: {
+                    note_id: noteId,
+                },
+            });
+        },
+        meta: {
+            successMessage: 'Note relinked successfully.',
+        },
+    });
 
     // Initialize editor utils for autolink functionality
     const editorUtils = React.useMemo(() => {
         CradleEditor.clearCache();
-        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, (error) =>
-            handleError(error, { suppressNotification: false }),
-        );
+        return new CradleEditor(lspApi, notesApi, {}, setLspLoaded, async (error) => {
+            const parsed = await parseAPIError(error);
+            if (
+                parsed.code !== 'UNAUTHENTICATED' &&
+                parsed.code !== 'SESSION_EXPIRED'
+            ) {
+                toast.error(parsed.detail, { duration: 5000 });
+            }
+        });
     }, [notesApi, lspApi]);
 
     const copyToClipboard = (text: string) => {
@@ -117,7 +178,6 @@ export default function NoteViewer() {
                 toast.success('Copied to clipboard');
             })
             .catch((error) => {
-                console.error('Failed to copy text: ', error);
                 toast.error('Failed to copy to clipboard');
             });
     };
@@ -157,8 +217,6 @@ export default function NoteViewer() {
                 return;
             }
 
-            console.log(view);
-
             const doc = view.state;
             let to = doc.selection.main.to;
             let from = doc.selection.main.from;
@@ -182,9 +240,13 @@ export default function NoteViewer() {
 
             setMarkdownContent(linked);
             if (changes > 0) {
-                toast.success(`${changes} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`);
+                toast.success(
+                    `${changes} link${changes == 1 ? '' : 's'} ${onlyTimestamps ? 'timestamped.' : 'found in text.'}`,
+                );
             } else {
-                toast.info(`No link${onlyTimestamps ? 's timestamped.' : 's found in text.'}`);
+                toast.info(
+                    `No link${onlyTimestamps ? 's timestamped.' : 's found in text.'}`,
+                );
             }
         },
         [editorUtils, setMarkdownContent],
@@ -211,15 +273,13 @@ export default function NoteViewer() {
                 .join('\n'),
         );
 
-        setModal(EnrichmentRequestModal, {
-            entitiesList: entities,
-            artifactsList: artifacts,
-        });
-    }, [editorUtils, setModal]);
+        setEnrichmentEntities(entities);
+        setEnrichmentArtifacts(artifacts);
+        setEnrichmentModalOpen(true);
+    }, [editorUtils]);
 
     useEffect(() => {
         if (!noteId) {
-            console.warn('NoteViewer - No note ID provided');
             setIsLoading(false);
             setNote(null);
             setMarkdownContent('');
@@ -240,7 +300,7 @@ export default function NoteViewer() {
         setHasUnsavedChanges(false);
         initialContentSetRef.current = false;
 
-        console.debug('[NoteViewer] opening note with collab enabled', {
+        logger.debug('[NoteViewer] opening note with collab enabled', {
             noteId,
             hasStateNotes: Boolean(state?.notes?.length),
         });
@@ -251,45 +311,44 @@ export default function NoteViewer() {
                 setNote(matchedNote);
                 setIsFleeting(Boolean(matchedNote.fleeting));
                 setFileData(matchedNote.files || []);
-                console.debug('[NoteViewer] hydrated note metadata from state', {
+                logger.debug('[NoteViewer] hydrated note metadata from state', {
                     noteId,
                     isFleeting: Boolean(matchedNote.fleeting),
                     fileCount: matchedNote.files?.length || 0,
                 });
             } else {
-                console.debug('[NoteViewer] note metadata not found in state', {
+                logger.debug('[NoteViewer] note metadata not found in state', {
                     noteId,
                 });
             }
         }
     }, [noteId, state?.notes]);
 
+    // Query for note metadata
+    const { data: noteData, isPending: isPendingNote } = useQuery({
+        queryKey: queryKeys.notes.detail(noteId),
+        queryFn: () =>
+            notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
+        enabled: !!noteId,
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Note not found!',
+        },
+    });
+
+    // Update state when note data is loaded
     useEffect(() => {
-        if (!noteId) return;
-        let isMounted = true;
+        if (!noteData) {
+            setNote(null);
+            setIsFleeting(false);
+            setFileData([]);
+            return;
+        }
 
-        const loadNoteMetadata = async () => {
-            try {
-                const responseNote = await execute(
-                    () => notesApi.notesRetrieve({ noteId: noteId || '', footnotes: false }),
-                    { errorMessage: 'Note not found!' },
-                );
-                if (!isMounted) return;
-
-                setNote(responseNote);
-                setIsFleeting(Boolean(responseNote.fleeting));
-                setFileData(responseNote.files || []);
-            } catch (error) {
-                // Errors are handled by execute.
-            }
-        };
-
-        loadNoteMetadata();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [noteId, execute, notesApi]);
+        setNote(noteData);
+        setIsFleeting(Boolean(noteData.fleeting));
+        setFileData(noteData.files || []);
+    }, [noteData]);
 
     useEffect(() => {
         if (initialContentSetRef.current) {
@@ -303,91 +362,74 @@ export default function NoteViewer() {
         }
     }, [markdownContent]);
 
+    // Mutation for deleting note
+    const deleteMutation = useMutation({
+        mutationFn: () => notesApi.notesDelete({ noteId: noteId }),
+        meta: {
+            invalidateQueries: [
+                { queryKey: queryKeys.notes.detail(noteId) },
+                { queryKey: queryKeys.notes.lists() },
+            ],
+            successMessage: 'Note deleted successfully',
+            errorMessage: 'Failed to delete note',
+        },
+    });
+
     const handleDelete = useCallback(async () => {
         if (!id) return;
 
-        execute(async () => {
-            await notesApi.notesDelete({ noteId: noteId });
+        try {
+            await deleteMutation.mutateAsync();
 
-            if (!state) {
-                navigate(from?.pathname || '/', { replace: true });
-                return;
-            }
-            if (!state.notes) {
-                navigate(from?.pathname || '/', { replace: true, state: state });
-                return;
-            }
-            const stateNotes = state.notes.filter((n) => n.id !== id);
-            const newState = { ...state, notes: stateNotes };
-            navigate(from?.pathname || '/', { replace: true, state: newState });
-        }).catch(() => { });
-    }, [noteId, execute, navigate, note, isFleeting, notesApi, state, from]);
+            // Invalidate related queries
+            queryClient.invalidateQueries({ queryKey: queryKeys.notes.all });
 
-    const handleSaveAsFinal = useCallback(async () => {
+            // Navigate back - TanStack Router doesn't support setting state via navigate
+            router.navigate({ to: (from?.pathname || '/') as any, replace: true });
+        } catch (error) {
+            // Error already handled by mutation
+        }
+    }, [noteId, deleteMutation, queryClient, router, id, state, from]);
+
+    const handleSaveAsFinal = useCallback(() => {
         if (!id || !markdownContent || markdownContent.trim().length === 0) {
             toast.error('Cannot save empty note.');
             return;
         }
 
         setSaving(true);
-        execute(() => notesApi.notesFinalUpdate({ noteId: noteId }), {
-            successMessage: 'Note finalized successfully.',
-        })
-            .then((response) => {
-                // Navigate to the regular note view
-                navigate(`/notes/${response.id}`, { replace: true });
-            })
-            .catch(() => {})
-            .finally(() => {
+        finalizeNoteMutation.mutate(noteId, {
+            onSettled: () => {
                 setSaving(false);
-            });
-    }, [noteId, markdownContent, fileData, navigate, notesApi, execute]);
+            },
+        });
+    }, [noteId, markdownContent, finalizeNoteMutation]);
 
     const handleRelinkNote = useCallback(() => {
         if (!id) return;
-
-        managementApi
-            .managementActionsCreate({
-                actionName: 'relinkNotes',
-                requestBody: {
-                    note_id: noteId,
-                },
-            })
-            .then(() => {
-                toast.info('Relinking note...');
-            });
-    }, [noteId, managementApi]);
+        relinkNoteMutation.mutate(noteId);
+        toast.info('Relinking note...');
+    }, [noteId, relinkNoteMutation]);
 
     const handlePublish = useCallback(() => {
         if (!note || !id) return;
-
-        setModal(ReportGenerationModal, {
-            noteId: id,
-            noteTitle: note.title,
-        });
-    }, [noteId, note, setModal]);
+        setReportModalOpen(true);
+    }, [note, id]);
 
     const handleDeleteWithConfirmation = useCallback(() => {
-        setModal(ConfirmDeletionModal, {
-            onConfirm: handleDelete,
-            text: 'Are you sure you want to delete this note? This action is irreversible.',
-        });
-    }, [handleDelete, setModal]);
+        setDeleteModalOpen(true);
+    }, []);
 
-    const handleFilesChange = useCallback((files: FileReferenceWithNote[]) => {
-        setFileData(files);
-    }, [setFileData]);
-
-    const handleUploadFiles = useCallback(
-        (filesList?: any[]) => {
-            setModal(FileUploadModal, {
-                files: fileData,
-                onFilesChange: handleFilesChange,
-                noteId: id,
-            });
+    const handleFilesChange = useCallback(
+        (files: FileReferenceWithNote[]) => {
+            setFileData(files);
         },
-        [fileData, handleFilesChange, setModal, id],
+        [setFileData],
     );
+
+    const handleUploadFiles = useCallback((filesList?: any[]) => {
+        setFileUploadModalOpen(true);
+    }, []);
 
     const handleFind = useCallback(() => {
         setShowFind(true);
@@ -482,7 +524,7 @@ export default function NoteViewer() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
+                        <AlertDialogAction
                             onClick={handleConfirmEdit}
                             className={cn(buttonVariants({ variant: 'destructive' }))}
                         >
@@ -517,10 +559,11 @@ export default function NoteViewer() {
                                     className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
                                     data-testid='actions-dropdown-btn'
                                 >
-                                    {
-                                        enableEditing ? <EditPencil width='20' height='20' /> : <Book width='20' height='20' />
-                                    }
-
+                                    {enableEditing ? (
+                                        <EditPencil width='20' height='20' />
+                                    ) : (
+                                        <Book width='20' height='20' />
+                                    )}
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
@@ -562,8 +605,8 @@ export default function NoteViewer() {
                 {showFileUpload && (
                     <div className='w-full px-4 py-2 border-b bg-muted'>
                         <FileInput
-                            fileData={fileData}
-                            setFileData={setFileData}
+                            fileData={uploadedFileData}
+                            setFileData={setUploadedFileData}
                             pendingFiles={pendingFiles}
                             setPendingFiles={setPendingFiles}
                             noteId={id}
@@ -652,30 +695,28 @@ export default function NoteViewer() {
                                             </div>
                                         </ResizablePanel>
                                     </ResizablePanelGroup>
-                                                                ) : (
-                                                                    <div
-                                                                        className='h-full flex flex-col border-l border-border relative'
-                                                                        onDoubleClick={handleEnableEditingWithConfirmation}
-                                                                    >
-                                                                        {showFind && (
-                                                                            <FindReplace
-                                                                                view={
-                                                                                    editorRef.current?.view ||
-                                                                                    editorRef.current
-                                                                                }
-                                                                                onClose={() =>
-                                                                                    setShowFind(false)
-                                                                                }
-                                                                                initialReplace={findReplaceMode}
-                                                                            />
-                                                                        )}
-                                                                        {/* Embedded Rich Editor */}
-                                                                        <div className='flex-1 min-h-0'>
-                                                                            <RichEditor
-                                                                                additionalExtensions={
-                                                                                    customKeymap
-                                                                                }
-                                                                                key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
+                                ) : (
+                                    <div
+                                        className='h-full flex flex-col border-l border-border relative'
+                                        onDoubleClick={
+                                            handleEnableEditingWithConfirmation
+                                        }
+                                    >
+                                        {showFind && (
+                                            <FindReplace
+                                                view={
+                                                    editorRef.current?.view ||
+                                                    editorRef.current
+                                                }
+                                                onClose={() => setShowFind(false)}
+                                                initialReplace={findReplaceMode}
+                                            />
+                                        )}
+                                        {/* Embedded Rich Editor */}
+                                        <div className='flex-1 min-h-0'>
+                                            <RichEditor
+                                                additionalExtensions={customKeymap}
+                                                key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
                                                 ref={editorRef}
                                                 noteid={noteId || ''}
                                                 markdownContent={markdownContent}
@@ -721,6 +762,31 @@ export default function NoteViewer() {
                     )}
                 </div>
             </div>
+            <EnrichmentRequestModal
+                open={enrichmentModalOpen}
+                onOpenChange={setEnrichmentModalOpen}
+                entitiesList={enrichmentEntities}
+                artifactsList={enrichmentArtifacts}
+            />
+            <ReportGenerationModal
+                open={reportModalOpen}
+                onOpenChange={setReportModalOpen}
+                noteId={id}
+                noteTitle={note?.title}
+            />
+            <ConfirmDeletionModal
+                open={deleteModalOpen}
+                onOpenChange={setDeleteModalOpen}
+                onConfirm={handleDelete}
+                text='Are you sure you want to delete this note? This action is irreversible.'
+            />
+            <FileUploadModal
+                open={fileUploadModalOpen}
+                onOpenChange={setFileUploadModalOpen}
+                files={fileData}
+                onFilesChange={handleFilesChange}
+                noteId={id}
+            />
         </>
     );
 }

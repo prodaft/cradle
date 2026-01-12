@@ -1,15 +1,12 @@
-import { useModal } from '@/contexts/ui/ModalContext';
-import { useProfile } from '@/contexts/user/ProfileContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useProfile } from '@/hooks/user/useProfile';
 import { ClockRotateRight, Lock } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import ActivityList from '../../activity/ActivityList';
-import AccountSettings from '../../user/AccountSettings';
 import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
+import AdminUserSettings from '../pages/AdminUserSettings';
 
 interface AdminPanelCardUserProps {
     name: string;
@@ -24,11 +21,8 @@ export default function AdminPanelCardUser({
     onDelete,
     setRightPane,
 }: AdminPanelCardUserProps) {
-    const { executor } = useAPICall();
     const { usersApi } = useApi();
-    const { navigate, navigateLink } = useCradleNavigate();
     const { isAdmin } = useProfile();
-    const { setModal } = useModal();
 
     const handleActivityClick = () => {
         setRightPane(
@@ -42,7 +36,7 @@ export default function AdminPanelCardUser({
     };
 
     const handleUserClick = () => {
-        setRightPane(<AccountSettings target={String(id)} />);
+        setRightPane(<AdminUserSettings userId={String(id)} />);
     };
 
     const handlePermissionsClick = () => {

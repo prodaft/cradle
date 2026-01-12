@@ -1,9 +1,9 @@
-import { NavigateOptions } from '@/hooks/navigation/useCradleNavigate';
 import { syntaxTree } from '@codemirror/language';
 import { Diagnostic, forEachDiagnostic } from '@codemirror/lint';
 import { EditorState, Range } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
+import type { NavigateOptions } from '@tanstack/react-router';
 
 /**
  * Widget to render Cradle links as clickable elements in the editor

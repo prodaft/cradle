@@ -2,8 +2,14 @@
  * FormFieldWrapper - Consistent wrapper for form fields with label and error display
  */
 
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError as FieldErrorComponent,
+    FieldLabel,
+} from '@/components/ui/field';
 import React, { ReactNode } from 'react';
-import { Label } from '@/components/ui/label';
 
 export interface FormFieldWrapperProps {
     /** Field name for accessibility */
@@ -46,16 +52,14 @@ export default function FormFieldWrapper({
             <div className={`w-full ${className}`}>
                 {children}
                 {helperText && !hasError && (
-                    <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
+                    <FieldDescription className='text-xs mt-1'>
+                        {helperText}
+                    </FieldDescription>
                 )}
                 {hasError && (
-                    <p
-                        id={`${name}-error`}
-                        className='text-xs text-destructive mt-1'
-                        role='alert'
-                    >
+                    <FieldErrorComponent id={`${name}-error`} className='text-xs mt-1'>
                         {error}
-                    </p>
+                    </FieldErrorComponent>
                 )}
             </div>
         );
@@ -64,55 +68,49 @@ export default function FormFieldWrapper({
     // Row layout (label and field side by side)
     if (row) {
         return (
-            <div className={`w-full ${className}`}>
-                <div className='flex flex-row items-center justify-between w-full gap-4'>
-                    <Label
-                        htmlFor={name}
-                        className='text-muted-foreground whitespace-nowrap'
-                    >
-                        {label}
-                        {required && <span className='text-destructive ml-1'>*</span>}
-                    </Label>
-                    <div className='flex-1'>{children}</div>
-                </div>
+            <Field orientation='horizontal' className={`w-full ${className}`}>
+                <FieldLabel
+                    htmlFor={name}
+                    className='text-muted-foreground whitespace-nowrap'
+                >
+                    {label}
+                    {required && <span className='text-destructive ml-1'>*</span>}
+                </FieldLabel>
+                <div className='flex-1'>{children}</div>
                 {helperText && !hasError && (
-                    <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
+                    <FieldDescription className='text-xs mt-1'>
+                        {helperText}
+                    </FieldDescription>
                 )}
                 {hasError && (
-                    <p
-                        id={`${name}-error`}
-                        className='text-xs text-destructive mt-1'
-                        role='alert'
-                    >
+                    <FieldErrorComponent id={`${name}-error`} className='text-xs mt-1'>
                         {error}
-                    </p>
+                    </FieldErrorComponent>
                 )}
-            </div>
+            </Field>
         );
     }
 
     // Standard column layout
     return (
-        <div className={`w-full ${className}`}>
-            <div className='flex flex-col w-full gap-2'>
-                <Label htmlFor={name} className='text-muted-foreground'>
+        <Field orientation='vertical' className={`w-full ${className}`}>
+            <FieldContent>
+                <FieldLabel htmlFor={name} className='text-muted-foreground'>
                     {label}
                     {required && <span className='text-destructive ml-1'>*</span>}
-                </Label>
-                {children}
-            </div>
+                </FieldLabel>
+            </FieldContent>
+            {children}
             {helperText && !hasError && (
-                <p className='text-xs text-muted-foreground mt-1'>{helperText}</p>
+                <FieldDescription className='text-xs mt-1'>
+                    {helperText}
+                </FieldDescription>
             )}
             {hasError && (
-                <p
-                    id={`${name}-error`}
-                    className='text-xs text-destructive mt-1'
-                    role='alert'
-                >
+                <FieldErrorComponent id={`${name}-error`} className='text-xs mt-1'>
                     {error}
-                </p>
+                </FieldErrorComponent>
             )}
-        </div>
+        </Field>
     );
 }

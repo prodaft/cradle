@@ -1,34 +1,30 @@
-import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as Yup from 'yup';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { SettingsCard } from '../../../forms';
 
 interface UserSettingsFormProps {
     onAdd?: () => void;
 }
 
-interface FormData {
-    allowRegistration: boolean;
-    requireEmailActivation: boolean;
-    requireAdminConfirmation: boolean;
-}
-
-const accountSettingsSchema = Yup.object().shape({
-    allowRegistration: Yup.boolean().default(false),
-    requireEmailActivation: Yup.boolean().default(false),
-    requireAdminConfirmation: Yup.boolean().default(false),
+const accountSettingsSchema = z.object({
+    allowRegistration: z.boolean().default(false),
+    requireEmailActivation: z.boolean().default(false),
+    requireAdminConfirmation: z.boolean().default(false),
 });
+
+type UserSettingsFormData = z.infer<typeof accountSettingsSchema>;
 
 export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
     const { managementApi } = useApi();
-    const [isLoading, setIsLoading] = useState(true);
 
     const {
         register,
@@ -37,8 +33,8 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         watch,
         control,
         formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: yupResolver(accountSettingsSchema),
+    } = useForm<UserSettingsFormData>({
+        resolver: zodResolver(accountSettingsSchema) as any,
         defaultValues: {
             allowRegistration: false,
             requireEmailActivation: false,
@@ -46,31 +42,24 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         },
     });
 
-    useEffect(() => {
-        async function fetchSettings() {
-            try {
-                const settings = await managementApi.managementSettingsRetrieve();
-                if (settings && settings.users) {
-                    reset({
-                        allowRegistration: settings.users.allow_registration ?? false,
-                        requireEmailActivation:
-                            settings.users.require_email_confirmation ?? false,
-                        requireAdminConfirmation:
-                            settings.users.require_admin_confirmation ?? false,
-                    });
-                }
-            } catch (error) {
-                console.error('Failed to fetch account settings:', error);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchSettings();
-    }, [managementApi, reset]);
+    // Query for management settings
+    const {
+        data: settingsData,
+        isPending,
+        isPaused,
+    } = useQuery({
+        queryKey: queryKeys.management.settings(),
+        queryFn: () => managementApi.managementSettingsRetrieve(),
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true,
+        },
+    });
 
-    const onSubmit = async (data: FormData) => {
-        try {
-            await managementApi.managementSettingsCreate({
+    // Mutation for saving settings
+    const saveMutation = useMutation({
+        mutationFn: (data: UserSettingsFormData) =>
+            managementApi.managementSettingsCreate({
                 requestBody: {
                     users: {
                         allow_registration: data.allowRegistration,
@@ -78,15 +67,37 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                         require_admin_confirmation: data.requireAdminConfirmation,
                     },
                 },
+            }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.management.settings() }],
+            successMessage: 'Account settings updated successfully!',
+            errorMessage: 'Failed to save settings',
+        },
+    });
+
+    // Populate form when settings data is loaded
+    useEffect(() => {
+        if (settingsData && settingsData.users) {
+            reset({
+                allowRegistration: settingsData.users.allow_registration ?? false,
+                requireEmailActivation:
+                    settingsData.users.require_email_confirmation ?? false,
+                requireAdminConfirmation:
+                    settingsData.users.require_admin_confirmation ?? false,
             });
-            toast.success('Account settings updated successfully!');
+        }
+    }, [settingsData, reset]);
+
+    const onSubmit = async (data: UserSettingsFormData) => {
+        try {
+            await saveMutation.mutateAsync(data);
             if (onAdd) onAdd();
         } catch (error) {
-            toast.error('Failed to save settings');
+            // Error already handled by mutation
         }
     };
 
-    if (isLoading) {
+    if (isPending) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='animate-pulse text-foreground'>Loading...</div>
@@ -100,14 +111,16 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
                     <h2 className='text-2xl font-bold tracking-tight'>User Settings</h2>
-                    <p className='text-muted-foreground'>Configure user registration and authentication</p>
+                    <p className='text-muted-foreground'>
+                        Configure user registration and authentication
+                    </p>
                 </div>
             </div>
 
             {/* Content Area */}
             <div className='p-5'>
                 <div className='w-full'>
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form onSubmit={handleSubmit(onSubmit as any)}>
                         {/* Registration Section */}
                         <section id='registration' className='pb-8'>
                             <h2 className='text-lg font-semibold text-foreground tracking-tight'>
@@ -122,12 +135,23 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='allowRegistration' className='text-sm text-muted-foreground block mb-0.5'>
+                                                <Label
+                                                    htmlFor='allowRegistration'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
                                                     Allow Registration
                                                 </Label>
-                                                <p className='text-sm text-muted-foreground'>Allow new users to register for accounts</p>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Allow new users to register for
+                                                    accounts
+                                                </p>
                                                 {errors.allowRegistration && (
-                                                    <p className='text-sm text-destructive mt-1'>{errors.allowRegistration.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>
+                                                        {
+                                                            errors.allowRegistration
+                                                                .message
+                                                        }
+                                                    </p>
                                                 )}
                                             </div>
                                             <Controller
@@ -150,12 +174,24 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='requireEmailActivation' className='text-sm text-muted-foreground block mb-0.5'>
+                                                <Label
+                                                    htmlFor='requireEmailActivation'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
                                                     Require Email Activation
                                                 </Label>
-                                                <p className='text-sm text-muted-foreground'>Users must verify their email before accessing the system</p>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Users must verify their email before
+                                                    accessing the system
+                                                </p>
                                                 {errors.requireEmailActivation && (
-                                                    <p className='text-sm text-destructive mt-1'>{errors.requireEmailActivation.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>
+                                                        {
+                                                            errors
+                                                                .requireEmailActivation
+                                                                .message
+                                                        }
+                                                    </p>
                                                 )}
                                             </div>
                                             <Controller
@@ -178,12 +214,24 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='requireAdminConfirmation' className='text-sm text-muted-foreground block mb-0.5'>
+                                                <Label
+                                                    htmlFor='requireAdminConfirmation'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
                                                     Require Admin Confirmation
                                                 </Label>
-                                                <p className='text-sm text-muted-foreground'>New accounts must be approved by an administrator</p>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    New accounts must be approved by an
+                                                    administrator
+                                                </p>
                                                 {errors.requireAdminConfirmation && (
-                                                    <p className='text-sm text-destructive mt-1'>{errors.requireAdminConfirmation.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>
+                                                        {
+                                                            errors
+                                                                .requireAdminConfirmation
+                                                                .message
+                                                        }
+                                                    </p>
                                                 )}
                                             </div>
                                             <Controller

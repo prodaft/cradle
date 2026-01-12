@@ -33,31 +33,6 @@ export function getRedirectUrl(content_type: string, id: string): string | null 
 }
 
 /**
- * Mimics Python's strip() function for strings.
- * Removes leading and trailing characters specified in the chars parameter.
- * If no chars parameter is provided, it removes whitespace by default.
- *
- * @param str - The string to strip
- * @param chars - Characters to remove (defaults to whitespace)
- * @returns The stripped string
- */
-export function strip(str: string, chars: string = ' \t\n\r\f\v'): string {
-    // Escape special regex characters in the chars string
-    const escapeRegExp = (string: string): string => {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    };
-
-    // Create a RegExp pattern for the characters to strip
-    const pattern = new RegExp(
-        `^[${escapeRegExp(chars)}]+|[${escapeRegExp(chars)}]+$`,
-        'g',
-    );
-
-    // Return the string with leading and trailing specified characters removed
-    return str.replace(pattern, '');
-}
-
-/**
  * Creates a download path for a file. This path corresponds to the download endpoint in the backend.
  * The base URL (e.g. `http://localhost:8000`) is the same as the backend API's.
  *

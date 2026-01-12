@@ -1,8 +1,14 @@
-import { useState } from 'react';
-import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import { useState } from 'react';
 
 /**
  * ConfirmDeletionModal component props
@@ -14,8 +20,10 @@ export interface ConfirmDeletionModalProps {
     text?: string;
     /** If provided, user must type this text exactly to enable the delete button */
     confirmText?: string;
-    /** Function to close the modal */
-    closeModal: () => void;
+    /** Whether the dialog is open */
+    open: boolean;
+    /** Callback when dialog open state changes */
+    onOpenChange: (open: boolean) => void;
 }
 
 /**
@@ -25,11 +33,13 @@ export interface ConfirmDeletionModalProps {
  *
  * @example
  * ```tsx
+ * const [open, setOpen] = useState(false);
  * <ConfirmDeletionModal
+ *   open={open}
+ *   onOpenChange={setOpen}
  *   onConfirm={handleDelete}
  *   text="This will permanently delete all data."
  *   confirmText="DELETE"
- *   closeModal={closeModal}
  * />
  * ```
  */
@@ -37,7 +47,8 @@ export default function ConfirmDeletionModal({
     onConfirm,
     text = 'Are you sure you want to delete? This action is irreversible.',
     confirmText,
-    closeModal,
+    open,
+    onOpenChange,
 }: ConfirmDeletionModalProps): JSX.Element {
     const [userInput, setUserInput] = useState('');
 
@@ -47,54 +58,57 @@ export default function ConfirmDeletionModal({
     const handleConfirm = () => {
         if (isConfirmEnabled) {
             onConfirm();
-            // Optionally close the modal if a close function is provided
-            if (closeModal) closeModal();
+            onOpenChange(false);
         }
     };
 
     return (
-        <>
-            <DialogHeader>
-                <DialogTitle>Confirm Deletion</DialogTitle>
-                <DialogDescription>{text}</DialogDescription>
-            </DialogHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogDescription>{text}</DialogDescription>
+                </DialogHeader>
 
-            {/* Confirmation input */}
-            {confirmText && (
-                <div className='grid w-full items-center gap-3 mb-5'>
-                    <Label htmlFor='confirm-input'>
-                        Type "<span className='text-border-primary'>{confirmText}</span>" to confirm
-                    </Label>
-                    <Input
-                        id='confirm-input'
-                        type='text'
-                        value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        placeholder={confirmText}
-                    />
+                {/* Confirmation input */}
+                {confirmText && (
+                    <div className='grid w-full items-center gap-3 mb-5'>
+                        <Label htmlFor='confirm-input'>
+                            Type "
+                            <span className='text-border-primary'>{confirmText}</span>"
+                            to confirm
+                        </Label>
+                        <Input
+                            id='confirm-input'
+                            type='text'
+                            value={userInput}
+                            onChange={(e) => setUserInput(e.target.value)}
+                            placeholder={confirmText}
+                        />
+                    </div>
+                )}
+
+                {/* Action buttons */}
+                <div className='flex justify-end gap-2 mt-4'>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type='button'
+                        variant='destructive'
+                        size='sm'
+                        onClick={handleConfirm}
+                        disabled={!isConfirmEnabled}
+                    >
+                        Delete
+                    </Button>
                 </div>
-            )}
-
-            {/* Action buttons */}
-            <div className='flex justify-end gap-2 mt-4'>
-                <Button
-                    type='button'
-                    variant='outline'
-                    size='sm'
-                    onClick={closeModal}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type='button'
-                    variant='destructive'
-                    size='sm'
-                    onClick={handleConfirm}
-                    disabled={!isConfirmEnabled}
-                >
-                    Delete
-                </Button>
-            </div>
-        </>
+            </DialogContent>
+        </Dialog>
     );
 }

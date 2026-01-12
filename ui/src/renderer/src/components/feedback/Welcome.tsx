@@ -1,10 +1,10 @@
-import { useAPICall } from '@/hooks';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { RouterButton } from '@/components/ui/router-button';
 import { StatisticsNote } from '@/services/cradle';
 import Logo from '@components/base/Logo/Logo';
 import useApi from '@hooks/api/useApi';
-import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { truncateText } from '@utils/dashboard';
 import { formatDate } from '@utils/dates';
 import { parseMarkdownInline } from '@utils/parser/parse';
@@ -17,7 +17,7 @@ import {
     Search,
     User,
 } from 'iconoir-react/regular';
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode } from 'react';
 
 interface ItemWithName {
     name: string;
@@ -180,68 +180,83 @@ function RecentNotesCard({
  * It displays a modern dashboard with quick actions, statistics, and recent activity.
  */
 export default function Welcome() {
-    const { execute } = useAPICall();
-    const [artifacts, setArtifacts] = useState<ItemWithName[]>([]);
-    const [entities, setEntities] = useState<ItemWithName[]>([]);
-    const [notes, setNotes] = useState<StatisticsNote[]>([]);
-    const { navigate, navigateLink } = useCradleNavigate();
+    const router = useRouter();
     const { notesApi, statisticsApi } = useApi();
 
-    useEffect(() => {
-        (async () => {
-            const response = await execute(() => statisticsApi.statisticsRetrieve(), {
-                errorMessage: 'Failed to load statistics',
+    const createNoteMutation = useMutation({
+        mutationFn: async () => {
+            return await notesApi.notesCreate({
+                fleetingNoteRequest: {
+                    content: '',
+                },
             });
-            const { artifacts, entities, notes } = response;
-            setArtifacts(artifacts || []);
-            setEntities(entities || []);
-            setNotes(notes || []);
-        })();
-    }, []);
+        },
+        meta: {
+            errorMessage: 'Failed to create note',
+        },
+    });
+
+    // Query for statistics
+    const { data: statisticsData } = useQuery({
+        queryKey: ['statistics'],
+        queryFn: () => statisticsApi.statisticsRetrieve(),
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to load statistics',
+        },
+    });
+
+    const artifacts = statisticsData?.artifacts || [];
+    const entities = statisticsData?.entities || [];
+    const notes = statisticsData?.notes || [];
 
     const handleCreateNewNote = async () => {
-        const response = await execute(
-            () =>
-                notesApi.notesCreate({
-                    fleetingNoteRequest: {
-                        content: '',
-                    },
-                }),
-            {
-                errorMessage: 'Failed to create note',
-            },
-        );
-        navigate(`/notes/${response.id}`);
+        try {
+            const response = await createNoteMutation.mutateAsync();
+            if (!response.id) {
+                throw new Error('Note created but ID is missing');
+            }
+            const noteId = response.id;
+            router.navigate({
+                to: '/notes/$id',
+                params: { id: noteId.toString() },
+            });
+        } catch (error) {
+            // Error handled by mutation
+        }
     };
 
-    const quickActions: QuickAction[] = [
+    const quickActions: (QuickAction & { to?: string })[] = [
         {
             title: 'New Note',
             description: 'Create a new note',
             icon: <PlusCircle width={24} height={24} />,
             onClick: handleCreateNewNote,
-            color: 'cradle-status-success',
+            color: 'inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide border border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] font-semibold',
         },
         {
             title: 'Browse Notes',
             description: 'View all notes',
             icon: <Notes width={24} height={24} />,
-            onClick: navigateLink('/notes'),
-            color: 'cradle-status-info',
+            to: '/notes',
+            onClick: () => {},
+            color: 'inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide border border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] font-semibold',
         },
         {
             title: 'Graph Search',
             description: 'Explore connections',
             icon: <Search width={24} height={24} />,
-            onClick: navigateLink('/knowledge-graph'),
-            color: 'cradle-status-warning',
+            to: '/knowledge-graph',
+            onClick: () => {},
+            color: 'inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide border border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] font-semibold',
         },
         {
             title: 'Enrich Artifacts',
             description: 'Enrich IOCs with external sources',
             icon: <Sparks width={24} height={24} />,
-            onClick: navigateLink('/enrich'),
-            color: 'cradle-status-warning',
+            to: '/enrich',
+            onClick: () => {},
+            color: 'inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide border border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] font-semibold',
         },
     ];
 
@@ -253,7 +268,7 @@ export default function Welcome() {
                     <div className='max-w-7xl mx-auto'>
                         <div className='flex items-center justify-between'>
                             <div>
-                                <h1 className='text-4xl font-medium text-foreground cradle-mono tracking-tight mb-2'>
+                                <h1 className='text-4xl font-medium text-foreground font-mono tracking-wide tracking-tight mb-2'>
                                     CRADLE
                                 </h1>
                                 <p className='text-sm text-muted-foreground uppercase tracking-wider'>
@@ -270,16 +285,12 @@ export default function Welcome() {
                 <div className='max-w-7xl mx-auto px-6 py-8'>
                     {/* Quick Actions */}
                     <div className='mb-12'>
-                        <h2 className='text-xl font-medium text-foreground cradle-mono mb-6'>
+                        <h2 className='text-xl font-medium text-foreground font-mono tracking-wide mb-6'>
                             Quick Actions
                         </h2>
                         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
-                            {quickActions.map((action, index) => (
-                                <Card
-                                    key={index}
-                                    className='p-6 text-left hover:bg-bg-secondary transition-colors cursor-pointer h-auto'
-                                    onClick={action.onClick}
-                                >
+                            {quickActions.map((action, index) => {
+                                const cardContent = (
                                     <CardContent className='p-0'>
                                         <div className='flex items-center gap-3 mb-3'>
                                             <div
@@ -295,14 +306,38 @@ export default function Welcome() {
                                             {action.description}
                                         </p>
                                     </CardContent>
-                                </Card>
-                            ))}
+                                );
+
+                                if (action.to) {
+                                    return (
+                                        <RouterButton
+                                            key={index}
+                                            to={action.to}
+                                            className='p-0 h-auto'
+                                        >
+                                            <Card className='p-6 text-left hover:bg-bg-secondary transition-colors cursor-pointer h-auto w-full'>
+                                                {cardContent}
+                                            </Card>
+                                        </RouterButton>
+                                    );
+                                }
+
+                                return (
+                                    <Card
+                                        key={index}
+                                        className='p-6 text-left hover:bg-bg-secondary transition-colors cursor-pointer h-auto'
+                                        onClick={action.onClick}
+                                    >
+                                        {cardContent}
+                                    </Card>
+                                );
+                            })}
                         </div>
                     </div>
 
                     {/* Recent Activity */}
                     <div>
-                        <h2 className='text-xl font-medium text-foreground cradle-mono mb-6'>
+                        <h2 className='text-xl font-medium text-foreground font-mono tracking-wide mb-6'>
                             Recent Activity
                         </h2>
 
@@ -314,12 +349,12 @@ export default function Welcome() {
                                 totalCount={entities.length}
                                 icon={<User width={18} height={18} />}
                                 emptyMessage='No entities yet'
-                                onItemClick={(item) =>
-                                    navigateLink(
-                                        `/dashboards/${item.subtype}/${item.name}`,
-                                    )
+                                onItemClick={(item) => () =>
+                                    router.navigate({
+                                        to: `/dashboards/${item.subtype}/${item.name}` as any,
+                                    })
                                 }
-                                color='cradle-status-success'
+                                color='inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide border border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] font-semibold'
                             />
 
                             {/* Recent Artifacts */}
@@ -329,12 +364,12 @@ export default function Welcome() {
                                 totalCount={artifacts.length}
                                 icon={<DatabaseBackup width={18} height={18} />}
                                 emptyMessage='No artifacts yet'
-                                onItemClick={(item) =>
-                                    navigateLink(
-                                        `/dashboards/${item.subtype}/${item.name}`,
-                                    )
+                                onItemClick={(item) => () =>
+                                    router.navigate({
+                                        to: `/dashboards/${item.subtype}/${item.name}` as any,
+                                    })
                                 }
-                                color='cradle-status-warning'
+                                color='inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide border border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] font-semibold'
                             />
 
                             {/* Recent Notes */}
@@ -344,10 +379,10 @@ export default function Welcome() {
                                 totalCount={notes.length}
                                 icon={<Notes width={18} height={18} />}
                                 emptyMessage='No notes yet'
-                                onNoteClick={(note) =>
-                                    navigateLink(`/notes/${note.id}`)
+                                onNoteClick={(note) => () =>
+                                    router.navigate({ to: `/notes/${note.id}` as any })
                                 }
-                                color='cradle-status-info'
+                                color='inline-flex items-center gap-2 px-3 py-1 text-xs uppercase tracking-wide border border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] font-semibold'
                             />
                         </div>
                     </div>

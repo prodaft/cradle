@@ -1,7 +1,6 @@
 const stripTrailingSlash = (value: string): string => value.replace(/\/+$/, '');
 
-const stripApiSuffix = (value: string): string =>
-    value.replace(/\/api\/?$/, '');
+const stripApiSuffix = (value: string): string => value.replace(/\/api\/?$/, '');
 
 export const getApiBaseUrl = (value: string): string => {
     const base = stripApiSuffix(stripTrailingSlash(value));
@@ -10,8 +9,6 @@ export const getApiBaseUrl = (value: string): string => {
 
 export const getCollabUrl = (value: string): string => {
     const base = stripApiSuffix(stripTrailingSlash(value));
-    const withWs = base
-        .replace(/^http:\/\//, 'ws://')
-        .replace(/^https:\/\//, 'wss://');
+    const withWs = base.replace(/^http:\/\//, 'ws://').replace(/^https:\/\//, 'wss://');
     return `${withWs}/collab`;
 };

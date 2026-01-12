@@ -4,19 +4,20 @@
 // NOTE: When possible, use generated types from @services/cradle/models instead of defining custom types.
 // Generated types are automatically synced with the backend API and include type guards and serialization.
 
+import type { FileReferenceWithNote } from '@services/cradle/models';
 import type React from 'react';
 
 // Re-export generated models for domain types
 export type {
     Entity,
     Entry,
-    FileReference,
     FileReferenceWithNote,
-    NoteCreateRequest,
-    NoteEditRequest,
     NoteRetrieve,
     UserRetrieve,
 } from '@services/cradle/models';
+
+// Type alias for compatibility - FileReference is an alias for FileReferenceWithNote
+export type FileReference = FileReferenceWithNote;
 
 // ============================================================================
 // Custom Application-Specific Types
@@ -66,19 +67,3 @@ export interface Notification {
 // The canonical definitions are in @/utils/graph and are re-exported here for convenience.
 
 export type { GraphLink, GraphNode } from '@/utils/graph';
-
-// ============================================================================
-// Backward Compatibility Aliases (Deprecated - use generated types)
-// ============================================================================
-// These are provided for backward compatibility during migration.
-// New code should import directly from @services/cradle/models.
-
-/**
- * @deprecated Use FileReference from @services/cradle/models instead
- */
-export type { FileReference as FileData } from '@services/cradle/models';
-
-/**
- * @deprecated Use NoteRetrieve from @services/cradle/models instead
- */
-export type { NoteRetrieve as Note } from '@services/cradle/models';

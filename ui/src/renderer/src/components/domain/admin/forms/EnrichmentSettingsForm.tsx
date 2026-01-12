@@ -1,21 +1,30 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import MultipleSelector, { type Option } from '@/components/ui/multi-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { capitalizeString } from '@/utils/dashboard';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { CheckCircle, InfoCircle, WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import * as Yup from 'yup';
+import { z } from 'zod';
 import {
     SelectOption,
     SettingsCard,
     SettingsField,
+    SettingsToggle,
 } from '../../../forms';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
-import { Separator } from '@/components/ui/separator';
-import ShadcnSelect from '../../../forms/ShadcnSelect';
 
 interface EnrichmentSettingsFormProps {
     enrichment_class: string;
@@ -37,44 +46,54 @@ interface FormFields {
     [key: string]: FormField;
 }
 
-interface FormData {
-    for_eclasses: EclassOption[];
-    enabled: boolean;
-    settings: Record<string, any>;
-    id?: string;
-}
-
 // Dynamic schema generation based on form_fields
 const createEnrichmentSchema = (form_fields: FormFields) => {
     const settingsShape = Object.entries(form_fields || {}).reduce(
         (acc, [key, field]) => {
-            let validator: Yup.AnySchema = Yup.string();
+            let validator: z.ZodType = z.string();
 
             if (field.type === 'number') {
-                validator = Yup.number();
+                validator = z.coerce.number();
             } else if (field.type === 'choice') {
-                validator = Yup.string();
+                validator = z.string();
             } else if (field.type === 'boolean') {
-                validator = Yup.boolean();
+                validator = z.boolean();
             } else if (field.type === 'url') {
-                validator = Yup.string().url(`${key} must be a valid URL`);
+                validator = z.string().refine((val) => z.url().safeParse(val).success, {
+                    error: `${key} must be a valid URL`,
+                });
             }
 
             if (field.required) {
-                validator = validator.required(`${key} is required`);
+                // Only apply .min() to string/number types, not boolean
+                if (
+                    field.type === 'string' ||
+                    field.type === 'choice' ||
+                    field.type === 'url'
+                ) {
+                    validator = (validator as z.ZodString).min(1, {
+                        error: `${key} is required`,
+                    });
+                } else if (field.type === 'number') {
+                    validator = (validator as z.ZodNumber).min(0, {
+                        error: `${key} is required`,
+                    });
+                }
             }
 
             acc[key] = validator;
             return acc;
         },
-        {} as Record<string, Yup.AnySchema>,
+        {} as Record<string, z.ZodType>,
     );
 
-    return Yup.object().shape({
-        for_eclasses: Yup.array().default([]),
-        enabled: Yup.boolean().default(false),
-        id: Yup.string(),
-        settings: Yup.object().shape(settingsShape),
+    return z.object({
+        for_eclasses: z
+            .array(z.object({ value: z.string(), label: z.string() }))
+            .default([]),
+        enabled: z.boolean().default(false),
+        id: z.string().optional(),
+        settings: z.object(settingsShape),
     });
 };
 
@@ -82,33 +101,9 @@ export default function EnrichmentSettingsForm({
     enrichment_class,
 }: EnrichmentSettingsFormProps) {
     const { intelioApi, entriesApi } = useApi();
-    const [displayName, setDisplayName] = useState('');
-    const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({ type: null, message: '' });
-    const [formFields, setFormFields] = useState<FormFields>({});
-    const [loading, setLoading] = useState(true);
-    const [validationSchema, setValidationSchema] = useState(
-        createEnrichmentSchema({}),
-    );
 
-    const {
-        handleSubmit,
-        control,
-        reset,
-        register,
-        watch,
-        formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: yupResolver(validationSchema) as any,
-        defaultValues: {
-            for_eclasses: [],
-            enabled: false,
-            settings: {},
-        },
-    });
-
-    // Fetch all entry classes for the for_eclasses selector
-    const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
-        try {
+    const fetchEntryClassesMutation = useMutation({
+        mutationFn: async (q: string) => {
             const response = await entriesApi.entryClassesList({});
             if (response) {
                 return response
@@ -117,93 +112,140 @@ export default function EnrichmentSettingsForm({
                         value: entry.subtype,
                         label: entry.subtype,
                     }));
-            } else {
-                return [];
             }
-        } catch (err) {
-            console.error('Failed to fetch entry classes:', err);
             return [];
-        }
-    };
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
 
-    // Fetch enrichment settings
-    useEffect(() => {
-        if (enrichment_class) {
-            setLoading(true);
-            intelioApi
-                .enrichmentSettingsRetrieve({ enricherType: enrichment_class })
-                .then((settings) => {
-                    if (settings) {
-                        setDisplayName(settings.displayName || '');
-                        setFormFields(settings.formFields || {});
-                        setValidationSchema(
-                            createEnrichmentSchema(settings.formFields || {}),
-                        );
-
-                        // Initialize settings object with defaults
-                        const initialSettings: Record<
-                            string,
-                            string | number | boolean
-                        > = {};
-                        Object.entries(settings.formFields || {}).forEach(
-                            ([key, field]) => {
-                                if (field.type === 'boolean') {
-                                    initialSettings[key] =
-                                        settings.settings?.[key] ?? false;
-                                } else {
-                                    initialSettings[key] =
-                                        settings.settings?.[key] || '';
-                                }
-                            },
-                        );
-
-                        // Format for_eclasses for the selector
-                        const formattedEclasses =
-                            settings.forEclassesDetail?.map((eclass) => ({
-                                value: eclass.subtype,
-                                label: eclass.subtype,
-                            })) || [];
-
-                        // Set form values
-                        reset({
-                            for_eclasses: formattedEclasses,
-                            enabled: settings.enabled || false,
-                            settings: initialSettings,
-                            id: settings.id,
-                        });
-                    }
-                    setLoading(false);
-                })
-                .catch((err) => {
-                    console.error('Failed to fetch enrichment settings:', err);
-                    setAlert({
-                        type: 'error',
-                        message: 'Failed to load enrichment settings',
-                    });
-                    setLoading(false);
-                });
-        }
-    }, [enrichment_class, reset, intelioApi]);
-
-    const onSubmit = async (data: FormData) => {
-        try {
-            const formatted_data = {
-                ...data,
-                forEclasses: data.for_eclasses?.map((item) => item.value),
-            };
-
+    const updateEnrichmentSettingsMutation = useMutation({
+        mutationFn: async (formatted_data: any) => {
             await intelioApi.enrichmentSettingsUpdate({
                 enricherType: enrichment_class,
                 enrichmentSettingsRequest: formatted_data,
             });
+        },
+        meta: {
+            successMessage: 'Enrichment settings saved successfully',
+            errorMessage: 'Failed to save enrichment settings',
+        },
+        onSuccess: () => {
             setAlert({
                 type: 'success',
-                message: 'Enrichment settings saved successfully!',
+                message: 'Enrichment settings saved successfully',
             });
+        },
+        onError: () => {
+            setAlert({
+                type: 'error',
+                message: 'Failed to save enrichment settings',
+            });
+        },
+    });
+    const [alert, setAlert] = useState<{
+        type: 'success' | 'error' | 'warning' | null;
+        message: string;
+    }>({ type: null, message: '' });
+    const [validationSchema, setValidationSchema] = useState(
+        createEnrichmentSchema({}),
+    );
+
+    const form = useForm<z.infer<ReturnType<typeof createEnrichmentSchema>>>({
+        resolver: zodResolver(validationSchema) as any,
+        defaultValues: {
+            for_eclasses: [],
+            enabled: false,
+            settings: {},
+        },
+    });
+
+    const {
+        control,
+        reset,
+        watch,
+        formState: { errors, isSubmitting },
+    } = form;
+
+    // Fetch all entry classes for the for_eclasses selector
+    const fetchEntryClasses = async (q: string): Promise<EclassOption[]> => {
+        try {
+            return await fetchEntryClassesMutation.mutateAsync(q);
         } catch (err) {
-            console.error('Failed to save enrichment settings:', err);
-            setAlert({ type: 'error', message: 'Failed to save enrichment settings' });
+            return [];
         }
+    };
+
+    // Query for enrichment settings
+    const { data: settingsData, isPending: loading } = useQuery({
+        queryKey: ['enrichment', 'settings', enrichment_class],
+        queryFn: () =>
+            intelioApi.enrichmentSettingsRetrieve({
+                enricherType: enrichment_class,
+            }),
+        enabled: !!enrichment_class,
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true, // We handle alerts ourselves
+        },
+    });
+
+    // Update form when settings load
+    useEffect(() => {
+        if (settingsData) {
+            setValidationSchema(createEnrichmentSchema(settingsData.formFields || {}));
+
+            // Initialize settings object with defaults
+            const initialSettings: Record<string, string | number | boolean> = {};
+            Object.entries(settingsData.formFields || {}).forEach(([key, field]) => {
+                if (field.type === 'boolean') {
+                    initialSettings[key] = settingsData.settings?.[key] ?? false;
+                } else if (field.type === 'number') {
+                    initialSettings[key] = settingsData.settings?.[key] ?? '';
+                } else {
+                    initialSettings[key] = settingsData.settings?.[key] ?? '';
+                }
+            });
+
+            // Format for_eclasses for the selector
+            const formattedEclasses =
+                settingsData.forEclassesDetail?.map((eclass) => ({
+                    value: eclass.subtype,
+                    label: eclass.subtype,
+                })) || [];
+
+            // Set form values
+            reset({
+                for_eclasses: formattedEclasses,
+                enabled: settingsData.enabled || false,
+                settings: initialSettings,
+                id: settingsData.id,
+            });
+        }
+    }, [settingsData, reset]);
+
+    // Handle errors
+    useEffect(() => {
+        if (settingsData === undefined && !loading && enrichment_class) {
+            setAlert({
+                type: 'error',
+                message: 'Failed to load enrichment settings',
+            });
+        }
+    }, [settingsData, loading, enrichment_class]);
+
+    const displayName = settingsData?.displayName || '';
+    const formFields = settingsData?.formFields || {};
+
+    const onSubmit = async (
+        data: z.infer<ReturnType<typeof createEnrichmentSchema>>,
+    ) => {
+        const formatted_data = {
+            ...data,
+            forEclasses: data.for_eclasses?.map((item) => item.value),
+        };
+        updateEnrichmentSettingsMutation.mutate(formatted_data);
     };
 
     // Render form fields based on form_fields configuration
@@ -217,8 +259,9 @@ export default function EnrichmentSettingsForm({
                         <SettingsToggle
                             label={capitalizeString(key)}
                             description={field.description}
-                            {...register(`settings.${key}`)}
-                            watch={watch}
+                            name={`settings.${key}`}
+                            control={control}
+                            error={errors.settings?.[key] as any}
                         />
                     ) : field.type === 'choice' ? (
                         <SettingsField
@@ -230,48 +273,79 @@ export default function EnrichmentSettingsForm({
                             <Controller
                                 control={control}
                                 name={`settings.${key}`}
-                                render={({ field: { onChange, value } }) => (
-                                    <ShadcnSelect
-                                        staticOptions={field.options?.map(o => ({ label: o, value: o })) || []}
-                                        value={
-                                            field.options
-                                                ?.map((o) => ({ label: o, value: o }))
-                                                .find((o) => o.value === value) || null
-                                        }
-                                        onChange={(option: any) =>
-                                            onChange(option?.value)
-                                        }
-                                        staticOptions={
-                                            field.options?.map((option) => ({
-                                                value: option,
-                                                label: option,
-                                            })) || []
-                                        }
-                                        placeholder={`Select ${capitalizeString(key)}...`}
-                                    />
-                                )}
+                                render={({ field: { onChange, value } }) => {
+                                    const options = field.options || [];
+                                    const stringValue =
+                                        (typeof value === 'string' ? value : '') ?? '';
+                                    return (
+                                        <Select
+                                            value={stringValue}
+                                            onValueChange={onChange}
+                                        >
+                                            <SelectTrigger
+                                                className='w-72'
+                                                aria-invalid={Boolean(
+                                                    errors.settings?.[key],
+                                                )}
+                                            >
+                                                <SelectValue
+                                                    placeholder={`Select ${capitalizeString(key)}...`}
+                                                />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {options.map((opt) => (
+                                                    <SelectItem key={opt} value={opt}>
+                                                        {opt}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    );
+                                }}
                             />
                         </SettingsField>
                     ) : field.type === 'url' ? (
-                        <SettingsField
-                            label={capitalizeString(key)}
-                            description={field.description}
-                            type='url'
-                            {...register(`settings.${key}`)}
-                            error={errors.settings?.[key]?.message?.toString()}
-                            required={field.required}
+                        <Controller
+                            control={control}
+                            name={`settings.${key}` as any}
+                            render={({
+                                field: { onChange, value, ...fieldProps },
+                                fieldState,
+                            }) => (
+                                <SettingsField
+                                    {...fieldProps}
+                                    label={capitalizeString(key)}
+                                    description={field.description}
+                                    type='url'
+                                    value={(value as string) ?? ''}
+                                    onChange={(e) => onChange(e.target.value)}
+                                    error={fieldState.error?.message?.toString()}
+                                    required={field.required}
+                                />
+                            )}
                         />
                     ) : (
-                        <SettingsField
-                            label={capitalizeString(key)}
-                            description={field.description}
-                            type={field.type === 'number' ? 'number' : 'text'}
-                            {...register(`settings.${key}`)}
-                            error={errors.settings?.[key]?.message?.toString()}
-                            required={field.required}
+                        <Controller
+                            control={control}
+                            name={`settings.${key}` as any}
+                            render={({
+                                field: { onChange, value, ...fieldProps },
+                                fieldState,
+                            }) => (
+                                <SettingsField
+                                    {...fieldProps}
+                                    label={capitalizeString(key)}
+                                    description={field.description}
+                                    type={field.type === 'number' ? 'number' : 'text'}
+                                    value={(value as string | number) ?? ''}
+                                    onChange={(e) => onChange(e.target.value)}
+                                    error={fieldState.error?.message?.toString()}
+                                    required={field.required}
+                                />
+                            )}
                         />
                     )}
-                    {!isLast && <Separator className="my-2" />}
+                    {!isLast && <Separator className='my-2' />}
                 </div>
             );
             return content;
@@ -307,9 +381,13 @@ export default function EnrichmentSettingsForm({
                 <div className='w-full'>
                     {' '}
                     {/* Removed max-w-4xl here */}
-                    <form onSubmit={handleSubmit(onSubmit)}>
+                    <form onSubmit={form.handleSubmit(onSubmit)}>
                         {alert.type && (
-                            <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
+                            <Alert
+                                variant={
+                                    alert.type === 'error' ? 'destructive' : 'default'
+                                }
+                            >
                                 {alert.type === 'success' && <CheckCircle />}
                                 {alert.type === 'error' && <WarningCircle />}
                                 {alert.type === 'warning' && <InfoCircle />}
@@ -331,10 +409,16 @@ export default function EnrichmentSettingsForm({
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='enabled' className='text-sm text-muted-foreground block mb-0.5'>
+                                                <Label
+                                                    htmlFor='enabled'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
                                                     Enabled
                                                 </Label>
-                                                <p className='text-sm text-muted-foreground'>Enable or disable this enrichment source</p>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Enable or disable this enrichment
+                                                    source
+                                                </p>
                                             </div>
                                             <Controller
                                                 name='enabled'
@@ -343,7 +427,7 @@ export default function EnrichmentSettingsForm({
                                                     <Switch
                                                         id='enabled'
                                                         name={field.name}
-                                                        checked={field.value}
+                                                        checked={field.value ?? false}
                                                         onCheckedChange={field.onChange}
                                                     />
                                                 )}
@@ -358,9 +442,9 @@ export default function EnrichmentSettingsForm({
                                             {' '}
                                             {/* Added flex container */}
                                             <div className='flex-1'>
-                                                <label className='text-sm text-muted-foreground block mb-0.5'>
+                                                <Label className='text-sm text-muted-foreground block mb-0.5'>
                                                     Entry Classes
-                                                </label>
+                                                </Label>
                                                 <p className='text-sm text-muted-foreground'>
                                                     Entry classes to apply this
                                                     enrichment to
@@ -378,14 +462,45 @@ export default function EnrichmentSettingsForm({
                                                     name='for_eclasses'
                                                     control={control}
                                                     render={({ field }) => (
-                                                        <ShadcnSelect
-                                                            fetchOptions={fetchEntryClasses}
-                                                            values={field.value || []}
-                                                            isMulti={true}
+                                                        <MultipleSelector
+                                                            value={
+                                                                (field.value?.map(
+                                                                    (e) => ({
+                                                                        value: e.value,
+                                                                        label: e.label,
+                                                                    }),
+                                                                ) || []) as Option[]
+                                                            }
+                                                            defaultOptions={[]}
                                                             placeholder='Select entry classes...'
-                                                            onMultiChange={(newValues) => {
-                                                                field.onChange(newValues);
+                                                            onSearch={async (query) => {
+                                                                const results =
+                                                                    await fetchEntryClasses(
+                                                                        query,
+                                                                    );
+                                                                return results.map(
+                                                                    (e) => ({
+                                                                        value: e.value,
+                                                                        label: e.label,
+                                                                    }),
+                                                                ) as unknown as Option[];
                                                             }}
+                                                            onChange={(options) => {
+                                                                field.onChange(
+                                                                    options.map(
+                                                                        (o) => ({
+                                                                            value: o.value,
+                                                                            label: o.label,
+                                                                        }),
+                                                                    ),
+                                                                );
+                                                            }}
+                                                            emptyIndicator={
+                                                                <p className='text-center text-sm'>
+                                                                    No entry classes
+                                                                    found
+                                                                </p>
+                                                            }
                                                         />
                                                     )}
                                                 />

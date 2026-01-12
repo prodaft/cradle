@@ -1,6 +1,5 @@
-import { NavigateOptions } from '@/hooks/navigation/useCradleNavigate';
 import { FileTransferDownloadRetrieveRequest } from '@/services/cradle/apis/FileTransferApi';
-import { FileDownload, FileReference } from '@/services/cradle/models';
+import { FileDownload, FileReferenceWithNote } from '@/services/cradle/models';
 import { syntaxTree } from '@codemirror/language';
 import { EditorState, Range } from '@codemirror/state';
 import {
@@ -12,6 +11,10 @@ import {
 } from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
 import { MarkdownConfig } from '@lezer/markdown';
+import type { NavigateOptions } from '@tanstack/react-router';
+
+// Type alias for compatibility - export it
+export type FileReference = FileReferenceWithNote;
 
 /**
  * Widget to display the reference link.

@@ -4,15 +4,12 @@ import Prism from 'prismjs';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.css';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
-// import '@/utils/parser.js'; // TODO: Fix parser import
 
-import { toast } from 'sonner';
-import useCradleNavigate from '@hooks/navigation/useCradleNavigate';
-import { handleLinkClick, NavigateHandler } from '@utils/editor/textEditor';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
+import { handleLinkClick, NavigateHandler } from '@utils/editor/textEditor';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface PreviewProps {
     htmlContent: string;
@@ -26,18 +23,22 @@ export default function Preview({
     setCurrentLine = null,
 }: PreviewProps) {
     const sanitizedContent = DOMPurify.sanitize(htmlContent);
-    const { navigate, navigateLink } = useCradleNavigate();
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    // Preview can be used in multiple routes, so we'll use a flexible approach
+    const search = useSearch({ strict: false });
     const preventScrollRef = useRef(false);
     const [isLoading, setIsLoading] = useState(true);
     const [previewElement, setPreviewElement] = useState<HTMLDivElement | null>(null);
-    const [searchParams, setSearchParams] = useSearchParams();
 
     // Create a NavigateHandler adapter for handleLinkClick
     const navigateHandler: NavigateHandler = useCallback(
         (path: string) => {
-            navigate(path);
+            router.navigate({ to: path as any });
         },
-        [navigate],
+        [router],
     );
 
     const previewRef = useCallback(
@@ -117,7 +118,7 @@ export default function Preview({
 
     // Scroll to heading if heading parameter exists
     useEffect(() => {
-        const headingId = searchParams.get('heading');
+        const headingId = (search as any).heading;
         if (headingId && previewElement) {
             try {
                 // Escape the ID to handle special characters
@@ -133,7 +134,7 @@ export default function Preview({
                     }, 100);
                 }
             } catch (error) {
-                console.error('Error scrolling to heading:', error);
+                // Silently fail - scroll error is non-critical
             }
         }
     }, [searchParams, previewElement]);

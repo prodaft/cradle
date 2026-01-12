@@ -1,30 +1,29 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ConfirmDeletionModal } from '@/components/modals';
-import { useModal } from '@/contexts';
-import { toast } from 'sonner';
-import { useAPICall, useCradleNavigate } from '@/hooks';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { WarningCircle } from 'iconoir-react';
-import { Badge } from '@/components/ui/badge';
-import { DataTable, type BulkAction } from '@/components/ui/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import TableActionsButton from '@components/base/TableActionsButton';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useDroppable } from '@dnd-kit/core';
-import type { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
-import bytes from 'bytes';
-import { Download, RefreshCircle, Trash } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import type { FileReferenceWithNote } from '@services/cradle/models';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
-import { Checkbox } from '@/components/ui/checkbox';
+import bytes from 'bytes';
+import { Download, RefreshCircle, Trash, WarningCircle } from 'iconoir-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import OfflineIndicator from '../../feedback/OfflineIndicator';
 
 interface FilesListQuery {
     date?: string;
@@ -78,29 +77,60 @@ export default function FilesList({
     onError = null,
     onCountChange,
 }: FilesListProps) {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const { navigate, navigateLink } = useCradleNavigate();
-    const [files, setFiles] = useState<FileReferenceWithNote[]>([]);
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/files' });
+
     const [alert, setInternalAlert] = useState<Alert>({
         show: false,
         message: '',
         color: 'red',
     });
 
-    const [loading, setLoading] = useState(false);
-    const [totalPages, setTotalPages] = useState(1);
-    const [page, setPage] = useState(Number(searchParams.get('files_page')) || 1);
+    const [page, setPage] = useState((search as any)?.files_page || 1);
     const [sortField, setSortField] = useState(
-        searchParams.get('files_sort_field') || 'timestamp',
+        (search as any)?.files_sort_field || 'timestamp',
     );
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-        (searchParams.get('files_sort_direction') as 'asc' | 'desc') || 'desc',
+        (search as any)?.files_sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('files_pagesize')) || 10,
-    );
-    const { execute } = useAPICall();
-    const { setModal } = useModal();
+    const [pageSize, setPageSize] = useState((search as any)?.files_pagesize || 10);
+    const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
+
+    const downloadFileMutation = useMutation({
+        mutationFn: async (fileId: string) => {
+            const download = await fileTransferApi.fileTransferDownloadRetrieve({
+                fileId,
+            });
+            return download.presignedUrl;
+        },
+        meta: {
+            errorMessage: 'Failed to download file. Please try again.',
+        },
+        onSuccess: (presignedUrl) => {
+            if (presignedUrl) {
+                window.open(presignedUrl, '_blank', 'noopener');
+            }
+        },
+    });
+
+    const reprocessFileMutation = useMutation({
+        mutationFn: async (fileId: string) => {
+            await fileTransferApi.fileTransferProcessCreate({
+                fileProcessRequest: {
+                    fileId: fileId,
+                },
+            });
+        },
+        meta: {
+            successMessage: 'File queued for reprocessing',
+            errorMessage: 'Failed to reprocess file',
+        },
+    });
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const { notesApi, fileTransferApi } = useApi();
@@ -126,88 +156,106 @@ export default function FilesList({
 
             // Reset to first page when sorting changes
             setPage(1);
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set('files_page', '1');
+            const newSearch: any = {
+                ...(search as any),
+                files_page: 1,
+            };
             if (sorting.length > 0) {
                 const sort = sorting[0];
                 const apiField = SORT_FIELD_MAPPING[sort.id] || sort.id;
-                newParams.set('files_sort_field', apiField);
-                newParams.set('files_sort_direction', sort.desc ? 'desc' : 'asc');
+                newSearch.files_sort_field = apiField;
+                newSearch.files_sort_direction = sort.desc ? 'desc' : 'asc';
             }
-            setSearchParams(newParams, { replace: true });
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+                replace: true,
+            });
         },
-        [searchParams, setSearchParams],
+        [search, router, location.pathname],
     );
 
-    const fetchFiles = useCallback(async () => {
-        setLoading(true);
+    // Prepare query parameters
+    const queryParams = useMemo(() => {
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
 
-        try {
-            const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+        // Map snake_case to camelCase for the autogenerated API
+        const params: any = {
+            page,
+            pageSize: pageSize,
+            orderBy: orderBy,
+            date: query.date,
+            keyword: searchQuery || query.keyword,
+            linkedTo: query.linked_to,
+            linkedToExactMatch: query.linked_to_exact_match,
+            mimetype: query.mimetype,
+            references: query.references,
+            timestampGte: query.timestamp_gte,
+            timestampLte: query.timestamp_lte,
+        };
 
-            // Map snake_case to camelCase for the autogenerated API
-            const params: any = {
-                page,
-                pageSize: pageSize,
-                orderBy: orderBy,
-                date: query.date,
-                keyword: searchQuery || query.keyword,
-                linkedTo: query.linked_to,
-                linkedToExactMatch: query.linked_to_exact_match,
-                mimetype: query.mimetype,
-                references: query.references,
-                timestampGte: query.timestamp_gte,
-                timestampLte: query.timestamp_lte,
-            };
+        // Remove undefined values
+        Object.keys(params).forEach(
+            (key) => params[key] === undefined && delete params[key],
+        );
 
-            // Remove undefined values
-            Object.keys(params).forEach(
-                (key) => params[key] === undefined && delete params[key],
-            );
+        return params;
+    }, [page, pageSize, sortField, sortDirection, query, searchQuery]);
 
-            const response = await notesApi.notesFilesRetrieve(params);
-            setFiles(response.results);
-            setTotalPages(response.totalPages);
-            if (onCountChange) {
-                onCountChange({
-                    current: response.results.length,
-                    total: response.count || 0,
-                });
-            }
-            setLoading(false);
-        } catch (error) {
+    // Query for files
+    const {
+        data: filesData,
+        isPending,
+        isPaused,
+        error: filesError,
+    } = useQuery({
+        queryKey: queryKeys.files.list({
+            page,
+            pageSize,
+            query: queryParams,
+        }),
+        queryFn: () => notesApi.notesFilesRetrieve(queryParams),
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true, // We handle errors ourselves
+        },
+    });
+
+    // Handle query errors (v5: onError removed from useQuery, use useEffect instead)
+    useEffect(() => {
+        if (filesError) {
             if (onError) {
-                onError(error);
+                onError(filesError);
             } else {
                 toast.error('Failed to fetch files. Please try again.');
             }
-            setLoading(false);
         }
-    }, [
-        page,
-        pageSize,
-        sortField,
-        sortDirection,
-        query,
-        searchQuery,
-        notesApi,
-        onCountChange,
-        onError,
-    ]);
+    }, [filesError, onError]);
 
-    const copyToClipboard = useCallback(
-        (text: string) => {
-            navigator.clipboard
-                .writeText(text)
-                .catch((error) => {
-                    console.error('Failed to copy text: ', error);
-                })
-                .then(() => {
-                    toast.success('Copied to clipboard');
-                });
-        },
-        [],
-    );
+    const files = filesData?.results || [];
+    const totalPages = filesData?.totalPages || 1;
+    const loading = isPending && !isPaused;
+
+    // Update count callback
+    useEffect(() => {
+        if (onCountChange && filesData) {
+            onCountChange({
+                current: files.length,
+                total: filesData.count || 0,
+            });
+        }
+    }, [files.length, filesData?.count, onCountChange]);
+
+    const copyToClipboard = useCallback((text: string) => {
+        navigator.clipboard
+            .writeText(text)
+            .catch(() => {
+                // Silently fail - user can try again
+            })
+            .then(() => {
+                toast.success('Copied to clipboard');
+            });
+    }, []);
 
     const getFileStatus = useCallback(
         (file: FileReferenceWithNote): 'healthy' | 'warning' => {
@@ -217,22 +265,16 @@ export default function FilesList({
     );
 
     // Download a single file
-    const handleDownloadFile = useCallback(async (file: FileReferenceWithNote) => {
-        if (!file.bucketName || !file.minioFileName) {
-            toast.error('File download information is missing.');
-            return;
-        }
-
-        try {
-            const response = await fileTransferApi.fileTransferDownloadRetrieve({
-                bucketName: file.bucketName,
-                minioFileName: file.minioFileName,
-            });
-        } catch (error) {
-            console.error('Failed to download file: ', error);
-            toast.error('Failed to download file. Please try again.');
-        }
-    }, [fileTransferApi]);
+    const handleDownloadFile = useCallback(
+        (file: FileReferenceWithNote) => {
+            if (!file.id) {
+                toast.error('File download information is missing.');
+                return;
+            }
+            downloadFileMutation.mutate(file.id);
+        },
+        [downloadFileMutation],
+    );
 
     // Download selected files
     const handleDownloadSelected = useCallback(async () => {
@@ -240,122 +282,110 @@ export default function FilesList({
 
         try {
             const downloads = await Promise.all(
-                selectedFiles.map((fileId) => {
-                    if (!fileId) return null;
-
-                    return execute(() =>
-                        fileTransferApi.fileTransferDownloadRetrieve({
-                            fileId: fileId,
-                        }),
-                    );
-                }),
+                selectedFiles
+                    .filter((fileId) => fileId)
+                    .map((fileId) => downloadFileMutation.mutateAsync(fileId)),
             );
-            downloads
-                .filter((download): download is FileDownload => download !== null)
-                .forEach(({ presignedUrl }, index) => {
+            downloads.forEach((presignedUrl) => {
+                if (presignedUrl) {
                     window.open(presignedUrl, '_blank', 'noopener');
-                });
+                }
+            });
 
-            toast.info(`Attempted to download ${downloads.length} file(s). Your browser may block some.`);
-
+            toast.info(
+                `Attempted to download ${downloads.length} file(s). Your browser may block some.`,
+            );
         } catch (error) {
-            console.error('Failed to download files: ', error);
             toast.error('Failed to download files. Please try again.');
         }
-    }, [selectedFiles, files, fileTransferApi]);
+    }, [selectedFiles, downloadFileMutation]);
 
     const handleReprocessSelected = useCallback(async () => {
         if (selectedFiles.length === 0) return;
 
-        const promises = selectedFiles.map((fileId) =>
-            execute(() =>
-                fileTransferApi.fileTransferProcessCreate({
-                    fileProcessRequest: {
-                        fileId: fileId,
-                    },
-                }),
-            ),
-        );
+        try {
+            await Promise.all(
+                selectedFiles.map((fileId) =>
+                    reprocessFileMutation.mutateAsync(fileId),
+                ),
+            );
+            toast.success(
+                `Queued ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} for reprocessing`,
+            );
+            setSelectedFiles([]);
+        } catch (error) {
+            // Error handled by mutation
+        }
+    }, [selectedFiles, reprocessFileMutation]);
 
-        await Promise.all(promises);
-        toast.success(`Queued ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} for reprocessing`);
-        setSelectedFiles([]);
-    }, [selectedFiles, fileTransferApi, execute]);
-
+    // Delete mutation
+    const deleteMutation = useMutation({
+        mutationFn: (fileId: string) =>
+            fileTransferApi.fileTransferDeleteDestroy({
+                fileId: fileId.toString(),
+            }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.files.lists() }],
+            suppressNotification: true,
+        },
+    });
 
     const deleteFiles = async (fileIds: string[]) => {
-        let promises = selectedFiles.map((fileId) =>
-            execute(() =>
-                fileTransferApi.fileTransferDeleteDestroy({
-                    fileId: fileId.toString(),
-                }),
-            ),
-        );
-
-        await Promise.all(promises);
-        toast.success(`Deleted ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}`);
-        setSelectedFiles([]);
-        fetchFiles();
+        try {
+            await Promise.all(
+                fileIds.map((fileId) => deleteMutation.mutateAsync(fileId)),
+            );
+            toast.success(
+                `Deleted ${fileIds.length} file${fileIds.length > 1 ? 's' : ''}`,
+            );
+            setSelectedFiles([]);
+        } catch (error) {
+            toast.error('Failed to delete files');
+        }
     };
 
     const handleDeleteSelected = useCallback(async () => {
         if (selectedFiles.length === 0) return;
-
-        setModal(ConfirmDeletionModal, {
-            text: `Are you sure you want to delete ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}?`,
-            onConfirm: () => deleteFiles(selectedFiles),
-        });
-
-    }, [selectedFiles, files, notesApi, setModal]);
+        setBulkDeleteModalOpen(true);
+    }, [selectedFiles]);
 
     const resetToFirstPage = useCallback(() => {
         setPage(1);
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('files_page', '1');
-        setSearchParams(newParams, { replace: true });
-    }, [searchParams, setSearchParams]);
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...(search as any), files_page: 1 } as any,
+            replace: true,
+        });
+    }, [router, location.pathname, search]);
 
-    // Memoize the files_page value to prevent unnecessary rerenders
-    const filesPage = useMemo(() => searchParams.get('files_page'), [searchParams]);
-
+    // Sync URL params to page state
     useEffect(() => {
-        const pageFromParams = Number(filesPage) || 1;
+        const pageFromParams = (search as any)?.files_page || 1;
         if (pageFromParams !== page) {
             setPage(pageFromParams);
         }
-    }, [filesPage, page]);
+    }, [(search as any)?.files_page, page]);
 
-    useEffect(() => {
-        fetchFiles();
-    }, [
-        page,
-        pageSize,
-        sortField,
-        sortDirection,
-        query.date,
-        query.keyword,
-        query.linked_to,
-        query.linked_to_exact_match,
-        query.mimetype,
-        query.references,
-        query.timestamp_gte,
-        query.timestamp_lte,
-        searchQuery,
-    ]);
+    // Query automatically refetches when dependencies change
+    // No manual useEffect needed
 
     const handlePageChange = useCallback(
         (newPage: number) => {
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set('files_page', String(newPage));
-            setSearchParams(newParams);
+            const searchAny = search as any;
+            const newSearch: any = { ...searchAny, files_page: newPage };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+            });
         },
-        [searchParams, setSearchParams],
+        [router, location.pathname, search],
     );
 
     // Filter files based on status and filteredFiles
     const filteredData = useMemo(() => {
         return files.filter((file) => {
-            if (statusFilter !== 'all' && getFileStatus(file) !== statusFilter) return false;
+            if (statusFilter !== 'all' && getFileStatus(file) !== statusFilter)
+                return false;
             return !filteredFiles.some((f) => f.id === file.id);
         });
     }, [files, statusFilter, filteredFiles]);
@@ -371,15 +401,17 @@ export default function FilesList({
                             table.getIsAllPageRowsSelected() ||
                             (table.getIsSomePageRowsSelected() && 'indeterminate')
                         }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
+                        onCheckedChange={(value) =>
+                            table.toggleAllPageRowsSelected(!!value)
+                        }
+                        aria-label='Select all'
                     />
                 ),
                 cell: ({ row }) => (
                     <Checkbox
                         checked={row.getIsSelected()}
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
+                        aria-label='Select row'
                         onClick={(e) => e.stopPropagation()}
                     />
                 ),
@@ -390,14 +422,20 @@ export default function FilesList({
                 accessorKey: 'name',
                 id: 'name',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Name" />
+                    <DataTableColumnHeader column={column} title='Name' />
                 ),
                 cell: ({ row }) => (
-                    <div 
-                        className='truncate w-32 cursor-pointer' 
-                        onClick={navigateLink(`/notes/${row.original.noteId}`)}
+                    <div
+                        className='truncate w-32 cursor-pointer'
+                        onClick={() =>
+                            router.navigate({
+                                to: `/notes/${row.original.noteId}` as any,
+                            })
+                        }
                     >
-                        <span className='truncate'>{truncateText(row.original.fileName, 32)}</span>
+                        <span className='truncate'>
+                            {truncateText(row.original.fileName, 32)}
+                        </span>
                     </div>
                 ),
             },
@@ -413,15 +451,19 @@ export default function FilesList({
                                 className='cursor-pointer'
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    navigate(
-                                        `/dashboards/${entity.subtype || 'unknown'}/${encodeURIComponent(entity.name)}`,
-                                    );
+                                    router.navigate({
+                                        to: `/dashboards/${entity.subtype || 'unknown'}/${encodeURIComponent(entity.name)}` as any,
+                                    });
                                 }}
                                 title={`View ${entity.subtype || 'entity'}: ${entity.name}`}
                             >
-                                <Badge 
+                                <Badge
                                     className={`rounded-full ${!entity.color ? 'bg-muted' : ''}`}
-                                    style={entity.color ? { backgroundColor: entity.color } : undefined}
+                                    style={
+                                        entity.color
+                                            ? { backgroundColor: entity.color }
+                                            : undefined
+                                    }
                                 >
                                     {entity.name}
                                 </Badge>
@@ -435,22 +477,26 @@ export default function FilesList({
                 accessorKey: 'mimetype',
                 id: 'mimetype',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="MimeType" />
+                    <DataTableColumnHeader column={column} title='MimeType' />
                 ),
                 cell: ({ row }) => (
-                    <div className='truncate w-32'>{truncateText(row.original.mimetype, 32)}</div>
+                    <div className='truncate w-32'>
+                        {truncateText(row.original.mimetype, 32)}
+                    </div>
                 ),
             },
             {
                 accessorKey: 'fileSize',
                 id: 'fileSize',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Size" />
+                    <DataTableColumnHeader column={column} title='Size' />
                 ),
                 cell: ({ row }) => (
                     <div className='w-24'>
                         {row.original.fileSize != null
-                            ? bytes.format(row.original.fileSize, { unitSeparator: ' ' })
+                            ? bytes.format(row.original.fileSize, {
+                                  unitSeparator: ' ',
+                              })
                             : '-'}
                     </div>
                 ),
@@ -474,9 +520,7 @@ export default function FilesList({
                                         {row.original.sha256Hash!.substring(0, 48)}...
                                     </span>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                    Click to copy
-                                </TooltipContent>
+                                <TooltipContent>Click to copy</TooltipContent>
                             </Tooltip>
                         ) : (
                             '-'
@@ -489,11 +533,13 @@ export default function FilesList({
                 accessorKey: 'uploadedAt',
                 id: 'uploadedAt',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Uploaded At" />
+                    <DataTableColumnHeader column={column} title='Uploaded At' />
                 ),
                 cell: ({ row }) => (
                     <div className='w-32'>
-                        {row.original.timestamp ? formatDate(row.original.timestamp) : '-'}
+                        {row.original.timestamp
+                            ? formatDate(row.original.timestamp)
+                            : '-'}
                     </div>
                 ),
             },
@@ -506,29 +552,20 @@ export default function FilesList({
                         handleDownloadFile(file);
                     };
 
-                    const handleReprocess = async () => {
-                        try {
-                            await execute(() => fileTransferApi.fileTransferProcessCreate({
-                                fileProcessRequest: {
-                                    fileId: file.id!,
-                                },
-                            }));
-                            toast.success('File queued for reprocessing');
-                        } catch (error) {
-                            console.error('Reprocess file failed:', error);
-                            toast.error('Failed to reprocess file');
-                        }
+                    const handleReprocess = () => {
+                        reprocessFileMutation.mutate(file.id!);
                     };
 
                     const handleDelete = () => {
-                        setModal(ConfirmDeletionModal, {
-                            text: `Are you sure you want to delete this file?`,
-                            onConfirm: () => deleteFiles([file.id!]),
-                        });
+                        setDeletingFileId(file.id!);
+                        setDeleteModalOpen(true);
                     };
 
                     return (
-                        <div className='w-12 text-right' onClick={(e) => e.stopPropagation()}>
+                        <div
+                            className='w-12 text-right'
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className='flex justify-end'>
                                 <TableActionsButton>
                                     <DropdownMenuItem onClick={handleDownload}>
@@ -540,7 +577,10 @@ export default function FilesList({
                                         Reprocess
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                                    <DropdownMenuItem
+                                        onClick={handleDelete}
+                                        variant='destructive'
+                                    >
                                         <Trash width='18' height='18' />
                                         Delete
                                     </DropdownMenuItem>
@@ -552,20 +592,25 @@ export default function FilesList({
                 enableSorting: false,
             },
         ],
-        [copyToClipboard, navigate, navigateLink, handleDownloadFile, execute, fileTransferApi, setModal, deleteFiles],
+        [copyToClipboard, router, handleDownloadFile, reprocessFileMutation],
     );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
         // Find the column id that matches the sortField
-        const columnId = Object.keys(SORT_FIELD_MAPPING).find(
-            (key) => SORT_FIELD_MAPPING[key] === sortField
-        ) || sortField;
-        
-        return columnId ? [{
-            id: columnId,
-            desc: sortDirection === 'desc',
-        }] : [];
+        const columnId =
+            Object.keys(SORT_FIELD_MAPPING).find(
+                (key) => SORT_FIELD_MAPPING[key] === sortField,
+            ) || sortField;
+
+        return columnId
+            ? [
+                  {
+                      id: columnId,
+                      desc: sortDirection === 'desc',
+                  },
+              ]
+            : [];
     }, [sortField, sortDirection]);
 
     // Handle row selection
@@ -577,19 +622,32 @@ export default function FilesList({
         (newSize: number) => {
             setPageSize(newSize);
             setPage(1);
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set('files_page', '1');
-            newParams.set('files_pagesize', String(newSize));
-            setSearchParams(newParams, { replace: true });
+            const searchAny = search as any;
+            const newSearch: any = {
+                ...searchAny,
+                files_page: 1,
+                files_pagesize: newSize,
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+                replace: true,
+            });
         },
-        [searchParams, setSearchParams],
+        [router, location.pathname, search],
     );
 
     return (
         <>
             <div className='flex flex-col space-y-4'>
                 {alert.show && (
-                    <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                    <AlertComponent
+                        variant={
+                            alert.color === 'red' || alert.color === 'error'
+                                ? 'destructive'
+                                : 'default'
+                        }
+                    >
                         <WarningCircle />
                         <AlertDescription>{alert.message}</AlertDescription>
                     </AlertComponent>
@@ -613,6 +671,12 @@ export default function FilesList({
                     }
                 />
 
+                {isPaused && (
+                    <div className='mb-4'>
+                        <OfflineIndicator />
+                    </div>
+                )}
+
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
                     <DataTable
                         columns={columns}
@@ -632,14 +696,20 @@ export default function FilesList({
                                 label: 'Download files',
                                 icon: <Download width={18} height={18} />,
                                 onClick: handleDownloadSelected,
-                                disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                disabled:
+                                    loading ||
+                                    files.length === 0 ||
+                                    selectedFiles.length === 0,
                             },
                             {
                                 id: 'delete',
                                 label: 'Delete files',
                                 icon: <Trash width={18} height={18} />,
                                 onClick: handleDeleteSelected,
-                                disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                disabled:
+                                    loading ||
+                                    files.length === 0 ||
+                                    selectedFiles.length === 0,
                                 variant: 'destructive',
                             },
                             {
@@ -647,10 +717,13 @@ export default function FilesList({
                                 label: 'Reprocess files',
                                 icon: <RefreshCircle width={18} height={18} />,
                                 onClick: handleReprocessSelected,
-                                disabled: loading || files.length === 0 || selectedFiles.length === 0,
+                                disabled:
+                                    loading ||
+                                    files.length === 0 ||
+                                    selectedFiles.length === 0,
                             },
                         ]}
-                        itemLabel="file"
+                        itemLabel='file'
                     />
                 </div>
 
@@ -665,6 +738,27 @@ export default function FilesList({
                     totalRows={files.length}
                 />
             </div>
+            <ConfirmDeletionModal
+                open={bulkDeleteModalOpen}
+                onOpenChange={setBulkDeleteModalOpen}
+                text={`Are you sure you want to delete ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}?`}
+                onConfirm={() => deleteFiles(selectedFiles)}
+            />
+            {deletingFileId && (
+                <ConfirmDeletionModal
+                    open={deleteModalOpen}
+                    onOpenChange={(open) => {
+                        setDeleteModalOpen(open);
+                        if (!open) setDeletingFileId(null);
+                    }}
+                    text='Are you sure you want to delete this file?'
+                    onConfirm={() => {
+                        if (deletingFileId) {
+                            deleteFiles([deletingFileId]);
+                        }
+                    }}
+                />
+            )}
         </>
     );
 }

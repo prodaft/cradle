@@ -1,5 +1,5 @@
-import { capitalizeString } from '@/utils/dashboard';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { capitalizeString } from '@/utils/dashboard';
 import {
     DesignNib,
     InfoCircleSolid,
@@ -69,7 +69,11 @@ export function getStatusIcon(
             );
         case 'invalid':
             return (
-                <WarningCircleSolid className='text-destructive' width='18' height='18' />
+                <WarningCircleSolid
+                    className='text-destructive'
+                    width='18'
+                    height='18'
+                />
             );
         default:
             return null;

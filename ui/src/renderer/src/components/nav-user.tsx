@@ -1,83 +1,134 @@
-import {
-  User,
-  LogOut,
-  Settings,
-} from "lucide-react"
-import { useProfile } from "@contexts"
-import useAuth from "@/hooks/auth/useAuth"
-import { useCradleNavigate } from "@hooks"
+import { Badge } from '@/components/ui/badge';
+import { useAuthActions } from '@/hooks/auth/useAuth';
+import { useProfile } from '@/hooks/user/useProfile';
+import { useRouter } from '@tanstack/react-router';
+import { LogOut, Settings, User } from 'lucide-react';
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar"
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
+} from '@/components/ui/sidebar';
 
 export function NavUser() {
-  const { isMobile } = useSidebar()
-  const { profile, isEntryManager } = useProfile()
-  const { logOut } = useAuth()
-  const { navigateLink } = useCradleNavigate()
+    const { isMobile, state } = useSidebar();
+    const { profile } = useProfile();
+    const { logOut } = useAuthActions();
+    const router = useRouter();
+    const isCollapsed = state === 'collapsed';
 
-  const handleLogout = () => {
-    logOut()
-    window.location.href = '/#/login'
-  }
+    const handleLogout = () => {
+        logOut();
+        router.navigate({ to: '/login' });
+    };
 
-  const handleSettings = navigateLink('/settings')
+    const handleSettings = () => {
+        router.navigate({ to: '/settings' });
+    };
 
-  return (
-    <SidebarMenu>
-      <SidebarMenuItem>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <SidebarMenuButton
-              size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center"
-            >
-              <User className="size-4 shrink-0" />
-              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium">{profile?.username || 'User'}</span>
-                <span className="truncate text-xs">{profile?.email || ''}</span>
-              </div>
-            </SidebarMenuButton>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
-            side={isMobile ? "bottom" : "right"}
-            align="end"
-            sideOffset={4}
-          >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{profile?.username || 'User'}</span>
-                  <span className="truncate text-xs">{profile?.email || ''}</span>
-                </div>
-              </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSettings}>
-              <Settings />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-              <LogOut />
-              Logout
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </SidebarMenuItem>
-    </SidebarMenu>
-  )
+    const getRoleBadgeVariant = (role?: string) => {
+        switch (role) {
+            case 'admin':
+                return 'destructive';
+            case 'author':
+                return 'default';
+            case 'viewer':
+                return 'secondary';
+            default:
+                return 'outline';
+        }
+    };
+
+    return (
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <SidebarMenuButton
+                            size='lg'
+                            className='data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground group-data-[collapsible=icon]:justify-center'
+                            aria-label={`User menu for ${profile?.username || 'User'}`}
+                        >
+                            <User className='size-4 shrink-0' />
+                            <div className='grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden'>
+                                <div className='flex items-center gap-2'>
+                                    <span className='truncate font-medium'>
+                                        {profile?.username || 'User'}
+                                    </span>
+                                    {profile?.role && (
+                                        <Badge
+                                            variant={getRoleBadgeVariant(profile.role)}
+                                            className='text-[10px] px-1.5 py-0 h-4 leading-none'
+                                        >
+                                            {profile.role.charAt(0).toUpperCase() +
+                                                profile.role.slice(1)}
+                                        </Badge>
+                                    )}
+                                </div>
+                                <span className='truncate text-xs'>
+                                    {profile?.email || ''}
+                                </span>
+                            </div>
+                        </SidebarMenuButton>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        className='w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg'
+                        side={isMobile ? 'bottom' : 'right'}
+                        align='end'
+                        sideOffset={4}
+                    >
+                        {/* Show user info as menu item when sidebar is collapsed */}
+                        {isCollapsed && !isMobile && (
+                            <>
+                                <DropdownMenuItem className='flex items-center gap-2 py-2 px-2 cursor-default hover:bg-transparent focus:bg-transparent'>
+                                    <User className='size-4 shrink-0' />
+                                    <div className='grid flex-1 text-left text-sm leading-tight'>
+                                        <div className='flex items-center gap-2'>
+                                            <span className='truncate font-medium'>
+                                                {profile?.username || 'User'}
+                                            </span>
+                                            {profile?.role && (
+                                                <Badge
+                                                    variant={getRoleBadgeVariant(
+                                                        profile.role,
+                                                    )}
+                                                    className='text-[10px] px-1.5 py-0 h-4 leading-none'
+                                                >
+                                                    {profile.role
+                                                        .charAt(0)
+                                                        .toUpperCase() +
+                                                        profile.role.slice(1)}
+                                                </Badge>
+                                            )}
+                                        </div>
+                                        <span className='truncate text-xs'>
+                                            {profile?.email || ''}
+                                        </span>
+                                    </div>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                            </>
+                        )}
+                        <DropdownMenuItem onClick={handleSettings}>
+                            <Settings />
+                            Settings
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout}>
+                            <LogOut />
+                            Logout
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </SidebarMenuItem>
+        </SidebarMenu>
+    );
 }

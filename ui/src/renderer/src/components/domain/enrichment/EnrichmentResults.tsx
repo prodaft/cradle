@@ -1,20 +1,25 @@
 import PaginationWrapper from '@/components/base/Pagination/PaginationWrapper';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { formatDate } from '@/utils/dates';
 import { Badge } from '@/components/ui/badge';
-import ReactJson from '@microlink/react-json-view';
-import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
-    EnrichmentRelation,
-    EnrichmentRequestDetail,
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
+import { formatDate } from '@/utils/dates';
+import ReactJson from '@microlink/react-json-view';
+import {
     EnrichmentRequestDetailStatusEnum,
-    EnrichmentRequestEnricher,
     EntrySerializerMinimal,
 } from '@services/cradle/models';
+import { useQuery } from '@tanstack/react-query';
+import { useParams } from '@tanstack/react-router';
 import {
     Calendar,
     CheckCircle,
@@ -29,8 +34,6 @@ import {
     Xmark,
 } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 
 /**
  * EnrichmentResults component - displays enrichment results in a split-pane view
@@ -45,7 +48,8 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
  */
 export default function EnrichmentResults() {
     const { intelioApi } = useApi();
-    const { id: idParam } = useParams<{ id: string }>();
+    const params = useParams({ strict: false });
+    const idParam = (params as any).id;
     const id = Number(idParam);
 
     if (isNaN(id)) {
@@ -56,121 +60,77 @@ export default function EnrichmentResults() {
         );
     }
 
-    const { execute } = useAPICall();
-
-    // State for enrichment details
-    const [enrichmentDetails, setEnrichmentDetails] =
-        useState<EnrichmentRequestDetail | null>(null);
     const [selectedEnricher, setSelectedEnricher] = useState<string | null>(null);
-    const [loadingDetails, setLoadingDetails] = useState(true);
-
-    // State for selected enricher details
-    const [enricherDetails, setEnricherDetails] =
-        useState<EnrichmentRequestEnricher | null>(null);
-    const [loadingEnricher, setLoadingEnricher] = useState(false);
-
-    // State for showing ignored artifacts
     const [showIgnored, setShowIgnored] = useState(false);
-
-    // State for results (relations)
-    const [results, setResults] = useState<EnrichmentRelation[]>([]);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [searchParams, setSearchParams] = useState({ query: '', details: '' });
     const [searchInput, setSearchInput] = useState({ query: '', details: '' });
-    const [loadingResults, setLoadingResults] = useState(false);
 
-    // Load enrichment details on mount
+    // Query for enrichment details
+    const { data: enrichmentDetails, isPending: isPendingDetails } = useQuery({
+        queryKey: queryKeys.enrichment.results.detail(String(id)),
+        queryFn: () => intelioApi.enrichmentDetailRetrieve({ id }),
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch enrichment details',
+        },
+    });
+
+    // Select the first enricher by default when details load
     useEffect(() => {
-        const fetchEnrichmentDetails = async () => {
-            setLoadingDetails(true);
-            try {
-                const details = await execute(
-                    () =>
-                        intelioApi.enrichmentDetailRetrieve({
-                            id,
-                        }),
-                    {
-                        errorMessage: 'Failed to fetch enrichment details',
-                    },
-                );
-
-                setEnrichmentDetails(details);
-
-                // Select the first enricher by default
-                if (details.enrichers && details.enrichers.length > 0) {
-                    setSelectedEnricher(details.enrichers[0].enricherType!);
-                }
-            } finally {
-                setLoadingDetails(false);
-            }
-        };
-
-        fetchEnrichmentDetails();
-    }, [id, intelioApi]);
-
-    // Load enricher details when selectedEnricher changes
-    useEffect(() => {
-        if (!selectedEnricher || showIgnored) {
-            setEnricherDetails(null);
-            return;
+        if (
+            enrichmentDetails?.enrichers &&
+            enrichmentDetails.enrichers.length > 0 &&
+            !selectedEnricher
+        ) {
+            setSelectedEnricher(enrichmentDetails.enrichers[0].enricherType!);
         }
+    }, [enrichmentDetails, selectedEnricher]);
 
-        const fetchEnricherDetails = async () => {
-            setLoadingEnricher(true);
-            try {
-                const details = await execute(
-                    () =>
-                        intelioApi.enrichmentRequestEnricherRetrieve({
-                            id,
-                            enricherType: selectedEnricher,
-                        }),
-                    {
-                        errorMessage: 'Failed to fetch enricher details',
-                    },
-                );
+    // Query for enricher details
+    const { data: enricherDetails, isPending: isPendingEnricher } = useQuery({
+        queryKey: queryKeys.enrichment.results.detail(`${id}-${selectedEnricher}`),
+        queryFn: () =>
+            intelioApi.enrichmentRequestEnricherRetrieve({
+                id,
+                enricherType: selectedEnricher!,
+            }),
+        enabled: !!selectedEnricher && !showIgnored,
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch enricher details',
+        },
+    });
 
-                setEnricherDetails(details);
-            } finally {
-                setLoadingEnricher(false);
-            }
-        };
+    // Query for results (relations)
+    const { data: resultsData, isPending: isPendingResults } = useQuery({
+        queryKey: queryKeys.enrichment.results.relations({
+            id: String(id),
+            enricherType: selectedEnricher!,
+            page,
+            pageSize,
+            query: searchParams.query || undefined,
+            details: searchParams.details || undefined,
+        }),
+        queryFn: () =>
+            intelioApi.enrichmentRelationsRetrieve({
+                id,
+                enricherType: selectedEnricher!,
+                page,
+                pageSize,
+                query: searchParams.query || undefined,
+                details: searchParams.details || undefined,
+            }),
+        enabled: !!selectedEnricher && !showIgnored,
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch enrichment results',
+        },
+    });
 
-        fetchEnricherDetails();
-    }, [id, selectedEnricher, showIgnored, intelioApi]);
-
-    // Load results when enricher, page, pageSize, or query changes
-    useEffect(() => {
-        if (!selectedEnricher || showIgnored) return;
-
-        const fetchResults = async () => {
-            setLoadingResults(true);
-            try {
-                const response = await execute(
-                    () =>
-                        intelioApi.enrichmentRelationsRetrieve({
-                            id,
-                            enricherType: selectedEnricher,
-                            page,
-                            pageSize,
-                            query: searchParams.query || undefined,
-                            details: searchParams.details || undefined,
-                        }),
-                    {
-                        errorMessage: 'Failed to fetch enrichment results',
-                    },
-                );
-
-                setResults(response.results || []);
-                setTotalPages(response.totalPages || 1);
-            } finally {
-                setLoadingResults(false);
-            }
-        };
-
-        fetchResults();
-    }, [id, selectedEnricher, page, pageSize, searchParams, showIgnored, intelioApi]);
+    const results = resultsData?.results || [];
+    const totalPages = resultsData?.totalPages || 1;
 
     // Reset to page 1 when search query changes
     const handleSearch = () => {
@@ -191,9 +151,7 @@ export default function EnrichmentResults() {
 
         switch (status) {
             case 'done':
-                return (
-                    <CheckCircle className='text-primary' width='18' height='18' />
-                );
+                return <CheckCircle className='text-primary' width='18' height='18' />;
             case 'working':
             case 'waiting':
                 return <InfoCircle className='text-primary' width='18' height='18' />;
@@ -207,7 +165,11 @@ export default function EnrichmentResults() {
                 );
             case 'error':
                 return (
-                    <WarningCircle className='text-destructive' width='18' height='18' />
+                    <WarningCircle
+                        className='text-destructive'
+                        width='18'
+                        height='18'
+                    />
                 );
             default:
                 return null;
@@ -262,7 +224,7 @@ export default function EnrichmentResults() {
         }
 
         return (
-            <Badge 
+            <Badge
                 className={`rounded-full ${!entry.color ? 'bg-muted' : ''}`}
                 style={entry.color ? { backgroundColor: entry.color } : undefined}
             >
@@ -326,7 +288,7 @@ export default function EnrichmentResults() {
     const handleIgnoredSelect = () => {
         setSelectedEnricher(null);
         setShowIgnored(true);
-        setEnricherDetails(null);
+        // Query will automatically handle null when enabled is false
     };
 
     const errorMsg = () => {
@@ -383,9 +345,7 @@ export default function EnrichmentResults() {
                                             </span>
                                         </div>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        {errorMsg()}
-                                    </TooltipContent>
+                                    <TooltipContent>{errorMsg()}</TooltipContent>
                                 </Tooltip>
                             )}
                             {enrichmentDetails.createdAt && (
@@ -421,7 +381,7 @@ export default function EnrichmentResults() {
                     {/* Left Panel - Enrichment Techniques */}
                     <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
                         <ScrollArea className='h-full px-3 pt-3'>
-                            {loadingDetails ? (
+                            {isPendingDetails ? (
                                 <div className='flex items-center justify-center min-h-[200px]'>
                                     <Spinner className='size-10' />
                                 </div>
@@ -431,15 +391,18 @@ export default function EnrichmentResults() {
                                     {ignoredArtifacts.length > 0 && (
                                         <>
                                             {/* Separator */}
-                                            {enrichmentDetails?.enrichers && enrichmentDetails.enrichers.length > 0 && (
-                                                <div className='h-px bg-card my-2' />
-                                            )}
+                                            {enrichmentDetails?.enrichers &&
+                                                enrichmentDetails.enrichers.length >
+                                                    0 && (
+                                                    <div className='h-px bg-card my-2' />
+                                                )}
 
                                             <div
-                                                className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${showIgnored
-                                                    ? 'bg-secondary border-primary shadow-sm'
-                                                    : 'bg-card border-transparent hover:bg-secondary hover:border-border'
-                                                    }`}
+                                                className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
+                                                    showIgnored
+                                                        ? 'bg-secondary border-primary shadow-sm'
+                                                        : 'bg-card border-transparent hover:bg-secondary hover:border-border'
+                                                }`}
                                                 onClick={handleIgnoredSelect}
                                             >
                                                 <EyeClosed
@@ -461,11 +424,18 @@ export default function EnrichmentResults() {
                                     {enrichmentDetails?.enrichers?.map((enricher) => (
                                         <div
                                             key={enricher.enricherType}
-                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${selectedEnricher === enricher.enricherType && !showIgnored
-                                                ? 'bg-secondary border-primary shadow-sm'
+                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
+                                                selectedEnricher ===
+                                                    enricher.enricherType &&
+                                                !showIgnored
+                                                    ? 'bg-secondary border-primary shadow-sm'
                                                     : 'bg-card border-transparent hover:bg-secondary hover:border-border'
-                                                }`}
-                                            onClick={() => handleEnricherSelect(enricher.enricherType!)}
+                                            }`}
+                                            onClick={() =>
+                                                handleEnricherSelect(
+                                                    enricher.enricherType!,
+                                                )
+                                            }
                                         >
                                             {getEnricherStatusIcon(enricher.status!)}
                                             <span className='text-sm font-medium truncate text-foreground'>
@@ -529,7 +499,7 @@ export default function EnrichmentResults() {
                                 </div>
                             ) : selectedEnricher ? (
                                 /* Enricher Tabs View */
-                                loadingEnricher ? (
+                                isPendingEnricher ? (
                                     <div className='flex items-center justify-center h-full'>
                                         <Spinner className='size-10' />
                                     </div>
@@ -537,7 +507,9 @@ export default function EnrichmentResults() {
                                     <div className='flex flex-col h-full'>
                                         {/* Relations Section */}
                                         <div className='flex-1 overflow-hidden flex flex-col'>
-                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Relations</h3>
+                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
+                                                Relations
+                                            </h3>
                                             <div className='px-3 pb-3 flex-1 flex flex-col overflow-hidden'>
                                                 {/* Search Bars */}
                                                 <div className='flex gap-2 items-center pb-3'>
@@ -552,9 +524,9 @@ export default function EnrichmentResults() {
                                                         >
                                                             <Search className='w-4 h-4' />
                                                         </Button>
-                                                        <input
+                                                        <Input
                                                             type='text'
-                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono'
+                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
                                                             placeholder='Search entries...'
                                                             value={searchInput.query}
                                                             onChange={(e) =>
@@ -597,9 +569,9 @@ export default function EnrichmentResults() {
                                                         >
                                                             <Search className='w-4 h-4' />
                                                         </Button>
-                                                        <input
+                                                        <Input
                                                             type='text'
-                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono'
+                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
                                                             placeholder='Search details...'
                                                             value={searchInput.details}
                                                             onChange={(e) =>
@@ -648,9 +620,11 @@ export default function EnrichmentResults() {
                                                         }
                                                         title='Download results as JSON'
                                                     >
-                                                        <Download width='18' height='18' />
+                                                        <Download
+                                                            width='18'
+                                                            height='18'
+                                                        />
                                                     </Button>
-
 
                                                     {/* Pagination */}
                                                     <PaginationWrapper
@@ -669,7 +643,7 @@ export default function EnrichmentResults() {
 
                                                 {/* Results */}
                                                 <ScrollArea className='flex-grow'>
-                                                    {loadingResults ? (
+                                                    {isPendingResults ? (
                                                         <div className='flex items-center justify-center min-h-[200px]'>
                                                             <Spinner className='size-10' />
                                                         </div>
@@ -751,9 +725,11 @@ export default function EnrichmentResults() {
 
                                         {/* Artifacts Section */}
                                         <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Artifacts</h3>
+                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
+                                                Artifacts
+                                            </h3>
                                             {!enricherDetails?.artifacts ||
-                                                enricherDetails.artifacts.length === 0 ? (
+                                            enricherDetails.artifacts.length === 0 ? (
                                                 <div className='flex flex-col items-center justify-center flex-1'>
                                                     <p className='text-sm text-muted-foreground'>
                                                         No artifacts found.
@@ -763,7 +739,10 @@ export default function EnrichmentResults() {
                                                 <ScrollArea className='flex-1 min-h-0 px-3 pb-3'>
                                                     <div className='divide-y divide-border'>
                                                         {enricherDetails.artifacts.map(
-                                                            (artifact: any, index: number) => (
+                                                            (
+                                                                artifact: any,
+                                                                index: number,
+                                                            ) => (
                                                                 <div
                                                                     key={index}
                                                                     className='px-4 py-3 flex items-center gap-3'
@@ -771,15 +750,21 @@ export default function EnrichmentResults() {
                                                                     {/* Entry class indicator */}
                                                                     {artifact.entry_class && (
                                                                         <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-secondary border border-border min-w-[60px] text-center'>
-                                                                            {artifact.entry_class}
+                                                                            {
+                                                                                artifact.entry_class
+                                                                            }
                                                                         </span>
                                                                     )}
 
                                                                     {/* Name */}
                                                                     <span className='flex-1 text-sm text-foreground truncate'>
-                                                                        {typeof artifact === 'string'
+                                                                        {typeof artifact ===
+                                                                        'string'
                                                                             ? artifact
-                                                                            : artifact.name || JSON.stringify(artifact)}
+                                                                            : artifact.name ||
+                                                                              JSON.stringify(
+                                                                                  artifact,
+                                                                              )}
                                                                     </span>
                                                                 </div>
                                                             ),
@@ -792,7 +777,9 @@ export default function EnrichmentResults() {
                                         {/* Warnings Section - Conditional */}
                                         {hasWarnings && (
                                             <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Warnings</h3>
+                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
+                                                    Warnings
+                                                </h3>
                                                 <ScrollArea className='flex-1 px-3 pb-3'>
                                                     <div className='divide-y divide-border'>
                                                         {enricherDetails!.warnings!.map(
@@ -828,7 +815,9 @@ export default function EnrichmentResults() {
                                         {/* Errors Section - Conditional */}
                                         {hasErrors && (
                                             <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>Errors</h3>
+                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
+                                                    Errors
+                                                </h3>
                                                 <ScrollArea className='flex-1 px-3 pb-3'>
                                                     <div className='divide-y divide-border'>
                                                         {enricherDetails!.errors!.map(

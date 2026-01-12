@@ -1,7 +1,7 @@
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { formatDate } from '@/utils/dates';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { Clock, Link, User } from 'iconoir-react';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface NoteMetadataProps {
     note: NoteRetrieve;
@@ -13,7 +13,7 @@ interface NoteMetadataProps {
  */
 export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
     return (
-        <div className='flex items-center gap-4 cradle-mono text-xs text-muted-foreground'>
+        <div className='flex items-center gap-4 font-mono tracking-wide text-xs text-muted-foreground'>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <span className='inline-flex items-center gap-1.5'>
@@ -23,9 +23,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                         </span>
                     </span>
                 </TooltipTrigger>
-                <TooltipContent>
-                    Created
-                </TooltipContent>
+                <TooltipContent>Created</TooltipContent>
             </Tooltip>
             {!isFleeting && (
                 <Tooltip>
@@ -37,9 +35,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                             </span>
                         </span>
                     </TooltipTrigger>
-                    <TooltipContent>
-                        Creator
-                    </TooltipContent>
+                    <TooltipContent>Creator</TooltipContent>
                 </Tooltip>
             )}
             {!isFleeting && note.editor && (
@@ -54,9 +50,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                                 </span>
                             </span>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            Edited
-                        </TooltipContent>
+                        <TooltipContent>Edited</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -67,9 +61,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                                 </span>
                             </span>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            Editor
-                        </TooltipContent>
+                        <TooltipContent>Editor</TooltipContent>
                     </Tooltip>
                 </>
             )}
@@ -83,9 +75,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                             </span>
                         </span>
                     </TooltipTrigger>
-                    <TooltipContent>
-                        Last Linked
-                    </TooltipContent>
+                    <TooltipContent>Last Linked</TooltipContent>
                 </Tooltip>
             )}
         </div>

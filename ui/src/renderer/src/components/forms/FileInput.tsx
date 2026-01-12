@@ -1,9 +1,11 @@
-import { toast } from 'sonner';
-import { useApi, useCradleNavigate } from '@hooks';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useApi } from '@hooks';
 import type {
-    FileReference,
     FileUploadFinalizeRequest,
+    FileUploadFinalizeResponse,
 } from '@services/cradle/models';
+import { useMutation } from '@tanstack/react-query';
 import { handleAPIError, parseAPIError } from '@utils/api';
 import { uploadFile } from '@utils/files';
 import { Check, CloudUpload, Xmark } from 'iconoir-react';
@@ -17,16 +19,27 @@ import {
     useRef,
     useState,
 } from 'react';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+
+/**
+ * File upload status types
+ */
+type FileUploadStatus = 'pending' | 'uploading' | 'success' | 'error';
+
+interface FileWithStatus {
+    file: File;
+    status: FileUploadStatus;
+    error?: string;
+}
 
 /**
  * FileInput component props
  */
 export interface FileInputProps {
     /** Files uploaded via this instance of the component */
-    fileData: FileReference[];
+    fileData: FileUploadFinalizeResponse[];
     /** Callback used when uploaded files change */
-    setFileData: Dispatch<SetStateAction<FileReference[]>>;
+    setFileData: Dispatch<SetStateAction<FileUploadFinalizeResponse[]>>;
     /** Array of File objects pending upload */
     pendingFiles: File[];
     /** Callback used when pending files change */
@@ -49,7 +62,7 @@ export interface FileInputProps {
  *
  * @example
  * ```tsx
- * const [fileData, setFileData] = useState<FileReference[]>([]);
+ * const [fileData, setFileData] = useState<FileUploadFinalizeResponse[]>([]);
  * const [pendingFiles, setPendingFiles] = useState<File[]>([]);
  *
  * <FileInput
@@ -67,9 +80,46 @@ export default function FileInput({
     pendingFiles,
     setPendingFiles,
     noteId,
-}: FileInputProps): JSX.Element {
+}: FileInputProps) {
     const { fileTransferApi } = useApi();
     const [isUploading, setIsUploading] = useState(false);
+
+    const uploadInitMutation = useMutation({
+        mutationFn: async ({
+            fileName,
+            fileSize,
+        }: {
+            fileName: string;
+            fileSize: number;
+        }) => {
+            return await fileTransferApi.fileTransferUploadRetrieve({
+                fileName,
+                fileSize,
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const uploadFinalizeMutation = useMutation({
+        mutationFn: async ({
+            uploadId,
+            noteId,
+        }: {
+            uploadId: string;
+            noteId?: string;
+        }) => {
+            const finalizeRequest: FileUploadFinalizeRequest = noteId ? { noteId } : {};
+            return await fileTransferApi.fileTransferUploadFinalizeCreate({
+                uploadId,
+                fileUploadFinalizeRequest: finalizeRequest,
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
     const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -111,7 +161,7 @@ export default function FileInput({
         }
 
         setIsUploading(true);
-        const succeededFileData: FileReference[] = [];
+        const succeededFileData: FileUploadFinalizeResponse[] = [];
         const failedFiles: File[] = [];
 
         try {
@@ -129,7 +179,7 @@ export default function FileInput({
 
                 try {
                     // Step 1: Request presigned URL
-                    const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve({
+                    const uploadResponse = await uploadInitMutation.mutateAsync({
                         fileName: file.name,
                         fileSize: file.size,
                     });
@@ -138,13 +188,9 @@ export default function FileInput({
                     await uploadFile(uploadResponse.presignedUrl, file);
 
                     // Step 3: Finalize upload
-                    const finalizeRequest: FileUploadFinalizeRequest = noteId
-                        ? { noteId }
-                        : {};
-
-                    const finalizeResponse = await fileTransferApi.fileTransferUploadFinalizeCreate({
+                    const finalizeResponse = await uploadFinalizeMutation.mutateAsync({
                         uploadId: uploadResponse.uploadId,
-                        fileUploadFinalizeRequest: finalizeRequest,
+                        noteId,
                     });
 
                     // Add to succeeded files
@@ -225,18 +271,9 @@ export default function FileInput({
         <div className='space-y-3' onPaste={handlePaste}>
             {/* File Input Row */}
             <div className='flex flex-row gap-2 items-stretch'>
-                <input
+                <Input
                     type='file'
-                    className='flex-1 text-sm text-text-foreground cursor-pointer
-                        border border-border-border rounded-xl bg-bg-secondary/5 p-0
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-l-[11px] file:rounded-r-none
-                        file:border-0 file:border-r file:border-border-border
-                        file:bg-border-primary/10 file:text-border-primary
-                        file:text-sm file:font-medium
-                        file:cursor-pointer file:transition-colors
-                        hover:file:bg-border-primary/20
-                    '
+                    className='flex-1'
                     multiple
                     onChange={handleFileChange}
                     ref={inputRef}
@@ -250,7 +287,7 @@ export default function FileInput({
                     disabled={isUploading || pendingFiles.length === 0}
                 >
                     {isUploading && (
-                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
                     )}
                     <CloudUpload className='w-5 h-5' strokeWidth={2} />
                 </Button>

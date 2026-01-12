@@ -1,32 +1,30 @@
-import { toast } from 'sonner';
-import { useAPICall } from '@/hooks';
-import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import Logo from '@components/base/Logo/Logo';
-import { Undo, WarningCircle } from 'iconoir-react';
-import { Link, useLocation } from 'react-router-dom';
-import * as Yup from 'yup';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
+    FieldContent,
     FieldDescription,
+    FieldError,
     FieldGroup,
     FieldLabel,
     FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import useApi from '@/hooks/api/useApi';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { cn } from '@/lib/utils';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { getApiBaseUrl } from '@/utils/url';
+import Logo from '@components/base/Logo/Logo';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { Link, useRouter, useRouterState } from '@tanstack/react-router';
+import { Undo, WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
 
-interface FormData {
-    username: string;
-    email: string;
-    password: string;
-    passwordCheck: string;
-}
+type FormData = z.infer<typeof registerSchema>;
 
 interface OAuthMethod {
     id?: string;
@@ -40,14 +38,22 @@ interface OAuthMethod {
     url?: string;
 }
 
-const registerSchema = Yup.object().shape({
-    username: Yup.string().required('Username is required'),
-    email: Yup.string().email('Invalid email').required('Email is required'),
-    password: Yup.string().required('Password is required'),
-    passwordCheck: Yup.string()
-        .required('Please confirm your password')
-        .oneOf([Yup.ref('password')], 'Passwords do not match'),
-});
+const registerSchema = z
+    .object({
+        username: z.string().min(1, { error: 'Username is required' }),
+        email: z
+            .string()
+            .min(1, { error: 'Email is required' })
+            .refine((val) => z.email().safeParse(val).success, {
+                error: 'Invalid email',
+            }),
+        password: z.string().min(1, { error: 'Password is required' }),
+        passwordCheck: z.string().min(1, { error: 'Please confirm your password' }),
+    })
+    .refine((data) => data.password === data.passwordCheck, {
+        error: 'Passwords do not match',
+        path: ['passwordCheck'],
+    });
 
 /**
  * Register component - renders the registration form.
@@ -56,21 +62,60 @@ const registerSchema = Yup.object().shape({
  * On error, displays an error message.
  */
 export default function Register() {
-    const { navigate } = useCradleNavigate();
-    const location = useLocation();
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const { usersApi, basePath } = useApi();
-    const { execute } = useAPICall();
+    const { role } = useAuthState();
+    const { isLoggedIn } = useAuthActions();
+
+    const registerMutation = useMutation({
+        mutationFn: async (data: {
+            username: string;
+            email: string;
+            password: string;
+        }) => {
+            return await usersApi.usersCreate({
+                userCreateRequest: {
+                    username: data.username,
+                    email: data.email,
+                    password: data.password,
+                },
+            });
+        },
+        meta: {
+            suppressNotification: true, // We handle toasts ourselves
+        },
+        onSuccess: (user) => {
+            if (!user.emailConfirmed) {
+                toast.success('Please check your email for a confirmation link.');
+            }
+
+            if (!user.isActive) {
+                toast.info(
+                    'Your account must be activated by an administrator before you can login.',
+                );
+            }
+
+            if (user.emailConfirmed && user.isActive) {
+                toast.info('Account created successfully.');
+            }
+
+            router.navigate({
+                to: '/login',
+                state: location.state,
+                replace: true,
+            });
+        },
+    });
     const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
     const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(
         null,
     );
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: yupResolver(registerSchema),
+    const form = useForm<FormData>({
+        resolver: zodResolver(registerSchema),
         defaultValues: {
             username: '',
             email: '',
@@ -80,6 +125,11 @@ export default function Register() {
     });
 
     useEffect(() => {
+        // If user is already logged in, redirect to dashboard
+        if (isLoggedIn()) {
+            router.navigate({ to: '/', replace: true });
+            return;
+        }
         if (!basePath) {
             setOauthMethods([]);
             setRegistrationEnabled(null);
@@ -90,7 +140,9 @@ export default function Register() {
 
         const loadConfig = async () => {
             try {
-                const response = await fetch(`${basePath}/users/config/`);
+                const response = await fetch(
+                    `${getApiBaseUrl(basePath)}/users/config/`,
+                );
                 if (!response.ok) {
                     throw new Error('Failed to load auth configuration');
                 }
@@ -122,9 +174,10 @@ export default function Register() {
         return () => {
             isMounted = false;
         };
-    }, [basePath]);
+    }, [basePath, role, router, isLoggedIn]);
 
-    const apiRoot = basePath.replace(/\/api\/?$/, '');
+    const apiBasePath = basePath ? getApiBaseUrl(basePath) : '';
+    const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
 
     const getOAuthKey = (method: OAuthMethod) => {
         return (
@@ -185,11 +238,16 @@ export default function Register() {
             return '';
         }
 
-        const redirectUri = `${window.location.origin}/oauth/callback`;
-        const redirectUrl = new URL(url);
-        redirectUrl.searchParams.set('redirect_uri', redirectUri);
-        redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
-        return redirectUrl.toString();
+        try {
+            const redirectUri = `${window.location.origin}/oauth/callback`;
+            const redirectUrl = new URL(url);
+            redirectUrl.searchParams.set('redirect_uri', redirectUri);
+            redirectUrl.searchParams.set('state', `oauth_login:${provider}`);
+            return redirectUrl.toString();
+        } catch (error) {
+            // Invalid URL, return empty string
+            return '';
+        }
     };
 
     const oauthOptions = oauthMethods.filter((method) => buildOAuthRedirectUrl(method));
@@ -200,33 +258,17 @@ export default function Register() {
             return;
         }
 
-        let user = await execute(() =>
-            usersApi.usersCreate({
-                userCreateRequest: {
-                    username: data.username,
-                    email: data.email,
-                    password: data.password,
-                },
-            }),
-        );
-
-        if (!user.emailConfirmed) {
-            toast.success('Please check your email for a confirmation link.');
-        }
-
-        if (!user.isActive) {
-            toast.info('Your account must be activated by an administrator before you can login.');
-        }
-
-        if (user.emailConfirmed && user.isActive) {
-            toast.info('Account created successfully.');
-        }
-
-        navigate('/login', {
-            state: location.state,
-            replace: true,
+        registerMutation.mutate({
+            username: data.username,
+            email: data.email,
+            password: data.password,
         });
     };
+
+    // If user is logged in, don't render the register form
+    if (isLoggedIn()) {
+        return null;
+    }
 
     return (
         <div className='grid min-h-svh lg:grid-cols-2'>
@@ -238,7 +280,7 @@ export default function Register() {
                         <Logo text={true} width='120px' />
                     </a>
                     <Button
-                        onClick={() => navigate('/login', { replace: true })}
+                        onClick={() => router.navigate({ to: '/login', replace: true })}
                         variant='ghost'
                         size='icon-sm'
                         className='p-2 rounded-lg'
@@ -254,7 +296,7 @@ export default function Register() {
                     <div className='w-full max-w-xs'>
                         <form
                             className={cn('flex flex-col gap-6')}
-                            onSubmit={handleSubmit(onSubmit)}
+                            onSubmit={form.handleSubmit(onSubmit)}
                         >
                             <FieldGroup>
                                 <div className='flex flex-col items-center gap-1 text-center'>
@@ -269,77 +311,127 @@ export default function Register() {
                                     <Alert>
                                         <WarningCircle />
                                         <AlertDescription>
-                                            Registration is disabled. Use single sign-on or
-                                            contact an administrator.
+                                            Registration is disabled. Use single sign-on
+                                            or contact an administrator.
                                         </AlertDescription>
                                     </Alert>
                                 )}
-                                <Field>
-                                    <FieldLabel htmlFor='username'>Username</FieldLabel>
-                                    <Input
-                                        id='username'
-                                        type='text'
-                                        {...register('username')}
-                                        aria-invalid={errors.username ? 'true' : 'false'}
-                                        required
-                                        disabled={registrationEnabled === false}
-                                    />
-                                    {errors.username && (
-                                        <FieldDescription className='text-destructive'>
-                                            {errors.username.message}
-                                        </FieldDescription>
+                                <Controller
+                                    name='username'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Username
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={field.name}
+                                                    type='text'
+                                                    aria-invalid={fieldState.invalid}
+                                                    autoComplete='username'
+                                                    required
+                                                    disabled={
+                                                        registrationEnabled === false
+                                                    }
+                                                />
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        errors={[fieldState.error]}
+                                                    />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
                                     )}
-                                </Field>
-                                <Field>
-                                    <FieldLabel htmlFor='email'>Email</FieldLabel>
-                                    <Input
-                                        id='email'
-                                        type='email'
-                                        {...register('email')}
-                                        aria-invalid={errors.email ? 'true' : 'false'}
-                                        required
-                                        disabled={registrationEnabled === false}
-                                    />
-                                    {errors.email && (
-                                        <FieldDescription className='text-destructive'>
-                                            {errors.email.message}
-                                        </FieldDescription>
+                                />
+                                <Controller
+                                    name='email'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Email
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={field.name}
+                                                    type='email'
+                                                    aria-invalid={fieldState.invalid}
+                                                    autoComplete='email'
+                                                    required
+                                                    disabled={
+                                                        registrationEnabled === false
+                                                    }
+                                                />
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        errors={[fieldState.error]}
+                                                    />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
                                     )}
-                                </Field>
-                                <Field>
-                                    <FieldLabel htmlFor='password'>Password</FieldLabel>
-                                    <Input
-                                        id='password'
-                                        type='password'
-                                        {...register('password')}
-                                        aria-invalid={errors.password ? 'true' : 'false'}
-                                        required
-                                        disabled={registrationEnabled === false}
-                                    />
-                                    {errors.password && (
-                                        <FieldDescription className='text-destructive'>
-                                            {errors.password.message}
-                                        </FieldDescription>
+                                />
+                                <Controller
+                                    name='password'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Password
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={field.name}
+                                                    type='password'
+                                                    aria-invalid={fieldState.invalid}
+                                                    autoComplete='new-password'
+                                                    required
+                                                    disabled={
+                                                        registrationEnabled === false
+                                                    }
+                                                />
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        errors={[fieldState.error]}
+                                                    />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
                                     )}
-                                </Field>
-                                <Field>
-                                    <FieldLabel htmlFor='passwordCheck'>
-                                        Confirm Password
-                                    </FieldLabel>
-                                    <Input
-                                        id='passwordCheck'
-                                        type='password'
-                                        {...register('passwordCheck')}
-                                        aria-invalid={errors.passwordCheck ? 'true' : 'false'}
-                                        required
-                                        disabled={registrationEnabled === false}
-                                    />
-                                    {errors.passwordCheck && (
-                                        <FieldDescription className='text-destructive'>
-                                            {errors.passwordCheck.message}
-                                        </FieldDescription>
+                                />
+                                <Controller
+                                    name='passwordCheck'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Confirm Password
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={field.name}
+                                                    type='password'
+                                                    aria-invalid={fieldState.invalid}
+                                                    autoComplete='new-password'
+                                                    required
+                                                    disabled={
+                                                        registrationEnabled === false
+                                                    }
+                                                />
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        errors={[fieldState.error]}
+                                                    />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
                                     )}
-                                </Field>
+                                />
                                 <Field>
                                     <Button
                                         type='submit'
@@ -347,13 +439,14 @@ export default function Register() {
                                         size='default'
                                         className='w-full'
                                         disabled={
-                                            isSubmitting || registrationEnabled === false
+                                            form.formState.isSubmitting ||
+                                            registrationEnabled === false
                                         }
                                         data-testid='login-register-button'
                                     >
                                         {registrationEnabled === false
                                             ? 'Registration Disabled'
-                                            : isSubmitting
+                                            : form.formState.isSubmitting
                                               ? 'Creating...'
                                               : 'Create Account'}
                                     </Button>
@@ -376,12 +469,48 @@ export default function Register() {
                                                     size='default'
                                                     className='w-full'
                                                     onClick={() => {
+                                                        let redirectPath = '/';
+                                                        if (
+                                                            typeof location.state ===
+                                                                'object' &&
+                                                            location.state !== null &&
+                                                            'from' in location.state
+                                                        ) {
+                                                            const from =
+                                                                location.state.from;
+                                                            if (
+                                                                typeof from === 'string'
+                                                            ) {
+                                                                redirectPath =
+                                                                    from.includes('#')
+                                                                        ? from.slice(
+                                                                              from.indexOf(
+                                                                                  '#',
+                                                                              ) + 1,
+                                                                          ) || '/'
+                                                                        : from;
+                                                            } else if (
+                                                                from &&
+                                                                typeof from ===
+                                                                    'object' &&
+                                                                'pathname' in from
+                                                            ) {
+                                                                redirectPath =
+                                                                    (
+                                                                        from as {
+                                                                            pathname?: string;
+                                                                        }
+                                                                    ).pathname || '/';
+                                                            }
+                                                        }
                                                         sessionStorage.setItem(
                                                             'oauth_login_redirect',
-                                                            '/',
+                                                            redirectPath,
                                                         );
                                                         window.location.href =
-                                                            buildOAuthRedirectUrl(method);
+                                                            buildOAuthRedirectUrl(
+                                                                method,
+                                                            );
                                                     }}
                                                 >
                                                     {getOAuthLabel(method)}
@@ -409,7 +538,7 @@ export default function Register() {
 
                         {/* Version/Status Indicator */}
                         <div className='mt-6 text-center'>
-                            <span className='text-xs text-muted-foreground cradle-mono tracking-wider'>
+                            <span className='text-xs text-muted-foreground font-mono tracking-wide tracking-wider'>
                                 v2.10.2-beta.a070af1b
                             </span>
                         </div>

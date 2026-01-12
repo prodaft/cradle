@@ -1,26 +1,35 @@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import MultipleSelector, { type Option } from '@/components/ui/multi-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
 import useApi from '@/hooks/api/useApi';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { queryKeys } from '@/hooks/query';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { AccessUser, Entity } from '@services/cradle/models';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import * as Yup from 'yup';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import OfflineIndicator from '../../../feedback/OfflineIndicator';
 import {
     SelectOption,
     SettingsCard,
     SettingsField,
     SettingsTextArea,
 } from '../../../forms';
-import { Separator } from '@/components/ui/separator';
-import ShadcnSelect from '../../../forms/ShadcnSelect';
 import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 
 interface EntityFormProps {
     id?: number | string | null;
-    isEdit?: boolean;
     onAdd?: (result: Entity) => void;
 }
 
@@ -34,46 +43,69 @@ interface SubtypeOption extends SelectOption<string> {
     label: string;
 }
 
-interface FormData {
-    name: string;
-    subtype: SubtypeOption | null;
-    description: string;
-    isPublic: boolean;
-    aliases: AliasOption[];
-}
-
-const entitySchema: Yup.ObjectSchema<FormData> = Yup.object().shape({
-    name: Yup.string().required('Name is required'),
-    subtype: Yup.object()
-        .shape({
-            value: Yup.string().required(),
-            label: Yup.string().required(),
+const entitySchema = z.object({
+    name: z.string().min(1, { error: 'Name is required' }),
+    subtype: z
+        .object({
+            value: z.string().min(1),
+            label: z.string().min(1),
         })
         .nullable()
-        .required('Subtype is required'),
-    description: Yup.string().default(''),
-    isPublic: Yup.boolean().default(false),
-    aliases: Yup.array()
-        .of(
-            Yup.object().shape({
-                value: Yup.number().required(),
-                label: Yup.string().required(),
+        .refine((val) => val !== null, {
+            error: 'Subtype is required',
+        }),
+    description: z.string().default(''),
+    isPublic: z.boolean().default(false),
+    aliases: z
+        .array(
+            z.object({
+                value: z.number(),
+                label: z.string().min(1),
             }),
         )
         .default([]),
-}) as Yup.ObjectSchema<FormData>;
+});
 
-export default function EntityForm({
-    id = null,
-    isEdit = false,
-    onAdd,
-}: EntityFormProps) {
+type EntityFormData = z.infer<typeof entitySchema>;
+
+export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     const { accessApi, entriesApi, queryApi } = useApi();
+
+    const fetchAliasesMutation = useMutation({
+        mutationFn: async (q: string) => {
+            const results = await queryApi.queryAdvancedRetrieve({
+                query: [q],
+                wildcard: true,
+            });
+            return results.results.map((alias) => ({
+                value: alias.id!,
+                label: `${alias.subtype}:${alias.name}`,
+            }));
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const updateEntityMutation = useMutation({
+        mutationFn: async (payload: any) => {
+            return await entriesApi.entitiesUpdate({
+                entityId: Number(id),
+                entityRequest: payload,
+            });
+        },
+        meta: {
+            successMessage: 'Entity updated successfully!',
+            errorMessage: 'Failed to update entity',
+        },
+        onError: () => {
+            toast.error('Failed to update entity');
+        },
+    });
 
     const [accesses, setAccessUsers] = useState<AccessUser[]>([]);
     const [entity, setEntity] = useState<Entity | null>(null);
     const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     const {
         register,
@@ -83,11 +115,11 @@ export default function EntityForm({
         control,
         getValues,
         formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: yupResolver(entitySchema),
+    } = useForm<EntityFormData>({
+        resolver: zodResolver(entitySchema) as any,
         defaultValues: {
             name: '',
-            subtype: null,
+            subtype: null as any,
             description: '',
             isPublic: false,
             aliases: [],
@@ -97,136 +129,107 @@ export default function EntityForm({
     // Fetch aliases for async select
     const fetchAliases = async (q: string): Promise<AliasOption[]> => {
         try {
-            const results = await queryApi.queryAdvancedRetrieve({
-                query: [q],
-                wildcard: true,
-            });
-
-            return results.results.map((alias) => ({
-                value: alias.id!,
-                label: `${alias.subtype}:${alias.name}`,
-            }));
+            return await fetchAliasesMutation.mutateAsync(q);
         } catch (error) {
-            console.error('Failed to fetch aliases:', error);
             return [];
         }
     };
 
-    // Fetch subtype options on mount
+    // Query for entry classes
+    const { data: entryClassesData } = useQuery({
+        queryKey: queryKeys.entryTypes.lists(),
+        queryFn: () => entriesApi.entryClassesList({ showCount: true }),
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true,
+        },
+    });
+
+    // Update subtype options when entry classes load
     useEffect(() => {
-        (async () => {
-            try {
-                const entryClasses = await entriesApi.entryClassesList({
-                    showCount: true,
-                });
-                const entityClasses = entryClasses.filter(
-                    (entity) => entity.type === 'entity',
-                );
-                const options = entityClasses.map((c) => ({
-                    value: c.subtype,
-                    label: c.subtype,
-                }));
-                setSubtypeOptions(options);
+        if (entryClassesData) {
+            const entityClasses = entryClassesData.filter(
+                (entity: any) => entity.type === 'entity',
+            );
+            const options = entityClasses.map((c: any) => ({
+                value: c.subtype,
+                label: c.subtype,
+            }));
+            setSubtypeOptions(options);
+        }
+    }, [entryClassesData]);
 
-                // Set default subtype for new entities
-                if (!isEdit && options.length > 0) {
-                    reset((prev) => ({ ...prev, subtype: options[0] }));
-                }
+    // Query for entity data when editing
+    const {
+        data: entityData,
+        isPending,
+        isPaused,
+    } = useQuery({
+        queryKey: queryKeys.entities.detail(String(id)),
+        queryFn: () => entriesApi.entitiesRetrieve({ entityId: Number(id) }),
+        enabled: !!id,
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch entity',
+        },
+        suppressNotification: true,
+    });
 
-                handleSubtypeChange(options[0]);
-            } catch (err) {
-                console.error('Failed to fetch subtypes:', err);
-            }
-        })();
-    }, [isEdit, entriesApi, reset]);
+    // Query for access data when editing
+    const { data: accessData } = useQuery({
+        queryKey: ['entities', 'access', String(id)],
+        queryFn: () => accessApi.accessEntityList({ entityId: Number(id) }),
+        enabled: !!id,
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true,
+        },
+    });
 
-    // Fetch entity data when editing
+    // Update form when entity data loads
     useEffect(() => {
-        (async () => {
-            if (isEdit && id) {
-                setIsLoading(true);
-                try {
-                    const [entityData, accessData] = await Promise.all([
-                        entriesApi.entitiesRetrieve({ entityId: Number(id) }),
-                        accessApi.accessEntityList({ entityId: Number(id) }),
-                    ]);
+        if (entityData) {
+            reset({
+                name: entityData.name,
+                subtype: {
+                    value: entityData.subtype,
+                    label: entityData.subtype,
+                },
+                description: entityData.description || '',
+                isPublic: entityData.isPublic || false,
+                aliases:
+                    entityData.aliasesDetail
+                        ?.filter((alias) => alias.id !== undefined)
+                        .map((alias) => ({
+                            value: alias.id!,
+                            label: `${alias.subtype}:${alias.name}`,
+                        })) ?? [],
+            });
+            setEntity(entityData);
+        }
+    }, [entityData, reset]);
 
-                    reset({
-                        name: entityData.name,
-                        subtype: {
-                            value: entityData.subtype,
-                            label: entityData.subtype,
-                        },
-                        description: entityData.description || '',
-                        isPublic: entityData.isPublic || false,
-                        aliases:
-                            entityData.aliasesDetail
-                                ?.filter((alias) => alias.id !== undefined)
-                                .map((alias) => ({
-                                    value: alias.id!,
-                                    label: `${alias.subtype}:${alias.name}`,
-                                })) ?? [],
-                    });
-
-                    setAccessUsers(accessData);
-                    setEntity(entityData);
-                } catch (err) {
-                    console.error('Failed to fetch entity:', err);
-                } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                setIsLoading(false);
-            }
-        })();
-    }, [isEdit, id, entriesApi, accessApi, reset]);
+    // Update access users when access data loads
+    useEffect(() => {
+        if (accessData) {
+            setAccessUsers(accessData);
+        }
+    }, [accessData]);
 
     // Handle form submission
-    const onSubmit = async (data: FormData) => {
-        try {
-            const payload = {
-                type: 'entity',
-                name: data.name,
-                description: data.description,
-                subtype: data.subtype?.value || '',
-                is_public: data.isPublic,
-                aliases: data.aliases.map((alias) => alias.value),
-            };
-
-            if (isEdit) {
-                await entriesApi.entitiesUpdate({
-                    entityId: Number(id),
-                    entityRequest: payload,
-                });
-                toast.success('Entity updated successfully!');
-            } else {
-                const result = await entriesApi.entitiesCreate({
-                    entityRequest: payload,
-                });
-                toast.success('Entity created successfully!');
-                if (onAdd) onAdd(result);
-            }
-        } catch (error) {
-            toast.error(`Failed to ${isEdit ? 'update' : 'create'} entity`);
-        }
+    const onSubmit = async (data: EntityFormData) => {
+        const payload = {
+            type: 'entity',
+            name: data.name,
+            description: data.description,
+            subtype: data.subtype?.value || '',
+            is_public: data.isPublic,
+            aliases: data.aliases.map((alias) => alias.value),
+        };
+        updateEntityMutation.mutate(payload);
     };
 
-    // Auto-fill name when subtype changes (for new entities)
-    const handleSubtypeChange = async (subtype: SubtypeOption | null) => {
-        if (!isEdit && subtype) {
-            try {
-                const response = await entriesApi.entriesNextNameRetrieve({
-                    classSubtype: subtype.value,
-                });
-                const currentValues = getValues();
-                reset({ ...currentValues, subtype, name: response.name || '' });
-            } catch (err) {
-                console.error('Failed to fetch next name:', err);
-            }
-        }
-    };
-
-    if (isLoading) {
+    if (isPending && !isPaused) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
                 <div className='animate-pulse text-foreground'>Loading...</div>
@@ -234,192 +237,210 @@ export default function EntityForm({
         );
     }
 
+    if (isPaused) {
+        return (
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='w-full max-w-md p-4'>
+                    <OfflineIndicator />
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className='w-full h-full'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>
-                        {isEdit ? 'Edit Entity' : 'New Entity'}
-                    </h2>
-                    <p className='text-muted-foreground'>
-                        {isEdit ? 'Modify entity details' : 'Create new entity'}
-                    </p>
-                </div>
-            </div>
+        <form onSubmit={handleFormSubmit(onSubmit as any)}>
+            {/* Basic Section */}
+            <section id='basic' className='pb-8'>
+                <div className='space-y-4'>
+                    <SettingsCard>
+                        <SettingsField
+                            label='Name'
+                            description='Unique identifier for this entity'
+                            {...register('name')}
+                            error={errors.name}
+                            disabled={true}
+                            required
+                        />
 
-            {/* Content Area */}
-            <div className='p-5'>
-                <div className='w-full'>
-                    <form onSubmit={handleFormSubmit(onSubmit)}>
-                        {/* Basic Section */}
-                        <section id='basic' className='pb-8'>
-                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                Basic Information
-                            </h2>
-                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Core entity properties
-                            </p>
+                        <Separator />
 
-                            <div className='space-y-4'>
-                                <SettingsCard>
-                                    <SettingsField
-                                        label='Name'
-                                        description='Unique identifier for this entity'
-                                        {...register('name')}
-                                        error={errors.name}
-                                        disabled={isEdit}
-                                        required
-                                    />
-
-                                    <Separator />
-
-                                    <SettingsField
-                                        label='Subtype'
-                                        description='Entity class type'
-                                        required
-                                        error={errors.subtype?.message?.toString()}
-                                        inputWidth='w-72'
+                        <SettingsField
+                            label='Subtype'
+                            description='Entity class type'
+                            required
+                            error={errors.subtype?.message?.toString()}
+                            inputWidth='w-72'
+                        >
+                            <Controller
+                                name='subtype'
+                                control={control}
+                                render={({ field }) => (
+                                    <Select
+                                        value={field.value?.value || ''}
+                                        onValueChange={(value) => {
+                                            const option = subtypeOptions.find(
+                                                (opt) => opt.value === value,
+                                            );
+                                            field.onChange(
+                                                option
+                                                    ? {
+                                                          value: option.value,
+                                                          label: option.label,
+                                                      }
+                                                    : null,
+                                            );
+                                        }}
                                     >
-                                        <Controller
-                                            name='subtype'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <ShadcnSelect
-                                                    staticOptions={subtypeOptions}
-                                                    value={field.value}
-                                                    placeholder='Select subtype'
-                                                    disabled={isEdit}
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
-                                                        handleSubtypeChange(
-                                                            newValue as SubtypeOption | null,
-                                                        );
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </SettingsField>
+                                        <SelectTrigger
+                                            className='w-72'
+                                            aria-invalid={Boolean(errors.subtype)}
+                                        >
+                                            <SelectValue placeholder='Select subtype' />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subtypeOptions.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                        </SettingsField>
 
-                                    <Separator />
+                        <Separator />
 
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <Label htmlFor='isPublic' className='text-sm text-muted-foreground block mb-0.5'>
-                                                    Publicly Available
-                                                </Label>
-                                                <p className='text-sm text-muted-foreground'>Allow public access to this entity</p>
-                                                {errors.isPublic && (
-                                                    <p className='text-sm text-destructive mt-1'>{errors.isPublic.message}</p>
-                                                )}
-                                            </div>
-                                            <Controller
-                                                name='isPublic'
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Switch
-                                                        id='isPublic'
-                                                        name={field.name}
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <Separator />
-
-                                    <SettingsTextArea
-                                        label='Description'
-                                        description='Brief explanation of this entity'
-                                        placeholder='Description'
-                                        rows={4}
-                                        {...register('description')}
-                                        error={errors.description}
-                                        layout='vertical'
-                                    />
-
-                                    <Separator />
-
-                                    <div className='py-2'>
-                                        <label className='text-sm text-muted-foreground block mb-0.5'>
-                                            Aliases
-                                        </label>
-                                        <p className='text-sm text-muted-foreground mb-2'>
-                                            Alternate names or references for this
-                                            entity
+                        <div className='py-2'>
+                            <div className='flex items-center justify-between gap-4'>
+                                <div className='flex-1'>
+                                    <Label
+                                        htmlFor='isPublic'
+                                        className='text-sm text-muted-foreground block mb-0.5'
+                                    >
+                                        Publicly Available
+                                    </Label>
+                                    <p className='text-sm text-muted-foreground'>
+                                        Allow public access to this entity
+                                    </p>
+                                    {errors.isPublic && (
+                                        <p className='text-sm text-destructive mt-1'>
+                                            {errors.isPublic.message}
                                         </p>
-                                        <Controller
-                                            name='aliases'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <ShadcnSelect
-                                                    fetchOptions={fetchAliases}
-                                                    values={field.value || []}
-                                                    placeholder='Select aliases...'
-                                                    isMulti
-                                                    onMultiChange={(newValues) => {
-                                                        field.onChange(newValues);
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                        {errors.aliases && (
-                                            <p className='text-sm text-destructive mt-1'>
-                                                {errors.aliases.message}
-                                            </p>
-                                        )}
-                                    </div>
-                                </SettingsCard>
-                            </div>
-                        </section>
-
-                        {/* Access Section (only in edit mode with accesses) */}
-                        {isEdit && entity && accesses.length > 0 && (
-                            <section
-                                id='access'
-                                className='border-t border-white/5 pt-5 pb-8'
-                            >
-                                <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                    Access Control
-                                </h2>
-                                <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                    User permissions for this entity
-                                </p>
-
-                                <div className='space-y-2'>
-                                    {accesses.map((access) => {
-                                        const user = access.user;
-                                        return (
-                                            <AdminPanelPermissionCard
-                                                key={user.id}
-                                                userId={user.id!}
-                                                text={user.username}
-                                                entityId={entity.id!}
-                                                accessLevel={access.accessType}
-                                                searchKey={user.username}
-                                            />
-                                        );
-                                    })}
+                                    )}
                                 </div>
-                            </section>
-                        )}
-
-                        {/* Save Button */}
-                        <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <Button
-                                type='submit'
-                                variant='default'
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entity'}
-                            </Button>
+                                <Controller
+                                    name='isPublic'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Switch
+                                            id='isPublic'
+                                            name={field.name}
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                        />
+                                    )}
+                                />
+                            </div>
                         </div>
-                    </form>
+
+                        <Separator />
+
+                        <SettingsTextArea
+                            label='Description'
+                            description='Brief explanation of this entity'
+                            placeholder='Description'
+                            rows={4}
+                            {...register('description')}
+                            error={errors.description}
+                            layout='vertical'
+                        />
+
+                        <Separator />
+
+                        <div className='py-2'>
+                            <Label className='text-sm text-muted-foreground block mb-0.5'>
+                                Aliases
+                            </Label>
+                            <p className='text-sm text-muted-foreground mb-2'>
+                                Alternate names or references for this entity
+                            </p>
+                            <Controller
+                                name='aliases'
+                                control={control}
+                                render={({ field }) => (
+                                    <MultipleSelector
+                                        value={
+                                            (field.value?.map((a) => ({
+                                                value: String(a.value),
+                                                label: a.label,
+                                            })) || []) as Option[]
+                                        }
+                                        defaultOptions={[]}
+                                        placeholder='Select aliases...'
+                                        onSearch={async (query) => {
+                                            const results = await fetchAliases(query);
+                                            return results.map((a) => ({
+                                                value: String(a.value),
+                                                label: a.label,
+                                            })) as unknown as Option[];
+                                        }}
+                                        onChange={(options) => {
+                                            field.onChange(
+                                                options.map((o) => ({
+                                                    value: Number(o.value),
+                                                    label: o.label,
+                                                })),
+                                            );
+                                        }}
+                                        emptyIndicator={
+                                            <p className='text-center text-sm'>
+                                                No aliases found
+                                            </p>
+                                        }
+                                    />
+                                )}
+                            />
+                            {errors.aliases && (
+                                <p className='text-sm text-destructive mt-1'>
+                                    {errors.aliases.message}
+                                </p>
+                            )}
+                        </div>
+                    </SettingsCard>
                 </div>
+            </section>
+
+            {/* Access Section (only with accesses) */}
+            {entity && accesses.length > 0 && (
+                <section id='access' className='border-t border-white/5 pt-5 pb-8'>
+                    <div className='space-y-2'>
+                        {accesses.map((access) => {
+                            const user = access.user;
+                            return (
+                                <AdminPanelPermissionCard
+                                    key={user.id}
+                                    userId={user.id!}
+                                    text={user.username}
+                                    entityId={entity.id!}
+                                    accessLevel={access.accessType}
+                                    searchKey={user.username}
+                                />
+                            );
+                        })}
+                    </div>
+                </section>
+            )}
+
+            {/* Save Button */}
+            <div className='border-t border-white/5 pt-5 flex justify-end'>
+                <Button type='submit' variant='default' disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </Button>
             </div>
-        </div>
+        </form>
     );
 }

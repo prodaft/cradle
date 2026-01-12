@@ -1,14 +1,20 @@
-import { useProfile } from '@/contexts/user/ProfileContext';
-import { useAPICall } from '@/hooks';
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardAction,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useProfile } from '@/hooks/user/useProfile';
 import { Relation } from '@/services/cradle';
 import { capitalizeString, createDashboardLink } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { Trash } from 'iconoir-react';
-import { ReactNode, useEffect, useState } from 'react';
-import { Card, CardHeader, CardTitle, CardAction, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from 'react';
 
 interface RelationCardProps {
     relation: Relation;
@@ -21,24 +27,35 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
     const [visible, setVisible] = useState(true);
     const { isAdmin } = useProfile();
     const { entriesApi } = useApi();
-    const { navigate } = useCradleNavigate();
-    const { execute } = useAPICall();
+    const router = useRouter();
+
+    const deleteMutation = useMutation({
+        mutationFn: async (relationId: string) => {
+            await entriesApi.entriesRelationsDestroy({ relationId });
+        },
+        meta: {
+            successMessage: 'Relation deleted successfully',
+            errorMessage: 'Failed to delete relation',
+        },
+        onSuccess: () => {
+            setVisible(false);
+            if (onDelete) onDelete();
+        },
+    });
 
     useEffect(() => {
         setFormattedCreated(formatDate(new Date(relation.createdAt || '')));
         setFormattedSeen(formatDate(new Date(relation.lastSeen || '')));
     }, [relation.createdAt, relation.lastSeen]);
 
-    const handleDelete = async () => {
-        await entriesApi.entriesRelationsDestroy({ relationId: relation.id! });
-        setVisible(false);
-        if (onDelete) onDelete();
+    const handleDelete = () => {
+        deleteMutation.mutate(relation.id!);
     };
 
     const handleEntryClick =
         (name: string, subtype: string) => (e: React.MouseEvent) => {
             const link = createDashboardLink({ name, subtype });
-            navigate(link, { event: e });
+            router.navigate({ to: link as any });
         };
 
     const cardDetails = {
@@ -81,49 +98,49 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                     ))}
                 </div>
                 <div className='text-foreground text-sm space-y-1 -mt-1 mb-2'>
-                    <InfoRow label='Entity 1'>
-                        <span
-                            className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e1?.color ? 'text-primary' : ''}`}
-                            style={relation.e1?.color ? { color: relation.e1.color } : undefined}
-                            onClick={handleEntryClick(
-                                relation.e1?.name || '',
-                                relation.e1?.subtype || '',
-                            )}
-                        >
-                            [{relation.e1?.subtype}] {relation.e1?.name}
-                        </span>
-                    </InfoRow>
-                    <InfoRow label='Entity 2'>
-                        <span
-                            className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e2?.color ? 'text-primary' : ''}`}
-                            style={relation.e2?.color ? { color: relation.e2.color } : undefined}
-                            onClick={handleEntryClick(
-                                relation.e2?.name || '',
-                                relation.e2?.subtype || '',
-                            )}
-                        >
-                            [{relation.e2?.subtype}] {relation.e2?.name}
-                        </span>
-                    </InfoRow>
+                    <div className='grid grid-cols-[100px_1fr] items-start gap-2'>
+                        <strong className='text-foreground'>Entity 1</strong>
+                        <div>
+                            <span
+                                className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e1?.color ? 'text-primary' : ''}`}
+                                style={
+                                    relation.e1?.color
+                                        ? { color: relation.e1.color }
+                                        : undefined
+                                }
+                                onClick={handleEntryClick(
+                                    relation.e1?.name || '',
+                                    relation.e1?.subtype || '',
+                                )}
+                            >
+                                [{relation.e1?.subtype}] {relation.e1?.name}
+                            </span>
+                        </div>
+                    </div>
+                    <div className='grid grid-cols-[100px_1fr] items-start gap-2'>
+                        <strong className='text-foreground'>Entity 2</strong>
+                        <div>
+                            <span
+                                className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e2?.color ? 'text-primary' : ''}`}
+                                style={
+                                    relation.e2?.color
+                                        ? { color: relation.e2.color }
+                                        : undefined
+                                }
+                                onClick={handleEntryClick(
+                                    relation.e2?.name || '',
+                                    relation.e2?.subtype || '',
+                                )}
+                            >
+                                [{relation.e2?.subtype}] {relation.e2?.name}
+                            </span>
+                        </div>
+                    </div>
                 </div>
                 <div className='text-[10px] text-muted-foreground select-text mt-2'>
                     ID: {relation.id}
                 </div>
             </CardContent>
         </Card>
-    );
-}
-
-interface InfoRowProps {
-    label: string;
-    children: ReactNode;
-}
-
-function InfoRow({ label, children }: InfoRowProps) {
-    return (
-        <div className='grid grid-cols-[100px_1fr] items-start gap-2'>
-            <strong className='text-foreground'>{label}</strong>
-            <div>{children}</div>
-        </div>
     );
 }

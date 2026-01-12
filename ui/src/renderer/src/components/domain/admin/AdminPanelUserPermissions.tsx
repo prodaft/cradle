@@ -1,14 +1,15 @@
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useAuth from '@/hooks/auth/useAuth';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useAuthActions } from '@/hooks/auth/useAuth';
 import { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { Search, Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import AdminPanelPermissionCard from './cards/AdminPanelPermissionCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AdminPanelUserPermissionsProps {
     username: string;
@@ -25,49 +26,74 @@ export default function AdminPanelUserPermissions({
     const [entities, setEntities] = useState<SearchableChild[]>([]);
     const [searchVal, setSearchVal] = useState('');
     const { accessApi, usersApi } = useApi();
-    const { navigate } = useCradleNavigate();
-    const auth = useAuth();
-    const { execute } = useAPICall();
+    const router = useRouter();
+    const { setTokensDirectly } = useAuthActions();
 
-    const simulateSession = () => {
-        execute(() =>
-            usersApi.usersManageRetrieve({
+    const simulateSessionMutation = useMutation({
+        mutationFn: async () => {
+            return await usersApi.usersManageRetrieve({
                 userId: String(id),
                 actionName: 'simulate',
-            }),
-        )
-            .then((res) => {
-                auth.setTokensDirectly(res as any);
-                navigate('/', { replace: true });
-            })
-            .catch(() => {});
+            });
+        },
+        meta: {
+            errorMessage: 'Failed to simulate session',
+        },
+        onSuccess: (res) => {
+            setTokensDirectly(res as any);
+            router.navigate({ to: '/', replace: true });
+        },
+    });
+
+    const sendEmailConfirmationMutation = useMutation({
+        mutationFn: async () => {
+            await usersApi.usersManageRetrieve({
+                userId: String(id),
+                actionName: 'send_email_confirmation',
+            });
+        },
+        meta: {
+            successMessage: 'Email confirmation sent successfully',
+        },
+    });
+
+    const sendPasswordResetEmailMutation = useMutation({
+        mutationFn: async () => {
+            await usersApi.usersManageRetrieve({
+                userId: String(id),
+                actionName: 'password_reset_email',
+            });
+        },
+        meta: {
+            successMessage: 'Password reset email sent successfully',
+        },
+    });
+
+    const fetchPermissionsMutation = useMutation({
+        mutationFn: async () => {
+            return await accessApi.accessUserList({ userId: String(id) });
+        },
+        meta: {
+            errorMessage: 'Failed to load user permissions',
+        },
+    });
+
+    const simulateSession = () => {
+        simulateSessionMutation.mutate();
     };
 
     const sendEmailConfirmation = () => {
-        execute(
-            () =>
-                usersApi.usersManageRetrieve({
-                    userId: String(id),
-                    actionName: 'send_email_confirmation',
-                }),
-            { successMessage: 'Email confirmation sent successfully' },
-        ).catch(() => {});
+        sendEmailConfirmationMutation.mutate();
     };
 
     const sendPasswordResetEmail = () => {
-        execute(
-            () =>
-                usersApi.usersManageRetrieve({
-                    userId: String(id),
-                    actionName: 'password_reset_email',
-                }),
-            { successMessage: 'Password reset email sent successfully' },
-        ).catch(() => {});
+        sendPasswordResetEmailMutation.mutate();
     };
 
     useEffect(() => {
-        execute(() => accessApi.accessUserList({ userId: String(id) }))
-            .then((permissions) => {
+        const fetchPermissions = async () => {
+            try {
+                const permissions = await fetchPermissionsMutation.mutateAsync();
                 setEntities(
                     permissions
                         .map((c) => {
@@ -93,9 +119,14 @@ export default function AdminPanelUserPermissions({
                             return naturalSort(aKey, bKey);
                         }),
                 );
-            })
-            .catch(() => {});
-    }, [id, accessApi, execute]);
+            } catch (error) {
+                // Error already handled
+                setEntities([]);
+            }
+        };
+
+        fetchPermissions();
+    }, [id, accessApi, fetchPermissionsMutation]);
 
     // Filter entities based on search
     const filteredEntities = entities.filter((entity) => {
@@ -108,8 +139,12 @@ export default function AdminPanelUserPermissions({
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>User Permissions: {username}</h2>
-                    <p className='text-muted-foreground'>Manage entity access and user actions</p>
+                    <h2 className='text-2xl font-bold tracking-tight'>
+                        User Permissions: {username}
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        Manage entity access and user actions
+                    </p>
                 </div>
             </div>
 
@@ -136,10 +171,10 @@ export default function AdminPanelUserPermissions({
                                 >
                                     <Search className='w-4 h-4' />
                                 </Button>
-                                <input
+                                <Input
                                     type='text'
                                     placeholder='Search entities'
-                                    className='flex-grow bg-transparent text-sm outline-none text-text-foreground placeholder:text-text-muted-foreground rounded-none font-mono'
+                                    className='flex-grow bg-transparent text-sm outline-none text-text-foreground placeholder:text-text-muted-foreground rounded-none font-mono border-0 shadow-none'
                                     onChange={(e) => setSearchVal(e.target.value)}
                                     value={searchVal}
                                 />

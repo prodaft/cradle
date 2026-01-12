@@ -1,14 +1,17 @@
 import { ComponentType, useEffect, useRef, useState } from 'react';
 
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { displayError } from '@/utils/api';
+import { parseAPIError } from '@/utils/api';
+import { useRouter } from '@tanstack/react-router';
 
-import useApi from '@/hooks/api/useApi';
-import useAuth from '@/hooks/auth/useAuth';
-import { LinkTreeFlattener } from '@/utils/dashboard';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { WarningCircle } from 'iconoir-react';
+import useApi from '@/hooks/api/useApi';
+import { useAuthActions } from '@/hooks/auth/useAuth';
+import { queryKeys } from '@/hooks/query';
+import { LinkTreeFlattener } from '@/utils/dashboard';
+import { logger } from '@/utils/logger';
 import type { EdgeRelation } from '@services/cradle/models';
+import { useQuery } from '@tanstack/react-query';
+import { WarningCircle } from 'iconoir-react';
 import { Node } from './graphFilterUtils';
 
 interface Alert {
@@ -32,23 +35,20 @@ export default function NoteGraphSearch(
         addBoth,
     }: NoteGraphSearchProps) {
         const [isGraphFetching, setIsGraphFetching] = useState(false);
-        const [loading, setLoading] = useState(false);
         const [alert, setAlert] = useState<Alert>({
             show: false,
             message: '',
             color: 'red',
         });
         const { basePath } = useApi();
-        const { getAccessToken } = useAuth();
-        const { navigate } = useCradleNavigate();
+        const { getAccessToken } = useAuthActions();
+        const router = useRouter();
         const hasFetchedRef = useRef(false);
 
-        const fetchGraph = async () => {
-            setLoading(true);
-            setIsGraphFetching(true);
-
-            try {
-                // Make direct fetch call to bypass API client's incorrect parsing
+        // Query for note graph data
+        const { data: graphData, isPending: loading } = useQuery({
+            queryKey: queryKeys.notes.detail(`${noteId}-graph`),
+            queryFn: async () => {
                 const token = await getAccessToken();
                 const url = `${basePath}/notes/${noteId}/graph`;
 
@@ -64,11 +64,47 @@ export default function NoteGraphSearch(
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                const graphData = await response.json();
+                return response.json();
+            },
+            enabled: !hasFetchedRef.current,
+            meta: {
+                showErrorToast: true,
+                errorMessage: 'Failed to fetch graph data',
+            },
+            onError: async (error: any) => {
+                logger.error('[NoteGraphSearch] Error fetching graph data:', error);
+                const parsed = await parseAPIError(error);
 
+                // Handle 401 errors with navigation
+                if (parsed.status === 401) {
+                    setAlert({
+                        show: true,
+                        message: 'Your session has expired. Please log back in.',
+                        color: 'red',
+                    });
+                    router.navigate({ to: '/login' });
+                    return;
+                }
+
+                // Set alert with error message
+                setAlert({
+                    show: true,
+                    message:
+                        parsed.detail || 'An error occurred while loading the graph.',
+                    color: 'red',
+                });
+            },
+        });
+
+        // Process graph data when it loads
+        useEffect(() => {
+            if (!graphData || hasFetchedRef.current) return;
+
+            hasFetchedRef.current = true;
+            setIsGraphFetching(true);
+
+            try {
                 const { entries, relations, colors } = graphData || {};
-
-                console.log('[NoteGraphSearch] Colors from API:', colors);
 
                 // Process nodes and edges together to avoid race conditions
                 let nodes: any[] = [];
@@ -77,11 +113,6 @@ export default function NoteGraphSearch(
                 if (entries) {
                     try {
                         const flattenedEntries = LinkTreeFlattener.flatten(entries);
-
-                        console.log(
-                            '[NoteGraphSearch] Flattened entries:',
-                            flattenedEntries,
-                        );
 
                         if (flattenedEntries && flattenedEntries.length > 0) {
                             nodes = flattenedEntries.map((e: any) => {
@@ -92,10 +123,8 @@ export default function NoteGraphSearch(
                                     label = `note: ${e.name || 'untitled'}`;
                                 }
 
-                                const nodeColor = colors?.[e.subtype] || 'var(--color-primary)';
-                                console.log(
-                                    `[NoteGraphSearch] Node ${e.id} (${e.subtype}): color=${nodeColor}`,
-                                );
+                                const nodeColor =
+                                    colors?.[e.subtype] || 'var(--color-primary)';
 
                                 return {
                                     id: String(e.id),
@@ -110,7 +139,7 @@ export default function NoteGraphSearch(
                             hasData = true;
                         }
                     } catch (e) {
-                        console.error('[NoteGraphSearch] Error processing entries:', e);
+                        logger.error('[NoteGraphSearch] Error processing entries:', e);
                     }
                 }
 
@@ -144,28 +173,21 @@ export default function NoteGraphSearch(
                 } else {
                     setAlert({ show: false, message: '', color: 'red' });
                 }
-            } catch (error: any) {
-                console.error(error);
-                displayError(setAlert, navigate)(error);
             } finally {
-                setLoading(false);
                 setIsGraphFetching(false);
             }
-        };
-
-        // Automatically fetch graph on mount (only once)
-        useEffect(() => {
-            if (!hasFetchedRef.current) {
-                hasFetchedRef.current = true;
-                fetchGraph();
-            }
-            // eslint-disable-next-line react-hooks/exhaustive-deps
-        }, [noteId]);
+        }, [graphData, addBoth, addNodes, addEdges]);
 
         return (
             <div className='px-2 mt-2 w-full'>
                 {alert.show && (
-                    <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                    <AlertComponent
+                        variant={
+                            alert.color === 'red' || alert.color === 'error'
+                                ? 'destructive'
+                                : 'default'
+                        }
+                    >
                         <WarningCircle />
                         <AlertDescription>{alert.message}</AlertDescription>
                     </AlertComponent>

@@ -1,10 +1,9 @@
-import Logo from '@components/base/Logo/Logo';
 import { Button } from '@/components/ui/button';
-import useAuth from '@/hooks/auth/useAuth';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { getApiBaseUrl } from '@/utils/url';
+import Logo from '@components/base/Logo/Logo';
+import { useRouter, useRouterState } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 
 type OAuthAction = 'oauth_login' | 'oauth_connect';
 
@@ -27,17 +26,17 @@ const parseOAuthState = (stateValue: string | null): OAuthState | null => {
 };
 
 export default function OAuthCallback() {
-    const auth = useAuth();
-    const { navigate } = useCradleNavigate();
-    const location = useLocation();
+    const { basePath } = useAuthState();
+    const { isLoggedIn, getAccessToken, setTokensDirectly } = useAuthActions();
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [statusMessage, setStatusMessage] = useState('Completing sign-in...');
     const hasExchangedRef = useRef(false);
 
-    const redirectUri = useMemo(
-        () => `${window.location.origin}/oauth/callback`,
-        [],
-    );
+    const redirectUri = useMemo(() => `${window.location.origin}/oauth/callback`, []);
 
     useEffect(() => {
         if (hasExchangedRef.current) {
@@ -67,7 +66,9 @@ export default function OAuthCallback() {
 
         const state = parseOAuthState(params.get('state'));
         const provider =
-            state?.provider || params.get('provider') || sessionStorage.getItem('oauth_connect_provider');
+            state?.provider ||
+            params.get('provider') ||
+            sessionStorage.getItem('oauth_connect_provider');
 
         if (!provider) {
             setErrorMessage('Missing OAuth provider.');
@@ -78,7 +79,7 @@ export default function OAuthCallback() {
         const action = state?.action || 'oauth_login';
 
         const run = async () => {
-            if (!auth.basePath) {
+            if (!basePath) {
                 setErrorMessage('Backend URL is not configured.');
                 setStatusMessage('Unable to continue.');
                 return;
@@ -86,15 +87,15 @@ export default function OAuthCallback() {
 
             try {
                 if (action === 'oauth_connect') {
-                    if (!auth.isLoggedIn()) {
+                    if (!isLoggedIn()) {
                         setErrorMessage('You must be logged in to connect accounts.');
                         setStatusMessage('Unable to continue.');
                         return;
                     }
 
-                    const token = await auth.getAccessToken();
+                    const token = await getAccessToken();
                     const response = await fetch(
-                        `${getApiBaseUrl(auth.basePath)}/users/oauth/connect/`,
+                        `${getApiBaseUrl(basePath)}/users/oauth/connect/`,
                         {
                             method: 'POST',
                             headers: {
@@ -118,14 +119,17 @@ export default function OAuthCallback() {
                         '/settings';
                     sessionStorage.removeItem('oauth_connect_return_path');
                     sessionStorage.removeItem('oauth_connect_provider');
-                    window.location.replace(
-                        `${window.location.origin}/#${returnPath.startsWith('/') ? returnPath : `/${returnPath}`}`,
-                    );
+                    router.navigate({
+                        to: returnPath.startsWith('/')
+                            ? (returnPath as any)
+                            : (`/${returnPath}` as any),
+                        replace: true,
+                    });
                     return;
                 }
 
                 const response = await fetch(
-                    `${getApiBaseUrl(auth.basePath)}/users/oauth/login/`,
+                    `${getApiBaseUrl(basePath)}/users/oauth/login/`,
                     {
                         method: 'POST',
                         headers: {
@@ -146,7 +150,7 @@ export default function OAuthCallback() {
                 const data = await response.json();
                 data.accessExpiresAt = new Date(data.access_expires_at);
                 data.refreshExpiresAt = new Date(data.refresh_expires_at);
-                auth.setTokensDirectly(data);
+                setTokensDirectly(data);
 
                 const redirectPath =
                     sessionStorage.getItem('oauth_login_redirect') || '/';
@@ -156,9 +160,12 @@ export default function OAuthCallback() {
                         ? '/'
                         : redirectPath;
                 sessionStorage.removeItem('oauth_login_redirect');
-                window.location.replace(
-                    `${window.location.origin}/#${normalizedRedirect.startsWith('/') ? normalizedRedirect : `/${normalizedRedirect}`}`,
-                );
+                router.navigate({
+                    to: normalizedRedirect.startsWith('/')
+                        ? (normalizedRedirect as any)
+                        : (`/${normalizedRedirect}` as any),
+                    replace: true,
+                });
             } catch (error) {
                 setErrorMessage('OAuth flow failed. Please try again.');
                 setStatusMessage('Unable to continue.');
@@ -166,7 +173,7 @@ export default function OAuthCallback() {
         };
 
         run();
-    }, [auth, location.search, navigate, redirectUri]);
+    }, [auth, location.search, router, redirectUri, location]);
 
     return (
         <div className='grid min-h-svh lg:grid-cols-2'>
@@ -182,12 +189,12 @@ export default function OAuthCallback() {
                         <h1 className='text-2xl font-bold'>{statusMessage}</h1>
                         {errorMessage ? (
                             <>
-                                <p className='text-muted-foreground'>
-                                    {errorMessage}
-                                </p>
+                                <p className='text-muted-foreground'>{errorMessage}</p>
                                 <Button
                                     variant='default'
-                                    onClick={() => navigate('/login', { replace: true })}
+                                    onClick={() =>
+                                        router.navigate({ to: '/login', replace: true })
+                                    }
                                 >
                                     Back to Login
                                 </Button>

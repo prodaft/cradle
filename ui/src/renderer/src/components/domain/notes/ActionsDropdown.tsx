@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -7,6 +6,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Graph, TreeView } from '@phosphor-icons/react';
 import {
     Box,
@@ -91,11 +91,9 @@ export default function ActionsDropdown({
                         </Button>
                     </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>
-                    Actions
-                </TooltipContent>
+                <TooltipContent>Actions</TooltipContent>
             </Tooltip>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align='end' className='w-48'>
                 {/* View / editor mode options */}
                 <DropdownMenuItem
                     onClick={() => {
@@ -193,28 +191,24 @@ export default function ActionsDropdown({
                         {showOutline && <Check width='16' height='16' />}
                     </DropdownMenuItem>
                 )}
-                {lspLoaded &&
-                    enableEditing &&
-                    activeView === ViewMode.CONTENT && (
-                        <DropdownMenuItem
-                            onClick={() => smartLink(false)}
-                            data-testid='auto-link-menu-item'
-                        >
-                            <LightBulb width='16' height='16' />
-                            <span className='flex-1'>Auto Link</span>
-                        </DropdownMenuItem>
-                    )}
-                {enableEditing &&
-                    lspLoaded &&
-                    activeView === ViewMode.CONTENT && (
-                        <DropdownMenuItem
-                            onClick={() => smartLink(true)}
-                            data-testid='add-timestamps-menu-item'
-                        >
-                            <LightBulb width='16' height='16' />
-                            <span className='flex-1'>Add Timestamps</span>
-                        </DropdownMenuItem>
-                    )}
+                {lspLoaded && enableEditing && activeView === ViewMode.CONTENT && (
+                    <DropdownMenuItem
+                        onClick={() => smartLink(false)}
+                        data-testid='auto-link-menu-item'
+                    >
+                        <LightBulb width='16' height='16' />
+                        <span className='flex-1'>Auto Link</span>
+                    </DropdownMenuItem>
+                )}
+                {enableEditing && lspLoaded && activeView === ViewMode.CONTENT && (
+                    <DropdownMenuItem
+                        onClick={() => smartLink(true)}
+                        data-testid='add-timestamps-menu-item'
+                    >
+                        <LightBulb width='16' height='16' />
+                        <span className='flex-1'>Add Timestamps</span>
+                    </DropdownMenuItem>
+                )}
                 {isAdmin && !isFleeting && activeView !== ViewMode.GRAPH && (
                     <>
                         <DropdownMenuSeparator />
@@ -272,7 +266,7 @@ export default function ActionsDropdown({
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                     onClick={handleDelete}
-                    variant="destructive"
+                    variant='destructive'
                     data-testid='delete-note-menu-item'
                 >
                     <Trash width='16' height='16' />

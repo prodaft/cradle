@@ -1,5 +1,6 @@
 import { ApiContext } from '@/hooks/api/useApi';
-import useAuth from '@/hooks/auth/useAuth';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import { queryClient } from '@/query/queryClient';
 import { getApiBaseUrl } from '@/utils/url';
 import {
     AccessApi,
@@ -18,7 +19,7 @@ import {
     UserApi,
 } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
-import { ReactNode, useMemo } from 'react';
+import { ReactNode, useEffect, useMemo } from 'react';
 
 interface ApiProviderProps {
     children: ReactNode;
@@ -30,24 +31,23 @@ interface ApiProviderProps {
  * Automatically configures authentication based on AuthContext
  */
 export function ApiProvider({ children }: ApiProviderProps) {
-    const { getAccessToken, isLoggedIn, tokenVersion, basePath, setBasePath } =
-        useAuth();
+    const { basePath } = useAuthState();
+    const { getAccessToken, isLoggedIn, setBasePath } = useAuthActions();
     const apiBasePath = useMemo(() => getApiBaseUrl(basePath), [basePath]);
 
     const configuration = useMemo(() => {
         return new Configuration({
             basePath: apiBasePath,
-            accessToken: isLoggedIn()
-                ? async () => {
-                    const token = await getAccessToken();
-                    return token;
-                }
-                : undefined,
+            accessToken: async () => {
+                // Decide at call time, not memo time
+                if (!isLoggedIn()) return '';
+                return await getAccessToken();
+            },
             // Note: Don't set Content-Type as a default header here.
             // Individual API methods set it as needed (e.g., 'application/json' for JSON requests).
             // For file uploads, the browser must set 'multipart/form-data' with the boundary automatically.
         });
-    }, [tokenVersion, apiBasePath, getAccessToken, isLoggedIn]);
+    }, [apiBasePath, getAccessToken, isLoggedIn]);
 
     // Create API instances with the configuration
     const apis = useMemo(() => {
@@ -68,6 +68,15 @@ export function ApiProvider({ children }: ApiProviderProps) {
             usersApi: new UserApi(configuration),
         };
     }, [configuration]);
+
+    // Cancel and clear all queries when basePath changes (env switch)
+    // This ensures stale data from the old basePath is cleared and in-flight requests are cancelled
+    useEffect(() => {
+        queryClient.cancelQueries();
+        queryClient.clear();
+        // Optional: force re-login on env switch
+        // auth.logOut();
+    }, [apiBasePath]);
 
     return (
         <ApiContext.Provider value={{ ...apis, basePath: apiBasePath, setBasePath }}>

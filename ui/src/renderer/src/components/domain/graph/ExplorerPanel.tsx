@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useMemo, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
 
 interface ExplorerPanelProps {
@@ -145,10 +145,14 @@ export default function ExplorerPanel({
                                                 variant='link'
                                                 size='sm'
                                                 type='button'
-                                                onClick={() => toggleConnections(node.id)}
+                                                onClick={() =>
+                                                    toggleConnections(node.id)
+                                                }
                                                 className='text-xs h-auto p-0'
                                             >
-                                                {isExpanded ? 'Show less' : `Show all (${connectedNodes.length})`}
+                                                {isExpanded
+                                                    ? 'Show less'
+                                                    : `Show all (${connectedNodes.length})`}
                                             </Button>
                                         )}
                                     </div>
@@ -159,7 +163,9 @@ export default function ExplorerPanel({
                                                 variant='outline'
                                                 size='sm'
                                                 type='button'
-                                                onClick={() => onNodeClick?.(connectedNode)}
+                                                onClick={() =>
+                                                    onNodeClick?.(connectedNode)
+                                                }
                                                 className='inline-flex items-center gap-1.5 px-2 py-1 text-xs h-auto'
                                                 title={`Click to select ${connectedNode.label || connectedNode.name || connectedNode.id}`}
                                             >

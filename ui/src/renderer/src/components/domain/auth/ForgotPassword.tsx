@@ -1,40 +1,78 @@
-import { toast } from 'sonner';
-import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import Logo from '@components/base/Logo/Logo';
-import { Undo, WarningCircle } from 'iconoir-react';
-import { Link, useLocation } from 'react-router-dom';
-import * as Yup from 'yup';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Field,
+    FieldContent,
     FieldDescription,
+    FieldError,
     FieldGroup,
     FieldLabel,
     FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import useApi from '@/hooks/api/useApi';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { cn } from '@/lib/utils';
-import { useForm } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { useState } from 'react';
+import Logo from '@components/base/Logo/Logo';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { Link, useRouter, useRouterState } from '@tanstack/react-router';
+import { Undo, WarningCircle } from 'iconoir-react';
+import { useEffect, useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-interface FormData {
-    email: string;
-}
-
-const forgotPasswordSchema = Yup.object().shape({
-    email: Yup.string().email('Invalid email').required('Email is required'),
+const forgotPasswordSchema = z.object({
+    email: z
+        .string()
+        .min(1, { error: 'Email is required' })
+        .refine((val) => z.email().safeParse(val).success, {
+            error: 'Invalid email',
+        }),
 });
+
+type FormData = z.infer<typeof forgotPasswordSchema>;
 
 /**
  * ForgotPassword component - renders the form for a user to get a forgot password email.
  */
 export default function ForgotPassword() {
-    const location = useLocation();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const { usersApi } = useApi();
-    const { navigate } = useCradleNavigate();
+    const router = useRouter();
+    const { role } = useAuthState();
+    const { isLoggedIn } = useAuthActions();
+
+    const resetPasswordMutation = useMutation({
+        mutationFn: async (email: string) => {
+            await usersApi.usersResetPasswordCreate({
+                passwordResetRequestRequest: {
+                    email,
+                },
+            });
+        },
+        meta: {
+            successMessage: 'Password change email sent to your inbox!',
+            errorMessage: 'Failed to send reset email. Please try again.',
+        },
+        onError: (error: any) => {
+            setAlert({
+                show: true,
+                message:
+                    error?.detail || 'Failed to send reset email. Please try again.',
+                color: 'red',
+            });
+        },
+        onSuccess: () => {
+            setAlert({
+                show: false,
+                message: '',
+                color: 'red',
+            });
+        },
+    });
     const [alert, setAlert] = useState<{
         show: boolean;
         message: string;
@@ -45,38 +83,28 @@ export default function ForgotPassword() {
         color: 'red',
     });
 
-    const {
-        register,
-        handleSubmit,
-        formState: { errors, isSubmitting },
-    } = useForm<FormData>({
-        resolver: yupResolver(forgotPasswordSchema),
+    const form = useForm<FormData>({
+        resolver: zodResolver(forgotPasswordSchema),
         defaultValues: {
             email: '',
         },
     });
 
-    const onSubmit = async (data: FormData) => {
-        try {
-            await usersApi.usersResetPasswordCreate({
-                passwordResetRequestRequest: {
-                    email: data.email,
-                },
-            });
-            toast.success('Password change email sent to your inbox!');
-            setAlert({
-                show: false,
-                message: '',
-                color: 'red',
-            });
-        } catch (error: any) {
-            setAlert({
-                show: true,
-                message: error?.message || 'Failed to send reset email',
-                color: 'red',
-            });
+    useEffect(() => {
+        // If user is already logged in, redirect to dashboard
+        if (isLoggedIn()) {
+            router.navigate({ to: '/', replace: true });
         }
+    }, [role, router, isLoggedIn]);
+
+    const onSubmit = async (data: FormData) => {
+        resetPasswordMutation.mutate(data.email);
     };
+
+    // If user is logged in, don't render the forgot password form
+    if (isLoggedIn()) {
+        return null;
+    }
 
     return (
         <div className='grid min-h-svh lg:grid-cols-2'>
@@ -88,7 +116,7 @@ export default function ForgotPassword() {
                         <Logo text={true} width='120px' />
                     </a>
                     <Button
-                        onClick={() => navigate('/login', { replace: true })}
+                        onClick={() => router.navigate({ to: '/login', replace: true })}
                         variant='ghost'
                         size='icon-sm'
                         className='p-2 rounded-lg'
@@ -104,7 +132,7 @@ export default function ForgotPassword() {
                     <div className='w-full max-w-xs'>
                         <form
                             className={cn('flex flex-col gap-6')}
-                            onSubmit={handleSubmit(onSubmit)}
+                            onSubmit={form.handleSubmit(onSubmit)}
                         >
                             <FieldGroup>
                                 <div className='flex flex-col items-center gap-1 text-center'>
@@ -116,22 +144,33 @@ export default function ForgotPassword() {
                                         instructions
                                     </p>
                                 </div>
-                                <Field>
-                                    <FieldLabel htmlFor='email'>Email</FieldLabel>
-                                    <Input
-                                        id='email'
-                                        type='email'
-                                        {...register('email')}
-                                        aria-invalid={errors.email ? 'true' : 'false'}
-                                        autoFocus={true}
-                                        required
-                                    />
-                                    {errors.email && (
-                                        <FieldDescription className='text-destructive'>
-                                            {errors.email.message}
-                                        </FieldDescription>
+                                <Controller
+                                    name='email'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Email
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={field.name}
+                                                    type='email'
+                                                    aria-invalid={fieldState.invalid}
+                                                    autoComplete='email'
+                                                    autoFocus={true}
+                                                    required
+                                                />
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        errors={[fieldState.error]}
+                                                    />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
                                     )}
-                                </Field>
+                                />
                                 {alert.show && (
                                     <Alert
                                         variant={
@@ -153,10 +192,10 @@ export default function ForgotPassword() {
                                         variant='default'
                                         size='default'
                                         className='w-full'
-                                        disabled={isSubmitting}
+                                        disabled={form.formState.isSubmitting}
                                         data-testid='login-register-button'
                                     >
-                                        {isSubmitting
+                                        {form.formState.isSubmitting
                                             ? 'Sending...'
                                             : 'Send Reset Link'}
                                     </Button>

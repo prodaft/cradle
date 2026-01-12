@@ -1,4 +1,4 @@
-import { FileDownload, FileReference } from '@services/cradle';
+import { FileDownload, FileReferenceWithNote } from '@services/cradle';
 import { FileTransferApi } from '@services/cradle/apis';
 import matter from 'gray-matter';
 import jsYaml from 'js-yaml';
@@ -224,7 +224,7 @@ export async function processTokens(
 export async function parseWithExtensions(
     md: MarkdownIt,
     mdContent: string,
-    fileData: FileReference[] | undefined,
+    fileData: FileReferenceWithNote[] | undefined,
     entryColors: Map<string, string>,
     fileTransferApi: FileTransferApi,
     baseURL: string,

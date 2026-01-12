@@ -3,8 +3,8 @@
  * Matches the AccountSettings design pattern with label/description on left, button on right
  */
 
-import { ButtonHTMLAttributes, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonHTMLAttributes, ReactNode } from 'react';
 
 export interface SettingsButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     /** Label text for the button row */

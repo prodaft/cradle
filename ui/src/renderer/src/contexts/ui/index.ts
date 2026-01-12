@@ -1,7 +1,6 @@
 /**
  * UI-related context providers
- * Contexts for managing UI state: theme, modals, and notifications
+ * Contexts for managing UI state: theme, and notifications
  */
 
-export { ModalProvider, useModal } from './ModalContext';
 export { ThemeProvider, useTheme } from './ThemeContext';

@@ -49,8 +49,7 @@ export const useFrontendSearch = (
             setFilteredChildren(children);
         } else {
             const filtered = children.filter((child) => {
-                console.log(child.props);
-                return (
+                const searchableText = (
                     child.props.searchKey ||
                     child.props.name ||
                     child.props.key ||
@@ -58,8 +57,8 @@ export const useFrontendSearch = (
                     ''
                 )
                     .toString()
-                    .toLowerCase()
-                    .includes(searchVal.toLowerCase());
+                    .toLowerCase();
+                return searchableText.includes(searchVal.toLowerCase());
             });
             setFilteredChildren(filtered);
         }

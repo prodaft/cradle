@@ -1,4 +1,5 @@
-import { ChangeEvent } from 'react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 interface SearchFilterProps {
     text: string;
@@ -34,21 +35,17 @@ export default function SearchFilter({
         }
     };
 
-    const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const { name, checked } = event.target;
-        setFilters(updatePrevState(filters, name, checked));
+    const handleCheckboxChange = (checked: boolean) => {
+        setFilters(updatePrevState(filters, option, checked));
     };
 
     return (
-        <label key={option} className='flex items-center space-x-3 w-36'>
-            <input
-                type='checkbox'
-                className='cradle-checkbox'
-                name={option}
+        <Label key={option} className='flex items-center space-x-3 w-36'>
+            <Checkbox
                 checked={filters.includes(option)}
-                onChange={handleCheckboxChange}
+                onCheckedChange={handleCheckboxChange}
             />
             <span className='text-muted-foreground'>{text}</span>
-        </label>
+        </Label>
     );
 }

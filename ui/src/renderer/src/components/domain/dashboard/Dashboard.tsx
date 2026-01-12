@@ -1,16 +1,12 @@
-import { toast } from 'sonner';
-import { useProfile } from '@/contexts/user/ProfileContext';
+import { Card, CardContent } from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { EntryResponse } from '@services/cradle/models';
-import { useEffect, useRef, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
-import NotFound from '../../feedback/NotFound';
+import { useMutation } from '@tanstack/react-query';
+import { useLoaderData, useRouter } from '@tanstack/react-router';
+import { useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './Relations';
-import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Dashboard component
@@ -28,43 +24,32 @@ import { Spinner } from '@/components/ui/spinner';
  * @constructor
  */
 export default function Dashboard() {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const location = useLocation();
-    const { subtype, name } = useParams<{ subtype: string; name: string }>();
-    const [entryMissing, setEntryMissing] = useState(false);
-    const [contentObject, setContentObject] = useState<EntryResponse | null>(null);
-    const { queryApi, entriesApi } = useApi();
-    const { navigate } = useCradleNavigate();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { profile, isAdmin } = useProfile();
+    const loaderData = useLoaderData({
+        from: '/_authenticated/dashboards/$subtype/$name',
+    });
+    const contentObject = loaderData?.entry || undefined;
+    const { entriesApi } = useApi();
+    const router = useRouter();
     const dashboard = useRef<HTMLDivElement>(null);
-    const { execute } = useAPICall();
 
-    // On load, fetch the dashboard data for the entry
+    const deleteEntityMutation = useMutation({
+        mutationFn: async (entityId: number) => {
+            await entriesApi.entitiesDestroy({ entityId });
+        },
+        meta: {
+            successMessage: 'Entity deleted successfully.',
+        },
+        onSuccess: () => {
+            router.navigate({ to: '/' });
+        },
+    });
+
+    // Scroll to top on mount
     useEffect(() => {
-        setEntryMissing(false);
-        setContentObject(null);
-
-        if (!subtype || !name) {
-            setEntryMissing(true);
-            return;
+        if (dashboard.current) {
+            dashboard.current.scrollTo(0, 0);
         }
-
-        queryApi
-            .queryList({ subtype: [subtype], nameExact: [name] })
-            .then((response) => {
-                if (response.count !== 1) {
-                    setEntryMissing(true);
-                    return;
-                }
-                const obj = response.results[0];
-
-                if (dashboard.current) {
-                    dashboard.current.scrollTo(0, 0);
-                }
-                setContentObject(obj);
-            });
-    }, [subtype, name, setEntryMissing, setContentObject, queryApi]);
+    }, [contentObject]);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const handleDelete = () => {
@@ -74,25 +59,10 @@ export default function Dashboard() {
             toast.error('Only entities can be deleted.');
             return;
         }
-
-        execute(() => entriesApi.entitiesDestroy({ entityId: contentObject.id! }), {
-            successMessage: 'Entity deleted successfully.',
-        })
-            .then(() => {
-                navigate('/');
-            })
-            .catch(() => {});
+        if (contentObject.id) {
+            deleteEntityMutation.mutate(contentObject.id);
+        }
     };
-
-    if (entryMissing) {
-        return (
-            <NotFound
-                message={
-                    'The entry you are looking for does not exist or you do not have access to it. If you believe the entry exists contact an administrator for access.'
-                }
-            />
-        );
-    }
 
     return (
         <>
@@ -100,49 +70,49 @@ export default function Dashboard() {
                 className='w-full h-full flex justify-center items-center overflow-x-hidden overflow-y-hidden'
                 ref={dashboard}
             >
-                {contentObject == null ? (
-                    <div className='flex items-center justify-center h-full'>
-                        <Spinner className='size-10' />
-                    </div>
-                ) : (
-                    <div className='w-full h-full flex flex-col p-6 space-y-4'>
-                        {contentObject.name && (
-                            <div className='flex justify-between items-center w-full border-border-b px-4 pb-4'>
-                                <div>
-                                    <h1 className='text-3xl font-medium break-all text-foreground cradle-mono tracking-tight'>
-                                        {contentObject.type && (
-                                            <span className='text-muted-foreground text-2xl mr-2'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
-                                        )}
-                                        {contentObject.name}
-                                    </h1>
-                                    {contentObject.description && (
-                                        <p className='text-sm text-foreground mt-2 cradle-mono'>
-                                            {contentObject.description}
-                                        </p>
+                <div className='w-full h-full flex flex-col p-6 space-y-4'>
+                    {contentObject.name && (
+                        <div className='flex justify-between items-center w-full border-border-b px-4 pb-4'>
+                            <div>
+                                <h1 className='text-3xl font-medium break-all text-foreground font-mono tracking-wide tracking-tight'>
+                                    {contentObject.type && (
+                                        <span className='text-muted-foreground text-2xl mr-2'>{`${contentObject.subtype ? contentObject.subtype : contentObject.type}:`}</span>
                                     )}
-                                </div>
+                                    {contentObject.name}
+                                </h1>
+                                {contentObject.description && (
+                                    <p className='text-sm text-foreground mt-2 font-mono tracking-wide'>
+                                        {contentObject.description}
+                                    </p>
+                                )}
                             </div>
-                        )}
-                        {contentObject.id && (
-                            <div className='cradle-card'>
-                                <div className='flex flex-col space-y-4 pt-4'>
-                                    <div>
-                                        <h2 className='text-lg font-semibold mb-4'>Notes</h2>
-                                        <Notes obj={contentObject} />
-                                    </div>
-                                    <div>
-                                        <h2 className='text-lg font-semibold mb-4'>Relations</h2>
-                                        <Relations obj={contentObject} />
-                                    </div>
-                                    <div>
-                                        <h2 className='text-lg font-semibold mb-4'>Files</h2>
-                                        <Files obj={contentObject} />
-                                    </div>
+                        </div>
+                    )}
+                    {contentObject.id && (
+                        <Card>
+                            <CardContent className='flex flex-col space-y-4 pt-4'>
+                                <div>
+                                    <h2 className='text-lg font-semibold mb-4'>
+                                        Notes
+                                    </h2>
+                                    <Notes obj={contentObject} />
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
+                                <div>
+                                    <h2 className='text-lg font-semibold mb-4'>
+                                        Relations
+                                    </h2>
+                                    <Relations obj={contentObject} />
+                                </div>
+                                <div>
+                                    <h2 className='text-lg font-semibold mb-4'>
+                                        Files
+                                    </h2>
+                                    <Files obj={contentObject} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </div>
             </div>
             <div className='w-full h-8' />
         </>

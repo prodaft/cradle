@@ -1,9 +1,10 @@
-import { NotificationsPanel } from '@components/domain/notifications';
-import React, { useCallback, useRef, useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import Navbar from '../Navbar/Navbar';
 import { AppSidebar } from '@/components/app-sidebar';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { Spinner } from '@/components/ui/spinner';
+import { NotificationsPanel } from '@components/domain/notifications';
+import { Outlet } from '@tanstack/react-router';
+import React, { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import Navbar from '../Navbar/Navbar';
 
 /**
  * MainLayout component - The main layout that includes sidebar and content area
@@ -48,12 +49,20 @@ export default function MainLayout(): React.JSX.Element {
         document.addEventListener('mouseup', handleMouseUp);
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (isResizing.current) {
+                isResizing.current = false;
+            }
+        };
+    }, []);
+
     return (
         <SidebarProvider defaultOpen={false}>
             {/* Sidebar */}
-            <AppSidebar 
-              onNotificationsClick={handleNotifications}
-              unreadNotificationsCount={unreadNotificationsCount}
+            <AppSidebar
+                onNotificationsClick={handleNotifications}
+                unreadNotificationsCount={unreadNotificationsCount}
             />
 
             {/* Main Content Area with Navbar */}
@@ -62,36 +71,48 @@ export default function MainLayout(): React.JSX.Element {
                 <Navbar />
 
                 {/* Content Area */}
-                <div className='flex-1 overflow-hidden relative'>
+                <div className='flex-1 overflow-hidden relative md:rounded-b-xl'>
                     <div className='absolute inset-0 overflow-y-auto'>
-                        <Outlet />
+                        <Suspense
+                            fallback={
+                                <div className='flex items-center justify-center h-full'>
+                                    <Spinner className='size-10' />
+                                </div>
+                            }
+                        >
+                            <Outlet />
+                        </Suspense>
                     </div>
 
                     {/* Notifications Panel - Overlay */}
                     {showNotifications && (
                         <>
                             {/* Dark backdrop */}
-                            <div 
+                            <div
                                 className='absolute inset-0 bg-black/50 z-40'
                                 onClick={() => setShowNotifications(false)}
                             />
-                            
+
                             {/* Panel */}
-                            <div 
+                            <div
                                 className='absolute right-0 top-0 h-full z-50 flex'
                                 style={{ width: panelWidth }}
                             >
                                 {/* Resize handle */}
-                                <div 
+                                <div
                                     className='w-[3px] h-full bg-muted hover:bg-primary cursor-col-resize transition-colors flex-shrink-0'
                                     onMouseDown={handleMouseDown}
                                 />
-                                
+
                                 {/* Panel content */}
                                 <div className='flex-1 h-full bg-card overflow-hidden'>
                                     <NotificationsPanel
-                                        unreadNotificationsCount={unreadNotificationsCount}
-                                        setUnreadNotificationsCount={setUnreadNotificationsCount}
+                                        unreadNotificationsCount={
+                                            unreadNotificationsCount
+                                        }
+                                        setUnreadNotificationsCount={
+                                            setUnreadNotificationsCount
+                                        }
                                     />
                                 </div>
                             </div>

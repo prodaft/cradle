@@ -1,59 +1,71 @@
-import { useState } from 'react';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, WarningCircle, InfoCircle, Server, Trash } from 'iconoir-react';
 import { Separator } from '@/components/ui/separator';
-import {
-    SettingsButton,
-    SettingsCard,
-} from '../../../forms';
+import useApi from '@/hooks/api/useApi';
+import { useMutation } from '@tanstack/react-query';
+import { CheckCircle, InfoCircle, Server, Trash, WarningCircle } from 'iconoir-react';
+import { useState } from 'react';
+import { SettingsButton, SettingsCard } from '../../../forms';
 
 export default function EntriesManagement() {
     const { managementApi } = useApi();
-    const { execute } = useAPICall();
-    const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({ type: null, message: '' });
 
-    const handlePropagateAccessVectors = async () => {
-        try {
-            await execute(
-                () =>
-                    managementApi.managementActionsCreate({
-                        actionName: 'propagateAccessVectors',
-                    }),
-                { suppressNotification: true },
-            );
+    const propagateAccessMutation = useMutation({
+        mutationFn: async () => {
+            await managementApi.managementActionsCreate({
+                actionName: 'propagateAccessVectors',
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: () => {
             setAlert({
                 type: 'success',
                 message: 'Propagate Access Vectors action triggered successfully!',
             });
-        } catch {
+        },
+        onError: () => {
             setAlert({
                 type: 'error',
                 message: 'Error occurred while propagating access vectors.',
             });
-        }
-    };
+        },
+    });
 
-    const handleDeleteHangingArtifacts = async () => {
-        try {
-            const response = await execute(
-                () =>
-                    managementApi.managementActionsCreate({
-                        actionName: 'deleteHangingArtifacts',
-                    }),
-                { suppressNotification: true },
-            );
+    const deleteHangingArtifactsMutation = useMutation({
+        mutationFn: async () => {
+            const response = await managementApi.managementActionsCreate({
+                actionName: 'deleteHangingArtifacts',
+            });
+            return response;
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: (response) => {
             setAlert({
                 type: 'success',
                 message: (response as any)?.message || 'Action completed successfully!',
             });
-        } catch {
+        },
+        onError: () => {
             setAlert({
                 type: 'error',
                 message: 'Error occurred while deleting hanging artifacts.',
             });
-        }
+        },
+    });
+    const [alert, setAlert] = useState<{
+        type: 'success' | 'error' | 'warning' | null;
+        message: string;
+    }>({ type: null, message: '' });
+
+    const handlePropagateAccessVectors = () => {
+        propagateAccessMutation.mutate();
+    };
+
+    const handleDeleteHangingArtifacts = () => {
+        deleteHangingArtifactsMutation.mutate();
     };
 
     return (
@@ -61,8 +73,12 @@ export default function EntriesManagement() {
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>Entry Settings</h2>
-                    <p className='text-muted-foreground'>Manage entries and artifacts</p>
+                    <h2 className='text-2xl font-bold tracking-tight'>
+                        Entry Settings
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        Manage entries and artifacts
+                    </p>
                 </div>
             </div>
 
@@ -80,7 +96,13 @@ export default function EntriesManagement() {
 
                         <div className='space-y-4'>
                             {alert.type && (
-                                <Alert variant={alert.type === 'error' ? 'destructive' : 'default'}>
+                                <Alert
+                                    variant={
+                                        alert.type === 'error'
+                                            ? 'destructive'
+                                            : 'default'
+                                    }
+                                >
                                     {alert.type === 'success' && <CheckCircle />}
                                     {alert.type === 'error' && <WarningCircle />}
                                     {alert.type === 'warning' && <InfoCircle />}

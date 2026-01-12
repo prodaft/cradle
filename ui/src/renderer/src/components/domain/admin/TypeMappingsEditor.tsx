@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { capitalizeString } from '@/utils/dashboard';
-import { useEffect, useState } from 'react';
-import ShadcnSelect from '../../forms/ShadcnSelect';
+import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
+import useApi from '@/hooks/api/useApi';
+import { capitalizeString } from '@/utils/dashboard';
+import { useMutation } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface Option {
     value: string;
@@ -51,7 +51,72 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const [isLoading, setIsLoading] = useState(true);
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const { intelioApi, entriesApi } = useApi();
-    const { execute } = useAPICall();
+
+    // Mutations for fetching data
+    const fetchMappingKeysMutation = useMutation({
+        mutationFn: async () => {
+            return await intelioApi.mappingsKeysSchema({ className: id });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const fetchEntryClassesMutation = useMutation({
+        mutationFn: async () => {
+            return await entriesApi.entryClassesList({});
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const fetchMappingsMutation = useMutation({
+        mutationFn: async () => {
+            return await intelioApi.mappingsSchemaList({ className: id });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    // Mutations for saving/deleting
+    const deleteMappingMutation = useMutation({
+        mutationFn: async (mappingId: string) => {
+            return await intelioApi.mappingsSchemaDestroy({ className: id, mappingId });
+        },
+        meta: {
+            successMessage: 'Mapping deleted successfully',
+            errorMessage: 'Failed to delete mapping',
+        },
+    });
+
+    const saveMappingMutation = useMutation({
+        mutationFn: async (rowData: Record<string, any>) => {
+            return await intelioApi.mappingsSchemaCreateOrUpdate({
+                className: id,
+                ...rowData,
+            });
+        },
+        meta: {
+            successMessage: 'Mapping saved successfully',
+            errorMessage: 'Failed to save mapping',
+        },
+    });
+
+    const saveAllMappingsMutation = useMutation({
+        mutationFn: async (dataToSave: Record<string, any>[]) => {
+            // Save all mappings sequentially
+            const promises = dataToSave.map((rowData) =>
+                intelioApi.mappingsSchemaCreateOrUpdate({ className: id, ...rowData }),
+            );
+            return await Promise.all(promises);
+        },
+        meta: {
+            successMessage: 'All mappings saved successfully',
+            errorMessage: 'Failed to save mappings',
+        },
+    });
 
     const allColumns = columnDefinitions
         ? [
@@ -82,14 +147,11 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         const fetchData = async () => {
             try {
                 // Returns a record of column definitions
-                const mappingKeys = (await intelioApi.mappingsKeysSchema({
-                    className: id,
-                })) as unknown as ColumnDefinitions;
+                const mappingKeys =
+                    (await fetchMappingKeysMutation.mutateAsync()) as unknown as ColumnDefinitions;
 
-                const entryClasses = await entriesApi.entryClassesList({});
-                const mappings = (await intelioApi.mappingsSchemaList({
-                    className: id,
-                })) as any[]; // The response here is a list of objects with dynamic keys
+                const entryClasses = await fetchEntryClassesMutation.mutateAsync();
+                const mappings = (await fetchMappingsMutation.mutateAsync()) as any[]; // The response here is a list of objects with dynamic keys
 
                 // Transform string arrays in options to {value, label} format
                 const transformedMappingKeys: ColumnDefinitions = {};
@@ -190,7 +252,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 initialRows = [...initialRows, createLocalEmptyRow(cols)];
                 setRows(initialRows);
             } catch (error) {
-                console.error('Error fetching column definitions:', error);
+                // Error already handled by mutation
             } finally {
                 setIsLoading(false);
             }
@@ -327,14 +389,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         });
 
         if (row.id) {
-            execute(
-                () =>
-                    intelioApi.mappingsSchemaDestroy({
-                        className: id,
-                        mappingId: row.id ?? undefined,
-                    }),
-                { successMessage: 'Mapping deleted successfully' },
-            ).catch(() => {});
+            deleteMappingMutation.mutate(row.id);
         }
     };
 
@@ -386,23 +441,16 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             }
         }
 
-        execute(
-            () =>
-                intelioApi.mappingsSchemaCreateOrUpdate({
-                    className: id,
-                    requestBody: rowData,
-                }),
-            { successMessage: 'Mapping saved successfully' },
-        )
-            .then(() => {
+        saveMappingMutation.mutate(rowData, {
+            onSuccess: () => {
                 // Update the row to mark it as not edited
                 setRows((prevRows) =>
                     prevRows.map((r, idx) =>
                         idx === rowIndex ? { ...r, edited: false } : r,
                     ),
                 );
-            })
-            .catch(() => {});
+            },
+        });
     };
 
     const handleSaveAll = () => {
@@ -453,25 +501,14 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             return;
         }
 
-        execute(
-            () =>
-                Promise.all(
-                    dataToSave.map((row) =>
-                        intelioApi.mappingsSchemaCreateOrUpdate({
-                            className: id,
-                            requestBody: row,
-                        }),
-                    ),
-                ),
-            { successMessage: 'All mappings saved successfully' },
-        )
-            .then(() => {
+        saveAllMappingsMutation.mutate(dataToSave, {
+            onSuccess: () => {
                 // Update all rows to mark them as not edited
                 setRows((prevRows) =>
                     prevRows.map((r) => (r.edited ? { ...r, edited: false } : r)),
                 );
-            })
-            .catch(() => {});
+            },
+        });
     };
 
     // Get used internal_class values to filter options
@@ -493,8 +530,12 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>Edit Type Mappings</h2>
-                    <p className='text-muted-foreground'>Manage data type transformations</p>
+                    <h2 className='text-2xl font-bold tracking-tight'>
+                        Edit Type Mappings
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        Manage data type transformations
+                    </p>
                 </div>
             </div>
 
@@ -564,7 +605,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                     <Button
                                                         variant='ghost'
                                                         size='sm'
-                                                        onClick={() => handleSaveRow(index)}
+                                                        onClick={() =>
+                                                            handleSaveRow(index)
+                                                        }
                                                         className='text-primary hover:text-primary/80'
                                                     >
                                                         Save
@@ -584,29 +627,17 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         key={`${index}-${column}`}
                                                         className='px-2 py-2'
                                                     >
-                                                        <ShadcnSelect
-                                                            value={row[column]}
-                                                            onChange={(option) =>
-                                                                handleCellChange(
-                                                                    index,
-                                                                    column,
-                                                                    option,
-                                                                )
+                                                        <Input
+                                                            value={
+                                                                row[column]?.label || ''
                                                             }
-                                                            staticOptions={
-                                                                column ===
-                                                                'internal_class'
-                                                                    ? getAvailableInternalClassOptions(
-                                                                          index,
-                                                                      )
-                                                                    : colDef.options
-                                                            }
+                                                            disabled={true}
+                                                            className='w-full'
                                                             placeholder={
                                                                 colDef.required
                                                                     ? 'Required...'
                                                                     : 'Select...'
                                                             }
-                                                            isClearable={!colDef.required}
                                                         />
                                                     </td>
                                                 );
@@ -616,9 +647,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         key={`${index}-${column}`}
                                                         className='px-2 py-2'
                                                     >
-                                                        <input
+                                                        <Input
                                                             type='number'
-                                                            value={row[column]}
+                                                            value={row[column] ?? ''}
                                                             onChange={(e) =>
                                                                 handleCellChange(
                                                                     index,
@@ -626,11 +657,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     e.target.value,
                                                                 )
                                                             }
-                                                            className={`cradle-input w-full ${
-                                                                hasError
-                                                                    ? 'border-destructive'
-                                                                    : ''
-                                                            }`}
+                                                            className='w-full'
                                                             min={colDef.min}
                                                             max={colDef.max}
                                                             placeholder={
@@ -647,9 +674,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                         key={`${index}-${column}`}
                                                         className='px-2 py-2'
                                                     >
-                                                        <input
+                                                        <Input
                                                             type='text'
-                                                            value={row[column]}
+                                                            value={row[column] ?? ''}
                                                             onChange={(e) =>
                                                                 handleCellChange(
                                                                     index,
@@ -657,11 +684,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     e.target.value,
                                                                 )
                                                             }
-                                                            className={`cradle-input w-full ${
-                                                                hasError
-                                                                    ? 'border-destructive'
-                                                                    : ''
-                                                            }`}
+                                                            className='w-full'
                                                             minLength={colDef.minLength}
                                                             maxLength={colDef.maxLength}
                                                             pattern={colDef.pattern}

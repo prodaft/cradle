@@ -1,11 +1,20 @@
+import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import PaginationWrapper from '@/components/base/Pagination/PaginationWrapper';
+import TableActionsButton from '@/components/base/TableActionsButton';
 import ActionConfirmationModal from '@/components/modals/base/ActionConfirmationModal';
-import { useModal } from '@/contexts/ui/ModalContext';
-import { toast } from 'sonner';
-import { useAuth } from '@hooks';
+import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable, type BulkAction } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { getApiBaseUrl } from '@/utils/url';
-import { useCallback, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
+import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { Trash } from 'iconoir-react/regular';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 interface UserSession {
     id: string;
@@ -26,16 +35,29 @@ interface ActiveSessionsProps {
  * ActiveSessions component - Displays and manages active user sessions
  */
 export default function ActiveSessions({ userId }: ActiveSessionsProps) {
-    const [sessions, setSessions] = useState<UserSession[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const { setModal } = useModal();
-    const auth = useAuth();
-    const basePath = getApiBaseUrl(auth.basePath);
+    const [selectedSessions, setSelectedSessions] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [revokeModalOpen, setRevokeModalOpen] = useState(false);
+    const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
+    const [bulkRevokeModalOpen, setBulkRevokeModalOpen] = useState(false);
+    const { basePath: authBasePath } = useAuthState();
+    const { getAccessToken, logOut } = useAuthActions();
+    const basePath = getApiBaseUrl(authBasePath);
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ strict: false });
+    const queryClient = useQueryClient();
 
-    const fetchSessions = useCallback(async () => {
-        setIsLoading(true);
-        try {
-            const token = await auth.getAccessToken();
+    // Query for sessions
+    const { data: sessions = [], isPending } = useQuery({
+        queryKey: ['users', 'detail', `${userId}-sessions`],
+        queryFn: async () => {
+            const token = await getAccessToken();
             const response = await fetch(`${basePath}/users/${userId}/sessions/`, {
                 method: 'GET',
                 headers: {
@@ -44,18 +66,16 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 },
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                setSessions(data);
-            } else {
-                console.error('Failed to fetch sessions');
+            if (!response.ok) {
+                throw new Error('Failed to fetch sessions');
             }
-        } catch (error) {
-            console.error('Error fetching sessions:', error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [userId, basePath, auth]);
+
+            return response.json() as Promise<UserSession[]>;
+        },
+        meta: {
+            errorMessage: 'Failed to fetch sessions',
+        },
+    });
 
     const getCurrentSessionJti = useCallback((): string | null => {
         // Get the refresh token from localStorage and decode it to get the JTI
@@ -72,152 +92,476 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             );
             return payload.jti || null;
         } catch (error) {
-            console.error('Error decoding refresh token:', error);
+            // Invalid token, return null
             return null;
         }
     }, []);
 
+    // Revoke session mutation
+    const revokeSessionMutation = useMutation({
+        mutationFn: async (sessionId: string) => {
+            const token = await getAccessToken();
+            const response = await fetch(
+                `${basePath}/users/${userId}/sessions/${sessionId}/`,
+                {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                },
+            );
+
+            if (!response.ok) {
+                throw new Error('Failed to revoke session');
+            }
+
+            return response;
+        },
+        meta: {
+            invalidateQueries: [
+                { queryKey: ['users', 'detail', `${userId}-sessions`] },
+            ],
+            successMessage: 'Session revoked successfully',
+            errorMessage: 'Failed to revoke session',
+        },
+    });
+
     const revokeSession = useCallback(
         async (sessionId: string) => {
             try {
-                const token = await auth.getAccessToken();
-                const response = await fetch(
-                    `${basePath}/users/${userId}/sessions/${sessionId}/`,
-                    {
+                await revokeSessionMutation.mutateAsync(sessionId);
+
+                // Check if this is the current session by comparing JTI
+                const session = sessions.find((s) => s.id === sessionId);
+                const currentJti = getCurrentSessionJti();
+                const isCurrentSession =
+                    session && currentJti && session.refresh_token_jti === currentJti;
+
+                // If current session was revoked, log out immediately
+                if (isCurrentSession || session?.is_current) {
+                    // Clear tokens and log out
+                    logOut();
+                } else {
+                    setSelectedSessions((prev) =>
+                        prev.filter((id) => id !== sessionId),
+                    );
+                }
+            } catch (error) {
+                // Error already handled by mutation
+            }
+        },
+        [
+            userId,
+            basePath,
+            getAccessToken,
+            sessions,
+            revokeSessionMutation,
+            getCurrentSessionJti,
+            logOut,
+        ],
+    );
+
+    const revokeSessions = useCallback(
+        async (sessionIds: string[]) => {
+            try {
+                const token = await getAccessToken();
+                const revokePromises = sessionIds.map((sessionId) =>
+                    fetch(`${basePath}/users/${userId}/sessions/${sessionId}/`, {
                         method: 'DELETE',
                         headers: {
                             Authorization: `Bearer ${token}`,
                             'Content-Type': 'application/json',
                         },
-                    },
+                    }),
                 );
 
-            if (response.ok) {
-                toast.success('Session revoked successfully');
-                
-                // Check if this is the current session by comparing JTI
-                const session = sessions.find(s => s.id === sessionId);
-                const currentJti = getCurrentSessionJti();
-                const isCurrentSession = session && currentJti && session.refresh_token_jti === currentJti;
-                
-                // If current session was revoked, log out immediately
-                if (isCurrentSession || session?.is_current) {
-                    // Clear tokens and log out
-                    auth.logOut();
+                const results = await Promise.allSettled(revokePromises);
+                const successes = results.filter(
+                    (r) => r.status === 'fulfilled' && r.value.ok,
+                ).length;
+                const failures = results.length - successes;
+
+                if (failures === 0) {
+                    toast.success(
+                        `Successfully revoked ${successes} session${successes > 1 ? 's' : ''}`,
+                    );
+                } else if (successes === 0) {
+                    toast.error(
+                        `Failed to revoke ${failures} session${failures > 1 ? 's' : ''}`,
+                    );
                 } else {
-                    fetchSessions();
+                    toast.success(
+                        `Revoked ${successes} session${successes > 1 ? 's' : ''}, ${failures} failed`,
+                    );
                 }
-            } else {
-                toast.error('Failed to revoke session');
+
+                const currentJti = getCurrentSessionJti();
+                const revokedSessions = sessions.filter((s) =>
+                    sessionIds.includes(s.id),
+                );
+                const isCurrentSessionRevoked = revokedSessions.some(
+                    (s) => currentJti && s.refresh_token_jti === currentJti,
+                );
+
+                if (isCurrentSessionRevoked) {
+                    logOut();
+                } else {
+                    queryClient.invalidateQueries({
+                        queryKey: [`users`, `detail`, `${userId}-sessions`],
+                    });
+                    setSelectedSessions([]);
+                }
+            } catch (error) {
+                toast.error('Failed to revoke sessions');
             }
-        } catch (error) {
-            console.error('Error revoking session:', error);
-            toast.error('Failed to revoke session');
-        }
-    }, [userId, basePath, auth, sessions, fetchSessions, getCurrentSessionJti]);
-
-    const openRevokeConfirmationModal = useCallback(
-        (sessionId: string) => {
-            const session = sessions.find((s) => s.id === sessionId);
-            const currentJti = getCurrentSessionJti();
-            const isCurrentSession =
-                session && currentJti && session.refresh_token_jti === currentJti;
-
-            setModal(ActionConfirmationModal, {
-                onConfirm: () => revokeSession(sessionId),
-                text: isCurrentSession
-                    ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
-                    : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.',
-            });
         },
-        [sessions, setModal, revokeSession, getCurrentSessionJti],
+        [
+            userId,
+            basePath,
+            sessions,
+            queryClient,
+            getCurrentSessionJti,
+            getAccessToken,
+            logOut,
+        ],
     );
 
-    useEffect(() => {
-        fetchSessions();
-    }, [fetchSessions]);
+    const openRevokeConfirmationModal = useCallback((sessionId: string) => {
+        setRevokeSessionId(sessionId);
+        setRevokeModalOpen(true);
+    }, []);
 
-    const formatDate = (dateString: string): string => {
+    // Query automatically fetches on mount and when dependencies change
+
+    const formatDate = useCallback((dateString: string): string => {
         const date = new Date(dateString);
         return date.toLocaleString();
-    };
+    }, []);
 
-    const formatDeviceInfo = (deviceInfo: string | null): string => {
+    const formatDeviceInfo = useCallback((deviceInfo: string | null): string => {
         if (!deviceInfo) return 'Unknown device';
         // Truncate long device info
         return deviceInfo.length > 50
             ? deviceInfo.substring(0, 50) + '...'
             : deviceInfo;
-    };
+    }, []);
 
     // Mark current session by comparing JTI
     const currentJti = getCurrentSessionJti();
-    const sessionsWithCurrent = sessions.map((session) => ({
-        ...session,
-        is_current: currentJti
-            ? session.refresh_token_jti === currentJti
-            : session.is_current,
-    }));
+    const sessionsWithCurrent = useMemo(
+        () =>
+            sessions.map((session) => ({
+                ...session,
+                is_current: currentJti
+                    ? session.refresh_token_jti === currentJti
+                    : session.is_current,
+            })),
+        [sessions, currentJti],
+    );
 
-    if (isLoading) {
-        return (
-            <div className='py-2'>
-                <div className='text-sm text-muted-foreground'>Loading sessions...</div>
-            </div>
+    // Filter sessions based on search query
+    const filteredSessions = useMemo(() => {
+        if (!searchQuery) return sessionsWithCurrent;
+        const query = searchQuery.toLowerCase();
+        return sessionsWithCurrent.filter(
+            (session) =>
+                session.device_info?.toLowerCase().includes(query) ||
+                session.ip_address?.toLowerCase().includes(query) ||
+                formatDate(session.created_at).toLowerCase().includes(query) ||
+                formatDate(session.last_activity).toLowerCase().includes(query),
         );
-    }
+    }, [sessionsWithCurrent, searchQuery, formatDate]);
 
-    if (sessions.length === 0) {
-        return (
-            <div className='py-2'>
-                <div className='text-sm text-muted-foreground'>No active sessions</div>
-            </div>
-        );
-    }
+    // Calculate total pages from filtered sessions
+    const totalPages = useMemo(() => {
+        return Math.max(1, Math.ceil(filteredSessions.length / pageSize));
+    }, [filteredSessions.length, pageSize]);
 
-    return (
-        <div className='py-2 space-y-3'>
-            {sessionsWithCurrent.map((session, index) => (
-                <div key={session.id}>
-                    <div className='flex items-center justify-between'>
-                        <div className='flex-1'>
-                            <div className='flex items-center gap-2'>
-                                <span className='text-sm text-muted-foreground'>
-                                    {formatDeviceInfo(session.device_info)}
-                                </span>
-                                {session.is_current && (
-                                    <span className='text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30'>
-                                        Current
-                                    </span>
-                                )}
-                            </div>
-                            <div className='text-xs text-muted-foreground mt-0.5'>
-                                {session.ip_address && (
-                                    <span className='mr-3'>
-                                        IP: {session.ip_address}
-                                    </span>
-                                )}
-                                <span>
-                                    Last activity: {formatDate(session.last_activity)}
-                                </span>
+    // Paginate filtered sessions
+    const paginatedSessions = useMemo(() => {
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+        return filteredSessions.slice(start, end);
+    }, [filteredSessions, page, pageSize]);
+
+    // Handle row selection
+    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
+        setSelectedSessions(selectedIds);
+    }, []);
+
+    // Handle sorting change
+    const handleSortingChange = useCallback((newSorting: SortingState) => {
+        setSorting(newSorting);
+        setPage(1);
+    }, []);
+
+    // Handle page change
+    const handlePageChange = useCallback(
+        (newPage: number) => {
+            setPage(newPage);
+            const newSearch: any = {
+                ...search,
+                sessions_page: String(newPage),
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch,
+            });
+        },
+        [router, location.pathname, search],
+    );
+
+    // Handle page size change
+    const handlePageSizeChange = useCallback(
+        (newSize: number) => {
+            setPageSize(newSize);
+            setPage(1);
+            const newSearch: any = {
+                ...search,
+                sessions_pagesize: String(newSize),
+                sessions_page: '1',
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch,
+            });
+        },
+        [router, location.pathname, search],
+    );
+
+    // Sync URL params to state
+    useEffect(() => {
+        const pageFromParams = (search as any)?.sessions_page || 1;
+        const pageSizeFromParams = (search as any)?.sessions_pagesize || 10;
+        if (pageFromParams !== page) setPage(pageFromParams);
+        if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
+    }, [(search as any)?.sessions_page, (search as any)?.sessions_pagesize]);
+
+    const columns = useMemo<ColumnDef<UserSession>[]>(
+        () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(value) =>
+                            table.toggleAllPageRowsSelected(!!value)
+                        }
+                        aria-label='Select all'
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label='Select row'
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+            },
+            {
+                accessorKey: 'device_info',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='Device' />
+                ),
+                cell: ({ row }) => {
+                    const session = row.original;
+                    return (
+                        <div className='flex items-center gap-2'>
+                            <span className='text-sm'>
+                                {formatDeviceInfo(session.device_info)}
+                            </span>
+                            {session.is_current && (
+                                <Badge variant='default' className='text-xs'>
+                                    Current
+                                </Badge>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'ip_address',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='IP Address' />
+                ),
+                cell: ({ row }) => {
+                    const ip = row.original.ip_address;
+                    return (
+                        <span className='text-sm text-muted-foreground'>
+                            {ip || '-'}
+                        </span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'created_at',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='Created' />
+                ),
+                cell: ({ row }) => (
+                    <span className='text-sm text-muted-foreground'>
+                        {formatDate(row.original.created_at)}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'last_activity',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='Last Activity' />
+                ),
+                cell: ({ row }) => (
+                    <span className='text-sm text-muted-foreground'>
+                        {formatDate(row.original.last_activity)}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'expires_at',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='Expires' />
+                ),
+                cell: ({ row }) => (
+                    <span className='text-sm text-muted-foreground'>
+                        {formatDate(row.original.expires_at)}
+                    </span>
+                ),
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    const session = row.original;
+                    return (
+                        <div
+                            className='w-12 text-right'
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className='flex justify-end'>
+                                <TableActionsButton>
+                                    <DropdownMenuItem
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            openRevokeConfirmationModal(session.id);
+                                        }}
+                                        variant='destructive'
+                                    >
+                                        <Trash width='18' height='18' />
+                                        Revoke
+                                    </DropdownMenuItem>
+                                </TableActionsButton>
                             </div>
                         </div>
-                        <Button
-                            type='button'
-                            onClick={() => openRevokeConfirmationModal(session.id)}
-                            variant='outline'
-                            size='sm'
-                            className='ml-4'
-                            title='Revoke session'
-                        >
-                            Revoke
-                        </Button>
-                    </div>
-                    {index < sessionsWithCurrent.length - 1 && (
-                        <div className='h-px bg-border/50 my-3' />
-                    )}
-                </div>
-            ))}
+                    );
+                },
+                enableSorting: false,
+            },
+        ],
+        [openRevokeConfirmationModal],
+    );
+
+    const bulkActions: BulkAction[] = [
+        {
+            id: 'revoke',
+            label: 'Revoke',
+            icon: <Trash width={18} height={18} />,
+            onClick: () => {
+                if (selectedSessions.length > 0) {
+                    setBulkRevokeModalOpen(true);
+                }
+            },
+            disabled:
+                isPending ||
+                selectedSessions.length === 0 ||
+                paginatedSessions.length === 0,
+            variant: 'destructive',
+        },
+    ];
+
+    return (
+        <div className='w-full space-y-4'>
+            <ActionBar
+                left={
+                    <ActionBarSearch
+                        placeholder='Search sessions...'
+                        value={searchQuery}
+                        defaultExpanded={Boolean(searchQuery)}
+                        debounceMs={300}
+                        onDebouncedChange={(v) => {
+                            setSearchQuery(v);
+                            setPage(1);
+                        }}
+                        onSubmit={(v) => {
+                            setSearchQuery(v);
+                            setPage(1);
+                        }}
+                    />
+                }
+            />
+            <DataTable
+                columns={columns}
+                data={paginatedSessions}
+                loading={isPending}
+                emptyMessage='No active sessions'
+                enableRowSelection={true}
+                selectedRows={selectedSessions}
+                onRowSelectionChange={handleRowSelectionChange}
+                sorting={sorting}
+                onSortingChange={handleSortingChange}
+                manualPagination={true}
+                manualSorting={true}
+                bulkActions={bulkActions}
+                itemLabel='session'
+            />
+            <PaginationWrapper
+                currentPage={page}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                pageSize={pageSize}
+                onPageSizeChange={handlePageSizeChange}
+                selectedCount={selectedSessions.length}
+                totalRows={filteredSessions.length}
+            />
+            {revokeSessionId !== null &&
+                (() => {
+                    const session = sessions.find((s) => s.id === revokeSessionId);
+                    const currentJti = getCurrentSessionJti();
+                    const isCurrentSession =
+                        session &&
+                        currentJti &&
+                        session.refresh_token_jti === currentJti;
+                    return (
+                        <ActionConfirmationModal
+                            open={revokeModalOpen}
+                            onOpenChange={(open) => {
+                                setRevokeModalOpen(open);
+                                if (!open) setRevokeSessionId(null);
+                            }}
+                            onConfirm={() => {
+                                if (revokeSessionId) {
+                                    revokeSession(revokeSessionId);
+                                }
+                            }}
+                            text={
+                                isCurrentSession
+                                    ? 'Are you sure you want to revoke this session? This is your current session and you will be logged out immediately.'
+                                    : 'Are you sure you want to revoke this session? The device will be signed out and will need to sign in again.'
+                            }
+                        />
+                    );
+                })()}
+            <ActionConfirmationModal
+                open={bulkRevokeModalOpen}
+                onOpenChange={setBulkRevokeModalOpen}
+                onConfirm={() => revokeSessions(selectedSessions)}
+                text={`Are you sure you want to revoke ${selectedSessions.length} session${selectedSessions.length > 1 ? 's' : ''}? The device${selectedSessions.length > 1 ? 's' : ''} will be signed out and will need to sign in again.`}
+            />
         </div>
     );
 }

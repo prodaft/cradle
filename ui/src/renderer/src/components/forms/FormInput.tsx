@@ -2,10 +2,10 @@
  * FormInput - Text input component for react-hook-form
  */
 
+import { Input } from '@/components/ui/input';
 import { FieldValues, Path, useFormContext } from 'react-hook-form';
 import FormFieldWrapper from './shared/FormFieldWrapper';
 import { TextFieldProps } from './shared/types';
-import { Input } from '@/components/ui/input';
 
 /**
  * Text input component that integrates with react-hook-form via useFormContext.

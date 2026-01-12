@@ -1,5 +1,12 @@
-import { ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import React from 'react';
 
 /**
  * Pagination component props
@@ -46,11 +53,11 @@ export default function Pagination({
     onPageSizeChange = null,
     selectedCount,
     totalRows,
-}: PaginationProps): JSX.Element {
-    const handlePageSizeChange = (e: ChangeEvent<HTMLSelectElement>) => {
+}: PaginationProps): React.ReactElement {
+    const handlePageSizeChange = (value: string) => {
         if (!onPageSizeChange) return;
 
-        const newSize = parseInt(e.target.value, 10);
+        const newSize = parseInt(value, 10);
         if (!isNaN(newSize) && newSize > 0) {
             onPageSizeChange(newSize);
         }
@@ -79,28 +86,29 @@ export default function Pagination({
                 {pageSize !== null && onPageSizeChange && (
                     <div className='flex items-center space-x-2'>
                         <p className='text-sm font-medium'>Rows per page</p>
-                        <select
-                            className='h-8 px-3 text-sm rounded-md border border-border-border bg-transparent text-text-foreground focus:outline-none focus:ring-2 focus:ring-border-primary focus:ring-offset-2 cursor-pointer appearance-none'
-                            style={{
-                                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`,
-                                backgroundPosition: 'right 0.5rem center',
-                                backgroundRepeat: 'no-repeat',
-                                backgroundSize: '1.5em 1.5em',
-                                paddingRight: '2.5rem',
-                            }}
-                            value={pageSize}
-                            onChange={handlePageSizeChange}
-                            aria-label='Rows per page'
+                        <Select
+                            value={pageSize.toString()}
+                            onValueChange={handlePageSizeChange}
                         >
-                            {pageSizeOptions.map((size) => (
-                                <option key={size} value={size}>
-                                    {size}
-                                </option>
-                            ))}
-                            {!pageSizeOptions.includes(pageSize) && (
-                                <option value={pageSize}>{pageSize}</option>
-                            )}
-                        </select>
+                            <SelectTrigger
+                                className='h-8 w-[70px]'
+                                aria-label='Rows per page'
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {pageSizeOptions.map((size) => (
+                                    <SelectItem key={size} value={size.toString()}>
+                                        {size}
+                                    </SelectItem>
+                                ))}
+                                {!pageSizeOptions.includes(pageSize) && (
+                                    <SelectItem value={pageSize.toString()}>
+                                        {pageSize}
+                                    </SelectItem>
+                                )}
+                            </SelectContent>
+                        </Select>
                     </div>
                 )}
 

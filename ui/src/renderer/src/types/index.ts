@@ -1,6 +1,6 @@
 // Common type definitions
 
-import { ComponentType, ReactNode } from 'react';
+import { ReactNode } from 'react';
 
 // ============================================================================
 // Base Component Props
@@ -50,39 +50,6 @@ export interface ProfileContextValue {
     isLoading: boolean;
 }
 
-/**
- * @deprecated Use UserRetrieve from @services/cradle/models instead
- */
-export interface User {
-    id: string;
-    username: string;
-    email: string;
-    theme: Theme;
-}
-
-// ============================================================================
-// Modal Types
-// ============================================================================
-
-export interface ModalData<
-    TProps extends Record<string, unknown> = Record<string, unknown>,
-> {
-    Component: ComponentType<TProps & { closeModal: () => void }> | null;
-    props: TProps;
-}
-
-/**
- * Modal component props must include closeModal.
- * Other props are passed through from setModal.
- */
-export interface ModalContextValue {
-    setModal: <TProps extends { closeModal: () => void }>(
-        Component: ComponentType<TProps>,
-        props?: Omit<TProps, 'closeModal'>,
-    ) => void;
-    closeModal: () => void;
-}
-
 // ============================================================================
 // Notification Types
 // ============================================================================
@@ -98,22 +65,6 @@ export interface NotificationOptions {
 
 export interface NotificationContextValue {
     notify: (options: NotificationOptions) => void;
-}
-
-// ============================================================================
-// Route Types
-// ============================================================================
-
-export interface RouteConfig {
-    path: string;
-    label: string;
-    icon?: ComponentType;
-    children?: RouteConfig[];
-}
-
-export interface RouteConfigContextValue {
-    routes: RouteConfig[];
-    setRoutes: (routes: RouteConfig[]) => void;
 }
 
 // ============================================================================
@@ -176,10 +127,6 @@ export interface FileMetadata {
 // NOTE: For graph visualization with D3 force simulation properties,
 // use GraphNode and GraphLink from @/types instead.
 
-/**
- * @deprecated Use GraphNode from @/types for D3 visualizations
- * This is kept for backward compatibility with simpler graph representations
- */
 export interface SimpleGraphNode {
     id: string;
     label: string;

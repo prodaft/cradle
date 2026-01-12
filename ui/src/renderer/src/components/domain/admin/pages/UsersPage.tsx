@@ -1,41 +1,72 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { UserRetrieve } from '@services/cradle/models';
-import { uniqueId } from 'lodash';
-import { ClockRotateRight, Lock } from 'iconoir-react/regular';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { DataTable } from '@/components/ui/data-table';
+import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import PageHeader from '@/components/base/PageHeader';
 import TableActionsButton from '@/components/base/TableActionsButton';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import AccountSettings from '../../user/AccountSettings';
-import ActivityList from '../../activity/ActivityList';
-import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import useApi from '@/hooks/api/useApi';
+import { useProfile } from '@/hooks/user/useProfile';
+import { UserRetrieve } from '@services/cradle/models';
+import { useMutation } from '@tanstack/react-query';
+import { useParams, useRouter } from '@tanstack/react-router';
+import { ColumnDef } from '@tanstack/react-table';
+import { ClockRotateRight, Lock, Trash, UserPlus } from 'iconoir-react/regular';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import AddUserModal from '../../../modals/admin/AddUserModal';
+import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import AdminPageLayout from '../AdminPageLayout';
-import { useProfile } from '@/contexts/user/ProfileContext';
+import AdminUserSettings from './AdminUserSettings';
 
 export default function UsersPage() {
+    const params = useParams({ strict: false });
+    const id = (params as any).id;
+    const router = useRouter();
     const [users, setUsers] = useState<UserRetrieve[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [rightPane, setRightPane] = useState<ReactNode | null>(null);
+    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
     const { usersApi } = useApi();
-    const { execute } = useAPICall();
     const { isAdmin } = useProfile();
+    const [addUserModalOpen, setAddUserModalOpen] = useState(false);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+    const fetchUsersMutation = useMutation({
+        mutationFn: async () => {
+            return await usersApi.usersList();
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const deleteUsersMutation = useMutation({
+        mutationFn: async (userIds: string[]) => {
+            await Promise.all(
+                userIds.map((userId) => usersApi.usersDestroy({ userId })),
+            );
+        },
+        onSuccess: (_, userIds) => {
+            toast.success(
+                `Successfully deleted ${userIds.length} user${userIds.length > 1 ? 's' : ''}`,
+            );
+        },
+        errorMessage: 'Failed to delete users',
+    });
 
     const displayUsers = async () => {
         setIsLoading(true);
-        execute(() => usersApi.usersList())
-            .then((fetchedUsers) => {
-                setUsers(fetchedUsers || []);
-            })
-            .catch(() => {
-                setUsers([]);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
+        try {
+            const fetchedUsers = await fetchUsersMutation.mutateAsync();
+            setUsers(fetchedUsers || []);
+        } catch (error) {
+            setUsers([]);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
@@ -44,30 +75,15 @@ export default function UsersPage() {
     }, []);
 
     const handleUserClick = (user: UserRetrieve) => {
-        setRightPane(<AccountSettings target={String(user.id || user.username)} />);
+        router.navigate({ to: `/manage/users/${user.id || user.username}` as any });
     };
 
     const handleActivityClick = (user: UserRetrieve, e: React.MouseEvent) => {
         e.stopPropagation();
-        setRightPane(
-            <ActivityList
-                content_type='entryclass'
-                username={user.username}
-                name={user.username}
-                key={user.username}
-            />,
-        );
     };
 
     const handlePermissionsClick = (user: UserRetrieve, e: React.MouseEvent) => {
         e.stopPropagation();
-        setRightPane(
-            <AdminPanelUserPermissions
-                username={user.username}
-                id={String(user.id || user.username)}
-                key={String(user.id || user.username)}
-            />,
-        );
     };
 
     const getRoleBadgeVariant = (role?: string) => {
@@ -83,13 +99,83 @@ export default function UsersPage() {
         }
     };
 
+    const handleAddUser = () => {
+        setAddUserModalOpen(true);
+    };
+
+    const handleUserAdded = (newUser: UserRetrieve) => {
+        displayUsers();
+        if (newUser.id || newUser.username) {
+            router.navigate({
+                to: `/manage/users/${newUser.id || newUser.username}` as any,
+            });
+        }
+    };
+
+    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
+        setSelectedUsers(selectedIds);
+    }, []);
+
+    const handleDeleteUsers = async (userIds: string[]) => {
+        deleteUsersMutation.mutate(userIds, {
+            onSuccess: () => {
+                setSelectedUsers([]);
+                displayUsers();
+            },
+            onError: () => {
+                toast.error('Failed to delete users');
+            },
+        });
+    };
+
+    const filteredUsers = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return users;
+        }
+        const query = searchQuery.toLowerCase();
+        return users.filter(
+            (user) =>
+                user.username?.toLowerCase().includes(query) ||
+                user.email?.toLowerCase().includes(query) ||
+                user.role?.toLowerCase().includes(query),
+        );
+    }, [users, searchQuery]);
+
     const columns = useMemo<ColumnDef<UserRetrieve>[]>(
         () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && 'indeterminate')
+                        }
+                        onCheckedChange={(value) =>
+                            table.toggleAllPageRowsSelected(!!value)
+                        }
+                        aria-label='Select all'
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label='Select row'
+                        onClick={(e) => e.stopPropagation()}
+                    />
+                ),
+                enableSorting: false,
+                enableHiding: false,
+            },
             {
                 accessorKey: 'username',
                 header: 'Username',
                 cell: ({ row }) => (
-                    <div className='font-medium cursor-pointer' onClick={() => handleUserClick(row.original)}>
+                    <div
+                        className='font-medium cursor-pointer'
+                        onClick={() => handleUserClick(row.original)}
+                    >
                         {row.original.username}
                     </div>
                 ),
@@ -97,7 +183,9 @@ export default function UsersPage() {
             {
                 accessorKey: 'email',
                 header: 'Email',
-                cell: ({ row }) => <div className='text-muted-foreground'>{row.original.email}</div>,
+                cell: ({ row }) => (
+                    <div className='text-muted-foreground'>{row.original.email}</div>
+                ),
             },
             {
                 accessorKey: 'role',
@@ -126,23 +214,34 @@ export default function UsersPage() {
             },
             {
                 id: 'actions',
-                header: 'Actions',
+                header: '',
                 cell: ({ row }) => {
                     const user = row.original;
                     return (
-                        <div className='flex justify-end' onClick={(e) => e.stopPropagation()}>
-                            <TableActionsButton>
-                                {isAdmin() && (
-                                    <DropdownMenuItem onClick={(e) => handleActivityClick(user, e)}>
-                                        <ClockRotateRight width='18' height='18' />
-                                        View Activity
+                        <div
+                            className='w-12 text-right'
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className='flex justify-end'>
+                                <TableActionsButton>
+                                    {isAdmin() && (
+                                        <DropdownMenuItem
+                                            onClick={(e) =>
+                                                handleActivityClick(user, e)
+                                            }
+                                        >
+                                            <ClockRotateRight width='18' height='18' />
+                                            View Activity
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem
+                                        onClick={(e) => handlePermissionsClick(user, e)}
+                                    >
+                                        <Lock width='18' height='18' />
+                                        Edit Permissions
                                     </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem onClick={(e) => handlePermissionsClick(user, e)}>
-                                    <Lock width='18' height='18' />
-                                    Edit Permissions
-                                </DropdownMenuItem>
-                            </TableActionsButton>
+                                </TableActionsButton>
+                            </div>
                         </div>
                     );
                 },
@@ -152,39 +251,88 @@ export default function UsersPage() {
         [isAdmin],
     );
 
-    const handleAddUser = () => {
-        setRightPane(
-            <AccountSettings
-                isEdit={false}
-                key={uniqueId('user-form-')}
-                onAdd={(newUser: UserRetrieve) => {
-                    displayUsers();
-                    setRightPane(<AccountSettings target={String(newUser.id || newUser.username)} />);
-                }}
-            />,
+    if (id && id !== 'add') {
+        return (
+            <AdminPageLayout>
+                <AdminUserSettings userId={id} />
+            </AdminPageLayout>
         );
-    };
+    }
 
     return (
-        <AdminPageLayout rightPane={rightPane}>
-            <div className='w-full h-full flex flex-col rounded-md px-3'>
-                <div className='flex items-center justify-between py-4'>
-                    <div>
-                        <h2 className='text-2xl font-bold tracking-tight'>Users</h2>
-                        <p className='text-muted-foreground'>Manage user accounts and permissions</p>
+        <AdminPageLayout>
+            <div className='w-full h-full flex flex-col space-y-4'>
+                <PageHeader
+                    title='Users'
+                    description='Manage user accounts and permissions'
+                    actions={
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button onClick={handleAddUser}>
+                                    <UserPlus />
+                                    Add User
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Create a new user account</TooltipContent>
+                        </Tooltip>
+                    }
+                />
+                <div className='px-4 flex-1 flex flex-col'>
+                    <div className='pb-4'>
+                        <ActionBar
+                            left={
+                                <ActionBarSearch
+                                    placeholder='Search users...'
+                                    value={searchQuery}
+                                    onDebouncedChange={setSearchQuery}
+                                    onSubmit={setSearchQuery}
+                                />
+                            }
+                        />
                     </div>
-                    <Button onClick={handleAddUser}>Add User</Button>
-                </div>
-                <div className='flex-1 overflow-hidden'>
-                    <DataTable
-                        columns={columns}
-                        data={users}
-                        loading={isLoading}
-                        emptyMessage='No users found.'
-                        onRowClick={handleUserClick}
-                    />
+                    <div className='flex-1'>
+                        <DataTable
+                            columns={columns}
+                            data={filteredUsers}
+                            loading={isLoading}
+                            emptyMessage='No users found.'
+                            enableRowSelection={true}
+                            selectedRows={selectedUsers}
+                            onRowSelectionChange={handleRowSelectionChange}
+                            onRowClick={handleUserClick}
+                            bulkActions={[
+                                {
+                                    id: 'delete',
+                                    label: 'Delete',
+                                    icon: <Trash width={18} height={18} />,
+                                    onClick: () => {
+                                        if (selectedUsers.length === 0) return;
+                                        setDeleteModalOpen(true);
+                                    },
+                                    disabled:
+                                        isLoading ||
+                                        selectedUsers.length === 0 ||
+                                        filteredUsers.length === 0,
+                                    variant: 'destructive',
+                                },
+                            ]}
+                            itemLabel='user'
+                        />
+                    </div>
                 </div>
             </div>
+            <AddUserModal
+                open={addUserModalOpen}
+                onOpenChange={setAddUserModalOpen}
+                onAdd={handleUserAdded}
+            />
+            <ConfirmDeletionModal
+                open={deleteModalOpen}
+                onOpenChange={setDeleteModalOpen}
+                onConfirm={() => handleDeleteUsers(selectedUsers)}
+                confirmText='DELETE'
+                text={`Are you sure you want to delete ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}? This action is irreversible.`}
+            />
         </AdminPageLayout>
     );
 }

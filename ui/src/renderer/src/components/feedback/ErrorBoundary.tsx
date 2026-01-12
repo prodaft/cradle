@@ -1,6 +1,7 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { logger } from '@/utils/logger';
+import { Component, ErrorInfo, ReactNode } from 'react';
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -24,8 +25,10 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
     }
 
     componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-        // Log error details
-        console.error('ErrorBoundary caught an error:', error, errorInfo);
+        // Log error details - this is a critical error that should always be logged
+        logger.error('ErrorBoundary caught an error', error, {
+            componentStack: errorInfo.componentStack,
+        });
         this.setState({
             error: error,
             errorInfo: errorInfo,

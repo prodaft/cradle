@@ -1,5 +1,6 @@
-import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReactNode } from 'react';
 
 interface Action {
@@ -38,13 +39,20 @@ export default function SearchResult({
             onClick={onClick}
         >
             {depth != null && (
-                <div className='absolute top-2 right-2 cradle-status cradle-status-info z-10'>
+                <Badge
+                    variant='outline'
+                    className='absolute top-2 right-2 text-xs uppercase tracking-wide border-primary text-primary bg-primary/8 rounded-[var(--radius-sm)] z-10'
+                >
                     Depth: {depth}
-                </div>
+                </Badge>
             )}
             <CardHeader>
                 <CardTitle>
-                    {subtype && <span className='text-text-muted-foreground mr-2'>{subtype}:</span>}
+                    {subtype && (
+                        <span className='text-text-muted-foreground mr-2'>
+                            {subtype}:
+                        </span>
+                    )}
                     {name}
                 </CardTitle>
                 {actions.length > 0 && (

@@ -1,29 +1,42 @@
-import { Form, FormInput } from '@/components/forms';
-import useApi from '@/hooks/api/useApi';
-import * as Yup from 'yup';
-import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import useApi from '@/hooks/api/useApi';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { Controller, useForm } from 'react-hook-form';
+import { z } from 'zod';
 
-interface FormData {
-    oldPassword: string;
-    newPassword: string;
-    confirmNewPassword: string;
-}
+const changePasswordSchema = z
+    .object({
+        oldPassword: z.string().min(1, { error: 'Current password is required' }),
+        newPassword: z.string().min(1, { error: 'New password is required' }),
+        confirmNewPassword: z
+            .string()
+            .min(1, { error: 'Please confirm your new password' }),
+    })
+    .refine((data) => data.newPassword === data.confirmNewPassword, {
+        error: 'New passwords do not match',
+        path: ['confirmNewPassword'],
+    });
 
-const changePasswordSchema = Yup.object().shape({
-    oldPassword: Yup.string().required('Current password is required'),
-    newPassword: Yup.string().required('New password is required'),
-    confirmNewPassword: Yup.string()
-        .required('Please confirm your new password')
-        .oneOf([Yup.ref('newPassword')], 'New passwords do not match'),
-});
+type FormData = z.infer<typeof changePasswordSchema>;
 
 /**
  * ChangePasswordModal component props
  */
 export interface ChangePasswordModalProps {
-    /** Function to close the modal */
-    closeModal: () => void;
+    /** Whether the dialog is open */
+    open: boolean;
+    /** Callback when dialog open state changes */
+    onOpenChange: (open: boolean) => void;
 }
 
 /**
@@ -32,96 +45,160 @@ export interface ChangePasswordModalProps {
  *
  * @example
  * ```tsx
- * <ChangePasswordModal closeModal={closeModal} />
+ * const [open, setOpen] = useState(false);
+ * <ChangePasswordModal open={open} onOpenChange={setOpen} />
  * ```
  */
 export default function ChangePasswordModal({
-    closeModal,
-}: ChangePasswordModalProps): JSX.Element {
+    open,
+    onOpenChange,
+}: ChangePasswordModalProps) {
     const { usersApi } = useApi();
 
-    const handleSubmit = async (data: FormData) => {
-        await usersApi.usersChangePasswordCreate({
-            changePasswordRequestRequest: {
-                oldPassword: data.oldPassword,
-                newPassword: data.newPassword,
-            },
+    const changePasswordMutation = useMutation({
+        mutationFn: async (data: { oldPassword: string; newPassword: string }) => {
+            await usersApi.usersChangePasswordCreate({
+                changePasswordRequestRequest: {
+                    oldPassword: data.oldPassword,
+                    newPassword: data.newPassword,
+                },
+            });
+        },
+        meta: {
+            successMessage: 'Password changed successfully',
+            errorMessage: 'Failed to change password',
+        },
+        onSuccess: () => {
+            onOpenChange(false);
+        },
+    });
+
+    const form = useForm<FormData>({
+        resolver: zodResolver(changePasswordSchema),
+        defaultValues: {
+            oldPassword: '',
+            newPassword: '',
+            confirmNewPassword: '',
+        },
+    });
+
+    const onSubmit = async (data: FormData) => {
+        changePasswordMutation.mutate({
+            oldPassword: data.oldPassword,
+            newPassword: data.newPassword,
         });
     };
 
     return (
-        <>
-            <DialogHeader>
-                <DialogTitle>Change Password</DialogTitle>
-                <DialogDescription>
-                    Choose a strong password that you haven't used elsewhere.
-                    For security, you'll need to enter your current password first.
-                </DialogDescription>
-            </DialogHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Change Password</DialogTitle>
+                    <DialogDescription>
+                        Choose a strong password that you haven't used elsewhere. For
+                        security, you'll need to enter your current password first.
+                    </DialogDescription>
+                </DialogHeader>
 
-            {/* Form */}
-            <Form<FormData>
-                schema={changePasswordSchema}
-                defaultValues={{
-                    oldPassword: '',
-                    newPassword: '',
-                    confirmNewPassword: '',
-                }}
-                onSubmit={handleSubmit}
-                onSuccess={closeModal}
-                className='space-y-5'
-            >
-                {({ formState: { isSubmitting } }) => (
-                    <>
-                        <div>
-                            <FormInput<FormData>
-                                name='oldPassword'
-                                type='password'
-                                label='Current Password'
-                                placeholder='Enter current password'
-                            />
-                        </div>
+                <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-5'>
+                    <Controller
+                        name='oldPassword'
+                        control={form.control}
+                        render={({ field, fieldState }) => (
+                            <Field data-invalid={fieldState.invalid}>
+                                <FieldContent>
+                                    <FieldLabel htmlFor={field.name}>
+                                        Current Password
+                                    </FieldLabel>
+                                    <Input
+                                        {...field}
+                                        id={field.name}
+                                        type='password'
+                                        placeholder='Enter current password'
+                                        aria-invalid={fieldState.invalid}
+                                        disabled={form.formState.isSubmitting}
+                                    />
+                                    {fieldState.invalid && (
+                                        <FieldError errors={[fieldState.error]} />
+                                    )}
+                                </FieldContent>
+                            </Field>
+                        )}
+                    />
 
+                    <div className='space-y-4'>
+                        <Controller
+                            name='newPassword'
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldContent>
+                                        <FieldLabel htmlFor={field.name}>
+                                            New Password
+                                        </FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={field.name}
+                                            type='password'
+                                            placeholder='Enter new password'
+                                            aria-invalid={fieldState.invalid}
+                                            disabled={form.formState.isSubmitting}
+                                        />
+                                        {fieldState.invalid && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </FieldContent>
+                                </Field>
+                            )}
+                        />
 
-                        <div>
-                            <div className='space-y-4'>
-                                <FormInput<FormData>
-                                    name='newPassword'
-                                    type='password'
-                                    label='New Password'
-                                    placeholder='Enter new password'
-                                />
-                                <FormInput<FormData>
-                                    name='confirmNewPassword'
-                                    type='password'
-                                    label='Confirm New Password'
-                                    placeholder='Re-enter new password'
-                                />
-                            </div>
-                        </div>
+                        <Controller
+                            name='confirmNewPassword'
+                            control={form.control}
+                            render={({ field, fieldState }) => (
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldContent>
+                                        <FieldLabel htmlFor={field.name}>
+                                            Confirm New Password
+                                        </FieldLabel>
+                                        <Input
+                                            {...field}
+                                            id={field.name}
+                                            type='password'
+                                            placeholder='Re-enter new password'
+                                            aria-invalid={fieldState.invalid}
+                                            disabled={form.formState.isSubmitting}
+                                        />
+                                        {fieldState.invalid && (
+                                            <FieldError errors={[fieldState.error]} />
+                                        )}
+                                    </FieldContent>
+                                </Field>
+                            )}
+                        />
+                    </div>
 
-                        <div className='flex justify-end gap-2 mt-4'>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={closeModal}
-                                disabled={isSubmitting}
-                            >
-                                Cancel
-                            </Button>
-                            <Button
-                                type='submit'
-                                variant='default'
-                                size='sm'
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Updating...' : 'Change'}
-                            </Button>
-                        </div>
-                    </>
-                )}
-            </Form>
-        </>
+                    <div className='flex justify-end gap-2 mt-4'>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            onClick={() => onOpenChange(false)}
+                            disabled={form.formState.isSubmitting}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type='submit'
+                            variant='default'
+                            size='sm'
+                            disabled={form.formState.isSubmitting}
+                        >
+                            {form.formState.isSubmitting ? 'Updating...' : 'Change'}
+                        </Button>
+                    </div>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }

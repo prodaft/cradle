@@ -2,10 +2,12 @@
  * Form - Main form wrapper component with react-hook-form and API integration
  */
 
-import { useAPICall } from '@/hooks/api/useAPICall';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ParsedAPIError } from '@/utils/api';
-import { yupResolver } from '@hookform/resolvers/yup';
-import { ReactNode, useCallback, useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { CheckCircle, InfoCircle, WarningCircle } from 'iconoir-react';
+import React, { ReactNode, useCallback, useState } from 'react';
 import {
     FieldValues,
     FormProvider,
@@ -15,9 +17,7 @@ import {
     UseFormProps,
     UseFormReturn,
 } from 'react-hook-form';
-import type { ObjectSchema } from 'yup';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
+import type { z } from 'zod';
 
 /**
  * Props for the Form component
@@ -25,8 +25,8 @@ import { CheckCircle, WarningCircle, InfoCircle } from 'iconoir-react';
 export interface FormProps<TFieldValues extends FieldValues = FieldValues> {
     /** Form children (field components) */
     children: ReactNode | ((methods: UseFormReturn<TFieldValues>) => ReactNode);
-    /** Yup validation schema */
-    schema?: ObjectSchema<TFieldValues>;
+    /** Zod validation schema */
+    schema?: z.ZodType<TFieldValues>;
     /** Submit handler - receives validated form data, should return a Promise */
     onSubmit: (data: TFieldValues) => Promise<unknown>;
     /** Success message to display after successful submission */
@@ -58,18 +58,18 @@ export interface FormProps<TFieldValues extends FieldValues = FieldValues> {
  *
  * Features:
  * - Wraps children with FormProvider for useFormContext access
- * - Supports Yup validation schema
- * - Handles form submission via useAPICall
+ * - Supports Zod validation schemas
+ * - Handles form submission via useMutation from @tanstack/react-query
  * - Automatically merges API validation errors with form errors
  * - Displays success/error alerts inline (not notifications)
  *
  * @example
  * ```tsx
- * import * as Yup from 'yup';
+ * import { z } from 'zod';
  *
- * const schema = Yup.object({
- *   username: Yup.string().required('Username is required'),
- *   email: Yup.string().email('Invalid email').required('Email is required'),
+ * const schema = z.object({
+ *   username: z.string().min(1, { error: 'Username is required' }),
+ *   email: z.string().min(1, { error: 'Email is required' }).refine((val) => z.email().safeParse(val).success, { error: 'Invalid email' }),
  * });
  *
  * function CreateUserForm() {
@@ -120,18 +120,60 @@ export default function Form<TFieldValues extends FieldValues = FieldValues>({
     resetOnSuccess = false,
     alertTimeout = 5000,
     showAlerts = true,
-}: FormProps<TFieldValues>): JSX.Element {
-    const { execute } = useAPICall();
-    const [alert, setAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({ type: null, message: '' });
+}: FormProps<TFieldValues>): React.JSX.Element {
+    const [alert, setAlert] = useState<{
+        type: 'success' | 'error' | 'warning' | null;
+        message: string;
+    }>({ type: null, message: '' });
 
     const methods = useForm<TFieldValues>({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        resolver: schema ? (yupResolver(schema) as any) : undefined,
+        resolver: schema
+            ? (zodResolver(schema as z.ZodType<any, any>) as any)
+            : undefined,
         defaultValues,
         mode,
     });
 
     const { handleSubmit, setError, reset } = methods;
+
+    const submitMutation = useMutation({
+        mutationFn: onSubmit,
+        meta: {
+            suppressNotification: true, // We handle alerts ourselves
+        },
+        onSuccess: (result) => {
+            // Show success alert
+            if (successMessage) {
+                setAlert({ type: 'success', message: successMessage });
+            }
+
+            // Reset form if configured
+            if (resetOnSuccess) {
+                reset();
+            }
+
+            // Call success callback
+            onSuccess?.(result);
+        },
+        onError: (error) => {
+            // Apply field errors from API response
+            if (error.isValidationError && error.fieldErrors) {
+                applyFieldErrors(error.fieldErrors);
+            }
+
+            // Show error alert
+            const message =
+                errorMessage ||
+                (error.isValidationError
+                    ? 'Please fix the validation errors below.'
+                    : error.detail || 'An error occurred');
+            setAlert({ type: 'error', message });
+
+            // Call error callback
+            onError?.(error);
+        },
+    });
 
     /**
      * Clear the alert
@@ -161,60 +203,13 @@ export default function Form<TFieldValues extends FieldValues = FieldValues>({
      * Handle form submission with API call
      */
     const onFormSubmit: SubmitHandler<TFieldValues> = useCallback(
-        async (data) => {
+        (data) => {
             // Clear previous alert
             clearAlert();
-
-            try {
-                const result = await execute(() => onSubmit(data), {
-                    suppressNotification: true, // We handle alerts ourselves
-                    onError: (error) => {
-                        // Apply field errors from API response
-                        if (error.isValidationError && error.fieldErrors) {
-                            applyFieldErrors(error.fieldErrors);
-                        }
-                    },
-                });
-
-                // Show success alert
-                if (successMessage) {
-                    setAlert({ type: 'success', message: successMessage });
-                }
-
-                // Reset form if configured
-                if (resetOnSuccess) {
-                    reset();
-                }
-
-                // Call success callback
-                onSuccess?.(result);
-            } catch (error) {
-                const parsedError = error as ParsedAPIError;
-
-                // Show error alert
-                const message =
-                    errorMessage ||
-                    (parsedError.isValidationError
-                        ? 'Please fix the validation errors below.'
-                        : parsedError.detail || 'An error occurred');
-                setAlert({ type: 'error', message });
-
-                // Call error callback
-                onError?.(parsedError);
-            }
+            // Submit via mutation
+            submitMutation.mutate(data);
         },
-        [
-            execute,
-            onSubmit,
-            successMessage,
-            errorMessage,
-            onSuccess,
-            onError,
-            applyFieldErrors,
-            resetOnSuccess,
-            reset,
-            clearAlert,
-        ],
+        [submitMutation, clearAlert],
     );
 
     // Render children - support both ReactNode and render prop patterns
@@ -242,7 +237,6 @@ export default function Form<TFieldValues extends FieldValues = FieldValues>({
         </FormProvider>
     );
 }
-
 /**
  * Re-export useFormContext for convenience
  */

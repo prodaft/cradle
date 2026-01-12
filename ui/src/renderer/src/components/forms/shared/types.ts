@@ -135,7 +135,6 @@ export interface SelectFieldProps<
     /** Custom onChange handler (called in addition to form field update) */
     onChange?: (value: IsMulti extends true ? TOption[] : TOption | null) => void;
 }
-
 /**
  * Helper type to get error message from FieldError
  */

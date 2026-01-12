@@ -3,8 +3,8 @@
  * Provides the consistent card styling used in AccountSettings
  */
 
-import { ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { ReactElement, ReactNode } from 'react';
 
 export interface SettingsCardProps {
     /** Card content */
@@ -29,12 +29,10 @@ export interface SettingsCardProps {
 export default function SettingsCard({
     children,
     className = '',
-}: SettingsCardProps): JSX.Element {
+}: SettingsCardProps): ReactElement {
     return (
         <Card className={`rounded-lg border-border bg-muted/5 space-y-0 ${className}`}>
-            <CardContent className='px-4 py-1'>
-                {children}
-            </CardContent>
+            <CardContent className='px-4 py-1'>{children}</CardContent>
         </Card>
     );
 }

@@ -1,103 +1,164 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
-import { ColumnDef } from '@tanstack/react-table';
+import { Input } from '@/components/ui/input';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/ui/sidebar';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { MappingSubclass } from '@services/cradle/models';
-import { EditPencil } from 'iconoir-react/regular';
-import { DataTable } from '@/components/ui/data-table';
-import TableActionsButton from '@/components/base/TableActionsButton';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { capitalizeString } from '@/utils/dashboard';
-import TypeMappingsEditor from '../TypeMappingsEditor';
+import { MappingSubclass } from '@services/cradle/models';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
+import { Search } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import AdminPageLayout from '../AdminPageLayout';
+import TypeMappingsEditor from '../TypeMappingsEditor';
 
 export default function TypeMappingsPage() {
-    const [mappingTypes, setMappingTypes] = useState<MappingSubclass[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [rightPane, setRightPane] = useState<ReactNode | null>(null);
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/manage/type-mappings' });
+    const [searchQuery, setSearchQuery] = useState('');
     const { intelioApi } = useApi();
-    const { execute } = useAPICall();
+    const queryClient = useQueryClient();
 
-    const displayMappingTypes = async () => {
-        setIsLoading(true);
-        execute(() => intelioApi.mappingsSubclassesList())
-            .then((mappingTypes) => {
-                setMappingTypes(mappingTypes || []);
-            })
-            .catch(() => {
-                setMappingTypes([]);
-            })
-            .finally(() => {
-                setIsLoading(false);
-            });
+    const tab = 'tab' in search ? search.tab : undefined;
+
+    // Query for mapping types
+    const { data: mappingTypesData = [], isPending } = useQuery({
+        queryKey: ['typeMappings'],
+        queryFn: () => intelioApi.mappingsSubclassesList(),
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true,
+        },
+    });
+
+    const mappingTypes = mappingTypesData as MappingSubclass[];
+
+    const handleMappingClick = (mapping: MappingSubclass) => {
+        const newSearch: any = {
+            ...search,
+            tab: mapping.className,
+        };
+        router.navigate({
+            to: location.pathname as any,
+            search: newSearch,
+            replace: true,
+        });
     };
 
+    // Auto-select first mapping if no tab and mappings are loaded
     useEffect(() => {
-        displayMappingTypes();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        if (!tab && mappingTypes.length > 0 && !isPending) {
+            const newSearch: any = {
+                ...search,
+                tab: mappingTypes[0].className,
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch,
+                replace: true,
+            });
+        }
+    }, [tab, mappingTypes, isPending, router, location.pathname, search]);
 
-    const handleEditClick = (mapping: MappingSubclass) => {
-        setRightPane(<TypeMappingsEditor id={mapping.className} name={mapping.name} onSave={() => {}} />);
-    };
+    const selectedMapping = tab ? mappingTypes.find((m) => m.className === tab) : null;
 
-    const columns = useMemo<ColumnDef<MappingSubclass>[]>(
-        () => [
-            {
-                accessorKey: 'name',
-                header: 'Name',
-                cell: ({ row }) => (
-                    <div className='font-medium cursor-pointer' onClick={() => handleEditClick(row.original)}>
-                        {capitalizeString(row.original.name)}
-                    </div>
-                ),
-            },
-            {
-                accessorKey: 'className',
-                header: 'Class Name',
-                cell: ({ row }) => (
-                    <div className='text-muted-foreground font-mono text-sm'>{row.original.className}</div>
-                ),
-            },
-            {
-                id: 'actions',
-                header: 'Actions',
-                cell: ({ row }) => {
-                    const mapping = row.original;
-                    return (
-                        <div className='flex justify-end' onClick={(e) => e.stopPropagation()}>
-                            <TableActionsButton>
-                                <DropdownMenuItem onClick={() => handleEditClick(mapping)}>
-                                    <EditPencil width='18' height='18' />
-                                    Edit
-                                </DropdownMenuItem>
-                            </TableActionsButton>
-                        </div>
-                    );
-                },
-                enableSorting: false,
-            },
-        ],
-        [],
-    );
+    const filteredMappingTypes = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return mappingTypes;
+        }
+        const query = searchQuery.toLowerCase();
+        return mappingTypes.filter(
+            (mapping) =>
+                mapping.name?.toLowerCase().includes(query) ||
+                mapping.className?.toLowerCase().includes(query),
+        );
+    }, [mappingTypes, searchQuery]);
 
     return (
-        <AdminPageLayout rightPane={rightPane}>
-            <div className='w-full h-full flex flex-col rounded-md px-3'>
-                <div className='flex items-center justify-between py-4'>
-                    <div>
-                        <h2 className='text-2xl font-bold tracking-tight'>Type Mappings</h2>
-                        <p className='text-muted-foreground'>Manage data type transformations</p>
-                    </div>
-                </div>
-                <div className='flex-1 overflow-hidden'>
-                    <DataTable
-                        columns={columns}
-                        data={mappingTypes}
-                        loading={isLoading}
-                        emptyMessage='No type mappings found.'
-                        onRowClick={handleEditClick}
-                    />
+        <AdminPageLayout>
+            <div className='flex w-full h-full'>
+                {/* Type Mappings Sidebar */}
+                <Sidebar
+                    collapsible='none'
+                    className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
+                >
+                    <SidebarHeader className='flex flex-col p-4 gap-2 border-b border-border'>
+                        <div className='relative'>
+                            <Search className='absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground' />
+                            <Input
+                                type='text'
+                                placeholder='Search mappings...'
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className='pl-8'
+                            />
+                        </div>
+                    </SidebarHeader>
+                    <SidebarContent>
+                        <SidebarGroup>
+                            <SidebarMenu>
+                                {isPending ? (
+                                    <div className='px-4 py-2 text-sm text-muted-foreground'>
+                                        Loading...
+                                    </div>
+                                ) : filteredMappingTypes.length === 0 ? (
+                                    <div className='px-4 py-2 text-sm text-muted-foreground'>
+                                        {searchQuery
+                                            ? 'No mappings match your search'
+                                            : 'No type mappings found'}
+                                    </div>
+                                ) : (
+                                    filteredMappingTypes.map((mapping) => (
+                                        <SidebarMenuItem key={mapping.className}>
+                                            <SidebarMenuButton
+                                                isActive={tab === mapping.className}
+                                                onClick={() =>
+                                                    handleMappingClick(mapping)
+                                                }
+                                                tooltip={capitalizeString(mapping.name)}
+                                            >
+                                                <span>
+                                                    {capitalizeString(mapping.name)}
+                                                </span>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    ))
+                                )}
+                            </SidebarMenu>
+                        </SidebarGroup>
+                    </SidebarContent>
+                </Sidebar>
+
+                {/* Main Content Area */}
+                <div className='flex-1 flex flex-col'>
+                    {selectedMapping ? (
+                        <TypeMappingsEditor
+                            id={tab!}
+                            name={selectedMapping.name || tab!}
+                            onSave={() => {
+                                queryClient.invalidateQueries({
+                                    queryKey: ['typeMappings'],
+                                });
+                            }}
+                        />
+                    ) : (
+                        <div className='flex-1 flex items-center justify-center'>
+                            <div className='text-center'>
+                                <p className='text-muted-foreground'>
+                                    Select a type mapping to edit
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </AdminPageLayout>

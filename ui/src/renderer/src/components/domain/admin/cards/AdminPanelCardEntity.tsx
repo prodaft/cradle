@@ -1,12 +1,10 @@
-import { useModal } from '@/contexts/ui/ModalContext';
-import { useProfile } from '@/contexts/user/ProfileContext';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
-import { ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
+import useApi from '@/hooks/api/useApi';
+import { useProfile } from '@/hooks/user/useProfile';
+import { useMutation } from '@tanstack/react-query';
+import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode, useState } from 'react';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
 import EntityForm from '../forms/EntityForm';
@@ -28,19 +26,21 @@ export default function AdminPanelCardEntity({
     typename,
     setRightPane,
 }: AdminPanelCardEntityProps) {
-    const { executor } = useAPICall();
     const { entriesApi } = useApi();
-    const { navigate, navigateLink } = useCradleNavigate();
     const { isAdmin } = useProfile();
-    const { setModal } = useModal();
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-    const handleDelete = executor(
-        async () => {
+    const deleteMutation = useMutation({
+        mutationFn: async () => {
             await entriesApi.entitiesDestroy({ entityId: Number(id) });
             onDelete();
         },
-        { successMessage: 'Entity deleted successfully' },
-    );
+        meta: {
+            successMessage: 'Entity deleted successfully',
+        },
+    });
+
+    const handleDelete = () => deleteMutation.mutate();
 
     const handleActivityClick = () => {
         setRightPane(
@@ -54,7 +54,7 @@ export default function AdminPanelCardEntity({
     };
 
     const handleEditClick = () => {
-        setRightPane(<EntityForm id={Number(id)} isEdit={true} />);
+        setRightPane(<EntityForm id={Number(id)} />);
     };
 
     return (
@@ -93,21 +93,26 @@ export default function AdminPanelCardEntity({
                         <EditPencil />
                     </Button>
                     {isAdmin() && (
-                        <Button
-                            variant='ghost'
-                            size='icon-sm'
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setModal(ConfirmDeletionModal, {
-                                    onConfirm: handleDelete,
-                                    confirmText: `${typename}:${name}`,
-                                    text: 'Are you sure you want to delete this entity? This will keep its related notes but remove the links to it.',
-                                });
-                            }}
-                            title='Delete'
-                        >
-                            <Trash />
-                        </Button>
+                        <>
+                            <Button
+                                variant='ghost'
+                                size='icon-sm'
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteModalOpen(true);
+                                }}
+                                title='Delete'
+                            >
+                                <Trash />
+                            </Button>
+                            <ConfirmDeletionModal
+                                open={deleteModalOpen}
+                                onOpenChange={setDeleteModalOpen}
+                                onConfirm={handleDelete}
+                                confirmText={`${typename}:${name}`}
+                                text='Are you sure you want to delete this entity? This will keep its related notes but remove the links to it.'
+                            />
+                        </>
                     )}
                 </CardAction>
             </CardHeader>

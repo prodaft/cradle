@@ -18,9 +18,6 @@
 /* Shadcn UI styles - includes CSS variables and theme configuration */
 @import './globals.css';
 
-/* Cradle Design System - includes border utilities and design tokens */
-@import './design.css';
-
 /* ============================================
    PROSEMARK CSS VARIABLES - Light Mode
    ============================================ */
@@ -139,7 +136,7 @@ h6:hover .header-anchor-icon {
 }
 
 .notification-action:hover {
-    color: #FF8C00;
+    color: #ff8c00;
     background-color: var(--muted);
 }
 
@@ -174,7 +171,9 @@ h6:hover .header-anchor-icon {
     color-scheme: light dark;
     background-color: transparent !important;
     color: var(--foreground);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
+    font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial,
+        sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji' !important;
     font-size: 16px;
     line-height: 1.5;
     word-wrap: break-word;
@@ -382,11 +381,3 @@ h6:hover .header-anchor-icon {
 .animate-actions-fade-in-right {
     animation: actions-fade-in-right 150ms ease-out backwards;
 }
-
-/* ============================================
-   FONT UTILITIES
-   ============================================ */
-.cradle-mono {
-    font-family: 'JetBrains Mono', 'IBM Plex Mono', 'Source Code Pro', monospace;
-}
-

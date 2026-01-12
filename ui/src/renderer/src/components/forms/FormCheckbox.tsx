@@ -2,7 +2,9 @@
  * FormCheckbox - Checkbox input component for react-hook-form
  */
 
-import { FieldValues, Path, useFormContext } from 'react-hook-form';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Controller, FieldValues, Path, useFormContext } from 'react-hook-form';
 import { CheckboxFieldProps } from './shared/types';
 
 /**
@@ -26,7 +28,7 @@ export default function FormCheckbox<TFieldValues extends FieldValues = FieldVal
     className = '',
 }: CheckboxFieldProps<TFieldValues>): JSX.Element {
     const {
-        register,
+        control,
         formState: { errors },
     } = useFormContext<TFieldValues>();
 
@@ -37,28 +39,36 @@ export default function FormCheckbox<TFieldValues extends FieldValues = FieldVal
 
     return (
         <div className={`w-full ${className}`}>
-            <label className='flex items-start gap-3 cursor-pointer'>
-                <input
-                    id={name}
-                    type='checkbox'
-                    disabled={disabled}
-                    className={`mt-0.5 ${hasError ? 'border-destructive' : ''}`}
-                    aria-invalid={hasError}
-                    aria-describedby={hasError ? `${name}-error` : undefined}
-                    {...register(name as Path<TFieldValues>)}
-                />
-                <div className='flex flex-col'>
-                    <span className='cradle-label text-muted-foreground'>
-                        {label}
-                        {required && <span className='text-destructive ml-1'>*</span>}
-                    </span>
-                    {description && (
-                        <span className='text-xs text-muted-foreground mt-0.5'>
-                            {description}
-                        </span>
-                    )}
-                </div>
-            </label>
+            <Controller
+                name={name as Path<TFieldValues>}
+                control={control}
+                render={({ field }) => (
+                    <div className='flex items-start gap-3'>
+                        <Checkbox
+                            id={name}
+                            disabled={disabled}
+                            checked={field.value || false}
+                            onCheckedChange={field.onChange}
+                            className={`mt-0.5 ${hasError ? 'border-destructive' : ''}`}
+                            aria-invalid={hasError}
+                            aria-describedby={hasError ? `${name}-error` : undefined}
+                        />
+                        <Label htmlFor={name} className='flex flex-col cursor-pointer'>
+                            <span className='text-xs uppercase tracking-widest font-semibold text-muted-foreground'>
+                                {label}
+                                {required && (
+                                    <span className='text-destructive ml-1'>*</span>
+                                )}
+                            </span>
+                            {description && (
+                                <span className='text-xs text-muted-foreground mt-0.5'>
+                                    {description}
+                                </span>
+                            )}
+                        </Label>
+                    </div>
+                )}
+            />
             {helperText && !hasError && (
                 <p className='text-xs text-muted-foreground mt-1 ml-6'>{helperText}</p>
             )}

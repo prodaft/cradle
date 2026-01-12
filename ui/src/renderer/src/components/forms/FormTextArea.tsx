@@ -2,6 +2,8 @@
  * FormTextArea - Multi-line text input component for react-hook-form
  */
 
+import { Textarea } from '@/components/ui/textarea';
+import { ReactElement } from 'react';
 import { FieldValues, Path, useFormContext } from 'react-hook-form';
 import FormFieldWrapper from './shared/FormFieldWrapper';
 import { TextAreaFieldProps } from './shared/types';
@@ -27,7 +29,7 @@ export default function FormTextArea<TFieldValues extends FieldValues = FieldVal
     placeholder,
     rows = 3,
     resize = 'vertical',
-}: TextAreaFieldProps<TFieldValues>): JSX.Element {
+}: TextAreaFieldProps<TFieldValues>): ReactElement {
     const {
         register,
         formState: { errors },
@@ -53,12 +55,12 @@ export default function FormTextArea<TFieldValues extends FieldValues = FieldVal
             error={errorMessage}
             className={className}
         >
-            <textarea
+            <Textarea
                 id={name}
                 placeholder={placeholder}
                 disabled={disabled}
                 rows={rows}
-                className={`cradle-search w-full disabled:opacity-50 disabled:cursor-not-allowed ${resizeClass} ${
+                className={`w-full ${resizeClass} ${
                     errorMessage ? 'border-destructive focus:ring-destructive' : ''
                 }`}
                 aria-invalid={Boolean(errorMessage)}

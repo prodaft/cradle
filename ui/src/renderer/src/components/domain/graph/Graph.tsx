@@ -1,7 +1,7 @@
-import { useTheme } from '@/contexts/ui/ThemeContext';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useTheme } from '@/contexts/ui/ThemeContext';
+import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
 import { PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';
 import { MinusIcon, PlusIcon } from 'lucide-react';
@@ -175,7 +175,6 @@ export default function GraphViewer({
     const { isDarkMode } = useTheme();
     const internalCosmographRef = useRef<any>(null);
     const cosmographRef = externalCosmographRef || internalCosmographRef;
-    const { navigate, navigateLink } = useCradleNavigate();
     const [disableSimulation, setDisableSimulation] = useState(true); // Non-functional - kept for future use
 
     // Filter out invalid nodes first
@@ -183,15 +182,17 @@ export default function GraphViewer({
         const filtered = nodes.filter((node) => {
             const isValid = node.id != null && node.id !== '';
             if (!isValid) {
-                console.warn('[Graph] Filtered out invalid node:', node);
+                logger.warn('[Graph] Filtered out invalid node:', { node });
             }
             return isValid;
         });
 
         if (filtered.length < nodes.length) {
-            console.warn(
-                `[Graph] Filtered out ${nodes.length - filtered.length} invalid node(s) with null or empty IDs`,
-            );
+            logger.warn('[Graph] Filtered out invalid nodes', {
+                filteredCount: filtered.length,
+                totalCount: nodes.length,
+                removedCount: nodes.length - filtered.length,
+            });
         }
 
         return filtered;
@@ -270,7 +271,7 @@ export default function GraphViewer({
 
                 const node = indexToNode.get(index);
                 if (!node) {
-                    console.warn('[Graph] onClick: Node not found for index:', index);
+                    logger.warn('[Graph] onClick: Node not found for index', { index });
                     return;
                 }
 
@@ -286,7 +287,7 @@ export default function GraphViewer({
                             clickedNodes.unshift(node);
                         }
                     } catch (e) {
-                        console.warn('[Graph] Error getting connected points:', e);
+                        logger.warn('[Graph] Error getting connected points:', e);
                     }
                 }
 
@@ -304,7 +305,7 @@ export default function GraphViewer({
                 try {
                     cosmographRef.current?.setFocusedPoint(index);
                 } catch (e) {
-                    console.warn('[Graph] Error setting focused point:', e);
+                    logger.warn('[Graph] Error setting focused point:', e);
                 }
 
                 setSelectedNodes(newNodes);
@@ -314,7 +315,7 @@ export default function GraphViewer({
                     onTogglePanel('explorer');
                 }
             } catch (error) {
-                console.error('[Graph] Error in onClick handler:', error);
+                logger.error('[Graph] Error in onClick handler:', error);
             }
         },
         [
@@ -333,10 +334,9 @@ export default function GraphViewer({
             try {
                 const link = linksData[linkIndex];
                 if (!link) {
-                    console.warn(
-                        '[Graph] onLinkClick: Link not found for index:',
+                    logger.warn('[Graph] onLinkClick: Link not found for index', {
                         linkIndex,
-                    );
+                    });
                     return;
                 }
 
@@ -356,7 +356,7 @@ export default function GraphViewer({
                     onTogglePanel('explorer');
                 }
             } catch (error) {
-                console.error('[Graph] Error in onLinkClick handler:', error);
+                logger.error('[Graph] Error in onLinkClick handler:', error);
             }
         },
         [linksData, indexToNode, setSelectedNodes, onTogglePanel, activePanel],
@@ -373,7 +373,7 @@ export default function GraphViewer({
                     cosmographRef.current.fitView(500, 0.1);
                 }
             } catch (e) {
-                console.warn('[Graph] Could not fit view:', e);
+                logger.warn('[Graph] Could not fit view:', e);
             }
         }, 300);
 
@@ -391,7 +391,7 @@ export default function GraphViewer({
                     cosmographRef.current.destroy();
                 }
             } catch (e) {
-                console.warn('[Graph] Error during cleanup:', e);
+                logger.warn('[Graph] Error during cleanup:', e);
             }
         };
     }, []);
@@ -400,9 +400,7 @@ export default function GraphViewer({
     const hasValidData = pointsData.length > 0;
 
     return (
-        <div
-            className='w-full h-full bg-background relative overflow-hidden'
-        >
+        <div className='w-full h-full bg-background relative overflow-hidden'>
             {hasValidData ? (
                 <>
                     {/* Graph controls - left side */}
@@ -411,17 +409,17 @@ export default function GraphViewer({
                         {onTogglePanel && (
                             <Button
                                 type='button'
-                                variant={activePanel === 'explorer' ? 'outline' : 'outline'}
+                                variant={
+                                    activePanel === 'explorer' ? 'outline' : 'outline'
+                                }
                                 size='icon'
                                 className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'explorer'
-                                        ? 'border-primary' 
-                                        : ''
+                                    activePanel === 'explorer' ? 'border-primary' : ''
                                 }`}
                                 title='Toggle explorer panel'
                                 onClick={() => onTogglePanel('explorer')}
                             >
-                                <Search width="16" height="16" />
+                                <Search width='16' height='16' />
                             </Button>
                         )}
 
@@ -429,12 +427,12 @@ export default function GraphViewer({
                         {onTogglePanel && (
                             <Button
                                 type='button'
-                                variant={activePanel === 'display' ? 'outline' : 'outline'}
+                                variant={
+                                    activePanel === 'display' ? 'outline' : 'outline'
+                                }
                                 size='icon'
                                 className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'display'
-                                        ? 'border-primary' 
-                                        : ''
+                                    activePanel === 'display' ? 'border-primary' : ''
                                 }`}
                                 title='Toggle display panel'
                                 onClick={() => onTogglePanel('display')}
@@ -456,7 +454,11 @@ export default function GraphViewer({
                             }}
                             disabled
                         >
-                            {disableSimulation ? <PlaySolid width="16" height="16" /> : <PauseSolid width="16" height="16" />}
+                            {disableSimulation ? (
+                                <PlaySolid width='16' height='16' />
+                            ) : (
+                                <PauseSolid width='16' height='16' />
+                            )}
                         </Button>
                     </div>
 
@@ -489,7 +491,7 @@ export default function GraphViewer({
                                         }
                                     }
                                 } catch (error) {
-                                    console.error('[Graph] Error fitting view:', error);
+                                    logger.error('[Graph] Error fitting view:', error);
                                 }
                             }}
                         >
@@ -510,16 +512,16 @@ export default function GraphViewer({
                                 <path d='M3 7.8V3m0 0h4.8M3 3l6 6'></path>
                             </svg>
                         </Button>
-                        
+
                         <ButtonGroup
-                            orientation="vertical"
-                            aria-label="Media controls"
-                            className="h-fit"
+                            orientation='vertical'
+                            aria-label='Media controls'
+                            className='h-fit'
                         >
                             <Button
-                                variant="outline"
-                                size="icon-sm"
-                                title="Zoom in"
+                                variant='outline'
+                                size='icon-sm'
+                                title='Zoom in'
                                 onClick={() => {
                                     try {
                                         if (cosmographRef.current) {
@@ -540,7 +542,8 @@ export default function GraphViewer({
                                                 'function'
                                             ) {
                                                 const currentZoom =
-                                                    cosmographRef.current.getZoom?.() || 1;
+                                                    cosmographRef.current.getZoom?.() ||
+                                                    1;
                                                 cosmographRef.current.setZoom(
                                                     currentZoom * 1.2,
                                                 );
@@ -552,16 +555,19 @@ export default function GraphViewer({
                                             }
                                         }
                                     } catch (error) {
-                                        console.error('[Graph] Error zooming in:', error);
+                                        logger.error(
+                                            '[Graph] Error zooming in:',
+                                            error,
+                                        );
                                     }
                                 }}
                             >
                                 <PlusIcon />
                             </Button>
                             <Button
-                                variant="outline"
-                                size="icon-sm"
-                                title="Zoom out"
+                                variant='outline'
+                                size='icon-sm'
+                                title='Zoom out'
                                 onClick={() => {
                                     try {
                                         if (cosmographRef.current) {
@@ -582,7 +588,8 @@ export default function GraphViewer({
                                                 'function'
                                             ) {
                                                 const currentZoom =
-                                                    cosmographRef.current.getZoom?.() || 1;
+                                                    cosmographRef.current.getZoom?.() ||
+                                                    1;
                                                 cosmographRef.current.setZoom(
                                                     currentZoom * 0.8,
                                                 );
@@ -594,7 +601,10 @@ export default function GraphViewer({
                                             }
                                         }
                                     } catch (error) {
-                                        console.error('[Graph] Error zooming out:', error);
+                                        logger.error(
+                                            '[Graph] Error zooming out:',
+                                            error,
+                                        );
                                     }
                                 }}
                             >

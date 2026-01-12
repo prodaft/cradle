@@ -2,20 +2,28 @@
  * Central export file for all hooks
  *
  * Hooks are organized into functional groups:
- * - api/ - API interaction hooks (useApi, useAPICall, useFormValidation)
- * - auth/ - Authentication and user hooks (useAuth, useProfile)
- * - navigation/ - Navigation hooks (useCradleNavigate)
- * - theme/ - Theme hooks (useTheme)
+ * - api/ - API interaction hooks (useApi)
+ * - auth/ - Authentication hooks (useAuthState, useAuthActions)
+ * - navigation/ - Navigation hooks
  * - search/ - Search hooks (useFrontendSearch)
+ *
+ * Note:
+ * - Theme hooks (useTheme) are available from @contexts/ui
+ * - Profile hooks (useProfile) are available from @hooks/user/useProfile
  *
  * Usage:
  * ```typescript
  * // Import from main index
- * import { useApi, useAuth } from '@hooks';
+ * import { useApi, useAuthState, useAuthActions } from '@hooks';
  *
  * // Or import from group
- * import { useApi, useAPICall } from '@hooks/api';
- * import { useAuth, useProfile } from '@hooks/auth';
+ * import { useApi } from '@hooks/api';
+ * import { useAuthState, useAuthActions } from '@hooks/auth';
+ * import { useProfile } from '@hooks/user/useProfile';
+ *
+ * // For optimal performance, use split auth hooks:
+ * const { role, basePath } = useAuthState();
+ * const { logOut, getAccessToken } = useAuthActions();
  * ```
  */
 
@@ -26,11 +34,13 @@ export * from './collab/useCollabExtension';
 // Auth-related hooks
 export * from './auth';
 
-// Navigation hooks
-export * from './navigation';
+// Query hooks (TanStack Query)
+export * from './query';
 
-// Theme hooks
-export * from './theme';
+// User-related hooks
+export * from './user';
+
+// Navigation hooks (currently empty - use TanStack Router directly)
 
 // Search hooks
 export * from './search';

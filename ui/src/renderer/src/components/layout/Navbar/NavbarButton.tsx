@@ -1,7 +1,7 @@
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import React, { ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import React, { ReactNode, useState } from 'react';
 
 /**
  * NavbarButton component props
@@ -71,9 +71,7 @@ export default function NavbarButton({
                         </Button>
                     </TooltipTrigger>
                     {text && (
-                        <TooltipContent side={tooltipDirection}>
-                            {text}
-                        </TooltipContent>
+                        <TooltipContent side={tooltipDirection}>{text}</TooltipContent>
                     )}
                 </Tooltip>
             )}

@@ -1,16 +1,30 @@
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from '@/components/ui/input-group';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
-import { useParams } from 'react-router-dom';
-import Pagination from '@components/base/Pagination/Pagination';
+import { queryKeys } from '@/hooks/query';
 import Datepicker from '@components/base/Datepicker/Datepicker';
+import Pagination from '@components/base/Pagination/Pagination';
 import type { EventLog } from '@services/cradle/models';
+import { useQuery } from '@tanstack/react-query';
+import { useParams } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import { Search } from 'iconoir-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
+import OfflineIndicator from '../../feedback/OfflineIndicator';
 import Activity from './Activity';
-import { Spinner } from '@/components/ui/spinner';
 
 // Local ActivityLog interface to match Activity component expectations
 interface ActivityLog {
@@ -48,7 +62,8 @@ export default function ActivityList({
     username,
 }: ActivityListProps) {
     const { logsApi } = useApi();
-    const { username: usernameParam } = useParams<{ username?: string }>();
+    const params = useParams({ strict: false });
+    const usernameParam = (params as any).username;
     const effectiveUsername = username || usernameParam || '';
 
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -63,10 +78,7 @@ export default function ActivityList({
     const [submittedFilters, setSubmittedFilters] =
         useState<SearchFilters>(searchFilters);
 
-    const [events, setEvents] = useState<ActivityLog[]>([]);
-    const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
 
     // Convert EventLog to ActivityLog format
     const convertEventLogToActivityLog = (eventLog: EventLog): ActivityLog => {
@@ -87,46 +99,55 @@ export default function ActivityList({
         };
     };
 
-    const fetchEvents = useCallback(() => {
-        setLoading(true);
-        logsApi
-            .logsList({
-                page,
-                username: submittedFilters.username || undefined,
-                startDate: submittedFilters.start_date
-                    ? new Date(submittedFilters.start_date)
-                    : undefined,
-                endDate: submittedFilters.end_date
-                    ? new Date(submittedFilters.end_date)
-                    : undefined,
-                type: submittedFilters.type || undefined,
-                contentType: submittedFilters.content_type || undefined,
-                objectId: submittedFilters.object_id || undefined,
-            })
-            .then((response) => {
-                const convertedEvents = response.results.map(
-                    convertEventLogToActivityLog,
-                );
-                setEvents(convertedEvents);
-                setTotalPages(response.totalPages);
-                setLoading(false);
-            })
-            .catch((error: any) => {
-                toast.error(
-                    error.response?.data?.detail ||
-                        'Failed to fetch event logs. Please try again.',
-                );
-                setLoading(false);
-            });
-    }, [page, submittedFilters, logsApi]);
+    // Prepare query parameters
+    const queryParams = useMemo(
+        () => ({
+            page,
+            username: submittedFilters.username || undefined,
+            startDate: submittedFilters.start_date
+                ? new Date(submittedFilters.start_date)
+                : undefined,
+            endDate: submittedFilters.end_date
+                ? new Date(submittedFilters.end_date)
+                : undefined,
+            type: submittedFilters.type || undefined,
+            contentType: submittedFilters.content_type || undefined,
+            objectId: submittedFilters.object_id || undefined,
+        }),
+        [page, submittedFilters],
+    );
+
+    // Query for activity logs
+    const {
+        data: logsData,
+        isPending,
+        isPaused,
+    } = useQuery({
+        queryKey: queryKeys.activity.list({
+            name: submittedFilters.username,
+            objectId: submittedFilters.object_id,
+            contentType: submittedFilters.content_type,
+            username: submittedFilters.username,
+        }),
+        queryFn: () => logsApi.logsList(queryParams),
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch event logs. Please try again.',
+        },
+    });
+
+    // Convert EventLog to ActivityLog format
+    const events = useMemo(() => {
+        if (!logsData?.results) return [];
+        return logsData.results.map(convertEventLogToActivityLog);
+    }, [logsData?.results]);
+
+    const totalPages = logsData?.totalPages || 1;
+    const loading = isPending && !isPaused;
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
     };
-
-    useEffect(() => {
-        fetchEvents();
-    }, [page, submittedFilters]);
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -162,18 +183,19 @@ export default function ActivityList({
                     >
                         {/* Username input - Search Bar Style */}
                         <div className='flex-1 min-w-[200px]'>
-                            <div className='flex items-center gap-2 w-full bg-bg-card border border-border-border h-10 px-2 rounded-full focus-within:border-border-primary transition-colors'>
-                                <Search className='w-4 h-4 text-text-muted-foreground flex-shrink-0' />
-                                <input
+                            <InputGroup>
+                                <InputGroupAddon align='inline-start'>
+                                    <Search />
+                                </InputGroupAddon>
+                                <InputGroupInput
                                     type='text'
                                     id='username'
                                     name='username'
                                     value={searchFilters.username}
                                     onChange={handleSearchChange}
                                     placeholder='Search by username...'
-                                    className='flex-grow bg-transparent text-sm outline-none text-text-foreground placeholder:text-text-muted-foreground rounded-none font-mono min-w-0'
                                 />
-                            </div>
+                            </InputGroup>
                         </div>
 
                         {/* Date range picker */}
@@ -200,40 +222,46 @@ export default function ActivityList({
                                             : '',
                                     }));
                                 }}
-                                className='cradle-input h-10 rounded-full py-1 px-4 text-sm w-full max-w-full font-mono'
+                                className='h-10 rounded-full py-1 px-4 text-sm w-full max-w-full font-mono'
                             />
                         </div>
 
                         {/* Type selector */}
                         <div className='flex-1 min-w-[140px]'>
-                            <select
-                                name='type'
-                                value={searchFilters.type}
-                                onChange={handleSearchChange}
-                                className='cradle-input h-10 rounded-full w-full max-w-full px-4 text-sm font-mono'
+                            <Select
+                                value={searchFilters.type || 'any'}
+                                onValueChange={(value) => {
+                                    setSearchFilters((prev) => ({
+                                        ...prev,
+                                        type: value === 'any' ? '' : value,
+                                    }));
+                                }}
                             >
-                                <option value=''>Any Type</option>
-                                <option value='create'>Create</option>
-                                <option value='edit'>Edit</option>
-                                <option value='delete'>Delete</option>
-                                <option value='fetch'>Fetch</option>
-                                <option value='login'>Login</option>
-                            </select>
+                                <SelectTrigger className='w-full font-mono'>
+                                    <SelectValue placeholder='Any Type' />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value='any'>Any Type</SelectItem>
+                                    <SelectItem value='create'>Create</SelectItem>
+                                    <SelectItem value='edit'>Edit</SelectItem>
+                                    <SelectItem value='delete'>Delete</SelectItem>
+                                    <SelectItem value='fetch'>Fetch</SelectItem>
+                                    <SelectItem value='login'>Login</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
                         {/* Search button */}
                         <div className='flex-shrink-0'>
-                            <Button
-                                type='submit'
-                                variant='default'
-                                className='h-10 rounded-full flex items-center px-6'
-                            >
-                                <Search className='mr-2 w-4 h-4' /> Search
+                            <Button type='submit' variant='outline' size='sm'>
+                                <Search /> Search
                             </Button>
                         </div>
                     </form>
 
                     <div className='flex flex-col space-y-4'>
+                        {isPaused && <OfflineIndicator />}
+
                         {loading ? (
                             <div className='flex items-center justify-center min-h-[200px]'>
                                 <Spinner className='size-10' />

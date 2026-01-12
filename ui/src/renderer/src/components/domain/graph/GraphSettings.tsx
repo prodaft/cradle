@@ -1,6 +1,15 @@
-import type { GraphEdge } from '@/types/index';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import type { GraphEdge } from '@/types/index';
 import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { ChangeEvent, useState } from 'react';
 
@@ -44,36 +53,44 @@ export default function GraphSettings({
                 ) : (
                     <NavArrowRight width='16' height='16' />
                 )}
-                <span>Settings</span>
+                Settings
             </Button>
             {isExpanded && (
                 <div className='mt-4 space-y-4'>
                     {/* Layout Mode Selector */}
                     <div className='flex flex-col gap-2'>
-                        <label className='text-sm font-medium'>Layout Mode</label>
-                        <select
+                        <Label className='text-sm font-medium'>Layout Mode</Label>
+                        <Select
                             value={config.layoutMode}
-                            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
+                            onValueChange={(value) =>
                                 setConfig((prev) => ({
                                     ...prev,
-                                    layoutMode: e.target.value as LayoutMode,
+                                    layoutMode: value as LayoutMode,
                                 }))
                             }
-                            className='cradle-input text-sm px-3 py-2 capitalize'
                         >
-                            {(
-                                [
-                                    'circular',
-                                    'grid',
-                                    'cluster',
-                                    'random',
-                                ] as LayoutMode[]
-                            ).map((mode) => (
-                                <option key={mode} value={mode} className='capitalize'>
-                                    {mode}
-                                </option>
-                            ))}
-                        </select>
+                            <SelectTrigger className='w-full capitalize'>
+                                <SelectValue placeholder='Select layout mode' />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {(
+                                    [
+                                        'circular',
+                                        'grid',
+                                        'cluster',
+                                        'random',
+                                    ] as LayoutMode[]
+                                ).map((mode) => (
+                                    <SelectItem
+                                        key={mode}
+                                        value={mode}
+                                        className='capitalize'
+                                    >
+                                        {mode}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {/* Size Controls */}
@@ -97,8 +114,8 @@ export default function GraphSettings({
                     ].map(({ label, value, min, max, step, key }) => (
                         <div key={key} className='flex flex-col gap-2'>
                             <div className='flex items-center justify-between'>
-                                <label className='text-sm font-medium'>{label}</label>
-                                <input
+                                <Label className='text-sm font-medium'>{label}</Label>
+                                <Input
                                     type='number'
                                     min={min}
                                     max={max}
@@ -110,7 +127,7 @@ export default function GraphSettings({
                                             [key]: Number(e.target.value),
                                         }))
                                     }
-                                    className='cradle-input w-16 text-xs px-2 py-1'
+                                    className='w-16 text-xs px-2 py-1'
                                 />
                             </div>
                             <Slider

@@ -1,9 +1,8 @@
 import { useTheme } from '@/contexts/ui/ThemeContext';
-import { useProfile } from '@/contexts/user/ProfileContext';
-import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
 import { useCollabExtension } from '@/hooks/collab/useCollabExtension';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { useProfile } from '@/hooks/user/useProfile';
+import { FileTransferDownloadRetrieveRequest } from '@/services/cradle/apis/FileTransferApi';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import {
@@ -11,6 +10,7 @@ import {
     referenceLinkSyntax,
 } from '@/utils/editor/referenceLinks';
 import { createCradleTheme } from '@/utils/editor/theme';
+import { logger } from '@/utils/logger';
 import {
     acceptCompletion,
     autocompletion,
@@ -55,7 +55,9 @@ import {
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
 import { vim, Vim } from '@replit/codemirror-vim';
-import { FileReference, FileReferenceWithNote } from '@services/cradle/models';
+import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import {
@@ -68,8 +70,12 @@ import {
     useRef,
     useState,
 } from 'react';
+import { toast } from 'sonner';
 import FileUploadModal from '../../modals/notes/FileUploadModal';
 import FileTable from '../files/FileTable';
+
+// Type alias for compatibility with referenceLinks
+type FileReference = FileReferenceWithNote;
 
 interface RichEditorProps {
     noteid: string;
@@ -176,14 +182,38 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const { profile } = useProfile();
     const { isDarkMode } = useTheme();
     const { entriesApi, fileTransferApi } = useApi();
-    const { navigate } = useCradleNavigate();
+    const router = useRouter();
+    const navigate = (url: string) => {
+        router.navigate({ to: url as any });
+    };
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
     const markdownContentRef = useRef(markdownContent);
     const collabAppliedRef = useRef(false);
     const [entryColors, setEntryColors] = useState<Map<string, string>>(new Map());
-    const { executor } = useAPICall();
     const collabEnabled = !!noteid;
+
+    const downloadFileMutation = useMutation({
+        mutationFn: async (fileId: string) => {
+            const response = await fileTransferApi.fileTransferDownloadRetrieve({
+                fileId,
+            });
+            return response;
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const fetchEntryColorsMutation = useMutation({
+        mutationFn: async () => {
+            const entries = await entriesApi.entryClassesList({});
+            return entries;
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
     const {
         extension: collabExtension,
         status: collabStatus,
@@ -194,10 +224,12 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
         () =>
-            executor(
-                fileTransferApi.fileTransferDownloadRetrieve.bind(fileTransferApi),
-            ),
-        [executor, fileTransferApi],
+            async (
+                file: FileTransferDownloadRetrieveRequest,
+            ): Promise<FileDownload> => {
+                return await downloadFileMutation.mutateAsync(file.fileId);
+            },
+        [downloadFileMutation],
     );
 
     // Fetch entry colors once on mount
@@ -205,7 +237,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         let isMounted = true;
         const fetchEntryColors = async () => {
             try {
-                const entries = await entriesApi.entryClassesList({});
+                const entries = await fetchEntryColorsMutation.mutateAsync();
                 if (!isMounted) return;
                 const colorMap = new Map<string, string>();
                 for (const entry of entries) {
@@ -216,7 +248,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 setEntryColors(colorMap);
             } catch (error) {
                 if (isMounted) {
-                    console.error('Failed to fetch entry colors:', error);
+                    logger.error('Failed to fetch entry colors:', error);
                 }
             }
         };
@@ -244,7 +276,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     }, [markdownContent, noteid]);
 
     useEffect(() => {
-        console.debug('[RichEditor] collab status update', {
+        logger.debug('[RichEditor] collab status update', {
             noteId: noteid,
             status: collabStatus,
         });
@@ -270,7 +302,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
         const cursorPos = view.state.selection.main.head;
         const nextCursorPos = Math.min(cursorPos, collabContent.length);
-        console.debug('[RichEditor] applying collab content as source of truth', {
+        logger.debug('[RichEditor] applying collab content as source of truth', {
             noteId: noteid,
             fromLength: currentContent.length,
             toLength: collabContent.length,
@@ -387,16 +419,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             }),
             ...(!source
                 ? [
-                    prosemarkBasicSetup(),
-                    prosemarkBaseThemeSetup(),
-                    htmlBlockExtension,
-                    codeBlockCopyExtension,
-                    clickLinkHandler.of((url: string) => {
-                        window.open(url, '_blank', 'noopener,noreferrer');
-                    }),
-                    // Syntax highlighting for both modes
-                    baseSyntaxHighlights,
-                ]
+                      prosemarkBasicSetup(),
+                      prosemarkBaseThemeSetup(),
+                      htmlBlockExtension,
+                      codeBlockCopyExtension,
+                      clickLinkHandler.of((url: string) => {
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                      }),
+                      // Syntax highlighting for both modes
+                      baseSyntaxHighlights,
+                  ]
                 : [sourceModeSyntaxHighlighting]),
             pasteHandler,
             Prec.high(cradleTheme),
@@ -483,7 +515,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (!editorViewRef.current && editorRef.current && extensions.length > 0) {
             try {
                 const initialDoc = collabEnabled ? '' : markdownContent || '';
-                console.debug('[RichEditor] initializing editor', {
+                logger.debug('[RichEditor] initializing editor', {
                     noteId: noteid,
                     initialDocLength: initialDoc.length,
                     extensionsCount: extensions.length,
@@ -515,8 +547,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
                 editorViewRef.current = view;
             } catch (error) {
-                console.error('Failed to initialize RichEditor:', error);
-                toast.error(`Failed to initialize editor: ${error instanceof Error ? error.message : 'Unknown error'}. Please refresh the page.`);
+                logger.error('Failed to initialize RichEditor:', error);
+                toast.error(
+                    `Failed to initialize editor: ${error instanceof Error ? error.message : 'Unknown error'}. Please refresh the page.`,
+                );
             }
         }
     }, [extensions]);
@@ -540,7 +574,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         if (currentContent === markdownContent) return;
 
         if (currentContent.length > 0) {
-            console.debug('[RichEditor] skipping external sync while collab active', {
+            logger.debug('[RichEditor] skipping external sync while collab active', {
                 noteId: noteid,
                 currentLength: currentContent.length,
                 incomingLength: markdownContent.length,
@@ -550,7 +584,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
         const cursorPos = view.state.selection.main.head;
         const nextCursorPos = Math.min(cursorPos, markdownContent.length);
-        console.debug('[RichEditor] syncing external content', {
+        logger.debug('[RichEditor] syncing external content', {
             noteId: noteid,
             fromLength: currentContent.length,
             toLength: markdownContent.length,

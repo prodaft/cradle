@@ -1,11 +1,10 @@
 import Loading from '@/components/base/Loading/Loading';
-import { toast } from 'sonner';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { Notification } from '@/services/cradle';
-import { useEffect, useState } from 'react';
-import NotificationCard from './NotificationCard';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import useApi from '@/hooks/api/useApi';
+import { Notification } from '@/services/cradle';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
+import NotificationCard from './NotificationCard';
 
 interface NotificationsPanelProps {
     unreadNotificationsCount: number;
@@ -23,38 +22,54 @@ export default function NotificationsPanel({
     setUnreadNotificationsCount,
 }: NotificationsPanelProps) {
     const { notificationsApi } = useApi();
-    const [loading, setLoading] = useState(false);
-    const { execute } = useAPICall();
-    const [notifications, setNotifications] = useState<Notification[]>([]);
     const [flaggedNotificationsCount, setFlaggedNotificationsCount] = useState(0);
+
+    // Query for notifications
+    const {
+        data: notificationsData,
+        isPending: loading,
+        refetch,
+    } = useQuery({
+        queryKey: ['notifications'],
+        queryFn: () => notificationsApi.notificationsList(),
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to load notifications',
+        },
+    });
+
+    const notifications = notificationsData || [];
+
+    // Calculate flagged notifications count
+    const calculatedFlaggedCount = useMemo(() => {
+        return notifications.filter(
+            (notification: Notification) => notification.isMarkedUnread,
+        ).length;
+    }, [notifications]);
+
+    // Update flagged count when notifications change
+    useEffect(() => {
+        setFlaggedNotificationsCount(calculatedFlaggedCount);
+        setUnreadNotificationsCount(calculatedFlaggedCount);
+    }, [calculatedFlaggedCount, setUnreadNotificationsCount]);
+
+    // Refetch when unread count increases (new notification arrived)
+    useEffect(() => {
+        if (flaggedNotificationsCount < unreadNotificationsCount) {
+            refetch();
+        }
+    }, [unreadNotificationsCount, flaggedNotificationsCount, refetch]);
 
     const updateFlaggedNotificationsCount = (
         updater: number | ((prevCount: number) => number),
     ) => {
-        setFlaggedNotificationsCount(updater);
-        setUnreadNotificationsCount(updater);
+        const newCount =
+            typeof updater === 'function'
+                ? updater(flaggedNotificationsCount)
+                : updater;
+        setFlaggedNotificationsCount(newCount);
+        setUnreadNotificationsCount(newCount);
     };
-
-    async function fetchNotificationsAndUpdateCounts() {
-        setLoading(true);
-        const response = await execute(() => notificationsApi.notificationsList());
-        setNotifications(response);
-        const auxFlaggedNotificationsCount = (response || []).filter(
-            (notification: Notification) => notification.isMarkedUnread,
-        ).length;
-        updateFlaggedNotificationsCount(auxFlaggedNotificationsCount);
-        setLoading(false);
-    }
-
-    useEffect(() => {
-        fetchNotificationsAndUpdateCounts();
-    }, []);
-
-    useEffect(() => {
-        if (flaggedNotificationsCount < unreadNotificationsCount) {
-            fetchNotificationsAndUpdateCounts();
-        }
-    }, [unreadNotificationsCount]);
 
     return (
         <div

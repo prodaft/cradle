@@ -1,12 +1,10 @@
-import { useModal } from '@/contexts/ui/ModalContext';
-import { useProfile } from '@/contexts/user/ProfileContext';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
-import { ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
+import useApi from '@/hooks/api/useApi';
+import { useProfile } from '@/hooks/user/useProfile';
+import { useMutation } from '@tanstack/react-query';
+import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ReactNode, useState } from 'react';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
 import EntryTypeForm from '../forms/EntryTypeForm';
@@ -26,19 +24,21 @@ export default function AdminPanelCardEntryType({
     onDelete,
     setRightPane,
 }: AdminPanelCardEntryTypeProps) {
-    const { executor } = useAPICall();
     const { entriesApi } = useApi();
-    const { navigate, navigateLink } = useCradleNavigate();
-    const { setModal } = useModal();
     const { isAdmin } = useProfile();
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-    const handleDelete = executor(
-        async () => {
+    const deleteMutation = useMutation({
+        mutationFn: async () => {
             await entriesApi.entryClassesDestroy({ classSubtype: id });
             onDelete();
         },
-        { successMessage: 'Entry type deleted successfully' },
-    );
+        meta: {
+            successMessage: 'Entry type deleted successfully',
+        },
+    });
+
+    const handleDelete = () => deleteMutation.mutate();
 
     const handleActivityClick = () => {
         setRightPane(
@@ -52,7 +52,7 @@ export default function AdminPanelCardEntryType({
     };
 
     const handleEditClick = () => {
-        setRightPane(<EntryTypeForm id={id} isEdit={true} />);
+        setRightPane(<EntryTypeForm id={id} />);
     };
 
     return (
@@ -93,21 +93,26 @@ export default function AdminPanelCardEntryType({
                         <EditPencil />
                     </Button>
                     {isAdmin() && (
-                        <Button
-                            variant='ghost'
-                            size='icon-sm'
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setModal(ConfirmDeletionModal, {
-                                    onConfirm: handleDelete,
-                                    confirmText: name,
-                                    text: 'Are you sure you want to delete this entry type? This action is irreversible.',
-                                });
-                            }}
-                            title='Delete'
-                        >
-                            <Trash />
-                        </Button>
+                        <>
+                            <Button
+                                variant='ghost'
+                                size='icon-sm'
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setDeleteModalOpen(true);
+                                }}
+                                title='Delete'
+                            >
+                                <Trash />
+                            </Button>
+                            <ConfirmDeletionModal
+                                open={deleteModalOpen}
+                                onOpenChange={setDeleteModalOpen}
+                                onConfirm={handleDelete}
+                                confirmText={name}
+                                text='Are you sure you want to delete this entry type? This action is irreversible.'
+                            />
+                        </>
                     )}
                 </CardAction>
             </CardHeader>

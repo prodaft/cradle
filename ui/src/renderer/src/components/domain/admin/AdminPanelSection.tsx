@@ -1,12 +1,16 @@
 import { Button } from '@/components/ui/button';
-import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSearch';
-import { naturalSort } from '@/utils/dashboard';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { PlusCircle, Search, Xmark } from 'iconoir-react';
-import { useMemo, useState } from 'react';
-import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSearch';
+import { naturalSort } from '@/utils/dashboard';
+import { PlusCircle, Search, Xmark } from 'iconoir-react';
+import { useMemo, useState } from 'react';
 
 interface AdminPanelSectionProps {
     title: string;
@@ -64,7 +68,11 @@ export default function AdminPanelSection({
                         <Search />
                     </InputGroupAddon>
                     {searchVal && (
-                        <InputGroupAddon align='inline-end' onClick={() => setSearchVal('')} className='cursor-pointer'>
+                        <InputGroupAddon
+                            align='inline-end'
+                            onClick={() => setSearchVal('')}
+                            className='cursor-pointer'
+                        >
                             <Xmark />
                         </InputGroupAddon>
                     )}
@@ -85,9 +93,7 @@ export default function AdminPanelSection({
                                 <PlusCircle />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            {addTooltipText}
-                        </TooltipContent>
+                        <TooltipContent>{addTooltipText}</TooltipContent>
                     </Tooltip>
                 )}
             </div>

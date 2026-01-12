@@ -1,8 +1,8 @@
+import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import { capitalizeString } from '@/utils/dashboard';
 import { EditPencil } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import TypeMappingsEditor from '../TypeMappingsEditor';
 
 interface AdminPanelCardTypeMappingProps {

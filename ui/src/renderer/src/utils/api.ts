@@ -39,16 +39,6 @@ interface APIErrorResponse {
 }
 
 /**
- * Alert state structure (legacy)
- * @deprecated Import Alert from @/types instead for consistent alert handling
- */
-export interface Alert {
-    show: boolean;
-    message: string;
-    color: 'success' | 'error' | 'warning' | 'info' | string;
-}
-
-/**
  * Parse RFC 9457 error response into structured format
  *
  * @param error - Error object with response
@@ -191,76 +181,3 @@ export function getErrorStatus(parsed: ParsedAPIError): number {
 // ============================================================================
 // Legacy Response Utils (to be phased out)
 // ============================================================================
-
-/**
- * Trim extra characters from a string
- * @param str - String to trim
- * @returns Trimmed string
- */
-const trimMore = (str: string): string => {
-    return str.trim().replace(/^"/g, '').replace(/"$/g, '');
-};
-
-/**
- * This function can be used to display error message in an alert box,
- * by controlling the alert message and color states.
- *
- * If the error is from the server, display the error message from the server.
- * Otherwise, display the error message from the client.
- *
- * If the error is a 401, the user is redirected to the login page.
- *
- * @deprecated Use parseAPIError and handleAPIError instead
- * @param setAlert - Function to set the alert message (state)
- * @param navigate - Function to navigate to a different page
- * @returns Function to display the error message
- */
-export const displayError = (
-    setAlert: (alert: Alert) => void,
-    navigate?: (path: string) => void,
-): ((err: any) => void) => {
-    return (err: any) => {
-        if (err.response && err.response.status === 401 && navigate) {
-            setAlert({
-                show: true,
-                message: 'Your session has expired. Please log back in.',
-                color: 'red',
-            });
-            navigate('/login');
-            return;
-        }
-
-        let message: string | null = null;
-
-        if (err.response && err.response.status === 500) {
-            message = 'Server error. Please try again later.';
-        }
-
-        if (!message && err.response && err.response.data) {
-            if (err.response.data.detail) {
-                message = `${err.response.status}: ${err.response.data.detail}`;
-            }
-            for (const key in err.response.data) {
-                if (message) {
-                    break;
-                }
-                if (key.includes('error') || key.includes('detail')) {
-                    message = JSON.stringify(err.response.data[key]);
-                }
-            }
-            if (!message) {
-                message = JSON.stringify(err.response.data);
-            }
-        }
-
-        if (!message && err.message) {
-            message = err.message.trim('"');
-        }
-        if (!message) {
-            message = 'An unknown error occurred.';
-            console.log(err);
-        }
-
-        setAlert({ show: true, message: trimMore(message), color: 'red' });
-    };
-};

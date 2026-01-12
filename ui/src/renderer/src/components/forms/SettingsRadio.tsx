@@ -3,6 +3,8 @@
  * Matches the AccountSettings design pattern with label/description on left, radio buttons on right
  */
 
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { forwardRef, InputHTMLAttributes } from 'react';
 import { FieldError } from 'react-hook-form';
 
@@ -78,46 +80,57 @@ const SettingsRadio = forwardRef<HTMLInputElement, SettingsRadioProps>(
             <div className='py-2'>
                 <div className='flex items-center justify-between gap-4'>
                     <div className='flex-1'>
-                        <label className='text-sm text-muted-foreground block mb-0.5'>
+                        <Label className='text-sm text-muted-foreground block mb-0.5'>
                             {label}
-                            {required && <span className='text-destructive ml-1'>*</span>}
-                        </label>
+                            {required && (
+                                <span className='text-destructive ml-1'>*</span>
+                            )}
+                        </Label>
                         {description && (
-                            <p className='text-sm text-muted-foreground'>{description}</p>
+                            <p className='text-sm text-muted-foreground'>
+                                {description}
+                            </p>
                         )}
                         {errorMessage && (
-                            <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
+                            <p className='text-sm text-destructive mt-1'>
+                                {errorMessage}
+                            </p>
                         )}
                     </div>
-                    <div
-                        className={`flex ${layout === 'horizontal' ? 'flex-row gap-3' : 'flex-col gap-2'}`}
+                    <RadioGroup
+                        value={value}
+                        onValueChange={onChange}
+                        name={name}
+                        className={
+                            layout === 'horizontal'
+                                ? 'flex-row gap-3'
+                                : 'flex-col gap-2'
+                        }
+                        aria-invalid={Boolean(errorMessage)}
+                        {...props}
                     >
-                        {options.map((option) => (
-                            <label
-                                key={option.value}
-                                className='flex items-center gap-2 cursor-pointer'
-                            >
-                                <input
-                                    ref={ref}
-                                    type='radio'
-                                    name={name}
-                                    value={option.value}
-                                    checked={value === option.value}
-                                    onChange={(e) => {
-                                        if (onChange && e.target.checked) {
-                                            onChange(option.value);
-                                        }
-                                    }}
-                                    className='w-4 h-4 text-primary bg-transparent border-border focus:ring-primary focus:ring-2'
-                                    aria-invalid={Boolean(errorMessage)}
-                                    {...props}
-                                />
-                                <span className='text-sm text-foreground'>
-                                    {option.label}
-                                </span>
-                            </label>
-                        ))}
-                    </div>
+                        {options.map((option) => {
+                            const optionId = `${name}-${option.value}`;
+                            return (
+                                <div
+                                    key={option.value}
+                                    className='flex items-center gap-2'
+                                >
+                                    <RadioGroupItem
+                                        value={option.value}
+                                        id={optionId}
+                                        ref={ref}
+                                    />
+                                    <Label
+                                        htmlFor={optionId}
+                                        className='text-sm text-foreground cursor-pointer'
+                                    >
+                                        {option.label}
+                                    </Label>
+                                </div>
+                            );
+                        })}
+                    </RadioGroup>
                 </div>
             </div>
         );

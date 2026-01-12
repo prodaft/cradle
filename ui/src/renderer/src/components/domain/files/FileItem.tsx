@@ -1,14 +1,14 @@
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useAPICall } from '@/hooks';
 import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import type { Alert, StateSetter } from '@/types';
 import { createDashboardLink } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import type { FileReferenceWithNote } from '@services/cradle/models';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { Download } from 'iconoir-react';
 import { forwardRef, useState } from 'react';
+import { toast } from 'sonner';
 
 /**
  * FileItem component - This component is used to display a file in a list.
@@ -27,30 +27,34 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
     { id, file, ...props },
     ref,
 ) {
-    const { navigateLink } = useCradleNavigate();
+    const router = useRouter();
     const { fileTransferApi } = useApi();
     const [hidden, setHidden] = useState(false);
-    const { execute } = useAPICall();
 
-    const downloadFile = async () => {
-        if (file.id) {
-            let response = await execute(() =>
-                fileTransferApi.fileTransferDownloadRetrieve({
-                    fileId: file.id!,
-                }),
-            );
-
-            const { presignedUrl } = response;
+    const downloadMutation = useMutation({
+        mutationFn: async (fileId: string) => {
+            const response = await fileTransferApi.fileTransferDownloadRetrieve({
+                fileId,
+            });
+            return response.presignedUrl;
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: (presignedUrl) => {
             const link = document.createElement('a');
             link.href = presignedUrl;
-
             const fileName = file.fileName!;
             link.download = fileName;
             document.body.appendChild(link);
-
             link.click();
-
             document.body.removeChild(link);
+        },
+    });
+
+    const downloadFile = () => {
+        if (file.id) {
+            downloadMutation.mutate(file.id);
         }
     };
 
@@ -84,22 +88,36 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                                 className={`hover:underline badge badge-flat-primary badge-xs px-2 mx-1 my-1 py-1 text-primary-foreground ${!entry.color ? 'bg-muted' : ''}`}
                                 href={`#${createDashboardLink(entry)}`}
                                 data-custom-href={`#${createDashboardLink(entry)}`}
-                                style={entry.color ? {
-                                    backgroundColor: entry.color,
-                                } : undefined}
+                                style={
+                                    entry.color
+                                        ? {
+                                              backgroundColor: entry.color,
+                                          }
+                                        : undefined
+                                }
                             >
                                 {entry.name}
                             </a>
                         ))}
                     </div>
                     <div className='mt-1'>
-                        <a
-                            href={`/notes/${file.noteId}`}
-                            onClick={navigateLink(`/notes/${file.noteId}`)}
-                            className='text-muted-foreground hover:text-foreground ml-2'
-                        >
-                            View Note
-                        </a>
+                        {file.noteId && (
+                            <>
+                                <a
+                                    href={`/notes/${file.noteId}`}
+                                    onClick={() =>
+                                        router.navigate({
+                                            to: '/notes/$id',
+                                            params: { id: file.noteId! },
+                                        })
+                                    }
+                                    className='text-muted-foreground hover:text-foreground ml-2'
+                                >
+                                    View Note
+                                </a>
+                                <span className='text-muted-foreground mx-1'>|</span>
+                            </>
+                        )}
                         <span className='text-muted-foreground mx-1'>|</span>
                         <span className='text-muted-foreground'>
                             {file.timestamp ? formatDate(file.timestamp) : 'N/A'}

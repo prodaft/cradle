@@ -3,10 +3,16 @@
  * Matches the AccountSettings design pattern with label/description on left, input on right
  */
 
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError as FieldErrorComponent,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { forwardRef, InputHTMLAttributes, ReactNode } from 'react';
 import { FieldError } from 'react-hook-form';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 export interface SettingsFieldProps extends Omit<
     InputHTMLAttributes<HTMLInputElement>,
@@ -72,19 +78,26 @@ const SettingsField = forwardRef<HTMLInputElement, SettingsFieldProps>(
         const errorMessage = typeof error === 'string' ? error : error?.message;
 
         return (
-            <div className='flex items-center justify-between gap-4 py-2'>
-                <div className='flex-1'>
-                    <Label htmlFor={props.id || props.name} className='text-sm text-muted-foreground block mb-0.5'>
+            <Field orientation='horizontal' className='py-2'>
+                <FieldContent className='flex-1'>
+                    <FieldLabel
+                        htmlFor={props.id || props.name}
+                        className='text-sm text-muted-foreground block mb-0.5'
+                    >
                         {label}
                         {required && <span className='text-destructive ml-1'>*</span>}
-                    </Label>
+                    </FieldLabel>
                     {description && (
-                        <p className='text-sm text-muted-foreground'>{description}</p>
+                        <FieldDescription className='text-sm'>
+                            {description}
+                        </FieldDescription>
                     )}
                     {errorMessage && (
-                        <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
+                        <FieldErrorComponent className='text-sm mt-1'>
+                            {errorMessage}
+                        </FieldErrorComponent>
                     )}
-                </div>
+                </FieldContent>
                 <div className={inputWidth}>
                     {children || (
                         <Input
@@ -100,7 +113,7 @@ const SettingsField = forwardRef<HTMLInputElement, SettingsFieldProps>(
                         />
                     )}
                 </div>
-            </div>
+            </Field>
         );
     },
 );

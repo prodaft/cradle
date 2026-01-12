@@ -1,12 +1,10 @@
-import { MouseEvent, ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { MouseEvent, ReactNode } from 'react';
 
 interface TableActionsButtonProps {
     /** Menu items to display in the dropdown */
@@ -44,14 +42,16 @@ export default function TableActionsButton({
     };
 
     return (
-        <div className={className} onClick={(e) => stopPropagation && e.stopPropagation()}>
+        <div
+            className={className}
+            onClick={(e) => stopPropagation && e.stopPropagation()}
+        >
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button
                         type='button'
                         variant='ghost'
                         size='icon-sm'
-                        className='text-primary-foreground hover:text-primary-foreground hover:bg-secondary'
                         onClick={handleButtonClick}
                     >
                         <svg
@@ -73,7 +73,7 @@ export default function TableActionsButton({
                         <span className='sr-only'>Open menu</span>
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align='end' className='w-48'>
                     {children}
                 </DropdownMenuContent>
             </DropdownMenu>

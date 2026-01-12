@@ -1,8 +1,7 @@
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { Button } from '@/components/ui/button';
+import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import { EditPencil } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
-import { Card, CardHeader, CardTitle, CardAction } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import EnrichmentSettingsForm from '../forms/EnrichmentSettingsForm';
 
 interface AdminPanelCardEnrichmentProps {
@@ -16,8 +15,6 @@ export default function AdminPanelCardEnrichment({
     id,
     setRightPane,
 }: AdminPanelCardEnrichmentProps) {
-    const { navigate, navigateLink } = useCradleNavigate();
-
     const handleEditClick = () => {
         setRightPane(<EnrichmentSettingsForm enrichment_class={id} />);
     };

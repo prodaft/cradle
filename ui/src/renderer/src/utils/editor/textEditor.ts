@@ -5,7 +5,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { EditorState } from '@codemirror/state';
 import { SyntaxNode } from '@lezer/common';
-import type { FileReference } from '@services/cradle/models';
+import type { FileReferenceWithNote } from '@services/cradle/models';
 import DOMPurify from 'dompurify';
 import parseMarkdown from '../parser/parse';
 
@@ -51,7 +51,7 @@ export const parseContent = async (
     entriesApi: any,
     fileTransferApi: any,
     baseURL: string,
-    fileData?: FileReference[],
+    fileData?: FileReferenceWithNote[],
     addLinks: boolean = false,
 ): Promise<ParseResult> => {
     const result = await parseMarkdown(

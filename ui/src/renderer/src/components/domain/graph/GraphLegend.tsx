@@ -1,6 +1,10 @@
-import { SubtypeHierarchy } from '@/utils/dashboard';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { SubtypeHierarchy } from '@/utils/dashboard';
 import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { ReactNode } from 'react';
 
@@ -62,13 +66,17 @@ const GraphLegend = ({
             <Collapsible defaultOpen={true}>
                 <div className='flex justify-between items-center'>
                     <CollapsibleTrigger asChild>
-                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
+                        <Button
+                            variant='ghost'
+                            size='sm'
+                            className='group hover:text-border-primary'
+                        >
                             <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                             <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
-                            <span>Legend</span>
+                            Legend
                         </Button>
                     </CollapsibleTrigger>
-                    <Button 
+                    <Button
                         variant='ghost'
                         size='sm'
                         className='text-xs px-2 py-1 hover:bg-bg-card'
@@ -79,9 +87,7 @@ const GraphLegend = ({
                 </div>
                 <CollapsibleContent>
                     <div className='flex flex-wrap gap-1 mt-4'>
-                        {new SubtypeHierarchy(
-                            Object.keys(entryGraphColors),
-                        ).convert(
+                        {new SubtypeHierarchy(Object.keys(entryGraphColors)).convert(
                             // --- Render for internal nodes (categories that have child categories) ---
                             (
                                 value: string,
@@ -101,7 +107,8 @@ const GraphLegend = ({
                                     (cv) =>
                                         entryGraphColors[cv] &&
                                         !childValues.some(
-                                            (other) => other !== cv && cv.startsWith(other),
+                                            (other) =>
+                                                other !== cv && cv.startsWith(other),
                                         ),
                                 );
 
@@ -116,20 +123,28 @@ const GraphLegend = ({
                                             <Collapsible>
                                                 <div className='flex justify-between items-center'>
                                                     <CollapsibleTrigger asChild>
-                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='sm'
+                                                            className='group hover:text-border-primary'
+                                                        >
                                                             <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                                             <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                                             <span>{value}</span>
                                                         </Button>
                                                     </CollapsibleTrigger>
-                                                    <Button 
+                                                    <Button
                                                         variant='ghost'
                                                         size='sm'
                                                         className='text-xs px-2 py-1 hover:bg-bg-card'
                                                         onClick={() =>
                                                             toggleAllAtPath(
                                                                 path,
-                                                                leafNodes.map((ln) => ln.substring(path.length)),
+                                                                leafNodes.map((ln) =>
+                                                                    ln.substring(
+                                                                        path.length,
+                                                                    ),
+                                                                ),
                                                             )
                                                         }
                                                     >
@@ -161,7 +176,10 @@ const GraphLegend = ({
                                     >
                                         <div
                                             className='w-2 h-2 rounded-full flex-shrink-0'
-                                            style={{ backgroundColor: entryGraphColors[fullSubtype] }}
+                                            style={{
+                                                backgroundColor:
+                                                    entryGraphColors[fullSubtype],
+                                            }}
                                         />
                                         <span className='truncate'>{value}</span>
                                     </div>

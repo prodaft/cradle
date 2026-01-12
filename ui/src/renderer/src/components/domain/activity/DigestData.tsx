@@ -1,18 +1,17 @@
-import { toast } from 'sonner';
-import { useProfile } from '@/contexts/user/ProfileContext';
+import { Button } from '@/components/ui/button';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { useModal } from '@/contexts/ui/ModalContext';
+import { useProfile } from '@/hooks/user/useProfile';
 import type { Alert } from '@/types';
 import DigestList from '@components/domain/files/DigestList';
 import UploadDigestModal from '@components/modals/files/UploadDigestModal';
 import type { BaseDigest } from '@services/cradle/models';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Kbd, KbdGroup } from '@/components/ui/kbd';
-import { FilePlus } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { debounce } from 'lodash';
+import { FilePlus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
 interface SearchFilters {
     title: string;
@@ -42,59 +41,54 @@ interface ColumnFilters {
 type Digest = BaseDigest;
 
 export default function DigestData() {
-    const [searchParams, setSearchParams] = useSearchParams();
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/digest-data' });
     const { profile } = useProfile();
     const { intelioApi } = useApi();
-    const { setModal } = useModal();
+    const [uploadDigestModalOpen, setUploadDigestModalOpen] = useState(false);
+    const queryClient = useQueryClient();
 
     // Digest list state
-    const [digests, setDigests] = useState<Digest[]>([]);
-    const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
     const [sortField, setSortField] = useState(
-        searchParams.get('digests_sort_field') || 'created_at',
+        (search as any)?.digests_sort_field || 'created_at',
     );
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>(
-        (searchParams.get('digests_sort_direction') as 'asc' | 'desc') || 'desc',
+        (search as any)?.digests_sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('digests_pagesize')) || 10,
-    );
+    const [pageSize, setPageSize] = useState((search as any)?.digests_pagesize || 10);
 
     // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-        title: searchParams.get('title') || '',
-        author: searchParams.get('author') || '',
+        title: (search as any)?.title || '',
+        author: (search as any)?.author || '',
     });
 
     const [submittedFilters, setSubmittedFilters] = useState<SubmittedFilters>({
-        title: searchParams.get('title') || '',
-        author: searchParams.get('author') || '',
-        created_at_gte: searchParams.get('created_at_gte') || '',
+        title: (search as any)?.title || '',
+        author: (search as any)?.author || '',
+        created_at_gte: (search as any)?.created_at_gte || '',
     });
 
     // Date range state
     const [dateRange, setDateRange] = useState<DateRange>({
-        startDate: searchParams.get('created_at_gte') || null,
-        endDate: searchParams.get('created_at_lte') || null,
+        startDate: (search as any)?.created_at_gte || null,
+        endDate: (search as any)?.created_at_lte || null,
     });
 
     // Column filters for table header
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
-        status: searchParams.get('status') || 'all',
-        user: searchParams.get('author') || '',
+        status: (search as any)?.status || 'all',
+        user: (search as any)?.author || '',
         createdAt: {
-            from: searchParams.get('created_at_gte')
-                ? new Date(searchParams.get('created_at_gte')!)
-                      .toISOString()
-                      .split('T')[0]
+            from: (search as any)?.created_at_gte
+                ? new Date((search as any).created_at_gte).toISOString().split('T')[0]
                 : '',
-            to: searchParams.get('created_at_lte')
-                ? new Date(searchParams.get('created_at_lte')!)
-                      .toISOString()
-                      .split('T')[0]
+            to: (search as any)?.created_at_lte
+                ? new Date((search as any).created_at_lte).toISOString().split('T')[0]
                 : '',
         },
     });
@@ -106,40 +100,76 @@ export default function DigestData() {
         color: 'info',
     });
 
-    const searchParamsRef = useRef(searchParams);
+    const searchRef = useRef(search);
     useEffect(() => {
-        searchParamsRef.current = searchParams;
-    }, [searchParams]);
+        searchRef.current = search;
+    }, [search]);
 
-    useEffect(() => {
-        fetchDigests();
-    }, [
-        page,
-        sortField,
-        sortDirection,
-        pageSize,
-        columnFilters,
-        submittedFilters,
-        intelioApi,
-    ]);
+    // Prepare query parameters
+    const queryParams = useMemo(() => {
+        const searchQueryParams: any = {
+            page,
+            pageSize,
+            title: submittedFilters.title || undefined,
+            author: submittedFilters.author || undefined,
+            createdAtGte: submittedFilters.created_at_gte || undefined,
+            createdAtLte: submittedFilters.created_at_lte || undefined,
+        };
+
+        // Add column filter parameters
+        if (columnFilters.user) {
+            searchQueryParams.author = columnFilters.user;
+        }
+
+        if (columnFilters.status != 'all') {
+            searchQueryParams.status = columnFilters.status;
+        }
+
+        if (columnFilters.createdAt.from) {
+            searchQueryParams.createdAtGte = new Date(
+                columnFilters.createdAt.from,
+            ).toISOString();
+        }
+        if (columnFilters.createdAt.to) {
+            const endDate = new Date(columnFilters.createdAt.to);
+            endDate.setHours(23, 59, 59, 999);
+            searchQueryParams.createdAtLte = endDate.toISOString();
+        }
+
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+        searchQueryParams.orderBy = orderBy;
+
+        return searchQueryParams;
+    }, [page, pageSize, sortField, sortDirection, columnFilters, submittedFilters]);
+
+    // Query for digests
+    const { data: digestsData, isPending: loading } = useQuery({
+        queryKey: ['digests', queryParams],
+        queryFn: () => intelioApi.intelioDigestRetrieve(queryParams),
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch digests',
+        },
+    });
+
+    const digests = digestsData?.results || [];
+    const totalPages = digestsData?.totalPages || 1;
+    const totalCount = digestsData?.count || 0;
 
     // Initialize filters from URL parameters
     useEffect(() => {
+        const searchAny = search as any;
         const initialFilters: SearchFilters = {
-            title: searchParams.get('title') || '',
-            author: searchParams.get('author') || '',
+            title: searchAny?.title || '',
+            author: searchAny?.author || '',
         };
 
         const initialDateRange: DateRange = {
-            startDate: searchParams.get('created_at_gte')
-                ? new Date(searchParams.get('created_at_gte')!)
-                      .toISOString()
-                      .split('T')[0]
+            startDate: searchAny?.created_at_gte
+                ? new Date(searchAny.created_at_gte).toISOString().split('T')[0]
                 : null,
-            endDate: searchParams.get('created_at_lte')
-                ? new Date(searchParams.get('created_at_lte')!)
-                      .toISOString()
-                      .split('T')[0]
+            endDate: searchAny?.created_at_lte
+                ? new Date(searchAny.created_at_lte).toISOString().split('T')[0]
                 : null,
         };
 
@@ -147,54 +177,49 @@ export default function DigestData() {
         setDateRange(initialDateRange);
 
         if (
-            searchParams.has('title') ||
-            searchParams.has('author') ||
-            searchParams.has('created_at_gte') ||
-            searchParams.has('created_at_lte')
+            searchAny?.title ||
+            searchAny?.author ||
+            searchAny?.created_at_gte ||
+            searchAny?.created_at_lte
         ) {
             setSubmittedFilters({
                 ...initialFilters,
-                created_at_gte: searchParams.get('created_at_gte') || '',
-                created_at_lte: searchParams.get('created_at_lte') || '',
+                created_at_gte: searchAny?.created_at_gte || '',
+                created_at_lte: searchAny?.created_at_lte || '',
             });
         }
-        fetchDigests();
-    }, []);
+    }, [search]);
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters, dateRangeValue: DateRange) => {
-            const newParams = new URLSearchParams(searchParamsRef.current);
+            const newSearch: any = {
+                ...search,
+                title: filters.title || undefined,
+                author: filters.author || undefined,
+                created_at_gte: dateRangeValue.startDate
+                    ? new Date(dateRangeValue.startDate).toISOString()
+                    : undefined,
+                created_at_lte: dateRangeValue.endDate
+                    ? (() => {
+                          const endDate = new Date(dateRangeValue.endDate);
+                          endDate.setHours(23, 59, 59, 999);
+                          return endDate.toISOString();
+                      })()
+                    : undefined,
+            };
 
-            if (filters.title) {
-                newParams.set('title', filters.title);
-            } else {
-                newParams.delete('title');
-            }
+            // Remove undefined values
+            Object.keys(newSearch).forEach((key) => {
+                if (newSearch[key] === undefined || newSearch[key] === '') {
+                    delete newSearch[key];
+                }
+            });
 
-            if (filters.author) {
-                newParams.set('author', filters.author);
-            } else {
-                newParams.delete('author');
-            }
-
-            if (dateRangeValue.startDate) {
-                newParams.set(
-                    'created_at_gte',
-                    new Date(dateRangeValue.startDate).toISOString(),
-                );
-            } else {
-                newParams.delete('created_at_gte');
-            }
-
-            if (dateRangeValue.endDate) {
-                const endDate = new Date(dateRangeValue.endDate);
-                endDate.setHours(23, 59, 59, 999);
-                newParams.set('created_at_lte', endDate.toISOString());
-            } else {
-                newParams.delete('created_at_lte');
-            }
-
-            setSearchParams(newParams, { replace: true });
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch,
+                replace: true,
+            });
 
             setSubmittedFilters({
                 ...filters,
@@ -210,7 +235,7 @@ export default function DigestData() {
                     : '',
             });
         },
-        [setSearchParams],
+        [router, location.pathname],
     );
 
     const debouncedUpdateSearchParams = useMemo(
@@ -277,54 +302,10 @@ export default function DigestData() {
         updateSearchParams(nextFilters, dateRange);
     };
 
-    const fetchDigests = async () => {
-        setLoading(true);
-        try {
-            const searchQueryParams: any = {
-                page,
-                pageSize,
-                title: submittedFilters.title || undefined,
-                author: submittedFilters.author || undefined,
-                createdAtGte: submittedFilters.created_at_gte || undefined,
-                createdAtLte: submittedFilters.created_at_lte || undefined,
-            };
-
-            // Add column filter parameters
-            if (columnFilters.user) {
-                searchQueryParams.author = columnFilters.user;
-            }
-
-            if (columnFilters.status != 'all') {
-                searchQueryParams.status = columnFilters.status;
-            }
-
-            if (columnFilters.createdAt.from) {
-                searchQueryParams.createdAtGte = new Date(
-                    columnFilters.createdAt.from,
-                ).toISOString();
-            }
-            if (columnFilters.createdAt.to) {
-                const endDate = new Date(columnFilters.createdAt.to);
-                endDate.setHours(23, 59, 59, 999);
-                searchQueryParams.createdAtLte = endDate.toISOString();
-            }
-
-            const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-            searchQueryParams.orderBy = orderBy;
-
-            const response = await intelioApi.intelioDigestRetrieve(searchQueryParams);
-
-            setDigests(response.results);
-            setTotalPages(response.totalPages);
-            setTotalCount(response.count || 0);
-        } catch (error: any) {
-            console.error('Failed to fetch digests', error);
-            toast.error(`Error fetching digests: ${error.message}`);
-            setDigests([]);
-        } finally {
-            setLoading(false);
-        }
-    };
+    // Invalidate digests query helper
+    const invalidateDigests = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: ['digests'] });
+    }, [queryClient]);
 
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
@@ -335,19 +316,31 @@ export default function DigestData() {
         setSortDirection(newSortDirection);
         setPage(1);
 
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('digests_sort_field', newSortField);
-        newParams.set('digests_sort_direction', newSortDirection);
-        setSearchParams(newParams, { replace: true });
+        const newSearch: any = {
+            ...search,
+            digests_sort_field: newSortField,
+            digests_sort_direction: newSortDirection,
+        };
+        router.navigate({
+            to: location.pathname as any,
+            search: newSearch,
+            replace: true,
+        });
     };
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
         setPage(1);
 
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('digests_pagesize', String(newSize));
-        setSearchParams(newParams, { replace: true });
+        const newSearch: any = {
+            ...search,
+            digests_pagesize: String(newSize),
+        };
+        router.navigate({
+            to: location.pathname as any,
+            search: newSearch,
+            replace: true,
+        });
     };
 
     const handleColumnFilterChange = (column: string, value: any) => {
@@ -359,11 +352,7 @@ export default function DigestData() {
     };
 
     const handleCreateDigest = () => {
-        setModal(UploadDigestModal, {
-            onUpload: () => {
-                fetchDigests();
-            },
-        });
+        setUploadDigestModalOpen(true);
     };
 
     return (
@@ -372,18 +361,16 @@ export default function DigestData() {
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
                     <h2 className='text-2xl font-bold tracking-tight'>Digest Data</h2>
-                    <p className='text-muted-foreground'>Browse & Manage Imported Data</p>
+                    <p className='text-muted-foreground'>
+                        Browse & Manage Imported Data
+                    </p>
                 </div>
                 <div className='flex gap-2'>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button
-                                onClick={handleCreateDigest}
-                                variant='default'
-                                className='space-x-1'
-                            >
-                                <span>New Digest</span>
-                                <FilePlus className='size-4' />
+                            <Button onClick={handleCreateDigest} variant='default'>
+                                <FilePlus />
+                                New Digest
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -408,7 +395,7 @@ export default function DigestData() {
                     totalPages={totalPages}
                     handlePageChange={handlePageChange}
                     setAlert={setAlert}
-                    onDigestDelete={fetchDigests}
+                    onDigestDelete={invalidateDigests}
                     sortField={sortField}
                     sortDirection={sortDirection}
                     onSort={handleSort}
@@ -424,6 +411,13 @@ export default function DigestData() {
                     onSearchSubmit={handleSearchSubmit}
                 />
             </div>
+            <UploadDigestModal
+                open={uploadDigestModalOpen}
+                onOpenChange={setUploadDigestModalOpen}
+                onUpload={() => {
+                    invalidateDigests();
+                }}
+            />
         </div>
     );
 }

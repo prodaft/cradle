@@ -1,5 +1,5 @@
-import Logo from '../Logo/Logo';
 import { Spinner } from '@/components/ui/spinner';
+import Logo from '../Logo/Logo';
 
 const CradleLoading = () => {
     return (

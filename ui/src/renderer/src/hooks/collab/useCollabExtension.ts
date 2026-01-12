@@ -1,6 +1,6 @@
-import { useProfile } from '@/contexts/user/ProfileContext';
 import useApi from '@/hooks/api/useApi';
-import useAuth from '@/hooks/auth/useAuth';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import { useProfile } from '@/hooks/user/useProfile';
 import { getCollabUrl } from '@/utils/url';
 import { Extension } from '@codemirror/state';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -18,11 +18,9 @@ type CollabState = {
     yText: Y.Text | null;
 };
 
-export function useCollabExtension(
-    noteId: string,
-    enabled: boolean,
-): CollabState {
-    const { getAccessToken, tokenVersion } = useAuth();
+export function useCollabExtension(noteId: string, enabled: boolean): CollabState {
+    const { role } = useAuthState();
+    const { getAccessToken } = useAuthActions();
     const { basePath } = useApi();
     const { profile } = useProfile();
     const [extension, setExtension] = useState<Extension | null>(null);
@@ -68,7 +66,8 @@ export function useCollabExtension(
         const doc = new Y.Doc();
         const ytext = doc.getText('content');
         setYText(ytext);
-        let provider: WebsocketProvider | null = null;
+        let provider: InstanceType<typeof WebsocketProvider> | null = null;
+        let observerAdded = false;
         const handleYTextChange = () => {
             console.debug('[Collab] content updated', {
                 noteId,
@@ -101,6 +100,7 @@ export function useCollabExtension(
                 });
 
                 ytext.observe(handleYTextChange);
+                observerAdded = true;
 
                 awarenessRef.current = provider.awareness;
                 provider.awareness.setLocalStateField('user', {
@@ -121,7 +121,9 @@ export function useCollabExtension(
 
         return () => {
             active = false;
-            ytext.unobserve(handleYTextChange);
+            if (observerAdded) {
+                ytext.unobserve(handleYTextChange);
+            }
             provider?.destroy();
             doc.destroy();
             setExtension(null);
@@ -130,15 +132,7 @@ export function useCollabExtension(
             setYText(null);
             awarenessRef.current = null;
         };
-    }, [
-        collabUrl,
-        displayName,
-        enabled,
-        getAccessToken,
-        noteId,
-        tokenVersion,
-        userColor,
-    ]);
+    }, [collabUrl, displayName, enabled, getAccessToken, noteId, role, userColor]);
 
     return { extension, status, synced, yText };
 }

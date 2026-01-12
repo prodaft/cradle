@@ -1,16 +1,15 @@
 import { Button } from '@/components/ui/button';
-import { useAPICall } from '@/hooks';
+import { DataTable } from '@/components/ui/data-table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import type { FileReferenceWithNote } from '@services/cradle/models';
-import bytes from 'bytes';
-import { Download } from 'iconoir-react';
-import { DataTable } from '@/components/ui/data-table';
-import { useMemo } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Download } from 'iconoir-react';
+import { useMemo } from 'react';
 
 interface Alert {
     show: boolean;
@@ -28,26 +27,39 @@ interface FilesViewProps {
  */
 export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
     const { fileTransferApi } = useApi();
-    const { execute } = useAPICall();
+
+    const downloadMutation = useMutation({
+        mutationFn: async (fileId: string) => {
+            const response = await fileTransferApi.fileTransferDownloadRetrieve({
+                fileId,
+            });
+            return response.presignedUrl;
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: (presignedUrl, fileId) => {
+            const file = files.find((f) => f.id === fileId);
+            if (file) {
+                const link = document.createElement('a');
+                link.href = presignedUrl;
+                const fileName = file?.fileName;
+                link.download = fileName || 'data';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        },
+    });
 
     if (!files || files.length === 0) {
         return null;
     }
 
     const handleDownload = async (file: FileReferenceWithNote) => {
-        let response = await execute(() =>
-            fileTransferApi.fileTransferDownloadRetrieve({
-                fileId: file.id!,
-            }),
-        );
-        const { presignedUrl } = response;
-        const link = document.createElement('a');
-        link.href = presignedUrl;
-        const fileName = file.fileName;
-        link.download = fileName || 'data';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        if (file.id) {
+            downloadMutation.mutate(file.id);
+        }
     };
 
     // Memoize columns to prevent recreation on every render
@@ -74,9 +86,13 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                 <span
                                     key={entity.name}
                                     className={`badge badge-xs px-1 text-primary-foreground ${!entity.color ? 'bg-muted' : ''}`}
-                                    style={entity.color ? {
-                                        backgroundColor: entity.color,
-                                    } : undefined}
+                                    style={
+                                        entity.color
+                                            ? {
+                                                  backgroundColor: entity.color,
+                                              }
+                                            : undefined
+                                    }
                                 >
                                     {entity.name}
                                 </span>
@@ -118,9 +134,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                         {row.original.sha256Hash.substring(0, 21)}...
                                     </span>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                    Click to copy
-                                </TooltipContent>
+                                <TooltipContent>Click to copy</TooltipContent>
                             </Tooltip>
                         ) : (
                             '-'
@@ -147,15 +161,16 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 cell: ({ row }) => {
                     const file = row.original;
                     return (
-                        <div className='w-32 text-right' onClick={(e) => e.stopPropagation()}>
+                        <div
+                            className='w-32 text-right'
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className='flex justify-end space-x-1'>
-                                {file.bucketName && file.minioFileName && (
+                                {file.id && (
                                     <Button
                                         variant='ghost'
                                         size='icon-sm'
-                                        onClick={async () =>
-                                            await handleDownload(file)
-                                        }
+                                        onClick={async () => await handleDownload(file)}
                                         className='text-primary hover:text-primary/80'
                                         title='Download'
                                     >

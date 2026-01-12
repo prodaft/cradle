@@ -1,14 +1,17 @@
-import { useAPICall } from '@/hooks';
+import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { useMutation } from '@tanstack/react-query';
+import { Link, useRouter } from '@tanstack/react-router';
 import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
-import { Spinner } from '@/components/ui/spinner';
 
 interface ReferenceTreeProps {
     note: NoteRetrieve;
@@ -32,8 +35,28 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
         Record<string, NextPageStatus>
     >({});
     const { queryApi } = useApi();
-    const { execute } = useAPICall();
-    const { navigate, navigateLink } = useCradleNavigate();
+    const router = useRouter();
+
+    const fetchReferencesMutation = useMutation({
+        mutationFn: async ({
+            path,
+            page,
+            noteId,
+        }: {
+            path: string;
+            page: number;
+            noteId: string;
+        }) => {
+            return await queryApi.queryList({
+                subtype: [path],
+                referencedIn: noteId,
+                page,
+            });
+        },
+        meta: {
+            errorMessage: 'Failed to fetch references',
+        },
+    });
 
     // If there's no entry_classes, there is nothing to display
     if (!note || !note.entries) {
@@ -69,36 +92,51 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
             [path]: 'loading',
         }));
 
-        const response = await execute(
-            () =>
-                queryApi.queryList({
-                    subtype: [path],
-                    referencedIn: note.id,
-                    page,
-                }),
-            {
-                errorMessage: 'Failed to fetch references',
-            },
-        );
+        if (!note.id) {
+            return;
+        }
 
-        setReferences((prev) => ({
-            ...prev,
-            [path]: [...(references[path] || []), ...response.results],
-        }));
+        const noteId = note.id;
 
-        setNextPageStatus((prev) => ({
-            ...prev,
-            [path]: response.page === response.totalPages ? 'end' : response.page + 1,
-        }));
+        try {
+            const response = await fetchReferencesMutation.mutateAsync({
+                path,
+                page,
+                noteId,
+            });
+
+            setReferences((prev) => ({
+                ...prev,
+                [path]: [...(references[path] || []), ...response.results],
+            }));
+
+            setNextPageStatus((prev) => ({
+                ...prev,
+                [path]:
+                    response.page === response.totalPages ? 'end' : response.page + 1,
+            }));
+        } catch (error) {
+            // Error handled by mutation
+            setNextPageStatus((prev) => ({
+                ...prev,
+                [path]: 'end',
+            }));
+        }
     };
 
     return (
         <>
             {note?.entries && note.entries.length > 0 && (
-                <div className={`text-muted-foreground text-xs w-full pt-1 pl-3 ${className}`}>
+                <div
+                    className={`text-muted-foreground text-xs w-full pt-1 pl-3 ${className}`}
+                >
                     <Collapsible defaultOpen={false}>
                         <CollapsibleTrigger asChild>
-                            <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
+                            <Button
+                                variant='ghost'
+                                size='sm'
+                                className='group hover:text-border-primary'
+                            >
                                 <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                 <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                 <span>References</span>
@@ -115,7 +153,11 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                         >
                                             <Collapsible>
                                                 <CollapsibleTrigger asChild>
-                                                    <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='sm'
+                                                        className='group hover:text-border-primary'
+                                                    >
                                                         <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                                         <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                                         <span>{value}</span>
@@ -140,12 +182,19 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                 <Collapsible
                                                     onOpenChange={(open) => {
                                                         if (open) {
-                                                            fetchReferences(fullPath, false);
+                                                            fetchReferences(
+                                                                fullPath,
+                                                                false,
+                                                            );
                                                         }
                                                     }}
                                                 >
                                                     <CollapsibleTrigger asChild>
-                                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='sm'
+                                                            className='group hover:text-border-primary'
+                                                        >
                                                             <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                                             <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
                                                             <span>{value}</span>
@@ -154,23 +203,32 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                     <CollapsibleContent>
                                                         <div className='text-muted-foreground text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
                                                             {/* Render the actual references */}
-                                                            {references[fullPath]?.map((entry) => (
-                                                                <Link
-                                                                    key={`${entry.name}:${entry.subtype}`}
-                                                                    to={createDashboardLink(entry)}
-                                                                    className='text-foreground hover:underline hover:text-primary bg-muted h-6 px-1 py-1 mx-1 my-1 rounded-md'
-                                                                >
-                                                                    {truncateText(entry.name, 30)}
-                                                                </Link>
-                                                            ))}
+                                                            {references[fullPath]?.map(
+                                                                (entry) => (
+                                                                    <Link
+                                                                        key={`${entry.name}:${entry.subtype}`}
+                                                                        to={createDashboardLink(
+                                                                            entry,
+                                                                        )}
+                                                                        className='text-foreground hover:underline hover:text-primary bg-muted h-6 px-1 py-1 mx-1 my-1 rounded-md'
+                                                                    >
+                                                                        {truncateText(
+                                                                            entry.name,
+                                                                            30,
+                                                                        )}
+                                                                    </Link>
+                                                                ),
+                                                            )}
 
                                                             <span className='h-6 px-1 py-1 mx-1 my-1'>
                                                                 {/* Render pagination logic */}
-                                                                {nextPageStatus[fullPath] ===
-                                                                    'loading' ? (
+                                                                {nextPageStatus[
+                                                                    fullPath
+                                                                ] === 'loading' ? (
                                                                     <Spinner className='size-3' />
-                                                                ) : nextPageStatus[fullPath] !==
-                                                                    'end' ? (
+                                                                ) : nextPageStatus[
+                                                                      fullPath
+                                                                  ] !== 'end' ? (
                                                                     <span
                                                                         onClick={() =>
                                                                             fetchReferences(

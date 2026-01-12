@@ -1,9 +1,13 @@
+import { Button } from '@/components/ui/button';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { MoreHoriz, Search, Xmark } from 'iconoir-react';
 import { debounce } from 'lodash';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { InputGroup, InputGroupInput, InputGroupAddon } from '@/components/ui/input-group';
 
 type ActionBarButtonVariant = 'circle' | 'pill';
 
@@ -37,37 +41,32 @@ export const ActionBarButton = memo(function ActionBarButton({
             : 'flex items-center gap-2 px-3 h-10 border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
     // Many pages rely on icon color toggling based on whether an action is "active" (e.g. selected count > 0).
-    const iconWrapperClass = iconActive
-        ? 'text-primary'
-        : 'text-muted-foreground';
+    const iconWrapperClass = iconActive ? 'text-primary' : 'text-muted-foreground';
 
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          type='button'
-          onClick={onClick}
-          disabled={disabled}
-          variant='outline'
-          size={variant === 'circle' ? 'icon' : 'default'}
-          className={className}
-          title={title}
-        >
-          <span className={iconWrapperClass}>{icon}</span>
-          {typeof count === 'number' && count > 0 && (
-            <span className='text-sm text-text-foreground font-mono'>
-              {count}
-            </span>
-          )}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        {tooltip}
-      </TooltipContent>
-    </Tooltip>
-  );
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button
+                    type='button'
+                    onClick={onClick}
+                    disabled={disabled}
+                    variant='outline'
+                    size={variant === 'circle' ? 'icon' : 'default'}
+                    className={className}
+                    title={title}
+                >
+                    <span className={iconWrapperClass}>{icon}</span>
+                    {typeof count === 'number' && count > 0 && (
+                        <span className='text-sm text-text-foreground font-mono'>
+                            {count}
+                        </span>
+                    )}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>{tooltip}</TooltipContent>
+        </Tooltip>
+    );
 });
-
 
 export interface ActionBarSearchProps {
     placeholder: string;
@@ -100,73 +99,77 @@ export const ActionBarSearch = memo(function ActionBarSearch({
     onSubmit,
     onClear,
 }: ActionBarSearchProps) {
-  const isControlled = value !== undefined;
-  const [internalValue, setInternalValue] = useState<string>(value ?? initialValue);
-  const inputRef = useRef<HTMLInputElement>(null);
+    const isControlled = value !== undefined;
+    const [internalValue, setInternalValue] = useState<string>(value ?? initialValue);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-  // Keep internal state in sync when controlled value changes.
-  useEffect(() => {
-    if (!isControlled) return;
-    setInternalValue(value ?? '');
-  }, [isControlled, value]);
+    // Keep internal state in sync when controlled value changes.
+    useEffect(() => {
+        if (!isControlled) return;
+        setInternalValue(value ?? '');
+    }, [isControlled, value]);
 
-  const debounced = useMemo(() => {
-    if (!onDebouncedChange) return null;
-    return debounce((next: string) => onDebouncedChange(next), debounceMs);
-  }, [onDebouncedChange, debounceMs]);
+    const debounced = useMemo(() => {
+        if (!onDebouncedChange) return null;
+        return debounce((next: string) => onDebouncedChange(next), debounceMs);
+    }, [onDebouncedChange, debounceMs]);
 
-  useEffect(() => {
-    return () => {
-      debounced?.cancel();
-    };
-  }, [debounced]);
+    useEffect(() => {
+        return () => {
+            debounced?.cancel();
+        };
+    }, [debounced]);
 
-  // Always render from internalValue so typing stays responsive even if the parent-controlled value lags.
+    // Always render from internalValue so typing stays responsive even if the parent-controlled value lags.
     // When controlled, we still sync internalValue from `value` via the effect above.
     const currentValue = internalValue;
 
-  const submit = useCallback(() => {
-    // If the user submits (Enter / button), apply any pending debounced change immediately, then cancel
-    // the timer so it doesn't fire again afterwards.
-    debounced?.flush?.();
-    debounced?.cancel?.();
-    onSubmit?.(currentValue);
-  }, [onSubmit, currentValue, debounced]);
+    const submit = useCallback(() => {
+        // If the user submits (Enter / button), apply any pending debounced change immediately, then cancel
+        // the timer so it doesn't fire again afterwards.
+        debounced?.flush?.();
+        debounced?.cancel?.();
+        onSubmit?.(currentValue);
+    }, [onSubmit, currentValue, debounced]);
 
-  const handleClear = useCallback(() => {
-    if (!isControlled) setInternalValue('');
-    debounced?.cancel();
-    onDebouncedChange?.('');
-    onClear?.();
-    onSubmit?.('');
-  }, [isControlled, debounced, onDebouncedChange, onClear, onSubmit]);
+    const handleClear = useCallback(() => {
+        if (!isControlled) setInternalValue('');
+        debounced?.cancel();
+        onDebouncedChange?.('');
+        onClear?.();
+        onSubmit?.('');
+    }, [isControlled, debounced, onDebouncedChange, onClear, onSubmit]);
 
-  return (
-    <InputGroup className='min-w-[280px]'>
-      <InputGroupInput
-        ref={inputRef}
-        placeholder={placeholder}
-        value={currentValue}
-        onChange={(e) => {
-          const next = e.target.value;
-          // Always update local value immediately to avoid "laggy" controlled inputs when the parent debounces state updates.
-          setInternalValue(next);
-          debounced?.(next);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
-        }}
-      />
-      <InputGroupAddon>
-        <Search />
-      </InputGroupAddon>
-      {currentValue && (
-        <InputGroupAddon align='inline-end' onClick={handleClear} className='cursor-pointer'>
-          <Xmark />
-        </InputGroupAddon>
-      )}
-    </InputGroup>
-  );
+    return (
+        <InputGroup className='min-w-[280px]'>
+            <InputGroupInput
+                ref={inputRef}
+                placeholder={placeholder}
+                value={currentValue}
+                onChange={(e) => {
+                    const next = e.target.value;
+                    // Always update local value immediately to avoid "laggy" controlled inputs when the parent debounces state updates.
+                    setInternalValue(next);
+                    debounced?.(next);
+                }}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') submit();
+                }}
+            />
+            <InputGroupAddon>
+                <Search />
+            </InputGroupAddon>
+            {currentValue && (
+                <InputGroupAddon
+                    align='inline-end'
+                    onClick={handleClear}
+                    className='cursor-pointer'
+                >
+                    <Xmark />
+                </InputGroupAddon>
+            )}
+        </InputGroup>
+    );
 });
 
 export interface ActionBarProps {
@@ -175,12 +178,12 @@ export interface ActionBarProps {
 }
 
 export const ActionBar = memo(function ActionBar({ left, right }: ActionBarProps) {
-  return (
-    <div className='flex flex-wrap items-center justify-between gap-4'>
-      <div className='flex items-center gap-2 flex-shrink-0'>{left}</div>
-      <div className='flex items-center gap-2'>{right}</div>
-    </div>
-  );
+    return (
+        <div className='flex flex-wrap items-center justify-between gap-4'>
+            <div className='flex items-center gap-2 flex-shrink-0'>{left}</div>
+            <div className='flex items-center gap-2'>{right}</div>
+        </div>
+    );
 });
 
 export interface CollapsibleAction {
@@ -268,27 +271,35 @@ export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
     const pillButtonClass =
         'flex items-center justify-center gap-2 px-3 h-10 border border-border-border bg-transparent hover:bg-bg-secondary hover:text-text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg';
 
-  const renderActionButton = (action: CollapsibleAction, animated = false, animationIndex = 0) => {
-    const button = (
-      <Tooltip key={action.id}>
-        <TooltipTrigger asChild>
-          <Button
-            type='button'
-            onClick={() => handleActionClick(action)}
-            disabled={action.disabled}
-            variant='outline'
-            size='icon'
-          >
-            <span className={action.iconActive ? 'text-primary' : 'text-muted-foreground'}>
-              {action.icon}
-            </span>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {action.tooltip}
-        </TooltipContent>
-      </Tooltip>
-    );
+    const renderActionButton = (
+        action: CollapsibleAction,
+        animated = false,
+        animationIndex = 0,
+    ) => {
+        const button = (
+            <Tooltip key={action.id}>
+                <TooltipTrigger asChild>
+                    <Button
+                        type='button'
+                        onClick={() => handleActionClick(action)}
+                        disabled={action.disabled}
+                        variant='outline'
+                        size='icon'
+                    >
+                        <span
+                            className={
+                                action.iconActive
+                                    ? 'text-primary'
+                                    : 'text-muted-foreground'
+                            }
+                        >
+                            {action.icon}
+                        </span>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>{action.tooltip}</TooltipContent>
+            </Tooltip>
+        );
 
         if (animated) {
             return (
@@ -311,38 +322,40 @@ export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
             return collapsibleActions.map((action) => renderActionButton(action));
         }
 
-    // MoreHoriz button (always visible when collapsible)
-    const moreButton = (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type='button'
-            onClick={() => {
-              if (canExpand) {
-                setIsExpanded(!isExpanded);
-              }
-            }}
-            disabled={!canExpand}
-            variant='outline'
-            size={selectedCount > 0 ? 'default' : 'icon'}
-          >
-            <MoreHoriz className={`w-5 h-5 ${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`} />
-            {selectedCount > 0 && (
-              <span className='text-sm text-text-foreground font-mono'>
-                {selectedCount}
-              </span>
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          {!canExpand
-            ? `Select ${itemLabel}s to see actions`
-            : isExpanded
-              ? 'Collapse actions'
-              : `${collapsibleActions.length} actions available`}
-        </TooltipContent>
-      </Tooltip>
-    );
+        // MoreHoriz button (always visible when collapsible)
+        const moreButton = (
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        type='button'
+                        onClick={() => {
+                            if (canExpand) {
+                                setIsExpanded(!isExpanded);
+                            }
+                        }}
+                        disabled={!canExpand}
+                        variant='outline'
+                        size={selectedCount > 0 ? 'default' : 'icon'}
+                    >
+                        <MoreHoriz
+                            className={`w-5 h-5 ${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
+                        />
+                        {selectedCount > 0 && (
+                            <span className='text-sm text-text-foreground font-mono'>
+                                {selectedCount}
+                            </span>
+                        )}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {!canExpand
+                        ? `Select ${itemLabel}s to see actions`
+                        : isExpanded
+                          ? 'Collapse actions'
+                          : `${collapsibleActions.length} actions available`}
+                </TooltipContent>
+            </Tooltip>
+        );
 
         if (!isExpanded) {
             // Collapsed state: show only MoreHoriz button

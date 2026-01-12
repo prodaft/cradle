@@ -1,16 +1,16 @@
-import { toast } from 'sonner';
+import PageHeader from '@/components/base/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Spinner } from '@/components/ui/spinner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import DeleteNote from '@components/domain/notes/DeleteNote';
 import NotesList from '@components/domain/notes/NotesList';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { FilePlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
 interface SearchFilters {
     content: string;
@@ -33,19 +33,47 @@ interface SearchFilters {
  * @constructor
  */
 export default function Notes() {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const { navigate, navigateLink } = useCradleNavigate();
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/notes' });
+    // navigate and navigateLink removed - use router.navigate() or Link component directly
     const { notesApi } = useApi();
-    const { execute } = useAPICall();
+    const [isCreatingNote, setIsCreatingNote] = useState(false);
+
+    const createNoteMutation = useMutation({
+        mutationFn: async () => {
+            return await notesApi.notesCreate({
+                fleetingNoteRequest: {
+                    content: '',
+                },
+            });
+        },
+        meta: {
+            errorMessage: 'Failed to create note',
+        },
+        onSuccess: (response) => {
+            router.navigate({ to: `/notes/${response.id}` });
+        },
+    });
 
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-        content: searchParams.get('content') || '',
-        author__username: searchParams.get('author__username') || '',
-        editor__username: searchParams.get('editor__username') || '',
-        created_date_from: searchParams.get('created_date_from') || '',
-        created_date_to: searchParams.get('created_date_to') || '',
-        updated_date_from: searchParams.get('updated_date_from') || '',
-        updated_date_to: searchParams.get('updated_date_to') || '',
+        content: ('content' in search ? search.content : undefined) || '',
+        author__username:
+            ('author__username' in search ? search.author__username : undefined) || '',
+        editor__username:
+            ('editor__username' in search ? search.editor__username : undefined) || '',
+        created_date_from:
+            ('created_date_from' in search ? search.created_date_from : undefined) ||
+            '',
+        created_date_to:
+            ('created_date_to' in search ? search.created_date_to : undefined) || '',
+        updated_date_from:
+            ('updated_date_from' in search ? search.updated_date_from : undefined) ||
+            '',
+        updated_date_to:
+            ('updated_date_to' in search ? search.updated_date_to : undefined) || '',
     });
     const searchFiltersRef = useRef(searchFilters);
     useEffect(() => {
@@ -58,51 +86,39 @@ export default function Notes() {
     const [notesCount, setNotesCount] = useState({ current: 0, total: 0 });
 
     const updateSearchParams = (filters: SearchFilters) => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('content', filters.content);
-        newParams.set('author__username', filters.author__username);
-        newParams.set('editor__username', filters.editor__username);
+        const newSearch: any = {
+            ...search,
+            content: filters.content || undefined,
+            author__username: filters.author__username || undefined,
+            editor__username: filters.editor__username || undefined,
+            created_date_from: filters.created_date_from || undefined,
+            created_date_to: filters.created_date_to || undefined,
+            updated_date_from: filters.updated_date_from || undefined,
+            updated_date_to: filters.updated_date_to || undefined,
+        };
 
-        // Set or delete created_date_from/to filters
-        if (filters.created_date_from) {
-            newParams.set('created_date_from', filters.created_date_from);
-        } else {
-            newParams.delete('created_date_from');
-        }
-        if (filters.created_date_to) {
-            newParams.set('created_date_to', filters.created_date_to);
-        } else {
-            newParams.delete('created_date_to');
-        }
+        // Remove undefined values
+        Object.keys(newSearch).forEach((key) => {
+            if (newSearch[key] === undefined) {
+                delete newSearch[key];
+            }
+        });
 
-        // Set or delete updated_date_from/to filters
-        if (filters.updated_date_from) {
-            newParams.set('updated_date_from', filters.updated_date_from);
-        } else {
-            newParams.delete('updated_date_from');
-        }
-        if (filters.updated_date_to) {
-            newParams.set('updated_date_to', filters.updated_date_to);
-        } else {
-            newParams.delete('updated_date_to');
-        }
-
-        setSearchParams(newParams, { replace: true });
+        router.navigate({
+            to: location.pathname as any,
+            search: newSearch,
+            replace: true,
+        });
         setSubmittedFilters(filters);
     };
 
-    const handleCreateNewNote = async () => {
-        execute(() =>
-            notesApi.notesCreate({
-                fleetingNoteRequest: {
-                    content: '',
-                },
-            }),
-        )
-            .then((response) => {
-                navigate(`/notes/${response.id}`);
-            })
-            .catch(() => {});
+    const handleCreateNewNote = () => {
+        setIsCreatingNote(true);
+        createNoteMutation.mutate(undefined, {
+            onSettled: () => {
+                setIsCreatingNote(false);
+            },
+        });
     };
 
     // Auto-update search when filters change
@@ -146,36 +162,56 @@ export default function Notes() {
 
     useEffect(() => {
         const initialFilters: SearchFilters = {
-            content: searchParams.get('content') || '',
-            author__username: searchParams.get('author__username') || '',
-            editor__username: searchParams.get('editor__username') || '',
-            created_date_from: searchParams.get('created_date_from') || '',
-            created_date_to: searchParams.get('created_date_to') || '',
-            updated_date_from: searchParams.get('updated_date_from') || '',
-            updated_date_to: searchParams.get('updated_date_to') || '',
+            content: ('content' in search ? search.content : undefined) || '',
+            author__username:
+                ('author__username' in search ? search.author__username : undefined) ||
+                '',
+            editor__username:
+                ('editor__username' in search ? search.editor__username : undefined) ||
+                '',
+            created_date_from:
+                ('created_date_from' in search
+                    ? search.created_date_from
+                    : undefined) || '',
+            created_date_to:
+                ('created_date_to' in search ? search.created_date_to : undefined) ||
+                '',
+            updated_date_from:
+                ('updated_date_from' in search
+                    ? search.updated_date_from
+                    : undefined) || '',
+            updated_date_to:
+                ('updated_date_to' in search ? search.updated_date_to : undefined) ||
+                '',
         };
 
         setSearchFilters(initialFilters);
-    }, []);
+    }, [search]);
 
     return (
         <div className='w-full h-full flex flex-col space-y-4'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>All Notes</h2>
-                    <p className='text-muted-foreground'>Search & Manage Your Notes</p>
-                </div>
-                <div className='flex gap-2'>
+            <PageHeader
+                title='All Notes'
+                description='Search & Manage Your Notes'
+                actions={
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
                                 onClick={handleCreateNewNote}
                                 variant='default'
-                                className='space-x-1'
+                                disabled={isCreatingNote}
                             >
-                                <span>New Note</span>
-                                <FilePlus className='size-4' />
+                                {isCreatingNote ? (
+                                    <>
+                                        <Spinner />
+                                        New Note
+                                    </>
+                                ) : (
+                                    <>
+                                        <FilePlus />
+                                        New Note
+                                    </>
+                                )}
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -187,8 +223,8 @@ export default function Notes() {
                             </KbdGroup>
                         </TooltipContent>
                     </Tooltip>
-                </div>
-            </div>
+                }
+            />
 
             {/* Results Section */}
             <div className='px-4'>

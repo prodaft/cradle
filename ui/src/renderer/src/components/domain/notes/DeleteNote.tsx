@@ -1,11 +1,9 @@
-import { useModal } from '@/contexts/ui/ModalContext';
-import { toast } from 'sonner';
-import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { Trash } from 'iconoir-react/regular';
 import { Button } from '@/components/ui/button';
+import useApi from '@/hooks/api/useApi';
+import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
+import { useMutation } from '@tanstack/react-query';
+import { Trash } from 'iconoir-react/regular';
+import { useState } from 'react';
 
 interface Note {
     id: string;
@@ -33,36 +31,43 @@ interface DeleteNoteProps {
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
 export default function DeleteNote({ note, setHidden, classNames }: DeleteNoteProps) {
-    const { navigate, navigateLink } = useCradleNavigate();
-    const { setModal } = useModal();
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const { notesApi } = useApi();
-    const { executor } = useAPICall();
 
-    const handleDelete = executor(
-        async () => {
+    const deleteMutation = useMutation({
+        mutationFn: async () => {
             await notesApi.notesDelete({ noteId: note.id });
             setHidden(true);
         },
-        { successMessage: 'Note deleted successfully' },
-    );
+        meta: {
+            successMessage: 'Note deleted successfully',
+        },
+    });
+
+    const handleDelete = () => deleteMutation.mutate();
 
     return (
-        <span className='pb-1 space-x-1 flex flex-row pl-2 text-destructive hover:text-destructive/80'>
-            <Button
-                variant='ghost'
-                size='icon-sm'
-                className='text-destructive hover:text-destructive/80'
-                onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
-                    setModal(ConfirmDeletionModal, {
-                        onConfirm: handleDelete,
-                        text: 'Are you sure you want to delete this note? This action is irreversible.',
-                    });
-                }}
-            >
-                <Trash className={classNames} />
-            </Button>
-        </span>
+        <>
+            <span className='pb-1 space-x-1 flex flex-row pl-2 text-destructive hover:text-destructive/80'>
+                <Button
+                    variant='ghost'
+                    size='icon-sm'
+                    className='text-destructive hover:text-destructive/80'
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        setDeleteModalOpen(true);
+                    }}
+                >
+                    <Trash className={classNames} />
+                </Button>
+            </span>
+            <ConfirmDeletionModal
+                open={deleteModalOpen}
+                onOpenChange={setDeleteModalOpen}
+                onConfirm={handleDelete}
+                text='Are you sure you want to delete this note? This action is irreversible.'
+            />
+        </>
     );
 }

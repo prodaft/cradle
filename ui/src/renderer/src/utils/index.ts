@@ -30,3 +30,6 @@ export * from './parser';
 
 // Editor utilities
 export * from './editor';
+
+// Logger utility
+export { logger } from './logger';

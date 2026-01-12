@@ -1,9 +1,9 @@
-import useApi from '@/hooks/api/useApi';
-import { displayError } from '@/utils/api';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import useApi from '@/hooks/api/useApi';
+import { useMutation } from '@tanstack/react-query';
+import { Link, useSearch } from '@tanstack/react-router';
 import { WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
 
 interface Alert {
     show: boolean;
@@ -22,11 +22,39 @@ export default function ConfirmEmail() {
         message: '',
         color: 'red',
     });
-    const [searchParams, setSearchParams] = useSearchParams();
-    const token = searchParams.get('token');
+    const search = useSearch({ from: '/confirm-email' });
+    const token = 'token' in search ? search.token : undefined;
     const { usersApi } = useApi();
 
-    const handleConfirm = async () => {
+    const confirmMutation = useMutation({
+        mutationFn: async (token: string) => {
+            await usersApi.usersEmailConfirmCreate({
+                emailConfirmRequest: { token },
+            });
+        },
+        meta: {
+            successMessage: 'Email confirmed successfully.',
+            errorMessage: 'Failed to confirm email',
+            suppressNotification: true, // We handle alerts ourselves
+        },
+        onSuccess: () => {
+            setAlert({
+                show: true,
+                message: 'Email confirmed successfully.',
+                color: 'green',
+            });
+        },
+        onError: (error: any) => {
+            setAlert({
+                show: true,
+                message:
+                    error?.detail || 'An error occurred while confirming your email.',
+                color: 'red',
+            });
+        },
+    });
+
+    const handleConfirm = () => {
         if (!token) {
             setAlert({
                 show: true,
@@ -35,19 +63,7 @@ export default function ConfirmEmail() {
             });
             return;
         }
-
-        try {
-            await usersApi.usersEmailConfirmCreate({
-                emailConfirmRequest: { token },
-            });
-            setAlert({
-                show: true,
-                message: 'Email confirmed successfully.',
-                color: 'green',
-            });
-        } catch (error) {
-            displayError(setAlert)(error);
-        }
+        confirmMutation.mutate(token);
     };
 
     useEffect(() => {
@@ -59,7 +75,13 @@ export default function ConfirmEmail() {
             <div className='bg-card/20 p-4 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
                 <div className='flex min-h-full flex-1 flex-col justify-center px-3 py-6 lg:px-4 text-muted-foreground'>
                     {alert.show && (
-                        <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                        <AlertComponent
+                            variant={
+                                alert.color === 'red' || alert.color === 'error'
+                                    ? 'destructive'
+                                    : 'default'
+                            }
+                        >
                             <WarningCircle />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>

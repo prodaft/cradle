@@ -1,5 +1,5 @@
-import React, { Dispatch, SetStateAction } from 'react';
 import { Button } from '@/components/ui/button';
+import React, { Dispatch, SetStateAction } from 'react';
 
 /**
  * SearchFilter component props

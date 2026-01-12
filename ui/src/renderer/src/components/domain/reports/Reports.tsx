@@ -1,28 +1,36 @@
-import { useModal } from '@/contexts/ui/ModalContext';
-import { toast } from 'sonner';
-import { useProfile } from '@/contexts/user/ProfileContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DataTable } from '@/components/ui/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import useAPICall from '@/hooks/api/useAPICall';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
+import { queryKeys } from '@/hooks/query';
+import { useProfile } from '@/hooks/user/useProfile';
 import { ReportList } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import { DataTable, type BulkAction } from '@/components/ui/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import { DateRangeFilter } from '@components/base/ListView/types';
+import PageHeader from '@components/base/PageHeader';
 import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import { Download, Edit, Eye, InfoCircleSolid, RefreshCircle, Trash, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
-import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Download,
+    Edit,
+    Eye,
+    InfoCircleSolid,
+    RefreshCircle,
+    Trash,
+    WarningCircleSolid,
+    WarningTriangleSolid,
+} from 'iconoir-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 interface ColumnFilters {
     [key: string]: string | DateRangeFilter | undefined;
@@ -43,26 +51,41 @@ interface SelectProps {
  * @returns {JSX.Element} Reports
  */
 export default function Reports() {
-    const [searchParams, setSearchParams] = useSearchParams();
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/reports' });
     const { reportsApi } = useApi();
-    const { navigate, navigateLink } = useCradleNavigate();
     const { profile } = useProfile();
-    const { setModal } = useModal();
-    const { execute } = useAPICall();
-    const [reports, setReports] = useState<ReportList[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(Number(searchParams.get('reports_page')) || 1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
+    const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
+    const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
+    const queryClient = useQueryClient();
+
+    const fetchReportMutation = useMutation({
+        mutationFn: async ({
+            id,
+            downloadUrl,
+        }: {
+            id: string;
+            downloadUrl: boolean;
+        }) => {
+            return await reportsApi.reportsRetrieve({ id, downloadUrl });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+    const [page, setPage] = useState((search as any)?.reports_page || 1);
     const [sortField, setSortField] = useState(
-        searchParams.get('reports_sort_field') || 'created_at',
+        (search as any)?.reports_sort_field || 'created_at',
     );
-    const [sortDirection, setSortDirection] = useState<SortDirection>(
-        (searchParams.get('reports_sort_direction') as SortDirection) || 'desc',
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
+        (search as any)?.reports_sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('reports_pagesize')) || 10,
-    );
+    const [pageSize, setPageSize] = useState((search as any)?.reports_pagesize || 10);
     const [selectedReports, setSelectedReports] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
@@ -81,94 +104,101 @@ export default function Reports() {
 
     // Sync URL params to state (for browser back/forward)
     useEffect(() => {
-        const pageFromParams = Number(searchParams.get('reports_page')) || 1;
-        const sortFieldFromParams =
-            searchParams.get('reports_sort_field') || 'created_at';
-        const sortDirectionFromParams =
-            (searchParams.get('reports_sort_direction') as SortDirection) || 'desc';
-        const pageSizeFromParams = Number(searchParams.get('reports_pagesize')) || 10;
+        const searchAny = search as any;
+        const pageFromParams = searchAny?.reports_page || 1;
+        const sortFieldFromParams = searchAny?.reports_sort_field || 'created_at';
+        const sortDirectionFromParams = searchAny?.reports_sort_direction || 'desc';
+        const pageSizeFromParams = searchAny?.reports_pagesize || 10;
 
         if (pageFromParams !== page) setPage(pageFromParams);
         if (sortFieldFromParams !== sortField) setSortField(sortFieldFromParams);
         if (sortDirectionFromParams !== sortDirection)
             setSortDirection(sortDirectionFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
-    }, [searchParams]);
+    }, [search]);
 
-    // Fetch reports when dependencies change
-    useEffect(() => {
-        fetchReports();
+    // Prepare query parameters
+    const queryParams = useMemo(() => {
+        const params: Record<string, any> = {
+            page,
+            page_size: pageSize,
+        };
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+        params.order_by = orderBy;
+
+        // Add filter parameters
+        if (columnFilters.user) {
+            params.user__username = columnFilters.user;
+        }
+        if (columnFilters.createdAt.from) {
+            params.created_at__gte = columnFilters.createdAt.from;
+        }
+        if (columnFilters.createdAt.to) {
+            params.created_at__lte = columnFilters.createdAt.to;
+        }
+
+        return params;
     }, [
         page,
+        pageSize,
         sortField,
         sortDirection,
-        pageSize,
-        columnFilters.status,
         columnFilters.user,
         columnFilters.createdAt.from,
         columnFilters.createdAt.to,
-        searchQuery,
     ]);
 
-    const resetToFirstPage = useCallback(() => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('reports_page', '1');
-        setSearchParams(newParams, { replace: true });
-    }, [searchParams, setSearchParams]);
-
-    const fetchReports = async () => {
-        setLoading(true);
-        try {
-            const queryParams: Record<string, any> = {
-                page,
-                page_size: pageSize,
-            };
-            const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-            queryParams.order_by = orderBy;
-
-            // Add filter parameters
-            if (columnFilters.user) {
-                queryParams.user__username = columnFilters.user;
-            }
-            if (columnFilters.createdAt.from) {
-                queryParams.created_at__gte = columnFilters.createdAt.from;
-            }
-            if (columnFilters.createdAt.to) {
-                queryParams.created_at__lte = columnFilters.createdAt.to;
-            }
-
-            const response = await reportsApi.reportsList({
+    // Query for reports
+    const { data: reportsData, isPending: loading } = useQuery({
+        queryKey: queryKeys.reports.list({
+            page,
+            pageSize,
+            sortField,
+            sortDirection,
+            statusFilter: columnFilters.status,
+        }),
+        queryFn: () =>
+            reportsApi.reportsList({
                 page: queryParams.page,
                 pageSize: queryParams.page_size,
                 orderBy: queryParams.order_by,
                 search: searchQuery || undefined,
                 // Note: Status filtering happens client-side until backend supports it
-            });
+            }),
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch reports',
+        },
+    });
 
-            // Client-side status filtering
-            let filteredResults = response.results;
-            if (columnFilters.status && columnFilters.status !== 'all') {
-                filteredResults = response.results.filter(
-                    (report) => report.status === columnFilters.status,
-                );
-            }
-
-            setReports(filteredResults);
-            setTotalPages(response.totalPages);
-            setTotalCount(response.count || 0);
-        } catch (error: any) {
-            console.error('Failed to fetch reports', error);
-            toast.error(`Error fetching reports: ${error.message}`);
-            setReports([]);
-        } finally {
-            setLoading(false);
+    // Client-side status filtering
+    const reports = useMemo(() => {
+        if (!reportsData?.results) return [];
+        if (columnFilters.status && columnFilters.status !== 'all') {
+            return reportsData.results.filter(
+                (report) => report.status === columnFilters.status,
+            );
         }
-    };
+        return reportsData.results;
+    }, [reportsData?.results, columnFilters.status]);
+
+    const totalPages = reportsData?.totalPages || 1;
+    const totalCount = reportsData?.count || 0;
+
+    const resetToFirstPage = useCallback(() => {
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...(search as any), reports_page: 1 } as any,
+            replace: true,
+        });
+    }, [search, router, location.pathname]);
 
     const handlePageChange = (newPage: number) => {
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('reports_page', String(newPage));
-        setSearchParams(newParams, { replace: true });
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...(search as any), reports_page: newPage } as any,
+            replace: true,
+        });
     };
 
     const handleSortingChange = useCallback(
@@ -183,39 +213,77 @@ export default function Reports() {
                 setSortDirection(sort.desc ? 'desc' : 'asc');
             }
 
-            const newParams = new URLSearchParams(searchParams);
-            newParams.set('reports_page', '1');
+            const newSearch: any = {
+                ...(search as any),
+                reports_page: 1,
+            };
             if (sorting.length > 0) {
                 const sort = sorting[0];
                 const apiField = sortFieldMapping[sort.id] || sort.id;
-                newParams.set('reports_sort_field', apiField);
-                newParams.set('reports_sort_direction', sort.desc ? 'desc' : 'asc');
+                newSearch.reports_sort_field = apiField;
+                newSearch.reports_sort_direction = sort.desc ? 'desc' : 'asc';
             }
-            setSearchParams(newParams, { replace: true });
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+                replace: true,
+            });
         },
-        [searchParams, setSearchParams],
+        [search, router, location.pathname],
     );
+
+    // Delete mutation
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => reportsApi.reportsDestroy({ id }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.reports.lists() }],
+        },
+    });
 
     const handleDelete = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
-
-        setModal(ConfirmDeletionModal, {
-            text: `Are you sure you want to delete these ${idsArray.length > 1 ? 'reports' : 'report'}? This action is irreversible.`,
-            onConfirm: async () => {
-                try {
-                    await Promise.all(
-                        idsArray.map((id) => reportsApi.reportsDestroy({ id })),
-                    );
-                    toast.success(`${idsArray.length > 1 ? 'Reports' : 'Report'} deleted successfully`);
-                    fetchReports();
-                    setSelectedReports([]);
-                } catch (error) {
-                    console.error('Delete failed:', error);
-                    toast.error('Failed to delete report(s)');
-                }
-            },
-        });
+        setDeletingReportIds(idsArray);
+        setDeleteModalOpen(true);
     };
+
+    const executeDelete = async (idsArray: string[]) => {
+        try {
+            // Send all delete requests in parallel
+            const deletePromises = idsArray.map((id) => deleteMutation.mutateAsync(id));
+            const results = await Promise.allSettled(deletePromises);
+
+            // Count successes and failures
+            const successes = results.filter((r) => r.status === 'fulfilled').length;
+            const failures = results.filter((r) => r.status === 'rejected').length;
+
+            if (failures === 0) {
+                toast.success(
+                    `${successes > 1 ? 'Reports' : 'Report'} deleted successfully`,
+                );
+            } else if (successes === 0) {
+                toast.error(
+                    `Failed to delete ${failures} report${failures > 1 ? 's' : ''}`,
+                );
+            } else {
+                toast.info(
+                    `Deleted ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed`,
+                );
+            }
+
+            setSelectedReports([]);
+        } catch (error) {
+            toast.error('An unexpected error occurred while deleting reports');
+        }
+    };
+
+    // Retry mutation
+    const retryMutation = useMutation({
+        mutationFn: (id: string) => reportsApi.reportsRetryCreate({ id }),
+        meta: {
+            suppressNotification: true, // We handle toasts ourselves
+            // Note: We don't invalidate queries here because retry is async and refetching causes a full table rerender
+        },
+    });
 
     const handleRetry = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
@@ -223,26 +291,29 @@ export default function Reports() {
         if (idsArray.length === 0) return;
 
         try {
-            const retryPromises = idsArray.map((id) =>
-                execute(() => reportsApi.reportsRetryCreate({ id })),
-            );
+            const retryPromises = idsArray.map((id) => retryMutation.mutateAsync(id));
             const results = await Promise.allSettled(retryPromises);
 
             const successes = results.filter((r) => r.status === 'fulfilled').length;
             const failures = results.filter((r) => r.status === 'rejected').length;
 
             if (failures === 0) {
-                toast.success(`Retry requested for ${successes} report${successes > 1 ? 's' : ''}.`);
+                toast.success(
+                    `Retry requested for ${successes} report${successes > 1 ? 's' : ''}.`,
+                );
             } else if (successes === 0) {
-                toast.error(`Failed to retry ${failures} report${failures > 1 ? 's' : ''}.`);
+                toast.error(
+                    `Failed to retry ${failures} report${failures > 1 ? 's' : ''}.`,
+                );
             } else {
-                toast.info(`Retry requested for ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed.`);
+                toast.info(
+                    `Retry requested for ${successes} report${successes > 1 ? 's' : ''}, ${failures} failed.`,
+                );
             }
 
             // Important: do NOT refetch here; retry is async and refetching causes a full table rerender.
             setSelectedReports([]);
         } catch (error) {
-            console.error('Retry failed:', error);
             toast.error('Failed to retry report(s).');
         }
     };
@@ -256,9 +327,11 @@ export default function Reports() {
             [column]: value,
         }));
         // Reset to first page when filters change
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('reports_page', '1');
-        setSearchParams(newParams, { replace: true });
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...(search as any), reports_page: 1 } as any,
+            replace: true,
+        });
     };
 
     const handleStatusChange = (status: string) => {
@@ -267,21 +340,28 @@ export default function Reports() {
             status,
         }));
         // Reset to first page when status filter changes
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('reports_page', '1');
-        setSearchParams(newParams, { replace: true });
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...(search as any), reports_page: 1 } as any,
+            replace: true,
+        });
     };
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
-        const columnId = Object.keys(sortFieldMapping).find(
-            (key) => sortFieldMapping[key] === sortField
-        ) || sortField;
-        
-        return columnId ? [{
-            id: columnId,
-            desc: sortDirection === 'desc',
-        }] : [];
+        const columnId =
+            Object.keys(sortFieldMapping).find(
+                (key) => sortFieldMapping[key] === sortField,
+            ) || sortField;
+
+        return columnId
+            ? [
+                  {
+                      id: columnId,
+                      desc: sortDirection === 'desc',
+                  },
+              ]
+            : [];
     }, [sortField, sortDirection]);
 
     // Define filterable columns with their handlers
@@ -293,12 +373,13 @@ export default function Reports() {
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
-        const promises = idsArray.map((id) =>
-            execute(() => reportsApi.reportsRetrieve({ id, downloadUrl: true })),
-        );
-        const reports = await Promise.all(promises);
-
         try {
+            const reports = await Promise.all(
+                idsArray.map((id) =>
+                    fetchReportMutation.mutateAsync({ id, downloadUrl: true }),
+                ),
+            );
+
             reports.forEach((report) => {
                 if (report.reportUrl) {
                     window.open(report.reportUrl, '_blank', 'noopener');
@@ -307,9 +388,10 @@ export default function Reports() {
                 }
             });
 
-            toast.success(`${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`);
+            toast.success(
+                `${idsArray.length > 1 ? 'Reports' : 'Report'} downloaded successfully`,
+            );
         } catch (error) {
-            console.error('Download failed:', error);
             toast.error('Failed to download report(s)');
         }
     };
@@ -368,7 +450,12 @@ export default function Reports() {
         })();
 
         const tooltipContent = errorMessage || capitalizeString(status);
-        const tooltipColorClass = status === 'error' ? 'bg-destructive text-destructive-foreground' : status === 'warning' ? 'bg-accent text-accent-foreground' : '';
+        const tooltipColorClass =
+            status === 'error'
+                ? 'bg-destructive text-destructive-foreground'
+                : status === 'warning'
+                  ? 'bg-accent text-accent-foreground'
+                  : '';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
@@ -378,7 +465,7 @@ export default function Reports() {
                             {icon}
                         </span>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className={tooltipColorClass}>
+                    <TooltipContent side='right' className={tooltipColorClass}>
                         {tooltipContent}
                     </TooltipContent>
                 </Tooltip>
@@ -392,9 +479,7 @@ export default function Reports() {
                         {icon}
                     </span>
                 </TooltipTrigger>
-                <TooltipContent side="right">
-                    {tooltipContent}
-                </TooltipContent>
+                <TooltipContent side='right'>{tooltipContent}</TooltipContent>
             </Tooltip>
         );
     };
@@ -410,15 +495,17 @@ export default function Reports() {
                             table.getIsAllPageRowsSelected() ||
                             (table.getIsSomePageRowsSelected() && 'indeterminate')
                         }
-                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label="Select all"
+                        onCheckedChange={(value) =>
+                            table.toggleAllPageRowsSelected(!!value)
+                        }
+                        aria-label='Select all'
                     />
                 ),
                 cell: ({ row }) => (
                     <Checkbox
                         checked={row.getIsSelected()}
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
+                        aria-label='Select row'
                         onClick={(e) => e.stopPropagation()}
                     />
                 ),
@@ -428,23 +515,39 @@ export default function Reports() {
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => (
-                    <span>Title</span>
-                ),
+                header: () => <span>Title</span>,
                 cell: ({ row }) => (
-                    <div className='text-foreground cursor-pointer' onClick={async () => {
-                        let details = await execute(() => reportsApi.reportsRetrieve({ id: row.original.id!, downloadUrl: false }));
-                        if (details.reportUrl) {
-                            window.open(details.reportUrl, '_blank');
-                        } else {
-                            toast.error('Report URL not found for report ' + details.title);
-                        }
-                    }}>
+                    <div
+                        className='text-foreground cursor-pointer'
+                        onClick={async () => {
+                            try {
+                                const details = await fetchReportMutation.mutateAsync({
+                                    id: row.original.id!,
+                                    downloadUrl: false,
+                                });
+                                if (details.reportUrl) {
+                                    window.open(details.reportUrl, '_blank');
+                                } else {
+                                    toast.error(
+                                        'Report URL not found for report ' +
+                                            details.title,
+                                    );
+                                }
+                            } catch (error) {
+                                // Error handled by mutation
+                            }
+                        }}
+                    >
                         <div className='flex items-center gap-2 min-w-0'>
                             <span className='inline-flex items-center flex-shrink-0'>
-                                {getStatusIcon(row.original.status, row.original.errorMessage || undefined)}
+                                {getStatusIcon(
+                                    row.original.status,
+                                    row.original.errorMessage || undefined,
+                                )}
                             </span>
-                            <span className='truncate'>{truncateText(row.original.title, 50)}</span>
+                            <span className='truncate'>
+                                {truncateText(row.original.title, 50)}
+                            </span>
                         </div>
                     </div>
                 ),
@@ -453,7 +556,7 @@ export default function Reports() {
                 accessorKey: 'strategy',
                 id: 'strategy',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Strategy" />
+                    <DataTableColumnHeader column={column} title='Strategy' />
                 ),
                 cell: ({ row }) => (
                     <div className='text-foreground'>
@@ -465,7 +568,7 @@ export default function Reports() {
                 accessorKey: 'anonymized',
                 id: 'anonymized',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title="Anonymized" />
+                    <DataTableColumnHeader column={column} title='Anonymized' />
                 ),
                 cell: ({ row }) => (
                     <div className='text-foreground'>
@@ -479,9 +582,9 @@ export default function Reports() {
                 header: ({ column }) => {
                     const filterValue = columnFilters.createdAt as DateRangeFilter;
                     return (
-                        <div className="flex items-center gap-2">
-                            <DataTableColumnHeader column={column} title="Created At" />
-                            {(filterValue?.from && filterValue?.to) && (
+                        <div className='flex items-center gap-2'>
+                            <DataTableColumnHeader column={column} title='Created At' />
+                            {filterValue?.from && filterValue?.to && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
                         </div>
@@ -499,51 +602,46 @@ export default function Reports() {
                 cell: ({ row }) => {
                     const report = row.original;
                     const handleView = async () => {
-                        let details = await execute(() => reportsApi.reportsRetrieve({ id: report.id!, downloadUrl: false }));
-                        if (details.reportUrl) {
-                            window.open(details.reportUrl, '_blank');
-                        } else {
-                            toast.error('No report location available');
+                        try {
+                            const details = await fetchReportMutation.mutateAsync({
+                                id: report.id!,
+                                downloadUrl: false,
+                            });
+                            if (details.reportUrl) {
+                                window.open(details.reportUrl, '_blank');
+                            } else {
+                                toast.error('No report location available');
+                            }
+                        } catch (error) {
+                            // Error handled by mutation
                         }
                     };
 
                     const handleEdit = () => {
-                        navigate(`/publish?report=${report.id}`);
+                        router.navigate({ to: `/publish?report=${report.id}` as any });
                     };
 
                     const handleRetry = async () => {
-                        try {
-                            await reportsApi.reportsRetryCreate({
-                                id: report.id!,
-                            });
-                            fetchReports();
-                            toast.success('Retrying to build report!');
-                        } catch (error) {
-                            console.error('Retry report failed:', error);
-                            toast.error('Failed to retry report');
-                        }
-                    };
-
-                    const handleDelete = () => {
-                        setModal(ConfirmDeletionModal, {
-                            text: `Are you sure you want to delete this report?`,
-                            onConfirm: async () => {
-                                try {
-                                    await reportsApi.reportsDestroy({
-                                        id: report.id!,
-                                    });
-                                    fetchReports();
-                                    toast.success('Report deleted successfully');
-                                } catch (error) {
-                                    console.error('Delete report failed:', error);
-                                    toast.error('Failed to delete report');
-                                }
+                        retryMutation.mutate(report.id!, {
+                            onSuccess: () => {
+                                toast.success('Retrying to build report!');
+                            },
+                            onError: () => {
+                                toast.error('Failed to retry report');
                             },
                         });
                     };
 
+                    const handleDelete = () => {
+                        setDeletingReportId(report.id!);
+                        setSingleDeleteModalOpen(true);
+                    };
+
                     return (
-                        <div className='w-12 text-right' onClick={(e) => e.stopPropagation()}>
+                        <div
+                            className='w-12 text-right'
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className='flex justify-end'>
                                 <TableActionsButton>
                                     {report.status === 'done' && (
@@ -565,7 +663,10 @@ export default function Reports() {
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                                    <DropdownMenuItem
+                                        onClick={handleDelete}
+                                        variant='destructive'
+                                    >
                                         <Trash width='18' height='18' />
                                         Delete
                                     </DropdownMenuItem>
@@ -577,7 +678,16 @@ export default function Reports() {
                 enableSorting: false,
             },
         ],
-        [columnFilters, handleStatusChange, getStatusIcon, execute, reportsApi, fetchReports, navigate, setModal],
+        [
+            columnFilters,
+            handleStatusChange,
+            getStatusIcon,
+            fetchReportMutation,
+            reportsApi,
+            router,
+            deleteMutation,
+            retryMutation,
+        ],
     );
 
     // Handle row selection
@@ -587,13 +697,7 @@ export default function Reports() {
 
     return (
         <div className='w-full h-full'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>Reports</h2>
-                    <p className='text-muted-foreground'>Manage & View Your Reports</p>
-                </div>
-            </div>
+            <PageHeader title='Reports' description='Manage & View Your Reports' />
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 p-4'>
@@ -640,14 +744,20 @@ export default function Reports() {
                             label: 'Download reports',
                             icon: <Download width={18} height={18} />,
                             onClick: () => handleDownload(selectedReports),
-                            disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                            disabled:
+                                loading ||
+                                reports.length === 0 ||
+                                selectedReports.length === 0,
                         },
                         {
                             id: 'delete',
                             label: 'Delete reports',
                             icon: <Trash width={18} height={18} />,
                             onClick: () => handleDelete(selectedReports),
-                            disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                            disabled:
+                                loading ||
+                                reports.length === 0 ||
+                                selectedReports.length === 0,
                             variant: 'destructive',
                         },
                         {
@@ -655,10 +765,13 @@ export default function Reports() {
                             label: 'Retry reports',
                             icon: <RefreshCircle width={18} height={18} />,
                             onClick: () => handleRetry(selectedReports),
-                            disabled: loading || reports.length === 0 || selectedReports.length === 0,
+                            disabled:
+                                loading ||
+                                reports.length === 0 ||
+                                selectedReports.length === 0,
                         },
                     ]}
-                    itemLabel="report"
+                    itemLabel='report'
                     manualSorting={true}
                 />
 
@@ -668,16 +781,51 @@ export default function Reports() {
                     onPageChange={handlePageChange}
                     pageSize={pageSize}
                     onPageSizeChange={(newSize) => {
-                        const newParams = new URLSearchParams(searchParams);
-                        newParams.set('reports_page', '1');
-                        newParams.set('reports_pagesize', String(newSize));
-                        setSearchParams(newParams, { replace: true });
+                        const searchAny = search as any;
+                        const newSearch: any = {
+                            ...searchAny,
+                            reports_page: 1,
+                            reports_pagesize: newSize,
+                        };
+                        router.navigate({
+                            to: location.pathname as any,
+                            search: newSearch as any,
+                            replace: true,
+                        });
                     }}
                     disabled={reports.length === 0}
                     selectedCount={selectedReports.length}
                     totalRows={totalCount}
                 />
             </div>
+            <ConfirmDeletionModal
+                open={deleteModalOpen}
+                onOpenChange={setDeleteModalOpen}
+                text={`Are you sure you want to delete these ${deletingReportIds.length > 1 ? 'reports' : 'report'}? This action is irreversible.`}
+                onConfirm={() => executeDelete(deletingReportIds)}
+            />
+            {deletingReportId && (
+                <ConfirmDeletionModal
+                    open={singleDeleteModalOpen}
+                    onOpenChange={(open) => {
+                        setSingleDeleteModalOpen(open);
+                        if (!open) setDeletingReportId(null);
+                    }}
+                    text='Are you sure you want to delete this report?'
+                    onConfirm={async () => {
+                        if (deletingReportId) {
+                            deleteMutation.mutate(deletingReportId, {
+                                onSuccess: () => {
+                                    toast.success('Report deleted successfully');
+                                },
+                                onError: () => {
+                                    toast.error('Failed to delete report');
+                                },
+                            });
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 }

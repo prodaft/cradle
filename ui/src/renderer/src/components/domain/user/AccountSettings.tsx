@@ -1,59 +1,44 @@
 import ApiKeyGenerateModal from '@/components/modals/auth/ApiKeyGenerateModal';
 import ChangePasswordModal from '@/components/modals/auth/ChangePasswordModal';
 import TwoFactorSetupModal from '@/components/modals/auth/TwoFactorSetupModal';
-import ActionConfirmationModal from '@/components/modals/base/ActionConfirmationModal';
 import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@/components/modals/notes/MarkdownEditorModal';
-import { useModal } from '@/contexts/ui/ModalContext';
-import { toast } from 'sonner';
-import { useProfile } from '@/contexts/user/ProfileContext';
-import { useAPICall } from '@/hooks';
-import useApi from '@/hooks/api/useApi';
-import useAuth from '@/hooks/auth/useAuth';
-import useCradleNavigate from '@/hooks/navigation/useCradleNavigate';
-import {
-    UserCreateRequestThemeEnum,
-    UserRetrieve,
-    UserUpdateRequestRoleEnum
-} from '@/services/cradle/models';
-import { displayError } from '@/utils/api';
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { WarningCircle } from 'iconoir-react';
-import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
-import { SettingsButton, SettingsCard, SettingsField, SettingsSelect } from '@components/forms';
-import { Separator } from '@/components/ui/separator';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarGroup,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/ui/sidebar';
 import { Switch } from '@/components/ui/switch';
-import { yupResolver } from '@hookform/resolvers/yup';
+import useApi from '@/hooks/api/useApi';
+import { useAuthActions } from '@/hooks/auth/useAuth';
+import { queryKeys } from '@/hooks/query';
+import { useProfile } from '@/hooks/user/useProfile';
+import { UserRetrieve } from '@/services/cradle/models';
+import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
+import { SettingsButton, SettingsCard } from '@components/forms';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import bytes from 'bytes';
-import { HalfMoon, SunLight } from 'iconoir-react';
+import { EditPencil, HalfMoon, Link, SunLight } from 'iconoir-react';
+import { ClockRotateRight, Lock } from 'iconoir-react/regular';
 import { debounce } from 'lodash'; // Import lodash debounce
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { useLocation } from 'react-router-dom';
-import * as Yup from 'yup';
+import { toast } from 'sonner';
+import { z } from 'zod';
 import ActiveSessions from './ActiveSessions';
-
-interface AccountFormData {
-    id: string;
-    username: string;
-    email: string;
-    password: string;
-    catalystApiKey: string;
-    role: UserUpdateRequestRoleEnum;
-    vimMode?: boolean;
-    theme?: UserCreateRequestThemeEnum;
-    emailConfirmed: boolean;
-    isActive: boolean;
-    fileUploadLimitOverride?: string;
-}
 
 interface AccountSettingsProps {
     target?: string;
-    isEdit?: boolean;
-    onAdd?: (user: any) => void;
 }
 
 interface Alert {
@@ -74,92 +59,149 @@ interface OAuthMethod {
     url?: string;
 }
 
-const accountSettingsSchema: Yup.ObjectSchema<AccountFormData> = Yup.object().shape({
-    id: Yup.string().notRequired(),
-    username: Yup.string().required('Username is required'),
-    email: Yup.string().email('Invalid email').required('Email is required'),
-    password: Yup.string().when('$isEdit', {
-        is: false,
-        then: () => Yup.string().required('Password is required'),
-        otherwise: () => Yup.string(),
-    }),
-    catalystApiKey: Yup.string(),
-    role: Yup.string().when('$isAdminAndNotOwn', {
-        is: true,
-        then: () => Yup.string().required('Role is required'),
-        otherwise: () => Yup.string(),
-    }),
-    emailConfirmed: Yup.boolean(),
-    isActive: Yup.boolean(),
-    vimMode: Yup.boolean().notRequired(),
-    theme: Yup.string().notRequired(),
-    fileUploadLimitOverride: Yup.string().when('$isAdminAndNotOwn', {
-        is: true,
-        then: () =>
-            Yup.string().test(
-                'is-valid-bytes',
-                'Enter a valid size (e.g. 100MB, 1GB) or leave empty to use global default',
-                (value) => {
-                    if (!value || value === '') return true; // Allow empty to use global default
-                    return typeof bytes(value) === 'number';
-                },
-            ),
-        otherwise: () => Yup.string().notRequired(),
-    }),
-}) as Yup.ObjectSchema<AccountFormData>;
+const accountSettingsSchema = z.object({
+    id: z.string().optional(),
+    username: z.string().min(1, { error: 'Username is required' }),
+    email: z
+        .string()
+        .min(1, { error: 'Email is required' })
+        .refine((val) => z.email().safeParse(val).success, {
+            error: 'Invalid email',
+        }),
+    password: z.string().optional(),
+    catalystApiKey: z.string().optional(),
+    role: z.string().optional(),
+    emailConfirmed: z.boolean().optional(),
+    isActive: z.boolean().optional(),
+    vimMode: z.boolean().optional(),
+    theme: z.string().optional(),
+    fileUploadLimitOverride: z.string().optional(),
+});
 
-export default function AccountSettings({
-    target = 'me',
-    isEdit = true,
-    onAdd,
-}: AccountSettingsProps) {
-    const { navigate, nativeNavigate } = useCradleNavigate();
+type AccountFormData = z.infer<typeof accountSettingsSchema>;
+
+export default function AccountSettings({ target = 'me' }: AccountSettingsProps) {
     const { usersApi, basePath } = useApi();
-    const auth = useAuth();
-    const { execute } = useAPICall();
+    const { logOut, getAccessToken } = useAuthActions();
     const { profile, setProfile, isAdmin } = useProfile();
-    const { setModal } = useModal();
-    const location = useLocation();
+
+    const autoSaveMutation = useMutation({
+        mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
+            return await usersApi.usersUpdate({
+                userId,
+                userUpdateRequest: payload,
+            });
+        },
+        meta: {
+            successMessage: 'Saved',
+            errorMessage: 'Failed to auto-save',
+            suppressNotification: true, // Autosave is silent
+        },
+    });
+
+    const deleteAccountMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            await usersApi.usersDestroy({ userId });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: () => {
+            auth.logOut();
+        },
+    });
+
+    const fetchNoteTemplateMutation = useMutation({
+        mutationFn: async (userId: string) => {
+            return await usersApi.usersDefaultNoteTemplateRetrieve({ userId });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const saveNoteTemplateMutation = useMutation({
+        mutationFn: async ({
+            userId,
+            template,
+        }: {
+            userId: string;
+            template: string;
+        }) => {
+            await usersApi.usersDefaultNoteTemplateCreate({
+                userId,
+                defaultNoteTemplateRequest: { template },
+            });
+        },
+        meta: {
+            successMessage: 'Note template saved successfully',
+            errorMessage: 'Failed to save note template',
+        },
+    });
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/settings' });
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+    const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
+    const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+    const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
+    const [twoFactorDisabling, setTwoFactorDisabling] = useState(false);
+    const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
+    const [noteTemplateModalOpen, setNoteTemplateModalOpen] = useState(false);
+    const [noteTemplateContent, setNoteTemplateContent] = useState('');
+
+    // Get active tab from URL search params, default to 'security'
+    const validTabs = ['security', 'sessions', 'oauth', 'appearance', 'editor'];
+    const getActiveTab = () => {
+        const tab = (search as any)?.tab;
+        return validTabs.includes(tab || '') ? tab : 'security';
+    };
+    const [activeTab, setActiveTab] = useState(getActiveTab());
+
+    // Update active tab when search params change and set initial tab
+    useEffect(() => {
+        const tab = (search as any)?.tab;
+        if (!tab || !validTabs.includes(tab)) {
+            // Set default tab if no valid tab is present
+            if (!tab) {
+                const newSearch: any = { ...search, tab: 'security' };
+                router.navigate({
+                    to: location.pathname as any,
+                    search: newSearch,
+                    replace: true,
+                });
+            }
+            setActiveTab('security');
+        } else {
+            setActiveTab(tab);
+        }
+    }, [(search as any)?.tab, router, location.pathname, search]);
     const [user, setUser] = useState<UserRetrieve | null>(null);
-    const [oauthConnections, setOauthConnections] = useState<
-        Record<string, boolean>
-    >({});
+    const [oauthConnections, setOauthConnections] = useState<Record<string, boolean>>(
+        {},
+    );
     const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
     const [oauthBusyProvider, setOauthBusyProvider] = useState<string | null>(null);
-    const isOwnAccount = isEdit ? target === 'me' || profile?.id === target : false;
-    const isAdminAndNotOwn = isAdmin() && !isOwnAccount;
     const vimModeId = useId();
     const snippetListRef = useRef<SnippetListRef>(null);
 
     // Note template loading state
     const [noteTemplateLoading, setNoteTemplateLoading] = useState(false);
 
-    const defaultValues: AccountFormData = isEdit
-        ? {
-            id: '',
-            username: '',
-            email: '',
-            password: 'password',
-            catalystApiKey: 'apikey',
-            role: 'author',
-            vimMode: false,
-            emailConfirmed: false,
-            isActive: false,
-            fileUploadLimitOverride: '',
-        }
-        : {
-            id: '',
-            username: '',
-            email: '',
-            password: '',
-            catalystApiKey: '',
-            role: 'author',
-            vimMode: false,
-            emailConfirmed: false,
-            isActive: false,
-            fileUploadLimitOverride: '',
-        };
+    const defaultValues: AccountFormData = {
+        id: '',
+        username: '',
+        email: '',
+        password: 'password',
+        catalystApiKey: 'apikey',
+        role: 'author',
+        vimMode: false,
+        emailConfirmed: false,
+        isActive: false,
+        fileUploadLimitOverride: '',
+    };
 
     const {
         register,
@@ -171,9 +213,7 @@ export default function AccountSettings({
         control,
         formState: { errors, isDirty },
     } = useForm<AccountFormData>({
-        resolver: yupResolver(accountSettingsSchema, {
-            context: { isEdit, isAdminAndNotOwn },
-        }),
+        resolver: zodResolver(accountSettingsSchema) as any,
         defaultValues,
     });
 
@@ -186,64 +226,65 @@ export default function AccountSettings({
     const isInitialLoad = useRef(true);
     const previousValuesRef = useRef<Partial<AccountFormData> | null>(null);
 
-    // Prepopulate form in edit mode.
+    // Query for user data
+    const { data: userData, isPending: isPendingUser } = useQuery<UserRetrieve>({
+        queryKey: queryKeys.users.detail(target),
+        queryFn: () => usersApi.usersRetrieve({ userId: target }),
+        enabled: !!target,
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch user data',
+            suppressNotification: true,
+        },
+    });
+
+    // Populate form when user data is loaded
     useEffect(() => {
-        (async () => {
-            if (isEdit && target) {
-                let user: UserRetrieve | null = null;
-                try {
-                    user = await execute(() =>
-                        usersApi.usersRetrieve({ userId: target }),
-                    );
-                } catch (error) {
-                    setUser(null);
-                    return;
-                }
-                setUser(user);
-                const connections =
-                    (user as any).oauthConnections ||
-                    (user as any).oauth_connections ||
-                    {};
-                setOauthConnections(connections);
+        if (!userData || !target) {
+            setUser(null);
+            return;
+        }
 
-                const fileUploadLimitBytes = user.fileUploadLimitOverride;
-                const fileUploadLimitFormatted = fileUploadLimitBytes
-                    ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
-                    : '';
+        setUser(userData);
+        const connections =
+            (userData as any).oauthConnections ||
+            (userData as any).oauth_connections ||
+            {};
+        setOauthConnections(connections);
 
-                const initialData = {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email,
-                    password: 'password',
-                    theme: user.theme || 'dark',
-                    catalystApiKey: user.catalystApiKey ? 'apikey' : '',
-                    role: user.role || 'author',
-                    emailConfirmed: user.emailConfirmed || false,
-                    isActive: user.isActive || false,
-                    vimMode: user.vimMode || false,
-                    fileUploadLimitOverride: fileUploadLimitFormatted,
-                };
+        const fileUploadLimitBytes = (userData as any).fileUploadLimitOverride;
+        const fileUploadLimitFormatted = fileUploadLimitBytes
+            ? bytes.format(fileUploadLimitBytes, { unitSeparator: ' ' })
+            : '';
 
-                reset(initialData);
-                setTwoFactorEnabled(user.twoFactorEnabled || false);
+        const initialData = {
+            id: userData.id,
+            username: userData.username,
+            email: userData.email,
+            password: 'password',
+            theme: userData.theme || 'dark',
+            catalystApiKey: userData.catalystApiKey ? 'apikey' : '',
+            role: userData.role || 'author',
+            emailConfirmed: userData.emailConfirmed || false,
+            isActive: userData.isActive || false,
+            vimMode: userData.vimMode || false,
+            fileUploadLimitOverride: fileUploadLimitFormatted,
+        };
 
-                // Store initial values for comparison
-                previousValuesRef.current = initialData;
+        reset(initialData);
+        setTwoFactorEnabled(userData.twoFactorEnabled || false);
 
-                // Mark initial load as complete
-                setTimeout(() => {
-                    isInitialLoad.current = false;
-                }, 1000);
-            } else {
-                reset(defaultValues);
-                isInitialLoad.current = false;
-            }
-        })();
-    }, [isEdit, target, reset, navigate, usersApi]);
+        // Store initial values for comparison
+        previousValuesRef.current = initialData;
+
+        // Mark initial load as complete
+        setTimeout(() => {
+            isInitialLoad.current = false;
+        }, 1000);
+    }, [userData, target, reset]);
 
     useEffect(() => {
-        if (!basePath || !isOwnAccount) {
+        if (!basePath) {
             setOauthMethods([]);
             return;
         }
@@ -278,7 +319,7 @@ export default function AccountSettings({
         return () => {
             isMounted = false;
         };
-    }, [basePath, isOwnAccount]);
+    }, [basePath]);
 
     const getOAuthKey = (method: OAuthMethod) => {
         return (
@@ -359,9 +400,7 @@ export default function AccountSettings({
     }, [oauthConnections, oauthMethods]);
 
     const handleOAuthConnect = (provider: string) => {
-        const method = oauthMethods.find(
-            (item) => getOAuthKey(item) === provider,
-        );
+        const method = oauthMethods.find((item) => getOAuthKey(item) === provider);
         if (!method) {
             toast.error('OAuth provider configuration not found.');
             return;
@@ -381,7 +420,7 @@ export default function AccountSettings({
     const handleOAuthDisconnect = async (provider: string) => {
         try {
             setOauthBusyProvider(provider);
-            const token = await auth.getAccessToken();
+            const token = await getAccessToken();
             const response = await fetch(
                 `${basePath}/users/oauth/disconnect/${provider}/`,
                 {
@@ -405,7 +444,6 @@ export default function AccountSettings({
         }
     };
 
-
     /**
      * Performs the actual API call and diffing.
      * This function is not debounced directly; it is called by the debounced wrapper.
@@ -413,17 +451,10 @@ export default function AccountSettings({
     const processAutoSave = async (data: AccountFormData) => {
         const previousData = previousValuesRef.current;
 
-        if (!isEdit || !data.id) return;
+        if (!data.id) return;
 
         // Check if any relevant field actually changed using strict equality
         const hasChanges =
-            (isAdminAndNotOwn &&
-                (data.username !== previousData?.username ||
-                    data.email !== previousData?.email ||
-                    data.role !== previousData?.role ||
-                    data.emailConfirmed !== previousData?.emailConfirmed ||
-                    data.isActive !== previousData?.isActive ||
-                    data.fileUploadLimitOverride !== previousData?.fileUploadLimitOverride)) ||
             (data.password !== 'password' &&
                 data.password !== previousData?.password) ||
             (data.catalystApiKey !== 'apikey' &&
@@ -434,9 +465,6 @@ export default function AccountSettings({
         if (!hasChanges) return;
 
         const payload: any = {};
-        if (data.password !== 'password' && data.password !== previousData?.password) {
-            payload.password = data.password;
-        }
         if (
             data.catalystApiKey !== 'apikey' &&
             data.catalystApiKey !== previousData?.catalystApiKey
@@ -449,59 +477,36 @@ export default function AccountSettings({
         if (data.theme !== previousData?.theme) {
             payload.theme = data.theme;
         }
-        if (isAdminAndNotOwn) {
-            if (data.username !== previousData?.username)
-                payload.username = data.username;
-            if (data.email !== previousData?.email) payload.email = data.email;
-            if (data.emailConfirmed !== previousData?.emailConfirmed)
-                payload.emailConfirmed = data.emailConfirmed;
-            if (data.isActive !== previousData?.isActive)
-                payload.isActive = data.isActive;
-            if (data.role !== previousData?.role) payload.role = data.role;
-            if (data.fileUploadLimitOverride !== previousData?.fileUploadLimitOverride) {
-                // Convert to bytes if provided, or null to use global default
-                if (data.fileUploadLimitOverride && data.fileUploadLimitOverride.trim() !== '') {
-                    payload.fileUploadLimitOverride = bytes.parse(data.fileUploadLimitOverride);
-                } else {
-                    payload.file_upload_limit = null;
-                }
-            }
-        }
 
         if (Object.keys(payload).length === 0) return;
 
-        try {
-            const updatedUser = await execute(
-                () =>
-                    usersApi.usersUpdate({
-                        userId: data.id,
-                        userUpdateRequest: payload,
-                    }),
-                {
-                    // Optional: Reduce noise by removing success message on autosave
-                    successMessage: 'Saved',
-                    errorMessage: 'Failed to auto-save',
-                },
-            );
-
-            if (isOwnAccount) {
-                setProfile((prevProfile: any) => ({
-                    ...prevProfile,
-                    ...updatedUser,
-                }));
-            }
-
-            // Update previous values AFTER successful save
-            previousValuesRef.current = {
-                ...previousData,
-                ...data,
-                // Ensure password/api key reset to placeholder in our reference to match form state
-                password: 'password',
-                catalystApiKey: data.catalystApiKey ? 'apikey' : '',
-            };
-        } catch (error) {
-            console.error('Autosave failed', error);
+        const userId = data.id;
+        if (!userId) {
+            return;
         }
+        autoSaveMutation.mutate(
+            { userId, payload },
+            {
+                onSuccess: (updatedUser) => {
+                    setProfile((prevProfile: any) => ({
+                        ...prevProfile,
+                        ...updatedUser,
+                    }));
+
+                    // Update previous values AFTER successful save
+                    previousValuesRef.current = {
+                        ...previousData,
+                        ...data,
+                        // Ensure password/api key reset to placeholder in our reference to match form state
+                        password: 'password',
+                        catalystApiKey: data.catalystApiKey ? 'apikey' : '',
+                    };
+                },
+                onError: () => {
+                    // Autosave errors are non-critical, silently fail
+                },
+            },
+        );
     };
 
     const processAutoSaveRef = useRef(processAutoSave);
@@ -529,713 +534,495 @@ export default function AccountSettings({
     const watchedValues = watch(); // Watch all fields
 
     useEffect(() => {
-        if (isEdit && getValues('id') && !isInitialLoad.current) {
+        if (getValues('id') && !isInitialLoad.current) {
             const currentValues = getValues();
             debouncedSave(currentValues);
         }
-    }, [watchedValues, isEdit, debouncedSave, getValues]);
+    }, [watchedValues, debouncedSave, getValues]);
 
     const onSubmit = async (data: AccountFormData) => {
-        if (isEdit) {
-            debouncedSave.flush(); // Force immediate execution of pending autosaves
-        } else {
-            const payload = {
-                username: data.username,
-                email: data.email,
-                password: data.password,
-                catalyst_api_key: data.catalystApiKey,
-                role: data.role,
-                emailConfirmed: data.emailConfirmed,
-                isActive: data.isActive,
-                vim_mode: data.vimMode,
-                theme: data.theme,
-            };
-            const newUser = await execute(() =>
-                usersApi.usersCreate({
-                    userCreateRequest: payload,
-                }),
-            );
-
-            toast.success('User created successfully');
-            reset();
-            if (onAdd) onAdd(newUser);
-        }
+        debouncedSave.flush(); // Force immediate execution of pending autosaves
     };
 
-    const handleDelete = async () => {
-        await execute(() => usersApi.usersDestroy({ userId: getValues('id') }));
-        auth.logOut();
+    const handleDelete = () => {
+        const userId = getValues('id');
+        if (!userId) {
+            return;
+        }
+        deleteAccountMutation.mutate(userId);
     };
 
     const openChangePasswordModal = () => {
-        setModal(ChangePasswordModal);
+        setChangePasswordModalOpen(true);
     };
 
     const openApiKeyModal = () => {
         const id = getValues('id');
         if (!id) return;
-        setModal(ApiKeyGenerateModal, {
-            userId: id,
-        });
+        setApiKeyModalOpen(true);
     };
 
     const openTwoFactorModal = () => {
-        setModal(TwoFactorSetupModal, {
-            isDisabling: twoFactorEnabled,
-            onSuccess: () => {
-                setTwoFactorEnabled((prev) => !prev);
-                toast.success(twoFactorEnabled
-                    ? 'Two-Factor Auth has been disabled.'
-                    : 'Two-Factor Auth has been enabled.');
-            },
-        });
+        setTwoFactorDisabling(twoFactorEnabled);
+        setTwoFactorModalOpen(true);
     };
 
     const openDeleteAccountModal = () => {
-        setModal(ConfirmDeletionModal, {
-            onConfirm: handleDelete,
-            confirmText: 'DELETE',
-            text: 'Deleting your account will permanently remove all your data, including notes, entries, and settings. This action cannot be undone.',
-        });
+        setDeleteAccountModalOpen(true);
     };
 
     const openNoteTemplateModal = async () => {
         setNoteTemplateLoading(true);
         try {
-            const defaultNoteResponse = await execute(() =>
-                usersApi.usersDefaultNoteTemplateRetrieve({
-                    userId: target,
-                }),
-            );
+            const defaultNoteResponse =
+                await fetchNoteTemplateMutation.mutateAsync(target);
             const initialTemplate = defaultNoteResponse.template || '';
-
-            setModal(MarkdownEditorModal, {
-                title: 'Default Note Template',
-                titleEditable: false,
-                initialContent: initialTemplate,
-                helpText:
-                    'This markdown template will be used as the starting content for new notes you create.',
-                onConfirm: async (content: string) => {
-                    try {
-                        if (isOwnAccount) {
-                            setProfile((prevProfile: any) => ({
-                                ...prevProfile,
-                                defaultNoteTemplate: content,
-                            }));
-                        }
-
-                        await usersApi.usersDefaultNoteTemplateCreate({
-                            userId: target,
-                            defaultNoteTemplateRequest: { template: content },
-                        });
-
-                        toast.success('Default note template updated successfully!');
-                    } catch (err) {
-                        displayError(setAlert)(err);
-                    }
-                },
-            });
+            setNoteTemplateContent(initialTemplate);
+            setNoteTemplateModalOpen(true);
         } finally {
             setNoteTemplateLoading(false);
         }
     };
 
-    // Admin-only actions
-    const simulateSession = async () => {
-        const res = await execute(() =>
-            usersApi.usersManageRetrieve({
-                userId: target,
-                actionName: 'simulate',
-            }),
-        );
-        auth.setTokensDirectly(res as any);
-        nativeNavigate('/', { replace: true });
-    };
+    // Require user to be loaded
+    if (!user) return <div></div>;
 
-    const sendEmailConfirmation = () => {
-        execute(
-            () =>
-                usersApi.usersManageRetrieve({
-                    userId: target,
-                    actionName: 'send_email_confirmation',
-                }),
-            { successMessage: 'Email confirmation sent successfully' },
-        ).catch(() => { });
-    };
-
-    const sendPasswordResetEmail = () => {
-        execute(
-            () =>
-                usersApi.usersManageRetrieve({
-                    userId: target,
-                    actionName: 'password_reset_email',
-                }),
-            { successMessage: 'Password reset email sent successfully' },
-        ).catch(() => { });
-    };
-
-    const handleDeleteUser = async () => {
-        await execute(() => usersApi.usersDestroy({ userId: target }));
-        toast.success('User deleted successfully');
-        navigate('/admin/users');
-    };
-
-    const openDeleteUserModal = () => {
-        setModal(ConfirmDeletionModal, {
-            onConfirm: handleDeleteUser,
-            confirmText: getValues('username') || 'DELETE',
-            text: 'Deleting this user will permanently remove all their data, including notes, entries, and settings. This action cannot be undone.',
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...search, tab } as any,
+            replace: true,
         });
     };
 
-    if (!user) return <div></div>;
+    const getRoleBadgeVariant = (role?: string) => {
+        switch (role) {
+            case 'admin':
+                return 'destructive';
+            case 'author':
+                return 'default';
+            case 'viewer':
+                return 'secondary';
+            default:
+                return 'outline';
+        }
+    };
+
+    const settingsTabs = [
+        { id: 'security', label: 'Security', icon: Lock },
+        { id: 'sessions', label: 'Sessions', icon: ClockRotateRight },
+        { id: 'oauth', label: 'OAuth', icon: Link },
+        { id: 'appearance', label: 'Appearance', icon: SunLight },
+        { id: 'editor', label: 'Editor', icon: EditPencil },
+    ];
+
+    const tabDescriptions: Record<string, string> = {
+        security: 'Authentication, API keys, and account security',
+        sessions: 'Manage your active sessions across devices',
+        oauth: 'Link or unlink external identity providers',
+        appearance: 'Customize your visual appearance and theme',
+        editor: 'Configure editor behavior, templates, and snippets',
+    };
+
+    const currentTab = settingsTabs.find((tab) => tab.id === activeTab);
+    const currentDescription =
+        activeTab && activeTab in tabDescriptions ? tabDescriptions[activeTab] : '';
 
     return (
-        <div className='w-full h-full'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>
-                        {isEdit ? 'Settings' : 'Add New User'}
-                    </h2>
-                    <p className='text-muted-foreground'>
-                        {isEdit
-                            ? 'Manage account preferences and security'
-                            : 'Create a new user account'}
-                    </p>
-                </div>
-            </div>
-
-            {/* Content Area */}
-            <div className='p-5'>
-                <div className='w-full'>
-                    {/* Admin Actions Section - Only visible to admins viewing other users */}
-                    {isAdminAndNotOwn && isEdit && (
-                        <section
-                            id='admin-actions'
-                            className='border-b border-white/5 pb-8'
-                        >
-                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                User Management
-                            </h2>
-                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Administrative actions for this user
-                            </p>
-
-                            <div className='space-y-4'>
-                                <SettingsCard>
-                                    <SettingsButton
-                                        label='Simulate Session'
-                                        description='Jump into a session for this user'
-                                        buttonText='Simulate'
-                                        onClick={simulateSession}
-                                    />
-
-                                    <Separator />
-
-                                    <SettingsButton
-                                        label='Email Confirmation'
-                                        description='Send email verification to user'
-                                        buttonText='Send Email'
-                                        onClick={sendEmailConfirmation}
-                                    />
-
-                                    <Separator />
-
-                                    <SettingsButton
-                                        label='Password Reset'
-                                        description='Send password reset email'
-                                        buttonText='Send Reset'
-                                        onClick={sendPasswordResetEmail}
-                                    />
-
-                                    <Separator />
-
-                                    <SettingsButton
-                                        label='Delete User'
-                                        description='Permanently remove this user and all their data'
-                                        buttonText='Delete'
-                                        variant='danger'
-                                        onClick={openDeleteUserModal}
-                                    />
-                                </SettingsCard>
+        <div className='flex w-full h-full'>
+            {/* Settings Sidebar */}
+            <Sidebar
+                collapsible='none'
+                className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
+            >
+                <SidebarHeader className='flex flex-col p-4 gap-2 border-b border-border'>
+                    <div className='w-full'>
+                        <div className='flex items-center gap-2 mb-1'>
+                            <div className='text-sm font-medium text-foreground truncate'>
+                                {profile?.username || user?.username || 'User'}
                             </div>
-                        </section>
-                    )}
-                    <form
-                        onSubmit={
-                            isEdit ? (e) => e.preventDefault() : handleSubmit(onSubmit)
-                        }
-                    >
-                        {/* Account Section */}
-                        <section
-                            id='account'
-                            className={`pb-8 ${isEdit && isAdminAndNotOwn ? 'pt-5' : ''}`}
-                        >
-                            <h2 className='text-lg text-foreground tracking-tight'>
-                                Account
-                            </h2>
-                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Basic account details and credentials
-                            </p>
-
-                            <div className='space-y-4'>
-                                {/* Alert */}
-                                {alert.show && (
-                                    <div className='pt-4'>
-                                        <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
-                                            <WarningCircle />
-                                            <AlertDescription>{alert.message}</AlertDescription>
-                                        </AlertComponent>
-                                    </div>
-                                )}
-
-                                {/* Basic Information Card */}
-                                <SettingsCard>
-                                    <SettingsField
-                                        label='Username'
-                                        description='Your display name across the platform'
-                                        placeholder='Username'
-                                        {...register('username')}
-                                        error={errors.username}
-                                        disabled={!isAdminAndNotOwn && isEdit}
-                                    />
-
-                                    <Separator />
-
-                                    <SettingsField
-                                        label='Email'
-                                        description='Used for login and notifications'
-                                        type='text'
-                                        placeholder='Email'
-                                        {...register('email')}
-                                        error={errors.email}
-                                        disabled={!isAdminAndNotOwn && isEdit}
-                                    />
-
-                                    <Separator />
-
-                                    <SettingsField
-                                        label='User ID'
-                                        description='Unique identifier for API integrations'
+                            {(() => {
+                                const role = profile?.role || user?.role;
+                                return role ? (
+                                    <Badge
+                                        variant={getRoleBadgeVariant(role)}
+                                        className='text-[10px] px-1.5 py-0 h-4 leading-none'
                                     >
-                                        <Input
-                                            type='text'
-                                            value={profile?.id || ''}
-                                            className='opacity-60'
-                                            disabled
-                                            readOnly
-                                        />
-                                    </SettingsField>
+                                        {role.charAt(0).toUpperCase() + role.slice(1)}
+                                    </Badge>
+                                ) : null;
+                            })()}
+                        </div>
+                        <div className='text-xs text-muted-foreground truncate'>
+                            {profile?.email || user?.email || ''}
+                        </div>
+                    </div>
+                </SidebarHeader>
+                <SidebarContent>
+                    <SidebarGroup>
+                        <SidebarMenu>
+                            {settingsTabs.map((tab) => {
+                                const Icon = tab.icon;
+                                return (
+                                    <SidebarMenuItem key={tab.id}>
+                                        <SidebarMenuButton
+                                            isActive={activeTab === tab.id}
+                                            onClick={() => handleTabChange(tab.id)}
+                                            tooltip={tab.label}
+                                        >
+                                            <Icon />
+                                            <span>{tab.label}</span>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
+                        </SidebarMenu>
+                    </SidebarGroup>
+                </SidebarContent>
+            </Sidebar>
 
-                                    <Separator />
+            {/* Main Content Area */}
+            <div className='flex-1 flex flex-col overflow-auto'>
+                {/* Header Section */}
+                <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
+                    <div>
+                        <h2 className='text-2xl font-bold tracking-tight'>
+                            {currentTab?.label || 'Settings'}
+                        </h2>
+                        <p className='text-muted-foreground'>{currentDescription}</p>
+                    </div>
+                </div>
 
-                                    <SettingsField
-                                        label='Role'
-                                        description='Determines your access permissions'
-                                    >
-                                        <Input
-                                            type='text'
-                                            value={profile?.role || ''}
-                                            className='opacity-60'
-                                            disabled
-                                            readOnly
-                                        />
-                                    </SettingsField>
-                                </SettingsCard>
-
-                                {!isEdit && (
-                                    <SettingsCard>
-                                        <SettingsField
-                                            label='Password'
-                                            description='Minimum 8 characters recommended'
-                                            type='password'
-                                            placeholder='Password'
-                                            {...register('password')}
-                                            error={errors.password}
-                                        />
-                                    </SettingsCard>
-                                )}
-
-                                {isAdmin() && (!isEdit || isAdminAndNotOwn) && (
-                                    <section
-                                        id='interface'
-                                        className='border-t border-white/5 pt-5'
-                                    >
-                                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                            Administrative
-                                        </h2>
-                                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                            Manage user permissions and settings
-                                        </p>
-
-                                        {/* Administrative Settings Card */}
+                {/* Content Area */}
+                <div className='p-5 flex-1'>
+                    <div className='w-full'>
+                        <form onSubmit={(e) => e.preventDefault()}>
+                            {/* Security Section */}
+                            {activeTab === 'security' && (
+                                <section id='security' className='pb-8'>
+                                    <div className='space-y-4'>
+                                        {/* Authentication Card */}
                                         <SettingsCard>
-                                            <SettingsSelect
-                                                label='Role'
-                                                description='Controls feature access level'
-                                                {...register('role')}
-                                            >
-                                                <option value='author'>User</option>
-                                                <option value='entrymanager'>
-                                                    Entry Manager
-                                                </option>
-                                                <option value='admin'>Admin</option>
-                                            </SettingsSelect>
+                                            <SettingsButton
+                                                label='Password'
+                                                description='Change your account password'
+                                                buttonText='Change'
+                                                onClick={openChangePasswordModal}
+                                                title='Change Password'
+                                            />
 
                                             <Separator />
 
-                                            <div className='py-2'>
-                                                <div className='flex items-center justify-between gap-4'>
-                                                    <div className='flex-1'>
-                                                        <Label htmlFor='emailConfirmed' className='text-sm text-muted-foreground block mb-0.5'>
-                                                            Email Confirmed
-                                                        </Label>
-                                                        <p className='text-sm text-muted-foreground'>User's email confirmation status</p>
-                                                    </div>
-                                                    <Controller
-                                                        name='emailConfirmed'
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <Switch
-                                                                id='emailConfirmed'
-                                                                name={field.name}
-                                                                data-testid='emailConfirmed-toggle'
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        )}
-                                                    />
+                                            <SettingsButton
+                                                label='API Key'
+                                                description='Generate key for API access'
+                                                buttonText='Generate'
+                                                onClick={openApiKeyModal}
+                                                title='Generate API Key'
+                                            />
+
+                                            <Separator />
+
+                                            <div className='flex items-center justify-between py-2'>
+                                                <div>
+                                                    <span className='text-sm text-muted-foreground block mb-0.5'>
+                                                        Two-Factor Auth
+                                                    </span>
+                                                    <span className='text-sm text-muted-foreground'>
+                                                        Protect your account with
+                                                        one-time codes from an
+                                                        authenticator app
+                                                    </span>
                                                 </div>
+                                                <Button
+                                                    type='button'
+                                                    variant={
+                                                        twoFactorEnabled
+                                                            ? 'destructive'
+                                                            : 'outline'
+                                                    }
+                                                    size='sm'
+                                                    onClick={openTwoFactorModal}
+                                                >
+                                                    {twoFactorEnabled
+                                                        ? 'Disable'
+                                                        : 'Enable'}
+                                                </Button>
                                             </div>
 
                                             <Separator />
 
-                                            <div className='py-2'>
-                                                <div className='flex items-center justify-between gap-4'>
-                                                    <div className='flex-1'>
-                                                        <Label htmlFor='isActive' className='text-sm text-muted-foreground block mb-0.5'>
-                                                            Active
-                                                        </Label>
-                                                        <p className='text-sm text-muted-foreground'>Disabled accounts cannot log in</p>
-                                                    </div>
-                                                    <Controller
-                                                        name='isActive'
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <Switch
-                                                                id='isActive'
-                                                                name={field.name}
-                                                                data-testid='isActive-toggle'
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        )}
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {isAdminAndNotOwn && (
-                                                <>
-                                                    <Separator />
-                                                    <SettingsField
-                                                        label='Password'
-                                                        description='Set a new password for this user'
-                                                        type='password'
-                                                        placeholder='Password'
-                                                        inputWidth='w-48'
-                                                        {...register('password')}
-                                                    />
-                                                </>
-                                            )}
+                                            <SettingsButton
+                                                label='Delete Account'
+                                                description='Permanently remove account and data'
+                                                buttonText='Delete'
+                                                variant='danger'
+                                                onClick={openDeleteAccountModal}
+                                            />
                                         </SettingsCard>
+                                    </div>
+                                </section>
+                            )}
+
+                            {/* Sessions Section */}
+                            {activeTab === 'sessions' && (
+                                <section id='sessions' className='pb-8'>
+                                    <ActiveSessions userId={target} />
+                                </section>
+                            )}
+
+                            {/* OAuth Section */}
+                            {activeTab === 'oauth' &&
+                                Object.keys(mergedOAuthConnections).length > 0 && (
+                                    <section id='oauth' className='pb-8'>
+                                        <div className='space-y-4'>
+                                            <SettingsCard>
+                                                {Object.entries(
+                                                    mergedOAuthConnections,
+                                                ).map(
+                                                    (
+                                                        [provider, connected],
+                                                        index,
+                                                        all,
+                                                    ) => {
+                                                        const method =
+                                                            oauthMethods.find(
+                                                                (item) =>
+                                                                    getOAuthKey(
+                                                                        item,
+                                                                    ) === provider,
+                                                            );
+                                                        const label = method
+                                                            ? getOAuthLabel(method)
+                                                            : provider;
+                                                        return (
+                                                            <div key={provider}>
+                                                                <div className='flex items-center justify-between py-2'>
+                                                                    <div>
+                                                                        <span className='text-sm text-muted-foreground block mb-0.5'>
+                                                                            {label}
+                                                                        </span>
+                                                                        <span className='text-sm text-muted-foreground'>
+                                                                            {connected
+                                                                                ? 'Connected'
+                                                                                : 'Not connected'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <Button
+                                                                        type='button'
+                                                                        variant={
+                                                                            connected
+                                                                                ? 'destructive'
+                                                                                : 'outline'
+                                                                        }
+                                                                        size='sm'
+                                                                        onClick={() => {
+                                                                            if (
+                                                                                connected
+                                                                            ) {
+                                                                                handleOAuthDisconnect(
+                                                                                    provider,
+                                                                                );
+                                                                            } else {
+                                                                                handleOAuthConnect(
+                                                                                    provider,
+                                                                                );
+                                                                            }
+                                                                        }}
+                                                                        disabled={
+                                                                            oauthBusyProvider ===
+                                                                            provider
+                                                                        }
+                                                                    >
+                                                                        {connected
+                                                                            ? 'Disconnect'
+                                                                            : 'Connect'}
+                                                                    </Button>
+                                                                </div>
+                                                                {index <
+                                                                    all.length - 1 && (
+                                                                    <Separator />
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    },
+                                                )}
+                                            </SettingsCard>
+                                        </div>
                                     </section>
                                 )}
-                            </div>
-                        </section>
 
-                        {(isOwnAccount || twoFactorEnabled || isOwnAccount) && (
-                            <section
-                                id='security'
-                                className='border-t border-white/5 pt-5 pb-8'
-                            >
-                                <h2 className='text-lg text-foreground tracking-tight'>
-                                    Security
-                                </h2>
-                                <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                    Authentication, API keys, and account security
-                                </p>
+                            {/* OAuth empty state */}
+                            {activeTab === 'oauth' &&
+                                Object.keys(mergedOAuthConnections).length === 0 && (
+                                    <section id='oauth' className='pb-8'>
+                                        <p className='text-sm text-muted-foreground'>
+                                            No OAuth providers are configured
+                                        </p>
+                                    </section>
+                                )}
 
-                                <div className='space-y-4'>
-                                    {/* Authentication Card */}
-                                    <SettingsCard>
-                                        {isOwnAccount && (
-                                            <>
-                                                <SettingsButton
-                                                    label='Password'
-                                                    description='Change your account password'
-                                                    buttonText='Change'
-                                                    onClick={openChangePasswordModal}
-                                                    title='Change Password'
-                                                />
-
-                                                <Separator />
-
-                                                <SettingsButton
-                                                    label='API Key'
-                                                    description='Generate key for API access'
-                                                    buttonText='Generate'
-                                                    onClick={openApiKeyModal}
-                                                    title='Generate API Key'
-                                                />
-                                            </>
-                                        )}
-
-                                        {(twoFactorEnabled || isOwnAccount) && (
-                                            <>
-                                                {isOwnAccount && <Separator />}
-                                                <div className='flex items-center justify-between py-2'>
-                                                    <div>
-                                                        <span className='text-sm text-muted-foreground block mb-0.5'>
-                                                            Two-Factor Auth
-                                                        </span>
-                                                        <span className='text-sm text-muted-foreground'>
-                                                            Protect your account with
-                                                            one-time codes from an
-                                                            authenticator app
-                                                        </span>
-                                                    </div>
-                                                    <Button
-                                                        type='button'
-                                                        variant={twoFactorEnabled ? 'destructive' : 'outline'}
-                                                        size='sm'
-                                                        onClick={openTwoFactorModal}
-                                                    >
-                                                        {twoFactorEnabled ? 'Disable' : 'Enable'}
-                                                    </Button>
+                            {/* Appearance Section */}
+                            {activeTab === 'appearance' && (
+                                <section id='appearance' className='pb-8'>
+                                    <div className='space-y-4'>
+                                        <SettingsCard>
+                                            <div className='flex items-center justify-between gap-4 py-2'>
+                                                <div className='flex-1'>
+                                                    <Label className='text-sm text-muted-foreground block mb-0.5'>
+                                                        Theme
+                                                    </Label>
+                                                    <p className='text-sm text-muted-foreground'>
+                                                        Choose your preferred color
+                                                        scheme
+                                                    </p>
                                                 </div>
-                                            </>
-                                        )}
-
-                                        {isOwnAccount && (
-                                            <>
-                                                <Separator />
-                                                <SettingsButton
-                                                    label='Delete Account'
-                                                    description='Permanently remove account and data'
-                                                    buttonText='Delete'
-                                                    variant='danger'
-                                                    onClick={openDeleteAccountModal}
-                                                />
-                                            </>
-                                        )}
-                                    </SettingsCard>
-
-                                    {/* Session Management - Only visible when viewing own account */}
-                                    {isOwnAccount && isEdit && (
-                                        <>
-                                            <div className='mb-3'>
-                                                <h3 className='text-sm font-medium text-muted-foreground'>
-                                                    Active Sessions
-                                                </h3>
+                                                <Button
+                                                    type='button'
+                                                    variant='ghost'
+                                                    size='icon'
+                                                    onClick={() =>
+                                                        setValue(
+                                                            'theme',
+                                                            watch('theme') === 'dark'
+                                                                ? 'light'
+                                                                : 'dark',
+                                                        )
+                                                    }
+                                                >
+                                                    {watch('theme') === 'dark' ? (
+                                                        <SunLight className='w-5 h-5' />
+                                                    ) : (
+                                                        <HalfMoon className='w-5 h-5' />
+                                                    )}
+                                                </Button>
                                             </div>
-                                            <SettingsCard>
-                                                <ActiveSessions userId={target} />
-                                            </SettingsCard>
-                                        </>
-                                    )}
-                                </div>
-                            </section>
-                        )}
+                                        </SettingsCard>
+                                    </div>
+                                </section>
+                            )}
 
-                        {isOwnAccount && Object.keys(mergedOAuthConnections).length > 0 && (
-                            <section
-                                id='oauth'
-                                className='border-t border-white/5 pt-5 pb-8'
-                            >
-                                <h2 className='text-lg cradle-text-primary tracking-tight'>
-                                    OAuth Connections
-                                </h2>
-                                <p className='text-sm cradle-text-muted mt-0.5 mb-5'>
-                                    Link or unlink external identity providers
-                                </p>
-
-                                <div className='space-y-4'>
-                                    <SettingsCard>
-                                        {Object.entries(mergedOAuthConnections).map(
-                                            ([provider, connected], index, all) => {
-                                                const method = oauthMethods.find(
-                                                    (item) =>
-                                                        getOAuthKey(item) === provider,
-                                                );
-                                                const label = method
-                                                    ? getOAuthLabel(method)
-                                                    : provider;
-                                                return (
-                                                    <div key={provider}>
-                                                        <div className='flex items-center justify-between py-2'>
-                                                            <div>
-                                                                <span className='text-sm cradle-text-tertiary block mb-0.5'>
-                                                                    {label}
-                                                                </span>
-                                                                <span className='text-sm cradle-text-muted'>
-                                                                    {connected
-                                                                        ? 'Connected'
-                                                                        : 'Not connected'}
-                                                                </span>
-                                                            </div>
-                                                            <Button
-                                                                type='button'
-                                                                variant={
-                                                                    connected
-                                                                        ? 'destructive'
-                                                                        : 'outline'
-                                                                }
-                                                                size='sm'
-                                                                onClick={() => {
-                                                                    if (connected) {
-                                                                        handleOAuthDisconnect(
-                                                                            provider,
-                                                                        );
-                                                                    } else {
-                                                                        handleOAuthConnect(
-                                                                            provider,
-                                                                        );
-                                                                    }
-                                                                }}
-                                                                disabled={
-                                                                    oauthBusyProvider ===
-                                                                    provider
-                                                                }
-                                                            >
-                                                                {connected
-                                                                    ? 'Disconnect'
-                                                                    : 'Connect'}
-                                                            </Button>
-                                                        </div>
-                                                        {index < all.length - 1 && (
-                                                            <Separator />
-                                                        )}
+                            {/* Editor Settings Section */}
+                            {activeTab === 'editor' && (
+                                <section id='editor' className='pb-8'>
+                                    <div className='space-y-4'>
+                                        <SettingsCard>
+                                            <div className='py-2'>
+                                                <div className='flex items-center justify-between gap-4'>
+                                                    <div className='flex-1'>
+                                                        <Label
+                                                            htmlFor={vimModeId}
+                                                            className='text-sm text-muted-foreground block mb-0.5'
+                                                        >
+                                                            Vim Mode
+                                                        </Label>
+                                                        <p className='text-sm text-muted-foreground'>
+                                                            Use Vim keybindings in the
+                                                            markdown editor
+                                                        </p>
                                                     </div>
-                                                );
-                                            },
-                                        )}
-                                    </SettingsCard>
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Interface Section */}
-                        <section
-                            id='interface'
-                            className='border-t border-white/5 pt-5 pb-8'
-                        >
-                            <h2 className='text-lg text-foreground tracking-tight'>
-                                Interface
-                            </h2>
-                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Customize your editing and viewing experience
-                            </p>
-
-                            <div className='space-y-4'>
-                                {/* Appearance Card */}
-                                <SettingsCard>
-                                    <div className='flex items-center justify-between gap-4 py-2'>
-                                        <div className='flex-1'>
-                                            <label className='text-sm text-muted-foreground block mb-0.5'>
-                                                Theme
-                                            </label>
-                                            <p className='text-sm text-muted-foreground'>
-                                                Choose your preferred color scheme
-                                            </p>
-                                        </div>
-                                        <Button
-                                            type='button'
-                                            variant='ghost'
-                                            size='icon'
-                                            onClick={() => setValue('theme', watch('theme') === 'dark' ? 'light' : 'dark')}
-                                            className='bg-accent text-accent-foreground hover:bg-accent/80'
-                                        >
-                                            {watch('theme') === 'dark' ? (
-                                                <SunLight className='w-5 h-5' />
-                                            ) : (
-                                                <HalfMoon className='w-5 h-5' />
-                                            )}
-                                        </Button>
-                                    </div>
-
-                                    <Separator />
-
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <Label htmlFor={vimModeId} className='text-sm text-muted-foreground block mb-0.5'>
-                                                    Vim Mode
-                                                </Label>
-                                                <p className='text-sm text-muted-foreground'>Use Vim keybindings in the markdown editor</p>
-                                            </div>
-                                            <Controller
-                                                name='vimMode'
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Switch
-                                                        id={vimModeId}
-                                                        name={field.name}
-                                                        data-testid='vim-toggle'
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
+                                                    <Controller
+                                                        name='vimMode'
+                                                        control={control}
+                                                        render={({ field }) => (
+                                                            <Switch
+                                                                id={vimModeId}
+                                                                name={field.name}
+                                                                data-testid='vim-toggle'
+                                                                checked={field.value}
+                                                                onCheckedChange={
+                                                                    field.onChange
+                                                                }
+                                                            />
+                                                        )}
                                                     />
-                                                )}
+                                                </div>
+                                            </div>
+
+                                            <Separator />
+
+                                            <SettingsButton
+                                                label='Note Template'
+                                                description='Preset structure for new notes you create'
+                                                buttonText='Edit'
+                                                onClick={openNoteTemplateModal}
+                                                disabled={noteTemplateLoading}
+                                                loading={noteTemplateLoading}
                                             />
-                                        </div>
+
+                                            <Separator />
+
+                                            <SettingsButton
+                                                label='Note Snippets'
+                                                description='Reusable text blocks you can insert with shortcuts'
+                                                buttonText='New Snippet'
+                                                onClick={() => {
+                                                    snippetListRef.current?.handleAddSnippet();
+                                                }}
+                                            />
+                                            <SnippetList
+                                                ref={snippetListRef}
+                                                userId={target}
+                                                showTitle={false}
+                                            />
+                                        </SettingsCard>
                                     </div>
-
-                                    <Separator />
-
-                                    <SettingsButton
-                                        label='Note Template'
-                                        description='Preset structure for new notes you create'
-                                        buttonText='Edit'
-                                        onClick={openNoteTemplateModal}
-                                        disabled={noteTemplateLoading}
-                                        loading={noteTemplateLoading}
-                                    />
-
-                                    <Separator />
-
-                                    <SettingsButton
-                                        label='Note Snippets'
-                                        description='Reusable text blocks you can insert with shortcuts'
-                                        buttonText='New Snippet'
-                                        onClick={() => {
-                                            snippetListRef.current?.handleAddSnippet();
-                                        }}
-                                    />
-                                    <SnippetList
-                                        ref={snippetListRef}
-                                        userId={target}
-                                        showTitle={false}
-                                    />
-                                </SettingsCard>
-                            </div>
-                        </section>
-
-                        {/* Save Button - Only for new user creation */}
-                        {!isEdit && (
-                            <div className='border-t border-white/5 pt-5 flex justify-end'>
-                                <Button
-                                    type='submit'
-                                    variant='default'
-                                    size='default'
-                                    disabled={!isDirty}
-                                >
-                                    Create User
-                                </Button>
-                            </div>
-                        )}
-                    </form>
+                                </section>
+                            )}
+                        </form>
+                    </div>
                 </div>
             </div>
+            <ChangePasswordModal
+                open={changePasswordModalOpen}
+                onOpenChange={setChangePasswordModalOpen}
+            />
+            {getValues('id') && (
+                <ApiKeyGenerateModal
+                    open={apiKeyModalOpen}
+                    onOpenChange={setApiKeyModalOpen}
+                    userId={getValues('id')!}
+                />
+            )}
+            <TwoFactorSetupModal
+                open={twoFactorModalOpen}
+                onOpenChange={setTwoFactorModalOpen}
+                isDisabling={twoFactorDisabling}
+                onSuccess={() => {
+                    setTwoFactorEnabled((prev) => !prev);
+                    toast.success(
+                        twoFactorDisabling
+                            ? 'Two-Factor Auth has been disabled.'
+                            : 'Two-Factor Auth has been enabled.',
+                    );
+                }}
+            />
+            <ConfirmDeletionModal
+                open={deleteAccountModalOpen}
+                onOpenChange={setDeleteAccountModalOpen}
+                onConfirm={handleDelete}
+                confirmText='DELETE'
+                text='Deleting your account will permanently remove all your data, including notes, entries, and settings. This action cannot be undone.'
+            />
+            <MarkdownEditorModal
+                open={noteTemplateModalOpen}
+                onOpenChange={setNoteTemplateModalOpen}
+                title='Default Note Template'
+                titleEditable={false}
+                initialContent={noteTemplateContent}
+                helpText='This markdown template will be used as the starting content for new notes you create.'
+                onConfirm={async (content) => {
+                    setProfile((prevProfile: any) => ({
+                        ...prevProfile,
+                        defaultNoteTemplate: content,
+                    }));
+                    await saveNoteTemplateMutation.mutateAsync({
+                        userId: target,
+                        template: content,
+                    });
+                }}
+            />
         </div>
     );
 }

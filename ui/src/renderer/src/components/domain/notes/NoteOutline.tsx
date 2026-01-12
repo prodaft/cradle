@@ -1,6 +1,6 @@
-import { HeaderNode } from '@/utils/editor/outline';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { HeaderNode } from '@/utils/editor/outline';
 import { NavArrowDown, NavArrowRight } from 'iconoir-react';
 import React, { useState } from 'react';
 

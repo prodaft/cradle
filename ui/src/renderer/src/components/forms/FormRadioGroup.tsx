@@ -2,7 +2,9 @@
  * FormRadioGroup - Radio button group component for react-hook-form
  */
 
-import { FieldValues, Path, useFormContext } from 'react-hook-form';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Controller, FieldValues, Path, useFormContext } from 'react-hook-form';
 import { RadioGroupFieldProps } from './shared/types';
 
 /**
@@ -37,7 +39,7 @@ export default function FormRadioGroup<
     direction = 'vertical',
 }: RadioGroupFieldProps<TFieldValues, TValue>): JSX.Element {
     const {
-        register,
+        control,
         formState: { errors },
     } = useFormContext<TFieldValues>();
 
@@ -47,53 +49,69 @@ export default function FormRadioGroup<
     const hasError = Boolean(errorMessage);
 
     return (
-        <div
-            className={`w-full ${className}`}
-            role='radiogroup'
-            aria-labelledby={`${name}-label`}
-        >
+        <div className={`w-full ${className}`}>
             {label && (
-                <div
+                <Label
                     id={`${name}-label`}
-                    className='cradle-label text-muted-foreground mb-2'
+                    className='text-xs uppercase tracking-widest font-semibold text-muted-foreground mb-2 block'
                 >
                     {label}
-                        {required && <span className='text-destructive ml-1'>*</span>}
-                </div>
+                    {required && <span className='text-destructive ml-1'>*</span>}
+                </Label>
             )}
-            <div
-                className={`flex gap-3 ${
-                    direction === 'horizontal' ? 'flex-row flex-wrap' : 'flex-col'
-                }`}
-            >
-                {options.map((option, index) => (
-                    <label
-                        key={index}
-                        className={`flex items-start gap-3 cursor-pointer ${
-                            option.disabled ? 'opacity-50 cursor-not-allowed' : ''
-                        }`}
+            <Controller
+                name={name as Path<TFieldValues>}
+                control={control}
+                render={({ field }) => (
+                    <RadioGroup
+                        value={field.value ? String(field.value) : undefined}
+                        onValueChange={(value) => field.onChange(value)}
+                        disabled={disabled}
+                        className={
+                            direction === 'horizontal'
+                                ? 'flex-row flex-wrap'
+                                : 'flex-col'
+                        }
+                        aria-labelledby={label ? `${name}-label` : undefined}
+                        aria-invalid={hasError}
+                        aria-describedby={hasError ? `${name}-error` : undefined}
                     >
-                        <input
-                            type='radio'
-                            value={String(option.value)}
-                            disabled={disabled || option.disabled}
-                            className={`mt-0.5 ${hasError ? 'border-destructive' : ''}`}
-                            aria-describedby={hasError ? `${name}-error` : undefined}
-                            {...register(name as Path<TFieldValues>)}
-                        />
-                        <div className='flex flex-col'>
-                            <span className='text-foreground text-sm'>
-                                {option.label}
-                            </span>
-                            {option.description && (
-                                <span className='text-xs text-muted-foreground mt-0.5'>
-                                    {option.description}
-                                </span>
-                            )}
-                        </div>
-                    </label>
-                ))}
-            </div>
+                        {options.map((option, index) => {
+                            const optionId = `${name}-${index}`;
+                            return (
+                                <div
+                                    key={index}
+                                    className={`flex items-start gap-3 ${
+                                        option.disabled || disabled
+                                            ? 'opacity-50 cursor-not-allowed'
+                                            : ''
+                                    }`}
+                                >
+                                    <RadioGroupItem
+                                        value={String(option.value)}
+                                        id={optionId}
+                                        disabled={disabled || option.disabled}
+                                        className={`mt-0.5 ${hasError ? 'border-destructive' : ''}`}
+                                    />
+                                    <Label
+                                        htmlFor={optionId}
+                                        className='flex flex-col cursor-pointer'
+                                    >
+                                        <span className='text-foreground text-sm'>
+                                            {option.label}
+                                        </span>
+                                        {option.description && (
+                                            <span className='text-xs text-muted-foreground mt-0.5'>
+                                                {option.description}
+                                            </span>
+                                        )}
+                                    </Label>
+                                </div>
+                            );
+                        })}
+                    </RadioGroup>
+                )}
+            />
             {helperText && !hasError && (
                 <p className='text-xs text-muted-foreground mt-2'>{helperText}</p>
             )}

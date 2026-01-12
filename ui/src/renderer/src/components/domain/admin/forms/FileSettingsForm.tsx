@@ -1,39 +1,36 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClassTypeEnum } from '@services/cradle/models';
+import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { CheckCircle, InfoCircle, Refresh, WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import * as Yup from 'yup';
+import { z } from 'zod';
 import {
     SelectOption,
     SettingsButton,
     SettingsCard,
     SettingsField,
 } from '../../../forms';
-import ShadcnSelect from '../../../forms/ShadcnSelect';
 
 interface SubtypeOption extends SelectOption<string> {
     value: string;
     label: string;
-}
-
-interface FileSettingsFormValues {
-    autoprocessFiles: boolean;
-    md5Subtype: SubtypeOption | null;
-    sha1Subtype: SubtypeOption | null;
-    sha256Subtype: SubtypeOption | null;
-    maxFileSizeForHashing: string;
-    uploadLimit: string;
 }
 
 interface FileSettingsResponse {
@@ -47,43 +44,136 @@ interface FileSettingsResponse {
     };
 }
 
-const fileSettingsSchema: Yup.ObjectSchema<FileSettingsFormValues> = Yup.object().shape(
-    {
-        autoprocessFiles: Yup.boolean().default(true).required(),
-        md5Subtype: Yup.object()
-            .shape({ value: Yup.string().required(), label: Yup.string().required() })
-            .nullable()
-            .required('MD5 hash subtype is required'),
-        sha1Subtype: Yup.object()
-            .shape({ value: Yup.string().required(), label: Yup.string().required() })
-            .nullable()
-            .required('SHA1 hash subtype is required'),
-        sha256Subtype: Yup.object()
-            .shape({ value: Yup.string().required(), label: Yup.string().required() })
-            .nullable()
-            .required('SHA256 hash subtype is required'),
-        maxFileSizeForHashing: Yup.string()
-            .required('Maximum file size for hashing is required')
-            .test('is-valid-bytes', 'Enter a valid size (e.g. 10MB, 1GB)', (value) => {
+const fileSettingsSchema = z.object({
+    autoprocessFiles: z.boolean().default(true),
+    md5Subtype: z
+        .object({ value: z.string().min(1), label: z.string().min(1) })
+        .nullable()
+        .refine((val) => val !== null, {
+            error: 'MD5 hash subtype is required',
+        }),
+    sha1Subtype: z
+        .object({ value: z.string().min(1), label: z.string().min(1) })
+        .nullable()
+        .refine((val) => val !== null, {
+            error: 'SHA1 hash subtype is required',
+        }),
+    sha256Subtype: z
+        .object({ value: z.string().min(1), label: z.string().min(1) })
+        .nullable()
+        .refine((val) => val !== null, {
+            error: 'SHA256 hash subtype is required',
+        }),
+    maxFileSizeForHashing: z
+        .string()
+        .min(1, { error: 'Maximum file size for hashing is required' })
+        .refine(
+            (value) => {
                 if (!value) return false;
                 return typeof bytes(value) === 'number';
-            }),
-        uploadLimit: Yup.string()
-            .required('Upload limit is required')
-            .test('is-valid-bytes', 'Enter a valid size (e.g. 100MB, 1GB)', (value) => {
+            },
+            {
+                error: 'Enter a valid size (e.g. 10MB, 1GB)',
+            },
+        ),
+    uploadLimit: z
+        .string()
+        .min(1, { error: 'Upload limit is required' })
+        .refine(
+            (value) => {
                 if (!value) return false;
                 return typeof bytes(value) === 'number';
-            }),
-    },
-);
+            },
+            {
+                error: 'Enter a valid size (e.g. 100MB, 1GB)',
+            },
+        ),
+});
+
+type FileSettingsFormValues = z.infer<typeof fileSettingsSchema>;
 
 export default function FileSettingsForm() {
     const { entriesApi, managementApi } = useApi();
-    const { execute } = useAPICall();
+
+    const reprocessFilesMutation = useMutation({
+        mutationFn: async () => {
+            await managementApi.managementActionsCreate({
+                actionName: ManagementActionsCreateActionNameEnum.ReprocessAllFiles,
+                requestBody: { action: 'reprocessAllFiles' },
+            });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: () => {
+            setActionAlert({
+                type: 'success',
+                message: 'Files are being re-processed',
+            });
+        },
+        onError: () => {
+            setActionAlert({ type: 'error', message: 'Failed to re-process files' });
+        },
+    });
+
+    const fetchSubtypesMutation = useMutation({
+        mutationFn: async () => {
+            const entryClasses = await entriesApi.entryClassesList({});
+            return entryClasses
+                .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
+                .map((entry) => ({
+                    value: entry.subtype,
+                    label: entry.subtype,
+                }));
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const fetchSettingsMutation = useMutation({
+        mutationFn: async () => {
+            return await managementApi.managementSettingsRetrieve();
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const updateSettingsMutation = useMutation({
+        mutationFn: async (data: FileSettingsFormValues) => {
+            await managementApi.managementSettingsCreate({
+                requestBody: {
+                    files: {
+                        autoprocess_files: data.autoprocessFiles,
+                        md5_subtype: data.md5Subtype?.value || null,
+                        sha1_subtype: data.sha1Subtype?.value || null,
+                        sha256_subtype: data.sha256Subtype?.value || null,
+                        max_file_size_for_hashing: data.maxFileSizeForHashing
+                            ? bytes.parse(data.maxFileSizeForHashing)
+                            : null,
+                        upload_limit: data.uploadLimit
+                            ? bytes.parse(data.uploadLimit)
+                            : null,
+                    },
+                },
+            });
+        },
+        meta: {
+            successMessage: 'File settings updated successfully!',
+            errorMessage: 'Failed to save file settings',
+        },
+        onError: () => {
+            toast.error('Failed to save file settings');
+        },
+    });
 
     const [isLoading, setIsLoading] = useState(true);
     const [subtypes, setSubtypes] = useState<SubtypeOption[]>([]);
-    const [actionAlert, setActionAlert] = useState<{ type: 'success' | 'error' | 'warning' | null; message: string }>({
+    const [actionAlert, setActionAlert] = useState<{
+        type: 'success' | 'error' | 'warning' | null;
+        message: string;
+    }>({
         type: null,
         message: '',
     });
@@ -96,123 +186,83 @@ export default function FileSettingsForm() {
         control,
         formState: { errors, isSubmitting },
     } = useForm<FileSettingsFormValues>({
-        resolver: yupResolver(fileSettingsSchema),
+        resolver: zodResolver(fileSettingsSchema) as any,
         defaultValues: {
             autoprocessFiles: true,
-            md5Subtype: null,
-            sha1Subtype: null,
-            sha256Subtype: null,
+            md5Subtype: null as any,
+            sha1Subtype: null as any,
+            sha256Subtype: null as any,
             maxFileSizeForHashing: '10 MB',
             uploadLimit: '2 GB',
         },
     });
 
-    const handleReProcessAllFiles = async () => {
-        try {
-            await execute(
-                () =>
-                    managementApi.managementActionsCreate({
-                        actionName:
-                            ManagementActionsCreateActionNameEnum.ReprocessAllFiles,
-                        requestBody: { action: 'reprocessAllFiles' },
-                    }),
-                { suppressNotification: true },
-            );
-            setActionAlert({
-                type: 'success',
-                message: 'Files are being re-processed',
-            });
-        } catch {
-            setActionAlert({ type: 'error', message: 'Failed to re-process files' });
-        }
+    const handleReProcessAllFiles = () => {
+        reprocessFilesMutation.mutate();
     };
 
     // Fetch all entry subtypes for the selectors
     useEffect(() => {
         async function fetchSubtypes() {
             try {
-                const entryClasses = await entriesApi.entryClassesList({});
-                const artifactSubtypes = entryClasses
-                    .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
-                    .map((entry) => ({
-                        value: entry.subtype,
-                        label: entry.subtype,
-                    }));
+                const artifactSubtypes = await fetchSubtypesMutation.mutateAsync();
                 setSubtypes(artifactSubtypes);
             } catch (error) {
-                console.error('Error fetching subtypes:', error);
+                // Error already handled
             }
         }
         fetchSubtypes();
-    }, [entriesApi]);
+    }, []);
 
     useEffect(() => {
         async function fetchSettings() {
             try {
                 const settings =
-                    (await managementApi.managementSettingsRetrieve()) as FileSettingsResponse;
+                    (await fetchSettingsMutation.mutateAsync()) as FileSettingsResponse;
                 if (settings.files) {
                     reset({
                         autoprocessFiles: settings.files.autoprocess_files ?? true,
                         md5Subtype: settings.files.md5_subtype
                             ? {
-                                value: settings.files.md5_subtype,
-                                label: settings.files.md5_subtype,
-                            }
+                                  value: settings.files.md5_subtype,
+                                  label: settings.files.md5_subtype,
+                              }
                             : null,
                         sha1Subtype: settings.files.sha1_subtype
                             ? {
-                                value: settings.files.sha1_subtype,
-                                label: settings.files.sha1_subtype,
-                            }
+                                  value: settings.files.sha1_subtype,
+                                  label: settings.files.sha1_subtype,
+                              }
                             : null,
                         sha256Subtype: settings.files.sha256_subtype
                             ? {
-                                value: settings.files.sha256_subtype,
-                                label: settings.files.sha256_subtype,
-                            }
+                                  value: settings.files.sha256_subtype,
+                                  label: settings.files.sha256_subtype,
+                              }
                             : null,
                         maxFileSizeForHashing: settings.files.max_file_size_for_hashing
                             ? bytes.format(settings.files.max_file_size_for_hashing, {
-                                unitSeparator: ' ',
-                            })
+                                  unitSeparator: ' ',
+                              })
                             : '10 MB',
                         uploadLimit: settings.files.upload_limit
                             ? bytes.format(settings.files.upload_limit, {
-                                unitSeparator: ' ',
-                            })
+                                  unitSeparator: ' ',
+                              })
                             : '2 GB',
-                    });
+                    } as FileSettingsFormValues);
                 }
             } catch (error) {
-                console.error('Failed to fetch file settings:', error);
+                // Error already handled by mutation
             } finally {
                 setIsLoading(false);
             }
         }
         fetchSettings();
-    }, [managementApi, reset]);
+    }, [reset]);
 
     const onSubmit = async (data: FileSettingsFormValues) => {
-        try {
-            await managementApi.managementSettingsCreate({
-                requestBody: {
-                    files: {
-                        autoprocess_files: data.autoprocessFiles,
-                        md5_subtype: data.md5Subtype?.value || '',
-                        sha1_subtype: data.sha1Subtype?.value || '',
-                        sha256_subtype: data.sha256Subtype?.value || '',
-                        max_file_size_for_hashing: bytes.parse(
-                            data.maxFileSizeForHashing,
-                        ),
-                        upload_limit: bytes.parse(data.uploadLimit),
-                    },
-                },
-            });
-            toast.success('File settings updated successfully!');
-        } catch (error) {
-            toast.error('Failed to save settings');
-        }
+        updateSettingsMutation.mutate(data);
     };
 
     if (isLoading) {
@@ -229,14 +279,16 @@ export default function FileSettingsForm() {
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
                     <h2 className='text-2xl font-bold tracking-tight'>File Settings</h2>
-                    <p className='text-muted-foreground'>Configure file processing and hash generation</p>
+                    <p className='text-muted-foreground'>
+                        Configure file processing and hash generation
+                    </p>
                 </div>
             </div>
 
             {/* Content Area */}
             <div className='p-5'>
                 <div className='w-full'>
-                    <form onSubmit={handleFormSubmit(onSubmit)}>
+                    <form onSubmit={handleFormSubmit(onSubmit as any)}>
                         {/* Processing Section */}
                         <section id='processing' className='pb-8'>
                             <h2 className='text-lg font-semibold text-foreground tracking-tight'>
@@ -251,12 +303,22 @@ export default function FileSettingsForm() {
                                     <div className='py-2'>
                                         <div className='flex items-center justify-between gap-4'>
                                             <div className='flex-1'>
-                                                <Label htmlFor='autoprocessFiles' className='text-sm text-muted-foreground block mb-0.5'>
+                                                <Label
+                                                    htmlFor='autoprocessFiles'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
                                                     Autoprocess Files
                                                 </Label>
-                                                <p className='text-sm text-muted-foreground'>Automatically process uploaded files</p>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Automatically process uploaded files
+                                                </p>
                                                 {errors.autoprocessFiles && (
-                                                    <p className='text-sm text-destructive mt-1'>{errors.autoprocessFiles.message}</p>
+                                                    <p className='text-sm text-destructive mt-1'>
+                                                        {
+                                                            errors.autoprocessFiles
+                                                                .message
+                                                        }
+                                                    </p>
                                                 )}
                                             </div>
                                             <Controller
@@ -286,14 +348,42 @@ export default function FileSettingsForm() {
                                             name='md5Subtype'
                                             control={control}
                                             render={({ field }) => (
-                                                <ShadcnSelect
-                                                    staticOptions={subtypes}
-                                                    value={field.value}
-                                                    placeholder='Select MD5 subtype'
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
+                                                <Select
+                                                    value={field.value?.value || ''}
+                                                    onValueChange={(value) => {
+                                                        const option = subtypes.find(
+                                                            (opt) =>
+                                                                opt.value === value,
+                                                        );
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
+                                                                : null,
+                                                        );
                                                     }}
-                                                />
+                                                >
+                                                    <SelectTrigger
+                                                        className='w-72'
+                                                        aria-invalid={Boolean(
+                                                            errors.md5Subtype,
+                                                        )}
+                                                    >
+                                                        <SelectValue placeholder='Select MD5 subtype' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {subtypes.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             )}
                                         />
                                     </SettingsField>
@@ -310,14 +400,42 @@ export default function FileSettingsForm() {
                                             name='sha1Subtype'
                                             control={control}
                                             render={({ field }) => (
-                                                <ShadcnSelect
-                                                    staticOptions={subtypes}
-                                                    value={field.value}
-                                                    placeholder='Select SHA1 subtype'
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
+                                                <Select
+                                                    value={field.value?.value || ''}
+                                                    onValueChange={(value) => {
+                                                        const option = subtypes.find(
+                                                            (opt) =>
+                                                                opt.value === value,
+                                                        );
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
+                                                                : null,
+                                                        );
                                                     }}
-                                                />
+                                                >
+                                                    <SelectTrigger
+                                                        className='w-72'
+                                                        aria-invalid={Boolean(
+                                                            errors.sha1Subtype,
+                                                        )}
+                                                    >
+                                                        <SelectValue placeholder='Select SHA1 subtype' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {subtypes.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             )}
                                         />
                                     </SettingsField>
@@ -334,14 +452,42 @@ export default function FileSettingsForm() {
                                             name='sha256Subtype'
                                             control={control}
                                             render={({ field }) => (
-                                                <ShadcnSelect
-                                                    staticOptions={subtypes}
-                                                    value={field.value}
-                                                    placeholder='Select SHA256 subtype'
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
+                                                <Select
+                                                    value={field.value?.value || ''}
+                                                    onValueChange={(value) => {
+                                                        const option = subtypes.find(
+                                                            (opt) =>
+                                                                opt.value === value,
+                                                        );
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
+                                                                : null,
+                                                        );
                                                     }}
-                                                />
+                                                >
+                                                    <SelectTrigger
+                                                        className='w-72'
+                                                        aria-invalid={Boolean(
+                                                            errors.sha256Subtype,
+                                                        )}
+                                                    >
+                                                        <SelectValue placeholder='Select SHA256 subtype' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {subtypes.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             )}
                                         />
                                     </SettingsField>
@@ -355,7 +501,7 @@ export default function FileSettingsForm() {
                                         error={errors.maxFileSizeForHashing}
                                     />
 
-                                    <SettingsSeparator />
+                                    <Separator />
 
                                     <SettingsField
                                         label='Upload Limit'
@@ -381,11 +527,25 @@ export default function FileSettingsForm() {
 
                             <div className='space-y-4'>
                                 {actionAlert.type && (
-                                    <Alert variant={actionAlert.type === 'error' ? 'destructive' : 'default'}>
-                                        {actionAlert.type === 'success' && <CheckCircle />}
-                                        {actionAlert.type === 'error' && <WarningCircle />}
-                                        {actionAlert.type === 'warning' && <InfoCircle />}
-                                        <AlertDescription>{actionAlert.message}</AlertDescription>
+                                    <Alert
+                                        variant={
+                                            actionAlert.type === 'error'
+                                                ? 'destructive'
+                                                : 'default'
+                                        }
+                                    >
+                                        {actionAlert.type === 'success' && (
+                                            <CheckCircle />
+                                        )}
+                                        {actionAlert.type === 'error' && (
+                                            <WarningCircle />
+                                        )}
+                                        {actionAlert.type === 'warning' && (
+                                            <InfoCircle />
+                                        )}
+                                        <AlertDescription>
+                                            {actionAlert.message}
+                                        </AlertDescription>
                                     </Alert>
                                 )}
                                 <SettingsCard>

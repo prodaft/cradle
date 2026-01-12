@@ -1,9 +1,13 @@
-import { toast } from 'sonner';
+import {
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
+} from '@/components/ui/resizable';
 import { EdgeRelation } from '@/services/cradle';
+import { logger } from '@/utils/logger';
 import InProgress from '@components/feedback/InProgress';
 import { CosmographProvider } from '@cosmograph/react';
 import { ComponentType, useMemo, useRef, useState } from 'react';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import Graph from './Graph';
 import { filterGraph, Node } from './graphFilterUtils';
 import GraphQuery from './GraphQuery';
@@ -42,7 +46,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         layoutMode: 'circular',
     });
     const [selectedNodes, setSelectedNodes] = useState<Set<Node>>(new Set());
-    const [activePanel, setActivePanel] = useState<'explorer' | 'display' | null>(null);
+    const [activePanel, setActivePanel] = useState<'explorer' | 'display' | null>(
+        'explorer',
+    );
     const cosmographRef = useRef<any>(null);
 
     // Maintain sets for tracking existing IDs
@@ -63,7 +69,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         // Filter valid nodes
         const nodesToAdd = nodesToProcess.filter((node) => {
             if (!node.id) {
-                console.warn('[GraphExplorer] Node missing id:', node);
+                logger.warn('[GraphExplorer] Node missing id', { node });
                 return false;
             }
             return !nodeIds.has(node.id);
@@ -76,10 +82,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         const edgesToAdd = edgesToProcess.filter((edge) => {
             // Validate required properties
             if (!edge.id || edge.src == null || edge.dst == null) {
-                console.warn(
-                    '[GraphExplorer] Edge missing required properties (id, src, dst):',
+                logger.warn('[GraphExplorer] Edge missing required properties', {
                     edge,
-                );
+                });
                 return false;
             }
 
@@ -97,11 +102,14 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
             const dstExists = allNodeIds.has(dstStr);
 
             if (!srcExists || !dstExists) {
-                console.warn(
-                    `[GraphExplorer] Edge references non-existent node(s). Edge: ${edge.id}, ` +
-                        `src: ${edge.src} (exists: ${srcExists}), dst: ${edge.dst} (exists: ${dstExists}). ` +
-                        `Available node IDs: ${Array.from(allNodeIds).join(', ')}`,
-                );
+                logger.warn('[GraphExplorer] Edge references non-existent node(s)', {
+                    edgeId: edge.id,
+                    src: edge.src,
+                    dst: edge.dst,
+                    srcExists,
+                    dstExists,
+                    availableNodeIds: Array.from(allNodeIds),
+                });
                 return false;
             }
 
@@ -183,34 +191,30 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         <CosmographProvider>
             <div className='w-full h-full overflow-y-hidden relative'>
                 <ResizablePanelGroup direction='horizontal' className='h-full'>
-                    {/* Always render panel but hide it when closed */}
-                    <ResizablePanel 
-                        defaultSize={30} 
-                        minSize={20} 
-                        maxSize={50}
-                        className={activePanel ? '' : 'hidden'}
-                    >
-                        <GraphQuery
-                            selectedEntries={selectedNodes}
-                            setSelectedEntries={setSelectedNodes}
-                            config={config}
-                            setConfig={setConfig}
-                            SearchComponent={GraphSearchComponent}
-                            entryGraphColors={entryGraphColors}
-                            disabledTypes={disabledTypes}
-                            setDisabledTypes={setDisabledTypes}
-                            addNodes={addNodes}
-                            addEdges={addEdges}
-                            addBoth={addBoth}
-                            nodes={filteredNodes}
-                            edges={filteredEdges}
-                            activePanel={activePanel || 'explorer'}
-                            onClosePanel={() => setActivePanel(null)}
-                            cosmographRef={cosmographRef}
-                        />
-                    </ResizablePanel>
                     {activePanel && (
-                        <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
+                        <>
+                            <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                                <GraphQuery
+                                    selectedEntries={selectedNodes}
+                                    setSelectedEntries={setSelectedNodes}
+                                    config={config}
+                                    setConfig={setConfig}
+                                    SearchComponent={GraphSearchComponent}
+                                    entryGraphColors={entryGraphColors}
+                                    disabledTypes={disabledTypes}
+                                    setDisabledTypes={setDisabledTypes}
+                                    addNodes={addNodes}
+                                    addEdges={addEdges}
+                                    addBoth={addBoth}
+                                    nodes={filteredNodes}
+                                    edges={filteredEdges}
+                                    activePanel={activePanel}
+                                    onClosePanel={() => setActivePanel(null)}
+                                    cosmographRef={cosmographRef}
+                                />
+                            </ResizablePanel>
+                            <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
+                        </>
                     )}
                     <ResizablePanel defaultSize={activePanel ? 70 : 100} minSize={50}>
                         <div className='relative h-full'>

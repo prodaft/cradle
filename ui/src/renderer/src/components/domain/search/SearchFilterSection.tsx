@@ -1,8 +1,12 @@
 import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import SearchFilter from '@components/forms/SearchFilter';
 import { SubtypeHierarchy } from '@utils/dashboard';
-import { FilterList, NavArrowDown, NavArrowUp, NavArrowRight } from 'iconoir-react';
+import { FilterList, NavArrowDown, NavArrowRight, NavArrowUp } from 'iconoir-react';
 import React, { Dispatch, SetStateAction } from 'react';
 
 /**
@@ -86,12 +90,19 @@ export default function SearchFilterSection({
                     <div className='space-y-2'>
                         {hierarchy.convert(
                             (value, children) => (
-                                <Collapsible key={value} className='text-text-foreground'>
+                                <Collapsible
+                                    key={value}
+                                    className='text-text-foreground'
+                                >
                                     <CollapsibleTrigger asChild>
-                                        <Button variant='ghost' size='sm' className='group flex items-center gap-2 text-sm font-medium cursor-pointer hover:text-border-primary'>
+                                        <Button
+                                            variant='ghost'
+                                            size='sm'
+                                            className='group hover:text-border-primary'
+                                        >
                                             <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
                                             <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
-                                            <span>{value}</span>
+                                            {value}
                                         </Button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent>

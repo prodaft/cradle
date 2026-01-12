@@ -1,6 +1,6 @@
 import useApi from '@/hooks/api/useApi';
-import { useAPICall } from '@/hooks/api/useAPICall';
 import { SettingsRadio } from '@components/forms';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 type AccessLevel = 'none' | 'read' | 'read-write';
@@ -30,27 +30,28 @@ export default function AdminPanelPermissionCard({
     searchKey,
 }: AdminPanelPermissionCardProps) {
     const [currentAccess, setCurrentAccess] = useState<AccessLevel>(accessLevel);
-    const { execute } = useAPICall();
     const { accessApi } = useApi();
 
-    const handleChange = async (newAccess: string) => {
+    const updateAccessMutation = useMutation({
+        mutationFn: async (accessType: AccessLevel) => {
+            await accessApi.accessUserUpdate({
+                userId: userId,
+                entityId: entityId,
+                accessRequest: { accessType },
+            });
+        },
+        meta: {
+            successMessage: 'Access updated successfully',
+        },
+        onSuccess: (_, accessType) => {
+            setCurrentAccess(accessType as AccessLevel);
+        },
+    });
+
+    const handleChange = (newAccess: string) => {
         const accessValue = newAccess as AccessLevel;
         if (currentAccess !== accessValue) {
-            execute(
-                () =>
-                    accessApi.accessUserUpdate({
-                        userId: userId,
-                        entityId: entityId,
-                        accessRequest: { accessType: accessValue },
-                    }),
-                { successMessage: 'Access updated successfully' },
-            )
-                .then(() => {
-                    setCurrentAccess(accessValue);
-                })
-                .catch(() => {
-                    // Error already handled by execute
-                });
+            updateAccessMutation.mutate(accessValue);
         }
     };
 

@@ -3,7 +3,15 @@
  * Can be used in either horizontal or vertical layout
  */
 
-import { forwardRef, ReactNode, TextareaHTMLAttributes } from 'react';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError as FieldErrorComponent,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Textarea } from '@/components/ui/textarea';
+import { forwardRef, ReactElement, ReactNode, TextareaHTMLAttributes } from 'react';
 import { FieldError } from 'react-hook-form';
 
 export interface SettingsTextAreaProps extends Omit<
@@ -59,33 +67,37 @@ const SettingsTextArea = forwardRef<HTMLTextAreaElement, SettingsTextAreaProps>(
             ...props
         },
         ref,
-    ): JSX.Element {
+    ): ReactElement {
         const errorMessage = typeof error === 'string' ? error : error?.message;
 
         // Horizontal layout (like SettingsField)
         if (layout === 'horizontal') {
             return (
-                <div className='flex items-start justify-between gap-4 py-2'>
-                    <div className='flex-1'>
-                        <label className='text-sm text-muted-foreground block mb-0.5'>
+                <Field orientation='horizontal' className='py-2'>
+                    <FieldContent className='flex-1'>
+                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
                             {label}
-                            {required && <span className='text-destructive ml-1'>*</span>}
-                        </label>
+                            {required && (
+                                <span className='text-destructive ml-1'>*</span>
+                            )}
+                        </FieldLabel>
                         {description && (
-                            <p className='text-sm text-muted-foreground'>{description}</p>
+                            <FieldDescription className='text-sm'>
+                                {description}
+                            </FieldDescription>
                         )}
                         {errorMessage && (
-                            <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
+                            <FieldErrorComponent className='text-sm mt-1'>
+                                {errorMessage}
+                            </FieldErrorComponent>
                         )}
-                    </div>
+                    </FieldContent>
                     <div className='w-auto flex-1'>
                         {children || (
-                            <textarea
+                            <Textarea
                                 ref={ref}
                                 rows={rows}
-                                className={`cradle-input w-full text-sm rounded ${
-                                    errorMessage ? 'border-destructive' : ''
-                                } ${className || ''}`}
+                                className={`w-full text-sm ${className || ''}`}
                                 aria-invalid={Boolean(errorMessage)}
                                 aria-describedby={
                                     errorMessage ? `${props.name}-error` : undefined
@@ -94,27 +106,29 @@ const SettingsTextArea = forwardRef<HTMLTextAreaElement, SettingsTextAreaProps>(
                             />
                         )}
                     </div>
-                </div>
+                </Field>
             );
         }
 
         // Vertical layout (stacked)
         return (
-            <div className='py-2 w-full'>
-                <label className='text-sm text-muted-foreground block mb-0.5'>
-                    {label}
-                    {required && <span className='text-destructive ml-1'>*</span>}
-                </label>
-                {description && (
-                    <p className='text-sm text-muted-foreground mb-2'>{description}</p>
-                )}
+            <Field orientation='vertical' className='py-2 w-full'>
+                <FieldContent>
+                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                        {label}
+                        {required && <span className='text-destructive ml-1'>*</span>}
+                    </FieldLabel>
+                    {description && (
+                        <FieldDescription className='text-sm mb-2'>
+                            {description}
+                        </FieldDescription>
+                    )}
+                </FieldContent>
                 {children || (
-                    <textarea
+                    <Textarea
                         ref={ref}
                         rows={rows}
-                        className={`cradle-input w-full text-sm rounded ${
-                            errorMessage ? 'border-destructive' : ''
-                        } ${className || ''}`}
+                        className={`w-full text-sm ${className || ''}`}
                         aria-invalid={Boolean(errorMessage)}
                         aria-describedby={
                             errorMessage ? `${props.name}-error` : undefined
@@ -123,9 +137,11 @@ const SettingsTextArea = forwardRef<HTMLTextAreaElement, SettingsTextAreaProps>(
                     />
                 )}
                 {errorMessage && (
-                    <p className='text-sm text-destructive mt-1'>{errorMessage}</p>
+                    <FieldErrorComponent className='text-sm mt-1'>
+                        {errorMessage}
+                    </FieldErrorComponent>
                 )}
-            </div>
+            </Field>
         );
     },
 );

@@ -6,9 +6,14 @@ import {
     DropdownMenuRadioItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { DesignNib, InfoCircleSolid, WarningCircleSolid, WarningTriangleSolid } from 'iconoir-react';
-import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+    DesignNib,
+    InfoCircleSolid,
+    WarningCircleSolid,
+    WarningTriangleSolid,
+} from 'iconoir-react';
+import { useState } from 'react';
 
 export type StatusOption =
     | 'all'
@@ -35,7 +40,7 @@ export default function StatusHeaderDropdown({
     status = null,
     statusOptions,
 }: StatusHeaderDropdownProps) {
-  const [currentStatus, setCurrentStatus] = useState(status || 'all');
+    const [currentStatus, setCurrentStatus] = useState(status || 'all');
 
     // Default status options based on context
     const options = statusOptions;
@@ -124,41 +129,44 @@ export default function StatusHeaderDropdown({
         }
     };
 
-  const handleStatusSelect = (selectedStatus: string) => {
-    setCurrentStatus(selectedStatus);
-    onStatusChange(selectedStatus);
-  };
+    const handleStatusSelect = (selectedStatus: string) => {
+        setCurrentStatus(selectedStatus);
+        onStatusChange(selectedStatus);
+    };
 
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant='ghost'
-          size='icon-sm'
-          className='inline-flex items-center justify-center hover:bg-bg-secondary hover:text-text-foreground'
-        >
-          {getStatusIcon(currentStatus)}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="center" className="p-2">
-        <DropdownMenuRadioGroup value={currentStatus} onValueChange={handleStatusSelect}>
-          {options.map((statusOption) => (
-            <Tooltip key={statusOption}>
-              <TooltipTrigger asChild>
-                <DropdownMenuRadioItem
-                  value={statusOption}
-                  className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-bg-secondary ring-1 ring-border-primary' : ''}`}
+    return (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    variant='ghost'
+                    size='icon-sm'
+                    className='inline-flex items-center justify-center hover:bg-bg-secondary hover:text-text-foreground'
                 >
-                  {getStatusIcon(statusOption)}
-                </DropdownMenuRadioItem>
-              </TooltipTrigger>
-              <TooltipContent side='right'>
-                {getStatusLabel(statusOption)}
-              </TooltipContent>
-            </Tooltip>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
+                    {getStatusIcon(currentStatus)}
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='center' className='p-2'>
+                <DropdownMenuRadioGroup
+                    value={currentStatus}
+                    onValueChange={handleStatusSelect}
+                >
+                    {options.map((statusOption) => (
+                        <Tooltip key={statusOption}>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuRadioItem
+                                    value={statusOption}
+                                    className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-bg-secondary ring-1 ring-border-primary' : ''}`}
+                                >
+                                    {getStatusIcon(statusOption)}
+                                </DropdownMenuRadioItem>
+                            </TooltipTrigger>
+                            <TooltipContent side='right'>
+                                {getStatusLabel(statusOption)}
+                            </TooltipContent>
+                        </Tooltip>
+                    ))}
+                </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
 }

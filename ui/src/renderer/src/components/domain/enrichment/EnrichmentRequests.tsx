@@ -1,17 +1,24 @@
-import { useModal } from '@/contexts/ui/ModalContext';
-import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import useAPICall from '@/hooks/api/useAPICall';
+import { queryKeys } from '@/hooks/query';
 import InProgress from '@components/feedback/InProgress';
 import EnrichmentRequestModal from '@components/modals/enrichment/EnrichmentRequestModal';
-import { EnrichmentRequestList } from '@services/cradle';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { Sparkles } from 'lucide-react';
-import { ChangeEvent, FormEvent, useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import {
+    ChangeEvent,
+    FormEvent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
+import { toast } from 'sonner';
 import { DateRangeFilter } from '../../base/ListView/types';
+import OfflineIndicator from '../../feedback/OfflineIndicator';
 import EnrichmentRequestsList from './EnrichmentRequestsList';
 
 interface SearchFilters {
@@ -30,34 +37,29 @@ export default function EnrichmentRequests() {
         return <InProgress />;
     }
 
-    const [searchParams, setSearchParams] = useSearchParams();
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ from: '/_authenticated/enrich' });
     const { intelioApi } = useApi();
-    const { execute } = useAPICall();
-    const { setModal } = useModal();
+    const [enrichmentModalOpen, setEnrichmentModalOpen] = useState(false);
 
     // Enrichment requests list state
-    const [enrichmentRequests, setEnrichmentRequests] = useState<
-        EnrichmentRequestList[]
-    >([]);
-    const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalCount, setTotalCount] = useState(0);
     const [sortField, setSortField] = useState(
-        searchParams.get('sort_field') || 'created_at',
+        (search as any)?.sort_field || 'created_at',
     );
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
-        (searchParams.get('sort_direction') as 'asc' | 'desc') || 'desc',
+        (search as any)?.sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState(
-        Number(searchParams.get('pagesize')) || 10,
-    );
+    const [pageSize, setPageSize] = useState((search as any)?.pagesize || 10);
     const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
 
     // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-        title: searchParams.get('title') || '',
-        user: searchParams.get('user__username') || '',
+        title: (search as any)?.title || '',
+        user: (search as any)?.user__username || '',
     });
 
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
@@ -66,92 +68,90 @@ export default function EnrichmentRequests() {
 
     // Column filters for table header
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
-        status: searchParams.get('status') || 'all',
-        user: searchParams.get('user__username') || '',
+        status: (search as any)?.status || 'all',
+        user: (search as any)?.user__username || '',
     });
 
-    const fetchEnrichmentRequests = useCallback(async () => {
-        if (!submittedFilters) return;
-        setLoading(true);
-        try {
-            const searchQueryParams: any = {
-                page,
-                pageSize,
-                title: submittedFilters.title || undefined,
-                userUsername: submittedFilters.user || undefined,
-            };
+    // Prepare query parameters
+    const queryParams = useMemo(() => {
+        if (!submittedFilters) return null;
 
-            // Add column filter parameters
-            if (columnFilters.user) {
-                searchQueryParams.userUsername = columnFilters.user;
-            }
-
-            const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
-            searchQueryParams.orderBy = orderBy;
-            searchQueryParams.status =
-                columnFilters.status == 'all' ? undefined : columnFilters.status;
-
-            const response = await intelioApi.enrichmentRequestList(searchQueryParams);
-            console.log('API response:', response);
-
-            setEnrichmentRequests(response.results || []);
-            setTotalPages(response.totalPages || 1);
-            setTotalCount(response.count || 0);
-        } catch (error: any) {
-            console.error('Failed to fetch enrichment requests', error);
-            toast.error(`Error fetching enrichment requests: ${error.message}`);
-            setEnrichmentRequests([]);
-            setTotalPages(1);
-        } finally {
-            setLoading(false);
-        }
-    }, [
-        page,
-        pageSize,
-        submittedFilters,
-        columnFilters,
-        sortField,
-        sortDirection,
-    ]);
-
-    useEffect(() => {
-        fetchEnrichmentRequests();
-    }, [page, pageSize, submittedFilters, columnFilters, sortField, sortDirection]);
-
-    // Initialize filters from URL parameters
-    useEffect(() => {
-        const initialFilters: SearchFilters = {
-            title: searchParams.get('title') || '',
-            user: searchParams.get('user__username') || '',
+        const searchQueryParams: any = {
+            page,
+            pageSize,
+            title: submittedFilters.title || undefined,
+            userUsername: submittedFilters.user || undefined,
         };
 
-        setSearchFilters(initialFilters);
-
-        if (searchParams.has('title') || searchParams.has('user__username')) {
-            setSubmittedFilters(initialFilters);
+        // Add column filter parameters
+        if (columnFilters.user) {
+            searchQueryParams.userUsername = columnFilters.user;
         }
-    }, []);
+
+        const orderBy = sortDirection === 'desc' ? `-${sortField}` : sortField;
+        searchQueryParams.orderBy = orderBy;
+        searchQueryParams.status =
+            columnFilters.status == 'all' ? undefined : columnFilters.status;
+
+        return searchQueryParams;
+    }, [page, pageSize, submittedFilters, columnFilters, sortField, sortDirection]);
+
+    // Query for enrichment requests
+    const {
+        data: requestsData,
+        isPending,
+        isPaused,
+    } = useQuery({
+        queryKey: queryKeys.enrichment.requests.list({
+            page,
+            pageSize,
+        }),
+        queryFn: () => intelioApi.enrichmentRequestList(queryParams!),
+        enabled: queryParams != null,
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch enrichment requests',
+        },
+    });
+
+    const enrichmentRequests = requestsData?.results || [];
+    const totalPages = requestsData?.totalPages || 1;
+    const totalCount = requestsData?.count || 0;
+
+    // Initialize submittedFilters from URL parameters on mount
+    useEffect(() => {
+        const searchAny = search as any;
+        if (searchAny?.title || searchAny?.user__username) {
+            setSubmittedFilters({
+                title: searchAny?.title || '',
+                user: searchAny?.user__username || '',
+            });
+        }
+    }, [search]);
 
     const updateSearchParams = useCallback(
         (filters: SearchFilters) => {
-            const newParams = new URLSearchParams(searchParams);
+            const newSearch: any = {
+                ...search,
+                title: filters.title || undefined,
+                user__username: filters.user || undefined,
+            };
 
-            if (filters.title) {
-                newParams.set('title', filters.title);
-            } else {
-                newParams.delete('title');
-            }
+            // Remove undefined values
+            Object.keys(newSearch).forEach((key) => {
+                if (newSearch[key] === undefined || newSearch[key] === '') {
+                    delete newSearch[key];
+                }
+            });
 
-            if (filters.user) {
-                newParams.set('user__username', filters.user);
-            } else {
-                newParams.delete('user__username');
-            }
-
-            setSearchParams(newParams, { replace: true });
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch,
+                replace: true,
+            });
             setSubmittedFilters(filters);
         },
-        [searchParams, setSearchParams],
+        [search, router, location.pathname],
     );
 
     useEffect(() => {
@@ -184,19 +184,31 @@ export default function EnrichmentRequests() {
         setSortDirection(newSortDirection);
         setPage(1);
 
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('sort_field', newSortField);
-        newParams.set('sort_direction', newSortDirection);
-        setSearchParams(newParams, { replace: true });
+        const newSearch: any = {
+            ...search,
+            sort_field: newSortField,
+            sort_direction: newSortDirection,
+        };
+        router.navigate({
+            to: location.pathname as any,
+            search: newSearch,
+            replace: true,
+        });
     };
 
     const handlePageSizeChange = (newSize: number) => {
         setPageSize(newSize);
         setPage(1);
 
-        const newParams = new URLSearchParams(searchParams);
-        newParams.set('pagesize', String(newSize));
-        setSearchParams(newParams, { replace: true });
+        const newSearch: any = {
+            ...search,
+            pagesize: String(newSize),
+        };
+        router.navigate({
+            to: location.pathname as any,
+            search: newSearch,
+            replace: true,
+        });
     };
 
     const handleColumnFilterChange = (
@@ -211,16 +223,24 @@ export default function EnrichmentRequests() {
         setPage(1); // Reset to first page when filters change
     };
 
+    // Delete mutation
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => intelioApi.enrichmentDetailDelete({ id }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+        },
+    });
+
+    // Rerun mutation
+    const rerunMutation = useMutation({
+        mutationFn: (id: number) => intelioApi.enrichmentRestart({ id }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+        },
+    });
+
     const handleCreateRequest = () => {
-        setModal(EnrichmentRequestModal, {
-            onSuccess: () => {
-                toast.success('Enrichment request created successfully');
-                fetchEnrichmentRequests();
-            },
-            onError: (error: Error) => {
-                toast.error(`Error creating enrichment request: ${error.message}`);
-            },
-        });
+        setEnrichmentModalOpen(true);
     };
 
     const handleDeleteSelected = async () => {
@@ -229,32 +249,30 @@ export default function EnrichmentRequests() {
         try {
             // Delete all selected requests
             await Promise.all(
-                selectedRequests.map((id) =>
-                    intelioApi.enrichmentDetailDelete({ id: id }),
-                ),
+                selectedRequests.map((id) => deleteMutation.mutateAsync(id)),
             );
-
             toast.success(`Deleted ${selectedRequests.length} enrichment request(s)`);
             setSelectedRequests([]);
-            fetchEnrichmentRequests();
-        } catch (error: any) {
-            toast.error(`Error deleting enrichment requests: ${error.message}`);
+        } catch (error) {
+            toast.error('Failed to delete enrichment requests');
         }
     };
 
     const handleRerunSelected = async () => {
         if (selectedRequests.length === 0) return;
 
-        // Retry all selected requests
-        await Promise.all(
-            selectedRequests.map((id) =>
-                execute(() => intelioApi.enrichmentRestart({ id: id })),
-            ),
-        );
-
-        toast.success(`Retrying ${selectedRequests.length} enrichment request${selectedRequests.length > 1 ? 's' : ''}`);
-        setSelectedRequests([]);
-        fetchEnrichmentRequests();
+        try {
+            // Retry all selected requests
+            await Promise.all(
+                selectedRequests.map((id) => rerunMutation.mutateAsync(id)),
+            );
+            toast.success(
+                `Retrying ${selectedRequests.length} enrichment request${selectedRequests.length > 1 ? 's' : ''}`,
+            );
+            setSelectedRequests([]);
+        } catch (error) {
+            toast.error('Failed to retry enrichment requests');
+        }
     };
 
     return (
@@ -262,19 +280,19 @@ export default function EnrichmentRequests() {
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
                 <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>Enrichment Requests</h2>
-                    <p className='text-muted-foreground'>Browse & Manage Enrichment Requests</p>
+                    <h2 className='text-2xl font-bold tracking-tight'>
+                        Enrichment Requests
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        Browse & Manage Enrichment Requests
+                    </p>
                 </div>
                 <div className='flex gap-2'>
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button
-                                onClick={handleCreateRequest}
-                                variant='default'
-                                className='space-x-1'
-                            >
-                                <span>New Request</span>
-                                <Sparkles className='size-4' />
+                            <Button onClick={handleCreateRequest} variant='default'>
+                                <Sparkles />
+                                New Request
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -291,14 +309,18 @@ export default function EnrichmentRequests() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 p-4'>
+                {isPaused && <OfflineIndicator />}
+
                 {/* Enrichment Requests List */}
                 <EnrichmentRequestsList
                     enrichmentRequests={enrichmentRequests}
-                    loading={loading}
+                    loading={isPending && !isPaused}
                     page={page}
                     totalPages={totalPages}
                     handlePageChange={handlePageChange}
-                    onRequestDelete={fetchEnrichmentRequests}
+                    onRequestDelete={() => {
+                        // Query will automatically refetch due to invalidation
+                    }}
                     sortField={sortField}
                     sortDirection={sortDirection}
                     onSort={handleSort}
@@ -316,6 +338,16 @@ export default function EnrichmentRequests() {
                     onCreateRequest={handleCreateRequest}
                 />
             </div>
+            <EnrichmentRequestModal
+                open={enrichmentModalOpen}
+                onOpenChange={setEnrichmentModalOpen}
+                onSuccess={() => {
+                    toast.success('Enrichment request created successfully');
+                }}
+                onError={(error: Error) => {
+                    toast.error(`Error creating enrichment request: ${error.message}`);
+                }}
+            />
         </div>
     );
 }

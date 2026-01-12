@@ -1,3 +1,11 @@
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import {
     getSearchQuery,
     replaceAll,
@@ -9,8 +17,18 @@ import { EditorSelection } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import { VscArrowDown, VscArrowUp, VscChevronDown, VscChevronRight, VscListSelection, VscRegex, VscReplace, VscReplaceAll, VscTextSize, VscWholeWord } from 'react-icons/vsc';
-import { Button } from '@/components/ui/button';
+import {
+    VscArrowDown,
+    VscArrowUp,
+    VscChevronDown,
+    VscChevronRight,
+    VscListSelection,
+    VscRegex,
+    VscReplace,
+    VscReplaceAll,
+    VscTextSize,
+    VscWholeWord,
+} from 'react-icons/vsc';
 
 interface FindReplaceProps {
     view: EditorView | null;
@@ -183,149 +201,157 @@ export default function FindReplace({
                         }`}
                         onClick={() => setShowReplace(!showReplace)}
                     >
-                        {showReplace ? <VscChevronDown className="text-sm" /> : <VscChevronRight className="text-sm" />}
+                        {showReplace ? (
+                            <VscChevronDown className='text-sm' />
+                        ) : (
+                            <VscChevronRight className='text-sm' />
+                        )}
                     </Button>
 
                     {/* Fields Container */}
-                    <div className="flex flex-col gap-2 flex-1 min-w-0">
-                    {/* Find Input */}
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-1 min-w-0">
-                            <div className="flex-1 min-w-0 bg-muted border border-border rounded-md flex items-center focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden">
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder="Find"
-                                    className="flex-1 min-w-0 bg-transparent border-0 outline-none px-2 py-1.5 text-foreground placeholder:text-muted-foreground text-sm"
-                                    autoFocus
-                                />
-                                {/* Options - Inside the input field */}
-                                <div className="flex gap-0.5 flex-shrink-0 pr-1">
+                    <div className='flex flex-col gap-2 flex-1 min-w-0'>
+                        {/* Find Input */}
+                        <div className='flex flex-col gap-1'>
+                            <div className='flex items-center gap-1 min-w-0'>
+                                <InputGroup className='flex-1 min-w-0 bg-muted'>
+                                    <InputGroupInput
+                                        type='text'
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder='Find'
+                                        className='px-2 py-1.5'
+                                        autoFocus
+                                    />
+                                    <InputGroupAddon align='inline-end'>
+                                        <InputGroupButton
+                                            variant='ghost'
+                                            size='icon-xs'
+                                            onClick={() =>
+                                                setCaseSensitive(!caseSensitive)
+                                            }
+                                            className={`${
+                                                caseSensitive
+                                                    ? 'bg-background text-foreground'
+                                                    : 'text-muted-foreground hover:bg-background hover:text-foreground'
+                                            }`}
+                                            title='Match Case'
+                                        >
+                                            <VscTextSize className='text-xs' />
+                                        </InputGroupButton>
+                                        <InputGroupButton
+                                            variant='ghost'
+                                            size='icon-xs'
+                                            onClick={() => setWholeWord(!wholeWord)}
+                                            className={`${
+                                                wholeWord
+                                                    ? 'bg-bg-background text-text-foreground'
+                                                    : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
+                                            }`}
+                                            title='Match Whole Word'
+                                        >
+                                            <VscWholeWord className='text-xs' />
+                                        </InputGroupButton>
+                                        <InputGroupButton
+                                            variant='ghost'
+                                            size='icon-xs'
+                                            onClick={() => setUseRegex(!useRegex)}
+                                            className={`${
+                                                useRegex
+                                                    ? 'bg-bg-background text-text-foreground'
+                                                    : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
+                                            }`}
+                                            title='Use Regular Expression'
+                                        >
+                                            <VscRegex className='text-xs' />
+                                        </InputGroupButton>
+                                    </InputGroupAddon>
+                                </InputGroup>
+                                <div className='flex gap-0.5 flex-shrink-0'>
                                     <Button
                                         variant='ghost'
                                         size='icon-sm'
-                                        onClick={() => setCaseSensitive(!caseSensitive)}
-                                        className={`w-6 h-6 ${
-                                            caseSensitive
-                                                ? 'bg-background text-foreground'
-                                                : 'text-muted-foreground hover:bg-background hover:text-foreground'
-                                        }`}
-                                        title="Match Case"
+                                        onClick={handlePrevious}
+                                        className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
+                                        title='Previous match (Shift+Enter)'
                                     >
-                                        <VscTextSize className="text-xs" />
+                                        <VscArrowUp className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
                                         size='icon-sm'
-                                        onClick={() => setWholeWord(!wholeWord)}
-                                        className={`w-6 h-6 ${
-                                            wholeWord
-                                                ? 'bg-bg-background text-text-foreground'
-                                                : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
-                                        }`}
-                                        title="Match Whole Word"
+                                        onClick={handleNext}
+                                        className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
+                                        title='Next match (Enter)'
                                     >
-                                        <VscWholeWord className="text-xs" />
+                                        <VscArrowDown className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
                                         size='icon-sm'
-                                        onClick={() => setUseRegex(!useRegex)}
-                                        className={`w-6 h-6 ${
-                                            useRegex
-                                                ? 'bg-bg-background text-text-foreground'
-                                                : 'text-muted-foreground hover:bg-bg-background hover:text-text-foreground'
-                                        }`}
-                                        title="Use Regular Expression"
+                                        onClick={handleFindAll}
+                                        className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
+                                        title='Find All'
                                     >
-                                        <VscRegex className="text-xs" />
+                                        <VscListSelection className='text-lg' />
+                                    </Button>
+                                    <Button
+                                        variant='ghost'
+                                        size='icon-sm'
+                                        onClick={onClose}
+                                        className='w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                                        aria-label='Close'
+                                    >
+                                        <Xmark width='18' height='18' />
                                     </Button>
                                 </div>
                             </div>
-                            <div className="flex gap-0.5 flex-shrink-0">
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    onClick={handlePrevious}
-                                    className="w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground"
-                                    title="Previous match (Shift+Enter)"
-                                >
-                                    <VscArrowUp className="text-lg" />
-                                </Button>
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    onClick={handleNext}
-                                    className="w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground"
-                                    title="Next match (Enter)"
-                                >
-                                    <VscArrowDown className="text-lg" />
-                                </Button>
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    onClick={handleFindAll}
-                                    className="w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground"
-                                    title="Find All"
-                                >
-                                    <VscListSelection className="text-lg" />
-                                </Button>
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    onClick={onClose}
-                                    className="w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground"
-                                    aria-label="Close"
-                                >
-                                    <Xmark width="18" height="18" />
-                                </Button>
-                            </div>
                         </div>
-                    </div>
 
-                    {/* Replace Input */}
-                    {showReplace && (
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-1 min-w-0">
-                                <input
-                                    type="text"
-                                    value={replaceTerm}
-                                    onChange={(e) => setReplaceTerm(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && searchTerm.trim()) {
-                                            handleReplace();
-                                        }
-                                    }}
-                                    placeholder="Replace"
-                                    className="flex-1 min-w-0 bg-muted border border-border rounded-md px-2 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground text-sm"
-                                />
-                                <div className="flex gap-0.5 flex-shrink-0">
-                                    <Button
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        onClick={handleReplace}
-                                        disabled={!searchTerm.trim()}
-                                        className="w-8 h-8 text-primary hover:bg-muted hover:text-primary"
-                                        title="Replace"
-                                    >
-                                        <VscReplace className="text-lg" />
-                                    </Button>
-                                    <Button
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        onClick={handleReplaceAll}
-                                        disabled={!searchTerm.trim()}
-                                        className="w-8 h-8 text-primary hover:bg-muted hover:text-primary"
-                                        title="Replace All"
-                                    >
-                                        <VscReplaceAll className="text-lg" />
-                                    </Button>
+                        {/* Replace Input */}
+                        {showReplace && (
+                            <div className='flex flex-col gap-1'>
+                                <div className='flex items-center gap-1 min-w-0'>
+                                    <Input
+                                        type='text'
+                                        value={replaceTerm}
+                                        onChange={(e) => setReplaceTerm(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (
+                                                e.key === 'Enter' &&
+                                                searchTerm.trim()
+                                            ) {
+                                                handleReplace();
+                                            }
+                                        }}
+                                        placeholder='Replace'
+                                        className='flex-1 min-w-0 bg-muted border border-border rounded-md px-2 py-1.5 outline-none focus:border-primary focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground text-sm'
+                                    />
+                                    <div className='flex gap-0.5 flex-shrink-0'>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            onClick={handleReplace}
+                                            disabled={!searchTerm.trim()}
+                                            className='text-primary hover:bg-muted hover:text-primary'
+                                            title='Replace'
+                                        >
+                                            <VscReplace className='text-lg' />
+                                        </Button>
+                                        <Button
+                                            variant='ghost'
+                                            size='icon-sm'
+                                            onClick={handleReplaceAll}
+                                            disabled={!searchTerm.trim()}
+                                            className='text-primary hover:bg-muted hover:text-primary'
+                                            title='Replace All'
+                                        >
+                                            <VscReplaceAll className='text-lg' />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    )}
+                        )}
                     </div>
                 </div>
             </div>

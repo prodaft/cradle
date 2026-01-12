@@ -43,6 +43,11 @@ export interface KnowledgeGraphNeighborsRetrieveRequest {
     wildcard?: boolean;
 }
 
+export interface KnowledgeGraphRetrieveRequest {
+    page?: number;
+    pageSize?: number;
+}
+
 /**
  * 
  */
@@ -176,8 +181,16 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
      * Returns the full knowledge graph accessible to the user.
      * Get knowledge graph
      */
-    async knowledgeGraphRetrieveRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubGraph>> {
+    async knowledgeGraphRetrieveRaw(requestParameters: KnowledgeGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -199,15 +212,15 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => SubGraphFromJSON(jsonValue));
+        return new runtime.JSONApiResponse(response);
     }
 
     /**
      * Returns the full knowledge graph accessible to the user.
      * Get knowledge graph
      */
-    async knowledgeGraphRetrieve(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SubGraph> {
-        const response = await this.knowledgeGraphRetrieveRaw(initOverrides);
+    async knowledgeGraphRetrieve(requestParameters: KnowledgeGraphRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
+        const response = await this.knowledgeGraphRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

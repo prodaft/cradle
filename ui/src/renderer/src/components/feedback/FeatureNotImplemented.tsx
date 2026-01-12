@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '@tanstack/react-router';
 
 /**
  * FeatureNotImplemented component - a placeholder component for features that are not yet implemented.
@@ -13,7 +13,7 @@ export default function FeatureNotImplemented() {
                 We're sorry, but this feature is not yet implemented.
             </p>
             <Link to='/' className='underline text-primary text-center w-full'>
-                Go back to Welcome
+                Go back to Dashboard
             </Link>
         </div>
     );

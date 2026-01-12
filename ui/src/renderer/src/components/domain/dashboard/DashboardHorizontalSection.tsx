@@ -1,6 +1,6 @@
+import { useRouterState } from '@tanstack/react-router';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
 import { ReactNode, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 
 interface DashboardHorizontalSectionProps {
     title: string;
@@ -22,7 +22,9 @@ export default function DashboardHorizontalSection({
     children,
     onExpand = null,
 }: DashboardHorizontalSectionProps) {
-    const location = useLocation();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const [expanded, setExpanded] = useState(false);
 
     const toggleExpanded = () => {

@@ -1,15 +1,12 @@
-import { Calendar } from 'iconoir-react';
-import { format } from 'date-fns';
-import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar as ShadcnCalendar } from '@/components/ui/calendar';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { Calendar } from 'iconoir-react';
+import { useEffect, useState } from 'react';
 
 interface DatepickerProps {
     startDate: Date | null;
@@ -58,7 +55,7 @@ const Datepicker = ({
         }
 
         const { from, to } = range;
-        
+
         // Apply time to dates
         let newStartDate: Date | null = null;
         let newEndDate: Date | null = null;
@@ -141,19 +138,22 @@ const Datepicker = ({
                         className={cn(
                             'w-full justify-start text-left font-normal font-mono bg-transparent',
                             !displayValue && 'text-muted-foreground',
-                            'pl-9'
+                            'pl-9',
                         )}
                     >
-                        {displayValue || <span>{placeholderText}</span>}
+                        {displayValue || placeholderText}
                     </Button>
                 </div>
             </PopoverTrigger>
-            <PopoverContent 
-                className='w-auto p-0' 
+            <PopoverContent
+                className='w-auto p-0'
                 align='start'
                 onInteractOutside={(e) => {
                     // Don't close when clicking inside the calendar
-                    if (e.target instanceof Element && e.target.closest('[data-slot="calendar"]')) {
+                    if (
+                        e.target instanceof Element &&
+                        e.target.closest('[data-slot="calendar"]')
+                    ) {
                         e.preventDefault();
                     }
                 }}
@@ -171,9 +171,9 @@ const Datepicker = ({
                     />
                     <div className='flex gap-4 p-3 border-t'>
                         <div className='flex flex-col gap-2'>
-                            <label className='text-sm font-medium text-text-foreground'>
+                            <Label className='text-sm font-medium text-text-foreground'>
                                 Start Time
-                            </label>
+                            </Label>
                             <Input
                                 type='time'
                                 value={startTime}
@@ -182,13 +182,15 @@ const Datepicker = ({
                             />
                         </div>
                         <div className='flex flex-col gap-2'>
-                            <label className='text-sm font-medium text-text-foreground'>
+                            <Label className='text-sm font-medium text-text-foreground'>
                                 End Time
-                            </label>
+                            </Label>
                             <Input
                                 type='time'
                                 value={endTime}
-                                onChange={(e) => handleTimeChange(e.target.value, false)}
+                                onChange={(e) =>
+                                    handleTimeChange(e.target.value, false)
+                                }
                                 className='w-32 font-mono'
                             />
                         </div>

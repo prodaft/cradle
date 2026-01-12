@@ -1,6 +1,6 @@
+import { Button } from '@/components/ui/button';
 import { NavArrowRight } from 'iconoir-react';
 import React, { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
 
 /**
  * Action for search result
@@ -59,7 +59,7 @@ export default function SearchResult({
         <Button
             variant='ghost'
             onClick={onClick}
-            className='w-full px-4 py-3 flex items-center gap-3 text-left cursor-pointer group h-auto'
+            className='w-full px-4 py-3 gap-3 text-left group h-auto'
         >
             {/* Type indicator */}
             {subtype && (

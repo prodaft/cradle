@@ -33,7 +33,16 @@ interface LoginResult {
     message?: string;
 }
 
-export interface AuthContextValue {
+// State interface - values that change and cause rerenders
+export interface AuthStateValue {
+    role: string;
+    userId: string | null;
+    isLoading: boolean;
+    basePath: string;
+}
+
+// Actions interface - functions that don't change
+export interface AuthActionsValue {
     logIn: (
         username: string,
         password: string,
@@ -42,21 +51,28 @@ export interface AuthContextValue {
     logOut: () => void;
     getAccessToken: () => Promise<string>;
     isLoggedIn: () => boolean;
-    role: string;
-    userId: string | null;
     isAdmin: () => boolean;
     isEntryManager: () => boolean;
-    isLoading: boolean;
     setTokensDirectly: (data: TokenData) => void;
-    tokenVersion: number;
-    basePath: string;
     setBasePath: (path: string) => void;
 }
 
+// Combined interface kept for type compatibility (useAuth removed)
+export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
+
 /**
- * AuthContext - the context for authentication of the application
+ * AuthStateContext - provides authentication state (role, userId, isLoading, basePath)
+ * Components that only need state should use useAuthState() to avoid rerenders from action changes
  */
-const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+const AuthStateContext = createContext<AuthStateValue | undefined>(undefined);
+
+/**
+ * AuthActionsContext - provides authentication actions (logIn, logOut, getAccessToken, etc.)
+ * Components that only need actions should use useAuthActions() to avoid rerenders from state changes
+ */
+const AuthActionsContext = createContext<AuthActionsValue | undefined>(undefined);
+
+// AuthContext removed - use AuthStateContext and AuthActionsContext instead
 
 /**
  * Authentication result enum
@@ -86,10 +102,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.getItem('user_id') || null,
     );
     const [isLoading, setIsLoading] = useState(false);
-    const [basePath, setBasePath] = useState(getBaseUrl());
-
-    // Token version counter - increments when tokens change to trigger dependent re-renders
-    const [tokenVersion, setTokenVersion] = useState(0);
+    const [basePath, setBasePathState] = useState(getBaseUrl());
 
     // Store tokens and expiration in refs (not state) to avoid re-renders
     const accessTokenRef = useRef(localStorage.getItem('access_token') || '');
@@ -137,7 +150,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.setItem('role', data.role);
 
         setRole(data.role);
-        setTokenVersion((prev) => prev + 1);
         scheduleTokenRefresh();
     }, []);
 
@@ -155,8 +167,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.removeItem('access_expires_at');
         localStorage.removeItem('refresh_expires_at');
 
-        // Increment token version to trigger re-renders in dependent components
-        setTokenVersion((prev) => prev + 1);
         localStorage.removeItem('role');
         localStorage.removeItem('user_id');
 
@@ -215,7 +225,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Throttle error logging to avoid console spam (log at most once per 5 seconds)
             const now = Date.now();
             if (now - lastNetworkErrorLogRef.current > 5000) {
-                console.error('Token refresh failed due to network error:', error);
+                // Network errors are throttled to avoid spam
                 lastNetworkErrorLogRef.current = now;
             }
             return false;
@@ -272,7 +282,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     clearTokens();
                     throw error;
                 }
-                console.error('Unexpected error during token refresh:', error);
+                // Unexpected error during token refresh - already handled above
             }
         }
 
@@ -296,13 +306,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     body.two_factor_token = twoFactorToken;
                 }
 
-                const response = await fetch(`${getApiBaseUrl(basePath)}/users/login/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
+                const response = await fetch(
+                    `${getApiBaseUrl(basePath)}/users/login/`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(body),
                     },
-                    body: JSON.stringify(body),
-                });
+                );
 
                 if (response.ok) {
                     const data = await response.json();
@@ -363,7 +376,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     };
                 }
             } catch (error) {
-                console.error('Login failed:', error);
                 return {
                     result: AuthResult.NETWORK_ERROR,
                     message: 'Network error occurred',
@@ -405,6 +417,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         [role],
     );
 
+    /**
+     * Set base path and update localStorage
+     */
+    const setBasePath = useCallback((path: string) => {
+        localStorage.setItem('backendUrl', path);
+        setBasePathState(path);
+    }, []);
+
     // Set up automatic token refresh on mount if logged in
     useEffect(() => {
         if (isLoggedIn()) {
@@ -419,27 +439,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
     }, [isLoggedIn, scheduleTokenRefresh]);
 
+    // State value - only changes when role, userId, isLoading, or basePath change
+    const stateValue: AuthStateValue = {
+        role,
+        userId,
+        isLoading,
+        basePath,
+    };
+
+    // Actions value - stable references, doesn't cause rerenders
+    const actionsValue: AuthActionsValue = {
+        logIn,
+        logOut,
+        getAccessToken,
+        isLoggedIn,
+        isAdmin,
+        isEntryManager,
+        setTokensDirectly,
+        setBasePath,
+    };
+
     return (
-        <AuthContext.Provider
-            value={{
-                logIn,
-                logOut,
-                getAccessToken,
-                isLoggedIn,
-                role,
-                userId,
-                isAdmin,
-                isEntryManager,
-                isLoading,
-                setTokensDirectly,
-                tokenVersion,
-                basePath,
-                setBasePath,
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
+        <AuthStateContext.Provider value={stateValue}>
+            <AuthActionsContext.Provider value={actionsValue}>
+                {children}
+            </AuthActionsContext.Provider>
+        </AuthStateContext.Provider>
     );
 }
 
-export { AuthContext };
+export { AuthActionsContext, AuthStateContext };

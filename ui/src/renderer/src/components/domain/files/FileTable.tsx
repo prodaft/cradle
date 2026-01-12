@@ -1,15 +1,14 @@
-import { Button } from '@/components/ui/button';
 import { ConfirmDeletionModal } from '@/components/modals';
-import { useModal } from '@/contexts';
+import { Button } from '@/components/ui/button';
+import { DataTable } from '@/components/ui/data-table';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApi } from '@/hooks';
-import { useAPICall } from '@/hooks/api/useAPICall';
 import type { FileReference, StateSetter } from '@/types';
 import { createDownloadPath } from '@/utils/links';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
-import { DataTable } from '@/components/ui/data-table';
-import { useMemo } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
+import { useMemo, useState } from 'react';
 
 /**
  * This component is used to display a table of fileData.
@@ -37,9 +36,21 @@ export default function FileTable({
     setFileData,
     insertTextCallback,
 }: FileTableProps) {
-    const { execute } = useAPICall();
     const { fileTransferApi, basePath } = useApi();
-    const { setModal } = useModal();
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deletingFile, setDeletingFile] = useState<FileReference | null>(null);
+
+    const downloadMutation = useMutation({
+        mutationFn: async (fileId: string) => {
+            const response = await fileTransferApi.fileTransferDownloadRetrieve({
+                fileId,
+            });
+            return response.presignedUrl;
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
 
     // Pre-configured clipboard copy with automatic error/success handling
     const copyToClipboard = async (text: string) => {
@@ -48,7 +59,6 @@ export default function FileTable({
 
     // Removes a file from the table only. The file is not deleted from the server.
     const handleDelete = (data: FileReference) => {
-        console.log('handleDelete', data);
         setFileData(fileData.filter((d) => d.id !== data.id));
         const minioCache = JSON.parse(localStorage.getItem('minio-cache') || '{}');
         if (minioCache) {
@@ -59,11 +69,7 @@ export default function FileTable({
 
     // Downloads a file
     const handleDownload = async (data: FileReference) => {
-        const { presignedUrl } = await execute(() =>
-            fileTransferApi.fileTransferDownloadRetrieve({
-                fileId: data.id!,
-            }),
-        );
+        const presignedUrl = await downloadMutation.mutateAsync(data.id!);
         const link = document.createElement('a');
         link.href = presignedUrl;
         link.download = data.fileName || 'data';
@@ -79,13 +85,18 @@ export default function FileTable({
                 accessorKey: 'tag',
                 id: 'tag',
                 header: 'Tag',
-                cell: ({ row }) => (
-                    <div className='text-foreground flex items-center'>
-                        <div className='max-w-150px truncate px-3'>
-                            {row.original.minioFileName}
+                cell: ({ row }) => {
+                    const data = row.original;
+                    const tag =
+                        data.id && data.fileName
+                            ? `${data.id}-${data.fileName}`
+                            : data.id || '';
+                    return (
+                        <div className='text-foreground flex items-center'>
+                            <div className='max-w-150px truncate px-3'>{tag}</div>
                         </div>
-                    </div>
-                ),
+                    );
+                },
                 enableSorting: false,
             },
             {
@@ -95,7 +106,7 @@ export default function FileTable({
                 cell: ({ row }) => {
                     const data = row.original;
                     return (
-                            <div className='text-foreground flex items-center justify-between'>
+                        <div className='text-foreground flex items-center justify-between'>
                             <div className='max-w-150px truncate pr-3'>
                                 {data.fileName}
                             </div>
@@ -110,8 +121,12 @@ export default function FileTable({
                                             className='px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground bg-muted'
                                             onClick={(e) => {
                                                 e.stopPropagation();
+                                                const tag =
+                                                    data.id && data.fileName
+                                                        ? `${data.id}-${data.fileName}`
+                                                        : data.id || '';
                                                 insertTextCallback(
-                                                    `[${data.fileName}][${data.minioFileName}]`,
+                                                    `[${data.fileName}][${tag}]`,
                                                 );
                                             }}
                                         >
@@ -132,17 +147,19 @@ export default function FileTable({
                                             className='px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground bg-muted'
                                             onClick={(e) => {
                                                 e.stopPropagation();
+                                                const tag =
+                                                    data.id && data.fileName
+                                                        ? `${data.id}-${data.fileName}`
+                                                        : data.id || '';
                                                 copyToClipboard(
-                                                    `[${data.fileName}][${data.minioFileName}]`,
+                                                    `[${data.fileName}][${tag}]`,
                                                 );
                                             }}
                                         >
                                             <PasteClipboard width='20px' />
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        Copy to clipboard
-                                    </TooltipContent>
+                                    <TooltipContent>Copy to clipboard</TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -160,9 +177,7 @@ export default function FileTable({
                                             <Download width='20px' />
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        Download
-                                    </TooltipContent>
+                                    <TooltipContent>Download</TooltipContent>
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -174,18 +189,14 @@ export default function FileTable({
                                             className='px-2 py-1 rounded hover:bg-accent hover:text-accent-foreground bg-muted'
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                setModal(ConfirmDeletionModal, {
-                                                    text: 'Are you sure you want to delete this file?',
-                                                    onConfirm: () => handleDelete(data),
-                                                });
+                                                setDeletingFile(data);
+                                                setDeleteModalOpen(true);
                                             }}
                                         >
                                             <Trash width='20px' />
                                         </Button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        Remove
-                                    </TooltipContent>
+                                    <TooltipContent>Remove</TooltipContent>
                                 </Tooltip>
                             </div>
                         </div>
@@ -194,14 +205,14 @@ export default function FileTable({
                 enableSorting: false,
             },
         ],
-        [copyToClipboard, handleDownload, handleDelete, insertTextCallback, setModal],
+        [copyToClipboard, handleDownload, insertTextCallback],
     );
 
     return (
         <div className='w-full h-full mx-auto bg-transparent rounded-lg overflow-y-auto text-sm z-40'>
             <div className='overflow-x-auto'>
                 <div className='w-full bg-muted rounded-md overflow-x-hidden overflow-y-auto'>
-                    {(!fileData || fileData.length === 0) ? (
+                    {!fileData || fileData.length === 0 ? (
                         <p className='ml-4 mt-2 text-foreground'>
                             No files uploaded yet.
                         </p>
@@ -217,6 +228,21 @@ export default function FileTable({
                     )}
                 </div>
             </div>
+            {deletingFile && (
+                <ConfirmDeletionModal
+                    open={deleteModalOpen}
+                    onOpenChange={(open) => {
+                        setDeleteModalOpen(open);
+                        if (!open) setDeletingFile(null);
+                    }}
+                    text='Are you sure you want to delete this file?'
+                    onConfirm={() => {
+                        if (deletingFile) {
+                            handleDelete(deletingFile);
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 }

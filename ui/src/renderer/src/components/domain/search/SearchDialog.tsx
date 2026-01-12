@@ -1,25 +1,25 @@
-import type { Alert } from '@/types';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { WarningCircle } from 'iconoir-react';
-import Pagination from '@components/base/Pagination/Pagination';
-import SearchResult from '@components/base/SearchResult/SearchResult';
 import { Button } from '@/components/ui/button';
-import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import {
     Command,
     CommandEmpty,
     CommandGroup,
+    CommandInput,
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
-import { useApi, useAPICall, useCradleNavigate } from '@hooks';
-import { handleAPIError, parseAPIError } from '@utils/api';
+import { Kbd } from '@/components/ui/kbd';
+import { Spinner } from '@/components/ui/spinner';
+import type { Alert } from '@/types';
+import Pagination from '@components/base/Pagination/Pagination';
+import { useApi } from '@hooks';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { createDashboardLink } from '@utils/dashboard';
-import { Search, Xmark } from 'iconoir-react';
-import { ChangeEvent, KeyboardEvent, useEffect, useRef, useState } from 'react';
+import { Search, WarningCircle, Xmark } from 'iconoir-react';
+import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';
-import { Spinner } from '@/components/ui/spinner';
 
 /**
  * Search result from API
@@ -49,7 +49,7 @@ export interface SearchDialogProps {
  * - Full-screen overlay with search functionality
  * - Filters for entry type and artifact type
  * - Shows paginated search results
- * - Supports Enter to search, Shift+Enter for newline
+ * - Supports Enter to search
  * - Advanced search that bypasses filters
  *
  * @example
@@ -65,9 +65,9 @@ export interface SearchDialogProps {
 export default function SearchDialog({
     isOpen,
     onClose,
-}: SearchDialogProps): JSX.Element | null {
+}: SearchDialogProps): React.JSX.Element | null {
     const [searchQuery, setSearchQuery] = useState('');
-    const inputRef = useRef<HTMLTextAreaElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
     const [results, setResults] = useState<SearchResultData[] | null>(null);
@@ -81,41 +81,58 @@ export default function SearchDialog({
     const [totalPages, setTotalPages] = useState(1);
 
     const dialogRoot = document.getElementById('portal-root');
-    const { navigate, navigateLink } = useCradleNavigate();
+    const router = useRouter();
     const { queryApi, entriesApi } = useApi();
     const [isLoading, setIsLoading] = useState(false);
-    const { execute } = useAPICall();
 
-    const autoResize = (el: HTMLTextAreaElement | null) => {
-        if (!el) return;
-        el.style.height = 'auto';
-        const maxH = parseInt(getComputedStyle(el).maxHeight || '0', 10);
-        const newHeight = el.scrollHeight;
-        if (maxH && newHeight > maxH) {
-            el.style.height = `${maxH}px`;
-        } else {
-            el.style.height = `${newHeight}px`;
-        }
+    const fetchEntrySubtypesMutation = useMutation({
+        mutationFn: async () => {
+            const entities = await entriesApi.entryClassesList({});
+            return entities.map((c) => c.subtype);
+        },
+        meta: {
+            errorMessage: 'Failed to load entry subtypes',
+        },
+        onSuccess: (subtypes) => {
+            setEntrySubtypes(subtypes);
+        },
+    });
+
+    const searchAdvancedMutation = useMutation({
+        mutationFn: async (params: {
+            page: number;
+            pageSize: number;
+            query: string[];
+            wildcard: boolean;
+        }) => {
+            return await queryApi.queryAdvancedRetrieve(params);
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const searchListMutation = useMutation({
+        mutationFn: async (params: {
+            page: number;
+            pageSize: number;
+            name: string[];
+            subtype: string[];
+        }) => {
+            return await queryApi.queryList(params);
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const populateEntrySubtypes = async () => {
+        fetchEntrySubtypesMutation.mutate();
     };
 
-    const populateEntrySubtypes = () => {
-        entriesApi
-            .entryClassesList({})
-            .then((entities) => {
-                setEntrySubtypes(entities.map((c) => c.subtype));
-            })
-            .catch(async (error) => {
-                const parsed = await parseAPIError(error);
-                handleAPIError(parsed);
-            });
-    };
-
-    const handleKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-        // Enter to search; Shift+Enter to insert a newline
+    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        // Enter to search
         if (event.key === 'Enter') {
-            if (event.shiftKey) {
-                return; // allow newline
-            }
             event.preventDefault();
             setPage(1);
             performSearch();
@@ -129,66 +146,47 @@ export default function SearchDialog({
     const handleResultClick = (link: string) => (e: React.MouseEvent) => {
         setAlert({ ...alert, show: false });
         onClose();
-        navigate(link, { event: e });
+        router.navigate({ to: link as any });
     };
 
     const performSearch = async () => {
         setAlert({ ...alert, show: false });
         setIsLoading(true);
-        let searchQueries = searchQuery
-            .split('\n')
-            .map((q) => q.trim())
-            .filter((q) => q !== '');
+        const trimmedQuery = searchQuery.trim();
 
-        if (entrySubtypeFilters.length === 0) {
-            try {
-                let response = await execute(() =>
-                    queryApi.queryAdvancedRetrieve({
-                        page: page,
-                        pageSize: 10,
-                        query: searchQueries,
-                        wildcard: true,
-                    }),
-                );
-                setTotalPages(response.totalPages);
-                setResults(response.results as SearchResultData[]);
-            } finally {
-                setIsLoading(false);
+        try {
+            let response;
+            if (entrySubtypeFilters.length === 0) {
+                response = await searchAdvancedMutation.mutateAsync({
+                    page: page,
+                    pageSize: 10,
+                    query: trimmedQuery ? [trimmedQuery] : [],
+                    wildcard: true,
+                });
+            } else {
+                response = await searchListMutation.mutateAsync({
+                    page: page,
+                    pageSize: 10,
+                    name: trimmedQuery ? [trimmedQuery] : [],
+                    subtype: entrySubtypeFilters,
+                });
             }
-        } else {
-            try {
-                let response = await execute(() =>
-                    queryApi.queryList({
-                        page: page,
-                        pageSize: 10,
-                        name: searchQueries,
-                        subtype: entrySubtypeFilters,
-                    }),
-                );
-
-                setTotalPages(response.totalPages);
-                setResults(response.results as SearchResultData[]);
-            } finally {
-                setIsLoading(false);
-            }
+            setTotalPages(response.totalPages);
+            setResults(response.results as SearchResultData[]);
+        } catch (error) {
+            // Error handled by mutation
+        } finally {
+            setIsLoading(false);
         }
     };
 
     useEffect(() => {
         if (isOpen && inputRef.current) {
             inputRef.current.focus();
-            autoResize(inputRef.current);
             performSearch();
         }
         populateEntrySubtypes();
     }, [isOpen, page]);
-
-    useEffect(() => {
-        // Keep textarea sized correctly if value changes programmatically
-        if (inputRef.current) {
-            autoResize(inputRef.current);
-        }
-    }, [searchQuery]);
 
     useEffect(() => {
         if (isOpen) {
@@ -209,80 +207,33 @@ export default function SearchDialog({
             }}
         >
             <div
-                className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] bg-card border flex flex-col relative overflow-hidden rounded-lg'
+                className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] bg-card border flex flex-col relative overflow-hidden rounded-lg shadow-md'
                 onClick={(e) => e.stopPropagation()}
             >
-                <Command className='h-full flex flex-col'>
-                    {/* Search Input - styled like CommandInput but with textarea for multi-line */}
-                    <div className='border-b px-3'>
-                        <div className='flex items-center gap-2 py-3'>
-                            <Search className='h-4 w-4 shrink-0 opacity-50' />
-                            <textarea
-                                ref={inputRef}
-                                className='flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground resize-none max-h-[15vh] overflow-y-auto leading-relaxed'
-                                placeholder='Search entries...'
-                                value={searchQuery}
-                                rows={1}
-                                onChange={(event: ChangeEvent<HTMLTextAreaElement>) => {
-                                    setSearchQuery(event.target.value);
-                                    autoResize(event.target);
+                <Command className='h-full flex flex-col rounded-lg'>
+                    <div className='relative'>
+                        <CommandInput
+                            ref={inputRef}
+                            placeholder='Search entries...'
+                            value={searchQuery}
+                            onValueChange={setSearchQuery}
+                            onKeyDown={handleKeyDown}
+                        />
+                        {searchQuery && (
+                            <Button
+                                variant='ghost'
+                                size='icon-sm'
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    setPage(1);
+                                    performSearch();
                                 }}
-                                onKeyDown={handleKeyDown}
-                            />
-                            {searchQuery && (
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    onClick={() => {
-                                        setSearchQuery('');
-                                        if (inputRef.current) {
-                                            autoResize(inputRef.current);
-                                        }
-                                        setPage(1);
-                                        performSearch();
-                                    }}
-                                    className='h-4 w-4 p-0'
-                                    title='Clear search'
-                                >
-                                    <svg
-                                        width='1em'
-                                        height='1em'
-                                        strokeWidth='1.5'
-                                        viewBox='0 0 24 24'
-                                        fill='none'
-                                        xmlns='http://www.w3.org/2000/svg'
-                                        color='currentColor'
-                                        className='h-3 w-3'
-                                    >
-                                        <path
-                                            d='M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426'
-                                            stroke='currentColor'
-                                            strokeLinecap='round'
-                                            strokeLinejoin='round'
-                                        ></path>
-                                    </svg>
-                                </Button>
-                            )}
-                        </div>
-                        {/* Keyboard hint */}
-                        <div className='flex items-center gap-4 pb-3 text-xs text-muted-foreground'>
-                            <span className='flex items-center gap-1.5'>
-                                <Kbd>Enter</Kbd>
-                                <span>search</span>
-                            </span>
-                            <span className='flex items-center gap-1.5'>
-                                <KbdGroup>
-                                    <Kbd>Shift</Kbd>
-                                    <span>+</span>
-                                    <Kbd>Enter</Kbd>
-                                </KbdGroup>
-                                <span>new line</span>
-                            </span>
-                            <span className='flex items-center gap-1.5'>
-                                <Kbd>Esc</Kbd>
-                                <span>close</span>
-                            </span>
-                        </div>
+                                className='absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 p-0'
+                                title='Clear search'
+                            >
+                                <Xmark className='h-3 w-3' />
+                            </Button>
+                        )}
                     </div>
 
                     {/* Filters Section */}
@@ -312,7 +263,7 @@ export default function SearchDialog({
                                     }
                                     className='inline-flex items-center gap-1 px-2 py-0.5 text-xs h-auto'
                                 >
-                                    <span>{filter}</span>
+                                    {filter}
                                     <Xmark className='w-3 h-3' />
                                 </Button>
                             ))}
@@ -328,60 +279,64 @@ export default function SearchDialog({
                     )}
 
                     {alert.show && (
-                        <AlertComponent variant={alert.color === 'red' || alert.color === 'error' ? 'destructive' : 'default'}>
+                        <AlertComponent
+                            variant={
+                                alert.color === 'red' || alert.color === 'error'
+                                    ? 'destructive'
+                                    : 'default'
+                            }
+                        >
                             <WarningCircle />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>
                     )}
 
                     {/* Results Section */}
-                    <div className='flex-1 overflow-hidden min-h-0'>
-                        <CommandList className='max-h-none'>
-                            {isLoading ? (
-                                <div className='flex items-center justify-center py-12'>
-                                    <Spinner className='size-10' />
-                                </div>
-                            ) : results && results.length > 0 ? (
-                                <CommandGroup>
-                                    {results.map((result) => {
-                                        const dashboardLink = createDashboardLink(result);
-                                        return (
-                                            <CommandItem
-                                                key={result.id}
-                                                onSelect={() => {
-                                                    handleResultClick(dashboardLink)(
-                                                        {} as React.MouseEvent,
-                                                    );
-                                                }}
-                                                className='px-4 py-3'
-                                            >
-                                                {result.subtype && (
-                                                    <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-muted border border-border min-w-[60px] text-center mr-3'>
-                                                        {result.subtype}
-                                                    </span>
-                                                )}
-                                                <span className='flex-1 text-sm truncate'>
-                                                    {result.name}
+                    <CommandList className='flex-1 overflow-auto'>
+                        {isLoading ? (
+                            <div className='flex items-center justify-center py-12'>
+                                <Spinner className='size-10' />
+                            </div>
+                        ) : results && results.length > 0 ? (
+                            <CommandGroup>
+                                {results.map((result) => {
+                                    const dashboardLink = createDashboardLink(result);
+                                    return (
+                                        <CommandItem
+                                            key={result.id}
+                                            onSelect={() => {
+                                                handleResultClick(dashboardLink)(
+                                                    {} as React.MouseEvent,
+                                                );
+                                            }}
+                                            className='px-4 py-3'
+                                        >
+                                            {result.subtype && (
+                                                <span className='text-[10px] font-mono uppercase tracking-wider text-muted-foreground px-1.5 py-0.5 bg-muted border border-border min-w-[60px] text-center mr-3'>
+                                                    {result.subtype}
                                                 </span>
-                                            </CommandItem>
-                                        );
-                                    })}
-                                </CommandGroup>
-                            ) : (
-                                <CommandEmpty>
-                                    <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
-                                        <Search className='w-10 h-10 mb-3 opacity-30' />
-                                        <span className='text-sm'>No results found</span>
-                                        {searchQuery && (
-                                            <span className='text-xs mt-1 opacity-70'>
-                                                Try a different search term
+                                            )}
+                                            <span className='flex-1 text-sm truncate'>
+                                                {result.name}
                                             </span>
-                                        )}
-                                    </div>
-                                </CommandEmpty>
-                            )}
-                        </CommandList>
-                    </div>
+                                        </CommandItem>
+                                    );
+                                })}
+                            </CommandGroup>
+                        ) : (
+                            <CommandEmpty>
+                                <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
+                                    <Search className='w-10 h-10 mb-3 opacity-30' />
+                                    <span className='text-sm'>No results found</span>
+                                    {searchQuery && (
+                                        <span className='text-xs mt-1 opacity-70'>
+                                            Try a different search term
+                                        </span>
+                                    )}
+                                </div>
+                            </CommandEmpty>
+                        )}
+                    </CommandList>
                 </Command>
 
                 {/* Footer with Pagination */}
@@ -397,6 +352,18 @@ export default function SearchDialog({
                         />
                     </div>
                 )}
+
+                {/* Keyboard hints */}
+                <div className='px-4 py-3 border-t flex items-center gap-4 text-xs text-muted-foreground'>
+                    <span className='flex items-center gap-1.5'>
+                        <Kbd>Enter</Kbd>
+                        <span>search</span>
+                    </span>
+                    <span className='flex items-center gap-1.5'>
+                        <Kbd>Esc</Kbd>
+                        <span>close</span>
+                    </span>
+                </div>
             </div>
         </div>,
         dialogRoot,

@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -6,8 +5,9 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Download, Trash } from 'iconoir-react';
 import { Spinner } from '@/components/ui/spinner';
+import { Download, Trash } from 'iconoir-react';
+import { useState } from 'react';
 
 interface Action {
     value: string;
@@ -41,7 +41,7 @@ export default function ActionBar({
         try {
             await action.handler(selectedItems);
         } catch (error) {
-            console.error('Action failed:', error);
+            // Error already handled by action handler
         } finally {
             setLoadingAction(null);
         }
@@ -63,7 +63,9 @@ export default function ActionBar({
                         variant='outline'
                         size='sm'
                         className={`text-sm flex items-center justify-between gap-2 min-w-[120px] ${
-                            isDisabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                            isDisabled
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'cursor-pointer'
                         }`}
                         disabled={isDisabled}
                         title={
@@ -94,16 +96,18 @@ export default function ActionBar({
                             key={action.value}
                             onClick={() => handleActionSelect(action.value)}
                         >
-                            {action.value === 'download' && <Download width='16' height='16' />}
-                            {action.value === 'delete' && <Trash width='16' height='16' />}
+                            {action.value === 'download' && (
+                                <Download width='16' height='16' />
+                            )}
+                            {action.value === 'delete' && (
+                                <Trash width='16' height='16' />
+                            )}
                             {action.label}
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
             </DropdownMenu>
-            {loadingAction && (
-                <Spinner className='size-3' />
-            )}
+            {loadingAction && <Spinner className='size-3' />}
         </div>
     );
 }

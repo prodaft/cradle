@@ -1,29 +1,41 @@
-import { toast } from 'sonner';
+import PageHeader from '@/components/base/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import MultipleSelector, { type Option } from '@/components/ui/multi-select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
-import { yupResolver } from '@hookform/resolvers/yup';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
     EntryClass,
     EntryClassRequest,
     EntryClassRequestTypeEnum,
 } from '@services/cradle/models';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
-import * as Yup from 'yup';
+import { toast } from 'sonner';
+import { z } from 'zod';
+import OfflineIndicator from '../../../feedback/OfflineIndicator';
 import {
     SelectOption,
     SettingsCard,
     SettingsField,
     SettingsTextArea,
 } from '../../../forms';
-import { Separator } from '@/components/ui/separator';
-import ShadcnSelect from '../../../forms/ShadcnSelect';
-import { Button } from '@/components/ui/button';
 
 interface EntryTypeFormProps {
     id?: string | null;
-    isEdit?: boolean;
     onAdd?: (result: EntryClass) => void;
 }
 
@@ -42,19 +54,6 @@ interface FormatOption extends SelectOption<string> {
     label: string;
 }
 
-interface EntryTypeFormValues {
-    type: TypeOption | null;
-    subtype: string;
-    description: string;
-    prefix: string;
-    typeFormat: FormatOption | null;
-    regex: string;
-    options: string;
-    generativeRegex: string;
-    color: string;
-    children: ChildOption[];
-}
-
 const typeOptions: TypeOption[] = [
     { value: EntryClassRequestTypeEnum.Artifact, label: 'Artifact' },
     { value: EntryClassRequestTypeEnum.Entity, label: 'Entity' },
@@ -66,38 +65,36 @@ const formatOptions: FormatOption[] = [
     { value: 'regex', label: 'Regex' },
 ];
 
-const entryTypeSchema: Yup.ObjectSchema<EntryTypeFormValues> = Yup.object().shape({
-    type: Yup.object()
-        .shape({
-            value: Yup.string()
-                .required()
-                .oneOf([
-                    EntryClassRequestTypeEnum.Artifact,
-                    EntryClassRequestTypeEnum.Entity,
-                ]),
-            label: Yup.string().required(),
+const entryTypeSchema = z.object({
+    type: z
+        .object({
+            value: z.enum([
+                EntryClassRequestTypeEnum.Artifact,
+                EntryClassRequestTypeEnum.Entity,
+            ]),
+            label: z.string().min(1),
         })
         .nullable()
-        .required('Class Type is required'),
-    subtype: Yup.string().required('Subtype is required'),
-    description: Yup.string().default(''),
-    prefix: Yup.string().default(''),
-    typeFormat: Yup.object()
-        .shape({ value: Yup.string().required(), label: Yup.string().required() })
+        .refine((val) => val !== null, {
+            error: 'Class Type is required',
+        }),
+    subtype: z.string().min(1, { error: 'Subtype is required' }),
+    description: z.string().default(''),
+    prefix: z.string().default(''),
+    typeFormat: z
+        .object({ value: z.string().min(1), label: z.string().min(1) })
         .nullable()
         .default(null),
-    regex: Yup.string().default(''),
-    options: Yup.string().default(''),
-    generativeRegex: Yup.string().default(''),
-    color: Yup.string().required('Color is required'),
-    children: Yup.array().default([]),
+    regex: z.string().default(''),
+    options: z.string().default(''),
+    generativeRegex: z.string().default(''),
+    color: z.string().min(1, { error: 'Color is required' }),
+    children: z.array(z.object({ value: z.string(), label: z.string() })).default([]),
 });
 
-export default function EntryTypeForm({
-    id = null,
-    isEdit = false,
-    onAdd,
-}: EntryTypeFormProps) {
+type EntryTypeFormValues = z.infer<typeof entryTypeSchema>;
+
+export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) {
     const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
@@ -114,7 +111,7 @@ export default function EntryTypeForm({
         control,
         formState: { errors, isSubmitting },
     } = useForm<EntryTypeFormValues>({
-        resolver: yupResolver(entryTypeSchema),
+        resolver: zodResolver(entryTypeSchema) as any,
         defaultValues: {
             type: typeOptions[0],
             subtype: '',
@@ -129,104 +126,138 @@ export default function EntryTypeForm({
         },
     });
 
+    // Fetch entry type details in edit mode
+    const {
+        data: entryTypeData,
+        isPending,
+        isPaused,
+    } = useQuery({
+        queryKey: queryKeys.entryTypes.detail(id!),
+        queryFn: () => entriesApi.entryClassesRetrieve({ classSubtype: id! }),
+        enabled: !!id,
+        meta: {
+            showErrorToast: true,
+            errorMessage: 'Failed to fetch entry type',
+        },
+    });
+
+    const fetchEntryTypesMutation = useMutation({
+        mutationFn: async () => {
+            const entries = await entriesApi.entryClassesList({});
+            return entries.map((entry) => ({
+                value: entry.subtype,
+                label: entry.subtype,
+            }));
+        },
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
     // Fetch all entry types for the Children selector
     const fetchEntryTypes = async () => {
         try {
-            const entries = await entriesApi.entryClassesList({});
-            setEntryTypes(
-                entries.map((entry) => ({
-                    value: entry.subtype,
-                    label: entry.subtype,
-                })),
-            );
+            const entryTypes = await fetchEntryTypesMutation.mutateAsync();
+            setEntryTypes(entryTypes);
         } catch (err) {
-            console.error('Failed to fetch entry types:', err);
+            // Error already handled
         }
     };
 
     // Fetch entry type details in edit mode
     useEffect(() => {
         const loadData = async () => {
+            setIsLoading(true);
             await fetchEntryTypes();
-
-            if (isEdit && id) {
-                try {
-                    const entrytype = await entriesApi.entryClassesRetrieve({
-                        classSubtype: id,
-                    });
-                    reset({
-                        type:
-                            typeOptions.find((o) => o.value === entrytype.type) ||
-                            typeOptions[0],
-                        subtype: entrytype.subtype,
-                        description: entrytype.description || '',
-                        prefix: entrytype.prefix || '',
-                        color: entrytype.color || colorGenerator.nextHexColor(),
-                        generativeRegex: entrytype.generativeRegex || '',
-                        typeFormat:
-                            formatOptions.find((o) => o.value === entrytype.format) ||
-                            formatOptions[0],
-                        regex: entrytype.regex || '',
-                        options: entrytype.options || '',
-                        children:
-                            entrytype.childrenDetail?.map((x: any) => ({
-                                value: x.subtype,
-                                label: x.subtype,
-                            })) || [],
-                    });
-                } catch (err) {
-                    console.error('Failed to fetch entry type:', err);
-                }
+            if (entryTypeData) {
+                reset({
+                    type:
+                        typeOptions.find((o) => o.value === entryTypeData.type) ||
+                        typeOptions[0],
+                    subtype: entryTypeData.subtype,
+                    description: entryTypeData.description || '',
+                    prefix: entryTypeData.prefix || '',
+                    color: entryTypeData.color || colorGenerator.nextHexColor(),
+                    generativeRegex: entryTypeData.generativeRegex || '',
+                    typeFormat:
+                        formatOptions.find((o) => o.value === entryTypeData.format) ||
+                        formatOptions[0],
+                    regex: entryTypeData.regex || '',
+                    options: entryTypeData.options || '',
+                    children:
+                        entryTypeData.childrenDetail?.map((x: any) => ({
+                            value: x.subtype,
+                            label: x.subtype,
+                        })) || [],
+                });
             }
             setIsLoading(false);
         };
 
         loadData();
-    }, [isEdit, id, entriesApi, colorGenerator, reset]);
+    }, [id, entryTypeData, colorGenerator, reset]);
+
+    const updateEntryTypeMutation = useMutation({
+        mutationFn: async (payload: EntryClassRequest) => {
+            return await entriesApi.entryClassesUpdate({
+                classSubtype: id!,
+                entryClassRequest: payload,
+            });
+        },
+        meta: {
+            successMessage: 'Entry type updated successfully!',
+            errorMessage: 'Failed to update entry type',
+        },
+        onSuccess: (result) => {
+            if (onAdd) onAdd(result);
+        },
+        onError: () => {
+            toast.error('Failed to update entry type');
+        },
+    });
 
     const onSubmit = async (data: EntryTypeFormValues) => {
-        try {
-            const payload: EntryClassRequest = {
-                generativeRegex: data.generativeRegex,
-                format:
-                    data.typeFormat?.value === 'any'
-                        ? null
-                        : (data.typeFormat?.value ?? null),
-                type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
-                subtype: data.subtype,
-                description: data.description,
-                prefix: data.prefix,
-                color: data.color,
-                regex: data.regex,
-                options: data.options,
-                children: data.children?.map((child) => child.value) ?? [],
-            };
-
-            let result: EntryClass;
-            if (isEdit && id) {
-                result = await entriesApi.entryClassesUpdate({
-                    classSubtype: id,
-                    entryClassRequest: payload,
-                });
-                toast.success('Entry type updated successfully!');
-            } else {
-                result = await entriesApi.entryClassesCreate({
-                    entryClassRequest: payload,
-                });
-                toast.success('Entry type created successfully!');
-            }
-
-            if (!isEdit && onAdd) onAdd(result);
-        } catch (error) {
-            toast.error(`Failed to ${isEdit ? 'update' : 'create'} entry type`);
-        }
+        const payload: EntryClassRequest = {
+            generativeRegex: data.generativeRegex,
+            format:
+                data.typeFormat?.value === 'any'
+                    ? null
+                    : (data.typeFormat?.value ?? null),
+            type: data.type?.value || EntryClassRequestTypeEnum.Artifact,
+            subtype: data.subtype,
+            description: data.description,
+            prefix: data.prefix,
+            color: data.color,
+            regex: data.regex,
+            options: data.options,
+            children: data.children?.map((child) => child.value) ?? [],
+        };
+        updateEntryTypeMutation.mutate(payload);
     };
+
+    if (isPending && !isPaused) {
+        return (
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='animate-pulse text-foreground'>Loading...</div>
+            </div>
+        );
+    }
+
+    if (isPaused) {
+        return (
+            <div className='flex items-center justify-center min-h-screen'>
+                <div className='w-full max-w-md p-4'>
+                    <OfflineIndicator />
+                </div>
+            </div>
+        );
+    }
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
     const watchColor = watch('color');
-    const isEntity = watchType?.value === 'entity';
-    const isArtifact = watchType?.value === 'artifact';
+    const isArtifact = watchType?.value === EntryClassRequestTypeEnum.Artifact;
+    const isEntity = watchType?.value === EntryClassRequestTypeEnum.Entity;
     const isOptions = watchTypeFormat?.value === 'options';
     const isRegex = watchTypeFormat?.value === 'regex';
 
@@ -242,33 +273,19 @@ export default function EntryTypeForm({
         );
     }
 
-    return (
-        <div className='w-full h-full'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>
-                        {isEdit ? 'Edit Entry Type' : 'New Entry Type'}
-                    </h2>
-                    <p className='text-muted-foreground'>
-                        {isEdit ? 'Modify entry class definition' : 'Create new entry class'}
-                    </p>
-                </div>
-            </div>
+    const pageTitle = entryTypeData?.subtype || id || 'Entry Type';
+    const pageDescription =
+        entryTypeData?.description || 'Edit entry type configuration';
 
+    return (
+        <div className='w-full h-full flex flex-col'>
+            <PageHeader title={pageTitle} description={pageDescription} />
             {/* Content Area */}
-            <div className='p-5'>
+            <div className='p-5 flex-1 overflow-auto'>
                 <div className='w-full'>
                     <form onSubmit={handleFormSubmit(onSubmit)}>
                         {/* Basic Section */}
                         <section id='basic' className='pb-8'>
-                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                Basic Information
-                            </h2>
-                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Core properties of the entry type
-                            </p>
-
                             <div className='space-y-4'>
                                 <SettingsCard>
                                     <SettingsField
@@ -282,14 +299,42 @@ export default function EntryTypeForm({
                                             name='type'
                                             control={control}
                                             render={({ field }) => (
-                                                <ShadcnSelect
-                                                    staticOptions={typeOptions}
-                                                    value={field.value}
-                                                    placeholder='Select type'
-                                                    onChange={(newValue) => {
-                                                        field.onChange(newValue);
+                                                <Select
+                                                    value={field.value?.value || ''}
+                                                    onValueChange={(value) => {
+                                                        const option = typeOptions.find(
+                                                            (opt) =>
+                                                                opt.value === value,
+                                                        );
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
+                                                                : null,
+                                                        );
                                                     }}
-                                                />
+                                                >
+                                                    <SelectTrigger
+                                                        className='w-72'
+                                                        aria-invalid={Boolean(
+                                                            errors.type,
+                                                        )}
+                                                    >
+                                                        <SelectValue placeholder='Select type' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {typeOptions.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             )}
                                         />
                                     </SettingsField>
@@ -297,7 +342,7 @@ export default function EntryTypeForm({
                                     <Separator />
 
                                     <SettingsField
-                                        label={isEdit ? 'Name' : 'Subtype'}
+                                        label='Name'
                                         description='Unique identifier for this entry class'
                                         {...register('subtype')}
                                         error={errors.subtype}
@@ -319,10 +364,12 @@ export default function EntryTypeForm({
                                     <Separator />
 
                                     <div className='py-2'>
-                                        <label className='text-sm text-muted-foreground block mb-0.5'>
+                                        <Label className='text-sm text-muted-foreground block mb-0.5'>
                                             Color
-                                            <span className='text-destructive ml-1'>*</span>
-                                        </label>
+                                            <span className='text-destructive ml-1'>
+                                                *
+                                            </span>
+                                        </Label>
                                         <p className='text-sm text-muted-foreground mb-2'>
                                             Display color for this entry type
                                         </p>
@@ -331,9 +378,9 @@ export default function EntryTypeForm({
                                                 name='color'
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <input
+                                                    <Input
                                                         type='text'
-                                                        className='cradle-input w-full text-sm h-10 rounded-full'
+                                                        className='w-full text-sm h-10 rounded-full'
                                                         {...field}
                                                     />
                                                 )}
@@ -446,13 +493,6 @@ export default function EntryTypeForm({
                             id='advanced'
                             className='border-t border-white/5 pt-5 pb-8'
                         >
-                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                Advanced Settings
-                            </h2>
-                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Additional configuration and validation
-                            </p>
-
                             <div className='space-y-4'>
                                 <SettingsCard>
                                     {isEntity && (
@@ -477,15 +517,53 @@ export default function EntryTypeForm({
                                                     name='typeFormat'
                                                     control={control}
                                                     render={({ field }) => (
-                                                        <ShadcnSelect
-                                                            staticOptions={formatOptions}
-                                                            value={field.value}
-                                                            placeholder='Select format'
-                                                            isClearable
-                                                            onChange={(newValue) => {
-                                                                field.onChange(newValue);
+                                                        <Select
+                                                            value={
+                                                                field.value?.value || ''
+                                                            }
+                                                            onValueChange={(value) => {
+                                                                const option =
+                                                                    formatOptions.find(
+                                                                        (opt) =>
+                                                                            opt.value ===
+                                                                            value,
+                                                                    );
+                                                                field.onChange(
+                                                                    option
+                                                                        ? {
+                                                                              value: option.value,
+                                                                              label: option.label,
+                                                                          }
+                                                                        : null,
+                                                                );
                                                             }}
-                                                        />
+                                                        >
+                                                            <SelectTrigger
+                                                                aria-invalid={Boolean(
+                                                                    errors.typeFormat,
+                                                                )}
+                                                            >
+                                                                <SelectValue placeholder='Select format' />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {formatOptions.map(
+                                                                    (option) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                option.value
+                                                                            }
+                                                                            value={
+                                                                                option.value
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                option.label
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
                                                     )}
                                                 />
                                             </SettingsField>
@@ -537,14 +615,13 @@ export default function EntryTypeForm({
                                         </>
                                     )}
 
-                                    {((isEntity && isArtifact === false) || isArtifact) && (
-                                        <Separator />
-                                    )}
+                                    {((isEntity && isArtifact === false) ||
+                                        isArtifact) && <Separator />}
 
                                     <div className='py-2'>
-                                        <label className='text-sm text-muted-foreground block mb-0.5'>
+                                        <Label className='text-sm text-muted-foreground block mb-0.5'>
                                             Children
-                                        </label>
+                                        </Label>
                                         <p className='text-sm text-muted-foreground mb-2'>
                                             Entry types that can be children of this
                                             type
@@ -553,14 +630,30 @@ export default function EntryTypeForm({
                                             name='children'
                                             control={control}
                                             render={({ field }) => (
-                                                <ShadcnSelect
-                                                    staticOptions={entryTypes}
-                                                    values={field.value || []}
+                                                <MultipleSelector
+                                                    value={
+                                                        (field.value?.map((c) => ({
+                                                            value: c.value,
+                                                            label: c.label,
+                                                        })) || []) as Option[]
+                                                    }
+                                                    defaultOptions={
+                                                        entryTypes as Option[]
+                                                    }
                                                     placeholder='Select child entry types...'
-                                                    isMulti
-                                                    onMultiChange={(newValues) => {
-                                                        field.onChange(newValues);
+                                                    onChange={(options) => {
+                                                        field.onChange(
+                                                            options.map((o) => ({
+                                                                value: o.value,
+                                                                label: o.label,
+                                                            })),
+                                                        );
                                                     }}
+                                                    emptyIndicator={
+                                                        <p className='text-center text-sm'>
+                                                            No entry types found
+                                                        </p>
+                                                    }
                                                 />
                                             )}
                                         />
@@ -581,7 +674,7 @@ export default function EntryTypeForm({
                                 variant='default'
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Create Entry Type'}
+                                {isSubmitting ? 'Saving...' : 'Save Changes'}
                             </Button>
                         </div>
                     </form>
