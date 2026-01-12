@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     "mail.apps.MailConfig",
     "core.apps.CoreConfig",
     "publish.apps.PublishConfig",
-    "internal.apps.InternalConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -142,11 +141,6 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler",
 }
 
-COLLAB_HMAC_SECRET = os.environ.get("COLLAB_HMAC_SECRET", "")
-COLLAB_HMAC_MAX_SKEW_SECONDS = int(
-    os.environ.get("COLLAB_HMAC_MAX_SKEW_SECONDS", "60")
-)
-
 SPECTACULAR_SETTINGS = {
     "TITLE": "CRADLE",
     "DESCRIPTION": "Threat Intelligence Knowledge Management",
@@ -192,6 +186,7 @@ def build_oauth_methods(oauth_providers: dict) -> list[dict]:
             method["authorization_url"] = config["authorization_url"]
         methods.append(method)
     return methods
+
 
 ROOT_URLCONF = "cradle.urls"
 

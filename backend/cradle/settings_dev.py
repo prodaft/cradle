@@ -89,8 +89,6 @@ DEFAULT_SETTINGS = {
     },
 }
 
-COLLAB_HMAC_SECRET = "dev-collab-secret"
-
 OAUTH_PROVIDERS = {
     "keycloak": {
         "issuer": "http://localhost:8081/realms/cradle",

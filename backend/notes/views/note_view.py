@@ -39,10 +39,11 @@ from ..exceptions import (
 from ..filters import NoteFilter
 from ..models import Note
 from ..serializers import (
-    FleetingNoteSerializer,
     FileReferenceListSerializer,
     FileReferenceWithNoteSerializer,
+    FleetingNoteSerializer,
     NoteCreateSerializer,
+    NoteEditSerializer,
     NoteListSerializer,
     NoteRetrieveSerializer,
 )
@@ -148,8 +149,8 @@ from ..serializers import (
     ),
     post=extend_schema(
         operation_id="notes_create",
-        summary="Create fleeting note",
-        description="Creates a new fleeting note for the authenticated user.",
+        summary="Create note",
+        description="Creates a new note for the authenticated user.",
         request=FleetingNoteSerializer,
         responses={
             200: FleetingNoteSerializer,
@@ -363,6 +364,29 @@ class NoteList(APIView):
             **get_common_error_responses(),
         },
     ),
+    post=extend_schema(
+        operation_id="notes_update",
+        summary="Update note",
+        description="Updates an existing note. User must have read-write access to referenced entities.",  # noqa: E501
+        request=NoteEditSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="note_id",
+                type=UUID,
+                location=OpenApiParameter.PATH,
+                description="ID of the note to update. Must be a valid UUID",
+            )
+        ],
+        responses={
+            200: NoteRetrieveSerializer,
+            **get_validation_error_response(),
+            **get_error_responses(
+                NotesErrorCodes.NOTE_DOES_NOT_EXIST,
+                NotesErrorCodes.CANNOT_EDIT_NOTE,
+            ),
+            **get_common_error_responses(),
+        },
+    ),
     delete=extend_schema(
         operation_id="notes_delete",
         summary="Delete note",
@@ -413,6 +437,32 @@ class NoteDetail(APIView):
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
+    def post(self, request: Request, note_id: UUID) -> Response:
+        try:
+            note: Note = Note.objects.non_fleeting().get(id=note_id)
+        except Note.DoesNotExist:
+            raise NoteDoesNotExistException(detail="Note was not found.")
+
+        user = cast(CradleUser, request.user)
+
+        if not Access.objects.has_access_to_entities(
+            user,
+            set(note.entries.filter(entry_class__type=EntryType.ENTITY)),
+            {AccessType.READ, AccessType.READ_WRITE},
+        ):
+            raise NoteDoesNotExistException(detail="Note was not found.")
+
+        if not user.is_cradle_admin and note.author != user:
+            raise CannotEditNoteException(detail="You cannot edit this note")
+
+        serializer = NoteEditSerializer(
+            note, data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+        note = serializer.save()
+        json_note = NoteRetrieveSerializer(note, many=False).data
+        return Response(json_note, status=status.HTTP_200_OK)
+
     def delete(self, request: Request, note_id: UUID) -> Response:
         from entries.tasks import refresh_edges_materialized_view
 
@@ -433,7 +483,9 @@ class NoteDetail(APIView):
                 raise NoAccessToEntriesException(
                     detail="User does not have Read-Write access to all referenced entities",
                     links=list(
-                        note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)
+                        note_to_delete.entries.filter(
+                            entry_class__type=EntryType.ENTITY
+                        )
                     ),
                 )
         note_to_delete.delete()
