@@ -40,8 +40,12 @@ export function RouterDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
-                    {description && (
+                    {description ? (
                         <DialogDescription>{description}</DialogDescription>
+                    ) : (
+                        <DialogDescription className='sr-only'>
+                            Dialog content
+                        </DialogDescription>
                     )}
                 </DialogHeader>
                 <div className='mt-4'>{children}</div>

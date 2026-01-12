@@ -97,10 +97,14 @@ export default function ApiKeyGenerateModal({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Generate API Key</DialogTitle>
-                    {!apiKey && (
+                    {!apiKey ? (
                         <DialogDescription>
                             Generating a new API key will invalidate your current key.
                             Any applications using the old key will stop working.
+                        </DialogDescription>
+                    ) : (
+                        <DialogDescription className='sr-only'>
+                            API key has been generated. Copy it now as you won't be able to see it again.
                         </DialogDescription>
                     )}
                 </DialogHeader>

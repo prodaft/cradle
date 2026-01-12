@@ -121,6 +121,9 @@ export default function TwoFactorSetupModal({
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Setting up Two-Factor Auth</DialogTitle>
+                        <DialogDescription className='sr-only'>
+                            Initializing two-factor authentication setup
+                        </DialogDescription>
                     </DialogHeader>
                     <div className='flex justify-center py-12'>
                         <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary'></div>
@@ -137,6 +140,11 @@ export default function TwoFactorSetupModal({
                     <DialogTitle>
                         {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
                     </DialogTitle>
+                    <DialogDescription>
+                        {isDisabling
+                            ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
+                            : 'Enter the 6-digit code from your authenticator app'}
+                    </DialogDescription>
                 </DialogHeader>
 
                 {!isDisabling && (
@@ -170,11 +178,6 @@ export default function TwoFactorSetupModal({
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className='space-y-5'>
-                    <DialogDescription>
-                        {isDisabling
-                            ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
-                            : 'Enter the 6-digit code from your authenticator app'}
-                    </DialogDescription>
                     <Field>
                         <InputOTP
                             maxLength={6}

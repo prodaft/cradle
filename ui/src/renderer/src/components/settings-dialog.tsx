@@ -29,6 +29,7 @@ import {
     Dialog,
     DialogContent,
     DialogDescription,
+    DialogHeader,
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
@@ -69,10 +70,12 @@ export function SettingsDialog() {
                 <Button size='sm'>Open Dialog</Button>
             </DialogTrigger>
             <DialogContent className='overflow-hidden p-0 md:max-h-[500px] md:max-w-[700px] lg:max-w-[800px]'>
-                <DialogTitle className='sr-only'>Settings</DialogTitle>
-                <DialogDescription className='sr-only'>
-                    Customize your settings here.
-                </DialogDescription>
+                <DialogHeader>
+                    <DialogTitle className='sr-only'>Settings</DialogTitle>
+                    <DialogDescription className='sr-only'>
+                        Customize your settings here.
+                    </DialogDescription>
+                </DialogHeader>
                 <SidebarProvider className='items-start'>
                     <Sidebar collapsible='none' className='hidden md:flex'>
                         <SidebarContent>

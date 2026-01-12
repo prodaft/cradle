@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -101,16 +102,24 @@ export default function MarkdownEditorModal({
             <DialogContent>
                 <DialogHeader>
                     {titleEditable ? (
-                        <Input
-                            type='text'
-                            value={noteTitle}
-                            onChange={handleTitleChange}
-                            placeholder='Enter title'
-                            className='text-lg font-semibold text-foreground tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-muted-foreground shadow-none h-auto'
-                        />
+                        <>
+                            <DialogTitle className='sr-only'>
+                                {noteTitle || 'Note Editor'}
+                            </DialogTitle>
+                            <Input
+                                type='text'
+                                value={noteTitle}
+                                onChange={handleTitleChange}
+                                placeholder='Enter title'
+                                className='text-lg font-semibold text-foreground tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-muted-foreground shadow-none h-auto'
+                            />
+                        </>
                     ) : (
                         <DialogTitle>{noteTitle}</DialogTitle>
                     )}
+                    <DialogDescription className='sr-only'>
+                        Edit markdown content for this note
+                    </DialogDescription>
                 </DialogHeader>
 
                 {/* Editor Section */}
