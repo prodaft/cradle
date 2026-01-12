@@ -439,7 +439,7 @@ class NoteDetail(APIView):
 
     def post(self, request: Request, note_id: UUID) -> Response:
         try:
-            note: Note = Note.objects.non_fleeting().get(id=note_id)
+            note: Note = Note.objects.get(id=note_id)
         except Note.DoesNotExist:
             raise NoteDoesNotExistException(detail="Note was not found.")
 
@@ -458,6 +458,7 @@ class NoteDetail(APIView):
         serializer = NoteEditSerializer(
             note, data=request.data, context={"request": request}
         )
+
         serializer.is_valid(raise_exception=True)
         note = serializer.save()
         json_note = NoteRetrieveSerializer(note, many=False).data

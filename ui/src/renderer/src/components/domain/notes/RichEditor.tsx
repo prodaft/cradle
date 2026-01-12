@@ -52,7 +52,7 @@ import {
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
-import { vim, Vim } from '@replit/codemirror-vim';
+import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
 import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -396,6 +396,17 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             ]),
             EditorState.readOnly.of(!enableEditing),
             EditorView.editable.of(enableEditing),
+            keymap.of([
+                {
+                    key: 'Ctrl-s',
+                    run: (cm: EditorView) => {
+                        if (!enableEditing) return false;
+                        setMarkdownContent(cm.state.doc.toString());
+                        saveNote(true);
+                        return true;
+                    },
+                },
+            ]),
             autocompletion(),
             ...editorUtils.autocomplete(),
             editorUtils.lint(),
@@ -419,7 +430,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         }
 
         if (profile?.vimMode) {
-            Vim.defineEx('write', 'w', () => true);
+            Vim.defineEx('write', 'w', (cm: CodeMirror) => {
+                try {
+                    setMarkdownContent(cm.cm6.state.doc.toString());
+                    saveNote(true);
+                } catch (error) {
+                    toast.error('Failed to save note. Please try again with Ctrl-S.');
+                    logger.error('Failed to save note:', error);
+                }
+                return true;
+            });
             exts = exts.concat(vim());
         }
 
@@ -434,6 +454,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         enableEditing,
         cradleTheme,
         setMarkdownContent,
+        saveNote,
         codeBlockCopyExtension,
         pasteHandler,
         referenceMappings,

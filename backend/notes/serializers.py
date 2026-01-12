@@ -11,8 +11,8 @@ from entries.serializers import (
     EntryTypesCompressedTreeSerializer,
 )
 from file_transfer.models import FileReference
-from management.settings import cradle_settings
 from file_transfer.serializers import FileReferenceSerializer
+from management.settings import cradle_settings
 from user.models import CradleUser
 from user.serializers import EssentialUserRetrieveSerializer, UserRetrieveSerializer
 
@@ -95,12 +95,14 @@ class NoteEditSerializer(serializers.ModelSerializer):
 
     def update(self, instance: Note, validated_data: dict[str, Any]):
         user = self.context["request"].user
-        content = validated_data.pop("content", None)
 
-        if content is not None:
-            TaskScheduler(user, content=content, **validated_data).run_pipeline(
-                instance
-            )
+        if not instance.fleeting:
+            content = validated_data.pop("content", None)
+
+            if content is not None:
+                TaskScheduler(user, content=content, **validated_data).run_pipeline(
+                    instance
+                )
 
         return super().update(instance, validated_data)
 
@@ -324,7 +326,7 @@ class NoteListSerializer:
             self.truncate == -1
             or len(note.content) - note.content_offset <= self.truncate
         ):
-            return note.content[note.content_offset:]
+            return note.content[note.content_offset :]
         return (
             note.content[note.content_offset : note.content_offset + self.truncate]
             + "..."

@@ -40,6 +40,7 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { Book, EditPencil } from 'iconoir-react';
+import { debounce } from 'lodash';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -321,6 +322,7 @@ export default function NoteViewer() {
 
         logger.info('NoteViewer - Note loaded successfully', { noteData });
         setNote(noteData);
+        setIsFleeting(Boolean(noteData.fleeting));
         setMarkdownContent(noteData.content);
         setInitialMarkdown(noteData.content);
         setFileData(noteData.files || []);
@@ -493,6 +495,30 @@ export default function NoteViewer() {
         ],
         [handleFind, handleReplace, handleSaveNote],
     );
+
+    const debouncedSaveNote = useMemo(
+        () => debounce(handleSaveNote, 1500),
+        [handleSaveNote],
+    );
+
+    // Auto-save when content changes
+    useEffect(() => {
+        if (!markdownContent || markdownContent === initialMarkdown) {
+            // Clear any pending debounced calls if content matches initial
+            debouncedSaveNote.cancel();
+            return;
+        }
+
+        // Update unsaved status after a short delay
+        setHasUnsavedChanges(true);
+        // Trigger save after a longer delay
+        debouncedSaveNote();
+
+        // Cleanup function to cancel pending debounced calls
+        return () => {
+            debouncedSaveNote.cancel();
+        };
+    }, [markdownContent, initialMarkdown, debouncedSaveNote]);
 
     useEffect(() => {
         localStorage.setItem('richEditor', richEditor.toString());
