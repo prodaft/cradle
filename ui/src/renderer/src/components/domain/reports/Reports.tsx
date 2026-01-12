@@ -12,7 +12,6 @@ import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import PageHeader from '@components/base/PageHeader';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
@@ -29,7 +28,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface ColumnFilters {
@@ -200,6 +199,35 @@ export default function Reports() {
             replace: true,
         });
     };
+
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+                const searchAny = search as any;
+                const newSearch: any = {
+                    ...searchAny,
+                    reports_page: 1,
+                    reports_pagesize: newPageSize,
+                };
+                router.navigate({
+                    to: location.pathname as any,
+                    search: newSearch as any,
+                    replace: true,
+                });
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                handlePageChange(newPage);
+            }
+        },
+        [page, pageSize, search, router, location.pathname, handlePageChange],
+    );
 
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
@@ -773,29 +801,11 @@ export default function Reports() {
                     ]}
                     itemLabel='report'
                     manualSorting={true}
-                />
-
-                <PaginationWrapper
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    pageSize={pageSize}
-                    onPageSizeChange={(newSize) => {
-                        const searchAny = search as any;
-                        const newSearch: any = {
-                            ...searchAny,
-                            reports_page: 1,
-                            reports_pagesize: newSize,
-                        };
-                        router.navigate({
-                            to: location.pathname as any,
-                            search: newSearch as any,
-                            replace: true,
-                        });
-                    }}
-                    disabled={reports.length === 0}
-                    selectedCount={selectedReports.length}
-                    totalRows={totalCount}
+                    pageCount={totalPages}
+                    initialPageIndex={page - 1}
+                    initialPageSize={pageSize}
+                    onPaginationChange={handlePaginationChange}
+                    showPagination={true}
                 />
             </div>
             <ConfirmDeletionModal

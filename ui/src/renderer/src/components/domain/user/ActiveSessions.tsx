@@ -1,5 +1,4 @@
 import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
-import PaginationWrapper from '@/components/base/Pagination/PaginationWrapper';
 import TableActionsButton from '@/components/base/TableActionsButton';
 import ActionConfirmationModal from '@/components/modals/base/ActionConfirmationModal';
 import { Badge } from '@/components/ui/badge';
@@ -12,7 +11,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Trash } from 'iconoir-react/regular';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 interface UserSession {
@@ -337,6 +336,23 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
     }, [(search as any)?.sessions_page, (search as any)?.sessions_pagesize]);
 
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                handlePageSizeChange(newPageSize);
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                handlePageChange(newPage);
+            }
+        },
+        [page, pageSize, handlePageChange, handlePageSizeChange],
+    );
+
     const columns = useMemo<ColumnDef<UserSession>[]>(
         () => [
             {
@@ -515,17 +531,13 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 onSortingChange={handleSortingChange}
                 manualPagination={true}
                 manualSorting={true}
+                pageCount={totalPages}
+                initialPageIndex={page - 1}
+                initialPageSize={pageSize}
+                onPaginationChange={handlePaginationChange}
+                showPagination={true}
                 bulkActions={bulkActions}
                 itemLabel='session'
-            />
-            <PaginationWrapper
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                pageSize={pageSize}
-                onPageSizeChange={handlePageSizeChange}
-                selectedCount={selectedSessions.length}
-                totalRows={filteredSessions.length}
             />
             {revokeSessionId !== null &&
                 (() => {

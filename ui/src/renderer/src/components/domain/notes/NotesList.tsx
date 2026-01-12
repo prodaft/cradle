@@ -33,7 +33,6 @@ import {
     ActionBarSearch,
 } from '../../base/ActionBar/ActionBar';
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
-import PaginationWrapper from '../../base/Pagination/PaginationWrapper';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '../../base/TableActionsButton';
@@ -474,6 +473,35 @@ export default function NotesList({
         });
     };
 
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+                const searchAny = search as any;
+                const newSearch: any = {
+                    ...searchAny,
+                    notes_page: 1,
+                    notes_pagesize: newPageSize,
+                };
+                router.navigate({
+                    to: location.pathname as any,
+                    search: newSearch as any,
+                    replace: true,
+                });
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                handlePageChange(newPage);
+            }
+        },
+        [page, pageSize, search, router, location.pathname, handlePageChange],
+    );
+
     // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: (noteId: string) => notesApi.notesDelete({ noteId }),
@@ -912,6 +940,11 @@ export default function NotesList({
                     onSortingChange={handleSortingChange}
                     manualPagination={true}
                     manualSorting={true}
+                    pageCount={totalPages}
+                    initialPageIndex={page - 1}
+                    initialPageSize={pageSize}
+                    onPaginationChange={handlePaginationChange}
+                    showPagination={true}
                     onRowClick={(note) =>
                         router.navigate({ to: `/notes/${note.id}` as any })
                     }
@@ -987,31 +1020,6 @@ export default function NotesList({
                         },
                     ]}
                     itemLabel='note'
-                />
-
-                <PaginationWrapper
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    pageSize={pageSize}
-                    onPageSizeChange={(newSize) => {
-                        setPageSize(newSize);
-                        setPage(1);
-                        const searchAny = search as any;
-                        const newSearch: any = {
-                            ...searchAny,
-                            notes_page: 1,
-                            notes_pagesize: newSize,
-                        };
-                        router.navigate({
-                            to: location.pathname as any,
-                            search: newSearch as any,
-                            replace: true,
-                        });
-                    }}
-                    disabled={notes.length === 0}
-                    selectedCount={selectedNotes.length}
-                    totalRows={totalCount}
                 />
             </div>
             <ConfirmDeletionModal

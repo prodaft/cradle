@@ -1,4 +1,4 @@
-import CradleLoading from '@/components/base/Loading/CradleLoading';
+import Loading from '@/components/base/Loading/Loading';
 import { AuthProvider } from '@/components/domain/auth/AuthProvider';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -18,7 +18,7 @@ export const Route = createRootRoute({
                         <Toaster />
                         <TooltipProvider>
                             <div id='root-content'>
-                                <Suspense fallback={<CradleLoading />}>
+                                <Suspense fallback={<Loading logo={true} />}>
                                     <Outlet />
                                 </Suspense>
                             </div>

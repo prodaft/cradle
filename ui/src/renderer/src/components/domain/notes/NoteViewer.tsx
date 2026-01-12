@@ -16,6 +16,7 @@ import {
     ResizablePanelGroup,
 } from '@/components/ui/resizable';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -562,7 +563,7 @@ export default function NoteViewer() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center h-full w-full py-8'>
-                <div className='animate-spin rounded-full h-16 w-16 border-b-2 border-foreground' />
+                <Spinner className='size-16' />
             </div>
         );
     }

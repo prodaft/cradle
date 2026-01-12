@@ -12,7 +12,6 @@ import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import TableActionsButton from '@components/base/TableActionsButton';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileReferenceWithNote } from '@services/cradle/models';
@@ -21,7 +20,7 @@ import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { Download, RefreshCircle, Trash, WarningCircle } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
 
@@ -381,6 +380,42 @@ export default function FilesList({
         [router, location.pathname, search],
     );
 
+    const handlePageSizeChange = useCallback(
+        (newSize: number) => {
+            setPageSize(newSize);
+            setPage(1);
+            const searchAny = search as any;
+            const newSearch: any = {
+                ...searchAny,
+                files_page: 1,
+                files_pagesize: newSize,
+            };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch as any,
+                replace: true,
+            });
+        },
+        [router, location.pathname, search],
+    );
+
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                handlePageSizeChange(newPageSize);
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                handlePageChange(newPage);
+            }
+        },
+        [page, pageSize, handlePageChange, handlePageSizeChange],
+    );
+
     // Filter files based on status and filteredFiles
     const filteredData = useMemo(() => {
         return files.filter((file) => {
@@ -618,25 +653,6 @@ export default function FilesList({
         setSelectedFiles(selectedIds);
     }, []);
 
-    const handlePageSizeChange = useCallback(
-        (newSize: number) => {
-            setPageSize(newSize);
-            setPage(1);
-            const searchAny = search as any;
-            const newSearch: any = {
-                ...searchAny,
-                files_page: 1,
-                files_pagesize: newSize,
-            };
-            router.navigate({
-                to: location.pathname as any,
-                search: newSearch as any,
-                replace: true,
-            });
-        },
-        [router, location.pathname, search],
-    );
-
     return (
         <>
             <div className='flex flex-col space-y-4'>
@@ -690,6 +706,11 @@ export default function FilesList({
                         onSortingChange={handleSortingChange}
                         manualPagination={true}
                         manualSorting={true}
+                        pageCount={totalPages}
+                        initialPageIndex={page - 1}
+                        initialPageSize={pageSize}
+                        onPaginationChange={handlePaginationChange}
+                        showPagination={true}
                         bulkActions={[
                             {
                                 id: 'download',
@@ -726,17 +747,6 @@ export default function FilesList({
                         itemLabel='file'
                     />
                 </div>
-
-                <PaginationWrapper
-                    currentPage={page}
-                    totalPages={totalPages}
-                    onPageChange={handlePageChange}
-                    pageSize={pageSize}
-                    onPageSizeChange={handlePageSizeChange}
-                    disabled={files.length === 0}
-                    selectedCount={selectedFiles.length}
-                    totalRows={files.length}
-                />
             </div>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}

@@ -11,7 +11,7 @@ import useApi from '@/hooks/api/useApi';
 import { useProfile } from '@/hooks/user/useProfile';
 import { UserRetrieve } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
-import { useParams, useRouter } from '@tanstack/react-router';
+import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
 import { ClockRotateRight, Lock, Trash, UserPlus } from 'iconoir-react/regular';
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -25,10 +25,14 @@ export default function UsersPage() {
     const params = useParams({ strict: false });
     const id = (params as any).id;
     const router = useRouter();
+    const location = useLocation();
+    const search = useSearch({ strict: false });
     const [users, setUsers] = useState<UserRetrieve[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [page, setPage] = useState((search as any)?.users_page || 1);
+    const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 10);
     const { usersApi } = useApi();
     const { isAdmin } = useProfile();
     const [addUserModalOpen, setAddUserModalOpen] = useState(false);
@@ -140,6 +144,61 @@ export default function UsersPage() {
                 user.role?.toLowerCase().includes(query),
         );
     }, [users, searchQuery]);
+
+    // Calculate total pages and paginate data
+    const totalPages = useMemo(() => {
+        return Math.max(1, Math.ceil(filteredUsers.length / pageSize));
+    }, [filteredUsers.length, pageSize]);
+
+    const paginatedUsers = useMemo(() => {
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+        return filteredUsers.slice(start, end);
+    }, [filteredUsers, page, pageSize]);
+
+    // Sync URL params to page state
+    useEffect(() => {
+        const pageFromParams = (search as any)?.users_page || 1;
+        const pageSizeFromParams = (search as any)?.users_pagesize || 10;
+        if (pageFromParams !== page) setPage(pageFromParams);
+        if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
+    }, [(search as any)?.users_page, (search as any)?.users_pagesize]);
+
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+                const searchAny = search as any;
+                const newSearch: any = {
+                    ...searchAny,
+                    users_page: 1,
+                    users_pagesize: newPageSize,
+                };
+                router.navigate({
+                    to: location.pathname as any,
+                    search: newSearch as any,
+                    replace: true,
+                });
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                setPage(newPage);
+                const searchAny = search as any;
+                const newSearch: any = { ...searchAny, users_page: newPage };
+                router.navigate({
+                    to: location.pathname as any,
+                    search: newSearch as any,
+                    replace: true,
+                });
+            }
+        },
+        [page, pageSize, search, router, location.pathname],
+    );
 
     const columns = useMemo<ColumnDef<UserRetrieve>[]>(
         () => [
@@ -293,13 +352,19 @@ export default function UsersPage() {
                     <div className='flex-1'>
                         <DataTable
                             columns={columns}
-                            data={filteredUsers}
+                            data={paginatedUsers}
                             loading={isLoading}
                             emptyMessage='No users found.'
                             enableRowSelection={true}
                             selectedRows={selectedUsers}
                             onRowSelectionChange={handleRowSelectionChange}
                             onRowClick={handleUserClick}
+                            manualPagination={true}
+                            pageCount={totalPages}
+                            initialPageIndex={page - 1}
+                            initialPageSize={pageSize}
+                            onPaginationChange={handlePaginationChange}
+                            showPagination={true}
                             bulkActions={[
                                 {
                                     id: 'delete',

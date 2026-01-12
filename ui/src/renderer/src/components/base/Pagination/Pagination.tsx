@@ -1,37 +1,48 @@
-import { Button } from '@/components/ui/button';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import React from 'react';
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import React from "react";
 
 /**
- * Pagination component props
+ * Pagination component props for standalone (non-table) use
  */
-export interface PaginationProps {
-    /** Current active page */
-    currentPage: number;
-    /** Total number of pages */
-    totalPages: number;
-    /** Callback when page changes */
-    onPageChange: (page: number) => void;
-    /** Maximum number of page buttons to show */
-    maxVisible?: number;
-    /** Current page size (items per page) */
-    pageSize?: number | null;
-    /** Callback when page size changes */
-    onPageSizeChange?: ((pageSize: number) => void) | null;
-    /** Number of selected rows */
-    selectedCount?: number;
-    /** Total number of rows */
-    totalRows?: number;
+export interface PaginationProps extends React.ComponentProps<"div"> {
+  /** Current active page */
+  currentPage: number;
+  /** Total number of pages */
+  totalPages: number;
+  /** Callback when page changes */
+  onPageChange: (page: number) => void;
+  /** Current page size (items per page) */
+  pageSize?: number;
+  /** Callback when page size changes */
+  onPageSizeChange?: (pageSize: number) => void;
+  /** Page size options */
+  pageSizeOptions?: number[];
+  /** Disabled state */
+  disabled?: boolean;
+  /** Number of selected rows */
+  selectedCount?: number;
+  /** Total number of rows */
+  totalRows?: number;
 }
 
 /**
- * Pagination component - Navigate between pages with first/prev/next/last controls
+ * Pagination component for standalone use (not with DataTable)
+ * Use DataTablePagination for DataTable components
  *
  * @example
  * ```tsx
@@ -45,180 +56,124 @@ export interface PaginationProps {
  * ```
  */
 export default function Pagination({
-    currentPage,
-    totalPages,
-    onPageChange,
-    maxVisible = 7,
-    pageSize = null,
-    onPageSizeChange = null,
-    selectedCount,
-    totalRows,
+  currentPage,
+  totalPages,
+  onPageChange,
+  pageSize,
+  onPageSizeChange,
+  pageSizeOptions = [10, 20, 30, 40, 50],
+  disabled = false,
+  className,
+  selectedCount,
+  totalRows,
+  ...props
 }: PaginationProps): React.ReactElement {
-    const handlePageSizeChange = (value: string) => {
-        if (!onPageSizeChange) return;
+  const handlePageSizeChange = (value: string) => {
+    if (!onPageSizeChange) return;
+    const newSize = Number(value);
+    if (!isNaN(newSize) && newSize > 0) {
+      onPageSizeChange(newSize);
+    }
+  };
 
-        const newSize = parseInt(value, 10);
-        if (!isNaN(newSize) && newSize > 0) {
-            onPageSizeChange(newSize);
-        }
-    };
+  const canGoPrevious = totalPages > 1 && currentPage !== 1;
+  const canGoNext = totalPages > 1 && currentPage !== totalPages;
 
-    const pageSizeOptions = [10, 20, 50, 100];
-
-    const canGoFirst = totalPages > 1 && currentPage !== 1;
-    const canGoPrevious = totalPages > 1 && currentPage !== 1;
-    const canGoNext = totalPages > 1 && currentPage !== totalPages;
-    const canGoLast = totalPages > 1 && currentPage !== totalPages;
-
-    return (
-        <div className='flex items-center justify-between px-2'>
-            {/* Left side: Selection info */}
-            {selectedCount !== undefined && totalRows !== undefined && (
-                <div className='flex-1 text-sm text-muted-foreground'>
-                    {selectedCount} of {totalRows} row{totalRows !== 1 ? 's' : ''}{' '}
-                    selected.
-                </div>
-            )}
-
-            {/* Right side: Pagination controls */}
-            <div className='flex items-center space-x-6 lg:space-x-8'>
-                {/* Rows per page selector */}
-                {pageSize !== null && onPageSizeChange && (
-                    <div className='flex items-center space-x-2'>
-                        <p className='text-sm font-medium'>Rows per page</p>
-                        <Select
-                            value={pageSize.toString()}
-                            onValueChange={handlePageSizeChange}
-                        >
-                            <SelectTrigger
-                                className='h-8 w-[70px]'
-                                aria-label='Rows per page'
-                            >
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {pageSizeOptions.map((size) => (
-                                    <SelectItem key={size} value={size.toString()}>
-                                        {size}
-                                    </SelectItem>
-                                ))}
-                                {!pageSizeOptions.includes(pageSize) && (
-                                    <SelectItem value={pageSize.toString()}>
-                                        {pageSize}
-                                    </SelectItem>
-                                )}
-                            </SelectContent>
-                        </Select>
-                    </div>
+  return (
+    <div
+      className={cn(
+        "flex w-full flex-col-reverse items-center justify-between gap-4 overflow-auto p-1 sm:flex-row sm:gap-8",
+        disabled && "opacity-50 pointer-events-none",
+        className
+      )}
+      {...props}
+    >
+      <div className="flex-1 whitespace-nowrap text-muted-foreground text-sm">
+        {selectedCount !== undefined && totalRows !== undefined && (
+          <>
+            {selectedCount} of {totalRows} row{totalRows !== 1 ? "s" : ""}{" "}
+            selected.
+          </>
+        )}
+      </div>
+      <div className="flex flex-col-reverse items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8">
+        {/* Rows per page selector */}
+        {pageSize !== undefined && onPageSizeChange && (
+          <div className="flex items-center space-x-2">
+            <p className="whitespace-nowrap font-medium text-sm">
+              Rows per page
+            </p>
+            <Select
+              value={`${pageSize}`}
+              onValueChange={handlePageSizeChange}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-8 w-18 data-size:h-8">
+                <SelectValue placeholder={pageSize} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {pageSizeOptions.map((size) => (
+                  <SelectItem key={size} value={`${size}`}>
+                    {size}
+                  </SelectItem>
+                ))}
+                {!pageSizeOptions.includes(pageSize) && (
+                  <SelectItem value={`${pageSize}`}>{pageSize}</SelectItem>
                 )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-                {/* Page info */}
-                <div className='flex w-[100px] items-center justify-center text-sm font-medium'>
-                    Page {currentPage} of {totalPages}
-                </div>
-
-                {/* Navigation buttons */}
-                <div className='flex items-center space-x-2'>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        onClick={() => onPageChange(1)}
-                        disabled={!canGoFirst}
-                        className='hidden lg:flex text-white hover:text-white'
-                        title='Go to first page'
-                    >
-                        <span className='sr-only'>Go to first page</span>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            width='24'
-                            height='24'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeWidth='2'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            className='h-4 w-4 text-white'
-                        >
-                            <path d='m11 17-5-5 5-5'></path>
-                            <path d='m18 17-5-5 5-5'></path>
-                        </svg>
-                    </Button>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={!canGoPrevious}
-                        className='text-white hover:text-white'
-                        title='Go to previous page'
-                    >
-                        <span className='sr-only'>Go to previous page</span>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            width='24'
-                            height='24'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeWidth='2'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            className='h-4 w-4 text-white'
-                        >
-                            <path d='m15 18-6-6 6-6'></path>
-                        </svg>
-                    </Button>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={!canGoNext}
-                        className='text-white hover:text-white'
-                        title='Go to next page'
-                    >
-                        <span className='sr-only'>Go to next page</span>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            width='24'
-                            height='24'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeWidth='2'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            className='h-4 w-4 text-white'
-                        >
-                            <path d='m9 18 6-6-6-6'></path>
-                        </svg>
-                    </Button>
-                    <Button
-                        variant='outline'
-                        size='icon'
-                        onClick={() => onPageChange(totalPages)}
-                        disabled={!canGoLast}
-                        className='hidden lg:flex text-white hover:text-white'
-                        title='Go to last page'
-                    >
-                        <span className='sr-only'>Go to last page</span>
-                        <svg
-                            xmlns='http://www.w3.org/2000/svg'
-                            width='24'
-                            height='24'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            stroke='currentColor'
-                            strokeWidth='2'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                            className='h-4 w-4 text-white'
-                        >
-                            <path d='m6 17 5-5-5-5'></path>
-                            <path d='m13 17 5-5-5-5'></path>
-                        </svg>
-                    </Button>
-                </div>
-            </div>
+        {/* Page info */}
+        <div className="flex items-center justify-center font-medium text-sm">
+          Page {currentPage} of {totalPages}
         </div>
-    );
+
+        {/* Navigation buttons */}
+        <div className="flex items-center space-x-2">
+          <Button
+            aria-label="Go to first page"
+            variant="outline"
+            size="icon"
+            className="hidden size-8 lg:flex"
+            onClick={() => onPageChange(1)}
+            disabled={!canGoPrevious || disabled}
+          >
+            <ChevronsLeft />
+          </Button>
+          <Button
+            aria-label="Go to previous page"
+            variant="outline"
+            size="icon"
+            className="size-8"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={!canGoPrevious || disabled}
+          >
+            <ChevronLeft />
+          </Button>
+          <Button
+            aria-label="Go to next page"
+            variant="outline"
+            size="icon"
+            className="size-8"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={!canGoNext || disabled}
+          >
+            <ChevronRight />
+          </Button>
+          <Button
+            aria-label="Go to last page"
+            variant="outline"
+            size="icon"
+            className="hidden size-8 lg:flex"
+            onClick={() => onPageChange(totalPages)}
+            disabled={!canGoNext || disabled}
+          >
+            <ChevronsRight />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 }

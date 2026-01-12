@@ -12,7 +12,6 @@ import { ReportList as ReportListModel } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarButton } from '@components/base/ActionBar/ActionBar';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
@@ -34,7 +33,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
 
@@ -212,6 +211,24 @@ export default function ReportList() {
     const handlePageChange = (newPage: number) => {
         setPage(newPage);
     };
+
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                handlePageChange(newPage);
+            }
+        },
+        [page, pageSize],
+    );
 
     const handleStatusChange = (status: string) => {
         setStatusFilter(status);
@@ -646,6 +663,11 @@ export default function ReportList() {
                         onSortingChange={handleSortingChange}
                         manualPagination={true}
                         manualSorting={true}
+                        pageCount={totalPages}
+                        initialPageIndex={page - 1}
+                        initialPageSize={pageSize}
+                        onPaginationChange={handlePaginationChange}
+                        showPagination={true}
                         bulkActions={[
                             {
                                 id: 'delete',
@@ -663,31 +685,6 @@ export default function ReportList() {
                             },
                         ]}
                         itemLabel='report'
-                    />
-
-                    <PaginationWrapper
-                        currentPage={page}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
-                        pageSize={pageSize}
-                        onPageSizeChange={(newSize) => {
-                            setPageSize(newSize);
-                            setPage(1);
-                            const searchAny = search as any;
-                            const newSearch: any = {
-                                ...searchAny,
-                                reports_page: 1,
-                                reports_pagesize: newSize,
-                            };
-                            router.navigate({
-                                to: location.pathname as any,
-                                search: newSearch as any,
-                                replace: true,
-                            });
-                        }}
-                        disabled={reports.length === 0}
-                        selectedCount={selectedReports.length}
-                        totalRows={reports.length}
                     />
                 </>
             ) : isPaused ? (

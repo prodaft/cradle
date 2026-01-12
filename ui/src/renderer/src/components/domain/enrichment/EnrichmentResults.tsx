@@ -1,4 +1,4 @@
-import PaginationWrapper from '@/components/base/Pagination/PaginationWrapper';
+import Pagination from '@/components/base/Pagination/Pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -624,7 +624,7 @@ export default function EnrichmentResults() {
                                                     </Button>
 
                                                     {/* Pagination */}
-                                                    <PaginationWrapper
+                                                    <Pagination
                                                         currentPage={page}
                                                         totalPages={totalPages}
                                                         onPageChange={(newPage) =>

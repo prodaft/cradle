@@ -14,7 +14,6 @@ import useApi from '@/hooks/api/useApi';
 import { useProfile } from '@/hooks/user/useProfile';
 import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -440,6 +439,24 @@ export default function Relations({ obj }: RelationsProps) {
 
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                setPage(newPage);
+            }
+        },
+        [page, pageSize],
+    );
+
     return (
         <div className='flex flex-col h-full gap-4'>
             <Card className='cradle-card-compact'>
@@ -578,20 +595,14 @@ export default function Relations({ obj }: RelationsProps) {
                         onRowSelectionChange={handleRowSelectionChange}
                         manualPagination={true}
                         manualSorting={true}
+                        pageCount={calculatedTotalPages}
+                        initialPageIndex={page - 1}
+                        initialPageSize={pageSize}
+                        onPaginationChange={handlePaginationChange}
+                        showPagination={true}
                     />
                 </div>
             </div>
-
-            <PaginationWrapper
-                currentPage={page}
-                totalPages={calculatedTotalPages}
-                onPageChange={setPage}
-                pageSize={pageSize}
-                onPageSizeChange={setPageSize}
-                disabled={!results || results.length === 0}
-                selectedCount={selectedIds.length}
-                totalRows={results?.length || 0}
-            />
         </div>
     );
 }

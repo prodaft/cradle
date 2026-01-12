@@ -9,7 +9,6 @@ import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
@@ -22,7 +21,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 interface DataTypeOption {
     value: string;
@@ -137,6 +136,24 @@ function DigestList({
             onColumnFilterChange('status', status);
         }
     };
+
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                handlePageChange(1);
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                handlePageChange(newPage);
+            }
+        },
+        [page, pageSize],
+    );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
@@ -578,6 +595,11 @@ function DigestList({
                 sorting={sorting}
                 onSortingChange={handleSortingChange}
                 manualPagination={true}
+                pageCount={totalPages}
+                initialPageIndex={page - 1}
+                initialPageSize={pageSize}
+                onPaginationChange={handlePaginationChange}
+                showPagination={true}
                 bulkActions={[
                     {
                         id: 'delete',
@@ -593,20 +615,6 @@ function DigestList({
                 ]}
                 itemLabel='digest'
                 manualSorting={true}
-            />
-
-            <PaginationWrapper
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                pageSize={pageSize}
-                onPageSizeChange={(newSize) => {
-                    setPageSize(newSize);
-                    handlePageChange(1);
-                }}
-                disabled={digests.length === 0}
-                selectedCount={selectedDigests.length}
-                totalRows={digests.length}
             />
             {deletingDigestId && (
                 <ConfirmDeletionModal

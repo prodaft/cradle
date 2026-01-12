@@ -4,6 +4,7 @@ import {
     ColumnDef,
     ColumnFiltersState,
     SortingState,
+    Table as TanStackTable,
     Updater,
     VisibilityState,
     flexRender,
@@ -33,6 +34,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 export interface BulkAction {
     id: string;
@@ -60,9 +62,15 @@ interface DataTableProps<TData, TValue> {
     manualPagination?: boolean;
     manualSorting?: boolean;
     manualFiltering?: boolean;
+    pageCount?: number;
+    initialPageIndex?: number;
+    initialPageSize?: number;
+    onPaginationChange?: (pageIndex: number, pageSize: number) => void;
     onRowClick?: (row: TData) => void;
     bulkActions?: BulkAction[];
     itemLabel?: string;
+    showPagination?: boolean;
+    pageSizeOptions?: number[];
 }
 
 export function DataTable<TData, TValue>({
@@ -82,15 +90,35 @@ export function DataTable<TData, TValue>({
     manualPagination = false,
     manualSorting = false,
     manualFiltering = false,
+    pageCount,
+    initialPageIndex,
+    initialPageSize,
+    onPaginationChange,
     onRowClick,
     bulkActions = [],
     itemLabel = 'item',
+    showPagination = false,
+    pageSizeOptions,
 }: DataTableProps<TData, TValue>) {
     const [internalSorting, setInternalSorting] = React.useState<SortingState>([]);
     const [internalColumnFilters, setInternalColumnFilters] =
         React.useState<ColumnFiltersState>([]);
     const [internalColumnVisibility, setInternalColumnVisibility] =
         React.useState<VisibilityState>({});
+    
+    // Use controlled pagination if props are provided, otherwise use internal state
+    const isPaginationControlled = initialPageIndex !== undefined || initialPageSize !== undefined;
+    const [internalPagination, setInternalPagination] = React.useState({
+        pageIndex: initialPageIndex ?? 0,
+        pageSize: initialPageSize ?? 10,
+    });
+    
+    const effectivePagination = isPaginationControlled
+        ? {
+            pageIndex: initialPageIndex ?? 0,
+            pageSize: initialPageSize ?? 10,
+        }
+        : internalPagination;
 
     const effectiveSorting = sorting ?? internalSorting;
     const effectiveColumnFilters = columnFilters ?? internalColumnFilters;
@@ -177,11 +205,27 @@ export function DataTable<TData, TValue>({
             columnFilters: effectiveColumnFilters,
             columnVisibility: effectiveColumnVisibility,
             rowSelection,
+            pagination: effectivePagination,
+        },
+        onPaginationChange: (updater) => {
+            const currentPagination = effectivePagination;
+            const newPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            
+            if (!isPaginationControlled) {
+                setInternalPagination(newPagination);
+            }
+            
+            if (onPaginationChange) {
+                onPaginationChange(newPagination.pageIndex, newPagination.pageSize);
+            }
         },
         manualPagination,
         manualSorting,
         manualFiltering,
+        pageCount: manualPagination && pageCount !== undefined ? pageCount : undefined,
     });
+
 
     if (loading) {
         return (
@@ -196,65 +240,75 @@ export function DataTable<TData, TValue>({
     const showContextMenu = hasBulkActions && selectedCount > 0;
 
     const tableContent = (
-        <ScrollArea className='w-full'>
-            <ScrollBar orientation='horizontal' />
-            <div className='rounded-md border'>
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
-                                {headerGroup.headers.map((header) => {
-                                    return (
-                                        <TableHead key={header.id}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef.header,
-                                                      header.getContext(),
-                                                  )}
-                                        </TableHead>
-                                    );
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && 'selected'}
-                                    className={onRowClick ? 'cursor-pointer' : ''}
-                                    onClick={
-                                        onRowClick
-                                            ? () => onRowClick(row.original)
-                                            : undefined
-                                    }
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(
-                                                cell.column.columnDef.cell,
-                                                cell.getContext(),
-                                            )}
-                                        </TableCell>
-                                    ))}
+        <>
+            <ScrollArea className='w-full'>
+                <ScrollBar orientation='horizontal' />
+                <div className='rounded-md border'>
+                    <Table>
+                        <TableHeader>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => {
+                                        return (
+                                            <TableHead key={header.id}>
+                                                {header.isPlaceholder
+                                                    ? null
+                                                    : flexRender(
+                                                          header.column.columnDef.header,
+                                                          header.getContext(),
+                                                      )}
+                                            </TableHead>
+                                        );
+                                    })}
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell
-                                    colSpan={columns.length}
-                                    className='h-24 text-center'
-                                >
-                                    {emptyMessage}
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
-        </ScrollArea>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            {table.getRowModel().rows?.length ? (
+                                table.getRowModel().rows.map((row) => (
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && 'selected'}
+                                        className={onRowClick ? 'cursor-pointer' : ''}
+                                        onClick={
+                                            onRowClick
+                                                ? () => onRowClick(row.original)
+                                                : undefined
+                                        }
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id}>
+                                                {flexRender(
+                                                    cell.column.columnDef.cell,
+                                                    cell.getContext(),
+                                                )}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={columns.length}
+                                        className='h-24 text-center'
+                                    >
+                                        {emptyMessage}
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </div>
+            </ScrollArea>
+            {showPagination && (
+                <div className='flex-shrink-0 -mt-3 py-2'>
+                    <DataTablePagination
+                        table={table}
+                        pageSizeOptions={pageSizeOptions}
+                    />
+                </div>
+            )}
+        </>
     );
 
     if (!showContextMenu) {

@@ -12,11 +12,11 @@ import { queryKeys } from '@/hooks/query';
 import { useProfile } from '@/hooks/user/useProfile';
 import { EntryClass } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams, useRouter } from '@tanstack/react-router';
+import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
-import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
+import { ClockRotateRight, Trash } from 'iconoir-react/regular';
 import { Plus } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddEntryTypeModal from '../../../modals/admin/AddEntryTypeModal';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import AdminPageLayout from '../AdminPageLayout';
@@ -32,8 +32,12 @@ export default function EntryTypesPage() {
     const params = useParams({ strict: false });
     const id = (params as any).id;
     const router = useRouter();
+    const location = useLocation();
+    const search = useSearch({ strict: false });
     const [selectedEntryTypes, setSelectedEntryTypes] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [page, setPage] = useState((search as any)?.entry_types_page || 1);
+    const [pageSize, setPageSize] = useState((search as any)?.entry_types_pagesize || 10);
     const { isAdmin } = useProfile();
     const { entriesApi } = useApi();
     const queryClient = useQueryClient();
@@ -111,6 +115,61 @@ export default function EntryTypesPage() {
         );
     }, [entryTypes, searchQuery]);
 
+    // Calculate total pages and paginate data
+    const totalPages = useMemo(() => {
+        return Math.max(1, Math.ceil(filteredEntryTypes.length / pageSize));
+    }, [filteredEntryTypes.length, pageSize]);
+
+    const paginatedEntryTypes = useMemo(() => {
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+        return filteredEntryTypes.slice(start, end);
+    }, [filteredEntryTypes, page, pageSize]);
+
+    // Sync URL params to page state
+    useEffect(() => {
+        const pageFromParams = (search as any)?.entry_types_page || 1;
+        const pageSizeFromParams = (search as any)?.entry_types_pagesize || 10;
+        if (pageFromParams !== page) setPage(pageFromParams);
+        if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
+    }, [(search as any)?.entry_types_page, (search as any)?.entry_types_pagesize]);
+
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== pageSize) {
+                setPageSize(newPageSize);
+                setPage(1);
+                const searchAny = search as any;
+                const newSearch: any = {
+                    ...searchAny,
+                    entry_types_page: 1,
+                    entry_types_pagesize: newPageSize,
+                };
+                router.navigate({
+                    to: location.pathname as any,
+                    search: newSearch as any,
+                    replace: true,
+                });
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                setPage(newPage);
+                const searchAny = search as any;
+                const newSearch: any = { ...searchAny, entry_types_page: newPage };
+                router.navigate({
+                    to: location.pathname as any,
+                    search: newSearch as any,
+                    replace: true,
+                });
+            }
+        },
+        [page, pageSize, search, router, location.pathname],
+    );
+
     const formatCount = (count?: number) => {
         if (count === undefined || count < 0) return '0';
         if (count >= 100) return '99+';
@@ -165,51 +224,45 @@ export default function EntryTypesPage() {
             },
             {
                 id: 'actions',
-                header: 'Actions',
+                header: '',
                 cell: ({ row }) => {
                     const entryType = row.original;
                     return (
                         <div
-                            className='flex justify-end'
+                            className='w-12 text-right'
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <TableActionsButton>
-                                {isAdmin() && (
-                                    <DropdownMenuItem
-                                        onClick={(e) =>
-                                            handleActivityClick(entryType, e)
-                                        }
-                                    >
-                                        <ClockRotateRight width='18' height='18' />
-                                        View Activity
-                                    </DropdownMenuItem>
-                                )}
-                                <DropdownMenuItem
-                                    onClick={() => handleEditClick(entryType)}
-                                >
-                                    <EditPencil width='18' height='18' />
-                                    Edit
-                                </DropdownMenuItem>
-                                {isAdmin() && (
-                                    <>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            onClick={() => handleDelete(entryType)}
-                                            variant='destructive'
-                                        >
-                                            <Trash width='18' height='18' />
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </>
-                                )}
-                            </TableActionsButton>
+                            <div className='flex justify-end'>
+                                <TableActionsButton>
+                                    {isAdmin() && (
+                                        <>
+                                            <DropdownMenuItem
+                                                onClick={(e) =>
+                                                    handleActivityClick(entryType, e)
+                                                }
+                                            >
+                                                <ClockRotateRight width='18' height='18' />
+                                                View Activity
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                onClick={() => handleDelete(entryType)}
+                                                variant='destructive'
+                                            >
+                                                <Trash width='18' height='18' />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                </TableActionsButton>
+                            </div>
                         </div>
                     );
                 },
                 enableSorting: false,
             },
         ],
-        [isAdmin, handleEditClick, handleActivityClick, handleDelete, formatCount],
+        [isAdmin, handleActivityClick, handleDelete, formatCount],
     );
 
     if (id && id !== 'add') {
@@ -281,13 +334,19 @@ export default function EntryTypesPage() {
                     <div className='flex-1'>
                         <DataTable
                             columns={columns}
-                            data={filteredEntryTypes}
+                            data={paginatedEntryTypes}
                             loading={isPending}
                             emptyMessage='No entry types found.'
                             enableRowSelection={true}
                             selectedRows={selectedEntryTypes}
                             onRowSelectionChange={handleRowSelectionChange}
                             onRowClick={handleEditClick}
+                            manualPagination={true}
+                            pageCount={totalPages}
+                            initialPageIndex={page - 1}
+                            initialPageSize={pageSize}
+                            onPaginationChange={handlePaginationChange}
+                            showPagination={true}
                             bulkActions={[
                                 {
                                     id: 'delete',

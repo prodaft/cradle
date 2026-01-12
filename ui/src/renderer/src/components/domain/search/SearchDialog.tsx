@@ -12,7 +12,7 @@ import {
 import { Kbd } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import type { Alert } from '@/types';
-import Pagination from '@components/base/Pagination/Pagination';
+import Pagination from '@/components/base/Pagination/Pagination';
 import { useApi } from '@hooks';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -360,10 +360,7 @@ export default function SearchDialog({
 
                 {/* Footer with Pagination */}
                 {results && results.length > 0 && (
-                    <div className='px-4 py-3 border-t bg-secondary flex items-center justify-between'>
-                        <span className='text-xs text-muted-foreground whitespace-nowrap'>
-                            Page {page} of {totalPages}
-                        </span>
+                    <div className='flex-shrink-0 -mt-3 py-2 px-4 border-t'>
                         <Pagination
                             currentPage={page}
                             totalPages={totalPages}

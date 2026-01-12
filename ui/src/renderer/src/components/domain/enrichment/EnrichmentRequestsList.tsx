@@ -6,7 +6,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
@@ -21,7 +20,7 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { capitalize } from 'lodash';
-import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type EnrichmentRequest = EnrichmentRequestList;
 
@@ -106,6 +105,26 @@ function EnrichmentRequestsList({
             onColumnFilterChange('status', status);
         }
     };
+
+    // Handle pagination changes from DataTable
+    const handlePaginationChange = useCallback(
+        (pageIndex: number, newPageSize: number) => {
+            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+            
+            // Handle page size change
+            if (newPageSize !== (pageSize || 10)) {
+                if (setPageSize) {
+                    setPageSize(newPageSize);
+                }
+                handlePageChange(1);
+            }
+            // Handle page change
+            else if (newPage !== page) {
+                handlePageChange(newPage);
+            }
+        },
+        [page, pageSize, setPageSize],
+    );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
     const sorting = useMemo<SortingState>(() => {
@@ -461,6 +480,11 @@ function EnrichmentRequestsList({
                 onSortingChange={handleSortingChange}
                 manualPagination={true}
                 manualSorting={true}
+                pageCount={totalPages}
+                initialPageIndex={page - 1}
+                initialPageSize={pageSize || 10}
+                onPaginationChange={handlePaginationChange}
+                showPagination={true}
                 bulkActions={[
                     {
                         id: 'delete',
@@ -494,17 +518,6 @@ function EnrichmentRequestsList({
                         params: { id: request.id.toString() },
                     })
                 }
-            />
-
-            <PaginationWrapper
-                currentPage={page}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-                pageSize={pageSize}
-                onPageSizeChange={setPageSize}
-                disabled={enrichmentRequests.length === 0}
-                selectedCount={selectedRequests.length}
-                totalRows={enrichmentRequests.length}
             />
             <ConfirmDeletionModal
                 open={deleteModalOpen}

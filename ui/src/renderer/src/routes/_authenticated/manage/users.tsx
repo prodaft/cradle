@@ -6,8 +6,8 @@ const UsersPage = lazy(() => import('@/components/domain/admin/pages/UsersPage')
 
 export const Route = createFileRoute('/_authenticated/manage/users')({
     validateSearch: z.object({
-        sessions_page: z.coerce.number().optional(),
-        sessions_pagesize: z.coerce.number().optional(),
+        users_page: z.coerce.number().optional(),
+        users_pagesize: z.coerce.number().optional(),
     }),
     component: UsersPage,
 });
