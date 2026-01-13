@@ -1,13 +1,13 @@
-import { createHashHistory, createRouter } from '@tanstack/react-router';
+import { createBrowserHistory, createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 
-// Create hash history for Electron compatibility
-const hashHistory = createHashHistory();
+// Create browser history for client-side routing
+const browserHistory = createBrowserHistory();
 
 // Create a new router instance
 export const router = createRouter({
     routeTree,
-    history: hashHistory,
+    history: browserHistory,
     defaultPreload: 'intent',
 });
 

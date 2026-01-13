@@ -43,5 +43,5 @@ Code formatting is managed by [Prettier](https://prettier.io/). The configuratio
 Run Prettier with:
 
 ```shell
-npm run prettier
+bun run prettier
 ```

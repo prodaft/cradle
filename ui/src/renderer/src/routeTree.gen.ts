@@ -31,7 +31,6 @@ import { Route as AuthenticatedManageSettingsImport } from './routes/_authentica
 import { Route as AuthenticatedManageTypeMappingsImport } from './routes/_authenticated/manage/type-mappings';
 import { Route as AuthenticatedManageUsersImport } from './routes/_authenticated/manage/users';
 import { Route as AuthenticatedManageUsersIdImport } from './routes/_authenticated/manage/users/$id';
-import { Route as AuthenticatedNotImplementedImport } from './routes/_authenticated/not-implemented';
 import { Route as AuthenticatedNotesImport } from './routes/_authenticated/notes';
 import { Route as AuthenticatedNotesIdImport } from './routes/_authenticated/notes/$id';
 import { Route as AuthenticatedReportsImport } from './routes/_authenticated/reports';
@@ -206,11 +205,6 @@ const AuthenticatedManageSettingsRoute = AuthenticatedManageSettingsImport.updat
     getParentRoute: () => AuthenticatedManageRoute,
 } as any);
 
-const AuthenticatedNotImplementedRoute = AuthenticatedNotImplementedImport.update({
-    path: '/not-implemented',
-    getParentRoute: () => AuthenticatedRoute,
-} as any);
-
 const NotFoundRoute = NotFoundImport.update({
     path: '/not-found',
     getParentRoute: () => rootRoute,
@@ -365,13 +359,6 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof AuthenticatedManageUsersIdImport;
             parentRoute: typeof AuthenticatedManageImport;
         };
-        '/_authenticated/not-implemented': {
-            id: '/_authenticated/not-implemented';
-            path: '/not-implemented';
-            fullPath: '/not-implemented';
-            preLoaderRoute: typeof AuthenticatedNotImplementedImport;
-            parentRoute: typeof AuthenticatedImport;
-        };
         '/_authenticated/notes': {
             id: '/_authenticated/notes';
             path: '/notes';
@@ -494,7 +481,6 @@ export const routeTree = rootRoute.addChildren({
             AuthenticatedManageEnrichmentRoute,
             AuthenticatedManageSettingsRoute,
         }),
-        AuthenticatedNotImplementedRoute,
     }),
     NotFoundRoute,
     CatchAllRoute,

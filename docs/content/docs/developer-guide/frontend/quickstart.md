@@ -182,7 +182,7 @@ export default App;
 
 ### Key Concepts
 
-- **HashRouter:** Enables client-side routing in Electron. [Learn more](https://reactrouter.com/en/main/router-components/hash-router).
+- **Router:** Enables client-side routing. [Learn more](https://tanstack.com/router/latest).
 - **AuthProvider:** Provides client-side authentication.
 - **PrivateRoute:** Protects routes by checking user authentication.
 - **Home:** Main container that includes the navbar and sidebar.

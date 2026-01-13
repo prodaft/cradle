@@ -16,11 +16,10 @@ The repository root contains configuration files, licenses, and READMEs. After b
 - **`test`** – Holds end-to-end tests between the frontend and backend.
 - **`tutorials`** – Markdown files (like this guide) used in generated JSDoc.
 - **`.env`** – Environment variables (see README and [Vite docs](https://vitejs.dev/guide/env-and-mode)).
-- **Config Files:** For Electron-Vite projects, configurations such as `electron.vite.config.js` and `vite.config.js` are in the root.
+- **Config Files:** Configuration files such as `vite.config.js` are in the root.
 
 ## Inside `src`
 
-- **`main` & `preload`:** Electron-specific files for starting the app.
 - **`renderer`:** Contains the main application:
   - **`assets`:** Resources such as images and SVGs.
   - **`components`:** React components (each in its own folder with tests).

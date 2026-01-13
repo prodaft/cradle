@@ -11,17 +11,21 @@ RUN mkdir /www
 RUN chown -R www:www /var/lib/nginx
 RUN chown -R www:www /www
 
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
+
 # Copy application source code
 COPY ./ui ui
 WORKDIR /ui
 
-RUN npm install
+RUN bun install
 
 RUN mkdir -p /www
 RUN cd /ui
 
 ENV VITE_API_BASE_URL="http://localhost:8000/api"
-RUN npm run build-web
+RUN bun run build
 
 RUN rm -rf /www/cradle
 RUN cp -r dist /cradle

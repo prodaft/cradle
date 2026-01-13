@@ -30,7 +30,6 @@ import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import bytes from 'bytes';
 import { EditPencil, HalfMoon, Link, SunLight } from 'iconoir-react';
 import { ClockRotateRight, Lock } from 'iconoir-react/regular';
-import { debounce } from 'lodash'; // Import lodash debounce
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -85,7 +84,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     const { logOut, getAccessToken } = useAuthActions();
     const { profile, setProfile, isAdmin } = useProfile();
 
-    const autoSaveMutation = useMutation({
+    const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
             return await usersApi.usersUpdate({
                 userId,
@@ -93,9 +92,8 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             });
         },
         meta: {
-            successMessage: 'Saved',
-            errorMessage: 'Failed to auto-save',
-            suppressNotification: true, // Autosave is silent
+            successMessage: 'Settings saved successfully',
+            errorMessage: 'Failed to save settings',
         },
     });
 
@@ -107,7 +105,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             suppressNotification: true,
         },
         onSuccess: () => {
-            auth.logOut();
+            logOut();
         },
     });
 
@@ -223,7 +221,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         color: 'red',
     });
 
-    const isInitialLoad = useRef(true);
     const previousValuesRef = useRef<Partial<AccountFormData> | null>(null);
 
     // Query for user data
@@ -276,11 +273,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
 
         // Store initial values for comparison
         previousValuesRef.current = initialData;
-
-        // Mark initial load as complete
-        setTimeout(() => {
-            isInitialLoad.current = false;
-        }, 1000);
     }, [userData, target, reset]);
 
     useEffect(() => {
@@ -444,11 +436,8 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         }
     };
 
-    /**
-     * Performs the actual API call and diffing.
-     * This function is not debounced directly; it is called by the debounced wrapper.
-     */
-    const processAutoSave = async (data: AccountFormData) => {
+    const handleSave = async () => {
+        const data = getValues();
         const previousData = previousValuesRef.current;
 
         if (!data.id) return;
@@ -462,7 +451,10 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             data.vimMode !== previousData?.vimMode ||
             data.theme !== previousData?.theme;
 
-        if (!hasChanges) return;
+        if (!hasChanges) {
+            toast.info('No changes to save');
+            return;
+        }
 
         const payload: any = {};
         if (
@@ -478,13 +470,17 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             payload.theme = data.theme;
         }
 
-        if (Object.keys(payload).length === 0) return;
+        if (Object.keys(payload).length === 0) {
+            toast.info('No changes to save');
+            return;
+        }
 
         const userId = data.id;
         if (!userId) {
             return;
         }
-        autoSaveMutation.mutate(
+
+        saveMutation.mutate(
             { userId, payload },
             {
                 onSuccess: (updatedUser) => {
@@ -502,46 +498,8 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                         catalystApiKey: data.catalystApiKey ? 'apikey' : '',
                     };
                 },
-                onError: () => {
-                    // Autosave errors are non-critical, silently fail
-                },
             },
         );
-    };
-
-    const processAutoSaveRef = useRef(processAutoSave);
-
-    useEffect(() => {
-        processAutoSaveRef.current = processAutoSave;
-    });
-
-    const debouncedSave = useMemo(
-        () =>
-            debounce((data: AccountFormData) => {
-                processAutoSaveRef.current(data);
-            }, 1000),
-        [],
-    );
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSave.cancel();
-        };
-    }, [debouncedSave]);
-
-    // Watch for form changes
-    const watchedValues = watch(); // Watch all fields
-
-    useEffect(() => {
-        if (getValues('id') && !isInitialLoad.current) {
-            const currentValues = getValues();
-            debouncedSave(currentValues);
-        }
-    }, [watchedValues, debouncedSave, getValues]);
-
-    const onSubmit = async (data: AccountFormData) => {
-        debouncedSave.flush(); // Force immediate execution of pending autosaves
     };
 
     const handleDelete = () => {
@@ -899,6 +857,15 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                 </Button>
                                             </div>
                                         </SettingsCard>
+                                        <div className='flex justify-start pt-2'>
+                                            <Button
+                                                type='button'
+                                                onClick={handleSave}
+                                                disabled={saveMutation.isPending || !isDirty}
+                                            >
+                                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </section>
                             )}
@@ -967,6 +934,15 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                 showTitle={false}
                                             />
                                         </SettingsCard>
+                                        <div className='flex justify-start pt-2'>
+                                            <Button
+                                                type='button'
+                                                onClick={handleSave}
+                                                disabled={saveMutation.isPending || !isDirty}
+                                            >
+                                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                                            </Button>
+                                        </div>
                                     </div>
                                 </section>
                             )}

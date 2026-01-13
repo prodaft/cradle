@@ -91,7 +91,7 @@ The monorepo is organized into three main components:
 | Directory    | Description                                  | Documentation                   |
 |--------------|----------------------------------------------|---------------------------------|
 | `backend/`   | Django-based API and data processing layer   | [README](backend/README.md)     |
-| `ui/`        | Electron/React frontend application          | [README](ui/README.md)          |
+| `ui/`        | React frontend application                   | [README](ui/README.md)          |
 | `docker/`    | Relevant dockerfiles and configurations      | [README](docker/README.md)      |
 | `docs/`      | Documentation and project website            | [Webpage](https://cradle.sh)    |
 
@@ -99,7 +99,6 @@ The monorepo is organized into three main components:
 
 [![Django][Django.com]][Django-url]
 [![React][React.js]][React-url]
-[![Electron][Electron.js]][Electron-url]
 [![Postgres][Postgres.com]][Postgres-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -191,7 +190,5 @@ Project Link: [https://github.com/prodaft/cradle](https://github.com/prodaft/cra
 [Django-url]: https://www.djangoproject.com/
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [React-url]: https://reactjs.org/
-[Electron.js]: https://img.shields.io/badge/Electron-191970?style=for-the-badge&logo=electron&logoColor=white
-[Electron-url]: https://www.electronjs.org/
 [Postgres.com]: https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white
 [Postgres-url]: https://www.postgresql.org/

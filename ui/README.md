@@ -3,7 +3,7 @@
 <div align="center">
   <h3 align="center">CRADLE Frontend</h3>
   <p align="center">
-    Electron/Web client for CRADLE
+    Client for CRADLE
     <br />
     <a href="https://github.com/prodaft/cradle"><strong>Explore main project »</strong></a>
   </p>
@@ -13,10 +13,9 @@
 
 ## About
 
-The CRADLE frontend is a modern desktop application built with:
+The CRADLE frontend is a modern application built with:
 
 - **React** for UI components
-- **Electron** for desktop runtime
 - **Vite** for development and bundling
 - **Tailwind CSS** for styling
 
@@ -53,11 +52,11 @@ It provides an intuitive interface for cybersecurity analysts to:
     ```
 
 3. **Configure environment**
-   Create `.env` file with backend API URL:
-
-    ```env
-    VITE_API_BASE_URL=http://localhost:8000
-    ```
+   Copy the example environment file and configure it:
+   ```bash
+   cp .env.example .env
+   ```
+   Then edit `.env` and set `VITE_API_BASE_URL` to your backend API URL (default: `http://localhost:8000`).
 
 4. **Start development server**
     ```bash
@@ -74,10 +73,8 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 | Command             | Description                         |
 | ------------------- | ----------------------------------- |
-| `bun run dev`       | Start development server (Electron) |
-| `bun run dev-web`   | Start development server (Web)      |
-| `bun run build`     | Build production bundle (Electron)  |
-| `bun run build-web` | Build production bundle (Web)       |
+| `bun run dev`       | Start development server              |
+| `bun run build`     | Build production bundle               |
 | `bun run lint`      | Run ESLint for code quality checks  |
 | `bun run typecheck` | Run tsc for typecheck               |
 | `bun run verify`    | Lint and Typecheck                  |
@@ -88,7 +85,6 @@ It provides an intuitive interface for cybersecurity analysts to:
 - Hot module replacement during development
 - Optimized production builds
 - Automated code formatting and linting
-- Comprehensive test suite
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

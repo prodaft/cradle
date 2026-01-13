@@ -18,12 +18,12 @@ import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@/services/cradle/models';
 import { SettingsButton, SettingsCard, SettingsField } from '@components/forms';
+import { Button } from '@/components/ui/button';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import bytes from 'bytes';
 import { WarningCircle } from 'iconoir-react';
-import { debounce } from 'lodash';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -75,7 +75,7 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
     const [deleteUserModalOpen, setDeleteUserModalOpen] = useState(false);
     const [setPasswordModalOpen, setSetPasswordModalOpen] = useState(false);
 
-    const autoSaveMutation = useMutation({
+    const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
             await usersApi.usersUpdate({
                 userId,
@@ -83,9 +83,13 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
             });
         },
         meta: {
-            successMessage: 'Saved',
-            errorMessage: 'Failed to auto-save',
-            suppressNotification: true, // Autosave is silent
+            successMessage: 'User settings saved successfully',
+            errorMessage: 'Failed to save user settings',
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: queryKeys.users.detail(userId),
+            });
         },
     });
 
@@ -149,7 +153,6 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
         color: 'red',
     });
 
-    const isInitialLoad = useRef(true);
     const previousValuesRef = useRef<Partial<AdminUserFormData> | null>(null);
 
     const defaultValues: AdminUserFormData = {
@@ -169,7 +172,7 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
         getValues,
         watch,
         control,
-        formState: { errors },
+        formState: { errors, isDirty },
     } = useForm<AdminUserFormData>({
         resolver: zodResolver(adminUserSettingsSchema) as any,
         defaultValues,
@@ -212,14 +215,10 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
 
         reset(initialData);
         previousValuesRef.current = initialData;
-
-        setTimeout(() => {
-            isInitialLoad.current = false;
-        }, 1000);
     }, [userData, userId, reset]);
 
-    // Auto-save functionality
-    const processAutoSave = async (data: AdminUserFormData) => {
+    const handleSave = async () => {
+        const data = getValues();
         const previousData = previousValuesRef.current;
 
         if (!data.id) return;
@@ -232,7 +231,10 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
             data.isActive !== previousData?.isActive ||
             data.fileUploadLimitOverride !== previousData?.fileUploadLimitOverride;
 
-        if (!hasChanges) return;
+        if (!hasChanges) {
+            toast.info('No changes to save');
+            return;
+        }
 
         const payload: any = {};
         if (data.username !== previousData?.username) payload.username = data.username;
@@ -254,13 +256,16 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
             }
         }
 
-        if (Object.keys(payload).length === 0) return;
+        if (Object.keys(payload).length === 0) {
+            toast.info('No changes to save');
+            return;
+        }
 
         if (!data.id) {
             return;
         }
         const userId = data.id;
-        autoSaveMutation.mutate(
+        saveMutation.mutate(
             { userId, payload },
             {
                 onSuccess: () => {
@@ -269,46 +274,8 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
                         ...data,
                     };
                 },
-                onError: () => {
-                    // Autosave errors are non-critical, silently fail
-                },
             },
         );
-    };
-
-    const processAutoSaveRef = useRef(processAutoSave);
-
-    useEffect(() => {
-        processAutoSaveRef.current = processAutoSave;
-    });
-
-    const debouncedSave = useMemo(
-        () =>
-            debounce((data: AdminUserFormData) => {
-                processAutoSaveRef.current(data);
-            }, 1000),
-        [],
-    );
-
-    // Cleanup debounce on unmount
-    useEffect(() => {
-        return () => {
-            debouncedSave.cancel();
-        };
-    }, [debouncedSave]);
-
-    // Watch for form changes
-    const watchedValues = watch();
-
-    useEffect(() => {
-        if (getValues('id') && !isInitialLoad.current) {
-            const currentValues = getValues();
-            debouncedSave(currentValues);
-        }
-    }, [watchedValues, getValues, debouncedSave]);
-
-    const onSubmit = async (data: AdminUserFormData) => {
-        debouncedSave.flush(); // Force immediate execution of pending autosaves
     };
 
     // Admin actions
@@ -557,6 +524,17 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
                                 </section>
                             </div>
                         </section>
+
+                        {/* Save Button */}
+                        <div className='flex justify-start pt-4'>
+                            <Button
+                                type='button'
+                                onClick={handleSave}
+                                disabled={saveMutation.isPending || !isDirty}
+                            >
+                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                        </div>
                     </form>
 
                     {/* User Management Actions Section */}

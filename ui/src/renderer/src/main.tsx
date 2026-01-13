@@ -30,7 +30,7 @@ const shouldRewriteOAuth = (() => {
         hasOAuthParams &&
         (url.pathname === '/' || url.pathname === '/oauth/callback')
     ) {
-        window.location.replace(`${url.origin}/#/oauth/callback${url.search}`);
+        window.location.replace(`${url.origin}/oauth/callback${url.search}`);
         return true;
     }
 

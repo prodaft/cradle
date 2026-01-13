@@ -5,7 +5,7 @@ linkTitle = "Frontend"
 draft = false
 +++
 
-Welcome to the **Frontend Development Guide** for CRADLE. This guide is designed for frontend developers working on CRADLE’s React/Electron application. Here, you'll find detailed insights into the code structure, architecture, and instructions for setting up and launching the frontend locally.
+Welcome to the **Frontend Development Guide** for CRADLE. This guide is designed for frontend developers working on CRADLE's React application. Here, you'll find detailed insights into the code structure, architecture, and instructions for setting up and launching the frontend locally.
 
 ## Getting Started
 
@@ -18,61 +18,48 @@ Follow these steps to set up the CRADLE frontend on your machine:
    ```
 
 2. **Navigate to the Frontend Directory:**
-   The frontend code is located in the Electron renderer folder:
+   The frontend code is located in the renderer folder:
    ```bash
-   cd src/renderer
+   cd ui/src/renderer
    ```
 
 3. **Configure Environment Variables:**
-   Create a `.env` file in the `src/renderer` directory with the following content:
-   ```env
-   VITE_API_BASE_URL=http://localhost:8080
+   Copy the example environment file and configure it:
+   ```bash
+   cp .env.example .env
    ```
+   Then edit `.env` and set `VITE_API_BASE_URL` to your backend API URL (default: `http://localhost:8000`).
    This ensures that the frontend knows where to reach the backend API.
 
 4. **Install Dependencies:**
-   Ensure you have Node.js (v16+) installed. Then install dependencies using npm (or yarn):
+   Ensure you have Bun installed. Then install dependencies:
    ```bash
-   npm install
-   ```
-   *Or if you prefer yarn:*
-   ```bash
-   yarn install
+   bun install
    ```
 
 5. **Run the Development Server:**
-   To start the development server for the web version:
+   To start the development server:
    ```bash
-   npm run dev
+   bun run dev
    ```
-   To launch the Electron application in development mode:
-   ```bash
-   npm run electron:dev
-   ```
-   Your application should now be accessible. For the web version, visit [http://localhost:3000/](http://localhost:3000/) (or the port specified by Vite).
+   Your application should now be accessible at [http://localhost:5173/](http://localhost:5173/) (or the port specified by Vite).
 
 ## Common Commands
 
-Make sure your environment includes `VITE_API_BASE_URL=http://localhost:8080`. Here’s a list of useful commands:
+Make sure your environment includes `VITE_API_BASE_URL=http://localhost:8080`. Here's a list of useful commands:
 
 ```bash
-# Run the development server (web version)
-npm run dev
+# Run the development server
+bun run dev
 
-# Launch the Electron app in development mode
-npm run electron:dev
-
-# Run tests
-npm run test
-
-# Build the project to be served on a browser
-npm run build-web
+# Build the project for production
+bun run build
 
 # Lint the codebase using ESLint
-npm run lint
+bun run lint
 
 # Format code with Prettier
-npm run prettier
+bun run prettier
 ```
 
 ## Topics Covered
