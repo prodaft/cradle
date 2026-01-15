@@ -8,18 +8,14 @@ class BaseStringFilter(django_filters.BaseInFilter, django_filters.CharFilter):
 
 
 class EntryFilter(django_filters.FilterSet):
-    type = django_filters.CharFilter(
-        field_name="entry_class__type", lookup_expr="exact"
-    )
+    type = django_filters.CharFilter(field_name="entry_class__type", lookup_expr="exact")
     # Accept multiple values via repeated params: ?subtype=a&subtype=b
     subtype = django_filters.CharFilter(method="filter_subtype")
     # Accept multiple values via repeated params: ?name=a&name=b
     name = django_filters.CharFilter(method="filter_name")
     # Accept multiple values via repeated params: ?name_exact=a&name_exact=b
     name_exact = django_filters.CharFilter(method="filter_name_exact")
-    referenced_in = django_filters.UUIDFilter(
-        field_name="notes__id", lookup_expr="exact"
-    )
+    referenced_in = django_filters.UUIDFilter(field_name="notes__id", lookup_expr="exact")
 
     class Meta:
         model = Entry

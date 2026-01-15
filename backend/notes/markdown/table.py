@@ -38,9 +38,7 @@ ALIGN_LEFT = re.compile(r"^ *:-+ *$")
 ALIGN_RIGHT = re.compile(r"^ *-+: *$")
 
 
-def parse_table(
-    block: "BlockParser", m: Match[str], state: "BlockState"
-) -> Optional[int]:
+def parse_table(block: "BlockParser", m: Match[str], state: "BlockState") -> Optional[int]:
     pos = m.end()
     header = m.group("table_head")
     align = m.group("table_align")
@@ -65,9 +63,7 @@ def parse_table(
     return pos
 
 
-def parse_nptable(
-    block: "BlockParser", m: Match[str], state: "BlockState"
-) -> Optional[int]:
+def parse_nptable(block: "BlockParser", m: Match[str], state: "BlockState") -> Optional[int]:
     header = m.group("nptable_head")
     align = m.group("nptable_align")
     thead, aligns = _process_thead(header, align)
@@ -88,9 +84,7 @@ def parse_nptable(
     return m.end()
 
 
-def _process_thead(
-    header: str, align: str
-) -> Union[Tuple[None, None], Tuple[Dict[str, Any], List[str]]]:
+def _process_thead(header: str, align: str) -> Union[Tuple[None, None], Tuple[Dict[str, Any], List[str]]]:
     headers = CELL_SPLIT.split(header)
     aligns = CELL_SPLIT.split(align)
     if len(headers) != len(aligns):
@@ -150,9 +144,7 @@ def render_table_row(renderer: "BaseRenderer", text: str) -> str:
     return "<tr>\n" + text + "</tr>\n"
 
 
-def render_table_cell(
-    renderer: "BaseRenderer", text: str, align: Optional[str] = None, head: bool = False
-) -> str:
+def render_table_cell(renderer: "BaseRenderer", text: str, align: Optional[str] = None, head: bool = False) -> str:
     if head:
         tag = "th"
     else:

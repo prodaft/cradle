@@ -5,7 +5,6 @@ import { useRouter } from '@tanstack/react-router';
 
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import useApi from '@/hooks/api/useApi';
-import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { LinkTreeFlattener } from '@/utils/dashboard';
 import { logger } from '@/utils/logger';
@@ -37,8 +36,7 @@ export default function KnowledgeGraphSearch({
         message: '',
         color: 'red',
     });
-    const { basePath } = useApi();
-    const { getAccessToken } = useAuthActions();
+    const { knowledgeGraphApi } = useApi();
     const router = useRouter();
     const hasFetchedRef = useRef(false);
     const pageSize = 100;
@@ -52,24 +50,27 @@ export default function KnowledgeGraphSearch({
         totalPages: number;
         hasMore: boolean;
     }> => {
-        const token = await getAccessToken();
-        const url = `${basePath}/knowledge-graph/?page=${page}&page_size=${pageSize}`;
-
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
+        const response = await knowledgeGraphApi.knowledgeGraphRetrieveRaw({
+            page,
+            pageSize,
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        const rawData = await response.raw.json();
+
+        const graphData = rawData.results;
+        const totalPages = rawData.total_pages || 1;
+
+        if (!graphData || !graphData.entries) {
+            return {
+                nodes: [],
+                edges: [],
+                colors: {},
+                totalPages,
+                hasMore: page < totalPages,
+            };
         }
 
-        const responseData = await response.json();
-        const graphData = responseData.results || responseData;
-        const { entries, relations, colors } = graphData || {};
+        const { entries, relations, colors } = graphData;
 
         let nodes: Node[] = [];
 
@@ -113,17 +114,13 @@ export default function KnowledgeGraphSearch({
             nodes,
             edges,
             colors: colors || {},
-            totalPages: responseData.total_pages || 1,
-            hasMore: page < (responseData.total_pages || 1),
+            totalPages,
+            hasMore: page < totalPages,
         };
     };
 
     // Query for first page to get total pages
-    const {
-        data: firstPageData,
-        isPending: loading,
-        error,
-    } = useQuery({
+    const { data: firstPageData, isPending: loading } = useQuery({
         queryKey: queryKeys.knowledgeGraph.graph(1),
         queryFn: () => fetchGraphPage(1),
         enabled: !hasFetchedRef.current,
@@ -132,38 +129,6 @@ export default function KnowledgeGraphSearch({
             errorMessage: 'Failed to fetch graph data',
         },
     });
-
-    // Handle errors
-    useEffect(() => {
-        if (error) {
-            (async () => {
-                logger.error(
-                    '[KnowledgeGraphSearch] Error fetching graph data:',
-                    error,
-                );
-                const parsed = await parseAPIError(error);
-
-                // Handle 401 errors with navigation
-                if (parsed.status === 401) {
-                    setAlert({
-                        show: true,
-                        message: 'Your session has expired. Please log back in.',
-                        color: 'red',
-                    });
-                    router.navigate({ to: '/login' });
-                    return;
-                }
-
-                // Set alert with error message
-                setAlert({
-                    show: true,
-                    message:
-                        parsed.detail || 'An error occurred while loading the graph.',
-                    color: 'red',
-                });
-            })();
-        }
-    }, [error, router]);
 
     // Fetch remaining pages when first page loads
     useEffect(() => {

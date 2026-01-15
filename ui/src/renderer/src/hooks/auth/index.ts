@@ -2,19 +2,25 @@
  * Authentication and user-related hooks
  * Hooks for managing authentication state
  *
- * Use the split hooks for optimal performance:
- * - useAuthState() - for state values (role, userId, isLoading, basePath)
- * - useAuthActions() - for actions (logIn, logOut, getAccessToken, etc.)
+ * Best practice recommendations:
+ * - useAuth() - Convenience hook that combines state and actions (use for most components)
+ * - useAuthState() - For state values only (role, userId, isLoading, basePath, isAdmin, isEntryManager)
+ * - useAuthActions() - For actions only (logIn, logOut, getAccessToken, isLoggedIn, setTokensDirectly)
  *
- * Note: useProfile is available from @hooks/user/useProfile
+ * For performance-sensitive components, use the split hooks to avoid unnecessary rerenders.
+ *
+ * Note: For profile data, use TanStack Query directly with queryKeys.users.detail('me')
  *
  * @example
  * ```typescript
- * // Split hooks for better performance
- * const { role, basePath } = useAuthState();
+ * // Most components - simple and correct
+ * const { role, isAdmin, logOut } = useAuth();
+ *
+ * // Performance-sensitive - split hooks
+ * const { role, isAdmin } = useAuthState();
  * const { logOut, getAccessToken } = useAuthActions();
  * ```
  */
 
-export { useAuthActions, useAuthState } from './useAuth';
+export { useAuth, useAuthActions, useAuthState } from './useAuth';
 export type { AuthContextValue } from './useAuth';

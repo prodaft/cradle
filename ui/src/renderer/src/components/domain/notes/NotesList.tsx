@@ -477,7 +477,7 @@ export default function NotesList({
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 setPageSize(newPageSize);

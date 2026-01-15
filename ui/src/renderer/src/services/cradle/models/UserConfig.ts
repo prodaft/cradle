@@ -31,7 +31,7 @@ export interface UserConfig {
      * @type {boolean}
      * @memberof UserConfig
      */
-    registrationEnabled: boolean;
+    signup: boolean;
 }
 
 /**
@@ -39,7 +39,7 @@ export interface UserConfig {
  */
 export function instanceOfUserConfig(value: object): value is UserConfig {
     if (!('oauthMethods' in value) || value['oauthMethods'] === undefined) return false;
-    if (!('registrationEnabled' in value) || value['registrationEnabled'] === undefined) return false;
+    if (!('signup' in value) || value['signup'] === undefined) return false;
     return true;
 }
 
@@ -54,7 +54,7 @@ export function UserConfigFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     return {
         
         'oauthMethods': json['oauth_methods'],
-        'registrationEnabled': json['registration_enabled'],
+        'signup': json['signup'],
     };
 }
 
@@ -70,7 +70,7 @@ export function UserConfigToJSONTyped(value?: UserConfig | null, ignoreDiscrimin
     return {
         
         'oauth_methods': value['oauthMethods'],
-        'registration_enabled': value['registrationEnabled'],
+        'signup': value['signup'],
     };
 }
 

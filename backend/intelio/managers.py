@@ -16,10 +16,7 @@ class EnrichmentRequestQuerySet(models.QuerySet):
         return self.annotate(
             inaccessible_count=Count(
                 "entities",
-                filter=~(
-                    Q(entities__id__in=accessible_entity_ids)
-                    | Q(entities__entry_class__type=EntryType.ARTIFACT)
-                ),
+                filter=~(Q(entities__id__in=accessible_entity_ids) | Q(entities__entry_class__type=EntryType.ARTIFACT)),
             )
         ).filter(inaccessible_count=0)
 

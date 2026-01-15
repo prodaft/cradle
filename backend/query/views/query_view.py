@@ -109,11 +109,7 @@ class EntryListQuery(ListAPIView):
             accessible_entries = accessible_entries.filter(
                 Q(
                     entry_class__type=EntryType.ENTITY,
-                    id__in=Subquery(
-                        Access.objects.get_accessible_entity_ids(
-                            cast(UUID, self.request.user.id)
-                        )
-                    ),
+                    id__in=Subquery(Access.objects.get_accessible_entity_ids(cast(UUID, self.request.user.id))),
                 )
                 | Q(
                     entry_class__type=EntryType.ARTIFACT,
@@ -162,12 +158,8 @@ class AdvancedQueryView(APIView):
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                EntryResponseSerializer
-            ),
-            **get_error_responses(
-                QueryErrorCodes.INVALID_PAGE_SIZE, QueryErrorCodes.INVALID_QUERY_SYNTAX
-            ),
+            200: TotalPagesPagination().get_paginated_response_serializer(EntryResponseSerializer),
+            **get_error_responses(QueryErrorCodes.INVALID_PAGE_SIZE, QueryErrorCodes.INVALID_QUERY_SYNTAX),
             **get_common_error_responses(),
         },
         request=None,
@@ -179,9 +171,7 @@ class AdvancedQueryView(APIView):
 
         page_size = request.query_params.get("page_size", "10")
         if not page_size.isdigit() or int(page_size) <= 0:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size parameter. Must be a positive integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size parameter. Must be a positive integer.")
         page_size = int(page_size)
 
         # Get the query parameter from the request
@@ -200,9 +190,7 @@ class AdvancedQueryView(APIView):
                 try:
                     query_filter |= parse_query(query_str.strip())
                 except Exception as e:
-                    raise InvalidQuerySyntaxException(
-                        detail=f"Invalid query syntax: {str(e)}"
-                    )
+                    raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
 
         # Get accessible entries for the user with optimized queries
         accessible_entries = (
@@ -215,11 +203,7 @@ class AdvancedQueryView(APIView):
             accessible_entries = accessible_entries.filter(
                 Q(
                     entry_class__type=EntryType.ENTITY,
-                    id__in=Subquery(
-                        Access.objects.get_accessible_entity_ids(
-                            cast(UUID, request.user.id)
-                        )
-                    ),
+                    id__in=Subquery(Access.objects.get_accessible_entity_ids(cast(UUID, request.user.id))),
                 )
                 | Q(
                     entry_class__type=EntryType.ARTIFACT,

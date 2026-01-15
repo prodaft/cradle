@@ -71,9 +71,7 @@ from .serializers import (
         ),
     ],
     responses={
-        200: LazyPaginator().get_paginated_response_serializer(
-            EntryWithDepthSerializerView
-        ),
+        200: LazyPaginator().get_paginated_response_serializer(EntryWithDepthSerializerView),
         400: {"description": "Invalid parameters or query syntax"},
         401: {"description": "User is not authenticated"},
         404: {"description": "Source entry not found"},
@@ -92,9 +90,7 @@ class GraphNeighborsView(APIView):
             depth = int(request.query_params.get("depth", 1))
             page_size = int(request.query_params.get("page_size", 200))
         except ValueError:
-            return Response(
-                {"error": "depth, page and page_size must be integers."}, status=400
-            )
+            return Response({"error": "depth, page and page_size must be integers."}, status=400)
 
         if depth < 0 or depth > 5:
             return Response({"error": "depth must be between 0 and 5."}, status=400)
@@ -103,19 +99,12 @@ class GraphNeighborsView(APIView):
         source_entry = Entry.objects.filter(pk=source_id).first()
 
         if not source_entry:
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
-        if (
-            source_entry.entry_class.type == EntryType.ENTITY
-            and not Access.objects.has_access_to_entities(
-                request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
-            )
+        if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
+            request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
         ):
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
@@ -227,19 +216,12 @@ class GraphInaccessibleView(APIView):
         source_entry = Entry.objects.filter(pk=source_id).first()
 
         if not source_entry:
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
-        if (
-            source_entry.entry_class.type == EntryType.ENTITY
-            and not Access.objects.has_access_to_entities(
-                request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
-            )
+        if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
+            request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
         ):
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
@@ -279,9 +261,7 @@ class GraphInaccessibleView(APIView):
         ),
     ],
     responses={
-        200: TotalPagesPagination().get_paginated_response_serializer(
-            SubGraphSerializer
-        ),
+        200: TotalPagesPagination().get_paginated_response_serializer(SubGraphSerializer),
         400: {"description": "Invalid pagination parameters"},
         401: {"description": "User is not authenticated"},
     },

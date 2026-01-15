@@ -4,7 +4,6 @@ import {
     ColumnDef,
     ColumnFiltersState,
     SortingState,
-    Table as TanStackTable,
     Updater,
     VisibilityState,
     flexRender,
@@ -24,6 +23,7 @@ import {
     ContextMenuSeparator,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import { DataTablePagination } from '@/components/ui/data-table-pagination';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -34,7 +34,6 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
 
 export interface BulkAction {
     id: string;
@@ -105,19 +104,20 @@ export function DataTable<TData, TValue>({
         React.useState<ColumnFiltersState>([]);
     const [internalColumnVisibility, setInternalColumnVisibility] =
         React.useState<VisibilityState>({});
-    
+
     // Use controlled pagination if props are provided, otherwise use internal state
-    const isPaginationControlled = initialPageIndex !== undefined || initialPageSize !== undefined;
+    const isPaginationControlled =
+        initialPageIndex !== undefined || initialPageSize !== undefined;
     const [internalPagination, setInternalPagination] = React.useState({
         pageIndex: initialPageIndex ?? 0,
         pageSize: initialPageSize ?? 10,
     });
-    
+
     const effectivePagination = isPaginationControlled
         ? {
-            pageIndex: initialPageIndex ?? 0,
-            pageSize: initialPageSize ?? 10,
-        }
+              pageIndex: initialPageIndex ?? 0,
+              pageSize: initialPageSize ?? 10,
+          }
         : internalPagination;
 
     const effectiveSorting = sorting ?? internalSorting;
@@ -211,11 +211,11 @@ export function DataTable<TData, TValue>({
             const currentPagination = effectivePagination;
             const newPagination =
                 typeof updater === 'function' ? updater(currentPagination) : updater;
-            
+
             if (!isPaginationControlled) {
                 setInternalPagination(newPagination);
             }
-            
+
             if (onPaginationChange) {
                 onPaginationChange(newPagination.pageIndex, newPagination.pageSize);
             }
@@ -225,7 +225,6 @@ export function DataTable<TData, TValue>({
         manualFiltering,
         pageCount: manualPagination && pageCount !== undefined ? pageCount : undefined,
     });
-
 
     if (loading) {
         return (
@@ -254,7 +253,8 @@ export function DataTable<TData, TValue>({
                                                 {header.isPlaceholder
                                                     ? null
                                                     : flexRender(
-                                                          header.column.columnDef.header,
+                                                          header.column.columnDef
+                                                              .header,
                                                           header.getContext(),
                                                       )}
                                             </TableHead>

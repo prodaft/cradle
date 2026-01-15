@@ -9,7 +9,7 @@
  *
  * Note:
  * - Theme hooks (useTheme) are available from @contexts/ui
- * - Profile hooks (useProfile) are available from @hooks/user/useProfile
+ * - Profile data: use TanStack Query directly with queryKeys.users.detail('me')
  *
  * Usage:
  * ```typescript
@@ -19,7 +19,13 @@
  * // Or import from group
  * import { useApi } from '@hooks/api';
  * import { useAuthState, useAuthActions } from '@hooks/auth';
- * import { useProfile } from '@hooks/user/useProfile';
+ * // For profile data, use TanStack Query directly:
+ * import { useQuery } from '@tanstack/react-query';
+ * import { queryKeys } from '@hooks/query';
+ * const { data: profile } = useQuery({
+ *   queryKey: queryKeys.users.detail('me'),
+ *   queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
+ * });
  *
  * // For optimal performance, use split auth hooks:
  * const { role, basePath } = useAuthState();
@@ -36,8 +42,6 @@ export * from './auth';
 // Query hooks (TanStack Query)
 export * from './query';
 
-// User-related hooks
-export * from './user';
 
 // Navigation hooks (currently empty - use TanStack Router directly)
 

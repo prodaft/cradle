@@ -7,7 +7,7 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthState } from '@/hooks/auth/useAuth';
 import { Relation } from '@/services/cradle';
 import { capitalizeString, createDashboardLink } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
@@ -25,7 +25,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
     const [formattedCreated, setFormattedCreated] = useState('');
     const [formattedSeen, setFormattedSeen] = useState('');
     const [visible, setVisible] = useState(true);
-    const { isAdmin } = useProfile();
+    const { isAdmin } = useAuthState();
     const { entriesApi } = useApi();
     const router = useRouter();
 
@@ -75,7 +75,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
         <Card>
             <CardHeader>
                 <CardTitle>{capitalizeString(relation.reason || 'Relation')}</CardTitle>
-                {isAdmin() && (
+                {isAdmin && (
                     <CardAction>
                         <Button
                             variant='ghost'

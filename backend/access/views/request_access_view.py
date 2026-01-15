@@ -92,9 +92,7 @@ class RequestAccess(APIView):
         if (
             user.is_cradle_admin
             or entity.entry_class.type == EntryType.ARTIFACT
-            or Access.objects.filter(
-                user=user, entity=entity, access_type=AccessType.READ_WRITE
-            )
+            or Access.objects.filter(user=user, entity=entity, access_type=AccessType.READ_WRITE)
         ):
             return Response(status=status.HTTP_200_OK)
 
@@ -105,10 +103,7 @@ class RequestAccess(APIView):
                     user_id=notified_user_id,
                     requesting_user=user,
                     entity=entity,
-                    message=(
-                        f"User {user.username} has requested access for "
-                        f"entity {entity.name}"
-                    ),
+                    message=(f"User {user.username} has requested access for entity {entity.name}"),
                 )
 
             return Response(status=status.HTTP_200_OK)

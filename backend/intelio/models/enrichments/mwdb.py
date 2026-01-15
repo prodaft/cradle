@@ -81,10 +81,7 @@ class MWDBEnricher(BaseEnricher):
             return "No entries provided for enrichment"
 
         # Warn if mappings are missing and hash extraction is enabled
-        if (
-            self.settings.get("extract_hashes", True)
-            and not MWDBMapping.objects.exists()
-        ):
+        if self.settings.get("extract_hashes", True) and not MWDBMapping.objects.exists():
             self.request._append_warning(
                 "No MWDB type mappings configured. "
                 "Related hash extraction will be disabled. "
@@ -119,9 +116,7 @@ class MWDBEnricher(BaseEnricher):
                     result["not_found"] = True
                 except Exception as exc:
                     logger.exception(exc)
-                    self.request._append_warning(
-                        f"MWDB query failed for {entry.name}: {str(exc)}"
-                    )
+                    self.request._append_warning(f"MWDB query failed for {entry.name}: {str(exc)}")
                     result["not_found"] = True
                 else:
                     # File found - extract data
@@ -132,12 +127,8 @@ class MWDBEnricher(BaseEnricher):
                     try:
                         result["attributes"] = file_info.attributes
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to get attributes: {e}", stack_info=True
-                        )
-                        self.request._append_warning(
-                            f"Could not retrieve attributes for {entry.name}: {str(e)}"
-                        )
+                        logger.warning(f"Failed to get attributes: {e}", stack_info=True)
+                        self.request._append_warning(f"Could not retrieve attributes for {entry.name}: {str(e)}")
 
                     # Add permalink
                     result["permalink"] = f"{mwdb_url}/file/{entry.name}"
@@ -159,9 +150,7 @@ class MWDBEnricher(BaseEnricher):
                     self._extract_related_hashes(entry, result.get("data", {}))
 
             except Exception as e:
-                self.request._append_warning(
-                    f"Unexpected error enriching {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"Unexpected error enriching {entry.name}: {str(e)}")
 
     def _extract_related_hashes(self, entry: Entry, data: dict) -> None:
         """Extract related hashes from MWDB data using MWDBMapping."""
@@ -182,9 +171,7 @@ class MWDBEnricher(BaseEnricher):
 
                 if target_class:
                     # Create entry for the hash
-                    hash_entry, _ = Entry.objects.get_or_create(
-                        entry_class=target_class, name=hash_value
-                    )
+                    hash_entry, _ = Entry.objects.get_or_create(entry_class=target_class, name=hash_value)
 
                     # Create relation
                     Relation.objects.create(
@@ -205,27 +192,21 @@ class MWDBEnricher(BaseEnricher):
                     # Track unmapped type
                     if field not in unmapped_types:
                         unmapped_types.append(field)
-                        logger.debug(
-                            f"Skipping MWDB hash type '{field}' - no mapping configured"
-                        )
+                        logger.debug(f"Skipping MWDB hash type '{field}' - no mapping configured")
 
         # Extract parent hashes if available
         parent_class = typemapping.get("parent")
         parents = data.get("parents", [])
         if parents and not parent_class:
             unmapped_types.append("parent")
-            logger.debug(
-                "Skipping MWDB parent hashes - no mapping configured for 'parent' type"
-            )
+            logger.debug("Skipping MWDB parent hashes - no mapping configured for 'parent' type")
 
         if parent_class:
             for parent in parents:
                 if isinstance(parent, dict):
                     parent_hash = parent.get("sha256") or parent.get("id")
                     if parent_hash:
-                        parent_entry, _ = Entry.objects.get_or_create(
-                            entry_class=parent_class, name=parent_hash
-                        )
+                        parent_entry, _ = Entry.objects.get_or_create(entry_class=parent_class, name=parent_hash)
 
                         Relation.objects.create(
                             e1=entry,

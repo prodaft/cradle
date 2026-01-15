@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthState } from '@/hooks/auth/useAuth';
 import { useMutation } from '@tanstack/react-query';
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
 import { ReactNode, useState } from 'react';
@@ -25,7 +25,7 @@ export default function AdminPanelCardEntryType({
     setRightPane,
 }: AdminPanelCardEntryTypeProps) {
     const { entriesApi } = useApi();
-    const { isAdmin } = useProfile();
+    const { isAdmin } = useAuthState();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
     const deleteMutation = useMutation({
@@ -68,7 +68,7 @@ export default function AdminPanelCardEntryType({
                     {name}
                 </CardTitle>
                 <CardAction>
-                    {isAdmin() && (
+                    {isAdmin && (
                         <Button
                             variant='ghost'
                             size='icon-sm'
@@ -92,7 +92,7 @@ export default function AdminPanelCardEntryType({
                     >
                         <EditPencil />
                     </Button>
-                    {isAdmin() && (
+                    {isAdmin && (
                         <>
                             <Button
                                 variant='ghost'

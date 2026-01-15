@@ -53,10 +53,12 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 3. **Configure environment**
    Copy the example environment file and configure it:
-   ```bash
-   cp .env.example .env
-   ```
-   Then edit `.env` and set `VITE_API_BASE_URL` to your backend API URL (default: `http://localhost:8000`).
+
+    ```bash
+    cp .env.example .env
+    ```
+
+    Then edit `.env` and set `VITE_API_BASE_URL` to your backend API URL (default: `http://localhost:8000`).
 
 4. **Start development server**
     ```bash
@@ -71,14 +73,14 @@ It provides an intuitive interface for cybersecurity analysts to:
 
 ### Development Scripts
 
-| Command             | Description                         |
-| ------------------- | ----------------------------------- |
-| `bun run dev`       | Start development server              |
-| `bun run build`     | Build production bundle               |
-| `bun run lint`      | Run ESLint for code quality checks  |
-| `bun run typecheck` | Run tsc for typecheck               |
-| `bun run verify`    | Lint and Typecheck                  |
-| `bun run prettier`  | Format code with Prettier           |
+| Command             | Description                        |
+| ------------------- | ---------------------------------- |
+| `bun run dev`       | Start development server           |
+| `bun run build`     | Build production bundle            |
+| `bun run lint`      | Run ESLint for code quality checks |
+| `bun run typecheck` | Run tsc for typecheck              |
+| `bun run verify`    | Lint and Typecheck                 |
+| `bun run prettier`  | Format code with Prettier          |
 
 ### Key Features
 

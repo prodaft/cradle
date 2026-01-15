@@ -4,7 +4,6 @@
 
 import type {
     AccessApi,
-    CradleStatisticsApi,
     EntriesApi,
     FileTransferApi,
     IntelioApi,
@@ -14,9 +13,9 @@ import type {
     ManagementApi,
     NotesApi,
     NotificationsApi,
-    PublishApi,
     QueryApi,
-    UserApi,
+    ReportsApi,
+    UsersApi,
 } from '@services/cradle/apis';
 import { createContext, useContext } from 'react';
 
@@ -35,11 +34,9 @@ export interface ApiContextValue {
     notesApi: NotesApi;
     notificationsApi: NotificationsApi;
     queryApi: QueryApi;
-    reportsApi: PublishApi;
-    statisticsApi: CradleStatisticsApi;
-    usersApi: UserApi;
+    reportsApi: ReportsApi;
+    usersApi: UsersApi;
     basePath: string;
-    setBasePath: (path: string) => void;
 }
 
 /**

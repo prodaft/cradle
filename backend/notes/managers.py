@@ -44,9 +44,7 @@ class NoteQuerySet(models.QuerySet):
         v = user.access_vector
 
         queryset = self.annotate(
-            bit_or=ExpressionWrapper(
-                F("access_vector").bitor(Value(v)), output_field=fieldtype
-            )
+            bit_or=ExpressionWrapper(F("access_vector").bitor(Value(v)), output_field=fieldtype)
         ).filter(~Q(bit_or=v))
 
         return queryset
@@ -61,9 +59,7 @@ class NoteQuerySet(models.QuerySet):
         v = user.access_vector
 
         queryset = self.annotate(
-            bit_or=ExpressionWrapper(
-                F("access_vector").bitor(Value(v)), output_field=fieldtype
-            )
+            bit_or=ExpressionWrapper(F("access_vector").bitor(Value(v)), output_field=fieldtype)
         ).filter(bit_or=v)
 
         return queryset
@@ -107,9 +103,7 @@ class NoteManager(models.Manager):
 
         return entries
 
-    def get_accessible_notes(
-        self, user: CradleUser, entry_id: Optional[UUID] = None
-    ) -> models.QuerySet:
+    def get_accessible_notes(self, user: CradleUser, entry_id: Optional[UUID] = None) -> models.QuerySet:
         """Get the notes of an entity that the user has access to.
         If None is provided as a parameter, then the method returns all
         accessible notes.
@@ -173,9 +167,7 @@ class NoteManager(models.Manager):
             models.QuerySet: The pairs of entries linked using notes.
 
         """
-        connected_entries = Entry.objects.annotate(
-            note_count=Count("notes", filter=Q(notes__id__in=note_list))
-        )
+        connected_entries = Entry.objects.annotate(note_count=Count("notes", filter=Q(notes__id__in=note_list)))
 
         connected_entries = connected_entries.filter(note_count__gt=0)
 

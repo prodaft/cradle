@@ -21,7 +21,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 interface DataTypeOption {
     value: string;
@@ -141,7 +141,7 @@ function DigestList({
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 setPageSize(newPageSize);

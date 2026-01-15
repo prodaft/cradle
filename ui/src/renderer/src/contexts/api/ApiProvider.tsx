@@ -1,6 +1,5 @@
 import { ApiContext } from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
-import { queryClient } from '@/query/queryClient';
 import {
     AccessApi,
     EntriesApi,
@@ -14,11 +13,10 @@ import {
     NotificationsApi,
     QueryApi,
     ReportsApi,
-    StatisticsApi,
     UsersApi,
 } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
-import { ReactNode, useEffect, useMemo } from 'react';
+import { ReactNode, useMemo } from 'react';
 
 interface ApiProviderProps {
     children: ReactNode;
@@ -31,7 +29,7 @@ interface ApiProviderProps {
  */
 export function ApiProvider({ children }: ApiProviderProps) {
     const { basePath } = useAuthState();
-    const { getAccessToken, isLoggedIn, setBasePath } = useAuthActions();
+    const { getAccessToken, isLoggedIn } = useAuthActions();
 
     const configuration = useMemo(() => {
         return new Configuration({
@@ -62,22 +60,12 @@ export function ApiProvider({ children }: ApiProviderProps) {
             notificationsApi: new NotificationsApi(configuration),
             queryApi: new QueryApi(configuration),
             reportsApi: new ReportsApi(configuration),
-            statisticsApi: new StatisticsApi(configuration),
             usersApi: new UsersApi(configuration),
         };
     }, [configuration]);
 
-    // Cancel and clear all queries when basePath changes (env switch)
-    // This ensures stale data from the old basePath is cleared and in-flight requests are cancelled
-    useEffect(() => {
-        queryClient.cancelQueries();
-        queryClient.clear();
-        // Optional: force re-login on env switch
-        // auth.logOut();
-    }, [basePath]);
-
     return (
-        <ApiContext.Provider value={{ ...apis, basePath: basePath, setBasePath }}>
+        <ApiContext.Provider value={{ ...apis, basePath: basePath }}>
             {children}
         </ApiContext.Provider>
     );

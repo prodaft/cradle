@@ -55,9 +55,7 @@ class RelationListView(APIView):
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                RelationSerializer
-            ),
+            200: TotalPagesPagination().get_paginated_response_serializer(RelationSerializer),
             **get_error_responses(
                 EntriesErrorCodes.RELATES_PARAMETER_REQUIRED,
                 EntriesErrorCodes.INVALID_RELATES_PARAMETER,
@@ -70,28 +68,20 @@ class RelationListView(APIView):
     def get(self, request):
         page_size = request.query_params.get("page_size", 10)
         if not page_size.isdigit() or int(page_size) <= 0:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size parameter. Must be a positive integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size parameter. Must be a positive integer.")
         page_size = int(page_size)
 
         if page_size > 200:
-            raise PageSizeTooLargeException(
-                detail="page_size cannot be greater than 200."
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 200.")
 
         raw_ids = request.query_params.getlist("relates")
         if not raw_ids:
-            raise RelatesParameterRequiredException(
-                detail="`relates` query parameter is required."
-            )
+            raise RelatesParameterRequiredException(detail="`relates` query parameter is required.")
 
         try:
             entry_ids = [int(e) for e in raw_ids]
         except ValueError:
-            raise InvalidRelatesParameterException(
-                detail="One or more `relates` values are not valid integers."
-            )
+            raise InvalidRelatesParameterException(detail="One or more `relates` values are not valid integers.")
 
         # Get relations where both e1 and e2 are in the provided list
         relations = Relation.objects.accessible(request.user).filter(

@@ -12,12 +12,21 @@ import Graph from './Graph';
 import { filterGraph, Node } from './graphFilterUtils';
 import GraphQuery from './GraphQuery';
 
-export type LayoutMode = 'circular' | 'grid' | 'cluster' | 'random';
-
 interface GraphConfig {
     nodeRadiusCoefficient: number;
     linkWidthCoefficient: number;
-    layoutMode: LayoutMode;
+    showLinks?: boolean;
+    curvedLinks?: boolean;
+    scaleLinksOnZoom?: boolean;
+    showLinkWidthLegend?: boolean;
+    simulationGravity: number;
+    simulationRepulsion: number;
+    simulationLinkSpring: number;
+    simulationLinkDistance: number;
+    simulationFriction: number;
+    simulationCluster: number;
+    simulationDecay: number;
+    randomSeed?: string | number;
 }
 
 interface SearchComponentProps {
@@ -43,12 +52,23 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     const [config, setConfig] = useState<GraphConfig>({
         nodeRadiusCoefficient: 1,
         linkWidthCoefficient: 1,
-        layoutMode: 'circular',
+        showLinks: true,
+        curvedLinks: false,
+        scaleLinksOnZoom: false,
+        showLinkWidthLegend: false,
+        simulationGravity: 0.15,
+        simulationRepulsion: 1.6,
+        simulationLinkSpring: 0.6,
+        simulationLinkDistance: 16,
+        simulationFriction: 0.75,
+        simulationCluster: 0.1,
+        simulationDecay: 10000,
+        randomSeed: 42,
     });
     const [selectedNodes, setSelectedNodes] = useState<Set<Node>>(new Set());
-    const [activePanel, setActivePanel] = useState<'explorer' | 'display' | null>(
-        'explorer',
-    );
+    const [activePanel, setActivePanel] = useState<
+        'explorer' | 'display' | 'filters' | null
+    >('explorer');
     const cosmographRef = useRef<any>(null);
 
     // Maintain sets for tracking existing IDs
@@ -208,7 +228,12 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                                     addBoth={addBoth}
                                     nodes={filteredNodes}
                                     edges={filteredEdges}
-                                    activePanel={activePanel}
+                                    activePanel={
+                                        activePanel as
+                                            | 'explorer'
+                                            | 'display'
+                                            | 'filters'
+                                    }
                                     onClosePanel={() => setActivePanel(null)}
                                     cosmographRef={cosmographRef}
                                 />

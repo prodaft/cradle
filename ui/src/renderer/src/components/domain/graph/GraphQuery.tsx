@@ -1,6 +1,8 @@
-import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { EdgeRelation } from '@/services/cradle';
-import { ComponentType, MutableRefObject } from 'react';
+import { XIcon } from 'lucide-react';
+import type React from 'react';
+import { ComponentType } from 'react';
 import GraphControl from './GraphControl';
 import { Edge, Node } from './graphFilterUtils';
 
@@ -33,9 +35,9 @@ interface GraphQueryProps {
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
     nodes: Node[];
     edges: Edge[];
-    activePanel: 'explorer' | 'display';
+    activePanel: 'explorer' | 'display' | 'filters';
     onClosePanel: () => void;
-    cosmographRef: MutableRefObject<any>;
+    cosmographRef: React.MutableRefObject<any>;
 }
 
 export default function GraphQuery({
@@ -61,57 +63,48 @@ export default function GraphQuery({
         setConfig,
     };
 
-    const panelTitle = activePanel === 'explorer' ? 'Explorer' : 'Display';
+    const panelTitle =
+        activePanel === 'explorer'
+            ? 'Explorer'
+            : activePanel === 'display'
+              ? 'Display'
+              : 'Filters';
 
     return (
-        <div className='h-full rounded-xl flex flex-col'>
+        <div className='h-full rounded-xl flex flex-col relative'>
             <div className='flex flex-col flex-1 overflow-hidden h-[85vh]'>
-                {/* Header with title and close button */}
+                {/* Header with title */}
                 <div className='flex justify-between items-center pl-4 pr-3 py-3'>
                     <h2 className='text-lg font-semibold'>{panelTitle}</h2>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='icon'
-                        className='p-1.5 w-8 h-8'
-                        title='Close panel'
-                        onClick={onClosePanel}
-                    >
-                        <svg
-                            width='16'
-                            height='16'
-                            strokeWidth='1.5'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            xmlns='http://www.w3.org/2000/svg'
-                            color='currentColor'
-                        >
-                            <path
-                                d='M6.75827 17.2426L12.0009 12M17.2435 6.75736L12.0009 12M12.0009 12L6.75827 6.75736M12.0009 12L17.2435 17.2426'
-                                stroke='currentColor'
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                            ></path>
-                        </svg>
-                    </Button>
                 </div>
+                {/* Close button */}
+                <button
+                    type='button'
+                    onClick={onClosePanel}
+                    className='ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4'
+                >
+                    <XIcon />
+                    <span className='sr-only'>Close</span>
+                </button>
                 <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800' />
-                <GraphControl
-                    settingsProps={settingsProps}
-                    SearchComponent={SearchComponent}
-                    entryGraphColors={entryGraphColors}
-                    disabledTypes={disabledTypes}
-                    setDisabledTypes={setDisabledTypes}
-                    addEdges={addEdges}
-                    addNodes={addNodes}
-                    addBoth={addBoth}
-                    nodes={nodes}
-                    edges={edges}
-                    activePanel={activePanel}
-                    cosmographRef={cosmographRef}
-                    selectedEntries={selectedEntries}
-                    setSelectedEntries={setSelectedEntries}
-                />
+                <ScrollArea className='flex-1'>
+                    <GraphControl
+                        settingsProps={settingsProps}
+                        SearchComponent={SearchComponent}
+                        entryGraphColors={entryGraphColors}
+                        disabledTypes={disabledTypes}
+                        setDisabledTypes={setDisabledTypes}
+                        addEdges={addEdges}
+                        addNodes={addNodes}
+                        addBoth={addBoth}
+                        nodes={nodes}
+                        edges={edges}
+                        activePanel={activePanel}
+                        cosmographRef={cosmographRef}
+                        selectedEntries={selectedEntries}
+                        setSelectedEntries={setSelectedEntries}
+                    />
+                </ScrollArea>
             </div>
         </div>
     );

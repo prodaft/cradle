@@ -20,7 +20,7 @@ import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { Download, RefreshCircle, Trash, WarningCircle } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
 
@@ -403,7 +403,7 @@ export default function FilesList({
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 handlePageSizeChange(newPageSize);

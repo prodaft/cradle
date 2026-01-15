@@ -1,7 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { useAuthActions } from '@/hooks/auth/useAuth';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { useRouter } from '@tanstack/react-router';
+import { useQuery } from '@tanstack/react-query';
 import { LogOut, Settings, User } from 'lucide-react';
 
 import {
@@ -20,7 +22,15 @@ import {
 
 export function NavUser() {
     const { isMobile, state } = useSidebar();
-    const { profile } = useProfile();
+    const { usersApi } = useApi();
+    const { isLoggedIn } = useAuthActions();
+    const { role } = useAuthState();
+    const { data: profile } = useQuery({
+        queryKey: queryKeys.users.detail('me'),
+        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
+        enabled: isLoggedIn(),
+        meta: { showErrorToast: false },
+    });
     const { logOut } = useAuthActions();
     const router = useRouter();
     const isCollapsed = state === 'collapsed';
@@ -63,13 +73,12 @@ export function NavUser() {
                                     <span className='truncate font-medium'>
                                         {profile?.username || 'User'}
                                     </span>
-                                    {profile?.role && (
+                                    {role && (
                                         <Badge
-                                            variant={getRoleBadgeVariant(profile.role)}
+                                            variant={getRoleBadgeVariant(role)}
                                             className='text-[10px] px-1.5 py-0 h-4 leading-none'
                                         >
-                                            {profile.role.charAt(0).toUpperCase() +
-                                                profile.role.slice(1)}
+                                            {role.charAt(0).toUpperCase() + role.slice(1)}
                                         </Badge>
                                     )}
                                 </div>
@@ -95,17 +104,13 @@ export function NavUser() {
                                             <span className='truncate font-medium'>
                                                 {profile?.username || 'User'}
                                             </span>
-                                            {profile?.role && (
+                                            {role && (
                                                 <Badge
-                                                    variant={getRoleBadgeVariant(
-                                                        profile.role,
-                                                    )}
+                                                    variant={getRoleBadgeVariant(role)}
                                                     className='text-[10px] px-1.5 py-0 h-4 leading-none'
                                                 >
-                                                    {profile.role
-                                                        .charAt(0)
-                                                        .toUpperCase() +
-                                                        profile.role.slice(1)}
+                                                    {role.charAt(0).toUpperCase() +
+                                                        role.slice(1)}
                                                 </Badge>
                                             )}
                                         </div>

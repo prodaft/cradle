@@ -137,9 +137,7 @@ class EntryClassesDoNotExistException(CradleAPIException):
 
     def __init__(self, classes: Iterable[str], *args, **kwargs) -> None:
         assert len(classes) > 0
-        detail = "Some of the referenced entry classes do not exist:\n" + ",\n".join(
-            classes
-        )
+        detail = "Some of the referenced entry classes do not exist:\n" + ",\n".join(classes)
         super().__init__(detail=detail, *args, **kwargs)
 
 
@@ -152,8 +150,7 @@ class EntriesDoNotExistException(CradleAPIException):
         assert len(links) > 0
 
         detail = (
-            "Some of the referenced entries do not exist or "
-            + "you don't have the right permissions to access them:\n"
+            "Some of the referenced entries do not exist or " + "you don't have the right permissions to access them:\n"
         )
 
         for i in links:
@@ -172,8 +169,7 @@ class NoAccessToEntriesException(CradleAPIException):
         assert len(links) > 0
 
         detail = (
-            "Some of the referenced entries do not exist or you don't "
-            + "have the right permissions to access them:\n"
+            "Some of the referenced entries do not exist or you don't " + "have the right permissions to access them:\n"
         )
 
         for i in links:

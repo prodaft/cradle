@@ -13,9 +13,7 @@ class LinkFilesTask(BaseTask):
     def is_validator(self) -> bool:
         return False
 
-    def run(
-        self, note: Note, entries: Iterable[Entry]
-    ) -> Tuple[Celery, Iterable[Entry]]:
+    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Celery, Iterable[Entry]]:
         """
         Create the links between the entries, using the note
 

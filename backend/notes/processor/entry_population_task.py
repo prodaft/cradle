@@ -13,9 +13,7 @@ class EntryPopulationTask(BaseTask):
     def is_validator(self) -> bool:
         return False
 
-    def run(
-        self, note: Note, entries: Iterable[Entry]
-    ) -> Tuple[Celery, Iterable[Entry]]:
+    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Celery, Iterable[Entry]]:
         """
         Create the entries that are missing for a note.
 
@@ -27,8 +25,6 @@ class EntryPopulationTask(BaseTask):
         """
 
         return (
-            entry_population_task.si(
-                note.id, user_id=self.user.id if self.user else None
-            ),
+            entry_population_task.si(note.id, user_id=self.user.id if self.user else None),
             entries,
         )

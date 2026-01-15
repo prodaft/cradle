@@ -117,8 +117,11 @@ uv run celery -A cradle flower
 # Access Django shell
 uv run python manage.py shell_plus --ipython
 
+# Format code
+uv run ruff format .
+
 # Check code quality
-uv run flake8 .
+uv run ruff check .
 ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>

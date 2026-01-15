@@ -7,9 +7,7 @@ from celery import current_task
 from redis_lock import Lock
 
 
-def distributed_lock(
-    lock_name_template, timeout=3600, retry_countdown=60, expire=7200, max_retries=3
-):
+def distributed_lock(lock_name_template, timeout=3600, retry_countdown=60, expire=7200, max_retries=3):
     """
     Distributed lock decorator using Redis.
 

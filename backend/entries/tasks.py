@@ -25,9 +25,7 @@ def update_accesses(entry_id):
     update_notes = []
 
     for note in notes:
-        newvec = calculate_acvec(
-            note.entries.filter(entry_class__type=EntryType.ENTITY)
-        )
+        newvec = calculate_acvec(note.entries.filter(entry_class__type=EntryType.ENTITY))
 
         if newvec != note.access_vector:
             note.access_vector = newvec
@@ -101,9 +99,7 @@ def scan_for_children(entry_ids, content_type_id, content_id):
                     reason=RelationReason.CONTAINS,
                     inherit_av=True,
                     access_vector=(
-                        getattr(content_object, "access_vector")
-                        if hasattr(content_object, "access_vector")
-                        else 1
+                        getattr(content_object, "access_vector") if hasattr(content_object, "access_vector") else 1
                     ),
                     content_object=content_object,
                 )
@@ -131,9 +127,7 @@ def refresh_edges_materialized_view():
     with connection.cursor() as cursor:
         cursor.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY edges;")
 
-    entryids = Entry.objects.exclude(entry_class__subtype="note").values_list(
-        "id", flat=True
-    )
+    entryids = Entry.objects.exclude(entry_class__subtype="note").values_list("id", flat=True)
     degrees = [None for _ in range(len(entryids))]
 
     for i, entryid in enumerate(entryids):

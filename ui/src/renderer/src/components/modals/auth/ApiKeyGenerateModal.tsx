@@ -104,7 +104,8 @@ export default function ApiKeyGenerateModal({
                         </DialogDescription>
                     ) : (
                         <DialogDescription className='sr-only'>
-                            API key has been generated. Copy it now as you won't be able to see it again.
+                            API key has been generated. Copy it now as you won't be able
+                            to see it again.
                         </DialogDescription>
                     )}
                 </DialogHeader>

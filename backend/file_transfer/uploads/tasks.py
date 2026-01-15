@@ -47,16 +47,12 @@ def cleanup_expired_upload_generic(
         pending = Model.objects.get(id=pending_upload_id)
     except Model.DoesNotExist:
         # Already cleaned up or finalized
-        logger.debug(
-            f"Pending upload {pending_upload_id} not found (already cleaned up)"
-        )
+        logger.debug(f"Pending upload {pending_upload_id} not found (already cleaned up)")
         return
 
     # Only clean up if expired
     if not pending.is_expired:
-        logger.debug(
-            f"Pending upload {pending_upload_id} not yet expired, skipping cleanup"
-        )
+        logger.debug(f"Pending upload {pending_upload_id} not yet expired, skipping cleanup")
         return
 
     # Delete file from S3 if it exists
@@ -111,9 +107,7 @@ def cleanup_all_expired_uploads():
         from intelio.models.uploads import PendingDigestUpload
         from file_transfer.storage import DigestStorage
 
-        expired_digest_uploads = PendingDigestUpload.objects.filter(
-            expires_at__lt=timezone.now()
-        )
+        expired_digest_uploads = PendingDigestUpload.objects.filter(expires_at__lt=timezone.now())
         for pending in expired_digest_uploads:
             try:
                 cleanup_expired_upload_generic(

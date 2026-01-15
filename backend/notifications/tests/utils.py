@@ -16,21 +16,13 @@ class NotificationsTestCase(TestCase):
         self.mocked_success_logger = self.success_logger_patcher.start()
         self.mocked_error_logger = self.error_logger_patcher.start()
 
-        self.entryclass_ip = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="ip"
-        )
+        self.entryclass_ip = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="ip")
 
-        self.entryclass_country = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="country"
-        )
+        self.entryclass_country = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="country")
 
-        self.entryclass1 = EntryClass.objects.create(
-            type=EntryType.ENTITY, subtype="case"
-        )
+        self.entryclass1 = EntryClass.objects.create(type=EntryType.ENTITY, subtype="case")
 
-        self.entryclass2 = EntryClass.objects.create(
-            type=EntryType.ARTIFACT, subtype="actor"
-        )
+        self.entryclass2 = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype="actor")
 
         self.entryclass1.save()
         self.entryclass2.save()

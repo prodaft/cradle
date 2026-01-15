@@ -212,9 +212,7 @@ class Node:
             return self.links
         elif not ignore_connectors:
             # Use deterministic ID instead of random UUID
-            note_link = Link(
-                key="note", value=self.get_deterministic_id(), virtual=True
-            )
+            note_link = Link(key="note", value=self.get_deterministic_id(), virtual=True)
             return {note_link}
 
         return set()
@@ -251,9 +249,7 @@ class Node:
         if other is None:
             return False
         if not isinstance(other, Node):
-            raise NotImplementedError(
-                "Cannot compare Node with non-Node object: " + str(other)
-            )
+            raise NotImplementedError("Cannot compare Node with non-Node object: " + str(other))
         return (
             self.level == other.level
             and self.type == other.type
@@ -314,9 +310,7 @@ class LinksRenderer(BaseRenderer):
             if (src.type == NodeType.HEADING and target.level > src.level + 1) or (
                 src.type == NodeType.ROOT and target.level > 1
             ):
-                dummy = self.node_factory.create_node(
-                    type=NodeType.HEADING, level=src.level + 1
-                )
+                dummy = self.node_factory.create_node(type=NodeType.HEADING, level=src.level + 1)
                 src.add_child(dummy)
                 return self.traverse_up(dummy, target)
             elif src.type == NodeType.HEADING and target.level <= src.level:
@@ -378,9 +372,7 @@ class LinksRenderer(BaseRenderer):
 
         return src
 
-    def render_token(
-        self, token: Dict[str, Any], state: BlockState, parent: Node
-    ) -> Node:
+    def render_token(self, token: Dict[str, Any], state: BlockState, parent: Node) -> Node:
         func = self._get_method(token["type"])
         attrs = token.get("attrs", {})
 
@@ -397,16 +389,12 @@ class LinksRenderer(BaseRenderer):
 
         return node
 
-    def render_tokens(
-        self, tokens: Iterable[Dict[str, Any]], state: BlockState, parent: Node
-    ) -> Node:
+    def render_tokens(self, tokens: Iterable[Dict[str, Any]], state: BlockState, parent: Node) -> Node:
         for tok in tokens:
             parent = self.render_token(tok, state, parent)
 
     def __call__(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> str:
-        root = self.node_factory.create_node(
-            type=NodeType.ROOT, level=0, links=self.root_links
-        )
+        root = self.node_factory.create_node(type=NodeType.ROOT, level=0, links=self.root_links)
         self.render_tokens(tokens, state, root)
         return root
 
@@ -488,9 +476,7 @@ class LinksRenderer(BaseRenderer):
         return self.node_factory.create_node(type=NodeType.OTHER)
 
     def list(self, ordered: bool, **attrs: Any) -> Node:
-        return self.node_factory.create_node(
-            type=NodeType.LIST, level=attrs.get("depth", 0) + 1
-        )
+        return self.node_factory.create_node(type=NodeType.LIST, level=attrs.get("depth", 0) + 1)
 
     def list_item(self) -> List:
         return self.node_factory.create_node(type=NodeType.LIST_ITEM, level=-1)
@@ -543,17 +529,13 @@ def cradle_connections(
                                 time_format = "%H:%M %d-%m-%Y"
 
                                 try:
-                                    date = make_aware(
-                                        datetime.datetime.strptime(v, time_format)
-                                    )
+                                    date = make_aware(datetime.datetime.strptime(v, time_format))
                                 except ValueError:
                                     raise InvalidDateFormatException(v)
 
                         if date is None:
                             try:
-                                date = make_aware(
-                                    datetime.datetime.strptime(v, "%d-%m-%Y")
-                                )
+                                date = make_aware(datetime.datetime.strptime(v, "%d-%m-%Y"))
                             except ValueError:
                                 raise InvalidDateFormatException(v)
                     except ValueError:
@@ -561,27 +543,21 @@ def cradle_connections(
 
                     entries.add(Link(key=subtype, value=k, date=date))
                 elif isinstance(v, Iterable):
-                    raise ValueError(
-                        f"Unsupported value type for {subtype}:{k}. Expected str, got {type(v)}."
-                    )
+                    raise ValueError(f"Unsupported value type for {subtype}:{k}. Expected str, got {type(v)}.")
 
         elif isinstance(value, str):
             entries.add(Link(key=subtype, value=value))
 
     renderer = LinksRenderer(base_id=base_id, root_links=entries)
 
-    markdown = mistune.create_markdown(
-        renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
-    )
+    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin])
 
     result, state = markdown.parse(content)
 
     return result
 
 
-def print_tree(
-    node: "Node", indent: str = "", is_last: bool = True, show_details: bool = False
-) -> None:
+def print_tree(node: "Node", indent: str = "", is_last: bool = True, show_details: bool = False) -> None:
     """
     Print a Node object as a tree structure.
 

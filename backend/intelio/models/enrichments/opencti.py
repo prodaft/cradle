@@ -116,10 +116,7 @@ class OpenCTIEnricher(BaseEnricher):
             return "No entries provided for enrichment"
 
         # Warn if mappings are missing and observable extraction is enabled
-        if (
-            self.settings.get("extract_observables", False)
-            and not OpenCTIMapping.objects.exists()
-        ):
+        if self.settings.get("extract_observables", False) and not OpenCTIMapping.objects.exists():
             self.request._append_warning(
                 "No OpenCTI type mappings configured. "
                 "Observable extraction will be disabled. "
@@ -147,9 +144,7 @@ class OpenCTIEnricher(BaseEnricher):
                 proxies=proxies,
             )
         except Exception as e:
-            self.request._append_warning(
-                f"Failed to initialize OpenCTI client: {str(e)}"
-            )
+            self.request._append_warning(f"Failed to initialize OpenCTI client: {str(e)}")
             return
 
         enrichment_entry = self.request.entry
@@ -157,17 +152,11 @@ class OpenCTIEnricher(BaseEnricher):
         for entry in entries:
             try:
                 # Search for observables
-                observables = pycti.StixCyberObservable(opencti_instance, File).list(
-                    search=entry.name
-                )
+                observables = pycti.StixCyberObservable(opencti_instance, File).list(search=entry.name)
 
                 # Filter exact matches if exact_search is set
                 if exact_search:
-                    observables = [
-                        obs
-                        for obs in observables
-                        if obs.get("observable_value") == entry.name
-                    ]
+                    observables = [obs for obs in observables if obs.get("observable_value") == entry.name]
 
                 # Process each observable
                 for observable in observables:
@@ -194,9 +183,7 @@ class OpenCTIEnricher(BaseEnricher):
                         observable["reports"] = reports
 
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to get reports for observable {observable.get('id')}: {e}"
-                        )
+                        logger.warning(f"Failed to get reports for observable {observable.get('id')}: {e}")
                         observable["reports"] = []
                         observable["error"] = str(e)
 
@@ -219,6 +206,4 @@ class OpenCTIEnricher(BaseEnricher):
                 )
 
             except Exception as e:
-                self.request._append_warning(
-                    f"OpenCTI query failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"OpenCTI query failed for {entry.name}: {str(e)}")

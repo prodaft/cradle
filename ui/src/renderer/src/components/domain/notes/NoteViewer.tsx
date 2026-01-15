@@ -20,7 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthState } from '@/hooks/auth';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
 import { CradleEditor } from '@/utils/editor/enhancements';
@@ -83,7 +83,7 @@ export default function NoteViewer() {
         select: (state) => state.location,
     });
     const locationState = (location.state as LocationState) || {};
-    const { isAdmin, profile } = useProfile();
+    const { isAdmin } = useAuthState();
     const { from, state } = locationState;
     const [note, setNote] = useState<NoteRetrieve | null>(null);
     const [richEditor, setRichEditor] = useState(
@@ -131,7 +131,7 @@ export default function NoteViewer() {
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
     const lastLoadedNoteIdRef = useRef<string | null>(null);
-    const { managementApi, notesApi, lspApi} = useApi();
+    const { managementApi, notesApi, lspApi } = useApi();
 
     const finalizeNoteMutation = useMutation({
         mutationFn: async (noteId: string) => {
@@ -623,7 +623,7 @@ export default function NoteViewer() {
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent>
-                                {enableEditing ? 'Editing mode' : 'Reading mode'}
+                                {enableEditing ? 'Editing view' : 'Reading view'}
                             </TooltipContent>
                         </Tooltip>
                         {!noteId?.startsWith('guide_') && (
@@ -639,7 +639,7 @@ export default function NoteViewer() {
                                     toggleOutline={toggleOutline}
                                     lspLoaded={lspLoaded}
                                     smartLink={smartLink}
-                                    isAdmin={isAdmin()}
+                                    isAdmin={isAdmin}
                                     handleRelinkNote={handleRelinkNote}
                                     isFleeting={isFleeting}
                                     hasFiles={fileData.length > 0}
@@ -813,7 +813,7 @@ export default function NoteViewer() {
                         />
                     )}
 
-                    {isAdmin() && activeView === ViewMode.HISTORY && noteId && (
+                    {isAdmin && activeView === ViewMode.HISTORY && noteId && (
                         <div className='pt-2'>
                             <ActivityList content_type='note' objectId={noteId} />
                         </div>

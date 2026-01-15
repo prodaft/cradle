@@ -163,18 +163,14 @@ class MISPEnricher(BaseEnricher):
                 if isinstance(result_search, dict):
                     errors = result_search.get("errors", [])
                     if errors:
-                        self.request._append_warning(
-                            f"MISP search errors for {entry.name}: {errors}"
-                        )
+                        self.request._append_warning(f"MISP search errors for {entry.name}: {errors}")
                         continue
 
                 # Create relation with results
                 result = {
                     "result_search": result_search,
                     "instance_url": instance_url,
-                    "total_results": (
-                        len(result_search) if isinstance(result_search, list) else 0
-                    ),
+                    "total_results": (len(result_search) if isinstance(result_search, list) else 0),
                 }
 
                 Relation.objects.create(
@@ -193,9 +189,7 @@ class MISPEnricher(BaseEnricher):
                     self._extract_artifacts_from_events(entry, result_search)
 
             except Exception as e:
-                self.request._append_warning(
-                    f"MISP query failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"MISP query failed for {entry.name}: {str(e)}")
 
     def _build_search_params(self, entry: Entry) -> dict:
         """Build MISP search parameters based on settings and entry."""
@@ -228,9 +222,7 @@ class MISPEnricher(BaseEnricher):
 
         # Type filtering - use mapping to get MISP attribute types for this CRADLE entry class
         if self.settings.get("filter_on_type", True):
-            misp_types = MISPMapping.get_misp_types_for_entry_class(
-                entry.entry_class.subtype
-            )
+            misp_types = MISPMapping.get_misp_types_for_entry_class(entry.entry_class.subtype)
             if misp_types:
                 params["type_attribute"] = misp_types
 
@@ -266,9 +258,7 @@ class MISPEnricher(BaseEnricher):
 
                 if target_class:
                     # Create entry for the discovered artifact
-                    artifact_entry, _ = Entry.objects.get_or_create(
-                        entry_class=target_class, name=attr_value
-                    )
+                    artifact_entry, _ = Entry.objects.get_or_create(entry_class=target_class, name=attr_value)
 
                     # Create relation
                     Relation.objects.create(
@@ -290,9 +280,7 @@ class MISPEnricher(BaseEnricher):
                 elif attr_type and attr_type not in unmapped_types:
                     # Log once per unmapped type
                     unmapped_types.add(attr_type)
-                    logger.debug(
-                        f"Skipping MISP attribute type '{attr_type}' - no mapping configured"
-                    )
+                    logger.debug(f"Skipping MISP attribute type '{attr_type}' - no mapping configured")
 
         # Warn user if unmapped types were encountered
         if unmapped_types:

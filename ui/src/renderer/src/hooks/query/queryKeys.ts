@@ -116,6 +116,7 @@ export const queryKeys = {
             [...queryKeys.users.lists(), filters] as const,
         details: () => [...queryKeys.users.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.users.details(), id] as const,
+        config: () => [...queryKeys.users.all, 'config'] as const,
     },
 
     // Entities

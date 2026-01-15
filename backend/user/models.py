@@ -30,43 +30,29 @@ class Theme(models.TextChoices):
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email: models.EmailField = models.EmailField(unique=True)
-    role: models.CharField = models.CharField(
-        max_length=32, choices=UserRoles.choices, default=UserRoles.USER
-    )
+    role: models.CharField = models.CharField(max_length=32, choices=UserRoles.choices, default=UserRoles.USER)
 
     api_key: Optional[str] = models.CharField(max_length=128, blank=True, null=True)
 
     catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)
 
     password_reset_token: Optional[str] = models.TextField(null=True, blank=True)
-    password_reset_token_expiry: Optional[models.DateTimeField] = models.DateTimeField(
-        null=True, blank=True
-    )
+    password_reset_token_expiry: Optional[models.DateTimeField] = models.DateTimeField(null=True, blank=True)
 
     email_confirmed: models.BooleanField = models.BooleanField(default=False)
     email_confirmation_token: Optional[str] = models.TextField(null=True, blank=True)
-    email_confirmation_token_expiry: Optional[models.DateTimeField] = (
-        models.DateTimeField(null=True, blank=True)
-    )
+    email_confirmation_token_expiry: Optional[models.DateTimeField] = models.DateTimeField(null=True, blank=True)
 
     is_active: models.BooleanField = models.BooleanField(default=False)
 
     two_factor_enabled = models.BooleanField(default=False)
 
-    default_note_template = models.TextField(
-        blank=True, null=True, help_text="Default template for new notes"
-    )
-    vim_mode = models.BooleanField(
-        default=False, help_text="Whether to enable Vim keybindings in the editor"
-    )
+    default_note_template = models.TextField(blank=True, null=True, help_text="Default template for new notes")
+    vim_mode = models.BooleanField(default=False, help_text="Whether to enable Vim keybindings in the editor")
 
-    theme = models.CharField(
-        default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI"
-    )
+    theme = models.CharField(default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI")
 
     file_upload_limit_override: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
         default=None, null=True, help_text="File upload limit in bytes"
@@ -156,9 +142,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
                 continue
             acvec |= 1 << access.entity.acvec_offset
 
-        fieldtype = BitStringField(
-            max_length=2048, null=False, default=1, varying=False
-        )
+        fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
         return fieldtype.get_prep_value(acvec)
 
@@ -173,9 +157,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
                 continue
             acvec |= 1 << access.entity.acvec_offset
 
-        fieldtype = BitStringField(
-            max_length=2048, null=False, default=1, varying=False
-        )
+        fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
         inverter = 1
         for i in range(2048):
@@ -219,9 +201,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         from django.db import transaction
 
         with transaction.atomic():
-            unconfirmed_devices = TOTPDevice.objects.select_for_update().filter(
-                user=self, confirmed=False
-            )
+            unconfirmed_devices = TOTPDevice.objects.select_for_update().filter(user=self, confirmed=False)
 
             for device in unconfirmed_devices:
                 if device.verify_token(token):
@@ -252,9 +232,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
 class ExternalIdentity(models.Model):
     """Links a Cradle user to an external OAuth/OIDC identity."""
 
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user: models.ForeignKey = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -291,12 +269,8 @@ class ExternalIdentity(models.Model):
 class UserSession(models.Model):
     """Track active user sessions based on refresh tokens."""
 
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    user: models.ForeignKey = models.ForeignKey(
-        CradleUser, on_delete=models.CASCADE, related_name="sessions"
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user: models.ForeignKey = models.ForeignKey(CradleUser, on_delete=models.CASCADE, related_name="sessions")
     refresh_token_jti: models.CharField = models.CharField(
         max_length=255,
         unique=True,
@@ -309,15 +283,9 @@ class UserSession(models.Model):
     ip_address: Optional[str] = models.CharField(
         max_length=45, blank=True, null=True, help_text="IP address of the session"
     )
-    created_at: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True, help_text="When the session was created"
-    )
-    last_activity: models.DateTimeField = models.DateTimeField(
-        auto_now=True, help_text="Last activity timestamp"
-    )
-    expires_at: models.DateTimeField = models.DateTimeField(
-        help_text="When the refresh token expires"
-    )
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When the session was created")
+    last_activity: models.DateTimeField = models.DateTimeField(auto_now=True, help_text="Last activity timestamp")
+    expires_at: models.DateTimeField = models.DateTimeField(help_text="When the refresh token expires")
     is_current: models.BooleanField = models.BooleanField(
         default=False, help_text="Whether this is the current session"
     )
@@ -330,9 +298,7 @@ class UserSession(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
-        )
+        return f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
 
     def is_expired(self):
         """Check if the session has expired."""
@@ -351,9 +317,7 @@ class BlacklistedToken(models.Model):
     blacklisted_at: models.DateTimeField = models.DateTimeField(
         auto_now_add=True, help_text="When the token was blacklisted"
     )
-    expires_at: models.DateTimeField = models.DateTimeField(
-        help_text="When the token expires (for cleanup purposes)"
-    )
+    expires_at: models.DateTimeField = models.DateTimeField(help_text="When the token expires (for cleanup purposes)")
 
     class Meta:
         ordering = ["-blacklisted_at"]

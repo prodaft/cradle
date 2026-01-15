@@ -87,8 +87,7 @@ from ..serializers import (
                 type=str,
                 location=OpenApiParameter.QUERY,
                 description="Filter by note status, finalized covers all statuses except for fleeting",
-                enum=list(map(lambda x: x[0], NoteStatus.choices))
-                + ["fleeting", "finalized"],
+                enum=list(map(lambda x: x[0], NoteStatus.choices)) + ["fleeting", "finalized"],
             ),
             OpenApiParameter(
                 name="date",
@@ -135,9 +134,7 @@ from ..serializers import (
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                NoteRetrieveSerializer
-            ),
+            200: TotalPagesPagination().get_paginated_response_serializer(NoteRetrieveSerializer),
             **get_error_responses(
                 NotesErrorCodes.INVALID_PAGE_SIZE,
                 NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
@@ -172,37 +169,27 @@ class NoteList(APIView):
         else:
             queryset = Note.objects.get_accessible_notes(user)
             if status_filter is None:
-                author_fleeting = Note.objects.filter(
-                    author=user, fleeting=True
-                ).distinct()
+                author_fleeting = Note.objects.filter(author=user, fleeting=True).distinct()
                 queryset = (queryset | author_fleeting).distinct()
 
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size value. Must be an integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            raise InvalidPageSizeException(
-                detail="page_size cannot be greater than 200."
-            )
+            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
             try:
-                references_at_least = int(
-                    request.query_params.get("references_at_least", len(entrylist))
-                )
+                references_at_least = int(request.query_params.get("references_at_least", len(entrylist)))
             except ValueError:
-                raise InvalidReferencesAtLeastException(
-                    detail="Invalid references_at_least value."
-                )
+                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
 
-            queryset = queryset.annotate(
-                matching_entries=Count("entries", filter=Q(entries__in=entrylist))
-            ).filter(matching_entries=references_at_least)
+            queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entrylist))).filter(
+                matching_entries=references_at_least
+            )
         elif "linked_to" in request.query_params:
             entryid = request.query_params.get("linked_to")
             entry = Entry.objects.filter(id=entryid)
@@ -212,15 +199,11 @@ class NoteList(APIView):
 
             entry = entry.first()
 
-            linked_to_exact_match = (
-                request.query_params.get("linked_to_exact_match", "false") == "true"
-            )
+            linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
 
             if linked_to_exact_match:
                 queryset = queryset.annotate(
-                    entity_count=Count(
-                        "entries", filter=Q(entries__entry_class__type=EntryType.ENTITY)
-                    )
+                    entity_count=Count("entries", filter=Q(entries__entry_class__type=EntryType.ENTITY))
                 )
                 queryset = queryset.filter(entries=entry).filter(entity_count=1)
             else:
@@ -248,9 +231,7 @@ class NoteList(APIView):
             ]
 
             # Parse and validate order_by parameter
-            order_fields, error_response = validate_order_by(
-                order_by, valid_order_fields
-            )
+            order_fields, error_response = validate_order_by(order_by, valid_order_fields)
             if error_response:
                 return error_response
 
@@ -259,13 +240,9 @@ class NoteList(APIView):
             else:
                 notes = notes.order_by("-timestamp")
 
-            entries_prefetch = Prefetch(
-                "entries", queryset=Entry.objects.select_related("entry_class")
-            )
+            entries_prefetch = Prefetch("entries", queryset=Entry.objects.select_related("entry_class"))
 
-            files_prefetch = Prefetch(
-                "files", queryset=FileReference.objects.select_related("note")
-            )
+            files_prefetch = Prefetch("files", queryset=FileReference.objects.select_related("note"))
 
             notes = (
                 notes.select_related("author", "editor")
@@ -304,9 +281,7 @@ class NoteList(APIView):
                 return paginator.get_paginated_response(serialized_data)
 
             serializer = NoteListSerializer(truncate=200, many=True)
-            return Response(
-                serializer.to_representation(notes), status=status.HTTP_200_OK
-            )
+            return Response(serializer.to_representation(notes), status=status.HTTP_200_OK)
         else:
             from ..exceptions import InvalidRequestException
 
@@ -328,9 +303,7 @@ class NoteList(APIView):
             Response("User is not authenticated.", status=401):
                 if the user is not authenticated
         """
-        serializer = FleetingNoteSerializer(
-            data=request.data, context={"request": request}
-        )
+        serializer = FleetingNoteSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -431,9 +404,7 @@ class NoteDetail(APIView):
                 raise NoteDoesNotExistException(detail="Note was not found.")
 
         if request.query_params.get("footnotes", "true") == "true":
-            return Response(
-                NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK
-            )
+            return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
         return Response(NoteRetrieveSerializer(note).data, status=status.HTTP_200_OK)
 
@@ -455,9 +426,7 @@ class NoteDetail(APIView):
         if not user.is_cradle_admin and note.author != user:
             raise CannotEditNoteException(detail="You cannot edit this note")
 
-        serializer = NoteEditSerializer(
-            note, data=request.data, context={"request": request}
-        )
+        serializer = NoteEditSerializer(note, data=request.data, context={"request": request})
 
         serializer.is_valid(raise_exception=True)
         note = serializer.save()
@@ -483,11 +452,7 @@ class NoteDetail(APIView):
             ):
                 raise NoAccessToEntriesException(
                     detail="User does not have Read-Write access to all referenced entities",
-                    links=list(
-                        note_to_delete.entries.filter(
-                            entry_class__type=EntryType.ENTITY
-                        )
-                    ),
+                    links=list(note_to_delete.entries.filter(entry_class__type=EntryType.ENTITY)),
                 )
         note_to_delete.delete()
 
@@ -533,15 +498,11 @@ class NoteFinalize(APIView):
         }
 
         with transaction.atomic():
-            serializer = NoteCreateSerializer(
-                data=note_data, context={"request": request}
-            )
+            serializer = NoteCreateSerializer(data=note_data, context={"request": request})
             serializer.is_valid(raise_exception=True)
             new_note = serializer.save()
             note.delete()
-            return Response(
-                NoteRetrieveSerializer(new_note).data, status=status.HTTP_200_OK
-            )
+            return Response(NoteRetrieveSerializer(new_note).data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -625,9 +586,7 @@ class NoteFinalize(APIView):
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                FileReferenceWithNoteSerializer
-            ),
+            200: TotalPagesPagination().get_paginated_response_serializer(FileReferenceWithNoteSerializer),
             **get_error_responses(
                 NotesErrorCodes.INVALID_PAGE_SIZE,
                 NotesErrorCodes.INVALID_REFERENCES_AT_LEAST,
@@ -648,42 +607,30 @@ class NoteFiles(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size value. Must be an integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            raise InvalidPageSizeException(
-                detail="page_size cannot be greater than 200."
-            )
+            raise InvalidPageSizeException(detail="page_size cannot be greater than 200.")
 
         if "references" in request.query_params:
             entrylist = request.query_params.getlist("references")
             try:
-                references_at_least = int(
-                    request.query_params.get("references_at_least", len(entrylist))
-                )
+                references_at_least = int(request.query_params.get("references_at_least", len(entrylist)))
             except ValueError:
-                raise InvalidReferencesAtLeastException(
-                    detail="Invalid references_at_least value."
-                )
-            queryset = queryset.annotate(
-                matching_entries=Count("entries", filter=Q(entries__in=entrylist))
-            ).filter(matching_entries=references_at_least)
+                raise InvalidReferencesAtLeastException(detail="Invalid references_at_least value.")
+            queryset = queryset.annotate(matching_entries=Count("entries", filter=Q(entries__in=entrylist))).filter(
+                matching_entries=references_at_least
+            )
         elif "linked_to" in request.query_params:
             entryid = request.query_params.get("linked_to")
             entry = Entry.objects.filter(id=entryid)
             if not entry.exists():
                 raise EntryNotFoundException(detail="Entry not found.")
             entry = entry.first()
-            linked_to_exact_match = (
-                request.query_params.get("linked_to_exact_match", "false") == "true"
-            )
+            linked_to_exact_match = request.query_params.get("linked_to_exact_match", "false") == "true"
             if linked_to_exact_match:
                 queryset = queryset.annotate(
-                    entity_count=Count(
-                        "entries", filter=Q(entries__entry_class__type=EntryType.ENTITY)
-                    )
+                    entity_count=Count("entries", filter=Q(entries__entry_class__type=EntryType.ENTITY))
                 )
                 queryset = queryset.filter(entries=entry).filter(entity_count=1)
             else:
@@ -697,9 +644,7 @@ class NoteFiles(APIView):
 
         notes_prefetch = Prefetch(
             "files",
-            queryset=FileReference.objects.select_related("note").prefetch_related(
-                "note__entries__entry_class"
-            ),
+            queryset=FileReference.objects.select_related("note").prefetch_related("note__entries__entry_class"),
         )
 
         notes = queryset.prefetch_related(notes_prefetch)
@@ -715,10 +660,7 @@ class NoteFiles(APIView):
         if "keyword" in request.query_params:
             keyword = request.query_params.get("keyword")
             files = files.filter(
-                Q(file_name__contains=keyword)
-                | Q(md5_hash=keyword)
-                | Q(sha256_hash=keyword)
-                | Q(sha1_hash=keyword)
+                Q(file_name__contains=keyword) | Q(md5_hash=keyword) | Q(sha256_hash=keyword) | Q(sha1_hash=keyword)
             )
 
         # Filter by mimetype (wildcard match)

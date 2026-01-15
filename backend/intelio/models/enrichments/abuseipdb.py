@@ -48,15 +48,9 @@ class AbuseIPDBEnricher(BaseEnricher):
             max_length=255,
             help_text="AbuseIPDB API key from https://www.abuseipdb.com/account/api",
         ),
-        "max_age": models.IntegerField(
-            default=90, help_text="Maximum age of reports in days (1-365)"
-        ),
-        "max_reports": models.IntegerField(
-            default=100, help_text="Maximum number of reports to include in results"
-        ),
-        "verbose": models.BooleanField(
-            default=False, help_text="Include detailed report information"
-        ),
+        "max_age": models.IntegerField(default=90, help_text="Maximum age of reports in days (1-365)"),
+        "max_reports": models.IntegerField(default=100, help_text="Maximum number of reports to include in results"),
+        "verbose": models.BooleanField(default=False, help_text="Include detailed report information"),
     }
 
     API_URL = "https://api.abuseipdb.com/api/v2/check"
@@ -109,13 +103,9 @@ class AbuseIPDBEnricher(BaseEnricher):
                     access_vector=self.request.access_vector,
                     inherit_av=True,
                     details={
-                        "abuse_confidence_score": result.get("data", {}).get(
-                            "abuseConfidenceScore", 0
-                        ),
+                        "abuse_confidence_score": result.get("data", {}).get("abuseConfidenceScore", 0),
                         "total_reports": result.get("data", {}).get("totalReports", 0),
-                        "is_whitelisted": result.get("data", {}).get(
-                            "isWhitelisted", False
-                        ),
+                        "is_whitelisted": result.get("data", {}).get("isWhitelisted", False),
                         "categories_found": categories_found,
                         "reports": reports[:max_reports],
                         "permalink": f"https://www.abuseipdb.com/check/{entry.name}",
@@ -124,9 +114,7 @@ class AbuseIPDBEnricher(BaseEnricher):
                 relations.append(relation)
 
             except requests.RequestException as e:
-                self.request._append_warning(
-                    f"AbuseIPDB API failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"AbuseIPDB API failed for {entry.name}: {str(e)}")
 
         # Bulk create relations
         if relations:

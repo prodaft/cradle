@@ -11,9 +11,7 @@ import uuid
 
 
 class MessageNotification(LifecycleModel):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     message: models.CharField = models.CharField()
     user: models.ForeignKey = models.ForeignKey(CradleUser, on_delete=models.CASCADE)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
@@ -41,9 +39,7 @@ class AccessGrantedNotification(MessageNotification):
 
 
 class AccessRequestNotification(MessageNotification):
-    requesting_user: models.ForeignKey = models.ForeignKey(
-        CradleUser, on_delete=models.CASCADE
-    )
+    requesting_user: models.ForeignKey = models.ForeignKey(CradleUser, on_delete=models.CASCADE)
     entity: models.ForeignKey = models.ForeignKey(Entry, on_delete=models.CASCADE)
 
     @property
@@ -52,9 +48,7 @@ class AccessRequestNotification(MessageNotification):
 
 
 class NewUserNotification(MessageNotification):
-    new_user: models.ForeignKey = models.ForeignKey(
-        CradleUser, on_delete=models.CASCADE
-    )
+    new_user: models.ForeignKey = models.ForeignKey(CradleUser, on_delete=models.CASCADE)
 
     @property
     def get_mail(self):
@@ -112,6 +106,4 @@ class EnrichmentErrorNotification(MessageNotification):
     def get_mail(self):
         from mail.models import EnrichmentErrorMail
 
-        return EnrichmentErrorMail(
-            self.user, self.enrichment_request, self.error_message
-        )
+        return EnrichmentErrorMail(self.user, self.enrichment_request, self.error_message)

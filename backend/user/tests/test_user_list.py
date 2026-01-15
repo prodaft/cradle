@@ -19,16 +19,14 @@ class CreateUserTest(UserTestCase):
             create_user_dict["email"] = email
 
         response = self.client.post(
-            reverse("user_list"),
+            reverse("auth_signup"),
             data=json.dumps(create_user_dict),
             content_type="application/json",
         )
         return response
 
     def test_user_create_successfully(self):
-        response = self.create_user_request(
-            "user", "userR1#1234112", email="alabala@gmail.com"
-        )
+        response = self.create_user_request("user", "userR1#1234112", email="alabala@gmail.com")
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(CradleUser.objects.get(username="user"))
 
@@ -36,9 +34,7 @@ class CreateUserTest(UserTestCase):
 
     def test_user_create_same_email(self):
         self.create_user_request("user", "userR1#1234112", email="alabala@example.com")
-        response = self.create_user_request(
-            "new_user", "userR1#12123412", email="alabala@example.com"
-        )
+        response = self.create_user_request("new_user", "userR1#12123412", email="alabala@example.com")
         self.assertEqual(response.status_code, 409)
 
         with self.assertRaises(CradleUser.DoesNotExist):
@@ -57,12 +53,8 @@ class CreateUserTest(UserTestCase):
         self.assertEqual(response.status_code, 400)
 
     def test_user_create_already_exists(self):
-        self.create_user_request(
-            username="user", password="userR1#1234112", email="alabala@gmail.com"
-        )
-        response = self.create_user_request(
-            username="user", password="userR1#1234112", email="alabal@gmail.com"
-        )
+        self.create_user_request(username="user", password="userR1#1234112", email="alabala@gmail.com")
+        response = self.create_user_request(username="user", password="userR1#1234112", email="alabal@gmail.com")
         self.assertEqual(response.status_code, 409)
 
     def test_user_create_no_email(self):
@@ -79,15 +71,13 @@ class CreateUserTest(UserTestCase):
         ]
         for email in emails:
             with self.subTest(email):
-                response = self.create_user_request(
-                    username="user", password="userR1#1234112", email=email
-                )
+                response = self.create_user_request(username="user", password="userR1#1234112", email=email)
                 self.assertEqual(response.status_code, 400)
 
     def test_user_login_successfully(self):
         self.create_user_request("user", "userR1#1234112", email="alabala@gmail.com")
         response = self.client.post(
-            reverse("user_login"),
+            reverse("auth_login"),
             data=json.dumps({"username": "user", "password": "userR1#1234112"}),
             content_type="application/json",
         )
@@ -96,7 +86,7 @@ class CreateUserTest(UserTestCase):
 
     def test_user_login_wrong_credentials(self):
         response = self.client.post(
-            reverse("user_login"),
+            reverse("auth_login"),
             data=json.dumps({"username": "user", "password": "user"}),
             content_type="application/json",
         )
@@ -105,7 +95,7 @@ class CreateUserTest(UserTestCase):
 
     def test_user_login_no_username(self):
         response = self.client.post(
-            reverse("user_login"),
+            reverse("auth_login"),
             data=json.dumps({"password": "user"}),
             content_type="application/json",
         )
@@ -114,7 +104,7 @@ class CreateUserTest(UserTestCase):
 
     def test_user_login_no_password(self):
         response = self.client.post(
-            reverse("user_login"),
+            reverse("auth_login"),
             data=json.dumps({"username": "user"}),
             content_type="application/json",
         )
@@ -130,12 +120,8 @@ class GetAllUsersTest(UserTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(
-            username="user", password="user", email="a@b.c"
-        )
-        self.admin = CradleUser.objects.create_superuser(
-            username="admin", password="admin", email="b@c.d"
-        )
+        self.user = CradleUser.objects.create_user(username="user", password="user", email="a@b.c")
+        self.admin = CradleUser.objects.create_superuser(username="admin", password="admin", email="b@c.d")
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
         self.headers_admin = {"HTTP_AUTHORIZATION": f"Bearer {self.token_admin}"}

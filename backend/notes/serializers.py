@@ -100,9 +100,7 @@ class NoteEditSerializer(serializers.ModelSerializer):
             content = validated_data.pop("content", None)
 
             if content is not None:
-                TaskScheduler(user, content=content, **validated_data).run_pipeline(
-                    instance
-                )
+                TaskScheduler(user, content=content, **validated_data).run_pipeline(instance)
 
         return super().update(instance, validated_data)
 
@@ -213,11 +211,7 @@ class FileReferenceListSerializer:
         entities = []
         if file_ref.note:
             for entry in file_ref.note.entries.all():
-                if (
-                    hasattr(entry, "entry_class")
-                    and entry.entry_class
-                    and entry.entry_class.type == "entity"
-                ):
+                if hasattr(entry, "entry_class") and entry.entry_class and entry.entry_class.type == "entity":
                     entities.append(
                         {
                             "id": str(entry.id),
@@ -252,17 +246,13 @@ class NoteListSerializer:
             "fleeting": note.fleeting,
             "status": note.status,
             "status_message": note.status_message,
-            "status_timestamp": note.status_timestamp.isoformat()
-            if note.status_timestamp
-            else None,
+            "status_timestamp": note.status_timestamp.isoformat() if note.status_timestamp else None,
             "content": self._truncate_content(note),
             "title": note.title,
             "description": note.description,
             "metadata": note.metadata,
             "timestamp": note.timestamp.isoformat(),
-            "edit_timestamp": note.edit_timestamp.isoformat()
-            if note.edit_timestamp
-            else None,
+            "edit_timestamp": note.edit_timestamp.isoformat() if note.edit_timestamp else None,
             "last_linked": note.last_linked.isoformat() if note.last_linked else None,
         }
 
@@ -294,9 +284,7 @@ class NoteListSerializer:
             for entity in entities
         ]
 
-        data["entry_classes"] = set(
-            note.entries.values_list("entry_class__subtype", flat=True)
-        )
+        data["entry_classes"] = set(note.entries.values_list("entry_class__subtype", flat=True))
 
         files_data = []
         for file_ref in note.files.all():
@@ -322,25 +310,15 @@ class NoteListSerializer:
         """Truncate content if needed"""
         if note.content_offset >= len(note.content):
             return ""
-        if (
-            self.truncate == -1
-            or len(note.content) - note.content_offset <= self.truncate
-        ):
+        if self.truncate == -1 or len(note.content) - note.content_offset <= self.truncate:
             return note.content[note.content_offset :]
-        return (
-            note.content[note.content_offset : note.content_offset + self.truncate]
-            + "..."
-        )
+        return note.content[note.content_offset : note.content_offset + self.truncate] + "..."
 
     def _get_file_entities(self, file_ref, note):
         """Get entities for file reference"""
         entities = []
         for entry in note.entries.all():
-            if (
-                hasattr(entry, "entry_class")
-                and entry.entry_class
-                and entry.entry_class.type == "entity"
-            ):
+            if hasattr(entry, "entry_class") and entry.entry_class and entry.entry_class.type == "entity":
                 entities.append(
                     {
                         "id": str(entry.id),
@@ -426,9 +404,7 @@ class NoteRetrieveSerializer(serializers.ModelSerializer):
 
         # Optimize string operations for truncation
         if len(content) > self.truncate:
-            data["content"] = (
-                content[obj.content_offset : obj.content_offset + self.truncate] + "..."
-            )
+            data["content"] = content[obj.content_offset : obj.content_offset + self.truncate] + "..."
 
         return data
 
@@ -532,10 +508,7 @@ class FleetingNoteSerializer(serializers.ModelSerializer):
 
         content = validated_data.get("content")
         if not content:
-            validated_data["content"] = (
-                user.default_note_template
-                or cradle_settings.notes.default_note_template
-            )
+            validated_data["content"] = user.default_note_template or cradle_settings.notes.default_note_template
 
         # Extract title and description from content if not provided
         content = validated_data.get("content", "")

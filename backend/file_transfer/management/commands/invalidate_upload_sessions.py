@@ -42,11 +42,7 @@ class Command(BaseCommand):
             digest_uploads = PendingDigestUpload.objects.all()
             digest_upload_count = digest_uploads.count()
         except ImportError:
-            self.stdout.write(
-                self.style.WARNING(
-                    "intelio app not available - skipping digest uploads"
-                )
-            )
+            self.stdout.write(self.style.WARNING("intelio app not available - skipping digest uploads"))
             digest_uploads = []
             digest_upload_count = 0
 
@@ -57,23 +53,16 @@ class Command(BaseCommand):
             return
 
         # Show summary
-        self.stdout.write(
-            self.style.WARNING(f"\nFound {total_count} pending upload(s):")
-        )
+        self.stdout.write(self.style.WARNING(f"\nFound {total_count} pending upload(s):"))
         self.stdout.write(f"  - File uploads: {file_upload_count}")
         self.stdout.write(f"  - Digest uploads: {digest_upload_count}")
 
         if dry_run:
-            self.stdout.write(
-                self.style.WARNING("\n[DRY RUN MODE - No changes will be made]\n")
-            )
+            self.stdout.write(self.style.WARNING("\n[DRY RUN MODE - No changes will be made]\n"))
         else:
             # Confirm deletion
             if not force:
-                confirm = input(
-                    "\nThis will delete all pending uploads and their S3 objects. "
-                    "Are you sure? [y/N]: "
-                )
+                confirm = input("\nThis will delete all pending uploads and their S3 objects. Are you sure? [y/N]: ")
                 if confirm.lower() != "y":
                     self.stdout.write(self.style.ERROR("Aborted."))
                     return
@@ -92,21 +81,11 @@ class Command(BaseCommand):
                 # Delete S3 object if exists
                 if exists(FileTransferStorage.bucket_name, pending.object_key):
                     try:
-                        delete_object(
-                            FileTransferStorage.bucket_name, pending.object_key
-                        )
+                        delete_object(FileTransferStorage.bucket_name, pending.object_key)
                         file_s3_deleted_count += 1
-                        self.stdout.write(
-                            self.style.SUCCESS(
-                                f"  ✓ Deleted S3 object: {pending.object_key}"
-                            )
-                        )
+                        self.stdout.write(self.style.SUCCESS(f"  ✓ Deleted S3 object: {pending.object_key}"))
                     except Exception as e:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"  ✗ Failed to delete S3 object {pending.object_key}: {e}"
-                            )
-                        )
+                        self.stdout.write(self.style.ERROR(f"  ✗ Failed to delete S3 object {pending.object_key}: {e}"))
 
                 # Delete database record
                 pending.delete()
@@ -129,16 +108,10 @@ class Command(BaseCommand):
                         try:
                             delete_object(DigestStorage.bucket_name, pending.object_key)
                             digest_s3_deleted_count += 1
-                            self.stdout.write(
-                                self.style.SUCCESS(
-                                    f"  ✓ Deleted S3 object: {pending.object_key}"
-                                )
-                            )
+                            self.stdout.write(self.style.SUCCESS(f"  ✓ Deleted S3 object: {pending.object_key}"))
                         except Exception as e:
                             self.stdout.write(
-                                self.style.ERROR(
-                                    f"  ✗ Failed to delete S3 object {pending.object_key}: {e}"
-                                )
+                                self.style.ERROR(f"  ✗ Failed to delete S3 object {pending.object_key}: {e}")
                             )
 
                     # Delete database record
@@ -149,23 +122,15 @@ class Command(BaseCommand):
         self.stdout.write("\n" + "=" * 60)
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY RUN SUMMARY:"))
-            self.stdout.write(
-                f"  Would delete {file_upload_count} file upload record(s)"
-            )
-            self.stdout.write(
-                f"  Would delete {digest_upload_count} digest upload record(s)"
-            )
+            self.stdout.write(f"  Would delete {file_upload_count} file upload record(s)")
+            self.stdout.write(f"  Would delete {digest_upload_count} digest upload record(s)")
         else:
             self.stdout.write(self.style.SUCCESS("CLEANUP SUMMARY:"))
             self.stdout.write(f"  Deleted {file_deleted_count} file upload record(s)")
             self.stdout.write(f"  Deleted {file_s3_deleted_count} file S3 object(s)")
             if digest_upload_count > 0:
-                self.stdout.write(
-                    f"  Deleted {digest_deleted_count} digest upload record(s)"
-                )
-                self.stdout.write(
-                    f"  Deleted {digest_s3_deleted_count} digest S3 object(s)"
-                )
+                self.stdout.write(f"  Deleted {digest_deleted_count} digest upload record(s)")
+                self.stdout.write(f"  Deleted {digest_s3_deleted_count} digest S3 object(s)")
             self.stdout.write(
                 self.style.SUCCESS(
                     f"\n✓ Successfully invalidated {file_deleted_count + digest_deleted_count} upload session(s)"

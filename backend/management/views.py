@@ -68,9 +68,7 @@ class SettingsView(APIView):
 
             result[section.prefix] = {}
 
-            for name, member in inspect.getmembers(
-                type(section), lambda m: isinstance(m, property)
-            ):
+            for name, member in inspect.getmembers(type(section), lambda m: isinstance(m, property)):
                 try:
                     value = getattr(section, name)
                     result[section.prefix][name] = value
@@ -87,12 +85,8 @@ class SettingsView(APIView):
         ),
         request=dict,
         responses={
-            200: OpenApiResponse(
-                response=dict, description="Successfully updated all settings."
-            ),
-            207: OpenApiResponse(
-                response=dict, description="Some settings updated, others failed."
-            ),
+            200: OpenApiResponse(response=dict, description="Successfully updated all settings."),
+            207: OpenApiResponse(response=dict, description="Some settings updated, others failed."),
         },
         examples=[
             OpenApiExample(
@@ -114,9 +108,7 @@ class SettingsView(APIView):
         with transaction.atomic():
             for full_key, value in flat_settings.items():
                 try:
-                    Setting.objects.update_or_create(
-                        key=full_key, defaults={"value": value}
-                    )
+                    Setting.objects.update_or_create(key=full_key, defaults={"value": value})
                     cache.set(f"setting:{full_key}", value, timeout=300)
                     updated.append(full_key)
                 except Exception as e:
@@ -158,9 +150,7 @@ class ActionView(APIView):
     @classmethod
     def get_action_names(cls):
         return [
-            name[len("action_") :]
-            for name in dir(cls)
-            if name.startswith("action_") and callable(getattr(cls, name))
+            name[len("action_") :] for name in dir(cls) if name.startswith("action_") and callable(getattr(cls, name))
         ]
 
     def post(self, request, action_name: str | None = None, *args, **kwargs):
@@ -180,9 +170,7 @@ class ActionView(APIView):
         else:
             notes = notes.all()
 
-        Relation.objects.filter(
-            content_type=ContentType.objects.get_for_model(Note)
-        ).delete()
+        Relation.objects.filter(content_type=ContentType.objects.get_for_model(Note)).delete()
 
         scheduler = TaskScheduler(
             request.user,

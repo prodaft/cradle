@@ -1,3 +1,4 @@
+import Pagination from '@/components/base/Pagination/Pagination';
 import { Button } from '@/components/ui/button';
 import {
     InputGroup,
@@ -15,7 +16,6 @@ import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import Datepicker from '@components/base/Datepicker/Datepicker';
-import Pagination from '@/components/base/Pagination/Pagination';
 import type { EventLog } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';

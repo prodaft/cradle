@@ -65,9 +65,7 @@ export default function SearchFilterSection({
                         Filter by type
                     </span>
                     {hasFilters && (
-                        <Badge variant="default">
-                            {entrySubtypeFilters.length}
-                        </Badge>
+                        <Badge variant='default'>{entrySubtypeFilters.length}</Badge>
                     )}
                 </div>
                 {showFilters ? (

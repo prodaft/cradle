@@ -10,9 +10,7 @@ urlpatterns = [
     path("", NoteList.as_view(), name="note_list"),
     path("files/", NoteFiles.as_view(), name="note_files"),
     # Snippet endpoints
-    path(
-        "snippets/", AllAccessibleSnippetsListView.as_view(), name="snippets_accessible"
-    ),
+    path("snippets/", AllAccessibleSnippetsListView.as_view(), name="snippets_accessible"),
     path(
         "snippets/user/<str:user_id>/",
         UserSnippetsListCreateView.as_view(),

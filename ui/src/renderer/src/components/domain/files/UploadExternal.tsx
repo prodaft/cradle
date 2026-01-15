@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
 import type { Alert } from '@/types';
 import Datepicker from '@components/base/Datepicker/Datepicker';
 import type { DigestSubclass } from '@services/cradle/models';
@@ -56,7 +55,6 @@ export default function UploadExternal() {
             ? rawSearch
             : {}
     ) as DigestDataSearchParams;
-    const { profile } = useProfile();
     const { intelioApi } = useApi();
     const queryClient = useQueryClient();
 
@@ -306,61 +304,61 @@ export default function UploadExternal() {
             {/* Search Section */}
             <div>
                 <form
-                        onSubmit={handleSearchSubmit}
-                        className='flex space-x-4 px-3 pb-2'
-                    >
-                        <Datepicker
-                            startDate={dateRange.startDate}
-                            endDate={dateRange.endDate}
-                            onChange={([start, end]) => {
-                                handleDateRangeChange({
-                                    startDate: start,
-                                    endDate: end,
-                                });
-                            }}
-                            className='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
-                            placeholderText='Select date range'
-                        />
-                        <Input
-                            type='text'
-                            name='title'
-                            value={searchFilters.title}
-                            onChange={handleSearchChange}
-                            placeholder='Search by title'
-                            className='!max-w-full w-full'
-                        />
-                        <Input
-                            type='text'
-                            name='author'
-                            value={searchFilters.author}
-                            onChange={handleSearchChange}
-                            placeholder='Search by user'
-                            className='!max-w-full w-full'
-                        />
-                        <Button type='submit' variant='default' size='default'>
-                            <Search /> Search
-                        </Button>
-                    </form>
-                </div>
-
-                {/* Digest List Section */}
-                <div className='mt-4'>
-                    <DigestList
-                        digests={digests}
-                        loading={loading}
-                        page={page}
-                        totalPages={totalPages}
-                        handlePageChange={handlePageChange}
-                        setAlert={setAlert}
-                        onDigestDelete={invalidateDigests}
-                        sortField={sortField}
-                        sortDirection={sortDirection}
-                        onSort={handleSort}
-                        pageSize={pageSize}
-                        setPageSize={handlePageSizeChange}
-                        dataTypeOptions={dataTypeOptions}
-                        onUpload={invalidateDigests}
+                    onSubmit={handleSearchSubmit}
+                    className='flex space-x-4 px-3 pb-2'
+                >
+                    <Datepicker
+                        startDate={dateRange.startDate}
+                        endDate={dateRange.endDate}
+                        onChange={([start, end]) => {
+                            handleDateRangeChange({
+                                startDate: start,
+                                endDate: end,
+                            });
+                        }}
+                        className='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                        placeholderText='Select date range'
                     />
+                    <Input
+                        type='text'
+                        name='title'
+                        value={searchFilters.title}
+                        onChange={handleSearchChange}
+                        placeholder='Search by title'
+                        className='!max-w-full w-full'
+                    />
+                    <Input
+                        type='text'
+                        name='author'
+                        value={searchFilters.author}
+                        onChange={handleSearchChange}
+                        placeholder='Search by user'
+                        className='!max-w-full w-full'
+                    />
+                    <Button type='submit' variant='default' size='default'>
+                        <Search /> Search
+                    </Button>
+                </form>
+            </div>
+
+            {/* Digest List Section */}
+            <div className='mt-4'>
+                <DigestList
+                    digests={digests}
+                    loading={loading}
+                    page={page}
+                    totalPages={totalPages}
+                    handlePageChange={handlePageChange}
+                    setAlert={setAlert}
+                    onDigestDelete={invalidateDigests}
+                    sortField={sortField}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
+                    pageSize={pageSize}
+                    setPageSize={handlePageSizeChange}
+                    dataTypeOptions={dataTypeOptions}
+                    onUpload={invalidateDigests}
+                />
             </div>
         </>
     );

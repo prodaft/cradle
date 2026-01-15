@@ -198,29 +198,21 @@ class EntryClassDetail(APIView):
         try:
             entity = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            raise EntryClassNotFoundException(
-                detail="There is no entry class with specified subtype."
-            )
+            raise EntryClassNotFoundException(detail="There is no entry class with specified subtype.")
         serializer = EntryClassSerializer(entity)
         return Response(serializer.data)
 
     def delete(self, request: Request, class_subtype: str) -> Response:
         if class_subtype in settings.INTERNAL_SUBTYPES:
-            raise CannotDeleteAliasClassException(
-                detail="Cannot delete the alias entry class."
-            )
+            raise CannotDeleteAliasClassException(detail="Cannot delete the alias entry class.")
 
         if not request.user.is_cradle_admin:
-            raise AdminOnlyEntryClassDeleteException(
-                detail="User must be an admin to delete entry classes."
-            )
+            raise AdminOnlyEntryClassDeleteException(detail="User must be an admin to delete entry classes.")
 
         try:
             entity_class = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            raise EntryClassNotFoundException(
-                detail="There is no entry class with specified subtype."
-            )
+            raise EntryClassNotFoundException(detail="There is no entry class with specified subtype.")
 
         entity_class.rename(None, request.user.id)
 
@@ -228,23 +220,17 @@ class EntryClassDetail(APIView):
 
     def post(self, request: Request, class_subtype: str) -> Response:
         if class_subtype in settings.INTERNAL_SUBTYPES:
-            raise CannotEditAliasClassException(
-                detail="Cannot edit the alias entry class."
-            )
+            raise CannotEditAliasClassException(detail="Cannot edit the alias entry class.")
 
         user = cast(CradleUser, request.user)
 
         try:
             entryclass = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            raise EntryClassNotFoundException(
-                detail="There is no entry class with specified subtype."
-            )
+            raise EntryClassNotFoundException(detail="There is no entry class with specified subtype.")
 
         if not user.is_cradle_admin and request.data["type"] != entryclass.type:
-            raise AdminOnlyEntryClassTypeChangeException(
-                detail="User must be an admin to change entry class type!"
-            )
+            raise AdminOnlyEntryClassTypeChangeException(detail="User must be an admin to change entry class type!")
 
         new_subtype = request.data.get("subtype", None)
 
@@ -291,9 +277,7 @@ class NextName(APIView):
         try:
             eclass = EntryClass.objects.get(subtype=class_subtype)
         except EntryClass.DoesNotExist:
-            raise EntryClassNotFoundException(
-                detail="There is no entry class with specified subtype."
-            )
+            raise EntryClassNotFoundException(detail="There is no entry class with specified subtype.")
 
         if not eclass.prefix:
             return Response({"name": None})
@@ -303,11 +287,7 @@ class NextName(APIView):
         if not all_entries.exists():
             max_number = 0
         else:
-            max_entry = (
-                all_entries.annotate(name_length=Length("name"))
-                .order_by("-name_length", "-name")
-                .first()
-            )
+            max_entry = all_entries.annotate(name_length=Length("name")).order_by("-name_length", "-name").first()
 
             max_number = int(max_entry.name[len(eclass.prefix) :])
         return Response({"name": f"{eclass.prefix}{max_number + 1}"})

@@ -85,7 +85,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                         {row.original.entities?.slice(0, 3).map((entity) => (
                             <Badge
                                 key={entity.name}
-                                variant={!entity.color ? "secondary" : "default"}
+                                variant={!entity.color ? 'secondary' : 'default'}
                                 style={
                                     entity.color
                                         ? {
@@ -166,10 +166,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     className='text-primary hover:text-primary/80'
                                     title='Download'
                                 >
-                                    <Download
-                                        className='w-4 h-4'
-                                        aria-hidden='true'
-                                    />
+                                    <Download className='w-4 h-4' aria-hidden='true' />
                                 </Button>
                             )}
                         </div>

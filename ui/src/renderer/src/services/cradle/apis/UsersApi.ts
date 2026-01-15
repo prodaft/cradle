@@ -398,7 +398,7 @@ export class UsersApi extends runtime.BaseAPI {
             }
         }
 
-        let urlPath = `/users/change_password/`;
+        let urlPath = `/auth/change_password/`;
 
         const response = await this.request({
             path: urlPath,
@@ -421,7 +421,7 @@ export class UsersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns OAuth configuration metadata and registration status.
+     * Returns OAuth configuration metadata and signup status.
      * Get user config
      */
     async usersConfigRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserConfig>> {
@@ -443,7 +443,7 @@ export class UsersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns OAuth configuration metadata and registration status.
+     * Returns OAuth configuration metadata and signup status.
      * Get user config
      */
     async usersConfig(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserConfig> {
@@ -669,7 +669,7 @@ export class UsersApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/users/email_confirm/`;
+        let urlPath = `/auth/email_confirm/`;
 
         const response = await this.request({
             path: urlPath,
@@ -753,7 +753,7 @@ export class UsersApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/users/login/`;
+        let urlPath = `/auth/login/`;
 
         const response = await this.request({
             path: urlPath,
@@ -772,6 +772,46 @@ export class UsersApi extends runtime.BaseAPI {
      */
     async usersLoginCreate(requestParameters: UsersLoginCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TokenPairRetrieve> {
         const response = await this.usersLoginCreateRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Creates a new user account. Available to unauthenticated users.
+     * User signup
+     */
+    async authSignupCreateRaw(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserRetrieve>> {
+        if (requestParameters['userCreateRequest'] == null) {
+            throw new runtime.RequiredError(
+                'userCreateRequest',
+                'Required parameter "userCreateRequest" was null or undefined when calling authSignupCreate().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
+
+        let urlPath = `/auth/signup/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'POST',
+            headers: headerParameters,
+            query: queryParameters,
+            body: UserCreateRequestToJSON(requestParameters['userCreateRequest']),
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => UserRetrieveFromJSON(jsonValue));
+    }
+
+    /**
+     * Creates a new user account. Available to unauthenticated users.
+     * User signup
+     */
+    async authSignupCreate(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserRetrieve> {
+        const response = await this.authSignupCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -931,7 +971,7 @@ export class UsersApi extends runtime.BaseAPI {
     /**
      * Login with OAuth provider
      */
-    async usersOauthLoginRaw(requestParameters: UsersOauthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
+    async usersOauthLoginRaw(requestParameters: UsersOauthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TokenPairRetrieve>> {
         if (requestParameters['oAuthConnectRequest'] == null) {
             throw new runtime.RequiredError(
                 'oAuthConnectRequest',
@@ -946,7 +986,7 @@ export class UsersApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/users/oauth/login/`;
+        let urlPath = `/auth/oauth/login/`;
 
         const response = await this.request({
             path: urlPath,
@@ -956,14 +996,15 @@ export class UsersApi extends runtime.BaseAPI {
             body: OAuthConnectRequestToJSON(requestParameters['oAuthConnectRequest']),
         }, initOverrides);
 
-        return new runtime.VoidApiResponse(response);
+        return new runtime.JSONApiResponse(response, (jsonValue) => TokenPairRetrieveFromJSON(jsonValue));
     }
 
     /**
      * Login with OAuth provider
      */
-    async usersOauthLogin(requestParameters: UsersOauthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
-        await this.usersOauthLoginRaw(requestParameters, initOverrides);
+    async usersOauthLogin(requestParameters: UsersOauthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TokenPairRetrieve> {
+        const response = await this.usersOauthLoginRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**
@@ -985,7 +1026,7 @@ export class UsersApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/users/refresh/`;
+        let urlPath = `/auth/refresh/`;
 
         const response = await this.request({
             path: urlPath,
@@ -1026,7 +1067,7 @@ export class UsersApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/users/reset_password/`;
+        let urlPath = `/auth/reset_password/`;
 
         const response = await this.request({
             path: urlPath,
@@ -1071,7 +1112,7 @@ export class UsersApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
 
-        let urlPath = `/users/reset_password/`;
+        let urlPath = `/auth/reset_password/`;
 
         const response = await this.request({
             path: urlPath,

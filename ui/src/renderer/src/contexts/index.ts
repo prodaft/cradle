@@ -13,7 +13,7 @@
  * import { ThemeProvider } from '@contexts/ui';
  * ```
  *
- * Note: Profile functionality has been moved to @hooks/user/useProfile
+ * Note: Profile data should be fetched using TanStack Query with queryKeys.users.detail('me')
  */
 
 // UI-related contexts

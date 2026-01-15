@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import useApi from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import Logo from '@components/base/Logo/Logo';
 import { useRouter, useRouterState } from '@tanstack/react-router';
@@ -25,6 +26,7 @@ const parseOAuthState = (stateValue: string | null): OAuthState | null => {
 };
 
 export default function OAuthCallback() {
+    const { usersApi } = useApi();
     const { basePath } = useAuthState();
     const { isLoggedIn, getAccessToken, setTokensDirectly } = useAuthActions();
     const router = useRouter();
@@ -92,26 +94,13 @@ export default function OAuthCallback() {
                         return;
                     }
 
-                    const token = await getAccessToken();
-                    const response = await fetch(
-                        `${basePath}/users/oauth/connect/`,
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                Authorization: `Bearer ${token}`,
-                            },
-                            body: JSON.stringify({
-                                provider,
-                                code,
-                                redirect_uri: redirectUri,
-                            }),
+                    await usersApi.usersOauthConnect({
+                        oAuthConnectRequest: {
+                            provider,
+                            code,
+                            redirectUri,
                         },
-                    );
-
-                    if (!response.ok) {
-                        throw new Error('Failed to connect OAuth provider.');
-                    }
+                    });
 
                     const returnPath =
                         sessionStorage.getItem('oauth_connect_return_path') ||
@@ -127,35 +116,31 @@ export default function OAuthCallback() {
                     return;
                 }
 
-                const response = await fetch(
-                    `${basePath}/users/oauth/login/`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            provider,
-                            code,
-                            redirect_uri: redirectUri,
-                        }),
+                const data = await usersApi.usersOauthLogin({
+                    oAuthConnectRequest: {
+                        provider,
+                        code,
+                        redirectUri,
                     },
-                );
+                });
 
-                if (!response.ok) {
-                    throw new Error('OAuth login failed.');
-                }
+                const tokenData = {
+                    access: data.access,
+                    refresh: data.refresh,
+                    accessExpiresAt: data.accessExpiresAt,
+                    refreshExpiresAt: data.refreshExpiresAt,
+                    role: data.role,
+                    // user_id may be present in response but not in TokenPairRetrieve type
+                    user_id: (data as any).user_id,
+                };
 
-                const data = await response.json();
-                data.accessExpiresAt = new Date(data.access_expires_at);
-                data.refreshExpiresAt = new Date(data.refresh_expires_at);
-                setTokensDirectly(data);
+                setTokensDirectly(tokenData);
 
                 const redirectPath =
                     sessionStorage.getItem('oauth_login_redirect') || '/';
                 const normalizedRedirect =
                     redirectPath === '/oauth/callback' ||
-                        redirectPath === '#/oauth/callback'
+                    redirectPath === '#/oauth/callback'
                         ? '/'
                         : redirectPath;
                 sessionStorage.removeItem('oauth_login_redirect');

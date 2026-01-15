@@ -23,13 +23,32 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from user.views.token_view import TokenObtainPairLogView, TokenRefreshLogView
+from user.views.user_view import SignupView, EmailConfirm, PasswordReset, ChangePasswordView
+from user.views.oauth_view import OAuthLoginView
+
+base_url = settings.BASE_URL.strip("/")
 
 urlpatterns = [
     path(
-        (settings.BASE_URL.strip("/") + "/").removeprefix("/"),
+        (base_url + "/").removeprefix("/") if base_url else "",
         include(
             [
                 path(settings.ADMIN_PATH, admin.site.urls),
+            ]
+        ),
+    ),
+    path(
+        "api/",
+        include(
+            [
+                path("auth/login/", TokenObtainPairLogView.as_view(), name="auth_login"),
+                path("auth/signup/", SignupView.as_view(), name="auth_signup"),
+                path("auth/refresh/", TokenRefreshLogView.as_view(), name="auth_refresh"),
+                path("auth/reset_password/", PasswordReset.as_view(), name="auth_reset_password"),
+                path("auth/email_confirm/", EmailConfirm.as_view(), name="auth_email_confirm"),
+                path("auth/change_password/", ChangePasswordView.as_view(), name="auth_change_password"),
+                path("auth/oauth/login/", OAuthLoginView.as_view(), name="auth_oauth_login"),
                 path("reports/", include("publish.urls")),
                 path("users/", include("user.urls")),
                 path("logs/", include("logs.urls")),

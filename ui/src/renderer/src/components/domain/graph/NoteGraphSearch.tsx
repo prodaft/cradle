@@ -1,15 +1,13 @@
 import { ComponentType, useEffect, useRef, useState } from 'react';
 
-import { parseAPIError } from '@/utils/api';
 import { useRouter } from '@tanstack/react-router';
 
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import useApi from '@/hooks/api/useApi';
-import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { LinkTreeFlattener } from '@/utils/dashboard';
 import { logger } from '@/utils/logger';
-import type { EdgeRelation } from '@services/cradle/models';
+import type { EdgeRelation, SubGraph } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { WarningCircle } from 'iconoir-react';
 import { Node } from './graphFilterUtils';
@@ -40,59 +38,18 @@ export default function NoteGraphSearch(
             message: '',
             color: 'red',
         });
-        const { basePath } = useApi();
-        const { getAccessToken } = useAuthActions();
+        const { notesApi } = useApi();
         const router = useRouter();
         const hasFetchedRef = useRef(false);
 
         // Query for note graph data
-        const { data: graphData, isPending: loading } = useQuery({
+        const { data: graphData, isPending: loading } = useQuery<SubGraph>({
             queryKey: queryKeys.notes.detail(`${noteId}-graph`),
-            queryFn: async () => {
-                const token = await getAccessToken();
-                const url = `${basePath}/notes/${noteId}/graph`;
-
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                return response.json();
-            },
+            queryFn: () => notesApi.notesGraphRetrieve({ noteId }),
             enabled: !hasFetchedRef.current,
             meta: {
                 showErrorToast: true,
                 errorMessage: 'Failed to fetch graph data',
-            },
-            onError: async (error: any) => {
-                logger.error('[NoteGraphSearch] Error fetching graph data:', error);
-                const parsed = await parseAPIError(error);
-
-                // Handle 401 errors with navigation
-                if (parsed.status === 401) {
-                    setAlert({
-                        show: true,
-                        message: 'Your session has expired. Please log back in.',
-                        color: 'red',
-                    });
-                    router.navigate({ to: '/login' });
-                    return;
-                }
-
-                // Set alert with error message
-                setAlert({
-                    show: true,
-                    message:
-                        parsed.detail || 'An error occurred while loading the graph.',
-                    color: 'red',
-                });
             },
         });
 
@@ -104,7 +61,7 @@ export default function NoteGraphSearch(
             setIsGraphFetching(true);
 
             try {
-                const { entries, relations, colors } = graphData || {};
+                const { entries, relations, colors } = graphData;
 
                 // Process nodes and edges together to avoid race conditions
                 let nodes: any[] = [];

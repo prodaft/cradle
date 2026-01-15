@@ -77,9 +77,7 @@ class UserAccessList(APIView):
 
         entities_with_access = Access.objects.get_accesses(user)
 
-        serializer = AccessEntitySerializer(
-            entities_with_access, context={"is_admin": user.is_cradle_admin}, many=True
-        )
+        serializer = AccessEntitySerializer(entities_with_access, context={"is_admin": user.is_cradle_admin}, many=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -118,17 +116,13 @@ class EntityAccessList(APIView):
         Returns:
             Response(body, status=200):
         """
-        entity = Entry.objects.filter(
-            id=entity_id, entry_class__type=EntryType.ENTITY
-        ).first()
+        entity = Entry.objects.filter(id=entity_id, entry_class__type=EntryType.ENTITY).first()
 
         if not entity:
             raise EntityNotFoundException(detail="Entity does not exist")
 
         accesses = Access.objects.filter(
-            Q(entity=entity)
-            & ~Q(access_type=AccessType.NONE)
-            & ~Q(user__role=UserRoles.ADMIN)
+            Q(entity=entity) & ~Q(access_type=AccessType.NONE) & ~Q(user__role=UserRoles.ADMIN)
         )
         serializer = AccessUserSerializer(accesses, many=True)
 

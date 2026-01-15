@@ -47,9 +47,7 @@ class Edge(LifecycleModel):
 
     objects = EdgeManager()
 
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
-    )
+    access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
 
     created_at = models.DateTimeField()
     last_seen = models.DateTimeField()
@@ -63,21 +61,13 @@ class Edge(LifecycleModel):
 
 class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
     type: models.CharField = models.CharField(max_length=20, choices=EntryType.choices)
-    subtype: models.CharField = models.CharField(
-        max_length=64, blank=False, primary_key=True
-    )
+    subtype: models.CharField = models.CharField(max_length=64, blank=False, primary_key=True)
     description: models.TextField = models.TextField(null=True, blank=True)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    format: models.CharField = models.CharField(
-        max_length=20, choices=EntryTypeFormat.choices, default=None, null=True
-    )
+    format: models.CharField = models.CharField(max_length=20, choices=EntryTypeFormat.choices, default=None, null=True)
     regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
-    generative_regex: models.CharField = models.CharField(
-        max_length=65536, blank=True, default=""
-    )
-    options: models.CharField = models.CharField(
-        max_length=65536, blank=True, default=""
-    )
+    generative_regex: models.CharField = models.CharField(max_length=65536, blank=True, default="")
+    options: models.CharField = models.CharField(max_length=65536, blank=True, default="")
 
     color: models.CharField = models.CharField(max_length=7, default="#e66100")
 
@@ -124,11 +114,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         unique_note_ids = list({note.id for note in notes})
 
         # Schedule remapping to update notes' content asynchronously.
-        transaction.on_commit(
-            lambda: remap_notes_task.delay(
-                unique_note_ids, {old_subtype: new_subtype}, {}, user_id
-            )
-        )
+        transaction.on_commit(lambda: remap_notes_task.delay(unique_note_ids, {old_subtype: new_subtype}, {}, user_id))
 
         EntryClass.objects.get(subtype=old_subtype).delete()
         return self
@@ -168,9 +154,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
         if EntryClass.objects.filter(subtype__in=possible_parents).exists():
             return EntryClass.objects.filter(subtype__in=possible_parents).first()
 
-        possible_children = EntryClass.objects.filter(
-            subtype__startswith=self.subtype + "/"
-        )
+        possible_children = EntryClass.objects.filter(subtype__startswith=self.subtype + "/")
 
         if possible_children.exists():
             return possible_children.first()
@@ -190,9 +174,7 @@ class EntryClass(LifecycleModelMixin, models.Model, LoggableModelMixin):
             self.options = self.options.strip()
 
             if self.options:
-                self.options = "\n".join(
-                    map(lambda x: x.strip(), self.options.split("\n"))
-                ).strip()
+                self.options = "\n".join(map(lambda x: x.strip(), self.options.split("\n"))).strip()
 
                 self.generative_regex = ""
 
@@ -248,9 +230,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
     name: models.CharField = models.CharField(max_length=1024)
     description: models.TextField = models.TextField(null=True, blank=True)
     created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
-    last_seen: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True, null=False
-    )
+    last_seen: models.DateTimeField = models.DateTimeField(auto_now_add=True, null=False)
 
     relations = GenericRelation("entries.Relation", related_query_name="entry")
 
@@ -262,9 +242,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
     class Meta:
         ordering = ["-last_seen"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["name", "entry_class"], name="unique_name_class"
-            ),
+            models.UniqueConstraint(fields=["name", "entry_class"], name="unique_name_class"),
             # Enforces uniqueness on non-zero acvec_offset values.
             models.UniqueConstraint(
                 fields=["acvec_offset"],
@@ -277,9 +255,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
     entities = EntityManager()
     artifacts = ArtifactManager()
 
-    location: gis_models.PointField = gis_models.PointField(
-        null=True, blank=True, srid=0, dim=2
-    )
+    location: gis_models.PointField = gis_models.PointField(null=True, blank=True, srid=0, dim=2)
     degree: models.IntegerField = models.IntegerField(default=0)
 
     aliases = models.ManyToManyField(
@@ -322,9 +298,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
         elif self.acvec_offset == 0:
             if self.entry_class.type == EntryType.ENTITY:
                 existing_offsets = set(
-                    self.__class__.objects.exclude(acvec_offset=0).values_list(
-                        "acvec_offset", flat=True
-                    )
+                    self.__class__.objects.exclude(acvec_offset=0).values_list("acvec_offset", flat=True)
                 )
                 offset = 1
                 while offset in existing_offsets:
@@ -420,9 +394,7 @@ class Relation(LifecycleModel):
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
-    )
+    access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
 
     inherit_av = models.BooleanField(default=False)
 
@@ -436,12 +408,8 @@ class Relation(LifecycleModel):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     content_object = GenericForeignKey("content_type", "object_id")
 
-    reason: models.CharField = models.CharField(
-        max_length=255, null=False, blank=False, choices=RelationReason.choices
-    )
-    reason_context: models.CharField = models.CharField(
-        max_length=255, null=True, blank=True
-    )
+    reason: models.CharField = models.CharField(max_length=255, null=False, blank=False, choices=RelationReason.choices)
+    reason_context: models.CharField = models.CharField(max_length=255, null=True, blank=True)
 
     details: models.JSONField = models.JSONField(default=dict, blank=True)
 
@@ -463,9 +431,7 @@ class Relation(LifecycleModel):
 
 class Attachment(LifecycleModel):
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    relation: models.ForeignKey = models.ForeignKey(
-        Relation, on_delete=models.CASCADE, related_name="attachments"
-    )
+    relation: models.ForeignKey = models.ForeignKey(Relation, on_delete=models.CASCADE, related_name="attachments")
     name: models.CharField = models.CharField(max_length=255)
     file: models.FileField = models.FileField(
         upload_to=attachment_upload_path,

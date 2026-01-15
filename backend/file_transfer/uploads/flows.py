@@ -50,9 +50,7 @@ class UploadFlowCallbacks(Protocol):
     successful upload finalization.
     """
 
-    def on_finalize_success(
-        self, pending_upload: "BasePendingUpload", **kwargs
-    ) -> dict:
+    def on_finalize_success(self, pending_upload: "BasePendingUpload", **kwargs) -> dict:
         """
         Called after upload is verified and before pending record is deleted.
 
@@ -146,26 +144,18 @@ class PresignedUploadFlow(Generic[T]):
         """
         # Validate file size
         if file_size <= 0:
-            raise InvalidFileSizeException(
-                detail="File size must be greater than 0 bytes."
-            )
+            raise InvalidFileSizeException(detail="File size must be greater than 0 bytes.")
 
         # Check user's upload limit
         if file_size > user.file_upload_limit:
             raise InvalidFileSizeException(
-                detail=f"File size ({file_size} bytes) exceeds your upload limit "
-                f"({user.file_upload_limit} bytes)."
+                detail=f"File size ({file_size} bytes) exceeds your upload limit ({user.file_upload_limit} bytes)."
             )
 
         # Check quota: sum of existing files + new file
         from file_transfer.models import FileReference
 
-        existing_total = (
-            FileReference.objects.filter(user=user).aggregate(
-                total=models.Sum("file_size")
-            )["total"]
-            or 0
-        )
+        existing_total = FileReference.objects.filter(user=user).aggregate(total=models.Sum("file_size"))["total"] or 0
 
         if existing_total + file_size > user.file_upload_limit:
             raise QuotaExceededException(
@@ -256,15 +246,11 @@ class PresignedUploadFlow(Generic[T]):
         try:
             pending_upload = self.pending_model.objects.get(id=upload_id, user=user)
         except self.pending_model.DoesNotExist:
-            raise UploadNotFoundException(
-                detail=f"Upload with ID {upload_id} not found."
-            )
+            raise UploadNotFoundException(detail=f"Upload with ID {upload_id} not found.")
 
         # Verify file exists in storage
         if not exists(self.config.bucket_name, pending_upload.object_key):
-            raise FileNotUploadedException(
-                detail="File was not uploaded to the presigned URL."
-            )
+            raise FileNotUploadedException(detail="File was not uploaded to the presigned URL.")
 
         # Check if upload has expired
         if pending_upload.is_expired:
@@ -274,14 +260,10 @@ class PresignedUploadFlow(Generic[T]):
 
                 delete_object(self.config.bucket_name, pending_upload.object_key)
             except Exception as e:
-                logger.warning(
-                    f"Could not delete expired upload {pending_upload.object_key}: {e}"
-                )
+                logger.warning(f"Could not delete expired upload {pending_upload.object_key}: {e}")
 
             pending_upload.delete()
-            raise UploadExpiredException(
-                detail="Upload has expired. Please initiate a new upload."
-            )
+            raise UploadExpiredException(detail="Upload has expired. Please initiate a new upload.")
 
         # Call domain-specific finalization logic
         response_data = self.callbacks.on_finalize_success(pending_upload, **kwargs)

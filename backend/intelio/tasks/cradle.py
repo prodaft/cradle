@@ -82,8 +82,5 @@ def download_file_for_note(note_id, file_identifier, file_url, bucket_name, dige
             digest = instance
 
     print(digest.summary)
-    if (
-        digest.summary["files_scheduled"]
-        == digest.summary["files_downloaded"] + digest.summary["files_failed"]
-    ):
+    if digest.summary["files_scheduled"] == digest.summary["files_downloaded"] + digest.summary["files_failed"]:
         digest.finalize()

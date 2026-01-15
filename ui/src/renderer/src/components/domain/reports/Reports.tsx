@@ -5,7 +5,6 @@ import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdow
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
-import { useProfile } from '@/hooks/user/useProfile';
 import { ReportList } from '@/services/cradle';
 import { capitalizeString, truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
@@ -28,7 +27,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 interface ColumnFilters {
@@ -56,7 +55,6 @@ export default function Reports() {
     });
     const search = useSearch({ from: '/_authenticated/reports' });
     const { reportsApi } = useApi();
-    const { profile } = useProfile();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
     const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
@@ -204,7 +202,7 @@ export default function Reports() {
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 setPageSize(newPageSize);

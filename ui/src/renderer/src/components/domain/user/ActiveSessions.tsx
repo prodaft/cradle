@@ -6,24 +6,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable, type BulkAction } from '@/components/ui/data-table';
 import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import useApi from '@/hooks/api/useApi';
+import { useAuthActions } from '@/hooks/auth/useAuth';
+import { UserSession } from '@/services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import { Trash } from 'iconoir-react/regular';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-
-interface UserSession {
-    id: string;
-    refresh_token_jti: string;
-    device_info: string | null;
-    ip_address: string | null;
-    created_at: string;
-    last_activity: string;
-    expires_at: string;
-    is_current: boolean;
-}
 
 interface ActiveSessionsProps {
     userId: string;
@@ -41,9 +32,8 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const [revokeModalOpen, setRevokeModalOpen] = useState(false);
     const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
     const [bulkRevokeModalOpen, setBulkRevokeModalOpen] = useState(false);
-    const { basePath: authBasePath } = useAuthState();
+    const { usersApi } = useApi();
     const { getAccessToken, logOut } = useAuthActions();
-    const basePath = authBasePath;
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
@@ -52,24 +42,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const queryClient = useQueryClient();
 
     // Query for sessions
-    const { data: sessions = [], isPending } = useQuery({
+    const { data: sessions = [], isPending } = useQuery<UserSession[]>({
         queryKey: ['users', 'detail', `${userId}-sessions`],
-        queryFn: async () => {
-            const token = await getAccessToken();
-            const response = await fetch(`${basePath}/users/${userId}/sessions/`, {
-                method: 'GET',
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                },
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch sessions');
-            }
-
-            return response.json() as Promise<UserSession[]>;
-        },
+        queryFn: () => usersApi.usersSessionsList({ userId }),
         meta: {
             errorMessage: 'Failed to fetch sessions',
         },
@@ -98,23 +73,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     // Revoke session mutation
     const revokeSessionMutation = useMutation({
         mutationFn: async (sessionId: string) => {
-            const token = await getAccessToken();
-            const response = await fetch(
-                `${basePath}/users/${userId}/sessions/${sessionId}/`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json',
-                    },
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to revoke session');
-            }
-
-            return response;
+            return await usersApi.usersSessionsDestroy({ userId, sessionId });
         },
         meta: {
             invalidateQueries: [
@@ -134,10 +93,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 const session = sessions.find((s) => s.id === sessionId);
                 const currentJti = getCurrentSessionJti();
                 const isCurrentSession =
-                    session && currentJti && session.refresh_token_jti === currentJti;
+                    session && currentJti && session.refreshTokenJti === currentJti;
 
                 // If current session was revoked, log out immediately
-                if (isCurrentSession || session?.is_current) {
+                if (isCurrentSession || session?.isCurrent) {
                     // Clear tokens and log out
                     logOut();
                 } else {
@@ -149,34 +108,19 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 // Error already handled by mutation
             }
         },
-        [
-            userId,
-            basePath,
-            getAccessToken,
-            sessions,
-            revokeSessionMutation,
-            getCurrentSessionJti,
-            logOut,
-        ],
+        [userId, sessions, revokeSessionMutation, getCurrentSessionJti, logOut],
     );
 
     const revokeSessions = useCallback(
         async (sessionIds: string[]) => {
             try {
-                const token = await getAccessToken();
                 const revokePromises = sessionIds.map((sessionId) =>
-                    fetch(`${basePath}/users/${userId}/sessions/${sessionId}/`, {
-                        method: 'DELETE',
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }),
+                    usersApi.usersSessionsDestroy({ userId, sessionId }),
                 );
 
                 const results = await Promise.allSettled(revokePromises);
                 const successes = results.filter(
-                    (r) => r.status === 'fulfilled' && r.value.ok,
+                    (r) => r.status === 'fulfilled',
                 ).length;
                 const failures = results.length - successes;
 
@@ -196,10 +140,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
 
                 const currentJti = getCurrentSessionJti();
                 const revokedSessions = sessions.filter((s) =>
-                    sessionIds.includes(s.id),
+                    sessionIds.includes(s.id || ''),
                 );
                 const isCurrentSessionRevoked = revokedSessions.some(
-                    (s) => currentJti && s.refresh_token_jti === currentJti,
+                    (s) => currentJti && s.refreshTokenJti === currentJti,
                 );
 
                 if (isCurrentSessionRevoked) {
@@ -214,15 +158,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 toast.error('Failed to revoke sessions');
             }
         },
-        [
-            userId,
-            basePath,
-            sessions,
-            queryClient,
-            getCurrentSessionJti,
-            getAccessToken,
-            logOut,
-        ],
+        [userId, usersApi, sessions, queryClient, getCurrentSessionJti, logOut],
     );
 
     const openRevokeConfirmationModal = useCallback((sessionId: string) => {
@@ -232,9 +168,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
 
     // Query automatically fetches on mount and when dependencies change
 
-    const formatDate = useCallback((dateString: string): string => {
-        const date = new Date(dateString);
-        return date.toLocaleString();
+    const formatDate = useCallback((date: Date | string | undefined): string => {
+        if (!date) return '';
+        const dateObj = date instanceof Date ? date : new Date(date);
+        return dateObj.toLocaleString();
     }, []);
 
     const formatDeviceInfo = useCallback((deviceInfo: string | null): string => {
@@ -251,9 +188,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         () =>
             sessions.map((session) => ({
                 ...session,
-                is_current: currentJti
-                    ? session.refresh_token_jti === currentJti
-                    : session.is_current,
+                isCurrent: currentJti
+                    ? session.refreshTokenJti === currentJti
+                    : session.isCurrent,
             })),
         [sessions, currentJti],
     );
@@ -264,10 +201,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         const query = searchQuery.toLowerCase();
         return sessionsWithCurrent.filter(
             (session) =>
-                session.device_info?.toLowerCase().includes(query) ||
-                session.ip_address?.toLowerCase().includes(query) ||
-                formatDate(session.created_at).toLowerCase().includes(query) ||
-                formatDate(session.last_activity).toLowerCase().includes(query),
+                session.deviceInfo?.toLowerCase().includes(query) ||
+                session.ipAddress?.toLowerCase().includes(query) ||
+                formatDate(session.createdAt).toLowerCase().includes(query) ||
+                formatDate(session.lastActivity).toLowerCase().includes(query),
         );
     }, [sessionsWithCurrent, searchQuery, formatDate]);
 
@@ -340,7 +277,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 handlePageSizeChange(newPageSize);
@@ -381,7 +318,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 enableHiding: false,
             },
             {
-                accessorKey: 'device_info',
+                accessorKey: 'deviceInfo',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} title='Device' />
                 ),
@@ -390,9 +327,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     return (
                         <div className='flex items-center gap-2'>
                             <span className='text-sm'>
-                                {formatDeviceInfo(session.device_info)}
+                                {formatDeviceInfo(session.deviceInfo || null)}
                             </span>
-                            {session.is_current && (
+                            {session.isCurrent && (
                                 <Badge variant='default' className='text-xs'>
                                     Current
                                 </Badge>
@@ -402,12 +339,12 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 },
             },
             {
-                accessorKey: 'ip_address',
+                accessorKey: 'ipAddress',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} title='IP Address' />
                 ),
                 cell: ({ row }) => {
-                    const ip = row.original.ip_address;
+                    const ip = row.original.ipAddress;
                     return (
                         <span className='text-sm text-muted-foreground'>
                             {ip || '-'}
@@ -416,35 +353,35 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 },
             },
             {
-                accessorKey: 'created_at',
+                accessorKey: 'createdAt',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} title='Created' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.created_at)}
+                        {formatDate(row.original.createdAt)}
                     </span>
                 ),
             },
             {
-                accessorKey: 'last_activity',
+                accessorKey: 'lastActivity',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} title='Last Activity' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.last_activity)}
+                        {formatDate(row.original.lastActivity)}
                     </span>
                 ),
             },
             {
-                accessorKey: 'expires_at',
+                accessorKey: 'expiresAt',
                 header: ({ column }) => (
                     <DataTableColumnHeader column={column} title='Expires' />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
-                        {formatDate(row.original.expires_at)}
+                        {formatDate(row.original.expiresAt)}
                     </span>
                 ),
             },
@@ -463,7 +400,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                     <DropdownMenuItem
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            openRevokeConfirmationModal(session.id);
+                                            const sessionId = session.id;
+                                            if (sessionId) {
+                                                openRevokeConfirmationModal(sessionId);
+                                            }
                                         }}
                                         variant='destructive'
                                     >
@@ -544,9 +484,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     const session = sessions.find((s) => s.id === revokeSessionId);
                     const currentJti = getCurrentSessionJti();
                     const isCurrentSession =
-                        session &&
-                        currentJti &&
-                        session.refresh_token_jti === currentJti;
+                        session && currentJti && session.refreshTokenJti === currentJti;
                     return (
                         <ActionConfirmationModal
                             open={revokeModalOpen}

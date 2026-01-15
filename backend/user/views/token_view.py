@@ -42,9 +42,7 @@ def get_device_info(request: Request) -> str:
     return user_agent[:255] if len(user_agent) > 255 else user_agent
 
 
-def create_or_update_session(
-    request: Request, user, refresh_token: RefreshToken, expires_at: datetime
-):
+def create_or_update_session(request: Request, user, refresh_token: RefreshToken, expires_at: datetime):
     """Create or update a session record for a user."""
     jti = refresh_token.get("jti")
     if not jti:
@@ -81,6 +79,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
             ),
         },
         summary="Obtain JWT Pair",
+        tags=["auth"],
     )
     def post(self, request: Request, *args, **kwargs) -> Response:
         serializer: TokenObtainSerializer = self.get_serializer(data=request.data)
@@ -119,9 +118,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
 
         # Decode refresh token to get expiry time
         refresh_token = RefreshToken(serializer.validated_data["refresh"])
-        refresh_expires_at = datetime.fromtimestamp(
-            refresh_token["exp"], tz=timezone.utc
-        )
+        refresh_expires_at = datetime.fromtimestamp(refresh_token["exp"], tz=timezone.utc)
         response_data["refresh_expires_at"] = refresh_expires_at
 
         # Create session record
@@ -139,6 +136,7 @@ class TokenObtainPairLogView(TokenObtainPairView):
             200: TokenRefreshRetrieveSerializer,
             **get_validation_error_response(),
         },
+        tags=["auth"],
     )
 )
 class TokenRefreshLogView(TokenRefreshView):
@@ -150,6 +148,7 @@ class TokenRefreshLogView(TokenRefreshView):
             **get_validation_error_response(),
         },
         summary="Refresh Access Token",
+        tags=["auth"],
     )
     def post(self, request: Request, *args, **kwargs) -> Response:
         """Takes a refresh type JSON web token and returns an access type
@@ -195,18 +194,14 @@ class TokenRefreshLogView(TokenRefreshView):
 
             # Get access token expiry time from the newly generated access token
             access_token = AccessToken(response.data["access"])
-            access_expires_at = datetime.fromtimestamp(
-                access_token["exp"], tz=timezone.utc
-            )
+            access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=timezone.utc)
 
             # Get new refresh token (if rotated) or use old one
             new_refresh_token_str = response.data.get("refresh", refresh_token_str)
             new_refresh_token = RefreshToken(new_refresh_token_str)
 
             # Get refresh token expiry time
-            refresh_expires_at = datetime.fromtimestamp(
-                new_refresh_token["exp"], tz=timezone.utc
-            )
+            refresh_expires_at = datetime.fromtimestamp(new_refresh_token["exp"], tz=timezone.utc)
 
             # Add additional fields to response
             response.data["role"] = role
@@ -228,9 +223,7 @@ class TokenRefreshLogView(TokenRefreshView):
                 if old_jti and new_refresh_token_str != refresh_token_str:
                     UserSession.objects.filter(refresh_token_jti=old_jti).delete()
                 # Create/update session with new token
-                create_or_update_session(
-                    request, user, new_refresh_token, refresh_expires_at
-                )
+                create_or_update_session(request, user, new_refresh_token, refresh_expires_at)
             except Exception:
                 pass  # If we can't get the user, skip session tracking
 

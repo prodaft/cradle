@@ -1,9 +1,10 @@
 import { EdgeRelation } from '@/services/cradle';
 import { CosmographSearch } from '@cosmograph/react';
-import { ComponentType, MutableRefObject, useMemo } from 'react';
+import type React from 'react';
+import { ComponentType, useMemo } from 'react';
 import ExplorerPanel from './ExplorerPanel';
+import GraphFilters from './GraphFilters';
 import { Edge, Node } from './graphFilterUtils';
-import GraphLegend from './GraphLegend';
 import GraphSettings from './GraphSettings';
 
 interface Entry {
@@ -33,8 +34,8 @@ interface GraphControlProps {
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
     nodes: Node[];
     edges: Edge[];
-    activePanel: 'explorer' | 'display';
-    cosmographRef: MutableRefObject<any>;
+    activePanel: 'explorer' | 'display' | 'filters';
+    cosmographRef: React.MutableRefObject<any>;
     selectedEntries: Set<Entry>;
     setSelectedEntries: (entries: Set<Entry>) => void;
 }
@@ -82,27 +83,32 @@ export default function GraphControl({
                     addNodes={addNodes}
                     addBoth={addBoth}
                 />
-                {/* Graph Search - Keep mounted to avoid cleanup errors */}
-                <div className='px-4 mt-4'>
-                    <div className='bg-background border border-border rounded-lg p-3'>
-                        <CosmographSearch
-                            accessor='_label'
-                            onSelect={(suggestion: any) => {
-                                if (suggestion == null || cosmographRef.current == null)
-                                    return;
-                                const index = suggestion._index;
-                                if (index !== undefined) {
-                                    cosmographRef.current.setFocusedPoint(index);
-                                    cosmographRef.current.zoomToPoint(index);
-                                    const node = indexToNode.get(index);
-                                    if (node) {
-                                        setSelectedEntries(new Set([node]));
+                {/* Graph Search - Only render when nodes are available */}
+                {nodes.length > 0 && (
+                    <div className='px-4 mt-4'>
+                        <div className='bg-background border border-border rounded-lg p-3'>
+                            <CosmographSearch
+                                accessor='_label'
+                                onSelect={(suggestion: any) => {
+                                    if (
+                                        suggestion == null ||
+                                        cosmographRef.current == null
+                                    )
+                                        return;
+                                    const index = suggestion._index;
+                                    if (index !== undefined) {
+                                        cosmographRef.current.setFocusedPoint(index);
+                                        cosmographRef.current.zoomToPoint(index);
+                                        const node = indexToNode.get(index);
+                                        if (node) {
+                                            setSelectedEntries(new Set([node]));
+                                        }
                                     }
-                                }
-                            }}
-                        />
+                                }}
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
                 {/* Explorer Panel */}
                 <div className='border-t-2 border-t-zinc-400 dark:border-t-zinc-800 mt-4'>
                     <ExplorerPanel
@@ -119,8 +125,11 @@ export default function GraphControl({
             {/* Display Panel Content */}
             <div className={activePanel === 'display' ? '' : 'hidden'}>
                 <GraphSettings {...settingsProps} nodes={nodes} edges={edges} />
-                <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800 mt-4' />
-                <GraphLegend
+            </div>
+
+            {/* Filters Panel Content */}
+            <div className={activePanel === 'filters' ? '' : 'hidden'}>
+                <GraphFilters
                     entryGraphColors={entryGraphColors}
                     disabledTypes={disabledTypes}
                     toggleDisabledType={toggleDisabledType}

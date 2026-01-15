@@ -107,163 +107,140 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
 
     return (
         <div className='w-full h-full'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>User Settings</h2>
-                    <p className='text-muted-foreground'>
-                        Configure user registration and authentication
-                    </p>
-                </div>
-            </div>
+            <div className='w-full'>
+                <form onSubmit={handleSubmit(onSubmit as any)}>
+                    {/* Registration Section */}
+                    <section id='registration' className='pb-8'>
+                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
+                            Registration
+                        </h2>
+                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
+                            Control how new users can join the system
+                        </p>
 
-            {/* Content Area */}
-            <div className='p-5'>
-                <div className='w-full'>
-                    <form onSubmit={handleSubmit(onSubmit as any)}>
-                        {/* Registration Section */}
-                        <section id='registration' className='pb-8'>
-                            <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                Registration
-                            </h2>
-                            <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Control how new users can join the system
-                            </p>
-
-                            <div className='space-y-4'>
-                                <SettingsCard>
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <Label
-                                                    htmlFor='allowRegistration'
-                                                    className='text-sm text-muted-foreground block mb-0.5'
-                                                >
-                                                    Allow Registration
-                                                </Label>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    Allow new users to register for
-                                                    accounts
+                        <div className='space-y-4'>
+                            <SettingsCard>
+                                <div className='py-2'>
+                                    <div className='flex items-center justify-between gap-4'>
+                                        <div className='flex-1'>
+                                            <Label
+                                                htmlFor='allowRegistration'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Allow Registration
+                                            </Label>
+                                            <p className='text-sm text-muted-foreground'>
+                                                Allow new users to register for accounts
+                                            </p>
+                                            {errors.allowRegistration && (
+                                                <p className='text-sm text-destructive mt-1'>
+                                                    {errors.allowRegistration.message}
                                                 </p>
-                                                {errors.allowRegistration && (
-                                                    <p className='text-sm text-destructive mt-1'>
-                                                        {
-                                                            errors.allowRegistration
-                                                                .message
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <Controller
-                                                name='allowRegistration'
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Switch
-                                                        id='allowRegistration'
-                                                        name={field.name}
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                )}
-                                            />
+                                            )}
                                         </div>
+                                        <Controller
+                                            name='allowRegistration'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Switch
+                                                    id='allowRegistration'
+                                                    name={field.name}
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            )}
+                                        />
                                     </div>
+                                </div>
 
-                                    <Separator />
+                                <Separator />
 
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <Label
-                                                    htmlFor='requireEmailActivation'
-                                                    className='text-sm text-muted-foreground block mb-0.5'
-                                                >
-                                                    Require Email Activation
-                                                </Label>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    Users must verify their email before
-                                                    accessing the system
+                                <div className='py-2'>
+                                    <div className='flex items-center justify-between gap-4'>
+                                        <div className='flex-1'>
+                                            <Label
+                                                htmlFor='requireEmailActivation'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Require Email Activation
+                                            </Label>
+                                            <p className='text-sm text-muted-foreground'>
+                                                Users must verify their email before
+                                                accessing the system
+                                            </p>
+                                            {errors.requireEmailActivation && (
+                                                <p className='text-sm text-destructive mt-1'>
+                                                    {
+                                                        errors.requireEmailActivation
+                                                            .message
+                                                    }
                                                 </p>
-                                                {errors.requireEmailActivation && (
-                                                    <p className='text-sm text-destructive mt-1'>
-                                                        {
-                                                            errors
-                                                                .requireEmailActivation
-                                                                .message
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <Controller
-                                                name='requireEmailActivation'
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Switch
-                                                        id='requireEmailActivation'
-                                                        name={field.name}
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                )}
-                                            />
+                                            )}
                                         </div>
+                                        <Controller
+                                            name='requireEmailActivation'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Switch
+                                                    id='requireEmailActivation'
+                                                    name={field.name}
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            )}
+                                        />
                                     </div>
+                                </div>
 
-                                    <Separator />
+                                <Separator />
 
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <Label
-                                                    htmlFor='requireAdminConfirmation'
-                                                    className='text-sm text-muted-foreground block mb-0.5'
-                                                >
-                                                    Require Admin Confirmation
-                                                </Label>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    New accounts must be approved by an
-                                                    administrator
+                                <div className='py-2'>
+                                    <div className='flex items-center justify-between gap-4'>
+                                        <div className='flex-1'>
+                                            <Label
+                                                htmlFor='requireAdminConfirmation'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Require Admin Confirmation
+                                            </Label>
+                                            <p className='text-sm text-muted-foreground'>
+                                                New accounts must be approved by an
+                                                administrator
+                                            </p>
+                                            {errors.requireAdminConfirmation && (
+                                                <p className='text-sm text-destructive mt-1'>
+                                                    {
+                                                        errors.requireAdminConfirmation
+                                                            .message
+                                                    }
                                                 </p>
-                                                {errors.requireAdminConfirmation && (
-                                                    <p className='text-sm text-destructive mt-1'>
-                                                        {
-                                                            errors
-                                                                .requireAdminConfirmation
-                                                                .message
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <Controller
-                                                name='requireAdminConfirmation'
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Switch
-                                                        id='requireAdminConfirmation'
-                                                        name={field.name}
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                )}
-                                            />
+                                            )}
                                         </div>
+                                        <Controller
+                                            name='requireAdminConfirmation'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Switch
+                                                    id='requireAdminConfirmation'
+                                                    name={field.name}
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            )}
+                                        />
                                     </div>
-                                </SettingsCard>
-                            </div>
-                        </section>
-
-                        {/* Save Button */}
-                        <div className='border-t border-white/5 pt-5 flex justify-end'>
-                            <Button
-                                type='submit'
-                                variant='default'
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Save Settings'}
-                            </Button>
+                                </div>
+                            </SettingsCard>
                         </div>
-                    </form>
-                </div>
+                    </section>
+
+                    {/* Save Button */}
+                    <div className='border-t border-white/5 pt-5 flex justify-end'>
+                        <Button type='submit' variant='default' disabled={isSubmitting}>
+                            {isSubmitting ? 'Saving...' : 'Save Settings'}
+                        </Button>
+                    </div>
+                </form>
             </div>
         </div>
     );

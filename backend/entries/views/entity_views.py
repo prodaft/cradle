@@ -62,9 +62,7 @@ class EntityList(APIView):
         if request.user.is_cradle_admin:
             entities = Entry.entities.all()
         else:
-            entities = Entry.objects.filter(
-                id__in=Access.objects.get_accessible_entity_ids(request.user)
-            )
+            entities = Entry.objects.filter(id__in=Access.objects.get_accessible_entity_ids(request.user))
 
         serializer = EntryResponseSerializer(entities, many=True)
         return Response(serializer.data)
@@ -77,9 +75,7 @@ class EntityList(APIView):
         # Check if entity already exists
         name = serializer.validated_data.get("name")
         if Entry.entities.filter(name=name).exists():
-            raise DuplicateEntityException(
-                detail=f"Entity with name '{name}' already exists"
-            )
+            raise DuplicateEntityException(detail=f"Entity with name '{name}' already exists")
 
         # Create new entity
         serializer.save()
@@ -163,35 +159,25 @@ class EntityDetail(APIView):
     def get(self, request: Request, entity_id: int) -> Response:
         if not (
             request.user.is_cradle_admin
-            or Access.objects.get_accessible_entity_ids(request.user)
-            .filter(pk=entity_id)
-            .exists()
+            or Access.objects.get_accessible_entity_ids(request.user).filter(pk=entity_id).exists()
         ):
-            raise EntityNotFoundException(
-                detail="There is no entity with specified ID."
-            )
+            raise EntityNotFoundException(detail="There is no entity with specified ID.")
 
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
-            raise EntityNotFoundException(
-                detail="There is no entity with specified ID."
-            )
+            raise EntityNotFoundException(detail="There is no entity with specified ID.")
 
         serializer = EntitySerializer(entity)
         return Response(serializer.data)
 
     def delete(self, request: Request, entity_id: UUID) -> Response:
         if not request.user.is_cradle_admin:
-            raise AdminOnlyEntityDeleteException(
-                detail="Only admins can delete entities!"
-            )
+            raise AdminOnlyEntityDeleteException(detail="Only admins can delete entities!")
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
-            raise EntityNotFoundException(
-                detail="There is no entity with specified ID."
-            )
+            raise EntityNotFoundException(detail="There is no entity with specified ID.")
 
         entity.delete_renaming(request.user.id)
         refresh_edges_materialized_view.apply_async()
@@ -202,31 +188,20 @@ class EntityDetail(APIView):
         try:
             entity = Entry.entities.get(pk=entity_id)
         except Entry.DoesNotExist:
-            raise EntityNotFoundException(
-                detail="There is no entity with specified ID or you don't have access."
-            )
+            raise EntityNotFoundException(detail="There is no entity with specified ID or you don't have access.")
 
-        if not (
-            Access.objects.has_access_to_entities(
-                request.user, [entity], {AccessType.READ_WRITE}
-            )
-        ):
-            raise EntityNotFoundException(
-                detail="There is no entity with specified ID or you don't have access."
-            )
+        if not (Access.objects.has_access_to_entities(request.user, [entity], {AccessType.READ_WRITE})):
+            raise EntityNotFoundException(detail="There is no entity with specified ID or you don't have access.")
 
         serializer = EntitySerializer(entity, data=request.data)
         serializer.is_valid(raise_exception=True)
 
         # Non-Admin cannot change public status of entity
         if (
-            serializer.validated_data.get("is_public", entity.is_public)
-            != entity.is_public
+            serializer.validated_data.get("is_public", entity.is_public) != entity.is_public
             and not request.user.is_cradle_admin
         ):
-            raise AdminOnlyEntityPublicStatusException(
-                detail="Only admins can change the public status of entities!"
-            )
+            raise AdminOnlyEntityPublicStatusException(detail="Only admins can change the public status of entities!")
 
         serializer.save()
         serializer.instance.log_edit(request.user)

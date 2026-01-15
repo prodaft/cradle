@@ -334,42 +334,38 @@ export default function EnrichmentResults() {
                     </h1>
                     <div className='h-px bg-card mb-2' />
                     <div className='flex items-center gap-4 text-xs text-muted-foreground'>
-                            {enrichmentDetails.status && (
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <div className='flex items-center gap-1.5'>
-                                            {getStatusIcon(enrichmentDetails.status)}
-                                            <span className='capitalize'>
-                                                {enrichmentDetails.status}
-                                            </span>
-                                        </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent>{errorMsg()}</TooltipContent>
-                                </Tooltip>
-                            )}
-                            {enrichmentDetails.createdAt && (
-                                <div className='flex items-center gap-1.5'>
-                                    <Calendar width='14' height='14' />
-                                    <span>
-                                        {formatDate(enrichmentDetails.createdAt)}
-                                    </span>
-                                </div>
-                            )}
-                            {enrichmentDetails.completedAt && (
-                                <div className='flex items-center gap-1.5'>
-                                    <Clock width='14' height='14' />
-                                    <span>
-                                        {formatDate(enrichmentDetails.completedAt)}
-                                    </span>
-                                </div>
-                            )}
-                            {enrichmentDetails.userDetail && (
-                                <div className='flex items-center gap-1.5'>
-                                    <User width='14' height='14' />
-                                    <span>{enrichmentDetails.userDetail.username}</span>
-                                </div>
-                            )}
-                        </div>
+                        {enrichmentDetails.status && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className='flex items-center gap-1.5'>
+                                        {getStatusIcon(enrichmentDetails.status)}
+                                        <span className='capitalize'>
+                                            {enrichmentDetails.status}
+                                        </span>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>{errorMsg()}</TooltipContent>
+                            </Tooltip>
+                        )}
+                        {enrichmentDetails.createdAt && (
+                            <div className='flex items-center gap-1.5'>
+                                <Calendar width='14' height='14' />
+                                <span>{formatDate(enrichmentDetails.createdAt)}</span>
+                            </div>
+                        )}
+                        {enrichmentDetails.completedAt && (
+                            <div className='flex items-center gap-1.5'>
+                                <Clock width='14' height='14' />
+                                <span>{formatDate(enrichmentDetails.completedAt)}</span>
+                            </div>
+                        )}
+                        {enrichmentDetails.userDetail && (
+                            <div className='flex items-center gap-1.5'>
+                                <User width='14' height='14' />
+                                <span>{enrichmentDetails.userDetail.username}</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -453,46 +449,42 @@ export default function EnrichmentResults() {
                         {showIgnored ? (
                             /* Ignored Artifacts View */
                             <div className='h-full flex flex-col overflow-hidden'>
-                                    <div className='p-4 border-b border-border'>
-                                        <h2 className='text-lg font-medium text-foreground'>
-                                            Ignored Artifacts
-                                        </h2>
-                                        <p className='text-xs text-muted-foreground mt-1'>
-                                            These artifacts were ignored because they
-                                            could not be matched with any enrichment
-                                            technique.
-                                        </p>
-                                    </div>
-                                    <ScrollArea className='flex-1 min-h-0'>
-                                        <div className='divide-y divide-border'>
-                                            {ignoredArtifacts.map(
-                                                (artifact: any, index: number) => (
-                                                    <div
-                                                        key={index}
-                                                        className='px-4 py-3 flex items-center gap-3'
-                                                    >
-                                                        {/* Entry class indicator */}
-                                                        {artifact.entry_class && (
-                                                            <Badge variant="secondary">
-                                                                {artifact.entry_class}
-                                                            </Badge>
-                                                        )}
+                                <div className='p-4 border-b border-border'>
+                                    <h2 className='text-lg font-medium text-foreground'>
+                                        Ignored Artifacts
+                                    </h2>
+                                    <p className='text-xs text-muted-foreground mt-1'>
+                                        These artifacts were ignored because they could
+                                        not be matched with any enrichment technique.
+                                    </p>
+                                </div>
+                                <ScrollArea className='flex-1 min-h-0'>
+                                    <div className='divide-y divide-border'>
+                                        {ignoredArtifacts.map(
+                                            (artifact: any, index: number) => (
+                                                <div
+                                                    key={index}
+                                                    className='px-4 py-3 flex items-center gap-3'
+                                                >
+                                                    {/* Entry class indicator */}
+                                                    {artifact.entry_class && (
+                                                        <Badge variant='secondary'>
+                                                            {artifact.entry_class}
+                                                        </Badge>
+                                                    )}
 
-                                                        {/* Name */}
-                                                        <span className='flex-1 text-sm text-foreground truncate'>
-                                                            {typeof artifact ===
-                                                            'string'
-                                                                ? artifact
-                                                                : artifact.name ||
-                                                                  JSON.stringify(
-                                                                      artifact,
-                                                                  )}
-                                                        </span>
-                                                    </div>
-                                                ),
-                                            )}
-                                        </div>
-                                    </ScrollArea>
+                                                    {/* Name */}
+                                                    <span className='flex-1 text-sm text-foreground truncate'>
+                                                        {typeof artifact === 'string'
+                                                            ? artifact
+                                                            : artifact.name ||
+                                                              JSON.stringify(artifact)}
+                                                    </span>
+                                                </div>
+                                            ),
+                                        )}
+                                    </div>
+                                </ScrollArea>
                             </div>
                         ) : selectedEnricher ? (
                             /* Enricher Tabs View */
@@ -502,350 +494,337 @@ export default function EnrichmentResults() {
                                 </div>
                             ) : (
                                 <div className='flex flex-col h-full'>
-                                        {/* Relations Section */}
-                                        <div className='flex-1 overflow-hidden flex flex-col'>
-                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                                Relations
-                                            </h3>
-                                            <div className='px-3 pb-3 flex-1 flex flex-col overflow-hidden'>
-                                                {/* Search Bars */}
-                                                <div className='flex gap-2 items-center pb-3'>
-                                                    {/* Search Entries */}
-                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
-                                                        <Button
-                                                            variant='ghost'
-                                                            size='icon-sm'
-                                                            className='p-1 flex-shrink-0'
-                                                            title='Search'
-                                                            onClick={handleSearch}
-                                                        >
-                                                            <Search className='w-4 h-4' />
-                                                        </Button>
-                                                        <Input
-                                                            type='text'
-                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
-                                                            placeholder='Search entries...'
-                                                            value={searchInput.query}
-                                                            onChange={(e) =>
-                                                                setSearchInput({
-                                                                    ...searchInput,
-                                                                    query: e.target
-                                                                        .value,
-                                                                })
-                                                            }
-                                                            onKeyDown={
-                                                                handleSearchKeyPress
-                                                            }
-                                                        />
-                                                        {searchInput.query && (
-                                                            <Button
-                                                                variant='ghost'
-                                                                size='icon-sm'
-                                                                onClick={() => {
-                                                                    setSearchInput({
-                                                                        ...searchInput,
-                                                                        query: '',
-                                                                    });
-                                                                }}
-                                                                className='p-1 flex-shrink-0'
-                                                                title='Clear'
-                                                            >
-                                                                <Xmark className='w-4 h-4' />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Search Details */}
-                                                    <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
-                                                        <Button
-                                                            variant='ghost'
-                                                            size='icon-sm'
-                                                            className='p-1 flex-shrink-0'
-                                                            title='Search Details'
-                                                            onClick={handleSearch}
-                                                        >
-                                                            <Search className='w-4 h-4' />
-                                                        </Button>
-                                                        <Input
-                                                            type='text'
-                                                            className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
-                                                            placeholder='Search details...'
-                                                            value={searchInput.details}
-                                                            onChange={(e) =>
-                                                                setSearchInput({
-                                                                    ...searchInput,
-                                                                    details:
-                                                                        e.target.value,
-                                                                })
-                                                            }
-                                                            onKeyDown={
-                                                                handleSearchKeyPress
-                                                            }
-                                                        />
-                                                        {searchInput.details && (
-                                                            <Button
-                                                                variant='ghost'
-                                                                size='icon-sm'
-                                                                onClick={() => {
-                                                                    setSearchInput({
-                                                                        ...searchInput,
-                                                                        details: '',
-                                                                    });
-                                                                }}
-                                                                className='p-1 flex-shrink-0'
-                                                                title='Clear'
-                                                            >
-                                                                <Xmark className='w-4 h-4' />
-                                                            </Button>
-                                                        )}
-                                                    </div>
-
+                                    {/* Relations Section */}
+                                    <div className='flex-1 overflow-hidden flex flex-col'>
+                                        <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
+                                            Relations
+                                        </h3>
+                                        <div className='px-3 pb-3 flex-1 flex flex-col overflow-hidden'>
+                                            {/* Search Bars */}
+                                            <div className='flex gap-2 items-center pb-3'>
+                                                {/* Search Entries */}
+                                                <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
                                                     <Button
-                                                        variant='outline'
-                                                        size='default'
+                                                        variant='ghost'
+                                                        size='icon-sm'
+                                                        className='p-1 flex-shrink-0'
+                                                        title='Search'
                                                         onClick={handleSearch}
                                                     >
-                                                        Search
+                                                        <Search className='w-4 h-4' />
                                                     </Button>
-                                                    <Button
-                                                        variant='outline'
-                                                        size='icon'
-                                                        onClick={handleDownloadResults}
-                                                        disabled={
-                                                            !results ||
-                                                            results.length === 0
+                                                    <Input
+                                                        type='text'
+                                                        className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
+                                                        placeholder='Search entries...'
+                                                        value={searchInput.query}
+                                                        onChange={(e) =>
+                                                            setSearchInput({
+                                                                ...searchInput,
+                                                                query: e.target.value,
+                                                            })
                                                         }
-                                                        title='Download results as JSON'
-                                                    >
-                                                        <Download
-                                                            width='18'
-                                                            height='18'
-                                                        />
-                                                    </Button>
-
-                                                    {/* Pagination */}
-                                                    <Pagination
-                                                        currentPage={page}
-                                                        totalPages={totalPages}
-                                                        onPageChange={(newPage) =>
-                                                            setPage(newPage)
-                                                        }
-                                                        pageSize={pageSize}
-                                                        onPageSizeChange={(newSize) => {
-                                                            setPageSize(newSize);
-                                                            setPage(1);
-                                                        }}
+                                                        onKeyDown={handleSearchKeyPress}
                                                     />
+                                                    {searchInput.query && (
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='icon-sm'
+                                                            onClick={() => {
+                                                                setSearchInput({
+                                                                    ...searchInput,
+                                                                    query: '',
+                                                                });
+                                                            }}
+                                                            className='p-1 flex-shrink-0'
+                                                            title='Clear'
+                                                        >
+                                                            <Xmark className='w-4 h-4' />
+                                                        </Button>
+                                                    )}
                                                 </div>
 
-                                                {/* Results */}
-                                                <ScrollArea className='flex-grow'>
-                                                    {isPendingResults ? (
-                                                        <div className='flex items-center justify-center min-h-[200px]'>
-                                                            <Spinner className='size-10' />
-                                                        </div>
-                                                    ) : results.length === 0 ? (
-                                                        <div className='flex flex-col items-center justify-center min-h-[200px]'>
-                                                            <p className='text-sm text-muted-foreground'>
-                                                                No results found.
-                                                            </p>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <div className='space-y-4 mb-4'>
-                                                                {results.map(
-                                                                    (result, index) => (
-                                                                        <div
-                                                                            key={
-                                                                                result.id ||
-                                                                                index
-                                                                            }
-                                                                            className='p-4 bg-card border border-border'
-                                                                        >
-                                                                            {/* Entry badges */}
-                                                                            {(result.e1 ||
-                                                                                result.e2) && (
-                                                                                <div className='flex flex-wrap gap-2 mb-3'>
-                                                                                    {renderEntryBadge(
-                                                                                        result.e1,
-                                                                                    )}
-                                                                                    {renderEntryBadge(
-                                                                                        result.e2,
-                                                                                    )}
-                                                                                </div>
-                                                                            )}
-
-                                                                            {/* Details JSON viewer */}
-                                                                            {result.details && (
-                                                                                <ReactJson
-                                                                                    src={
-                                                                                        result.details
-                                                                                    }
-                                                                                    theme='monokai'
-                                                                                    collapsed={
-                                                                                        1
-                                                                                    }
-                                                                                    displayDataTypes={
-                                                                                        false
-                                                                                    }
-                                                                                    displayObjectSize={
-                                                                                        false
-                                                                                    }
-                                                                                    enableClipboard={
-                                                                                        true
-                                                                                    }
-                                                                                    style={{
-                                                                                        backgroundColor:
-                                                                                            'transparent',
-                                                                                        fontSize:
-                                                                                            '12px',
-                                                                                    }}
-                                                                                />
-                                                                            )}
-
-                                                                            {!result.details && (
-                                                                                <p className='text-xs text-muted-foreground italic'>
-                                                                                    No
-                                                                                    details
-                                                                                    available
-                                                                                </p>
-                                                                            )}
-                                                                        </div>
-                                                                    ),
-                                                                )}
-                                                            </div>
-                                                        </>
+                                                {/* Search Details */}
+                                                <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
+                                                    <Button
+                                                        variant='ghost'
+                                                        size='icon-sm'
+                                                        className='p-1 flex-shrink-0'
+                                                        title='Search Details'
+                                                        onClick={handleSearch}
+                                                    >
+                                                        <Search className='w-4 h-4' />
+                                                    </Button>
+                                                    <Input
+                                                        type='text'
+                                                        className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
+                                                        placeholder='Search details...'
+                                                        value={searchInput.details}
+                                                        onChange={(e) =>
+                                                            setSearchInput({
+                                                                ...searchInput,
+                                                                details: e.target.value,
+                                                            })
+                                                        }
+                                                        onKeyDown={handleSearchKeyPress}
+                                                    />
+                                                    {searchInput.details && (
+                                                        <Button
+                                                            variant='ghost'
+                                                            size='icon-sm'
+                                                            onClick={() => {
+                                                                setSearchInput({
+                                                                    ...searchInput,
+                                                                    details: '',
+                                                                });
+                                                            }}
+                                                            className='p-1 flex-shrink-0'
+                                                            title='Clear'
+                                                        >
+                                                            <Xmark className='w-4 h-4' />
+                                                        </Button>
                                                     )}
-                                                </ScrollArea>
-                                            </div>
-                                        </div>
+                                                </div>
 
-                                        {/* Artifacts Section */}
+                                                <Button
+                                                    variant='outline'
+                                                    size='default'
+                                                    onClick={handleSearch}
+                                                >
+                                                    Search
+                                                </Button>
+                                                <Button
+                                                    variant='outline'
+                                                    size='icon'
+                                                    onClick={handleDownloadResults}
+                                                    disabled={
+                                                        !results || results.length === 0
+                                                    }
+                                                    title='Download results as JSON'
+                                                >
+                                                    <Download width='18' height='18' />
+                                                </Button>
+
+                                                {/* Pagination */}
+                                                <Pagination
+                                                    currentPage={page}
+                                                    totalPages={totalPages}
+                                                    onPageChange={(newPage) =>
+                                                        setPage(newPage)
+                                                    }
+                                                    pageSize={pageSize}
+                                                    onPageSizeChange={(newSize) => {
+                                                        setPageSize(newSize);
+                                                        setPage(1);
+                                                    }}
+                                                />
+                                            </div>
+
+                                            {/* Results */}
+                                            <ScrollArea className='flex-grow'>
+                                                {isPendingResults ? (
+                                                    <div className='flex items-center justify-center min-h-[200px]'>
+                                                        <Spinner className='size-10' />
+                                                    </div>
+                                                ) : results.length === 0 ? (
+                                                    <div className='flex flex-col items-center justify-center min-h-[200px]'>
+                                                        <p className='text-sm text-muted-foreground'>
+                                                            No results found.
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className='space-y-4 mb-4'>
+                                                            {results.map(
+                                                                (result, index) => (
+                                                                    <div
+                                                                        key={
+                                                                            result.id ||
+                                                                            index
+                                                                        }
+                                                                        className='p-4 bg-card border border-border'
+                                                                    >
+                                                                        {/* Entry badges */}
+                                                                        {(result.e1 ||
+                                                                            result.e2) && (
+                                                                            <div className='flex flex-wrap gap-2 mb-3'>
+                                                                                {renderEntryBadge(
+                                                                                    result.e1,
+                                                                                )}
+                                                                                {renderEntryBadge(
+                                                                                    result.e2,
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+
+                                                                        {/* Details JSON viewer */}
+                                                                        {result.details && (
+                                                                            <ReactJson
+                                                                                src={
+                                                                                    result.details
+                                                                                }
+                                                                                theme='monokai'
+                                                                                collapsed={
+                                                                                    1
+                                                                                }
+                                                                                displayDataTypes={
+                                                                                    false
+                                                                                }
+                                                                                displayObjectSize={
+                                                                                    false
+                                                                                }
+                                                                                enableClipboard={
+                                                                                    true
+                                                                                }
+                                                                                style={{
+                                                                                    backgroundColor:
+                                                                                        'transparent',
+                                                                                    fontSize:
+                                                                                        '12px',
+                                                                                }}
+                                                                            />
+                                                                        )}
+
+                                                                        {!result.details && (
+                                                                            <p className='text-xs text-muted-foreground italic'>
+                                                                                No
+                                                                                details
+                                                                                available
+                                                                            </p>
+                                                                        )}
+                                                                    </div>
+                                                                ),
+                                                            )}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </ScrollArea>
+                                        </div>
+                                    </div>
+
+                                    {/* Artifacts Section */}
+                                    <div className='flex-1 overflow-hidden flex flex-col border-t'>
+                                        <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
+                                            Artifacts
+                                        </h3>
+                                        {!enricherDetails?.artifacts ||
+                                        enricherDetails.artifacts.length === 0 ? (
+                                            <div className='flex flex-col items-center justify-center flex-1'>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    No artifacts found.
+                                                </p>
+                                            </div>
+                                        ) : (
+                                            <ScrollArea className='flex-1 min-h-0 px-3 pb-3'>
+                                                <div className='divide-y divide-border'>
+                                                    {enricherDetails.artifacts.map(
+                                                        (
+                                                            artifact: any,
+                                                            index: number,
+                                                        ) => (
+                                                            <div
+                                                                key={index}
+                                                                className='px-4 py-3 flex items-center gap-3'
+                                                            >
+                                                                {/* Entry class indicator */}
+                                                                {artifact.entry_class && (
+                                                                    <Badge variant='secondary'>
+                                                                        {
+                                                                            artifact.entry_class
+                                                                        }
+                                                                    </Badge>
+                                                                )}
+
+                                                                {/* Name */}
+                                                                <span className='flex-1 text-sm text-foreground truncate'>
+                                                                    {typeof artifact ===
+                                                                    'string'
+                                                                        ? artifact
+                                                                        : artifact.name ||
+                                                                          JSON.stringify(
+                                                                              artifact,
+                                                                          )}
+                                                                </span>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </ScrollArea>
+                                        )}
+                                    </div>
+
+                                    {/* Warnings Section - Conditional */}
+                                    {hasWarnings && (
                                         <div className='flex-1 overflow-hidden flex flex-col border-t'>
                                             <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                                Artifacts
+                                                Warnings
                                             </h3>
-                                            {!enricherDetails?.artifacts ||
-                                            enricherDetails.artifacts.length === 0 ? (
-                                                <div className='flex flex-col items-center justify-center flex-1'>
-                                                    <p className='text-sm text-muted-foreground'>
-                                                        No artifacts found.
-                                                    </p>
+                                            <ScrollArea className='flex-1 px-3 pb-3'>
+                                                <div className='divide-y divide-border'>
+                                                    {enricherDetails!.warnings!.map(
+                                                        (
+                                                            warning: any,
+                                                            index: number,
+                                                        ) => (
+                                                            <div
+                                                                key={index}
+                                                                className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
+                                                            >
+                                                                <WarningTriangle
+                                                                    className='text-muted-foreground flex-shrink-0'
+                                                                    width='16'
+                                                                    height='16'
+                                                                />
+                                                                <span className='flex-1 text-sm text-foreground'>
+                                                                    {typeof warning ===
+                                                                    'string'
+                                                                        ? warning
+                                                                        : JSON.stringify(
+                                                                              warning,
+                                                                          )}
+                                                                </span>
+                                                            </div>
+                                                        ),
+                                                    )}
                                                 </div>
-                                            ) : (
-                                                <ScrollArea className='flex-1 min-h-0 px-3 pb-3'>
-                                                    <div className='divide-y divide-border'>
-                                                        {enricherDetails.artifacts.map(
-                                                            (
-                                                                artifact: any,
-                                                                index: number,
-                                                            ) => (
-                                                                <div
-                                                                    key={index}
-                                                                    className='px-4 py-3 flex items-center gap-3'
-                                                                >
-                                                                    {/* Entry class indicator */}
-                                                                    {artifact.entry_class && (
-                                                                        <Badge variant="secondary">
-                                                                            {
-                                                                                artifact.entry_class
-                                                                            }
-                                                                        </Badge>
-                                                                    )}
-
-                                                                    {/* Name */}
-                                                                    <span className='flex-1 text-sm text-foreground truncate'>
-                                                                        {typeof artifact ===
-                                                                        'string'
-                                                                            ? artifact
-                                                                            : artifact.name ||
-                                                                              JSON.stringify(
-                                                                                  artifact,
-                                                                              )}
-                                                                    </span>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                </ScrollArea>
-                                            )}
+                                            </ScrollArea>
                                         </div>
+                                    )}
 
-                                        {/* Warnings Section - Conditional */}
-                                        {hasWarnings && (
-                                            <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                                    Warnings
-                                                </h3>
-                                                <ScrollArea className='flex-1 px-3 pb-3'>
-                                                    <div className='divide-y divide-border'>
-                                                        {enricherDetails!.warnings!.map(
-                                                            (
-                                                                warning: any,
-                                                                index: number,
-                                                            ) => (
-                                                                <div
-                                                                    key={index}
-                                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
-                                                                >
-                                                                    <WarningTriangle
-                                                                        className='text-muted-foreground flex-shrink-0'
-                                                                        width='16'
-                                                                        height='16'
-                                                                    />
-                                                                    <span className='flex-1 text-sm text-foreground'>
-                                                                        {typeof warning ===
-                                                                        'string'
-                                                                            ? warning
-                                                                            : JSON.stringify(
-                                                                                  warning,
-                                                                              )}
-                                                                    </span>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                </ScrollArea>
-                                            </div>
-                                        )}
-
-                                        {/* Errors Section - Conditional */}
-                                        {hasErrors && (
-                                            <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                                <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                                    Errors
-                                                </h3>
-                                                <ScrollArea className='flex-1 px-3 pb-3'>
-                                                    <div className='divide-y divide-border'>
-                                                        {enricherDetails!.errors!.map(
-                                                            (
-                                                                error: any,
-                                                                index: number,
-                                                            ) => (
-                                                                <div
-                                                                    key={index}
-                                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
-                                                                >
-                                                                    <WarningCircle
-                                                                        className='text-destructive flex-shrink-0'
-                                                                        width='16'
-                                                                        height='16'
-                                                                    />
-                                                                    <span className='flex-1 text-sm text-foreground'>
-                                                                        {typeof error ===
-                                                                        'string'
-                                                                            ? error
-                                                                            : JSON.stringify(
-                                                                                  error,
-                                                                              )}
-                                                                    </span>
-                                                                </div>
-                                                            ),
-                                                        )}
-                                                    </div>
-                                                </ScrollArea>
-                                            </div>
-                                        )}
+                                    {/* Errors Section - Conditional */}
+                                    {hasErrors && (
+                                        <div className='flex-1 overflow-hidden flex flex-col border-t'>
+                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
+                                                Errors
+                                            </h3>
+                                            <ScrollArea className='flex-1 px-3 pb-3'>
+                                                <div className='divide-y divide-border'>
+                                                    {enricherDetails!.errors!.map(
+                                                        (error: any, index: number) => (
+                                                            <div
+                                                                key={index}
+                                                                className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
+                                                            >
+                                                                <WarningCircle
+                                                                    className='text-destructive flex-shrink-0'
+                                                                    width='16'
+                                                                    height='16'
+                                                                />
+                                                                <span className='flex-1 text-sm text-foreground'>
+                                                                    {typeof error ===
+                                                                    'string'
+                                                                        ? error
+                                                                        : JSON.stringify(
+                                                                              error,
+                                                                          )}
+                                                                </span>
+                                                            </div>
+                                                        ),
+                                                    )}
+                                                </div>
+                                            </ScrollArea>
+                                        </div>
+                                    )}
                                 </div>
                             )
                         ) : (

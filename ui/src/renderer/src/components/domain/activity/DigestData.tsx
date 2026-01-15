@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
 import type { Alert } from '@/types';
 import DigestList from '@components/domain/files/DigestList';
 import UploadDigestModal from '@components/modals/files/UploadDigestModal';
@@ -46,7 +45,6 @@ export default function DigestData() {
         select: (state) => state.location,
     });
     const search = useSearch({ from: '/_authenticated/digest-data' });
-    const { profile } = useProfile();
     const { intelioApi } = useApi();
     const [uploadDigestModalOpen, setUploadDigestModalOpen] = useState(false);
     const queryClient = useQueryClient();

@@ -9,7 +9,7 @@ import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdow
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthState } from '@/hooks/auth/useAuth';
 import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
@@ -35,7 +35,7 @@ export default function EntitiesPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.entities_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.entities_pagesize || 10);
-    const { isAdmin } = useProfile();
+    const { isAdmin } = useAuthState();
     const { queryApi, entriesApi } = useApi();
     const queryClient = useQueryClient();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -142,7 +142,7 @@ export default function EntitiesPage() {
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 setPageSize(newPageSize);
@@ -250,12 +250,17 @@ export default function EntitiesPage() {
                         >
                             <div className='flex justify-end'>
                                 <TableActionsButton>
-                                    {isAdmin() && (
+                                    {isAdmin && (
                                         <>
                                             <DropdownMenuItem
-                                                onClick={(e) => handleActivityClick(entity, e)}
+                                                onClick={(e) =>
+                                                    handleActivityClick(entity, e)
+                                                }
                                             >
-                                                <ClockRotateRight width='18' height='18' />
+                                                <ClockRotateRight
+                                                    width='18'
+                                                    height='18'
+                                                />
                                                 View Activity
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
@@ -330,7 +335,7 @@ export default function EntitiesPage() {
                     title='Entities'
                     description='Manage entities and their properties'
                     actions={
-                        isAdmin() ? (
+                        isAdmin ? (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button onClick={handleAddEntity}>

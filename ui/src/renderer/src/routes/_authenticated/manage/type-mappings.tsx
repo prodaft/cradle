@@ -6,7 +6,9 @@ const TypeMappingsPage = lazy(
     () => import('@/components/domain/admin/pages/TypeMappingsPage'),
 );
 
-export const Route = createFileRoute('/_authenticated/manage/type-mappings')({
+export const Route = createFileRoute(
+    ('/_authenticated/manage/(entry-manager)/type-mappings' as any),
+)({
     validateSearch: z.object({
         tab: z.string().optional(),
     }),

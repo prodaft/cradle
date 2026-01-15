@@ -1,7 +1,7 @@
 'use client';
 
 import Logo from '@/components/base/Logo/Logo';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthState } from '@/hooks/auth/useAuth';
 import { Link, useMatchRoute, useRouter } from '@tanstack/react-router';
 import {
     Archive,
@@ -49,7 +49,7 @@ export function AppSidebar({
 }: AppSidebarProps) {
     const router = useRouter();
     const matchRoute = useMatchRoute();
-    const { isEntryManager, isAdmin, profile } = useProfile();
+    const { isEntryManager, isAdmin } = useAuthState();
     const { state } = useSidebar();
     const isCollapsed = state === 'collapsed';
 
@@ -136,7 +136,7 @@ export function AppSidebar({
                 <NavMain items={navMain} showLabel={true} label='General' />
                 <NavMain
                     items={[
-                        ...(isEntryManager()
+                        ...(isEntryManager
                             ? [
                                   {
                                       title: 'Manage',
@@ -159,7 +159,7 @@ export function AppSidebar({
                                               url: '/manage/type-mappings',
                                               icon: Link2,
                                           },
-                                          ...(isAdmin()
+                                          ...(isAdmin
                                               ? [
                                                     {
                                                         title: 'Users',

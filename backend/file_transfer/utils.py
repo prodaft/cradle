@@ -18,9 +18,7 @@ class MinioClient:
         if not hasattr(cls, "_instance"):
             cls._instance = super().__new__(cls)
             if MINIO_BACKEND_URL is not None:
-                cls._instance.client = Minio(
-                    http_client=urllib3.ProxyManager(MINIO_BACKEND_URL), **MINIO_CONFIG
-                )
+                cls._instance.client = Minio(http_client=urllib3.ProxyManager(MINIO_BACKEND_URL), **MINIO_CONFIG)
             else:
                 cls._instance.client = Minio(**MINIO_CONFIG)
 
@@ -125,9 +123,7 @@ class MinioClient:
         assert self.client is not None  # required by mypy
 
         try:
-            self.client.stat_object(
-                bucket_name=bucket_name, object_name=minio_file_name
-            )
+            self.client.stat_object(bucket_name=bucket_name, object_name=minio_file_name)
             return True
         except Exception:
             return False
@@ -165,9 +161,7 @@ class MinioClient:
         except Exception:
             return None
 
-    def read_bytes(
-        self, bucket_name: str, path: str, offset: int = 0, length: int = 0
-    ) -> Optional[bytes]:
+    def read_bytes(self, bucket_name: str, path: str, offset: int = 0, length: int = 0) -> Optional[bytes]:
         """Reads the bytes of a file from the MinIO instance.
         Args:
             bucket_name: The name of the bucket where the file is stored
@@ -178,9 +172,7 @@ class MinioClient:
         assert self.client is not None
 
         try:
-            return self.client.get_object(
-                bucket_name, object_name=path, offset=offset, length=length
-            ).read()
+            return self.client.get_object(bucket_name, object_name=path, offset=offset, length=length).read()
         except Exception:
             return None
 
@@ -197,9 +189,7 @@ class MinioClient:
         assert self.client is not None
 
         try:
-            objects = self.client.list_objects(
-                bucket_name, prefix=prefix, recursive=True
-            )
+            objects = self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
             return [obj.object_name for obj in objects]
         except Exception:
             return []
@@ -220,9 +210,7 @@ class MinioClient:
         # First verify all files exist
         for file_name in file_names:
             if not self.file_exists_at_path(bucket_name, file_name):
-                raise MinioObjectNotFound(
-                    f"File {file_name} not found in bucket {bucket_name}"
-                )
+                raise MinioObjectNotFound(f"File {file_name} not found in bucket {bucket_name}")
 
         # If all files exist, proceed with deletion
         try:
@@ -231,9 +219,7 @@ class MinioClient:
             for error in errors:
                 # This should theoretically never happen since we checked existence first,
                 # but we handle it just in case
-                raise Exception(
-                    f"Error deleting object: {error.object_name}, error: {error}"
-                )
+                raise Exception(f"Error deleting object: {error.object_name}, error: {error}")
         except Exception as e:
             # Catch any other MinIO errors
             raise Exception(f"Error deleting files: {str(e)}")

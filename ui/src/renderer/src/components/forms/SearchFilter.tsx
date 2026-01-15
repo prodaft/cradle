@@ -52,8 +52,12 @@ export default function SearchFilter({
         <Badge
             variant={isActive ? 'default' : 'outline'}
             onClick={toggleFilter}
-            className="cursor-pointer mr-1.5 mb-1.5"
-            style={color ? { backgroundColor: color, borderColor: color, color: '#fff' } : undefined}
+            className='cursor-pointer mr-1.5 mb-1.5'
+            style={
+                color
+                    ? { backgroundColor: color, borderColor: color, color: '#fff' }
+                    : undefined
+            }
         >
             {text}
         </Badge>

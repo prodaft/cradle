@@ -18,9 +18,7 @@ class EntryCompressedTreeValueSerializer(serializers.Serializer):
     """Serializer for individual entry values in compressed tree structure."""
 
     # This can be either a string (single field) or an object (multiple fields)
-    name = serializers.CharField(
-        required=False, help_text="Entry name (when using single field)"
-    )
+    name = serializers.CharField(required=False, help_text="Entry name (when using single field)")
     id = serializers.UUIDField(required=False, help_text="Entry ID")
     description = serializers.CharField(required=False, help_text="Entry description")
     location = serializers.ListField(
@@ -111,8 +109,7 @@ class EntryListCompressedTreeSerializerExtension(OpenApiSerializerExtension):
             },
             "required": ["entities", "artifacts"],
             "description": (
-                "A compressed tree representation of entries, organized by type "
-                "(entities/artifacts) and subtype."
+                "A compressed tree representation of entries, organized by type (entities/artifacts) and subtype."
             ),
             "title": "EntryListCompressedTree",
         }
@@ -187,13 +184,9 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
 
     def add_to_tree(self, tree, entry):
         if entry.entry_class.type == EntryType.ENTITY:
-            tree["entities"].setdefault(entry.entry_class.subtype, []).append(
-                self.serialize_entry(entry)
-            )
+            tree["entities"].setdefault(entry.entry_class.subtype, []).append(self.serialize_entry(entry))
         else:
-            tree["artifacts"].setdefault(entry.entry_class.subtype, []).append(
-                self.serialize_entry(entry)
-            )
+            tree["artifacts"].setdefault(entry.entry_class.subtype, []).append(self.serialize_entry(entry))
 
     def to_representation(self, data):
         tree = {"entities": {}, "artifacts": {}}
@@ -356,9 +349,7 @@ class EntryClassSerializerCount(EntryClassSerializer):
 class NextNameResponseSerializer(serializers.Serializer):
     """Serializer for the next available name response."""
 
-    name = serializers.CharField(
-        allow_null=True, help_text="Next available name, or null if class has no prefix"
-    )
+    name = serializers.CharField(allow_null=True, help_text="Next available name, or null if class has no prefix")
 
 
 class EntryResponseSerializerExtension(OpenApiSerializerExtension):
@@ -526,9 +517,7 @@ class EntitySerializer(serializers.ModelSerializer):
             raise EntryMustHaveASubtype()
 
         internal = super().to_internal_value(data)
-        entryclass = EntryClass.objects.filter(
-            type=EntryType.ENTITY, subtype=data["subtype"]
-        )
+        entryclass = EntryClass.objects.filter(type=EntryType.ENTITY, subtype=data["subtype"])
 
         if not entryclass.exists():
             raise EntryTypeDoesNotExist()
@@ -585,9 +574,7 @@ class EntitySerializer(serializers.ModelSerializer):
             current_alias_ids = set(instance.aliases.values_list("id", flat=True))
 
             # Normalize incoming alias data to IDs
-            new_alias_ids = {
-                alias.id if hasattr(alias, "id") else alias for alias in aliases_data
-            }
+            new_alias_ids = {alias.id if hasattr(alias, "id") else alias for alias in aliases_data}
 
             if current_alias_ids != new_alias_ids:
                 instance.aliases.set(aliases_data)
@@ -672,9 +659,7 @@ class ArtifactSerializer(serializers.ModelSerializer):
         if entry_class.exists() and entry_class.first().type != EntryType.ARTIFACT:
             raise EntryTypeMismatchException()
 
-        entry_exists = Entry.objects.filter(
-            entry_class=data["entry_class"], name=data["name"]
-        ).exists()
+        entry_exists = Entry.objects.filter(entry_class=data["entry_class"], name=data["name"]).exists()
         if entry_exists:
             raise DuplicateEntryException()
 
@@ -691,9 +676,7 @@ class ArtifactSerializer(serializers.ModelSerializer):
         Returns:
             The created Entry entry
         """
-        entry_class_serializer = EntryClassSerializerNoChildren(
-            instance=validated_data["entry_class"]
-        )
+        entry_class_serializer = EntryClassSerializerNoChildren(instance=validated_data["entry_class"])
         EntryClass.objects.get_or_create(**entry_class_serializer.data)
 
         return super().create(validated_data)

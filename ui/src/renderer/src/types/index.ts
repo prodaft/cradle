@@ -44,12 +44,6 @@ export interface Profile {
     // Add other profile properties as needed
 }
 
-export interface ProfileContextValue {
-    profile: Profile | null;
-    setProfile: (profile: Profile | null) => void;
-    isLoading: boolean;
-}
-
 // ============================================================================
 // Notification Types
 // ============================================================================

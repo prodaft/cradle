@@ -11,9 +11,7 @@ from uuid import UUID
 
 
 class AccessManager(models.Manager):
-    def inaccessible_entries(
-        self, user: CradleUser, entries: QuerySet, access_types: Set[AccessType]
-    ):
+    def inaccessible_entries(self, user: CradleUser, entries: QuerySet, access_types: Set[AccessType]):
         """Checks whether a user has one of the specified access types
         to each of the entities in the set of entities. Assumes that AccessType.NONE
         is not given as an access type in the set. If the user is a superuser,
@@ -40,18 +38,14 @@ class AccessManager(models.Manager):
 
         if AccessType.READ in access_types:
             accesses = accesses.union(
-                Entry.entities.filter(
-                    entry_class__type=EntryType.ENTITY, is_public=True
-                ).values("id")
+                Entry.entities.filter(entry_class__type=EntryType.ENTITY, is_public=True).values("id")
             )
 
         accessible = accesses
 
         return entities.filter(~Q(pk__in=accessible))
 
-    def has_access_to_entities(
-        self, user: CradleUser, entities: Set[Entry], access_types: Set[AccessType]
-    ) -> bool:
+    def has_access_to_entities(self, user: CradleUser, entities: Set[Entry], access_types: Set[AccessType]) -> bool:
         """Checks whether a user has one of the specified access types
         to each of the entities in the set of entities. Assumes that AccessType.NONE
         is not given as an access type in the set. If the user is a superuser,
@@ -80,9 +74,7 @@ class AccessManager(models.Manager):
             )
             count = len([e for e in entities if e.is_public])
         else:
-            q = models.Q(
-                user_id=user.pk, entity__in=entities, access_type__in=access_types
-            )
+            q = models.Q(user_id=user.pk, entity__in=entities, access_type__in=access_types)
 
         accesses = self.get_queryset().filter(q).distinct().values("id")
         count += accesses.count()
@@ -105,23 +97,13 @@ class AccessManager(models.Manager):
         ids = set(
             (
                 self.get_queryset()
-                .filter(
-                    (
-                        Q(user_id=user_id)
-                        & (
-                            Q(access_type=AccessType.READ)
-                            | Q(access_type=AccessType.READ_WRITE)
-                        )
-                    )
-                )
+                .filter((Q(user_id=user_id) & (Q(access_type=AccessType.READ) | Q(access_type=AccessType.READ_WRITE))))
                 .values_list("entity_id", flat=True)
             )
         )
 
         ids = ids | set(
-            Entry.objects.filter(
-                entry_class__type=EntryType.ENTITY, is_public=True
-            ).values_list("id", flat=True)
+            Entry.objects.filter(entry_class__type=EntryType.ENTITY, is_public=True).values_list("id", flat=True)
         )
 
         return Entry.entities.filter(pk__in=ids).values_list("pk", flat=True)
@@ -144,9 +126,7 @@ class AccessManager(models.Manager):
         """
         return (
             Entry.entities.annotate(
-                access_type=FilteredRelation(
-                    "access", condition=Q(access__user=user_id)
-                )
+                access_type=FilteredRelation("access", condition=Q(access__user=user_id))
             )  # left outer join
             .values("id", "name", "access_type__access_type")  # separate table
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
@@ -172,9 +152,7 @@ class AccessManager(models.Manager):
             .union(CradleUser.objects.filter(role="admin").values_list("id", flat=True))
         )
 
-    def check_user_access(
-        self, user: CradleUser, entity: Entry, access_type: AccessType
-    ) -> bool:
+    def check_user_access(self, user: CradleUser, entity: Entry, access_type: AccessType) -> bool:
         """Checks whether the user has an access access_type for the provided entity.
         The method should not be called when the user is a superuser or when
         access_type is NONE.
@@ -190,12 +168,6 @@ class AccessManager(models.Manager):
         """
 
         assert not user.is_cradle_admin, "The user parameter should not be a superuser"
-        assert access_type != AccessType.NONE, (
-            "The provided access type should not be NONE"
-        )
+        assert access_type != AccessType.NONE, "The provided access type should not be NONE"
 
-        return (
-            self.get_queryset()
-            .filter(user=user, entity=entity, access_type=access_type)
-            .exists()
-        )
+        return self.get_queryset().filter(user=user, entity=entity, access_type=access_type).exists()

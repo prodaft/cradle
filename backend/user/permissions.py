@@ -24,9 +24,5 @@ class HasAdminRole(BasePermission):
 class HasEntryManagerRole(BasePermission):
     def has_permission(self, request, view):
         return bool(
-            request.user
-            and (
-                request.user.role == UserRoles.ENTRY_MANAGER
-                or request.user.role == UserRoles.ADMIN
-            )
+            request.user and (request.user.role == UserRoles.ENTRY_MANAGER or request.user.role == UserRoles.ADMIN)
         )

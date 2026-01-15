@@ -3,33 +3,29 @@ import ChangePasswordModal from '@/components/modals/auth/ChangePasswordModal';
 import TwoFactorSetupModal from '@/components/modals/auth/TwoFactorSetupModal';
 import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
 import MarkdownEditorModal from '@/components/modals/notes/MarkdownEditorModal';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarGroup,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-} from '@/components/ui/sidebar';
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
-import { useProfile } from '@/hooks/user/useProfile';
-import { UserRetrieve } from '@/services/cradle/models';
+import { UserConfig, UserRetrieve } from '@/services/cradle/models';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { SettingsButton, SettingsCard } from '@components/forms';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import bytes from 'bytes';
-import { EditPencil, HalfMoon, Link, SunLight } from 'iconoir-react';
-import { ClockRotateRight, Lock } from 'iconoir-react/regular';
+import { ClockRotateRight, EditPencil, HalfMoon, SunLight } from 'iconoir-react';
+import { Link, Lock, Palette } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -81,8 +77,8 @@ type AccountFormData = z.infer<typeof accountSettingsSchema>;
 
 export default function AccountSettings({ target = 'me' }: AccountSettingsProps) {
     const { usersApi, basePath } = useApi();
-    const { logOut, getAccessToken } = useAuthActions();
-    const { profile, setProfile, isAdmin } = useProfile();
+    const { logOut } = useAuthActions();
+    const queryClient = useQueryClient();
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
@@ -275,43 +271,26 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         previousValuesRef.current = initialData;
     }, [userData, target, reset]);
 
+    // Query for OAuth configuration
+    const { data: userConfig } = useQuery<UserConfig>({
+        queryKey: queryKeys.users.config(),
+        queryFn: () => usersApi.usersConfig(),
+        enabled: !!basePath,
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    // Update OAuth methods when config is loaded
     useEffect(() => {
-        if (!basePath) {
+        if (userConfig?.oauthMethods) {
+            setOauthMethods(
+                Array.isArray(userConfig.oauthMethods) ? userConfig.oauthMethods : [],
+            );
+        } else {
             setOauthMethods([]);
-            return;
         }
-
-        let isMounted = true;
-
-        const loadConfig = async () => {
-            try {
-                const response = await fetch(`${basePath}/users/config/`);
-                if (!response.ok) {
-                    throw new Error('Failed to load auth configuration');
-                }
-
-                const data = await response.json();
-                if (!isMounted) {
-                    return;
-                }
-
-                setOauthMethods(
-                    Array.isArray(data?.oauth_methods) ? data.oauth_methods : [],
-                );
-            } catch (error) {
-                if (!isMounted) {
-                    return;
-                }
-                setOauthMethods([]);
-            }
-        };
-
-        loadConfig();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [basePath]);
+    }, [userConfig]);
 
     const getOAuthKey = (method: OAuthMethod) => {
         return (
@@ -409,28 +388,26 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         window.location.href = url;
     };
 
-    const handleOAuthDisconnect = async (provider: string) => {
-        try {
-            setOauthBusyProvider(provider);
-            const token = await getAccessToken();
-            const response = await fetch(
-                `${basePath}/users/oauth/disconnect/${provider}/`,
-                {
-                    method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
-                },
-            );
-
-            if (!response.ok) {
-                throw new Error('Failed to disconnect OAuth provider.');
-            }
-
+    const oauthDisconnectMutation = useMutation({
+        mutationFn: async (provider: string) => {
+            return await usersApi.usersOauthDisconnect({ provider });
+        },
+        meta: {
+            suppressNotification: true,
+        },
+        onSuccess: (_, provider) => {
             setOauthConnections((prev) => ({ ...prev, [provider]: false }));
             toast.success(`${provider} disconnected.`);
-        } catch (error) {
+        },
+        onError: () => {
             toast.error('Failed to disconnect OAuth provider.');
+        },
+    });
+
+    const handleOAuthDisconnect = async (provider: string) => {
+        setOauthBusyProvider(provider);
+        try {
+            await oauthDisconnectMutation.mutateAsync(provider);
         } finally {
             setOauthBusyProvider(null);
         }
@@ -484,7 +461,8 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             { userId, payload },
             {
                 onSuccess: (updatedUser) => {
-                    setProfile((prevProfile: any) => ({
+                    const meKey = queryKeys.users.detail(target);
+                    queryClient.setQueryData(meKey, (prevProfile: any) => ({
                         ...prevProfile,
                         ...updatedUser,
                     }));
@@ -571,7 +549,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         { id: 'security', label: 'Security', icon: Lock },
         { id: 'sessions', label: 'Sessions', icon: ClockRotateRight },
         { id: 'oauth', label: 'OAuth', icon: Link },
-        { id: 'appearance', label: 'Appearance', icon: SunLight },
+        { id: 'appearance', label: 'Appearance', icon: Palette },
         { id: 'editor', label: 'Editor', icon: EditPencil },
     ];
 
@@ -588,365 +566,431 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         activeTab && activeTab in tabDescriptions ? tabDescriptions[activeTab] : '';
 
     return (
-        <div className='flex w-full h-full'>
-            {/* Settings Sidebar */}
-            <Sidebar
-                collapsible='none'
-                className='border-r bg-background text-foreground [&_[data-slot=sidebar-inner]]:bg-background [&_[data-slot=sidebar-inner]]:text-foreground'
-            >
-                <SidebarHeader className='flex flex-col p-4 gap-2 border-b border-border'>
-                    <div className='w-full'>
-                        <div className='flex items-center gap-2 mb-1'>
-                            <div className='text-sm font-medium text-foreground truncate'>
-                                {profile?.username || user?.username || 'User'}
-                            </div>
-                            {(() => {
-                                const role = profile?.role || user?.role;
-                                return role ? (
-                                    <Badge
-                                        variant={getRoleBadgeVariant(role)}
-                                        className='text-[10px] px-1.5 py-0 h-4 leading-none'
-                                    >
-                                        {role.charAt(0).toUpperCase() + role.slice(1)}
-                                    </Badge>
-                                ) : null;
-                            })()}
-                        </div>
-                        <div className='text-xs text-muted-foreground truncate'>
-                            {profile?.email || user?.email || ''}
-                        </div>
+        <main
+            data-layout='fixed'
+            className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+        >
+            <div className='space-y-0.5'>
+                <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
+                    Settings
+                </h1>
+                <p className='text-muted-foreground'>
+                    Manage your account settings and set e-mail preferences.
+                </p>
+            </div>
+            <Separator
+                data-orientation='horizontal'
+                role='none'
+                className='shrink-0 my-4 lg:my-6'
+            />
+            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
+                <aside className='top-0 lg:sticky lg:w-1/5'>
+                    {/* Mobile dropdown */}
+                    <div className='p-1 md:hidden'>
+                        <Select value={activeTab} onValueChange={handleTabChange}>
+                            <SelectTrigger className='h-12 sm:w-48'>
+                                <SelectValue>
+                                    <div className='flex gap-x-4 px-2 py-1 items-center'>
+                                        <span className='scale-125 flex items-center'>
+                                            {currentTab && (
+                                                <currentTab.icon className='w-[18px] h-[18px]' />
+                                            )}
+                                        </span>
+                                        <span className='text-md'>
+                                            {currentTab?.label}
+                                        </span>
+                                    </div>
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {settingsTabs.map((tab) => {
+                                    const Icon = tab.icon;
+                                    return (
+                                        <SelectItem key={tab.id} value={tab.id}>
+                                            <div className='flex gap-x-2 items-center'>
+                                                <Icon className='w-[18px] h-[18px]' />
+                                                <span>{tab.label}</span>
+                                            </div>
+                                        </SelectItem>
+                                    );
+                                })}
+                            </SelectContent>
+                        </Select>
                     </div>
-                </SidebarHeader>
-                <SidebarContent>
-                    <SidebarGroup>
-                        <SidebarMenu>
+                    {/* Desktop navigation */}
+                    <div className='relative hidden w-full min-w-40 bg-background px-1 py-2 md:block'>
+                        <nav className='flex space-x-2 py-1 lg:flex-col lg:space-y-1 lg:space-x-0'>
                             {settingsTabs.map((tab) => {
                                 const Icon = tab.icon;
+                                const isActive = activeTab === tab.id;
                                 return (
-                                    <SidebarMenuItem key={tab.id}>
-                                        <SidebarMenuButton
-                                            isActive={activeTab === tab.id}
-                                            onClick={() => handleTabChange(tab.id)}
-                                            tooltip={tab.label}
-                                        >
-                                            <Icon />
-                                            <span>{tab.label}</span>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                    <a
+                                        key={tab.id}
+                                        href='#'
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleTabChange(tab.id);
+                                        }}
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
+                                            isActive
+                                                ? 'bg-muted hover:bg-accent active'
+                                                : ''
+                                        }`}
+                                        data-status={isActive ? 'active' : undefined}
+                                        aria-current={isActive ? 'page' : undefined}
+                                    >
+                                        <span className='me-2'>
+                                            <Icon className='w-[18px] h-[18px]' />
+                                        </span>
+                                        {tab.label}
+                                    </a>
                                 );
                             })}
-                        </SidebarMenu>
-                    </SidebarGroup>
-                </SidebarContent>
-            </Sidebar>
-
-            {/* Main Content Area */}
-            <div className='flex-1 flex flex-col overflow-auto'>
-                {/* Header Section */}
-                <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                    <div>
-                        <h2 className='text-2xl font-bold tracking-tight'>
-                            {currentTab?.label || 'Settings'}
-                        </h2>
-                        <p className='text-muted-foreground'>{currentDescription}</p>
+                        </nav>
                     </div>
-                </div>
-
-                {/* Content Area */}
-                <div className='p-5 flex-1'>
-                    <div className='w-full'>
-                        <form onSubmit={(e) => e.preventDefault()}>
-                            {/* Security Section */}
-                            {activeTab === 'security' && (
-                                <section id='security' className='pb-8'>
-                                    <div className='space-y-4'>
-                                        {/* Authentication Card */}
-                                        <SettingsCard>
-                                            <SettingsButton
-                                                label='Password'
-                                                description='Change your account password'
-                                                buttonText='Change'
-                                                onClick={openChangePasswordModal}
-                                                title='Change Password'
-                                            />
-
-                                            <Separator />
-
-                                            <SettingsButton
-                                                label='API Key'
-                                                description='Generate key for API access'
-                                                buttonText='Generate'
-                                                onClick={openApiKeyModal}
-                                                title='Generate API Key'
-                                            />
-
-                                            <Separator />
-
-                                            <div className='flex items-center justify-between py-2'>
-                                                <div>
-                                                    <span className='text-sm text-muted-foreground block mb-0.5'>
-                                                        Two-Factor Auth
-                                                    </span>
-                                                    <span className='text-sm text-muted-foreground'>
-                                                        Protect your account with
-                                                        one-time codes from an
-                                                        authenticator app
-                                                    </span>
-                                                </div>
-                                                <Button
-                                                    type='button'
-                                                    variant={
-                                                        twoFactorEnabled
-                                                            ? 'destructive'
-                                                            : 'outline'
-                                                    }
-                                                    size='sm'
-                                                    onClick={openTwoFactorModal}
-                                                >
-                                                    {twoFactorEnabled
-                                                        ? 'Disable'
-                                                        : 'Enable'}
-                                                </Button>
-                                            </div>
-
-                                            <Separator />
-
-                                            <SettingsButton
-                                                label='Delete Account'
-                                                description='Permanently remove account and data'
-                                                buttonText='Delete'
-                                                variant='danger'
-                                                onClick={openDeleteAccountModal}
-                                            />
-                                        </SettingsCard>
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* Sessions Section */}
-                            {activeTab === 'sessions' && (
-                                <section id='sessions' className='pb-8'>
-                                    <ActiveSessions userId={target} />
-                                </section>
-                            )}
-
-                            {/* OAuth Section */}
-                            {activeTab === 'oauth' &&
-                                Object.keys(mergedOAuthConnections).length > 0 && (
-                                    <section id='oauth' className='pb-8'>
-                                        <div className='space-y-4'>
-                                            <SettingsCard>
-                                                {Object.entries(
-                                                    mergedOAuthConnections,
-                                                ).map(
-                                                    (
-                                                        [provider, connected],
-                                                        index,
-                                                        all,
-                                                    ) => {
-                                                        const method =
-                                                            oauthMethods.find(
-                                                                (item) =>
-                                                                    getOAuthKey(
-                                                                        item,
-                                                                    ) === provider,
-                                                            );
-                                                        const label = method
-                                                            ? getOAuthLabel(method)
-                                                            : provider;
-                                                        return (
-                                                            <div key={provider}>
-                                                                <div className='flex items-center justify-between py-2'>
-                                                                    <div>
-                                                                        <span className='text-sm text-muted-foreground block mb-0.5'>
-                                                                            {label}
-                                                                        </span>
-                                                                        <span className='text-sm text-muted-foreground'>
-                                                                            {connected
-                                                                                ? 'Connected'
-                                                                                : 'Not connected'}
-                                                                        </span>
-                                                                    </div>
-                                                                    <Button
-                                                                        type='button'
-                                                                        variant={
-                                                                            connected
-                                                                                ? 'destructive'
-                                                                                : 'outline'
-                                                                        }
-                                                                        size='sm'
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                connected
-                                                                            ) {
-                                                                                handleOAuthDisconnect(
-                                                                                    provider,
-                                                                                );
-                                                                            } else {
-                                                                                handleOAuthConnect(
-                                                                                    provider,
-                                                                                );
-                                                                            }
-                                                                        }}
-                                                                        disabled={
-                                                                            oauthBusyProvider ===
-                                                                            provider
-                                                                        }
-                                                                    >
-                                                                        {connected
-                                                                            ? 'Disconnect'
-                                                                            : 'Connect'}
-                                                                    </Button>
-                                                                </div>
-                                                                {index <
-                                                                    all.length - 1 && (
-                                                                    <Separator />
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    },
-                                                )}
-                                            </SettingsCard>
-                                        </div>
-                                    </section>
-                                )}
-
-                            {/* OAuth empty state */}
-                            {activeTab === 'oauth' &&
-                                Object.keys(mergedOAuthConnections).length === 0 && (
-                                    <section id='oauth' className='pb-8'>
-                                        <p className='text-sm text-muted-foreground'>
-                                            No OAuth providers are configured
-                                        </p>
-                                    </section>
-                                )}
-
-                            {/* Appearance Section */}
-                            {activeTab === 'appearance' && (
-                                <section id='appearance' className='pb-8'>
-                                    <div className='space-y-4'>
-                                        <SettingsCard>
-                                            <div className='flex items-center justify-between gap-4 py-2'>
-                                                <div className='flex-1'>
-                                                    <Label className='text-sm text-muted-foreground block mb-0.5'>
-                                                        Theme
-                                                    </Label>
-                                                    <p className='text-sm text-muted-foreground'>
-                                                        Choose your preferred color
-                                                        scheme
-                                                    </p>
-                                                </div>
-                                                <Button
-                                                    type='button'
-                                                    variant='ghost'
-                                                    size='icon'
-                                                    onClick={() =>
-                                                        setValue(
-                                                            'theme',
-                                                            watch('theme') === 'dark'
-                                                                ? 'light'
-                                                                : 'dark',
-                                                        )
-                                                    }
-                                                >
-                                                    {watch('theme') === 'dark' ? (
-                                                        <SunLight className='w-5 h-5' />
-                                                    ) : (
-                                                        <HalfMoon className='w-5 h-5' />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </SettingsCard>
-                                        <div className='flex justify-start pt-2'>
-                                            <Button
-                                                type='button'
-                                                onClick={handleSave}
-                                                disabled={saveMutation.isPending || !isDirty}
-                                            >
-                                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* Editor Settings Section */}
-                            {activeTab === 'editor' && (
-                                <section id='editor' className='pb-8'>
-                                    <div className='space-y-4'>
-                                        <SettingsCard>
-                                            <div className='py-2'>
-                                                <div className='flex items-center justify-between gap-4'>
-                                                    <div className='flex-1'>
-                                                        <Label
-                                                            htmlFor={vimModeId}
-                                                            className='text-sm text-muted-foreground block mb-0.5'
-                                                        >
-                                                            Vim Mode
-                                                        </Label>
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            Use Vim keybindings in the
-                                                            markdown editor
-                                                        </p>
-                                                    </div>
-                                                    <Controller
-                                                        name='vimMode'
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <Switch
-                                                                id={vimModeId}
-                                                                name={field.name}
-                                                                data-testid='vim-toggle'
-                                                                checked={field.value}
-                                                                onCheckedChange={
-                                                                    field.onChange
-                                                                }
-                                                            />
-                                                        )}
+                </aside>
+                <div className='flex w-full overflow-y-hidden p-1'>
+                    <div className='flex flex-1 flex-col'>
+                        <div className='flex-none'>
+                            <h3 className='text-lg font-medium'>
+                                {currentTab?.label || 'Settings'}
+                            </h3>
+                            <p className='text-sm text-muted-foreground'>
+                                {currentDescription}
+                            </p>
+                        </div>
+                        <Separator
+                            data-orientation='horizontal'
+                            role='none'
+                            className='bg-border my-4 flex-none'
+                        />
+                        <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                            <div className='-mx-1 px-1.5'>
+                                <form
+                                    className='space-y-8'
+                                    onSubmit={(e) => e.preventDefault()}
+                                >
+                                    {/* Security Section */}
+                                    {activeTab === 'security' && (
+                                        <section id='security' className='pb-8'>
+                                            <div className='space-y-4'>
+                                                {/* Authentication Card */}
+                                                <SettingsCard>
+                                                    <SettingsButton
+                                                        label='Password'
+                                                        description='Change your account password'
+                                                        buttonText='Change'
+                                                        onClick={
+                                                            openChangePasswordModal
+                                                        }
+                                                        title='Change Password'
                                                     />
+
+                                                    <Separator />
+
+                                                    <SettingsButton
+                                                        label='API Key'
+                                                        description='Generate key for API access'
+                                                        buttonText='Generate'
+                                                        onClick={openApiKeyModal}
+                                                        title='Generate API Key'
+                                                    />
+
+                                                    <Separator />
+
+                                                    <div className='flex items-center justify-between py-2'>
+                                                        <div>
+                                                            <span className='text-sm text-muted-foreground block mb-0.5'>
+                                                                Two-Factor Auth
+                                                            </span>
+                                                            <span className='text-sm text-muted-foreground'>
+                                                                Protect your account
+                                                                with one-time codes from
+                                                                an authenticator app
+                                                            </span>
+                                                        </div>
+                                                        <Button
+                                                            type='button'
+                                                            variant={
+                                                                twoFactorEnabled
+                                                                    ? 'destructive'
+                                                                    : 'outline'
+                                                            }
+                                                            size='sm'
+                                                            onClick={openTwoFactorModal}
+                                                        >
+                                                            {twoFactorEnabled
+                                                                ? 'Disable'
+                                                                : 'Enable'}
+                                                        </Button>
+                                                    </div>
+
+                                                    <Separator />
+
+                                                    <SettingsButton
+                                                        label='Delete Account'
+                                                        description='Permanently remove account and data'
+                                                        buttonText='Delete'
+                                                        variant='danger'
+                                                        onClick={openDeleteAccountModal}
+                                                    />
+                                                </SettingsCard>
+                                            </div>
+                                        </section>
+                                    )}
+
+                                    {/* Sessions Section */}
+                                    {activeTab === 'sessions' && (
+                                        <section id='sessions' className='pb-8'>
+                                            <ActiveSessions userId={target} />
+                                        </section>
+                                    )}
+
+                                    {/* OAuth Section */}
+                                    {activeTab === 'oauth' &&
+                                        Object.keys(mergedOAuthConnections).length >
+                                            0 && (
+                                            <section id='oauth' className='pb-8'>
+                                                <div className='space-y-4'>
+                                                    <SettingsCard>
+                                                        {Object.entries(
+                                                            mergedOAuthConnections,
+                                                        ).map(
+                                                            (
+                                                                [provider, connected],
+                                                                index,
+                                                                all,
+                                                            ) => {
+                                                                const method =
+                                                                    oauthMethods.find(
+                                                                        (item) =>
+                                                                            getOAuthKey(
+                                                                                item,
+                                                                            ) ===
+                                                                            provider,
+                                                                    );
+                                                                const label = method
+                                                                    ? getOAuthLabel(
+                                                                          method,
+                                                                      )
+                                                                    : provider;
+                                                                return (
+                                                                    <div key={provider}>
+                                                                        <div className='flex items-center justify-between py-2'>
+                                                                            <div>
+                                                                                <span className='text-sm text-muted-foreground block mb-0.5'>
+                                                                                    {
+                                                                                        label
+                                                                                    }
+                                                                                </span>
+                                                                                <span className='text-sm text-muted-foreground'>
+                                                                                    {connected
+                                                                                        ? 'Connected'
+                                                                                        : 'Not connected'}
+                                                                                </span>
+                                                                            </div>
+                                                                            <Button
+                                                                                type='button'
+                                                                                variant={
+                                                                                    connected
+                                                                                        ? 'destructive'
+                                                                                        : 'outline'
+                                                                                }
+                                                                                size='sm'
+                                                                                onClick={() => {
+                                                                                    if (
+                                                                                        connected
+                                                                                    ) {
+                                                                                        handleOAuthDisconnect(
+                                                                                            provider,
+                                                                                        );
+                                                                                    } else {
+                                                                                        handleOAuthConnect(
+                                                                                            provider,
+                                                                                        );
+                                                                                    }
+                                                                                }}
+                                                                                disabled={
+                                                                                    oauthBusyProvider ===
+                                                                                        provider ||
+                                                                                    oauthDisconnectMutation.isPending
+                                                                                }
+                                                                            >
+                                                                                {connected
+                                                                                    ? 'Disconnect'
+                                                                                    : 'Connect'}
+                                                                            </Button>
+                                                                        </div>
+                                                                        {index <
+                                                                            all.length -
+                                                                                1 && (
+                                                                            <Separator />
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            },
+                                                        )}
+                                                    </SettingsCard>
+                                                </div>
+                                            </section>
+                                        )}
+
+                                    {/* OAuth empty state */}
+                                    {activeTab === 'oauth' &&
+                                        Object.keys(mergedOAuthConnections).length ===
+                                            0 && (
+                                            <section id='oauth' className='pb-8'>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    No OAuth providers are configured
+                                                </p>
+                                            </section>
+                                        )}
+
+                                    {/* Appearance Section */}
+                                    {activeTab === 'appearance' && (
+                                        <section id='appearance' className='pb-8'>
+                                            <div className='space-y-4'>
+                                                <SettingsCard>
+                                                    <div className='flex items-center justify-between gap-4 py-2'>
+                                                        <div className='flex-1'>
+                                                            <Label className='text-sm text-muted-foreground block mb-0.5'>
+                                                                Theme
+                                                            </Label>
+                                                            <p className='text-sm text-muted-foreground'>
+                                                                Choose your preferred
+                                                                color scheme
+                                                            </p>
+                                                        </div>
+                                                        <Button
+                                                            type='button'
+                                                            variant='ghost'
+                                                            size='icon'
+                                                            onClick={() =>
+                                                                setValue(
+                                                                    'theme',
+                                                                    watch('theme') ===
+                                                                        'dark'
+                                                                        ? 'light'
+                                                                        : 'dark',
+                                                                )
+                                                            }
+                                                        >
+                                                            {watch('theme') ===
+                                                            'dark' ? (
+                                                                <SunLight className='w-5 h-5' />
+                                                            ) : (
+                                                                <HalfMoon className='w-5 h-5' />
+                                                            )}
+                                                        </Button>
+                                                    </div>
+                                                </SettingsCard>
+                                                <div className='flex justify-end pt-2'>
+                                                    <Button
+                                                        type='button'
+                                                        onClick={handleSave}
+                                                        disabled={
+                                                            saveMutation.isPending ||
+                                                            !isDirty
+                                                        }
+                                                    >
+                                                        {saveMutation.isPending
+                                                            ? 'Saving...'
+                                                            : 'Save Changes'}
+                                                    </Button>
                                                 </div>
                                             </div>
+                                        </section>
+                                    )}
 
-                                            <Separator />
+                                    {/* Editor Settings Section */}
+                                    {activeTab === 'editor' && (
+                                        <section id='editor' className='pb-8'>
+                                            <div className='space-y-4'>
+                                                <SettingsCard>
+                                                    <div className='py-2'>
+                                                        <div className='flex items-center justify-between gap-4'>
+                                                            <div className='flex-1'>
+                                                                <Label
+                                                                    htmlFor={vimModeId}
+                                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                                >
+                                                                    Vim Mode
+                                                                </Label>
+                                                                <p className='text-sm text-muted-foreground'>
+                                                                    Use Vim keybindings
+                                                                    in the markdown
+                                                                    editor
+                                                                </p>
+                                                            </div>
+                                                            <Controller
+                                                                name='vimMode'
+                                                                control={control}
+                                                                render={({ field }) => (
+                                                                    <Switch
+                                                                        id={vimModeId}
+                                                                        name={
+                                                                            field.name
+                                                                        }
+                                                                        data-testid='vim-toggle'
+                                                                        checked={
+                                                                            field.value
+                                                                        }
+                                                                        onCheckedChange={
+                                                                            field.onChange
+                                                                        }
+                                                                    />
+                                                                )}
+                                                            />
+                                                        </div>
+                                                    </div>
 
-                                            <SettingsButton
-                                                label='Note Template'
-                                                description='Preset structure for new notes you create'
-                                                buttonText='Edit'
-                                                onClick={openNoteTemplateModal}
-                                                disabled={noteTemplateLoading}
-                                                loading={noteTemplateLoading}
-                                            />
+                                                    <Separator />
 
-                                            <Separator />
+                                                    <SettingsButton
+                                                        label='Note Template'
+                                                        description='Preset structure for new notes you create'
+                                                        buttonText='Edit'
+                                                        onClick={openNoteTemplateModal}
+                                                        disabled={noteTemplateLoading}
+                                                        loading={noteTemplateLoading}
+                                                    />
 
-                                            <SettingsButton
-                                                label='Note Snippets'
-                                                description='Reusable text blocks you can insert with shortcuts'
-                                                buttonText='New Snippet'
-                                                onClick={() => {
-                                                    snippetListRef.current?.handleAddSnippet();
-                                                }}
-                                            />
-                                            <SnippetList
-                                                ref={snippetListRef}
-                                                userId={target}
-                                                showTitle={false}
-                                            />
-                                        </SettingsCard>
-                                        <div className='flex justify-start pt-2'>
-                                            <Button
-                                                type='button'
-                                                onClick={handleSave}
-                                                disabled={saveMutation.isPending || !isDirty}
-                                            >
-                                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </section>
-                            )}
-                        </form>
+                                                    <Separator />
+
+                                                    <SettingsButton
+                                                        label='Note Snippets'
+                                                        description='Reusable text blocks you can insert with shortcuts'
+                                                        buttonText='New Snippet'
+                                                        onClick={() => {
+                                                            snippetListRef.current?.handleAddSnippet();
+                                                        }}
+                                                    />
+                                                    <SnippetList
+                                                        ref={snippetListRef}
+                                                        userId={target}
+                                                        showTitle={false}
+                                                    />
+                                                </SettingsCard>
+                                                <div className='flex justify-end pt-2'>
+                                                    <Button
+                                                        type='button'
+                                                        onClick={handleSave}
+                                                        disabled={
+                                                            saveMutation.isPending ||
+                                                            !isDirty
+                                                        }
+                                                    >
+                                                        {saveMutation.isPending
+                                                            ? 'Saving...'
+                                                            : 'Save Changes'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    )}
+                                </form>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -989,7 +1033,8 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                 initialContent={noteTemplateContent}
                 helpText='This markdown template will be used as the starting content for new notes you create.'
                 onConfirm={async (content) => {
-                    setProfile((prevProfile: any) => ({
+                    const meKey = queryKeys.users.detail(target);
+                    queryClient.setQueryData(meKey, (prevProfile: any) => ({
                         ...prevProfile,
                         defaultNoteTemplate: content,
                     }));
@@ -999,6 +1044,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                     });
                 }}
             />
-        </div>
+        </main>
     );
 }

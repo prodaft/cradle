@@ -92,11 +92,7 @@ class CompletionTrie(APIView):
 
             if entry_type:
                 # Get entry class with matching subtype
-                entry_class = (
-                    EntryClass.objects.filter(subtype=entry_type)
-                    .filter(format=None)
-                    .first()
-                )
+                entry_class = EntryClass.objects.filter(subtype=entry_type).filter(format=None).first()
 
                 if entry_class:
                     return Response(LspUtils.get_lsp_pack(user, [entry_class], prefix))

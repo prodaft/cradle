@@ -6,20 +6,217 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable } from '@/components/ui/data-table';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
+import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@services/cradle/models';
-import { useMutation } from '@tanstack/react-query';
-import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import {
+    useLocation,
+    useParams,
+    useRouter,
+    useRouterState,
+    useSearch,
+} from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
-import { ClockRotateRight, Lock, Trash, UserPlus } from 'iconoir-react/regular';
+import {
+    ClockRotateRight,
+    Lock,
+    Settings,
+    Trash,
+    User,
+    UserPlus,
+} from 'iconoir-react/regular';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AddUserModal from '../../../modals/admin/AddUserModal';
 import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
 import AdminPageLayout from '../AdminPageLayout';
 import AdminUserSettings from './AdminUserSettings';
+
+const USER_SETTINGS_ITEMS = [
+    { id: 'account', label: 'Account', icon: User },
+    { id: 'administrative', label: 'Administrative', icon: Settings },
+    { id: 'sessions', label: 'Sessions', icon: ClockRotateRight },
+    { id: 'management', label: 'Management', icon: Lock },
+];
+
+function UserSettingsPage({ userId }: { userId: string }) {
+    const router = useRouter();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
+    const search = useSearch({ strict: false });
+    const tab = (search as any)?.tab;
+    const { usersApi } = useApi();
+
+    // Query for user data to get username
+    const { data: userData } = useQuery({
+        queryKey: queryKeys.users.detail(userId),
+        queryFn: () => usersApi.usersRetrieve({ userId }),
+        enabled: !!userId,
+        meta: {
+            showErrorToast: false,
+            suppressNotification: true,
+        },
+    });
+
+    const handleTabClick = (tabId: string) => {
+        const newSearch: any = { ...search, tab: tabId };
+        router.navigate({
+            to: location.pathname as any,
+            search: newSearch,
+            replace: true,
+        });
+    };
+
+    // Auto-select first tab if no tab
+    useEffect(() => {
+        if (!tab && USER_SETTINGS_ITEMS.length > 0) {
+            const newSearch: any = { ...search, tab: USER_SETTINGS_ITEMS[0].id };
+            router.navigate({
+                to: location.pathname as any,
+                search: newSearch,
+                replace: true,
+            });
+        }
+    }, [tab, router, location.pathname, search]);
+
+    const selectedItem = USER_SETTINGS_ITEMS.find((item) => item.id === tab);
+    const currentTab = selectedItem || USER_SETTINGS_ITEMS[0];
+
+    const tabDescriptions: Record<string, string> = {
+        account: 'Manage user account information and basic settings',
+        administrative: 'Configure user permissions and administrative settings',
+        sessions: 'View and manage active user sessions',
+        management: 'Administrative actions for user management',
+    };
+    const currentDescription =
+        tab && tab in tabDescriptions ? tabDescriptions[tab] : '';
+
+    return (
+        <main
+            data-layout='fixed'
+            className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+        >
+            <div className='space-y-0.5'>
+                <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
+                    {userData?.username || 'User Settings'}
+                </h1>
+                <p className='text-muted-foreground'>
+                    Manage user account and administrative settings.
+                </p>
+            </div>
+            <Separator
+                data-orientation='horizontal'
+                role='none'
+                className='shrink-0 my-4 lg:my-6'
+            />
+            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
+                <aside className='top-0 lg:sticky lg:w-1/5'>
+                    {/* Mobile dropdown */}
+                    <div className='p-1 md:hidden'>
+                        <Select
+                            value={tab || USER_SETTINGS_ITEMS[0].id}
+                            onValueChange={handleTabClick}
+                        >
+                            <SelectTrigger className='h-12 sm:w-48'>
+                                <SelectValue>
+                                    <div className='flex gap-x-4 px-2 py-1 items-center'>
+                                        <span className='scale-125 flex items-center'>
+                                            {currentTab && (
+                                                <currentTab.icon className='w-[18px] h-[18px]' />
+                                            )}
+                                        </span>
+                                        <span className='text-md'>
+                                            {currentTab?.label}
+                                        </span>
+                                    </div>
+                                </SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {USER_SETTINGS_ITEMS.map((item) => {
+                                    const Icon = item.icon;
+                                    return (
+                                        <SelectItem key={item.id} value={item.id}>
+                                            <div className='flex gap-x-2 items-center'>
+                                                <Icon className='w-[18px] h-[18px]' />
+                                                <span>{item.label}</span>
+                                            </div>
+                                        </SelectItem>
+                                    );
+                                })}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {/* Desktop navigation */}
+                    <div className='relative hidden w-full min-w-40 bg-background px-1 py-2 md:block'>
+                        <nav className='flex space-x-2 py-1 lg:flex-col lg:space-y-1 lg:space-x-0'>
+                            {USER_SETTINGS_ITEMS.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = tab === item.id;
+                                return (
+                                    <a
+                                        key={item.id}
+                                        href='#'
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            handleTabClick(item.id);
+                                        }}
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
+                                            isActive
+                                                ? 'bg-muted hover:bg-accent active'
+                                                : ''
+                                        }`}
+                                        data-status={
+                                            isActive ? 'active' : undefined
+                                        }
+                                        aria-current={isActive ? 'page' : undefined}
+                                    >
+                                        <span className='me-2'>
+                                            <Icon className='w-[18px] h-[18px]' />
+                                        </span>
+                                        {item.label}
+                                    </a>
+                                );
+                            })}
+                        </nav>
+                    </div>
+                </aside>
+                <div className='flex w-full overflow-y-hidden p-1'>
+                    <div className='flex flex-1 flex-col'>
+                        <div className='flex-none'>
+                            <h3 className='text-lg font-medium'>
+                                {currentTab?.label || 'Settings'}
+                            </h3>
+                            <p className='text-sm text-muted-foreground'>
+                                {currentDescription}
+                            </p>
+                        </div>
+                        <Separator
+                            data-orientation='horizontal'
+                            role='none'
+                            className='bg-border my-4 flex-none'
+                        />
+                        <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                            <div className='-mx-1 px-1.5'>
+                                <AdminUserSettings userId={userId} activeTab={tab} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    );
+}
 
 export default function UsersPage() {
     const params = useParams({ strict: false });
@@ -34,7 +231,6 @@ export default function UsersPage() {
     const [page, setPage] = useState((search as any)?.users_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 10);
     const { usersApi } = useApi();
-    const { isAdmin } = useProfile();
     const [addUserModalOpen, setAddUserModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
@@ -53,12 +249,14 @@ export default function UsersPage() {
                 userIds.map((userId) => usersApi.usersDestroy({ userId })),
             );
         },
+        meta: {
+            errorMessage: 'Failed to delete users',
+        },
         onSuccess: (_, userIds) => {
             toast.success(
                 `Successfully deleted ${userIds.length} user${userIds.length > 1 ? 's' : ''}`,
             );
         },
-        errorMessage: 'Failed to delete users',
     });
 
     const displayUsers = async () => {
@@ -168,7 +366,7 @@ export default function UsersPage() {
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 setPageSize(newPageSize);
@@ -283,16 +481,14 @@ export default function UsersPage() {
                         >
                             <div className='flex justify-end'>
                                 <TableActionsButton>
-                                    {isAdmin() && (
-                                        <DropdownMenuItem
-                                            onClick={(e) =>
-                                                handleActivityClick(user, e)
-                                            }
-                                        >
-                                            <ClockRotateRight width='18' height='18' />
-                                            View Activity
-                                        </DropdownMenuItem>
-                                    )}
+                                    <DropdownMenuItem
+                                        onClick={(e) =>
+                                            handleActivityClick(user, e)
+                                        }
+                                    >
+                                        <ClockRotateRight width='18' height='18' />
+                                        View Activity
+                                    </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={(e) => handlePermissionsClick(user, e)}
                                     >
@@ -307,13 +503,13 @@ export default function UsersPage() {
                 enableSorting: false,
             },
         ],
-        [isAdmin],
+        [],
     );
 
     if (id && id !== 'add') {
         return (
             <AdminPageLayout>
-                <AdminUserSettings userId={id} />
+                <UserSettingsPage userId={id} />
             </AdminPageLayout>
         );
     }

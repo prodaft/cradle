@@ -1,6 +1,8 @@
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthActions } from '@/hooks/auth/useAuth';
+import { queryKeys } from '@/hooks/query';
+import { useQuery } from '@tanstack/react-query';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import {
@@ -179,7 +181,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const [showFileList, setShowFileList] = useState(false);
     const [showFileUploadModal, setShowFileUploadModal] = useState(false);
     const [clipboardFiles, setClipboardFiles] = useState<File[]>([]);
-    const { profile } = useProfile();
+    const { usersApi } = useApi();
+    const { isLoggedIn } = useAuthActions();
+    const { data: profile } = useQuery({
+        queryKey: queryKeys.users.detail('me'),
+        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
+        enabled: isLoggedIn(),
+        meta: { showErrorToast: false },
+    });
     const { isDarkMode } = useTheme();
     const { entriesApi, fileTransferApi } = useApi();
     const router = useRouter();
@@ -215,9 +224,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
-        () => async (file: { fileId: string }): Promise<FileDownload> => {
-            return await downloadFileMutation.mutateAsync(file.fileId);
-        },
+        () =>
+            async (file: { fileId: string }): Promise<FileDownload> => {
+                return await downloadFileMutation.mutateAsync(file.fileId);
+            },
         [downloadFileMutation],
     );
 
@@ -386,14 +396,14 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             indentOnInput(),
             closeBrackets(),
             Prec.highest(
-                keymap.of([...completionKeymap, { key: 'Tab', run: acceptCompletion }]),
+                keymap.of([...(completionKeymap as any), { key: 'Tab', run: acceptCompletion }] as any) as any,
             ),
             keymap.of([
                 indentWithTab,
-                ...defaultKeymap,
-                ...historyKeymap,
-                ...searchKeymap,
-            ]),
+                ...(defaultKeymap as any),
+                ...(historyKeymap as any),
+                ...(searchKeymap as any),
+            ] as any) as any,
             EditorState.readOnly.of(!enableEditing),
             EditorView.editable.of(enableEditing),
             keymap.of([

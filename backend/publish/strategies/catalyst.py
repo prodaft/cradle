@@ -14,16 +14,12 @@ from file_transfer.s3_utils import fetch_bytes
 
 
 class CatalystPublish(BasePublishStrategy):
-    def __init__(
-        self, tlp: str, category: str, subcategory: str, anonymized: bool
-    ) -> None:
+    def __init__(self, tlp: str, category: str, subcategory: str, anonymized: bool) -> None:
         super().__init__(anonymized)
         self.category = category
         self.subcategory = subcategory
         self.tlp = tlp
-        self.typemapping: dict[EntryClass, CatalystMapping] = (
-            CatalystMapping.get_typemapping()
-        )
+        self.typemapping: dict[EntryClass, CatalystMapping] = CatalystMapping.get_typemapping()
 
     def get_remote_url(self, report: PublishedReport) -> str:
         """
@@ -102,9 +98,7 @@ class CatalystPublish(BasePublishStrategy):
         if response.status_code == 201:
             return None
         else:
-            return (
-                f"Failed to create references: {response.status_code} {response.text}"
-            )
+            return f"Failed to create references: {response.status_code} {response.text}"
 
     def generate_access_link(self, external_ref: str, user: CradleUser) -> str:
         return f"https://catalyst.prodaft.com/publications/review/{external_ref}"
@@ -123,12 +117,8 @@ class CatalystPublish(BasePublishStrategy):
         report.extra_data["warnings"] = []
 
         # Use anonymized note content if enabled.
-        joint_md = "\n-----\n".join(
-            self._anonymize_note(note).content for note in report.notes.all()
-        )
-        entries: Iterable[Entry] = Note.objects.get_entries_from_notes(
-            report.notes.all()
-        )
+        joint_md = "\n-----\n".join(self._anonymize_note(note).content for note in report.notes.all())
+        entries: Iterable[Entry] = Note.objects.get_entries_from_notes(report.notes.all())
         entry_map = {}
         for i in entries:
             # Anonymize the entry before processing.
@@ -136,9 +126,7 @@ class CatalystPublish(BasePublishStrategy):
             if self.typemapping[i.entry_class] is None:
                 continue
 
-            entity = self.get_entity(
-                self.typemapping[i.entry_class], anonymized_entry.name, report.user
-            )
+            entity = self.get_entity(self.typemapping[i.entry_class], anonymized_entry.name, report.user)
 
             key = (i.entry_class.subtype, anonymized_entry.name)
             if entity:
@@ -149,9 +137,7 @@ class CatalystPublish(BasePublishStrategy):
                         f"Failed to link entry {i.entry_class.subtype}:{i.name + f'({anonymized_entry.name})'}"
                     )
                 else:
-                    report.extra_data["warnings"].append(
-                        f"Failed to link entry {i.entry_class.subtype}:{i.name}"
-                    )
+                    report.extra_data["warnings"].append(f"Failed to link entry {i.entry_class.subtype}:{i.name}")
 
         footnotes = {}
         for note in report.notes.all():
@@ -165,9 +151,7 @@ class CatalystPublish(BasePublishStrategy):
                     )
                 footnotes[f.file.name] = (FileTransferStorage.bucket_name, f.file.name)
 
-        platejs = markdown_to_pjs(
-            joint_md, entry_map, footnotes, lambda bucket, key: fetch_bytes(bucket, key)
-        )
+        platejs = markdown_to_pjs(joint_md, entry_map, footnotes, lambda bucket, key: fetch_bytes(bucket, key))
 
         payload = {
             "title": report.title,

@@ -71,9 +71,7 @@ def smart_linker_task(note_id):
                     )
                 )
             else:
-                logger.warning(
-                    f"Pair ({src}, {dst}) not found in entries. Skipping this pair."
-                )
+                logger.warning(f"Pair ({src}, {dst}) not found in entries. Skipping this pair.")
 
         # Bulk create relations
         Relation.objects.bulk_create(
@@ -121,30 +119,13 @@ def link_files_task(note_id, file_ref_id=None):
 
     md5_et, sha256_et, sha1_et = None, None, None
 
-    if (
-        md5_subclass
-        and EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype=md5_subclass
-        ).exists()
-    ):
+    if md5_subclass and EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=md5_subclass).exists():
         md5_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=md5_subclass)
 
-    if (
-        sha256_subclass
-        and EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype=sha256_subclass
-        ).exists()
-    ):
-        sha256_et = EntryClass.objects.get(
-            type=EntryType.ARTIFACT, subtype=sha256_subclass
-        )
+    if sha256_subclass and EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha256_subclass).exists():
+        sha256_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=sha256_subclass)
 
-    if (
-        sha1_subclass
-        and EntryClass.objects.filter(
-            type=EntryType.ARTIFACT, subtype=sha1_subclass
-        ).exists()
-    ):
+    if sha1_subclass and EntryClass.objects.filter(type=EntryType.ARTIFACT, subtype=sha1_subclass).exists():
         sha1_et = EntryClass.objects.get(type=EntryType.ARTIFACT, subtype=sha1_subclass)
 
     relations = []
@@ -153,9 +134,7 @@ def link_files_task(note_id, file_ref_id=None):
     else:
         file_ref = note.files.filter(id=file_ref_id).first()
         if not file_ref:
-            logger.warning(
-                f"File reference with ID {file_ref_id} not found in note {note_id}."
-            )
+            logger.warning(f"File reference with ID {file_ref_id} not found in note {note_id}.")
             return note_id
 
         files = [file_ref]
@@ -182,16 +161,12 @@ def link_files_task(note_id, file_ref_id=None):
             hashes.append(entry)
 
         if f.sha256_hash and sha256_et:
-            entry, _ = Entry.objects.get_or_create(
-                name=f.sha256_hash, entry_class=sha256_et
-            )
+            entry, _ = Entry.objects.get_or_create(name=f.sha256_hash, entry_class=sha256_et)
             note.entries.add(entry)
             hashes.append(entry)
 
         if f.sha1_hash and sha1_et:
-            entry, _ = Entry.objects.get_or_create(
-                name=f.sha1_hash, entry_class=sha1_et
-            )
+            entry, _ = Entry.objects.get_or_create(name=f.sha1_hash, entry_class=sha1_et)
             note.entries.add(entry)
             hashes.append(entry)
 
@@ -214,9 +189,7 @@ def link_files_task(note_id, file_ref_id=None):
     return note_id
 
 
-@shared_task(
-    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1
-)
+@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=60, max_retries=1)
 def entry_class_creation_task(note_id, user_id=None):
     """
     Celery task to create missing entry classes for a note.
@@ -251,9 +224,7 @@ def entry_class_creation_task(note_id, user_id=None):
                 if not cradle_settings.notes.allow_dynamic_entry_class_creation:
                     nonexistent_entries.add(r.key)
                 else:
-                    entry = EntryClass.objects.create(
-                        type=EntryType.ARTIFACT, subtype=r.key
-                    )
+                    entry = EntryClass.objects.create(type=EntryType.ARTIFACT, subtype=r.key)
                     if user_id:
                         entry.log_create(user)
 
@@ -266,9 +237,7 @@ def entry_class_creation_task(note_id, user_id=None):
         raise e
 
 
-@shared_task(
-    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
-)
+@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
 def entry_population_task(note_id, user_id=None, force_contains_check=False):
     """
     Celery task to create missing entries for a note.
@@ -289,9 +258,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
                 try:
                     entry_class = EntryClass.objects.get(subtype=r.key)
                 except EntryClass.DoesNotExist:
-                    logging.warning(
-                        f"Entry class {r.key} does not exist. Skipping entry creation."
-                    )
+                    logging.warning(f"Entry class {r.key} does not exist. Skipping entry creation.")
                     continue
 
                 if entry_class.type == EntryType.ARTIFACT:
@@ -317,9 +284,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
         for i, e in enumerate(new_objs):
             # print(e.name, e.entry_class.subtype)
             if e.id is None:
-                objs[i], _ = Entry.objects.get_or_create(
-                    name=e.name, entry_class__subtype=e.entry_class.subtype
-                )
+                objs[i], _ = Entry.objects.get_or_create(name=e.name, entry_class__subtype=e.entry_class.subtype)
             else:
                 objs[i] = e
 
@@ -351,9 +316,7 @@ def entry_population_task(note_id, user_id=None, force_contains_check=False):
         raise e
 
 
-@shared_task(
-    autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3
-)
+@shared_task(autoretry_for=(Exception,), retry_backoff=30, retry_backoff_max=300, max_retries=3)
 def connect_aliases(note_id, user_id=None):
     """
     Celery task to connect aliases in a note

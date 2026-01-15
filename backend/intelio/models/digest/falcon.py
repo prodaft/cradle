@@ -123,9 +123,7 @@ class FalconDigest(BaseDigest):
                 return
 
             if len(value) > 1024:
-                self._append_warning(
-                    f"Entity value {value} is too long ({len(value)} characters, max 1024)."
-                )
+                self._append_warning(f"Entity value {value} is too long ({len(value)} characters, max 1024).")
                 continue
 
             try:
@@ -152,9 +150,7 @@ class FalconDigest(BaseDigest):
             timestamp = obj.get("timestamp", None)
 
             if timestamp is not None:
-                timestamp = datetime.fromtimestamp(
-                    timestamp, tz=timezone.get_current_timezone()
-                )
+                timestamp = datetime.fromtimestamp(timestamp, tz=timezone.get_current_timezone())
             else:
                 timestamp = timezone.now()
 
@@ -177,9 +173,7 @@ class FalconDigest(BaseDigest):
                     continue
 
                 if eclass.type != EntryType.ARTIFACT:
-                    self._append_warning(
-                        f"You can't link to an entity ({eclass.subtype})!"
-                    )
+                    self._append_warning(f"You can't link to an entity ({eclass.subtype})!")
                     continue
 
                 value = link.get("value", None)
@@ -188,9 +182,7 @@ class FalconDigest(BaseDigest):
                     continue
 
                 if len(value) > 1024:
-                    self._append_warning(
-                        f"Entity value {value} is too long ({len(value)} characters, max 1024)."
-                    )
+                    self._append_warning(f"Entity value {value} is too long ({len(value)} characters, max 1024).")
                     continue
 
                 try:

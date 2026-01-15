@@ -87,7 +87,7 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                             <Badge
                                 key={entry.name}
                                 asChild
-                                variant={!entry.color ? "secondary" : "default"}
+                                variant={!entry.color ? 'secondary' : 'default'}
                                 style={
                                     entry.color
                                         ? {
@@ -99,7 +99,7 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                                 <a
                                     href={`#${createDashboardLink(entry)}`}
                                     data-custom-href={`#${createDashboardLink(entry)}`}
-                                    className="hover:underline"
+                                    className='hover:underline'
                                 >
                                     {entry.name}
                                 </a>

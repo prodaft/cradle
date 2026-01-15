@@ -50,9 +50,7 @@ class BitStringField(models.Field):
         if isinstance(value, str):
             # Convert the bit string to an integer.
             return int(value, 2)
-        raise ValueError(
-            "Invalid value type for BitStringField. Expected int or bit string."
-        )
+        raise ValueError("Invalid value type for BitStringField. Expected int or bit string.")
 
     def get_prep_value(self, value):
         """
@@ -68,13 +66,9 @@ class BitStringField(models.Field):
         bit_str = bin(value)[2:]
         if not self.varying:
             if len(bit_str) > self.max_length:
-                raise ValueError(
-                    f"Value {bit_str} exceeds maximum of {self.max_length} bits."
-                )
+                raise ValueError(f"Value {bit_str} exceeds maximum of {self.max_length} bits.")
             bit_str = bit_str.zfill(self.max_length)
         else:
             if len(bit_str) > self.max_length:
-                raise ValueError(
-                    f"Value length {len(bit_str)} exceeds maximum of {self.max_length} bits."
-                )
+                raise ValueError(f"Value length {len(bit_str)} exceeds maximum of {self.max_length} bits.")
         return bit_str

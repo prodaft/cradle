@@ -7,9 +7,7 @@ class EntryManagerTest(EntriesTestCase):
         super().setUp()
 
         self.entities = [
-            Entry.objects.create(
-                name=f"Entity {i}", description=f"{i}", entry_class=self.entryclass1
-            )
+            Entry.objects.create(name=f"Entity {i}", description=f"{i}", entry_class=self.entryclass1)
             for i in range(0, 4)
         ]
         self.artifacts = []
@@ -53,9 +51,7 @@ class EntryManagerTest(EntriesTestCase):
 
     def test_get_filtered_entries_filters_by_entry_subtype(self):
         initial_queryset = Entry.objects.all()
-        result = list(
-            Entry.objects.get_filtered_entries(initial_queryset, ["username"], "")
-        )
+        result = list(Entry.objects.get_filtered_entries(initial_queryset, ["username"], ""))
         with self.subTest("Correct number of results"):
             self.assertEqual(len(result), 1)
         for i in range(0, len(result)):
@@ -64,9 +60,7 @@ class EntryManagerTest(EntriesTestCase):
 
     def test_get_filtered_entries_mixed_filters(self):
         initial_queryset = Entry.objects.all()
-        result = list(
-            Entry.objects.get_filtered_entries(initial_queryset, self.subtypes, "Ent")
-        )
+        result = list(Entry.objects.get_filtered_entries(initial_queryset, self.subtypes, "Ent"))
         with self.subTest("Correct number of results"):
             self.assertEqual(len(result), 6)
         for i in range(0, len(result)):
@@ -75,10 +69,6 @@ class EntryManagerTest(EntriesTestCase):
 
     def test_get_filtered_entries_multiple_options(self):
         initial_queryset = Entry.objects.all()
-        result = list(
-            Entry.objects.get_filtered_entries(
-                initial_queryset, self.subtypes, "Entity"
-            )
-        )
+        result = list(Entry.objects.get_filtered_entries(initial_queryset, self.subtypes, "Entity"))
         with self.subTest("Correct number of results"):
             self.assertEqual(len(result), 5)

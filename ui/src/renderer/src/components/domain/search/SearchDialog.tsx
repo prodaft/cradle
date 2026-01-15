@@ -1,3 +1,4 @@
+import Pagination from '@/components/base/Pagination/Pagination';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,6 @@ import {
 import { Kbd } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import type { Alert } from '@/types';
-import Pagination from '@/components/base/Pagination/Pagination';
 import { useApi } from '@hooks';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -78,7 +78,9 @@ export default function SearchDialog({
         color: 'red',
     });
     const [entrySubtypes, setEntrySubtypes] = useState<string[]>([]);
-    const [entryClassColors, setEntryClassColors] = useState<Map<string, string>>(new Map());
+    const [entryClassColors, setEntryClassColors] = useState<Map<string, string>>(
+        new Map(),
+    );
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
@@ -196,11 +198,13 @@ export default function SearchDialog({
     };
 
     useEffect(() => {
-        if (isOpen && inputRef.current) {
-            inputRef.current.focus();
-            performSearch();
+        if (isOpen) {
+            if (inputRef.current) {
+                inputRef.current.focus();
+                performSearch();
+            }
+            populateEntrySubtypes();
         }
-        populateEntrySubtypes();
     }, [isOpen, page]);
 
     useEffect(() => {
@@ -278,8 +282,16 @@ export default function SearchDialog({
                                                 prev.filter((f) => f !== filter),
                                             )
                                         }
-                                        className="cursor-pointer"
-                                        style={color ? { backgroundColor: color, borderColor: color, color: '#fff' } : undefined}
+                                        className='cursor-pointer'
+                                        style={
+                                            color
+                                                ? {
+                                                      backgroundColor: color,
+                                                      borderColor: color,
+                                                      color: '#fff',
+                                                  }
+                                                : undefined
+                                        }
                                     >
                                         {filter}
                                         <Xmark className='w-3 h-3' />
@@ -331,7 +343,10 @@ export default function SearchDialog({
                                             className='px-4 py-3'
                                         >
                                             {result.subtype && (
-                                                <Badge variant="outline" className="mr-3">
+                                                <Badge
+                                                    variant='outline'
+                                                    className='mr-3'
+                                                >
                                                     {result.subtype}
                                                 </Badge>
                                             )}

@@ -9,7 +9,7 @@ import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdow
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
-import { useProfile } from '@/hooks/user/useProfile';
+import { useAuthState } from '@/hooks/auth/useAuth';
 import { EntryClass } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation, useParams, useRouter, useSearch } from '@tanstack/react-router';
@@ -37,8 +37,10 @@ export default function EntryTypesPage() {
     const [selectedEntryTypes, setSelectedEntryTypes] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.entry_types_page || 1);
-    const [pageSize, setPageSize] = useState((search as any)?.entry_types_pagesize || 10);
-    const { isAdmin } = useProfile();
+    const [pageSize, setPageSize] = useState(
+        (search as any)?.entry_types_pagesize || 10,
+    );
+    const { isAdmin } = useAuthState();
     const { entriesApi } = useApi();
     const queryClient = useQueryClient();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -138,7 +140,7 @@ export default function EntryTypesPage() {
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 setPageSize(newPageSize);
@@ -234,14 +236,17 @@ export default function EntryTypesPage() {
                         >
                             <div className='flex justify-end'>
                                 <TableActionsButton>
-                                    {isAdmin() && (
+                                    {isAdmin && (
                                         <>
                                             <DropdownMenuItem
                                                 onClick={(e) =>
                                                     handleActivityClick(entryType, e)
                                                 }
                                             >
-                                                <ClockRotateRight width='18' height='18' />
+                                                <ClockRotateRight
+                                                    width='18'
+                                                    height='18'
+                                                />
                                                 View Activity
                                             </DropdownMenuItem>
                                             <DropdownMenuSeparator />
@@ -305,7 +310,7 @@ export default function EntryTypesPage() {
                     title='Entry Types'
                     description='Manage entry type classifications'
                     actions={
-                        isAdmin() ? (
+                        isAdmin ? (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button onClick={handleAddEntryType}>

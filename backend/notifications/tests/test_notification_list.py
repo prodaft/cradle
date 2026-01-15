@@ -35,12 +35,8 @@ class NotificationListTest(NotificationsTestCase):
         self.assertEqual(response.status_code, 401)
 
     def test_get_notifications_successfully(self):
-        message_user = MessageNotification.objects.create(
-            user=self.user, message="Test message"
-        )
-        MessageNotification.objects.create(
-            user=self.other_user, message="Test message other user"
-        )
+        message_user = MessageNotification.objects.create(user=self.user, message="Test message")
+        MessageNotification.objects.create(user=self.other_user, message="Test message other user")
         access_request_user = AccessRequestNotification.objects.create(
             user=self.user,
             requesting_user=self.other_user,
@@ -76,9 +72,7 @@ class NotificationListTest(NotificationsTestCase):
             "is_marked_unread": False,
             "notification_type": "request_access_notification",
             "entity_id": str(access_request_user.entity.id),
-            "timestamp": access_request_user.timestamp.isoformat().replace(
-                "+00:00", "Z"
-            ),
+            "timestamp": access_request_user.timestamp.isoformat().replace("+00:00", "Z"),
             "requesting_user_id": str(access_request_user.requesting_user.id),
         }
 
@@ -102,15 +96,7 @@ class NotificationListTest(NotificationsTestCase):
             response_filtered,
         )
 
-        self.assertTrue(
-            response.json()[0]["timestamp"] >= response.json()[1]["timestamp"]
-        )
+        self.assertTrue(response.json()[0]["timestamp"] >= response.json()[1]["timestamp"])
 
-        self.assertFalse(
-            MessageNotification.objects.filter(user=self.user, is_unread=True).exists()
-        )
-        self.assertFalse(
-            MessageNotification.objects.filter(
-                user=self.other_user, is_unread=False
-            ).exists()
-        )
+        self.assertFalse(MessageNotification.objects.filter(user=self.user, is_unread=True).exists())
+        self.assertFalse(MessageNotification.objects.filter(user=self.other_user, is_unread=False).exists())

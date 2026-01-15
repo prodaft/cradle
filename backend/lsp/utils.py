@@ -58,9 +58,7 @@ class Trie:
 
 class LspUtils:
     @staticmethod
-    def get_lsp_entries(
-        user: CradleUser, eclass: EntryClass, initial: str
-    ) -> List[Entry]:
+    def get_lsp_entries(user: CradleUser, eclass: EntryClass, initial: str) -> List[Entry]:
         accessible_entries = (
             Entry.objects.accessible(user)
             .filter(
@@ -80,9 +78,7 @@ class LspUtils:
         return Entry.entities.filter(pk__in=entity_ids).distinct()
 
     @staticmethod
-    def get_lsp_pack(
-        user: CradleUser, classes: Iterable[EntryClass], initial=""
-    ) -> Dict[str, Dict[str, Any]]:
+    def get_lsp_pack(user: CradleUser, classes: Iterable[EntryClass], initial="") -> Dict[str, Dict[str, Any]]:
         tries = {}
 
         for eclass in classes:

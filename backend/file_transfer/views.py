@@ -177,23 +177,17 @@ class FileUpload(APIView):
         """
         file_name = request.query_params.get("fileName")
         if not file_name:
-            raise InvalidFileNameException(
-                detail="The 'fileName' query parameter is required."
-            )
+            raise InvalidFileNameException(detail="The 'fileName' query parameter is required.")
 
         # Get and validate file size
         file_size_str = request.query_params.get("fileSize")
         if not file_size_str:
-            raise InvalidFileSizeException(
-                detail="The 'fileSize' query parameter is required."
-            )
+            raise InvalidFileSizeException(detail="The 'fileSize' query parameter is required.")
 
         try:
             file_size = int(file_size_str)
         except ValueError:
-            raise InvalidFileSizeException(
-                detail="The 'fileSize' parameter must be a valid integer."
-            )
+            raise InvalidFileSizeException(detail="The 'fileSize' parameter must be a valid integer.")
 
         response_data = file_upload_flow.initiate(request.user, file_name, file_size)
         return Response(FileUploadResponseSerializer(response_data).data)
@@ -247,9 +241,7 @@ class FileUploadFinalize(APIView):
         serializer.is_valid(raise_exception=True)
 
         # Finalize upload via flow
-        response_data = file_upload_flow.finalize(
-            upload_id, request.user, **serializer.validated_data
-        )
+        response_data = file_upload_flow.finalize(upload_id, request.user, **serializer.validated_data)
 
         return Response(
             FileUploadFinalizeResponseSerializer(response_data).data,
@@ -295,20 +287,14 @@ class FileDownload(APIView):
         """
         file_id = request.query_params.get("fileId")
         if not file_id:
-            raise InvalidFileNameException(
-                detail="The 'fileId' query parameter is required."
-            )
+            raise InvalidFileNameException(detail="The 'fileId' query parameter is required.")
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
         except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(
-                detail=f"File reference with ID {file_id} not found."
-            )
+            raise FileReferenceNotFoundException(detail=f"File reference with ID {file_id} not found.")
         except ValueError:
-            raise InvalidFileNameException(
-                detail="The 'fileId' parameter must be a valid UUID."
-            )
+            raise InvalidFileNameException(detail="The 'fileId' parameter must be a valid UUID.")
 
         if not file_reference.file:
             raise MinioObjectNotFound(detail="File not found in storage.")
@@ -366,14 +352,10 @@ class FileProcess(APIView):
             raise InvalidRequestBodyException(detail="Request body validation failed.")
 
         try:
-            file_reference = FileReference.objects.get(
-                id=serializer.validated_data["file_id"]
-            )
+            file_reference = FileReference.objects.get(id=serializer.validated_data["file_id"])
             file_reference.process_file()
 
-            return Response(
-                {"message": "File processing started"}, status=status.HTTP_200_OK
-            )
+            return Response({"message": "File processing started"}, status=status.HTTP_200_OK)
         except FileReference.DoesNotExist:
             raise FileReferenceNotFoundException(
                 detail=f"File reference with ID {serializer.validated_data['file_id']} not found."
@@ -418,22 +400,14 @@ class FileDelete(APIView):
         """
         file_id = request.query_params.get("fileId")
         if not file_id:
-            raise InvalidFileNameException(
-                detail="The 'fileId' query parameter is required."
-            )
+            raise InvalidFileNameException(detail="The 'fileId' query parameter is required.")
 
         try:
             file_reference = FileReference.objects.get(id=file_id)
             file_reference.delete()
 
-            return Response(
-                {"message": "File deleted successfully"}, status=status.HTTP_200_OK
-            )
+            return Response({"message": "File deleted successfully"}, status=status.HTTP_200_OK)
         except FileReference.DoesNotExist:
-            raise FileReferenceNotFoundException(
-                detail=f"File reference with ID {file_id} not found."
-            )
+            raise FileReferenceNotFoundException(detail=f"File reference with ID {file_id} not found.")
         except ValueError:
-            raise InvalidFileNameException(
-                detail="The 'fileId' parameter must be a valid UUID."
-            )
+            raise InvalidFileNameException(detail="The 'fileId' parameter must be a valid UUID.")

@@ -2,20 +2,29 @@ import {
     AuthTokenException,
     SessionExpiredException,
 } from '@/exceptions/AuthExceptions';
+import { parseAPIError } from '@/utils/api';
+import { UsersApi } from '@services/cradle/apis/UsersApi';
+import {
+    TokenObtainRequest,
+    TokenPairRetrieve,
+    TokenRefreshRetrieve,
+} from '@services/cradle/models';
+import { Configuration } from '@services/cradle/runtime';
 import {
     createContext,
     ReactNode,
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
 } from 'react';
 
 /**
- * Get the base URL from localStorage or environment variable
+ * Get the base URL from environment variable
  */
 const getBaseUrl = (): string => {
-    return localStorage.getItem('backendUrl') || import.meta.env.VITE_API_BASE_URL;
+    return import.meta.env.VITE_API_BASE_URL;
 };
 
 interface TokenData {
@@ -38,6 +47,8 @@ export interface AuthStateValue {
     userId: string | null;
     isLoading: boolean;
     basePath: string;
+    isAdmin: boolean;
+    isEntryManager: boolean;
 }
 
 // Actions interface - functions that don't change
@@ -50,14 +61,11 @@ export interface AuthActionsValue {
     logOut: () => void;
     getAccessToken: () => Promise<string>;
     isLoggedIn: () => boolean;
-    isAdmin: () => boolean;
-    isEntryManager: () => boolean;
     setTokensDirectly: (data: TokenData) => void;
-    setBasePath: (path: string) => void;
 }
 
 // Combined interface kept for type compatibility (useAuth removed)
-export interface AuthContextValue extends AuthStateValue, AuthActionsValue { }
+export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
 
 /**
  * AuthStateContext - provides authentication state (role, userId, isLoading, basePath)
@@ -101,7 +109,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.getItem('user_id') || null,
     );
     const [isLoading, setIsLoading] = useState(false);
-    const [basePath, setBasePathState] = useState(getBaseUrl());
+    const basePath = getBaseUrl();
+
+    const usersApi = useMemo(() => {
+        const config = new Configuration({
+            basePath: basePath,
+        });
+        return new UsersApi(config);
+    }, [basePath]);
 
     // Store tokens and expiration in refs (not state) to avoid re-renders
     const accessTokenRef = useRef(localStorage.getItem('access_token') || '');
@@ -194,27 +209,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         try {
-            const response = await fetch(`${basePath}/users/refresh/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ refresh: refreshToken }),
+            const data: TokenRefreshRetrieve = await usersApi.usersRefreshCreate({
+                tokenRefreshRequest: { refresh: refreshToken },
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                data.accessExpiresAt = new Date(data.access_expires_at);
-                data.refreshExpiresAt = new Date(data.refresh_expires_at);
-                storeTokens(data);
-                scheduleTokenRefresh();
-                return true;
-            } else {
-                // Server rejected the refresh token (expired, revoked, invalid)
-                clearTokens();
-                throw new SessionExpiredException();
-            }
-        } catch (error) {
+            const tokenData: TokenData = {
+                access: data.access,
+                refresh: data.refresh,
+                accessExpiresAt: data.accessExpiresAt,
+                refreshExpiresAt: data.refreshExpiresAt,
+                role: data.role,
+            };
+
+            storeTokens(tokenData);
+            scheduleTokenRefresh();
+            return true;
+        } catch (error: any) {
             // Re-throw SessionExpiredException (from above or elsewhere)
             if (error instanceof SessionExpiredException) {
                 throw error;
@@ -229,7 +239,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
             return false;
         }
-    }, [basePath, storeTokens, clearTokens]);
+    }, [usersApi, storeTokens, clearTokens]);
 
     /**
      * Schedule automatic token refresh before expiration
@@ -300,38 +310,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
             setIsLoading(true);
 
             try {
-                const body: any = { username, password };
-                if (twoFactorToken) {
-                    body.two_factor_token = twoFactorToken;
-                }
+                const tokenRequest: TokenObtainRequest = {
+                    username,
+                    password,
+                    ...(twoFactorToken && { twoFactorToken }),
+                };
 
-                const response = await fetch(
-                    `${basePath}/users/login/`,
-                    {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify(body),
-                    },
-                );
+                const data: TokenPairRetrieve = await usersApi.usersLoginCreate({
+                    tokenObtainRequest: tokenRequest,
+                });
 
-                if (response.ok) {
-                    const data = await response.json();
-                    data.accessExpiresAt = new Date(data.access_expires_at);
-                    data.refreshExpiresAt = new Date(data.refresh_expires_at);
-                    storeTokens(data);
-                    localStorage.setItem('user_id', data.user_id || '');
-                    setUserId(data.user_id || null);
+                const tokenData: TokenData = {
+                    access: data.access,
+                    refresh: data.refresh,
+                    accessExpiresAt: data.accessExpiresAt,
+                    refreshExpiresAt: data.refreshExpiresAt,
+                    role: data.role,
+                };
 
-                    return { result: AuthResult.SUCCESS };
-                } else {
-                    const data = await response.json();
+                storeTokens(tokenData);
+
+                try {
+                    const tokenParts = data.access.split('.');
+                    if (tokenParts.length === 3) {
+                        const payload = JSON.parse(
+                            atob(tokenParts[1].replace(/-/g, '+').replace(/_/g, '/')),
+                        );
+                        const extractedUserId = payload.user_id || payload.sub || null;
+                        if (extractedUserId) {
+                            localStorage.setItem('user_id', extractedUserId);
+                            setUserId(extractedUserId);
+                        }
+                    }
+                } catch (e) {}
+
+                return { result: AuthResult.SUCCESS };
+            } catch (error: any) {
+                try {
+                    const parsed = await parseAPIError(error);
+                    const errorData = parsed.raw;
 
                     if (
-                        data.code === 'TWO_FACTOR_REQUIRED' ||
-                        data.code === 'two-factor-required' ||
-                        data.detail?.toLowerCase?.().includes('2fa token required')
+                        parsed.code === 'TWO_FACTOR_REQUIRED' ||
+                        parsed.code === 'two-factor-required' ||
+                        parsed.detail?.toLowerCase?.().includes('2fa token required')
                     ) {
                         return {
                             result: AuthResult.REQUIRES_2FA,
@@ -340,20 +362,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     }
 
                     if (
-                        data.code === 'INVALID_TWO_FACTOR_TOKEN' ||
-                        data.code === 'invalid-two-factor-token'
+                        parsed.code === 'INVALID_TWO_FACTOR_TOKEN' ||
+                        parsed.code === 'invalid-two-factor-token'
                     ) {
                         return {
                             result: AuthResult.INVALID_CREDENTIALS,
-                            message: data.detail || data.message || 'Invalid 2FA token',
+                            message: parsed.detail || 'Invalid 2FA token',
                         };
                     }
 
                     // Check for specific error messages
-                    const errorMessage =
-                        typeof data === 'string'
-                            ? data
-                            : data.error || data.detail || '';
+                    const errorMessage = parsed.detail || '';
 
                     if (errorMessage.includes('not confirmed')) {
                         return {
@@ -373,17 +392,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
                         result: AuthResult.INVALID_CREDENTIALS,
                         message: errorMessage || 'Invalid credentials',
                     };
+                } catch (parseError) {
+                    // If we can't parse the error, check for network error
+                    if (error && typeof error === 'object' && !error.response) {
+                        return {
+                            result: AuthResult.NETWORK_ERROR,
+                            message: 'Network error occurred',
+                        };
+                    }
+
+                    // Generic error
+                    return {
+                        result: AuthResult.INVALID_CREDENTIALS,
+                        message: 'Invalid credentials',
+                    };
                 }
-            } catch (error) {
-                return {
-                    result: AuthResult.NETWORK_ERROR,
-                    message: 'Network error occurred',
-                };
             } finally {
                 setIsLoading(false);
             }
         },
-        [basePath, storeTokens, scheduleTokenRefresh],
+        [usersApi, storeTokens],
     );
 
     /**
@@ -409,20 +437,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         [storeTokens, scheduleTokenRefresh],
     );
 
-    // Role check helpers
-    const isAdmin = useCallback(() => role === 'admin', [role]);
-    const isEntryManager = useCallback(
-        () => role === 'entrymanager' || role === 'admin',
-        [role],
-    );
-
-    /**
-     * Set base path and update localStorage
-     */
-    const setBasePath = useCallback((path: string) => {
-        localStorage.setItem('backendUrl', path);
-        setBasePathState(path);
-    }, []);
+    // Role check helpers - computed from state
+    const isAdmin = role === 'admin';
+    const isEntryManager = role === 'entrymanager' || role === 'admin';
 
     // Set up automatic token refresh on mount if logged in
     useEffect(() => {
@@ -438,25 +455,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
         };
     }, [isLoggedIn, scheduleTokenRefresh]);
 
-    // State value - only changes when role, userId, isLoading, or basePath change
-    const stateValue: AuthStateValue = {
-        role,
-        userId,
-        isLoading,
-        basePath,
-    };
+    // State value - memoized to prevent unnecessary rerenders
+    const stateValue = useMemo<AuthStateValue>(
+        () => ({
+            role,
+            userId,
+            isLoading,
+            basePath,
+            isAdmin,
+            isEntryManager,
+        }),
+        [role, userId, isLoading, basePath, isAdmin, isEntryManager],
+    );
 
-    // Actions value - stable references, doesn't cause rerenders
-    const actionsValue: AuthActionsValue = {
-        logIn,
-        logOut,
-        getAccessToken,
-        isLoggedIn,
-        isAdmin,
-        isEntryManager,
-        setTokensDirectly,
-        setBasePath,
-    };
+    // Actions value - memoized with stable function references
+    const actionsValue = useMemo<AuthActionsValue>(
+        () => ({
+            logIn,
+            logOut,
+            getAccessToken,
+            isLoggedIn,
+            setTokensDirectly,
+        }),
+        [logIn, logOut, getAccessToken, isLoggedIn, setTokensDirectly],
+    );
 
     return (
         <AuthStateContext.Provider value={stateValue}>

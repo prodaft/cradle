@@ -70,7 +70,7 @@ export default function TwoFactorSetupModal({
     } = useQuery<Enable2FA>({
         queryKey: ['2fa', 'setup'],
         queryFn: () => usersApi.users2faEnableCreate({}),
-        enabled: !isDisabling,
+        enabled: open && !isDisabling,
         meta: {
             showErrorToast: false, // We handle errors ourselves
             errorMessage: 'Failed to initialize 2FA setup',

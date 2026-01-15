@@ -3,120 +3,26 @@ import { ButtonGroup } from '@/components/ui/button-group';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
-import { PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';
+import { FilterList, PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';
 import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
 
-type LayoutMode = 'circular' | 'grid' | 'cluster' | 'random';
-
 interface GraphConfig {
     nodeRadiusCoefficient?: number;
     linkWidthCoefficient?: number;
-    layoutMode?: LayoutMode;
-}
-
-/**
- * Calculate positions for nodes based on layout mode
- */
-function calculateLayout(
-    nodes: Node[],
-    layoutMode: LayoutMode,
-    spaceSize: number = 512,
-): Map<string, { x: number; y: number }> {
-    const positions = new Map<string, { x: number; y: number }>();
-    const centerOffset = spaceSize / 2;
-
-    switch (layoutMode) {
-        case 'circular': {
-            const radius = spaceSize * 0.35;
-            const angleStep = (2 * Math.PI) / nodes.length;
-            nodes.forEach((node, i) => {
-                positions.set(node.id, {
-                    x: centerOffset + Math.cos(i * angleStep - Math.PI / 2) * radius,
-                    y: centerOffset + Math.sin(i * angleStep - Math.PI / 2) * radius,
-                });
-            });
-            break;
-        }
-        case 'grid': {
-            const cols = Math.ceil(Math.sqrt(nodes.length));
-            const cellSize = spaceSize / (cols + 1);
-            nodes.forEach((node, i) => {
-                const row = Math.floor(i / cols);
-                const col = i % cols;
-                positions.set(node.id, {
-                    x: (col + 1) * cellSize,
-                    y: (row + 1) * cellSize,
-                });
-            });
-            break;
-        }
-        case 'cluster': {
-            // Group nodes by type/subtype
-            const groups = new Map<string, Node[]>();
-            nodes.forEach((node) => {
-                const groupKey = node.subtype || node.type || 'default';
-                if (!groups.has(groupKey)) {
-                    groups.set(groupKey, []);
-                }
-                groups.get(groupKey)!.push(node);
-            });
-
-            // Position each cluster in a circle, nodes within cluster also in circle
-            const groupArray = Array.from(groups.entries());
-            const clusterRadius = spaceSize * 0.3;
-            const clusterAngleStep = (2 * Math.PI) / groupArray.length;
-
-            groupArray.forEach(([_, groupNodes], groupIndex) => {
-                const clusterCenterX =
-                    centerOffset +
-                    Math.cos(groupIndex * clusterAngleStep - Math.PI / 2) *
-                        clusterRadius;
-                const clusterCenterY =
-                    centerOffset +
-                    Math.sin(groupIndex * clusterAngleStep - Math.PI / 2) *
-                        clusterRadius;
-
-                const nodeRadius = Math.min(spaceSize * 0.15, 30 * groupNodes.length);
-                const nodeAngleStep = (2 * Math.PI) / groupNodes.length;
-
-                groupNodes.forEach((node, nodeIndex) => {
-                    if (groupNodes.length === 1) {
-                        positions.set(node.id, {
-                            x: clusterCenterX,
-                            y: clusterCenterY,
-                        });
-                    } else {
-                        positions.set(node.id, {
-                            x:
-                                clusterCenterX +
-                                Math.cos(nodeIndex * nodeAngleStep) * nodeRadius,
-                            y:
-                                clusterCenterY +
-                                Math.sin(nodeIndex * nodeAngleStep) * nodeRadius,
-                        });
-                    }
-                });
-            });
-            break;
-        }
-        case 'random':
-        default: {
-            // Random positions within space
-            const margin = spaceSize * 0.1;
-            const range = spaceSize - 2 * margin;
-            nodes.forEach((node) => {
-                positions.set(node.id, {
-                    x: margin + Math.random() * range,
-                    y: margin + Math.random() * range,
-                });
-            });
-            break;
-        }
-    }
-
-    return positions;
+    showLinks?: boolean;
+    curvedLinks?: boolean;
+    scaleLinksOnZoom?: boolean;
+    showLinkWidthLegend?: boolean;
+    simulationGravity?: number;
+    simulationRepulsion?: number;
+    simulationLinkSpring?: number;
+    simulationLinkDistance?: number;
+    simulationFriction?: number;
+    simulationCluster?: number;
+    simulationDecay?: number;
+    randomSeed?: string | number;
 }
 
 interface GraphViewerProps {
@@ -126,8 +32,8 @@ interface GraphViewerProps {
     nodes?: Node[];
     edges?: Edge[];
     onClearGraph?: () => void;
-    activePanel?: 'explorer' | 'display' | null;
-    onTogglePanel?: (panel: 'explorer' | 'display') => void;
+    activePanel?: 'explorer' | 'display' | 'filters' | null;
+    onTogglePanel?: (panel: 'explorer' | 'display' | 'filters') => void;
     cosmographRef?: React.MutableRefObject<any>;
 }
 
@@ -175,7 +81,7 @@ export default function GraphViewer({
     const { isDarkMode } = useTheme();
     const internalCosmographRef = useRef<any>(null);
     const cosmographRef = externalCosmographRef || internalCosmographRef;
-    const [disableSimulation, setDisableSimulation] = useState(true); // Non-functional - kept for future use
+    const [enableSimulation, setEnableSimulation] = useState(true);
 
     // Filter out invalid nodes first
     const validNodes = useMemo(() => {
@@ -216,28 +122,19 @@ export default function GraphViewer({
         return map;
     }, [validNodes]);
 
-    // Calculate layout positions based on mode
-    const layoutPositions = useMemo(() => {
-        return calculateLayout(validNodes, config.layoutMode || 'circular', 1024);
-    }, [validNodes, config.layoutMode]);
-
-    // Prepare points data with index column and layout positions for Cosmograph v2
     const pointsData = useMemo(() => {
         return validNodes.map((node, index) => {
-            const position = layoutPositions.get(node.id);
             const point: any = {
                 ...node,
                 _index: index,
                 _color: node.color || 'var(--color-primary)',
                 _size: normalize(node.degree || 1, 1, 60),
                 _label: node.label || node.id,
-                x: position?.x ?? 512,
-                y: position?.y ?? 512,
             };
 
             return point;
         });
-    }, [validNodes, layoutPositions]);
+    }, [validNodes]);
 
     // Prepare links data for Cosmograph v2
     const linksData = useMemo(() => {
@@ -378,7 +275,7 @@ export default function GraphViewer({
         }, 300);
 
         return () => clearTimeout(fitTimer);
-    }, [pointsData.length, config.layoutMode]);
+    }, [pointsData.length]);
 
     // Cleanup on unmount
     useEffect(() => {
@@ -441,23 +338,43 @@ export default function GraphViewer({
                             </Button>
                         )}
 
-                        {/* Simulation Toggle Button - Non-functional, kept for future use */}
+                        {/* Filters Panel Toggle Button */}
+                        {onTogglePanel && (
+                            <Button
+                                type='button'
+                                variant={
+                                    activePanel === 'filters' ? 'outline' : 'outline'
+                                }
+                                size='icon'
+                                className={`p-1.5 w-8 h-8 ${
+                                    activePanel === 'filters' ? 'border-primary' : ''
+                                }`}
+                                title='Toggle filters panel'
+                                onClick={() => onTogglePanel('filters')}
+                            >
+                                <FilterList width={16} height={16} />
+                            </Button>
+                        )}
+
+                        {/* Simulation Toggle Button */}
                         <Button
                             type='button'
                             variant='outline'
                             size='icon'
-                            className='p-1.5 w-8 h-8 opacity-50 cursor-not-allowed'
-                            title='Toggle simulation (coming soon)'
+                            className='p-1.5 w-8 h-8'
+                            title={
+                                enableSimulation
+                                    ? 'Pause simulation'
+                                    : 'Resume simulation'
+                            }
                             onClick={() => {
-                                // Non-functional - simulation is always disabled
-                                // Kept for future implementation
+                                setEnableSimulation((prev) => !prev);
                             }}
-                            disabled
                         >
-                            {disableSimulation ? (
-                                <PlaySolid width='16' height='16' />
-                            ) : (
+                            {enableSimulation ? (
                                 <PauseSolid width='16' height='16' />
+                            ) : (
+                                <PlaySolid width='16' height='16' />
                             )}
                         </Button>
                     </div>
@@ -615,14 +532,12 @@ export default function GraphViewer({
                     <Cosmograph
                         ref={cosmographRef}
                         points={pointsData}
-                        links={linksData}
+                        links={config.showLinks !== false ? linksData : []}
                         pointIdBy='id'
                         pointIndexBy='_index'
                         pointColorBy='_color'
                         pointLabelBy='_label'
                         pointSizeBy='_size'
-                        pointXBy='x'
-                        pointYBy='y'
                         linkSourceBy='source'
                         linkTargetBy='target'
                         linkSourceIndexBy='_sourceIndex'
@@ -635,7 +550,15 @@ export default function GraphViewer({
                         ]}
                         showDynamicLabels={true}
                         spaceSize={1024}
-                        enableSimulation={false}
+                        enableSimulation={enableSimulation}
+                        simulationGravity={config.simulationGravity}
+                        simulationRepulsion={config.simulationRepulsion}
+                        simulationLinkSpring={config.simulationLinkSpring}
+                        simulationLinkDistance={config.simulationLinkDistance}
+                        simulationFriction={config.simulationFriction}
+                        simulationCluster={config.simulationCluster}
+                        simulationDecay={config.simulationDecay}
+                        randomSeed={config.randomSeed}
                         fitViewOnInit={true}
                         fitViewDelay={250}
                         linkColor='var(--color-muted-foreground)'
@@ -644,7 +567,7 @@ export default function GraphViewer({
                             4 * (config.linkWidthCoefficient ?? 1),
                             4 * (config.linkWidthCoefficient ?? 1),
                         ]}
-                        curvedLinks={false}
+                        curvedLinks={config.curvedLinks ?? false}
                         onClick={onClick}
                         onLinkClick={onLinkClick}
                         selectPointOnClick={false}

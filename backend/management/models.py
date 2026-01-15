@@ -24,9 +24,7 @@ class BaseSettingsSection:
 
         value = cache.get_or_set(
             f"setting:{full_key}",
-            lambda: Setting.objects.filter(key=full_key)
-            .values_list("value", flat=True)
-            .first(),
+            lambda: Setting.objects.filter(key=full_key).values_list("value", flat=True).first(),
             timeout=300,
         )
 

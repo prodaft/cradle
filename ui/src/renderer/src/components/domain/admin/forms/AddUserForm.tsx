@@ -17,7 +17,6 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { UserRetrieve } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
@@ -62,7 +61,6 @@ type FormData = z.infer<typeof addUserSchema>;
 
 export default function AddUserForm({ onAdd }: AddUserFormProps) {
     const { usersApi } = useApi();
-    const { isAdmin } = useProfile();
 
     const {
         register,
@@ -209,9 +207,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                     {errors.role && <FieldError>{errors.role.message}</FieldError>}
                 </Field>
 
-                {isAdmin() && (
-                    <>
-                        <Field
+                <Field
                             orientation='horizontal'
                             data-invalid={Boolean(errors.emailConfirmed)}
                         >
@@ -293,8 +289,6 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                                 </FieldError>
                             )}
                         </Field>
-                    </>
-                )}
             </div>
 
             <div className='flex justify-end mt-5'>

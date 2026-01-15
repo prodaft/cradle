@@ -59,14 +59,10 @@ class EntryView(generics.CreateAPIView):
 
         elif entry_type == EntryType.ENTITY:
             if not request.user.is_cradle_admin:
-                raise AdminOnlyEntityCreateException(
-                    detail="Only admins can create entities!"
-                )
+                raise AdminOnlyEntityCreateException(detail="Only admins can create entities!")
             serializer_class = EntitySerializer
         else:
-            raise InvalidEntryTypeException(
-                detail="Invalid entry type. Must be 'artifact' or 'entity'."
-            )
+            raise InvalidEntryTypeException(detail="Invalid entry type. Must be 'artifact' or 'entity'.")
 
         data = request.data.copy()
 
@@ -108,13 +104,9 @@ class EntryDetailView(APIView):
         if entry.type == EntryType.ENTITY:
             if not (
                 request.user.is_cradle_admin
-                or Access.objects.get_accessible_entity_ids(request.user)
-                .filter(pk=id)
-                .exists()
+                or Access.objects.get_accessible_entity_ids(request.user).filter(pk=id).exists()
             ):
-                raise EntryNotFoundException(
-                    detail="There is no entity with specified ID."
-                )
+                raise EntryNotFoundException(detail="There is no entity with specified ID.")
 
         serializer = EntrySerializer(entry)
 

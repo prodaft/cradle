@@ -12,13 +12,15 @@ import {
 import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { UserConfig } from '@services/cradle/models';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { Undo, WarningCircle } from 'iconoir-react';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -75,7 +77,7 @@ export default function Register() {
             email: string;
             password: string;
         }) => {
-            return await usersApi.usersCreate({
+            return await usersApi.authSignupCreate({
                 userCreateRequest: {
                     username: data.username,
                     email: data.email,
@@ -108,11 +110,6 @@ export default function Register() {
             });
         },
     });
-    const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
-    const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(
-        null,
-    );
-
     const form = useForm<FormData>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
@@ -123,57 +120,25 @@ export default function Register() {
         },
     });
 
+    // Query for OAuth configuration
+    const { data: userConfig } = useQuery<UserConfig>({
+        queryKey: queryKeys.users.config(),
+        queryFn: () => usersApi.usersConfig(),
+        enabled: !!basePath && !isLoggedIn(),
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const oauthMethods = userConfig?.oauthMethods || [];
+    const signup = userConfig?.signup ?? null;
+
     useEffect(() => {
         // If user is already logged in, redirect to dashboard
         if (isLoggedIn()) {
             router.navigate({ to: '/', replace: true });
-            return;
         }
-        if (!basePath) {
-            setOauthMethods([]);
-            setRegistrationEnabled(null);
-            return;
-        }
-
-        let isMounted = true;
-
-        const loadConfig = async () => {
-            try {
-                const response = await fetch(
-                    `${basePath}/users/config/`,
-                );
-                if (!response.ok) {
-                    throw new Error('Failed to load auth configuration');
-                }
-
-                const data = await response.json();
-                if (!isMounted) {
-                    return;
-                }
-
-                setOauthMethods(
-                    Array.isArray(data?.oauth_methods) ? data.oauth_methods : [],
-                );
-                setRegistrationEnabled(
-                    typeof data?.registration_enabled === 'boolean'
-                        ? data.registration_enabled
-                        : null,
-                );
-            } catch (error) {
-                if (!isMounted) {
-                    return;
-                }
-                setOauthMethods([]);
-                setRegistrationEnabled(null);
-            }
-        };
-
-        loadConfig();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [basePath, role, router, isLoggedIn]);
+    }, [isLoggedIn, router]);
 
     const apiBasePath = basePath ? basePath : '';
     const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
@@ -252,7 +217,7 @@ export default function Register() {
     const oauthOptions = oauthMethods.filter((method) => buildOAuthRedirectUrl(method));
 
     const onSubmit = async (data: FormData) => {
-        if (registrationEnabled === false) {
+        if (signup === false) {
             toast.error('Registration is disabled. Contact an administrator.');
             return;
         }
@@ -306,7 +271,7 @@ export default function Register() {
                                         Enter your information to create your account
                                     </p>
                                 </div>
-                                {registrationEnabled === false && (
+                                {signup === false && (
                                     <Alert>
                                         <WarningCircle />
                                         <AlertDescription>
@@ -331,9 +296,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='username'
                                                     required
-                                                    disabled={
-                                                        registrationEnabled === false
-                                                    }
+                                                    disabled={signup === false}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -360,9 +323,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='email'
                                                     required
-                                                    disabled={
-                                                        registrationEnabled === false
-                                                    }
+                                                    disabled={signup === false}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -389,9 +350,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='new-password'
                                                     required
-                                                    disabled={
-                                                        registrationEnabled === false
-                                                    }
+                                                    disabled={signup === false}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -418,9 +377,7 @@ export default function Register() {
                                                     aria-invalid={fieldState.invalid}
                                                     autoComplete='new-password'
                                                     required
-                                                    disabled={
-                                                        registrationEnabled === false
-                                                    }
+                                                    disabled={signup === false}
                                                 />
                                                 {fieldState.invalid && (
                                                     <FieldError
@@ -439,15 +396,15 @@ export default function Register() {
                                         className='w-full'
                                         disabled={
                                             form.formState.isSubmitting ||
-                                            registrationEnabled === false
+                                            signup === false
                                         }
                                         data-testid='login-register-button'
                                     >
-                                        {registrationEnabled === false
+                                        {signup === false
                                             ? 'Registration Disabled'
                                             : form.formState.isSubmitting
-                                                ? 'Creating...'
-                                                : 'Create Account'}
+                                              ? 'Creating...'
+                                              : 'Create Account'}
                                     </Button>
                                 </Field>
                                 {oauthOptions.length > 0 && (
@@ -471,7 +428,7 @@ export default function Register() {
                                                         let redirectPath = '/';
                                                         if (
                                                             typeof location.state ===
-                                                            'object' &&
+                                                                'object' &&
                                                             location.state !== null &&
                                                             'from' in location.state
                                                         ) {
@@ -483,15 +440,15 @@ export default function Register() {
                                                                 redirectPath =
                                                                     from.includes('#')
                                                                         ? from.slice(
-                                                                            from.indexOf(
-                                                                                '#',
-                                                                            ) + 1,
-                                                                        ) || '/'
+                                                                              from.indexOf(
+                                                                                  '#',
+                                                                              ) + 1,
+                                                                          ) || '/'
                                                                         : from;
                                                             } else if (
                                                                 from &&
                                                                 typeof from ===
-                                                                'object' &&
+                                                                    'object' &&
                                                                 'pathname' in from
                                                             ) {
                                                                 redirectPath =

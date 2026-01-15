@@ -15,10 +15,19 @@ from user.exceptions import (
     AccountNotActivatedException,
     EmailNotConfirmedException,
     ExternalIdentityConflictException,
+    UserErrorCodes,
 )
 from user.models import ExternalIdentity
-from user.serializers import OAuthConnectSerializer, TokenObtainSerializer
-from user.views.token_view import create_or_update_session
+from user.serializers import (
+    OAuthConnectSerializer,
+    TokenObtainSerializer,
+    TokenPairRetrieveSerializer,
+)
+from user.views.token_view import (
+    create_or_update_session,
+    get_error_responses,
+    get_validation_error_response,
+)
 
 
 def _get_provider_config(provider: str) -> dict | None:
@@ -28,9 +37,7 @@ def _get_provider_config(provider: str) -> dict | None:
     return None
 
 
-def _exchange_code_for_userinfo(
-    provider: str, code: str, redirect_uri: str
-) -> tuple[dict, dict]:
+def _exchange_code_for_userinfo(provider: str, code: str, redirect_uri: str) -> tuple[dict, dict]:
     config = _get_provider_config(provider)
     if not config:
         raise ValidationException(detail="OAuth provider is not configured.")
@@ -81,10 +88,7 @@ def _exchange_code_for_userinfo(
 
     if not userinfo_response.ok:
         raise ValidationException(
-            detail=(
-                "OAuth user info request failed "
-                f"({userinfo_response.status_code}): {userinfo_response.text}"
-            )
+            detail=(f"OAuth user info request failed ({userinfo_response.status_code}): {userinfo_response.text}")
         )
 
     return token_data, userinfo_response.json()
@@ -107,28 +111,20 @@ class OAuthConnectView(APIView):
         data = serializer.validated_data
 
         provider = data["provider"]
-        _, userinfo = _exchange_code_for_userinfo(
-            provider, data["code"], data["redirect_uri"]
-        )
+        _, userinfo = _exchange_code_for_userinfo(provider, data["code"], data["redirect_uri"])
         subject = userinfo.get("sub")
         if not subject:
             raise ValidationException(detail="OAuth user info missing subject.")
 
-        issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get(
-            "issuer"
-        )
+        issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
         email = userinfo.get("email")
         email_verified = bool(userinfo.get("email_verified"))
         display_name = userinfo.get("name") or userinfo.get("preferred_username")
 
-        existing = ExternalIdentity.objects.filter(
-            provider=provider, subject=subject, issuer=issuer
-        ).first()
+        existing = ExternalIdentity.objects.filter(provider=provider, subject=subject, issuer=issuer).first()
 
         if existing and existing.user_id != request.user.id:
-            raise ExternalIdentityConflictException(
-                detail="This external account is already linked to another user."
-            )
+            raise ExternalIdentityConflictException(detail="This external account is already linked to another user.")
 
         if not existing:
             existing = ExternalIdentity(
@@ -156,10 +152,18 @@ class OAuthConnectView(APIView):
 
 @extend_schema_view(
     post=extend_schema(
-        operation_id="users_oauth_login",
+        operation_id="auth_oauth_login",
         summary="Login with OAuth provider",
         request=OAuthConnectSerializer,
-        responses={200: None},
+        responses={
+            200: TokenPairRetrieveSerializer,
+            **get_validation_error_response(),
+            **get_error_responses(
+                UserErrorCodes.EMAIL_NOT_CONFIRMED,
+                UserErrorCodes.ACCOUNT_NOT_ACTIVATED,
+            ),
+        },
+        tags=["auth"],
     ),
 )
 class OAuthLoginView(APIView):
@@ -172,17 +176,13 @@ class OAuthLoginView(APIView):
         data = serializer.validated_data
 
         provider = data["provider"]
-        _, userinfo = _exchange_code_for_userinfo(
-            provider, data["code"], data["redirect_uri"]
-        )
+        _, userinfo = _exchange_code_for_userinfo(provider, data["code"], data["redirect_uri"])
 
         subject = userinfo.get("sub")
         if not subject:
             raise ValidationException(detail="OAuth user info missing subject.")
 
-        issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get(
-            "issuer"
-        )
+        issuer = userinfo.get("iss") or settings.OAUTH_PROVIDERS.get(provider, {}).get("issuer")
 
         identity = (
             ExternalIdentity.objects.select_related("user")
@@ -191,9 +191,7 @@ class OAuthLoginView(APIView):
         )
 
         if not identity:
-            raise ValidationException(
-                detail="External account is not linked to any user."
-            )
+            raise ValidationException(detail="External account is not linked to any user.")
 
         user = identity.user
 
@@ -206,9 +204,7 @@ class OAuthLoginView(APIView):
         refresh: RefreshToken = TokenObtainSerializer.get_token(user)
         access_token = refresh.access_token
 
-        access_expires_at = datetime.fromtimestamp(
-            access_token["exp"], tz=dt_timezone.utc
-        )
+        access_expires_at = datetime.fromtimestamp(access_token["exp"], tz=dt_timezone.utc)
         refresh_expires_at = datetime.fromtimestamp(refresh["exp"], tz=dt_timezone.utc)
 
         response_data = {
@@ -236,7 +232,5 @@ class OAuthDisconnectView(APIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request, provider: str):
-        ExternalIdentity.objects.filter(
-            user=request.user, provider=provider
-        ).delete()
+        ExternalIdentity.objects.filter(user=request.user, provider=provider).delete()
         return Response(status=204)

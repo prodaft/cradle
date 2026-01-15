@@ -26,9 +26,7 @@ class Anonymizer:
             return self.value_map[key]
 
         if entry_class.options:
-            options = [
-                opt.strip() for opt in entry_class.options.split("\n") if opt.strip()
-            ]
+            options = [opt.strip() for opt in entry_class.options.split("\n") if opt.strip()]
             if options:
                 index = random.randint(0, len(options) - 1)
 
@@ -161,9 +159,7 @@ def anonymize_markdown(
     :return: Anonymized markdown content
     """
     renderer = AnonymizedMarkdownRenderer(entry_classes, anonymizer)
-    markdown = mistune.create_markdown(
-        renderer=renderer, plugins=[cradle_link_plugin, table]
-    )
+    markdown = mistune.create_markdown(renderer=renderer, plugins=[cradle_link_plugin, table])
     markdown.block = NewlineAwareBlockParser()
     return markdown(md).strip()
 
@@ -173,13 +169,9 @@ def remap_links(
     entryclass_remap: Dict[str, str],
     entry_remap: Dict[Tuple[str, str], str],
 ) -> str:
-    renderer = MarkdownRenderer(
-        entryclass_remap=entryclass_remap, entry_remap=entry_remap
-    )
+    renderer = MarkdownRenderer(entryclass_remap=entryclass_remap, entry_remap=entry_remap)
 
-    markdown = mistune.create_markdown(
-        renderer=renderer, plugins=[table, cradle_link_plugin], hard_wrap=True
-    )
+    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, cradle_link_plugin], hard_wrap=True)
 
     markdown.block = NewlineAwareBlockParser()
 

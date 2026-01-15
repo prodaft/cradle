@@ -2,6 +2,7 @@ import PageHeader from '@/components/base/PageHeader';
 import AdminSetPasswordModal from '@/components/modals/admin/AdminSetPasswordModal';
 import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -18,13 +19,12 @@ import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@/services/cradle/models';
 import { SettingsButton, SettingsCard, SettingsField } from '@components/forms';
-import { Button } from '@/components/ui/button';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import bytes from 'bytes';
 import { WarningCircle } from 'iconoir-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -32,6 +32,7 @@ import ActiveSessions from '../../user/ActiveSessions';
 
 interface AdminUserSettingsProps {
     userId: string;
+    activeTab?: string;
 }
 
 interface Alert {
@@ -68,7 +69,10 @@ const adminUserSettingsSchema = z.object({
 
 type AdminUserFormData = z.infer<typeof adminUserSettingsSchema>;
 
-export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
+export default function AdminUserSettings({
+    userId,
+    activeTab = 'account',
+}: AdminUserSettingsProps) {
     const router = useRouter();
     const { usersApi } = useApi();
     const { setTokensDirectly } = useAuthActions();
@@ -142,7 +146,7 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
         },
         onSuccess: () => {
             toast.success('User deleted successfully');
-            router.navigate({ to: '/manage/users' });
+            router.navigate({ to: '/manage/users' } as any);
         },
     });
     const queryClient = useQueryClient();
@@ -307,19 +311,18 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
 
     if (!user) return <div></div>;
 
+    const showSection = (sectionId: string) => {
+        if (!activeTab) return true;
+        return activeTab === sectionId;
+    };
+
     return (
         <div className='w-full h-full flex flex-col'>
-            <PageHeader
-                title={`User Settings: ${user.username || 'Loading...'}`}
-                description='Manage user account and administrative settings'
-            />
-
-            <div className='p-5 flex-1'>
-                <div className='w-full'>
-                    <form onSubmit={(e) => e.preventDefault()}>
-                        {/* Account Section - Basic Information First */}
-                        <section id='account' className='pb-8'>
-                            <div className='space-y-4'>
+            <form onSubmit={(e) => e.preventDefault()}>
+                {/* Account Section - Basic Information First */}
+                {showSection('account') && (
+                    <section id='account' className='pb-8'>
+                        <div className='space-y-4'>
                                 {/* Alert */}
                                 {alert.show && (
                                     <div className='pt-4'>
@@ -410,145 +413,110 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
                                     </SettingsField>
                                 </SettingsCard>
 
-                                {/* Administrative Settings */}
-                                <section
-                                    id='administrative'
-                                    className='border-t border-white/5 pt-5'
-                                >
-                                    <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                        Administrative
-                                    </h2>
-                                    <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                        Manage user permissions and settings
-                                    </p>
-
-                                    <SettingsCard>
-                                        <div className='py-2'>
-                                            <div className='flex items-center justify-between gap-4'>
-                                                <div className='flex-1'>
-                                                    <Label
-                                                        htmlFor='emailConfirmed'
-                                                        className='text-sm text-muted-foreground block mb-0.5'
-                                                    >
-                                                        Email Confirmed
-                                                    </Label>
-                                                    <p className='text-sm text-muted-foreground'>
-                                                        User's email confirmation status
-                                                    </p>
-                                                </div>
-                                                <Controller
-                                                    name='emailConfirmed'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Switch
-                                                            id='emailConfirmed'
-                                                            name={field.name}
-                                                            data-testid='emailConfirmed-toggle'
-                                                            checked={field.value}
-                                                            onCheckedChange={
-                                                                field.onChange
-                                                            }
-                                                        />
-                                                    )}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <Separator />
-
-                                        <div className='py-2'>
-                                            <div className='flex items-center justify-between gap-4'>
-                                                <div className='flex-1'>
-                                                    <Label
-                                                        htmlFor='isActive'
-                                                        className='text-sm text-muted-foreground block mb-0.5'
-                                                    >
-                                                        Active
-                                                    </Label>
-                                                    <p className='text-sm text-muted-foreground'>
-                                                        Disabled accounts cannot log in
-                                                    </p>
-                                                </div>
-                                                <Controller
-                                                    name='isActive'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Switch
-                                                            id='isActive'
-                                                            name={field.name}
-                                                            data-testid='isActive-toggle'
-                                                            checked={field.value}
-                                                            onCheckedChange={
-                                                                field.onChange
-                                                            }
-                                                        />
-                                                    )}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <Separator />
-
-                                        <SettingsField
-                                            label='File Upload Limit Override'
-                                            description='Override global file upload limit for this user (e.g., 100MB, 1GB). Leave empty to use global default.'
-                                            placeholder='e.g., 100MB, 1GB'
-                                            {...register('fileUploadLimitOverride')}
-                                            error={errors.fileUploadLimitOverride}
-                                        />
-
-                                        <Separator />
-
-                                        <SettingsButton
-                                            label='Password'
-                                            description='Set a new password for this user'
-                                            buttonText='Set Password'
-                                            onClick={openAdminSetPasswordModal}
-                                        />
-                                    </SettingsCard>
-                                </section>
-
-                                {/* Active Sessions Section */}
-                                <section
-                                    id='sessions'
-                                    className='border-t border-white/5 pt-5'
-                                >
-                                    <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                        Active Sessions
-                                    </h2>
-                                    <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                        View and manage active user sessions
-                                    </p>
-
-                                    <ActiveSessions userId={userId} />
-                                </section>
                             </div>
                         </section>
+                )}
 
-                        {/* Save Button */}
-                        <div className='flex justify-start pt-4'>
-                            <Button
-                                type='button'
-                                onClick={handleSave}
-                                disabled={saveMutation.isPending || !isDirty}
-                            >
-                                {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
-                            </Button>
+                {/* Administrative Settings */}
+                {showSection('administrative') && (
+                    <section id='administrative' className='pb-8'>
+                        <div className='space-y-4'>
+                            <SettingsCard>
+                                <div className='py-2'>
+                                    <div className='flex items-center justify-between gap-4'>
+                                        <div className='flex-1'>
+                                            <Label
+                                                htmlFor='emailConfirmed'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Email Confirmed
+                                            </Label>
+                                            <p className='text-sm text-muted-foreground'>
+                                                User's email confirmation status
+                                            </p>
+                                        </div>
+                                        <Controller
+                                            name='emailConfirmed'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Switch
+                                                    id='emailConfirmed'
+                                                    name={field.name}
+                                                    data-testid='emailConfirmed-toggle'
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                <div className='py-2'>
+                                    <div className='flex items-center justify-between gap-4'>
+                                        <div className='flex-1'>
+                                            <Label
+                                                htmlFor='isActive'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Active
+                                            </Label>
+                                            <p className='text-sm text-muted-foreground'>
+                                                Disabled accounts cannot log in
+                                            </p>
+                                        </div>
+                                        <Controller
+                                            name='isActive'
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Switch
+                                                    id='isActive'
+                                                    name={field.name}
+                                                    data-testid='isActive-toggle'
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+
+                                <Separator />
+
+                                <SettingsField
+                                    label='File Upload Limit Override'
+                                    description='Override global file upload limit for this user (e.g., 100MB, 1GB). Leave empty to use global default.'
+                                    placeholder='e.g., 100MB, 1GB'
+                                    {...register('fileUploadLimitOverride')}
+                                    error={errors.fileUploadLimitOverride}
+                                />
+
+                                <Separator />
+
+                                <SettingsButton
+                                    label='Password'
+                                    description='Set a new password for this user'
+                                    buttonText='Set Password'
+                                    onClick={openAdminSetPasswordModal}
+                                />
+                            </SettingsCard>
                         </div>
-                    </form>
+                    </section>
+                )}
 
-                    {/* User Management Actions Section */}
-                    <section
-                        id='admin-actions'
-                        className='border-t border-white/5 pt-8 pb-8'
-                    >
-                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                            User Management
-                        </h2>
-                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                            Administrative actions for this user
-                        </p>
+                {/* Active Sessions Section */}
+                {showSection('sessions') && (
+                    <section id='sessions' className='pb-8'>
+                        <div className='space-y-4'>
+                            <ActiveSessions userId={userId} />
+                        </div>
+                    </section>
+                )}
 
+                {/* User Management Actions Section */}
+                {showSection('management') && (
+                    <section id='admin-actions' className='pb-8'>
                         <div className='space-y-4'>
                             <SettingsCard>
                                 <SettingsButton
@@ -588,8 +556,21 @@ export default function AdminUserSettings({ userId }: AdminUserSettingsProps) {
                             </SettingsCard>
                         </div>
                     </section>
-                </div>
-            </div>
+                )}
+
+                {/* Save Button */}
+                {(showSection('account') || showSection('administrative')) && (
+                    <div className='flex justify-end pt-4'>
+                        <Button
+                            type='button'
+                            onClick={handleSave}
+                            disabled={saveMutation.isPending || !isDirty}
+                        >
+                            {saveMutation.isPending ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </div>
+                )}
+            </form>
             <ConfirmDeletionModal
                 open={deleteUserModalOpen}
                 onOpenChange={setDeleteUserModalOpen}

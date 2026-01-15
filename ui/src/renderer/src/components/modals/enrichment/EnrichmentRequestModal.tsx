@@ -129,6 +129,7 @@ export default function EnrichmentRequestModal({
     const { data: enricherTypesData, isPending: loadingEnrichers } = useQuery({
         queryKey: ['enrichment', 'subclasses'],
         queryFn: () => intelioApi.enrichmentSubclassesList(),
+        enabled: open,
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to fetch enricher types',
@@ -184,7 +185,7 @@ export default function EnrichmentRequestModal({
     const { data: allEntitiesData } = useQuery({
         queryKey: queryKeys.entities.list(),
         queryFn: () => entriesApi.entitiesList(),
-        enabled: !!entitiesList,
+        enabled: open && !!entitiesList,
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to fetch entities',
@@ -320,6 +321,7 @@ export default function EnrichmentRequestModal({
     const { data: entitiesListData } = useQuery({
         queryKey: queryKeys.entities.list(),
         queryFn: () => entriesApi.entitiesList(),
+        enabled: open,
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to fetch entities',

@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
 import { ClockRotateRight, Lock } from 'iconoir-react/regular';
 import { ReactNode } from 'react';
 import ActivityList from '../../activity/ActivityList';
@@ -22,7 +21,6 @@ export default function AdminPanelCardUser({
     setRightPane,
 }: AdminPanelCardUserProps) {
     const { usersApi } = useApi();
-    const { isAdmin } = useProfile();
 
     const handleActivityClick = () => {
         setRightPane(
@@ -57,19 +55,17 @@ export default function AdminPanelCardUser({
             <CardHeader>
                 <CardTitle>{name}</CardTitle>
                 <CardAction>
-                    {isAdmin() && (
-                        <Button
-                            variant='ghost'
-                            size='icon-sm'
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleActivityClick();
-                            }}
-                            title='View Activity'
-                        >
-                            <ClockRotateRight />
-                        </Button>
-                    )}
+                    <Button
+                        variant='ghost'
+                        size='icon-sm'
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handleActivityClick();
+                        }}
+                        title='View Activity'
+                    >
+                        <ClockRotateRight />
+                    </Button>
                     <Button
                         variant='ghost'
                         size='icon-sm'

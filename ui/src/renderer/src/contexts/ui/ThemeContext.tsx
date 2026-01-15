@@ -10,9 +10,8 @@
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
-import { useProfile } from '@/hooks/user/useProfile';
 import type { Theme, ThemeContextValue } from '@/types/index';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import React, {
     createContext,
     ReactNode,
@@ -50,10 +49,15 @@ export interface ThemeProviderProps {
  * Provides theme state and controls to the application
  */
 export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Element {
-    const { profile, setProfile } = useProfile();
     const { usersApi } = useApi();
     const { isLoggedIn } = useAuthActions();
     const queryClient = useQueryClient();
+    const { data: profile } = useQuery({
+        queryKey: queryKeys.users.detail('me'),
+        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
+        enabled: isLoggedIn(),
+        meta: { showErrorToast: false },
+    });
 
     // Local state for fallback (when no profile)
     const [localTheme, setLocalTheme] = useState<Theme | null>(() => {
@@ -73,10 +77,6 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
             // Update query cache with new profile data
             const meKey = queryKeys.users.detail('me');
             queryClient.setQueryData(meKey, data);
-            // Also update via setProfile for immediate UI update
-            setProfile((prev) =>
-                prev ? { ...prev, theme: data.theme as Theme } : null,
-            );
         },
         meta: {
             suppressNotification: true, // Theme changes are silent

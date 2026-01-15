@@ -21,9 +21,7 @@ class Command(BaseCommand):
             *args: Variable length argument list.
             **options: Arbitrary keyword arguments.
         """
-        Relation.objects.filter(
-            content_type=ContentType.objects.get_for_model(Note)
-        ).delete()
+        Relation.objects.filter(content_type=ContentType.objects.get_for_model(Note)).delete()
 
         for i in Note.objects.all():
             creation_task, _ = EntryPopulationTask(None).run(i, [])

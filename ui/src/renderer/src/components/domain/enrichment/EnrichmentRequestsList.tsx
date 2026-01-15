@@ -20,7 +20,7 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { capitalize } from 'lodash';
-import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from 'react';
 
 type EnrichmentRequest = EnrichmentRequestList;
 
@@ -110,7 +110,7 @@ function EnrichmentRequestsList({
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== (pageSize || 10)) {
                 if (setPageSize) {

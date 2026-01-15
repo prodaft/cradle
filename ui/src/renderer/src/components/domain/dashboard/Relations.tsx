@@ -11,7 +11,6 @@ import {
 } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { useProfile } from '@/hooks/user/useProfile';
 import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
@@ -76,7 +75,6 @@ export default function Relations({ obj }: RelationsProps) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [pageSize, setPageSize] = useState(10); // Default page size
 
-    const { profile } = useProfile();
     const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
 
     const requestAccessMutation = useMutation({
@@ -443,7 +441,7 @@ export default function Relations({ obj }: RelationsProps) {
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
-            
+
             // Handle page size change
             if (newPageSize !== pageSize) {
                 setPageSize(newPageSize);

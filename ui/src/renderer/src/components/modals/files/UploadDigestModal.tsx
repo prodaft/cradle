@@ -95,7 +95,7 @@ export default function UploadDigestModal({
             showErrorToast: true,
             errorMessage: 'Failed to load data types',
         },
-        enabled: !propDataTypeOptions || propDataTypeOptions.length === 0,
+        enabled: open && (!propDataTypeOptions || propDataTypeOptions.length === 0),
     });
 
     const dataTypeOptions = React.useMemo(() => {

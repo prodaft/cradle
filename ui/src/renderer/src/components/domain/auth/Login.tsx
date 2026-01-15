@@ -10,11 +10,15 @@ import {
 import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useTheme } from '@/contexts/ui/ThemeContext';
+import useApi from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
+import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
+import { UserConfig } from '@services/cradle/models';
+import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { HalfMoon, Settings, SunLight, Undo, WarningCircle } from 'iconoir-react';
+import { HalfMoon, SunLight, Undo, WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 
 interface Alert {
@@ -51,10 +55,6 @@ export default function Login() {
         message: '',
         color: 'red',
     });
-    const [oauthMethods, setOauthMethods] = useState<OAuthMethod[]>([]);
-    const [registrationEnabled, setRegistrationEnabled] = useState<boolean | null>(
-        null,
-    );
     const location = useRouterState({
         select: (state) => state.location,
     });
@@ -65,17 +65,24 @@ export default function Login() {
         from: { pathname: '/' },
     };
 
+    const { usersApi } = useApi();
     const { basePath, role } = useAuthState();
-    const { logIn, isLoggedIn, setBasePath } = useAuthActions();
-
-    const [showSettings, setShowSettings] = useState(!basePath);
-    const [backendUrl, _setBackendUrl] = useState(basePath || '');
+    const { logIn, isLoggedIn } = useAuthActions();
 
     const router = useRouter();
 
-    const setBackendUrl = (url: string) => {
-        _setBackendUrl(url.trim());
-    };
+    // Query for OAuth configuration
+    const { data: userConfig } = useQuery<UserConfig>({
+        queryKey: queryKeys.users.config(),
+        queryFn: () => usersApi.usersConfig(),
+        enabled: !!basePath && !isLoggedIn(),
+        meta: {
+            suppressNotification: true,
+        },
+    });
+
+    const oauthMethods = userConfig?.oauthMethods || [];
+    const signup = userConfig?.signup ?? null;
 
     useEffect(() => {
         // If user is already logged in, redirect to dashboard
@@ -83,59 +90,7 @@ export default function Login() {
             router.navigate({ to: '/', replace: true });
             return;
         }
-        // If backend URL is not set, force settings to be shown
-        if (!basePath) {
-            setShowSettings(true);
-        }
-    }, [basePath, role, router, isLoggedIn]);
-
-    useEffect(() => {
-        if (!basePath) {
-            setOauthMethods([]);
-            setRegistrationEnabled(null);
-            return;
-        }
-
-        let isMounted = true;
-
-        const loadConfig = async () => {
-            try {
-                const response = await fetch(
-                    `${basePath}/users/config/`,
-                );
-
-                if (!response.ok) {
-                    throw new Error('Failed to load auth configuration');
-                }
-
-                const data = await response.json();
-                if (!isMounted) {
-                    return;
-                }
-
-                setOauthMethods(
-                    Array.isArray(data?.oauth_methods) ? data.oauth_methods : [],
-                );
-                setRegistrationEnabled(
-                    typeof data?.registration_enabled === 'boolean'
-                        ? data.registration_enabled
-                        : null,
-                );
-            } catch (error) {
-                if (!isMounted) {
-                    return;
-                }
-                setOauthMethods([]);
-                setRegistrationEnabled(null);
-            }
-        };
-
-        loadConfig();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [basePath]);
+    }, [role, router, isLoggedIn]);
 
     const apiBasePath = basePath ? basePath : '';
     const apiRoot = apiBasePath.replace(/\/api\/?$/, '');
@@ -269,31 +224,6 @@ export default function Login() {
         }
     };
 
-    const handleSaveSettings = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!backendUrl) {
-            setAlert({ show: true, message: 'Backend URL is required', color: 'red' });
-            return;
-        }
-
-        // Basic URL validation
-        try {
-            const url = new URL(
-                backendUrl.startsWith('http') ? backendUrl : `https://${backendUrl}`,
-            );
-            if (!['http:', 'https:'].includes(url.protocol)) {
-                throw new Error('Invalid protocol');
-            }
-        } catch (error) {
-            setAlert({ show: true, message: 'Please enter a valid URL', color: 'red' });
-            return;
-        }
-
-        localStorage.setItem('backendUrl', backendUrl);
-        setBasePath(backendUrl);
-        setShowSettings(false);
-    };
-
     // If user is logged in, don't render the login form
     // This prevents flash of login page after successful login
     if (isLoggedIn()) {
@@ -309,40 +239,8 @@ export default function Login() {
                     <a href='#' className='flex items-center gap-2 font-medium'>
                         <Logo text={true} width='120px' />
                     </a>
-                    {/* Settings/Theme Buttons */}
-                    {showSettings ? (
-                        <div className='flex items-center gap-2'>
-                            {basePath && (
-                                <Button
-                                    onClick={() => {
-                                        setBackendUrl(basePath);
-                                        setShowSettings(false);
-                                    }}
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    className='p-2 rounded-lg'
-                                    data-testid='back-button'
-                                    title='Back'
-                                >
-                                    <Undo width={18} height={18} />
-                                </Button>
-                            )}
-                            <Button
-                                onClick={toggleTheme}
-                                variant='ghost'
-                                size='icon-sm'
-                                className='p-2 rounded-lg'
-                                data-testid='theme-button'
-                                title='Toggle Theme'
-                            >
-                                {isDarkMode ? (
-                                    <SunLight width={18} height={18} />
-                                ) : (
-                                    <HalfMoon width={18} height={18} />
-                                )}
-                            </Button>
-                        </div>
-                    ) : requiresTwoFactor ? (
+                    {/* Theme Button */}
+                    {requiresTwoFactor ? (
                         <Button
                             onClick={() => {
                                 setRequiresTwoFactor(false);
@@ -362,13 +260,18 @@ export default function Login() {
                         </Button>
                     ) : (
                         <Button
-                            onClick={() => setShowSettings(!showSettings)}
+                            onClick={toggleTheme}
                             variant='ghost'
                             size='icon-sm'
-                            data-testid='settings-button'
-                            title='Settings'
+                            className='p-2 rounded-lg'
+                            data-testid='theme-button'
+                            title='Toggle Theme'
                         >
-                            <Settings width={18} height={18} />
+                            {isDarkMode ? (
+                                <SunLight width={18} height={18} />
+                            ) : (
+                                <HalfMoon width={18} height={18} />
+                            )}
                         </Button>
                     )}
                 </div>
@@ -378,10 +281,10 @@ export default function Login() {
                     <div className='w-full max-w-xs'>
                         <form
                             className={cn('flex flex-col gap-6')}
-                            onSubmit={showSettings ? handleSaveSettings : handleSubmit}
+                            onSubmit={handleSubmit}
                         >
                             <FieldGroup>
-                                {!showSettings && !requiresTwoFactor && (
+                                {!requiresTwoFactor && (
                                     <div className='flex flex-col items-center gap-1 text-center'>
                                         <h1 className='text-2xl font-bold'>
                                             Login to your account
@@ -389,16 +292,6 @@ export default function Login() {
                                         <p className='text-muted-foreground text-sm text-balance'>
                                             Enter your credentials below to login to
                                             your account
-                                        </p>
-                                    </div>
-                                )}
-                                {showSettings && (
-                                    <div className='flex flex-col items-center gap-1 text-center'>
-                                        <h1 className='text-2xl font-bold'>
-                                            Configuration
-                                        </h1>
-                                        <p className='text-muted-foreground text-sm text-balance'>
-                                            Configure your backend URL
                                         </p>
                                     </div>
                                 )}
@@ -412,29 +305,54 @@ export default function Login() {
                                         </p>
                                     </div>
                                 )}
-                                {showSettings ? (
+                                {requiresTwoFactor ? (
                                     <>
                                         <Field>
-                                            <FieldLabel htmlFor='backendUrl'>
-                                                Backend URL
-                                            </FieldLabel>
-                                            <Input
-                                                id='backendUrl'
-                                                type='text'
-                                                value={backendUrl}
-                                                onChange={(e) =>
-                                                    setBackendUrl(e.target.value)
+                                            <InputOTP
+                                                maxLength={6}
+                                                value={twoFactorToken}
+                                                onChange={(value) =>
+                                                    setTwoFactorToken(value)
                                                 }
-                                                autoFocus={true}
-                                                required={true}
-                                                placeholder='https://api.example.com'
-                                            />
+                                                containerClassName='w-full'
+                                            >
+                                                <InputOTPGroup className='w-full'>
+                                                    <InputOTPSlot
+                                                        index={0}
+                                                        className='flex-1 h-12'
+                                                    />
+                                                    <InputOTPSlot
+                                                        index={1}
+                                                        className='flex-1 h-12'
+                                                    />
+                                                    <InputOTPSlot
+                                                        index={2}
+                                                        className='flex-1 h-12'
+                                                    />
+                                                    <InputOTPSlot
+                                                        index={3}
+                                                        className='flex-1 h-12'
+                                                    />
+                                                    <InputOTPSlot
+                                                        index={4}
+                                                        className='flex-1 h-12'
+                                                    />
+                                                    <InputOTPSlot
+                                                        index={5}
+                                                        className='flex-1 h-12'
+                                                    />
+                                                </InputOTPGroup>
+                                            </InputOTP>
+                                            <FieldDescription>
+                                                Enter the 6-digit code from your
+                                                authenticator app
+                                            </FieldDescription>
                                         </Field>
                                         {alert.show && (
                                             <Alert
                                                 variant={
                                                     alert.color === 'red' ||
-                                                        alert.color === 'error'
+                                                    alert.color === 'error'
                                                         ? 'destructive'
                                                         : 'default'
                                                 }
@@ -451,249 +369,164 @@ export default function Login() {
                                                 variant='default'
                                                 size='default'
                                                 className='w-full'
+                                                disabled={isSubmitting}
+                                                data-testid='login-register-button'
                                             >
-                                                Save Configuration
+                                                {isSubmitting
+                                                    ? 'Verifying...'
+                                                    : 'Verify'}
                                             </Button>
                                         </Field>
                                     </>
                                 ) : (
                                     <>
-                                        {requiresTwoFactor ? (
+                                        <Field>
+                                            <FieldLabel htmlFor='username'>
+                                                Username
+                                            </FieldLabel>
+                                            <Input
+                                                id='username'
+                                                name='username'
+                                                type='text'
+                                                value={username}
+                                                onChange={(e) =>
+                                                    setUsername(e.target.value)
+                                                }
+                                                autoComplete='username'
+                                                autoFocus={true}
+                                                required
+                                            />
+                                        </Field>
+                                        <Field>
+                                            <div className='flex items-center'>
+                                                <FieldLabel htmlFor='password'>
+                                                    Password
+                                                </FieldLabel>
+                                                <Link
+                                                    to='/forgot-password'
+                                                    className='ml-auto text-sm underline-offset-4 hover:underline'
+                                                    replace={true}
+                                                    onClick={() =>
+                                                        setRequiresTwoFactor(false)
+                                                    }
+                                                >
+                                                    Forgot password?
+                                                </Link>
+                                            </div>
+                                            <Input
+                                                id='password'
+                                                name='password'
+                                                type='password'
+                                                value={password}
+                                                onChange={(e) =>
+                                                    setPassword(e.target.value)
+                                                }
+                                                autoComplete='current-password'
+                                                required
+                                            />
+                                        </Field>
+                                        {alert.show && (
+                                            <Alert
+                                                variant={
+                                                    alert.color === 'red' ||
+                                                    alert.color === 'error'
+                                                        ? 'destructive'
+                                                        : 'default'
+                                                }
+                                            >
+                                                <WarningCircle />
+                                                <AlertDescription>
+                                                    {alert.message}
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+                                        <Field>
+                                            <Button
+                                                type='submit'
+                                                variant='default'
+                                                size='default'
+                                                className='w-full'
+                                                disabled={isSubmitting}
+                                                data-testid='login-register-button'
+                                            >
+                                                {isSubmitting
+                                                    ? 'Logging in...'
+                                                    : 'Log in'}
+                                            </Button>
+                                        </Field>
+                                        {oauthOptions.length > 0 && (
                                             <>
+                                                <FieldSeparator />
                                                 <Field>
-                                                    <InputOTP
-                                                        maxLength={6}
-                                                        value={twoFactorToken}
-                                                        onChange={(value) =>
-                                                            setTwoFactorToken(value)
-                                                        }
-                                                        containerClassName='w-full'
-                                                    >
-                                                        <InputOTPGroup className='w-full'>
-                                                            <InputOTPSlot
-                                                                index={0}
-                                                                className='flex-1 h-12'
-                                                            />
-                                                            <InputOTPSlot
-                                                                index={1}
-                                                                className='flex-1 h-12'
-                                                            />
-                                                            <InputOTPSlot
-                                                                index={2}
-                                                                className='flex-1 h-12'
-                                                            />
-                                                            <InputOTPSlot
-                                                                index={3}
-                                                                className='flex-1 h-12'
-                                                            />
-                                                            <InputOTPSlot
-                                                                index={4}
-                                                                className='flex-1 h-12'
-                                                            />
-                                                            <InputOTPSlot
-                                                                index={5}
-                                                                className='flex-1 h-12'
-                                                            />
-                                                        </InputOTPGroup>
-                                                    </InputOTP>
-                                                    <FieldDescription>
-                                                        Enter the 6-digit code from your
-                                                        authenticator app
+                                                    <FieldDescription className='text-center'>
+                                                        Or continue with
                                                     </FieldDescription>
                                                 </Field>
-                                                {alert.show && (
-                                                    <Alert
-                                                        variant={
-                                                            alert.color === 'red' ||
-                                                                alert.color === 'error'
-                                                                ? 'destructive'
-                                                                : 'default'
-                                                        }
+                                                {oauthOptions.map((method) => (
+                                                    <Field
+                                                        key={`${getOAuthKey(method)}-${getOAuthUrl(method)}`}
                                                     >
-                                                        <WarningCircle />
-                                                        <AlertDescription>
-                                                            {alert.message}
-                                                        </AlertDescription>
-                                                    </Alert>
-                                                )}
-                                                <Field>
-                                                    <Button
-                                                        type='submit'
-                                                        variant='default'
-                                                        size='default'
-                                                        className='w-full'
-                                                        disabled={isSubmitting}
-                                                        data-testid='login-register-button'
-                                                    >
-                                                        {isSubmitting
-                                                            ? 'Verifying...'
-                                                            : 'Verify'}
-                                                    </Button>
-                                                </Field>
+                                                        <Button
+                                                            type='button'
+                                                            variant='outline'
+                                                            size='default'
+                                                            className='w-full'
+                                                            onClick={() => {
+                                                                const redirectPath =
+                                                                    typeof from ===
+                                                                    'string'
+                                                                        ? from.includes(
+                                                                              '#',
+                                                                          )
+                                                                            ? from.slice(
+                                                                                  from.indexOf(
+                                                                                      '#',
+                                                                                  ) + 1,
+                                                                              ) || '/'
+                                                                            : from
+                                                                        : from?.pathname ||
+                                                                          '/';
+                                                                sessionStorage.setItem(
+                                                                    'oauth_login_redirect',
+                                                                    redirectPath,
+                                                                );
+                                                                window.location.href =
+                                                                    buildOAuthRedirectUrl(
+                                                                        method,
+                                                                    );
+                                                            }}
+                                                        >
+                                                            {getOAuthLabel(method)}
+                                                        </Button>
+                                                    </Field>
+                                                ))}
                                             </>
-                                        ) : (
+                                        )}
+                                        {basePath && signup !== false && (
                                             <>
+                                                <FieldSeparator />
                                                 <Field>
-                                                    <FieldLabel htmlFor='username'>
-                                                        Username
-                                                    </FieldLabel>
-                                                    <Input
-                                                        id='username'
-                                                        name='username'
-                                                        type='text'
-                                                        value={username}
-                                                        onChange={(e) =>
-                                                            setUsername(e.target.value)
-                                                        }
-                                                        autoComplete='username'
-                                                        autoFocus={true}
-                                                        required
-                                                    />
-                                                </Field>
-                                                <Field>
-                                                    <div className='flex items-center'>
-                                                        <FieldLabel htmlFor='password'>
-                                                            Password
-                                                        </FieldLabel>
+                                                    <FieldDescription className='text-center'>
+                                                        Don&apos;t have an account?{' '}
                                                         <Link
-                                                            to='/forgot-password'
-                                                            className='ml-auto text-sm underline-offset-4 hover:underline'
+                                                            to='/register'
+                                                            className='underline underline-offset-4'
                                                             replace={true}
+                                                            state={
+                                                                {
+                                                                    from: from,
+                                                                } as any
+                                                            }
                                                             onClick={() =>
                                                                 setRequiresTwoFactor(
                                                                     false,
                                                                 )
                                                             }
                                                         >
-                                                            Forgot password?
+                                                            Sign up
                                                         </Link>
-                                                    </div>
-                                                    <Input
-                                                        id='password'
-                                                        name='password'
-                                                        type='password'
-                                                        value={password}
-                                                        onChange={(e) =>
-                                                            setPassword(e.target.value)
-                                                        }
-                                                        autoComplete='current-password'
-                                                        required
-                                                    />
-                                                </Field>
-                                                {alert.show && (
-                                                    <Alert
-                                                        variant={
-                                                            alert.color === 'red' ||
-                                                                alert.color === 'error'
-                                                                ? 'destructive'
-                                                                : 'default'
-                                                        }
-                                                    >
-                                                        <WarningCircle />
-                                                        <AlertDescription>
-                                                            {alert.message}
-                                                        </AlertDescription>
-                                                    </Alert>
-                                                )}
-                                                <Field>
-                                                    <Button
-                                                        type='submit'
-                                                        variant='default'
-                                                        size='default'
-                                                        className='w-full'
-                                                        disabled={isSubmitting}
-                                                        data-testid='login-register-button'
-                                                    >
-                                                        {isSubmitting
-                                                            ? 'Logging in...'
-                                                            : 'Log in'}
-                                                    </Button>
-                                                </Field>
-                                                {oauthOptions.length > 0 && (
-                                                    <>
-                                                        <FieldSeparator />
-                                                        <Field>
-                                                            <FieldDescription className='text-center'>
-                                                                Or continue with
-                                                            </FieldDescription>
-                                                        </Field>
-                                                        {oauthOptions.map((method) => (
-                                                            <Field
-                                                                key={`${getOAuthKey(method)}-${getOAuthUrl(method)}`}
-                                                            >
-                                                                <Button
-                                                                    type='button'
-                                                                    variant='outline'
-                                                                    size='default'
-                                                                    className='w-full'
-                                                                    onClick={() => {
-                                                                        const redirectPath =
-                                                                            typeof from ===
-                                                                                'string'
-                                                                                ? from.includes(
-                                                                                    '#',
-                                                                                )
-                                                                                    ? from.slice(
-                                                                                        from.indexOf(
-                                                                                            '#',
-                                                                                        ) +
-                                                                                        1,
-                                                                                    ) ||
-                                                                                    '/'
-                                                                                    : from
-                                                                                : from?.pathname ||
-                                                                                '/';
-                                                                        sessionStorage.setItem(
-                                                                            'oauth_login_redirect',
-                                                                            redirectPath,
-                                                                        );
-                                                                        window.location.href =
-                                                                            buildOAuthRedirectUrl(
-                                                                                method,
-                                                                            );
-                                                                    }}
-                                                                >
-                                                                    {getOAuthLabel(
-                                                                        method,
-                                                                    )}
-                                                                </Button>
-                                                            </Field>
-                                                        ))}
-                                                    </>
-                                                )}
-                                                {basePath &&
-                                                    registrationEnabled === false ? (
-                                                    <FieldDescription className='text-center text-muted-foreground'>
-                                                        Registration is disabled.
                                                     </FieldDescription>
-                                                ) : (
-                                                    basePath && (
-                                                        <>
-                                                            <FieldSeparator />
-                                                            <Field>
-                                                                <FieldDescription className='text-center'>
-                                                                    Don&apos;t have an
-                                                                    account?{' '}
-                                                                    <Link
-                                                                        to='/register'
-                                                                        className='underline underline-offset-4'
-                                                                        replace={true}
-                                                                        state={{
-                                                                            from: from,
-                                                                        }}
-                                                                        onClick={() =>
-                                                                            setRequiresTwoFactor(
-                                                                                false,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        Sign up
-                                                                    </Link>
-                                                                </FieldDescription>
-                                                            </Field>
-                                                        </>
-                                                    )
-                                                )}
+                                                </Field>
                                             </>
                                         )}
                                     </>
