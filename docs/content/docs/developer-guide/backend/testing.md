@@ -13,14 +13,14 @@ Tests live in each app's tests module. Test files should follow:
 test_<filename>.py
 ```
 
-Each module typically includes a utils.py with a subclass of Django's testing
+Each module typically includes a `utils.py` with a subclass of Django's testing
 class that provides mocks and utilities.
 
 ## Setting up tests for a new application
 
-1. Create a tests directory.
-2. Add an __init__.py file.
-3. Create a utils.py file with test utilities.
+1. Create a `tests` directory.
+2. Add an `__init__.py` file.
+3. Create a `utils.py` file with test utilities.
 
 Example:
 

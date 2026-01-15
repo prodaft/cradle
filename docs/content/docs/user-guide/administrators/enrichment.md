@@ -10,16 +10,10 @@ internal processors. Each enricher exposes settings and produces related
 entries and relations.
 
 ## Enricher management
-- Enable or disable enrichers based on policy or availability.
-- Maintain API keys and credentials for external services.
-- Review supported entry classes for each enricher.
+Use **enricher management** to enable or disable techniques based on policy or
+availability, maintain **API keys** and credentials for external services, and
+review supported **entry classes** for each technique.
 
 ## Request settings
-- Define defaults for timeouts and features exposed by the enricher.
-- Limit enrichment to approved artifact types.
-
-## Monitoring
-- Track warnings and errors on enrichment requests.
-- Review stuck or failed requests and re-run as needed.
-
-See also: {{< ref "/docs/developer-guide/backend/enrichment" >}}.
+**Request defaults** define timeouts and features exposed by each enricher.
+You can also limit enrichment to approved artifact types.

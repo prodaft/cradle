@@ -11,52 +11,31 @@ with three access levels.
 
 ## Access levels
 
-1. None (default)
-   - Cannot view notes referencing the entity.
-   - Cannot create notes referencing the entity.
-
-2. Read
-   - Can view notes referencing the entity.
-   - Cannot create notes referencing the entity.
-
-3. Read-write
-   - Can view notes referencing the entity.
-   - Can create notes referencing the entity.
+| Access level | Capabilities |
+| --- | --- |
+| None (default) | Cannot view notes referencing the entity and cannot create notes referencing the entity. |
+| Read | Can view notes referencing the entity but cannot create notes referencing the entity. |
+| Read-write | Can view notes referencing the entity and can create notes referencing the entity. |
 
 ## Key rules
 
-1. Note access rule
-   A user can view a note only if they have read or read-write access to all
-   entities referenced in that note.
-
-2. Default access
-   Users are granted none access by default unless higher permissions are
-   explicitly assigned.
-
-3. Superuser privileges
-   Admins automatically have read-write access to all entities and their
-   permissions are not stored in the database.
-
-4. Roles
-   - Admin: Full permissions and user management.
-   - Manager: Manages system configuration and content, excluding user admin.
-   - Entry manager: Manage entry classes and edit entity metadata.
-   - User: Base access for creating and viewing notes.
+**Note access rule** means a user can view a note only if they have read or
+read-write access to all entities referenced in that note. **Default access**
+is none unless higher permissions are explicitly assigned. **Superuser
+privileges** grant admins read-write access to all entities, and those
+permissions are not stored in the database. **Roles** include **admin** (full
+permissions and user management), **manager** (system configuration and
+content, excluding user admin), **entry manager** (entry classes and entity
+metadata), and **user** (base access for creating and viewing notes).
 
 ## Access management
 
-1. Admin capabilities
-   - Modify access levels for any non-admin user.
-   - Cannot modify access levels for other admins.
-
-2. Users with read-write access
-   - Can grant access to other users for entities they control.
-   - Cannot modify access for admins or users who already have read-write
-     access.
-
-3. Access requests
-   - Users can request access to entities they cannot view.
-   - Users with read-write access receive notifications.
+**Admin capabilities** include modifying access levels for any non-admin user,
+but admins cannot modify access for other admins. **Users with read-write
+access** can grant access to other users for entities they control, but cannot
+modify access for admins or users who already have read-write access. **Access
+requests** let users request access to entities they cannot view, and users
+with read-write access receive notifications.
 
 ## Artifact visibility cases
 

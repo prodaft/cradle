@@ -17,8 +17,6 @@ This section covers backend architecture and development workflows.
 {{< card link="file-pipeline" title="File Pipeline" icon="paper-clip" >}}
 {{< card link="reporting" title="Reports and Publishing" icon="download" >}}
 {{< card link="background-tasks" title="Background Tasks" icon="clock" >}}
-{{< card link="configuration" title="Configuration" icon="cog" >}}
 {{< card link="testing" title="Testing" icon="beaker" >}}
 {{< card link="logging-observability" title="Logging and Observability" icon="chart-bar" >}}
-{{< card link="deployment" title="Deployment Basics" icon="cloud" >}}
 {{< /cards >}}

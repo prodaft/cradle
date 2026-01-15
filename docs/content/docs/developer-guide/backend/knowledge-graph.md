@@ -5,8 +5,8 @@ draft = false
 weight = 5
 +++
 
-The graph represents relationships between entries. Nodes are entities and
-artifacts, and edges are relationships created through note references.
+The graph represents relationships between entries. **Nodes** are entities and
+artifacts, and **edges** are relationships created through note references.
 
 Search expands neighbors within configured depth limits to explore connected
 entries.

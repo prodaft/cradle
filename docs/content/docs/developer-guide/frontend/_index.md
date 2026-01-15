@@ -14,11 +14,5 @@ This section covers frontend architecture and development workflows.
 {{< card link="api-client" title="API Client" icon="server" >}}
 {{< card link="component-design" title="Component Design" icon="collection" >}}
 {{< card link="editor" title="Editor Features" icon="pencil-alt" >}}
-{{< card link="graph-ui" title="Graph UI" icon="sparkles" >}}
-{{< card link="files-ui" title="Files UI" icon="paper-clip" >}}
-{{< card link="reports-ui" title="Reports UI" icon="download" >}}
-{{< card link="admin-ui" title="Admin UI" icon="adjustments" >}}
 {{< card link="tooling-scripts" title="Tooling and Scripts" icon="terminal" >}}
-{{< card link="testing" title="Testing" icon="beaker" >}}
-{{< card link="troubleshooting" title="Troubleshooting" icon="support" >}}
 {{< /cards >}}

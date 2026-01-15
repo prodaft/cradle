@@ -29,7 +29,7 @@ Batteries-included knowledge management solution for cyber threat hunters and de
 </div>
 
 <div class="hx-mt-6 hx-mb-6">
-{{< hextra/hero-button text="Get Started" link="docs/user-guide" >}}
+{{< hextra/hero-button text="Get Started" link="docs/getting-started" >}}
 </div>
 {{< /hextra/hero-container >}}
 

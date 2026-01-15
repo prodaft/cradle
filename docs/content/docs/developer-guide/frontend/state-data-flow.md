@@ -9,10 +9,10 @@ The app relies on context providers for auth, API access, layout, tabs, and
 notifications.
 
 ## Context providers
-- AuthProvider manages authentication state and guards routes.
-- ApiProvider configures API access and request helpers.
-- NotificationProvider manages in-app alerts.
-- ProfileProvider and ThemeProvider handle user preferences.
+- `AuthProvider` manages authentication state and guards routes.
+- `ApiProvider` configures API access and request helpers.
+- `NotificationProvider` manages in-app alerts.
+- `ProfileProvider` and `ThemeProvider` handle user preferences.
 - Tab and layout providers manage tabs and panes.
 
 ## Data flow

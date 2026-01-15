@@ -1,6 +1,6 @@
 # Hugo configuration file
 baseURL: "https://cradle.sh/"
-title: CRADLE Hub
+title: CRADLE
 
 enableRobotsTXT: true
 enableGitInfo: true
@@ -22,7 +22,7 @@ languages:
   en:
     languageName: English
     weight: 1
-    title: CRADLE Hub
+    title: CRADLE
 
 markup:
   goldmark:

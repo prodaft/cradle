@@ -5,26 +5,18 @@ draft = false
 weight = 1
 +++
 
-CRADLE provides administrators with tools to manage users, entities, and
-system-wide settings.
+CRADLE provides administrators with tools to manage users, entries, and
+system-wide settings from a single control surface.
 
 ## Management panel
 
 The management panel is the central hub for administrative tasks and is
-accessible from the Management link in the sidebar. It includes:
+accessible from the Management link in the sidebar.
 
-1. Entities management (admins and entry managers)
-   - Create, edit, and delete entities.
-   - Manage metadata and descriptions.
-   - View entity activity logs (admins only).
-
-2. Entry types management (admins and entry managers)
-   - Create and edit entry classes.
-   - Define validation rules for artifacts.
-   - Manage entry type hierarchies.
-
-3. User management (admins only)
-   - View and edit users.
-   - Manage permissions.
-   - View user activity logs.
-   - Delete user accounts.
+- **Entities management** for creating, editing, and deleting entities, updating
+  metadata and descriptions, and reviewing entity activity logs (admins only).
+- **Entry types management** for entry class creation, validation rules for
+  artifacts, entry type hierarchies, and the type mappings panel.
+- **User management** for editing users, managing permissions, reviewing user
+  activity logs, and deleting accounts (admins only).
+- **Settings** for system-wide defaults covering notes, users, and files.

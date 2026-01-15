@@ -6,11 +6,11 @@ weight = 3
 +++
 
 CRADLE uses an entity-level access control system with three access levels:
-none, read, and read-write. Note access requires read or read-write access to
-all entities referenced in the note.
+`none`, `read`, and `read-write`. Note access requires `read` or `read-write`
+access to all entities referenced in the note.
 
 ## Roles
-- Admin: full permissions for all entities and user management.
-- Manager: manages system configuration and content, excluding user admin.
-- Entry manager: manage entry classes and entity metadata.
-- User: base access for creating and viewing notes.
+- **Admin** has full permissions for all entities and user management.
+- **Manager** manages system configuration and content, excluding user admin.
+- **Entry manager** manages entry classes and entity metadata.
+- **User** provides base access for creating and viewing notes.

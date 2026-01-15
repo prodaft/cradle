@@ -5,11 +5,11 @@ draft = false
 weight = 6
 +++
 
-The editor supports markdown, live preview, and entry linking. It integrates an
-LSP-style completion for entry types and names.
+The editor supports Markdown, live preview, and entry linking. It integrates an
+`LSP`-style completion for entry types and names.
 
 ## Markdown and preview
-- Standard markdown with CRADLE extensions for entry links.
+- Standard Markdown with CRADLE extensions for entry links.
 - Live preview for formatting.
 
 ## Snippets and templates
@@ -17,4 +17,4 @@ LSP-style completion for entry types and names.
 - Default templates can be applied on note creation.
 
 ## Autocomplete
-- LSP endpoints provide entry type completion and suggestions.
+- `LSP` endpoints provide entry type completion and suggestions.

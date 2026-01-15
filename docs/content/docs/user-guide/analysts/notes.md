@@ -9,37 +9,29 @@ CRADLE notes capture analyst thinking and connect evidence as you write. As you
 link entries, CRADLE builds a graph that appears in dashboards and the graph
 explorer.
 
-Notes are composed using extended markdown with syntax highlighting and live
-preview.
+Notes are composed using extended markdown with syntax highlighting and
+live preview.
 
 ## Note syntax
 
 CRADLE extends standard markdown with features for linking entries.
 
 ### Basic markdown support
-- Headers (`#`, `##`, `###`)
-- Lists (bulleted and numbered)
-- Text formatting (bold, italic, strikethrough)
-- Code (inline and blocks)
-- Links and images
-- Tables
-- Blockquotes
+CRADLE supports headers (`#`, `##`, `###`), bulleted and numbered lists, text
+formatting (bold, italic, strikethrough), inline and block code, links and
+images, tables, and blockquotes.
 
 ### Entity and artifact linking
-Use double brackets to link entries by subtype:
-
-- `[[subtype:value]]` links to an entry, for example `[[case:PTI-42]]` or
-  `[[ip:1.1.1.1]]`.
-- `[[subtype:value|alias]]` links to an entry and displays an alias, for
-  example `[[ip:1.1.1.1|C2 IP]]`.
-- Linking with an alias also creates an `alias` entry in the graph, and the
-  original entry is linked to that alias node.
-- When adding links in tables, escape the alias separator, for example
-  `[[ip:1.1.1.1\|C2 IP]]`.
+Use double brackets to link entries by subtype. A basic link looks like
+`[[subtype:value]]`, for example `[[case:PTI-42]]` or `[[ip:1.1.1.1]]`. To
+display an alias, use `[[subtype:value|alias]]`, for example
+`[[ip:1.1.1.1|C2 IP]]`. Linking with an alias also creates an `alias` entry in
+the graph, and the original entry is linked to that alias node. When adding
+links in tables, escape the alias separator, for example `[[ip:1.1.1.1\|C2 IP]]`.
 
 ### Link dates
-If you need link dates to remain stable across note edits, add a date suffix
-after the link in `(MM-DD-YYYY)` format. CRADLE can add these dates
+If you need link dates to remain stable across note edits, add a date
+suffix after the link in `(MM-DD-YYYY)` format. CRADLE can add these dates
 automatically.
 
 Example: `[[ip:1.1.1.1]] (10-10-1000)`.
@@ -51,9 +43,9 @@ in the note.
 Example: `~[[domain:example.com]]`.
 
 ### Best practices
-- Use aliases to improve readability.
-- Keep notes concise. CRADLE aggregates them under related entries.
-- Save work in progress notes as fleeting notes until ready to finalize.
+Use aliases to improve readability, keep notes concise since CRADLE aggregates
+them under related entries, and save work in progress as fleeting notes until
+you are ready to finalize.
 
 ## Adding and referencing files in notes
 

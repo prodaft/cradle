@@ -13,18 +13,15 @@ propagates them to related objects.
 
 ### EventLog model
 
-Each log entry includes:
-- User: the CradleUser who performed the action.
-- Event type: create, delete, edit, fetch, login.
-- Content object: the object the event relates to.
-- Details: optional JSON context.
-- Timestamp: when the event occurred.
-- Source log: optional reference to an originating log.
+Each log entry includes the `CradleUser` who performed the action, the event
+type (`create`, `delete`, `edit`, `fetch`, `login`), the content object the
+event relates to, optional JSON details, a timestamp, and an optional reference
+to an originating log.
 
 ### Custom manager and logging API
 
-EventLogManager provides a log_event() helper that determines the content type
-and creates a log entry with a timestamp.
+`EventLogManager` provides a `log_event()` helper that determines the content
+type and creates a log entry with a timestamp.
 
 ```python
 EventLog.objects.log_event(
@@ -37,19 +34,19 @@ EventLog.objects.log_event(
 
 ### LoggableModelMixin
 
-Models can use LoggableModelMixin to log create, delete, edit, and fetch events.
-The mixin also propagates logs to related objects.
+Models can use `LoggableModelMixin` to log create, delete, edit, and fetch
+events. The mixin also propagates logs to related objects.
 
 ### Utility functions
 
-logs/utils.py formats log entries and provides helpers such as
-log_login_success(), log_entry_creation(), and log_failed_responses().
+`logs/utils.py` formats log entries and provides helpers such as
+`log_login_success()`, `log_entry_creation()`, and `log_failed_responses()`.
 
 ### API, filtering, and admin integration
 
-- API access: EventLogListView exposes logs via REST with filtering.
-- Filtering: supports event type, user, timestamp range, content type, object ID.
-- Admin interface: logs are read-only in Django admin.
+`EventLogListView` exposes logs via REST with filtering for event type, user,
+timestamp range, content type, and object ID. Logs are read-only in Django
+admin.
 
 ## Usage examples
 
@@ -68,8 +65,3 @@ def create_object(request):
 ```python
 instance.log_edit(request.user, details={"changed_field": "value"})
 ```
-
-## Summary
-
-This system provides structured and searchable logs, helper methods for
-integration, API access for monitoring, and consistent formatting for review.
