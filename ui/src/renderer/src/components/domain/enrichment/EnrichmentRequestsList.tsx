@@ -3,6 +3,8 @@ import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { truncateText } from '@/utils/dashboard';
 import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
@@ -10,6 +12,7 @@ import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHe
 import TableActionsButton from '@components/base/TableActionsButton';
 import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { EnrichmentRequestList } from '@services/cradle/models';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import {
@@ -21,6 +24,7 @@ import {
 } from 'iconoir-react';
 import { capitalize } from 'lodash';
 import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 type EnrichmentRequest = EnrichmentRequestList;
 
@@ -91,7 +95,18 @@ function EnrichmentRequestsList({
     onCreateRequest = () => {},
 }: EnrichmentRequestsListProps) {
     const router = useRouter();
+    const { intelioApi } = useApi();
+    const queryClient = useQueryClient();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
+    const [deletingRequestId, setDeletingRequestId] = useState<number | null>(null);
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: number) => intelioApi.enrichmentDetailDelete({ id }),
+        meta: {
+            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
+        },
+    });
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -379,9 +394,8 @@ function EnrichmentRequestsList({
                 cell: ({ row }) => {
                     const request = row.original;
                     const handleDelete = () => {
-                        if (onRequestDelete) {
-                            onRequestDelete();
-                        }
+                        setDeletingRequestId(request.id!);
+                        setSingleDeleteModalOpen(true);
                     };
 
                     return (
@@ -525,6 +539,28 @@ function EnrichmentRequestsList({
                 onConfirm={onDeleteSelected}
                 text={`Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
+            {deletingRequestId !== null && (
+                <ConfirmDeletionModal
+                    open={singleDeleteModalOpen}
+                    onOpenChange={(open) => {
+                        setSingleDeleteModalOpen(open);
+                        if (!open) setDeletingRequestId(null);
+                    }}
+                    text='Are you sure you want to delete this enrichment request? This action is irreversible.'
+                    onConfirm={async () => {
+                        if (deletingRequestId !== null) {
+                            try {
+                                await deleteMutation.mutateAsync(deletingRequestId);
+                                toast.success(
+                                    'Enrichment request deleted successfully',
+                                );
+                            } catch (error) {
+                                toast.error('Failed to delete enrichment request');
+                            }
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 }

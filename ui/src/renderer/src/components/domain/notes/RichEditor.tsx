@@ -2,7 +2,6 @@ import { useTheme } from '@/contexts/ui/ThemeContext';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
-import { useQuery } from '@tanstack/react-query';
 import { CradleEditor } from '@/utils/editor/enhancements';
 import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
 import {
@@ -56,7 +55,7 @@ import { htmlBlockExtension } from '@prosemark/render-html';
 import { indentationMarkers } from '@replit/codemirror-indentation-markers';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
 import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { Prec } from '@uiw/react-codemirror';
 import { NavArrowDown, NavArrowUp } from 'iconoir-react';
@@ -396,7 +395,10 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             indentOnInput(),
             closeBrackets(),
             Prec.highest(
-                keymap.of([...(completionKeymap as any), { key: 'Tab', run: acceptCompletion }] as any) as any,
+                keymap.of([
+                    ...(completionKeymap as any),
+                    { key: 'Tab', run: acceptCompletion },
+                ] as any) as any,
             ),
             keymap.of([
                 indentWithTab,

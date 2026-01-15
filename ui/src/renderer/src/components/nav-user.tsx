@@ -1,9 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import useApi from '@/hooks/api/useApi';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
-import { useRouter } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
 import { LogOut, Settings, User } from 'lucide-react';
 
 import {
@@ -78,7 +78,8 @@ export function NavUser() {
                                             variant={getRoleBadgeVariant(role)}
                                             className='text-[10px] px-1.5 py-0 h-4 leading-none'
                                         >
-                                            {role.charAt(0).toUpperCase() + role.slice(1)}
+                                            {role.charAt(0).toUpperCase() +
+                                                role.slice(1)}
                                         </Badge>
                                     )}
                                 </div>

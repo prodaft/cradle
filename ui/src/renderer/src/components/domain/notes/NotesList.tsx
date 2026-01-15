@@ -122,6 +122,8 @@ export default function NotesList({
     );
     const { notesApi, managementApi } = useApi();
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
+    const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [reportSelectedNotes, setReportSelectedNotes] = useState<
         Array<{ id: string; title: string }>
@@ -787,11 +789,20 @@ export default function NotesList({
                 cell: ({ row }) => {
                     const note = row.original;
                     const handleDelete = () => {
-                        actions[0].handler([note.id!]);
+                        setDeletingNoteId(note.id!);
+                        setSingleDeleteModalOpen(true);
                     };
 
-                    const handleRetry = () => {
-                        handleRetrySelected([note.id!]);
+                    const handleRetry = async () => {
+                        try {
+                            await retryNotesMutation.mutateAsync(note.id!);
+                            toast.success('Retrying note...');
+                            queryClient.invalidateQueries({
+                                queryKey: queryKeys.notes.lists(),
+                            });
+                        } catch (error) {
+                            toast.error('Failed to retry note');
+                        }
                     };
 
                     const handleReport = () => {
@@ -1009,8 +1020,9 @@ export default function NotesList({
                             label: 'Delete',
                             icon: <Trash width={18} height={18} />,
                             onClick: () => {
-                                if (selectedNotes.length > 0)
-                                    actions[0].handler(selectedNotes);
+                                if (selectedNotes.length > 0) {
+                                    setBulkDeleteModalOpen(true);
+                                }
                             },
                             disabled:
                                 loading ||
@@ -1032,6 +1044,34 @@ export default function NotesList({
                 }}
                 text={`Are you sure you want to delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
+            {deletingNoteId && (
+                <ConfirmDeletionModal
+                    open={singleDeleteModalOpen}
+                    onOpenChange={(open) => {
+                        setSingleDeleteModalOpen(open);
+                        if (!open) setDeletingNoteId(null);
+                    }}
+                    text='Are you sure you want to delete this note? This action is irreversible.'
+                    onConfirm={async () => {
+                        if (deletingNoteId) {
+                            try {
+                                await deleteMutation.mutateAsync(deletingNoteId);
+                                setAlert({
+                                    show: true,
+                                    color: 'green',
+                                    message: 'Note deleted successfully',
+                                });
+                            } catch (error) {
+                                setAlert({
+                                    show: true,
+                                    color: 'red',
+                                    message: 'Failed to delete note',
+                                });
+                            }
+                        }
+                    }}
+                />
+            )}
             <ReportGenerationModal
                 open={reportModalOpen}
                 onOpenChange={setReportModalOpen}

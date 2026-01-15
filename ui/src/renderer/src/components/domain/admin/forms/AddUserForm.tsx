@@ -208,87 +208,80 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                 </Field>
 
                 <Field
-                            orientation='horizontal'
-                            data-invalid={Boolean(errors.emailConfirmed)}
-                        >
-                            <FieldContent>
-                                <FieldLabel htmlFor='emailConfirmed'>
-                                    Email Confirmed
-                                </FieldLabel>
-                                <FieldDescription>
-                                    Mark email as confirmed (skip verification)
-                                </FieldDescription>
-                                {errors.emailConfirmed && (
-                                    <FieldError>
-                                        {errors.emailConfirmed.message}
-                                    </FieldError>
-                                )}
-                            </FieldContent>
-                            <Controller
-                                name='emailConfirmed'
-                                control={control}
-                                render={({ field }) => (
-                                    <Switch
-                                        id='emailConfirmed'
-                                        name={field.name}
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                )}
+                    orientation='horizontal'
+                    data-invalid={Boolean(errors.emailConfirmed)}
+                >
+                    <FieldContent>
+                        <FieldLabel htmlFor='emailConfirmed'>
+                            Email Confirmed
+                        </FieldLabel>
+                        <FieldDescription>
+                            Mark email as confirmed (skip verification)
+                        </FieldDescription>
+                        {errors.emailConfirmed && (
+                            <FieldError>{errors.emailConfirmed.message}</FieldError>
+                        )}
+                    </FieldContent>
+                    <Controller
+                        name='emailConfirmed'
+                        control={control}
+                        render={({ field }) => (
+                            <Switch
+                                id='emailConfirmed'
+                                name={field.name}
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                             />
-                        </Field>
+                        )}
+                    />
+                </Field>
 
-                        <Field
-                            orientation='horizontal'
-                            data-invalid={Boolean(errors.isActive)}
-                        >
-                            <FieldContent>
-                                <FieldLabel htmlFor='isActive'>Active</FieldLabel>
-                                <FieldDescription>
-                                    Allow user to login and access the system
-                                </FieldDescription>
-                                {errors.isActive && (
-                                    <FieldError>{errors.isActive.message}</FieldError>
-                                )}
-                            </FieldContent>
-                            <Controller
-                                name='isActive'
-                                control={control}
-                                render={({ field }) => (
-                                    <Switch
-                                        id='isActive'
-                                        name={field.name}
-                                        checked={field.value}
-                                        onCheckedChange={field.onChange}
-                                    />
-                                )}
+                <Field orientation='horizontal' data-invalid={Boolean(errors.isActive)}>
+                    <FieldContent>
+                        <FieldLabel htmlFor='isActive'>Active</FieldLabel>
+                        <FieldDescription>
+                            Allow user to login and access the system
+                        </FieldDescription>
+                        {errors.isActive && (
+                            <FieldError>{errors.isActive.message}</FieldError>
+                        )}
+                    </FieldContent>
+                    <Controller
+                        name='isActive'
+                        control={control}
+                        render={({ field }) => (
+                            <Switch
+                                id='isActive'
+                                name={field.name}
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                             />
-                        </Field>
+                        )}
+                    />
+                </Field>
 
-                        <Field data-invalid={Boolean(errors.fileUploadLimitOverride)}>
-                            <FieldLabel htmlFor='fileUploadLimitOverride'>
-                                File Upload Limit Override
-                            </FieldLabel>
-                            <InputGroup>
-                                <InputGroupInput
-                                    id='fileUploadLimitOverride'
-                                    placeholder='e.g., 100MB, 1GB'
-                                    {...register('fileUploadLimitOverride')}
-                                    aria-invalid={Boolean(
-                                        errors.fileUploadLimitOverride,
-                                    )}
-                                />
-                            </InputGroup>
-                            <FieldDescription>
-                                Custom upload limit (e.g., 100MB, 1GB). Leave empty to
-                                use global default.
-                            </FieldDescription>
-                            {errors.fileUploadLimitOverride && (
-                                <FieldError>
-                                    {errors.fileUploadLimitOverride.message}
-                                </FieldError>
-                            )}
-                        </Field>
+                <Field data-invalid={Boolean(errors.fileUploadLimitOverride)}>
+                    <FieldLabel htmlFor='fileUploadLimitOverride'>
+                        File Upload Limit Override
+                    </FieldLabel>
+                    <InputGroup>
+                        <InputGroupInput
+                            id='fileUploadLimitOverride'
+                            placeholder='e.g., 100MB, 1GB'
+                            {...register('fileUploadLimitOverride')}
+                            aria-invalid={Boolean(errors.fileUploadLimitOverride)}
+                        />
+                    </InputGroup>
+                    <FieldDescription>
+                        Custom upload limit (e.g., 100MB, 1GB). Leave empty to use
+                        global default.
+                    </FieldDescription>
+                    {errors.fileUploadLimitOverride && (
+                        <FieldError>
+                            {errors.fileUploadLimitOverride.message}
+                        </FieldError>
+                    )}
+                </Field>
             </div>
 
             <div className='flex justify-end mt-5'>

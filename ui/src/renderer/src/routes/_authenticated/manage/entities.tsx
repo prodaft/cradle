@@ -5,7 +5,7 @@ import { z } from 'zod';
 const EntitiesPage = lazy(() => import('@/components/domain/admin/pages/EntitiesPage'));
 
 export const Route = createFileRoute(
-    ('/_authenticated/manage/(entry-manager)/entities' as any),
+    '/_authenticated/manage/(entry-manager)/entities' as any,
 )({
     validateSearch: z.object({
         entities_page: z.coerce.number().optional(),

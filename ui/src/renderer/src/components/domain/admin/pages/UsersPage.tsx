@@ -176,9 +176,7 @@ function UserSettingsPage({ userId }: { userId: string }) {
                                                 ? 'bg-muted hover:bg-accent active'
                                                 : ''
                                         }`}
-                                        data-status={
-                                            isActive ? 'active' : undefined
-                                        }
+                                        data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
                                         <span className='me-2'>
@@ -482,9 +480,7 @@ export default function UsersPage() {
                             <div className='flex justify-end'>
                                 <TableActionsButton>
                                     <DropdownMenuItem
-                                        onClick={(e) =>
-                                            handleActivityClick(user, e)
-                                        }
+                                        onClick={(e) => handleActivityClick(user, e)}
                                     >
                                         <ClockRotateRight width='18' height='18' />
                                         View Activity

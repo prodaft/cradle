@@ -1,4 +1,3 @@
-import PageHeader from '@/components/base/PageHeader';
 import AdminSetPasswordModal from '@/components/modals/admin/AdminSetPasswordModal';
 import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
@@ -323,98 +322,97 @@ export default function AdminUserSettings({
                 {showSection('account') && (
                     <section id='account' className='pb-8'>
                         <div className='space-y-4'>
-                                {/* Alert */}
-                                {alert.show && (
-                                    <div className='pt-4'>
-                                        <AlertComponent
-                                            variant={
-                                                alert.color === 'red' ||
-                                                alert.color === 'error'
-                                                    ? 'destructive'
-                                                    : 'default'
-                                            }
-                                        >
-                                            <WarningCircle />
-                                            <AlertDescription>
-                                                {alert.message}
-                                            </AlertDescription>
-                                        </AlertComponent>
-                                    </div>
-                                )}
+                            {/* Alert */}
+                            {alert.show && (
+                                <div className='pt-4'>
+                                    <AlertComponent
+                                        variant={
+                                            alert.color === 'red' ||
+                                            alert.color === 'error'
+                                                ? 'destructive'
+                                                : 'default'
+                                        }
+                                    >
+                                        <WarningCircle />
+                                        <AlertDescription>
+                                            {alert.message}
+                                        </AlertDescription>
+                                    </AlertComponent>
+                                </div>
+                            )}
 
-                                {/* Basic Information Card */}
-                                <SettingsCard>
-                                    <SettingsField
-                                        label='Username'
-                                        description='User display name across the platform'
-                                        placeholder='Username'
-                                        {...register('username')}
-                                        error={errors.username}
-                                    />
+                            {/* Basic Information Card */}
+                            <SettingsCard>
+                                <SettingsField
+                                    label='Username'
+                                    description='User display name across the platform'
+                                    placeholder='Username'
+                                    {...register('username')}
+                                    error={errors.username}
+                                />
 
-                                    <Separator />
+                                <Separator />
 
-                                    <SettingsField
-                                        label='Email'
-                                        description='Used for login and notifications'
+                                <SettingsField
+                                    label='Email'
+                                    description='Used for login and notifications'
+                                    type='text'
+                                    placeholder='Email'
+                                    {...register('email')}
+                                    error={errors.email}
+                                />
+
+                                <Separator />
+
+                                <SettingsField
+                                    label='User ID'
+                                    description='Unique identifier for API integrations'
+                                >
+                                    <Input
                                         type='text'
-                                        placeholder='Email'
-                                        {...register('email')}
-                                        error={errors.email}
+                                        value={user?.id || ''}
+                                        className='opacity-60'
+                                        disabled
+                                        readOnly
                                     />
+                                </SettingsField>
 
-                                    <Separator />
+                                <Separator />
 
-                                    <SettingsField
-                                        label='User ID'
-                                        description='Unique identifier for API integrations'
-                                    >
-                                        <Input
-                                            type='text'
-                                            value={user?.id || ''}
-                                            className='opacity-60'
-                                            disabled
-                                            readOnly
-                                        />
-                                    </SettingsField>
-
-                                    <Separator />
-
-                                    <SettingsField
-                                        label='Role'
-                                        description='Determines access permissions'
-                                        error={errors.role}
-                                    >
-                                        <Controller
-                                            name='role'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Select
-                                                    value={field.value}
-                                                    onValueChange={field.onChange}
-                                                >
-                                                    <SelectTrigger className='w-full'>
-                                                        <SelectValue placeholder='Select a role' />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value='author'>
-                                                            User
-                                                        </SelectItem>
-                                                        <SelectItem value='entrymanager'>
-                                                            Entry Manager
-                                                        </SelectItem>
-                                                        <SelectItem value='admin'>
-                                                            Admin
-                                                        </SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            )}
-                                        />
-                                    </SettingsField>
-                                </SettingsCard>
-
-                            </div>
-                        </section>
+                                <SettingsField
+                                    label='Role'
+                                    description='Determines access permissions'
+                                    error={errors.role}
+                                >
+                                    <Controller
+                                        name='role'
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Select
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <SelectTrigger className='w-full'>
+                                                    <SelectValue placeholder='Select a role' />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value='author'>
+                                                        User
+                                                    </SelectItem>
+                                                    <SelectItem value='entrymanager'>
+                                                        Entry Manager
+                                                    </SelectItem>
+                                                    <SelectItem value='admin'>
+                                                        Admin
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                </SettingsField>
+                            </SettingsCard>
+                        </div>
+                    </section>
                 )}
 
                 {/* Administrative Settings */}

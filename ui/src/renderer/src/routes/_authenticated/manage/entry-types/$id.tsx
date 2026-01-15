@@ -6,7 +6,7 @@ const EntryTypesPage = lazy(
 );
 
 export const Route = createFileRoute(
-    ('/_authenticated/manage/(entry-manager)/entry-types/$id' as any),
+    '/_authenticated/manage/(entry-manager)/entry-types/$id' as any,
 )({
     component: EntryTypesPage,
 });

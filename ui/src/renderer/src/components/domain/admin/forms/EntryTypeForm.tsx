@@ -668,7 +668,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                         </section>
 
                         {/* Save Button */}
-                        <div className='border-t border-white/5 pt-5 flex justify-end'>
+                        <div className='pt-2 flex justify-end'>
                             <Button
                                 type='submit'
                                 variant='default'

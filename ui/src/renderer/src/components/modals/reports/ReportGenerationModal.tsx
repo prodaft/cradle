@@ -107,6 +107,8 @@ export default function ReportGenerationModal({
         );
     }, [selectedNotes, noteId, noteTitle]);
 
+    const isSingleNote = targets.length === 1;
+
     // Track selected note IDs
     const [selectedIds, setSelectedIds] = useState<Set<string>>(
         () => new Set(targets.map((t) => t.id)),
@@ -146,7 +148,10 @@ export default function ReportGenerationModal({
             return;
         }
 
-        const validTargets = targets.filter((t) => selectedIds.has(t.id));
+        // For single note, use all targets; for bulk, filter by selection
+        const validTargets = isSingleNote
+            ? targets
+            : targets.filter((t) => selectedIds.has(t.id));
 
         if (validTargets.length === 0) {
             toast.error('No notes selected for report generation.');
@@ -167,13 +172,14 @@ export default function ReportGenerationModal({
                 <DialogHeader>
                     <DialogTitle>Generate Report</DialogTitle>
                     <DialogDescription>
-                        Generate reports from selected notes in various formats (HTML,
-                        JSON, or plain text).
+                        {isSingleNote
+                            ? `Generate a report from "${targets[0]?.title || 'Untitled'}" in various formats (HTML, JSON, or plain text).`
+                            : 'Generate reports from selected notes in various formats (HTML, JSON, or plain text).'}
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* Selected Notes List */}
-                {targets.length > 0 && (
+                {/* Selected Notes List - Only show for bulk operations */}
+                {!isSingleNote && targets.length > 0 && (
                     <div className='mb-5'>
                         <Label>Selected Notes ({selectedIds.size})</Label>
                         <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>

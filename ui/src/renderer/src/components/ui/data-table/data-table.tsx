@@ -252,8 +252,7 @@ export function DataTable<TData, TValue>({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
+                                                      header.column.columnDef.header,
                                                       header.getContext(),
                                                   )}
                                         </TableHead>
@@ -265,16 +264,16 @@ export function DataTable<TData, TValue>({
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
                             table.getRowModel().rows.map((row) => (
-                                    <TableRow
-                                        key={row.id}
-                                        data-state={row.getIsSelected() && 'selected'}
-                                        className={onRowClick ? 'cursor-pointer' : ''}
-                                        onClick={
-                                            onRowClick
-                                                ? () => onRowClick(row.original)
-                                                : undefined
-                                        }
-                                    >
+                                <TableRow
+                                    key={row.id}
+                                    data-state={row.getIsSelected() && 'selected'}
+                                    className={onRowClick ? 'cursor-pointer' : ''}
+                                    onClick={
+                                        onRowClick
+                                            ? () => onRowClick(row.original)
+                                            : undefined
+                                    }
+                                >
                                     {row.getVisibleCells().map((cell) => (
                                         <TableCell key={cell.id}>
                                             {flexRender(
@@ -334,7 +333,10 @@ export function DataTable<TData, TValue>({
                             key={action.id}
                             onClick={(e) => {
                                 e.preventDefault();
-                                action.onClick();
+                                e.stopPropagation();
+                                if (!action.disabled) {
+                                    action.onClick();
+                                }
                             }}
                             disabled={action.disabled}
                             variant={action.variant}

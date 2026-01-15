@@ -7,7 +7,7 @@ const EnrichmentPage = lazy(
 );
 
 export const Route = createFileRoute(
-    ('/_authenticated/manage/(entry-manager)/enrichment' as any),
+    '/_authenticated/manage/(entry-manager)/enrichment' as any,
 )({
     validateSearch: z.object({
         tab: z.string().optional(),

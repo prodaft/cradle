@@ -42,7 +42,6 @@ export * from './auth';
 // Query hooks (TanStack Query)
 export * from './query';
 
-
 // Navigation hooks (currently empty - use TanStack Router directly)
 
 // Search hooks
