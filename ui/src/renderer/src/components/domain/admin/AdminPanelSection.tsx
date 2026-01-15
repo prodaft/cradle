@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
 import { PlusCircle, Search, Xmark } from 'iconoir-react';
-import { useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 
 interface AdminPanelSectionProps {
     title: string;
@@ -19,6 +19,12 @@ interface AdminPanelSectionProps {
     handleAdd: (addItemCallback: (item: SearchableChild) => void) => void;
     children: SearchableChild[] | null;
     isLoading?: boolean;
+    searchValue?: string;
+    onSearchChange?: (value: string) => void;
+    onSearchClear?: () => void;
+    enableFrontendSearch?: boolean;
+    footer?: ReactNode;
+    searchPlaceholder?: string;
 }
 
 /**
@@ -37,6 +43,12 @@ export default function AdminPanelSection({
     handleAdd,
     children,
     isLoading = false,
+    searchValue,
+    onSearchChange,
+    onSearchClear,
+    enableFrontendSearch = true,
+    footer,
+    searchPlaceholder = 'Search',
 }: AdminPanelSectionProps) {
     const [addedItems, setAddedItems] = useState<SearchableChild[]>([]);
     const combinedItems = useMemo(
@@ -45,14 +57,30 @@ export default function AdminPanelSection({
     );
     const { searchVal, setSearchVal, filteredChildren } =
         useFrontendSearch(combinedItems);
+    const effectiveSearchValue = onSearchChange ? searchValue || '' : searchVal;
+    const handleSearchValueChange = (value: string) => {
+        if (onSearchChange) {
+            onSearchChange(value);
+            return;
+        }
+        setSearchVal(value);
+    };
+    const handleSearchValueClear = () => {
+        if (onSearchClear) {
+            onSearchClear();
+            return;
+        }
+        setSearchVal('');
+    };
+    const visibleChildren = enableFrontendSearch ? filteredChildren : combinedItems;
     // Sort the filtered children based on their key property
-    const sortedFilteredChildren = filteredChildren
-        ? filteredChildren.sort((a, b) => {
-              // Convert keys to strings to ensure proper lexicographical comparison
-              const aKey = a.key?.toString() || '';
-              const bKey = b.key?.toString() || '';
-              return naturalSort(aKey, bKey);
-          })
+    const sortedFilteredChildren = visibleChildren
+        ? visibleChildren.sort((a, b) => {
+            // Convert keys to strings to ensure proper lexicographical comparison
+            const aKey = a.key?.toString() || '';
+            const bKey = b.key?.toString() || '';
+            return naturalSort(aKey, bKey);
+        })
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>

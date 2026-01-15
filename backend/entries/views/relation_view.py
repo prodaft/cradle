@@ -109,9 +109,9 @@ class RelationDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
+        operation_id="entries_relations_retrieve",
         summary="Get relation details",
         description="Retrieves detailed information about a relation including its attachments with presigned URLs.",
-        operation_id="entries_relations_retrieve",
         responses={
             200: RelationDetailSerializer,
             404: {"description": "Relation not found"},
@@ -128,9 +128,9 @@ class RelationDetailView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
+        operation_id="entries_relations_destroy",
         summary="Delete a relation",
         description="Deletes a specific relation by ID. Only admin users can perform this action.",
-        operation_id="entries_relations_destroy",
         responses={
             204: {"description": "No content - relation deleted successfully"},
             **get_common_error_responses(),

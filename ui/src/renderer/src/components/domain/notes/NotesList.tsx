@@ -54,6 +54,8 @@ interface Query {
     editor__username?: string;
     date?: string;
     references?: string[];
+    linked_to?: number | string;
+    linked_to_exact_match?: boolean;
     created_date_from?: string;
     created_date_to?: string;
     updated_date_from?: string;
@@ -279,12 +281,12 @@ export default function NotesList({
     };
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        {
-            author: (value) => handleColumnFilter('author', value),
-            editor: (value) => handleColumnFilter('editor', value),
-            createdAt: (value) => handleColumnFilter('createdAt', value),
-            lastChanged: (value) => handleColumnFilter('lastChanged', value),
-        };
+    {
+        author: (value) => handleColumnFilter('author', value),
+        editor: (value) => handleColumnFilter('editor', value),
+        createdAt: (value) => handleColumnFilter('createdAt', value),
+        lastChanged: (value) => handleColumnFilter('lastChanged', value),
+    };
 
     const handleStatusChange = (status: string) => {
         setColumnFilters((prev) => ({
@@ -572,11 +574,11 @@ export default function NotesList({
 
         return columnId
             ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
+                {
+                    id: columnId,
+                    desc: sortDirection === 'desc',
+                },
+            ]
             : [];
     }, [sortField, sortDirection]);
 

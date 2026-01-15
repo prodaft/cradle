@@ -97,6 +97,12 @@ from ..serializers import (
                 required=False,
             ),
             OpenApiParameter(
+                name="linked_to",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter notes by being linked to a specific entry",
+            ),
+            OpenApiParameter(
                 name="timestamp_gte",
                 type=str,
                 location=OpenApiParameter.QUERY,
@@ -191,6 +197,7 @@ class NoteList(APIView):
                 matching_entries=references_at_least
             )
         elif "linked_to" in request.query_params:
+            queryset = queryset.non_fleeting()
             entryid = request.query_params.get("linked_to")
             entry = Entry.objects.filter(id=entryid)
 
@@ -529,13 +536,6 @@ class NoteFinalize(APIView):
                 location=OpenApiParameter.QUERY,
                 description="Number of files to return per page. Max 200.",
                 default=10,
-            ),
-            OpenApiParameter(
-                name="linked_to_exact_match",
-                type=bool,
-                location=OpenApiParameter.QUERY,
-                description="Whether to require exact match for linked_to filter",
-                default=False,
             ),
             OpenApiParameter(
                 name="keyword",

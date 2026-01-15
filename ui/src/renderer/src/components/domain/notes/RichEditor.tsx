@@ -372,16 +372,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             }),
             ...(!source
                 ? [
-                      prosemarkBasicSetup(),
-                      prosemarkBaseThemeSetup(),
-                      htmlBlockExtension,
-                      codeBlockCopyExtension,
-                      clickLinkHandler.of((url: string) => {
-                          window.open(url, '_blank', 'noopener,noreferrer');
-                      }),
-                      // Syntax highlighting for both modes
-                      baseSyntaxHighlights,
-                  ]
+                    prosemarkBasicSetup(),
+                    prosemarkBaseThemeSetup(),
+                    htmlBlockExtension,
+                    codeBlockCopyExtension,
+                    clickLinkHandler.of((url: string) => {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                    }),
+                    // Syntax highlighting for both modes
+                    baseSyntaxHighlights,
+                ]
                 : [sourceModeSyntaxHighlighting]),
             pasteHandler,
             Prec.high(cradleTheme),

@@ -1,7 +1,7 @@
 +++
 date = '2025-03-05T12:55:51+01:00'
 draft = false
-title = 'CRADLE Intelligence Hub'
+title = 'CRADLE Security Hub'
 layout = "hextra-home"
 +++
 
@@ -18,18 +18,18 @@ layout = "hextra-home"
 
 <div class="hx-mt-6 hx-mb-6">
 {{< hextra/hero-headline >}}
-  CRADLE Intelligence Hub
+  CRADLE Security Hub
 {{< /hextra/hero-headline >}}
 </div>
 
 <div class="hx-mt-6 hx-mb-6">
 {{< hextra/hero-subtitle >}}
-Batteries included collaborative knowledge management solution for threat intelligence researchers.
+Batteries-included knowledge management solution for cyber threat hunters and defensive security practitioners.
 {{< /hextra/hero-subtitle >}}
 </div>
 
 <div class="hx-mt-6 hx-mb-6">
-{{< hextra/hero-button text="Get Started" link="docs/getting-started" >}}
+{{< hextra/hero-button text="Get Started" link="docs/user-guide" >}}
 </div>
 {{< /hextra/hero-container >}}
 
@@ -38,53 +38,50 @@ Batteries included collaborative knowledge management solution for threat intell
 <div class="hx-mt-6"></div>
 <div class="hx-mt-6"></div>
 
-{{< hextra/feature-grid >}}
-  {{< hextra/feature-card
-    title="Intuitive Dashboards"
-    subtitle="Centralize insights and access linked notes effortlessly."
-    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-md:hx-min-h-[340px]"
-    image="images/screenshots/dashboard.png"
-    imageClass="hx-top-[40%] hx-left-[24px] hx-w-[180%] sm:hx-w-[110%] dark:hx-opacity-80"
-    style="background: radial-gradient(ellipse at 50% 80%,rgba(194,97,254,0.15),hsla(0,0%,100%,0));"
-  >}}
-  {{< hextra/feature-card
-    title="Graph Explorer"
-    subtitle="Visualize and traverse relationships between artifacts using the graph visualizer."
-    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-lg:hx-min-h-[340px] hextra-feature-card"
-    image="images/screenshots/graph_bfs.png"
-    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[180%] sm:hx-w-[110%] dark:hx-opacity-80"
-    style="background: radial-gradient(ellipse at 50% 80%,rgba(142,53,74,0.15),hsla(0,0%,100%,0));"
-  >}}
-  {{< hextra/feature-card
-    title="Rich Markdown Editor"
-    subtitle="Craft detailed notes with live preview and extended markdown features, aided by smart linking."
-    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-lg:hx-min-h-[340px] hextra-feature-card"
-    image="images/screenshots/editor.png"
-    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[110%] sm:hx-w-[110%] dark:hx-opacity-80"
-    style="background: radial-gradient(ellipse at 50% 80%,rgba(221,210,59,0.15),hsla(0,0%,100%,0));"
-  >}}
-  {{< hextra/feature-card
-    title="Case Correlation"
-    subtitle="Explore connections between cases with pathfinding."
-    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-lg:hx-min-h-[340px] hextra-feature-card"
-    image="images/screenshots/3d_pathfind.png"
-    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[180%] sm:hx-w-[110%] dark:hx-opacity-80"
-    style="background: radial-gradient(ellipse at 50% 80%,rgba(142,53,74,0.15),hsla(0,0%,100%,0));"
-  >}}
-  {{< hextra/feature-card
-    title="Custom Reports"
-    subtitle="Generate and export comprehensive analysis reports effortlessly."
-    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-lg:hx-min-h-[340px] hextra-feature-card"
-    image="images/screenshots/reports.png"
-    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[110%] sm:hx-w-[110%] dark:hx-opacity-80"
-    style="background: radial-gradient(ellipse at 50% 80%,rgba(221,210,59,0.15),hsla(0,0%,100%,0));"
-  >}}
-  {{< hextra/feature-card
-    title="Secure Publishing"
-    subtitle="Share anonymized insights safely while protecting sensitive data."
-    class="hx-aspect-auto md:hx-aspect-[1.1/1] max-lg:hx-min-h-[340px] hextra-feature-card"
-    image="images/screenshots/anonymized_html.png"
-    imageClass="hx-top-[40%] hx-left-[36px] hx-w-[110%] sm:hx-w-[110%] dark:hx-opacity-80"
-    style="background: radial-gradient(ellipse at 50% 80%,rgba(221,210,59,0.15),hsla(0,0%,100%,0));"
-  >}}
-{{< /hextra/feature-grid >}}
+<div class="cradle-feature-lines">
+  <div class="cradle-feature-line">
+    {{< hextra/feature-card
+      title="Unified Case Workspace"
+      subtitle="All the information you have about a case or artifact is collected in a single view, instead of being scattered accross many pages. You can save all your findings in CRADLE and let it worry about comparing with external sources."
+      class="cradle-feature-card"
+      image="images/screenshots/dashboard.png"
+      imageClass="cradle-feature-card-image"
+    >}}
+  </div>
+  <div class="cradle-feature-line">
+    {{< hextra/feature-card
+      title="Granular Access Control"
+      subtitle="Managing a team is tricky, especially if you are dealing with sensitive data. CRADLE allows you to control access policy on a case-by-case level and grant/revoke permissions with ease."
+      class="cradle-feature-card"
+      image="images/screenshots/editor.png"
+      imageClass="cradle-feature-card-image"
+    >}}
+  </div>
+  <div class="cradle-feature-line">
+    {{< hextra/feature-card
+      title="Flexible & Schema-Free"
+      subtitle="Save your findings, in your way. CRADLE is here to adapt to your workflow and your needs. No more rigid forms, and predefined types. Define your own artifact types and just write down your findings in plain markdown. CRADLE will link everything for you!"
+      class="cradle-feature-card"
+      image="images/screenshots/editor.png"
+      imageClass="cradle-feature-card-image"
+    >}}
+  </div>
+  <div class="cradle-feature-line">
+    {{< hextra/feature-card
+      title="Graph-Based Relationship Analysis"
+      subtitle="Not all correlations are easy to spot through a textual interface. CRADLE offers a strong graph visualization of your data so you can find hidden connections between cases."
+      class="cradle-feature-card"
+      image="images/screenshots/graph_bfs.png"
+      imageClass="cradle-feature-card-image"
+    >}}
+  </div>
+  <div class="cradle-feature-line">
+    {{< hextra/feature-card
+      title="Effortless Reporting & Sharing"
+      subtitle="Say goodbye to writing reports. Share your findings accross teams easily with CRADLE's reporting functionality, by either sending a beautiful HTML report or a data pack that can be ported accross CRADLE instances."
+      class="cradle-feature-card"
+      image="images/screenshots/reports.png"
+      imageClass="cradle-feature-card-image"
+    >}}
+  </div>
+</div>

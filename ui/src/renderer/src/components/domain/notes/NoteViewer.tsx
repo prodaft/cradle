@@ -19,7 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { useAuthState } from '@/hooks/auth';
+import { useAuthActions, useAuthState } from '@/hooks/auth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import { parseAPIError } from '@/utils/api';
@@ -85,6 +85,14 @@ export default function NoteViewer() {
     const locationState = (location.state as LocationState) || {};
     const { isAdmin } = useAuthState();
     const { from, state } = locationState;
+    const { isLoggedIn } = useAuthActions();
+    const { usersApi } = useApi();
+    const { data: profile } = useQuery({
+        queryKey: queryKeys.users.detail('me'),
+        queryFn: () => usersApi.usersRetrieve({ userId: 'me' }),
+        enabled: isLoggedIn(),
+        meta: { showErrorToast: false },
+    });
     const [note, setNote] = useState<NoteRetrieve | null>(null);
     const [richEditor, setRichEditor] = useState(
         localStorage.getItem('richEditor')
@@ -601,6 +609,17 @@ export default function NoteViewer() {
                                 noteStatus={note.status || null}
                                 noteStatusMessage={note.statusMessage}
                             />
+                        )}
+                        {profile?.vimMode && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className='inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs bg-cradle-bg-secondary text-cradle-text-secondary border border-cradle-border-accent'>
+                                        <span className='w-1.5 h-1.5 rounded-full bg-green-500' />
+                                        <span className='cradle-mono'>Vim</span>
+                                    </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Vim mode enabled</TooltipContent>
+                            </Tooltip>
                         )}
                         {note && <NoteMetadata note={note} isFleeting={isFleeting} />}
                     </div>

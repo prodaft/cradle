@@ -177,6 +177,7 @@ class UserRetrieveSerializer(serializers.ModelSerializer):
             "vim_mode",
             "email_confirmed",
             "catalyst_api_key",
+            "file_upload_limit_override",
             "theme",
             "oauth_connections",
         ]

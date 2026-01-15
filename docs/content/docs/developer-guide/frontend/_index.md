@@ -1,8 +1,8 @@
 +++
-title = "Frontend Development Guide"
+title = "Frontend"
 date = "2025-03-05T12:55:52+01:00"
-linkTitle = "Frontend"
 draft = false
+weight = 2
 +++
 
 Welcome to the **Frontend Development Guide** for CRADLE. This guide is designed for frontend developers working on CRADLE's React application. Here, you'll find detailed insights into the code structure, architecture, and instructions for setting up and launching the frontend locally.
@@ -64,12 +64,20 @@ bun run prettier
 
 ## Topics Covered
 
-This guide includes detailed sections on:
+This section covers frontend architecture and development workflows.
 
-{{< cards >}}
-  {{< card link="quickstart" title="Quickstart" icon="clock" >}}
-  {{< card link="structure" title="App Structure" icon="view-grid" >}}
-  {{< card link="troubles" title="Troubleshooting" icon="question-mark-circle" >}}
+{{< cards columns="2" >}}
+{{< card link="architecture" title="Architecture Overview" icon="code" >}}
+{{< card link="app-structure" title="App Structure" icon="view-grid" >}}
+{{< card link="state-data-flow" title="State and Data Flow" icon="switch-horizontal" >}}
+{{< card link="api-client" title="API Client" icon="server" >}}
+{{< card link="component-design" title="Component Design" icon="collection" >}}
+{{< card link="editor" title="Editor Features" icon="pencil-alt" >}}
+{{< card link="graph-ui" title="Graph UI" icon="sparkles" >}}
+{{< card link="files-ui" title="Files UI" icon="paper-clip" >}}
+{{< card link="reports-ui" title="Reports UI" icon="download" >}}
+{{< card link="admin-ui" title="Admin UI" icon="adjustments" >}}
+{{< card link="tooling-scripts" title="Tooling and Scripts" icon="terminal" >}}
+{{< card link="testing" title="Testing" icon="beaker" >}}
+{{< card link="troubleshooting" title="Troubleshooting" icon="support" >}}
 {{< /cards >}}
-
-Happy coding and thank you for contributing to the CRADLE frontend!

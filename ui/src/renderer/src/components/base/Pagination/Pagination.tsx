@@ -33,6 +33,8 @@ export interface PaginationProps extends React.ComponentProps<'div'> {
     selectedCount?: number;
     /** Total number of rows */
     totalRows?: number;
+    /** Use a tighter horizontal layout */
+    compact?: boolean;
 }
 
 /**

@@ -5,7 +5,6 @@ import {
 } from '@/components/ui/resizable';
 import { EdgeRelation } from '@/services/cradle';
 import { logger } from '@/utils/logger';
-import InProgress from '@components/feedback/InProgress';
 import { CosmographProvider } from '@cosmograph/react';
 import { ComponentType, useMemo, useRef, useState } from 'react';
 import Graph from './Graph';
@@ -39,10 +38,6 @@ interface GraphExplorerProps {
 }
 
 export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerProps) {
-    if (import.meta.env.VITE_ENV === 'production') {
-        return <InProgress />;
-    }
-
     const [nodes, setNodes] = useState<Node[]>([]);
     const [edges, setEdges] = useState<EdgeRelation[]>([]);
     const [disabledTypes, setDisabledTypes] = useState<Set<string>>(new Set());
@@ -230,9 +225,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                                     edges={filteredEdges}
                                     activePanel={
                                         activePanel as
-                                            | 'explorer'
-                                            | 'display'
-                                            | 'filters'
+                                        | 'explorer'
+                                        | 'display'
+                                        | 'filters'
                                     }
                                     onClosePanel={() => setActivePanel(null)}
                                     cosmographRef={cosmographRef}

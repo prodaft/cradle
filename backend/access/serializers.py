@@ -18,6 +18,7 @@ class AccessEntitySerializer(serializers.Serializer):
     id = serializers.IntegerField(required=True)
     name = serializers.CharField(max_length=200)
     access_type = serializers.CharField(max_length=200, default=AccessType.NONE)
+    description = serializers.CharField(max_length=400)
 
     def to_representation(self, obj: dict) -> dict:
         """Takes an Entity with access object dictionary and fills in

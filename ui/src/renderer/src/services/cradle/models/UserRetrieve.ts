@@ -13,7 +13,6 @@
  * Do not edit the class manually.
  */
 
-import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -78,6 +77,12 @@ export interface UserRetrieve {
      */
     readonly catalystApiKey?: boolean;
     /**
+     * File upload limit in bytes
+     * @type {number}
+     * @memberof UserRetrieve
+     */
+    fileUploadLimitOverride?: number | null;
+    /**
      * Theme to use in the UI
      * 
      * * `dark` - Dark
@@ -134,7 +139,8 @@ export function UserRetrieveFromJSONTyped(json: any, ignoreDiscriminator: boolea
         return json;
     }
     return {
-        
+
+
         'id': json['id'] == null ? undefined : json['id'],
         'username': json['username'],
         'email': json['email'],
@@ -144,6 +150,7 @@ export function UserRetrieveFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'vimMode': json['vim_mode'] == null ? undefined : json['vim_mode'],
         'emailConfirmed': json['email_confirmed'] == null ? undefined : json['email_confirmed'],
         'catalystApiKey': json['catalyst_api_key'] == null ? undefined : json['catalyst_api_key'],
+        'fileUploadLimitOverride': json['file_upload_limit_override'] == null ? undefined : json['file_upload_limit_override'],
         'theme': json['theme'] == null ? undefined : json['theme'],
         'oauthConnections': json['oauth_connections'] == null ? undefined : json['oauth_connections'],
     };
@@ -153,13 +160,14 @@ export function UserRetrieveToJSON(json: any): UserRetrieve {
     return UserRetrieveToJSONTyped(json, false);
 }
 
-export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id'|'catalyst_api_key'|'oauth_connections'> | null, ignoreDiscriminator: boolean = false): any {
+export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id' | 'catalyst_api_key' | 'oauth_connections'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
 
     return {
-        
+
+
         'username': value['username'],
         'email': value['email'],
         'role': value['role'],
@@ -167,6 +175,7 @@ export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id'|'catalys
         'is_active': value['isActive'],
         'vim_mode': value['vimMode'],
         'email_confirmed': value['emailConfirmed'],
+        'file_upload_limit_override': value['fileUploadLimitOverride'],
         'theme': value['theme'],
     };
 }
