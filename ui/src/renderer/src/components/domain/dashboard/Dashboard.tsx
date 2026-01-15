@@ -33,8 +33,8 @@ export default function Dashboard() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const location = useLocation();
     const { params } = useTabContext();
-    const subtype = params.subtype;
-    const name = params.name;
+    const subtype = decodeURI(params.subtype || '');
+    const name = decodeURI(params.name || '');
     const [entryMissing, setEntryMissing] = useState(false);
     const [contentObject, setContentObject] = useState<EntryResponse | null>(null);
     const { notify } = useNotif();
@@ -89,7 +89,7 @@ export default function Dashboard() {
             .then(() => {
                 navigate('/');
             })
-            .catch(() => {});
+            .catch(() => { });
     };
 
     if (entryMissing) {
