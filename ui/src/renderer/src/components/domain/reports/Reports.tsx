@@ -1,6 +1,6 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
@@ -767,7 +767,7 @@ export default function Reports() {
                     bulkActions={[
                         {
                             id: 'download',
-                            label: 'Download reports',
+                            label: 'Download',
                             icon: <Download width={18} height={18} />,
                             onClick: () => handleDownload(selectedReports),
                             disabled:
@@ -776,8 +776,18 @@ export default function Reports() {
                                 selectedReports.length === 0,
                         },
                         {
+                            id: 'retry',
+                            label: 'Retry',
+                            icon: <RefreshCircle width={18} height={18} />,
+                            onClick: () => handleRetry(selectedReports),
+                            disabled:
+                                loading ||
+                                reports.length === 0 ||
+                                selectedReports.length === 0,
+                        },
+                        {
                             id: 'delete',
-                            label: 'Delete reports',
+                            label: 'Delete',
                             icon: <Trash width={18} height={18} />,
                             onClick: () => handleDelete(selectedReports),
                             disabled:
@@ -785,16 +795,6 @@ export default function Reports() {
                                 reports.length === 0 ||
                                 selectedReports.length === 0,
                             variant: 'destructive',
-                        },
-                        {
-                            id: 'retry',
-                            label: 'Retry reports',
-                            icon: <RefreshCircle width={18} height={18} />,
-                            onClick: () => handleRetry(selectedReports),
-                            disabled:
-                                loading ||
-                                reports.length === 0 ||
-                                selectedReports.length === 0,
                         },
                     ]}
                     itemLabel='report'

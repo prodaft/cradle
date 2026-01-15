@@ -1,6 +1,6 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -950,22 +950,8 @@ export default function NotesList({
                     }
                     bulkActions={[
                         {
-                            id: 'delete',
-                            label: 'Delete notes',
-                            icon: <Trash width={18} height={18} />,
-                            onClick: () => {
-                                if (selectedNotes.length > 0)
-                                    actions[0].handler(selectedNotes);
-                            },
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                            variant: 'destructive',
-                        },
-                        {
                             id: 'retry',
-                            label: 'Retry notes',
+                            label: 'Retry',
                             icon: <RefreshCircle width={18} height={18} />,
                             onClick: () => handleRetrySelected(selectedNotes),
                             disabled:
@@ -975,7 +961,7 @@ export default function NotesList({
                         },
                         {
                             id: 'report',
-                            label: 'Generate report',
+                            label: 'Report',
                             icon: <StatsReport width={18} height={18} />,
                             onClick: () => {
                                 if (selectedNotes.length === 0) return;
@@ -996,7 +982,7 @@ export default function NotesList({
                         },
                         {
                             id: 'enrich',
-                            label: 'Enrich notes',
+                            label: 'Enrich',
                             icon: <Sparks width={18} height={18} />,
                             onClick: () => {
                                 if (selectedNotes.length === 0) return;
@@ -1017,6 +1003,20 @@ export default function NotesList({
                                 loading ||
                                 selectedNotes.length === 0 ||
                                 notes.length === 0,
+                        },
+                        {
+                            id: 'delete',
+                            label: 'Delete',
+                            icon: <Trash width={18} height={18} />,
+                            onClick: () => {
+                                if (selectedNotes.length > 0)
+                                    actions[0].handler(selectedNotes);
+                            },
+                            disabled:
+                                loading ||
+                                selectedNotes.length === 0 ||
+                                notes.length === 0,
+                            variant: 'destructive',
                         },
                     ]}
                     itemLabel='note'

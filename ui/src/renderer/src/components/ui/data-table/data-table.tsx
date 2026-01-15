@@ -23,7 +23,7 @@ import {
     ContextMenuSeparator,
     ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { DataTablePagination } from '@/components/ui/data-table-pagination';
+import { DataTablePagination } from '@/components/ui/data-table/data-table-pagination';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -238,34 +238,33 @@ export function DataTable<TData, TValue>({
     const hasBulkActions = bulkActions.length > 0 && enableRowSelection;
     const showContextMenu = hasBulkActions && selectedCount > 0;
 
-    const tableContent = (
-        <>
-            <ScrollArea className='w-full'>
-                <ScrollBar orientation='horizontal' />
-                <div className='rounded-md border'>
-                    <Table>
-                        <TableHeader>
-                            {table.getHeaderGroups().map((headerGroup) => (
-                                <TableRow key={headerGroup.id}>
-                                    {headerGroup.headers.map((header) => {
-                                        return (
-                                            <TableHead key={header.id}>
-                                                {header.isPlaceholder
-                                                    ? null
-                                                    : flexRender(
-                                                          header.column.columnDef
-                                                              .header,
-                                                          header.getContext(),
-                                                      )}
-                                            </TableHead>
-                                        );
-                                    })}
-                                </TableRow>
-                            ))}
-                        </TableHeader>
-                        <TableBody>
-                            {table.getRowModel().rows?.length ? (
-                                table.getRowModel().rows.map((row) => (
+    const tableElement = (
+        <ScrollArea className='w-full'>
+            <ScrollBar orientation='horizontal' />
+            <div className='rounded-md border'>
+                <Table>
+                    <TableHeader>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <TableRow key={headerGroup.id}>
+                                {headerGroup.headers.map((header) => {
+                                    return (
+                                        <TableHead key={header.id}>
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                      header.column.columnDef
+                                                          .header,
+                                                      header.getContext(),
+                                                  )}
+                                        </TableHead>
+                                    );
+                                })}
+                            </TableRow>
+                        ))}
+                    </TableHeader>
+                    <TableBody>
+                        {table.getRowModel().rows?.length ? (
+                            table.getRowModel().rows.map((row) => (
                                     <TableRow
                                         key={row.id}
                                         data-state={row.getIsSelected() && 'selected'}
@@ -276,30 +275,76 @@ export function DataTable<TData, TValue>({
                                                 : undefined
                                         }
                                     >
-                                        {row.getVisibleCells().map((cell) => (
-                                            <TableCell key={cell.id}>
-                                                {flexRender(
-                                                    cell.column.columnDef.cell,
-                                                    cell.getContext(),
-                                                )}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={columns.length}
-                                        className='h-24 text-center'
-                                    >
-                                        {emptyMessage}
-                                    </TableCell>
+                                    {row.getVisibleCells().map((cell) => (
+                                        <TableCell key={cell.id}>
+                                            {flexRender(
+                                                cell.column.columnDef.cell,
+                                                cell.getContext(),
+                                            )}
+                                        </TableCell>
+                                    ))}
                                 </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-            </ScrollArea>
+                            ))
+                        ) : (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={columns.length}
+                                    className='h-24 text-center'
+                                >
+                                    {emptyMessage}
+                                </TableCell>
+                            </TableRow>
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
+        </ScrollArea>
+    );
+
+    if (!showContextMenu) {
+        return (
+            <>
+                {tableElement}
+                {showPagination && (
+                    <div className='flex-shrink-0 -mt-3 py-2'>
+                        <DataTablePagination
+                            table={table}
+                            pageSizeOptions={pageSizeOptions}
+                        />
+                    </div>
+                )}
+            </>
+        );
+    }
+
+    return (
+        <>
+            <ContextMenu>
+                <ContextMenuTrigger asChild>
+                    <div className='w-full'>{tableElement}</div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                    <ContextMenuLabel>
+                        {selectedCount} {itemLabel}
+                        {selectedCount !== 1 ? 's' : ''} selected
+                    </ContextMenuLabel>
+                    <ContextMenuSeparator />
+                    {bulkActions.map((action) => (
+                        <ContextMenuItem
+                            key={action.id}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                action.onClick();
+                            }}
+                            disabled={action.disabled}
+                            variant={action.variant}
+                        >
+                            {action.icon && <span className='mr-2'>{action.icon}</span>}
+                            {action.label}
+                        </ContextMenuItem>
+                    ))}
+                </ContextMenuContent>
+            </ContextMenu>
             {showPagination && (
                 <div className='flex-shrink-0 -mt-3 py-2'>
                     <DataTablePagination
@@ -309,33 +354,5 @@ export function DataTable<TData, TValue>({
                 </div>
             )}
         </>
-    );
-
-    if (!showContextMenu) {
-        return tableContent;
-    }
-
-    return (
-        <ContextMenu>
-            <ContextMenuTrigger asChild>{tableContent}</ContextMenuTrigger>
-            <ContextMenuContent>
-                <ContextMenuLabel>
-                    {selectedCount} {itemLabel}
-                    {selectedCount !== 1 ? 's' : ''} selected
-                </ContextMenuLabel>
-                <ContextMenuSeparator />
-                {bulkActions.map((action) => (
-                    <ContextMenuItem
-                        key={action.id}
-                        onClick={action.onClick}
-                        disabled={action.disabled}
-                        variant={action.variant}
-                    >
-                        {action.icon && <span className='mr-2'>{action.icon}</span>}
-                        {action.label}
-                    </ContextMenuItem>
-                ))}
-            </ContextMenuContent>
-        </ContextMenu>
     );
 }

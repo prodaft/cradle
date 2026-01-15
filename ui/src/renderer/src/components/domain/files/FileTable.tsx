@@ -1,6 +1,6 @@
 import { ConfirmDeletionModal } from '@/components/modals';
 import { Button } from '@/components/ui/button';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable } from '@/components/ui/data-table/data-table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useApi } from '@/hooks';
 import type { FileReference, StateSetter } from '@/types';

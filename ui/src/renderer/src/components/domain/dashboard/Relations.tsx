@@ -2,7 +2,7 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable } from '@/components/ui/data-table/data-table';
 import { Input } from '@/components/ui/input';
 import {
     InputGroup,

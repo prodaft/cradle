@@ -1,8 +1,8 @@
 import type { SortDirection } from '@/components/base/ListView/types';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
@@ -669,7 +669,7 @@ export default function ReportList() {
                         bulkActions={[
                             {
                                 id: 'delete',
-                                label: 'Delete reports',
+                                label: 'Delete',
                                 icon: <Trash width={18} height={18} />,
                                 onClick: () => {
                                     if (selectedReports.length > 0) {

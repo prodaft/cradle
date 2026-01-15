@@ -4,7 +4,7 @@ import TableActionsButton from '@/components/base/TableActionsButton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
+import { DataTable } from '@/components/ui/data-table/data-table';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import {
     Select,

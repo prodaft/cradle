@@ -1,6 +1,6 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table-column-header';
+import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
