@@ -11,6 +11,7 @@ interface PaginationWrapperProps extends React.HTMLAttributes<HTMLDivElement> {
     className?: string;
     selectedCount?: number;
     totalRows?: number;
+    compact?: boolean;
 }
 
 /**
@@ -26,6 +27,7 @@ function PaginationWrapper({
     className = '',
     selectedCount,
     totalRows,
+    compact = false,
     ...props
 }: PaginationWrapperProps) {
     return (
@@ -41,6 +43,7 @@ function PaginationWrapper({
                 onPageSizeChange={onPageSizeChange}
                 selectedCount={selectedCount}
                 totalRows={totalRows}
+                compact={compact}
             />
         </div>
     );

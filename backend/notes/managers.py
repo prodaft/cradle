@@ -1,16 +1,13 @@
-from django.db import models
-from django.db.models import Count, Value
+from typing import List, Optional
+from uuid import UUID
 
+from django.db import models
+from django.db.models import Case, Count, ExpressionWrapper, F, Q, Value, When
+
+from core.fields import BitStringField
 from entries.enums import EntryType
 from entries.models import Entry
 from user.models import CradleUser
-from django.db.models import Case, When, Q, F, ExpressionWrapper
-
-from typing import List
-from uuid import UUID
-from typing import Optional
-
-from core.fields import BitStringField
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
@@ -64,7 +61,7 @@ class NoteQuerySet(models.QuerySet):
             bit_or=ExpressionWrapper(
                 F("access_vector").bitor(Value(v)), output_field=fieldtype
             )
-        ).filter(bit_or=v)
+        ).filter(Q(bit_or=v) | Q(fleeting=True, author=user))
 
         return queryset
 

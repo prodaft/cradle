@@ -3,6 +3,7 @@ import useApi from '@/hooks/api/useApi';
 import { useAPICall } from '@/hooks/api/useAPICall';
 import { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { createDashboardLink } from '@/utils/dashboard';
+import PaginationWrapper from '@components/base/Pagination/PaginationWrapper';
 import {
     EnrichmentSubclass,
     Entity,
@@ -49,14 +50,31 @@ export default function AdminPanel() {
     const { isAdmin } = useProfile();
     const [entryTypes, setEntryTypes] = useState<SearchableChild[] | null>(null);
     const [rightPane, setRightPane] = useState<ReactNode | null>(null);
+    const [entitySearch, setEntitySearch] = useState('');
+    const [entityPage, setEntityPage] = useState(1);
+    const [entityTotalPages, setEntityTotalPages] = useState(1);
+    const [entityPageSize, setEntityPageSize] = useState(10);
+    const [isEntitiesLoading, setIsEntitiesLoading] = useState(true);
     const location = useLocation();
     const { entriesApi, usersApi, queryApi, intelioApi } = useApi();
     const { execute } = useAPICall();
 
     const displayEntities = async () => {
-        execute(() => queryApi.queryList({ type: 'entity' }))
+        setIsEntitiesLoading(true);
+        const searchQueries = entitySearch
+            .split('\n')
+            .map((q) => q.trim())
+            .filter((q) => q !== '');
+        const request = {
+            type: 'entity',
+            page: entityPage,
+            pageSize: entityPageSize,
+            ...(searchQueries.length > 0 ? { name: searchQueries } : {}),
+        };
+        execute(() => queryApi.queryList(request))
             .then((response) => {
                 const fetchedEntities = response.results;
+                setEntityTotalPages(Math.max(response.totalPages || 1, 1));
                 setEntities(
                     fetchedEntities.map((c) => {
                         const subtype = c.subtype || 'unknown';
@@ -75,7 +93,13 @@ export default function AdminPanel() {
                     }),
                 );
             })
-            .catch(() => { });
+            .catch(() => {
+                setEntities([]);
+                setEntityTotalPages(1);
+            })
+            .finally(() => {
+                setIsEntitiesLoading(false);
+            });
     };
 
     const displayEntryTypes = async () => {
@@ -166,11 +190,15 @@ export default function AdminPanel() {
             displayUsers();
             displayEnrichmentTypes();
         }
-        displayEntities();
         displayEntryTypes();
         displayMappingTypes();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.state]);
+
+    useEffect(() => {
+        displayEntities();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location.state, entityPage, entityPageSize, entitySearch]);
 
     return (
         <>
@@ -184,6 +212,32 @@ export default function AdminPanel() {
                                         title='Entities'
                                         addEnabled={isAdmin()}
                                         addTooltipText='Add Entity'
+                                        searchValue={entitySearch}
+                                        onSearchChange={(value) => {
+                                            setEntitySearch(value);
+                                            setEntityPage(1);
+                                        }}
+                                        onSearchClear={() => {
+                                            setEntitySearch('');
+                                            setEntityPage(1);
+                                        }}
+                                        enableFrontendSearch={false}
+                                        searchPlaceholder='Search entities'
+                                        footer={
+                                            <PaginationWrapper
+                                                currentPage={entityPage}
+                                                totalPages={entityTotalPages}
+                                                onPageChange={setEntityPage}
+                                                pageSize={entityPageSize}
+                                                onPageSizeChange={(pageSize) => {
+                                                    setEntityPage(1);
+                                                    setEntityPageSize(pageSize);
+                                                }}
+                                                disabled={!entities || entities.length === 0}
+                                                className='mt-0 py-1'
+                                                compact={true}
+                                            />
+                                        }
                                         handleAdd={(onAdd) =>
                                             setRightPane(
                                                 <EntityForm
@@ -222,7 +276,7 @@ export default function AdminPanel() {
                                                 />,
                                             )
                                         }
-                                        isLoading={entities === null}
+                                        isLoading={isEntitiesLoading}
                                     >
                                         {entities}
                                     </AdminPanelSection>

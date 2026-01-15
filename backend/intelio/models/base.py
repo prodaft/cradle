@@ -21,6 +21,7 @@ from core.fields import BitStringField
 from entries.enums import EntryType
 from entries.models import Entry, EntryClass, Relation
 from file_transfer.storage import DigestStorage
+from intelio.managers import EnrichmentRequestManager
 from user.models import CradleUser
 
 from ..enums import DigestStatus, EnrichmentStatus
@@ -453,6 +454,8 @@ class EnrichmentRequest(LifecycleModel):
     errors = models.JSONField(default=dict, blank=True)
     warnings = models.JSONField(default=dict, blank=True)
     ignored = models.JSONField(default=list, blank=True)
+
+    objects = EnrichmentRequestManager()
 
     def clean(self):
         if self.pk:

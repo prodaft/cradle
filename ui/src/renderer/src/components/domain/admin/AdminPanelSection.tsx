@@ -2,7 +2,7 @@ import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSe
 import { naturalSort } from '@/utils/dashboard';
 import Tooltip from '@components/base/Tooltip/Tooltip';
 import { PlusCircle, Search, Xmark } from 'iconoir-react';
-import { useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 
 interface AdminPanelSectionProps {
     title: string;
@@ -11,6 +11,12 @@ interface AdminPanelSectionProps {
     handleAdd: (addItemCallback: (item: SearchableChild) => void) => void;
     children: SearchableChild[] | null;
     isLoading?: boolean;
+    searchValue?: string;
+    onSearchChange?: (value: string) => void;
+    onSearchClear?: () => void;
+    enableFrontendSearch?: boolean;
+    footer?: ReactNode;
+    searchPlaceholder?: string;
 }
 
 /**
@@ -29,6 +35,12 @@ export default function AdminPanelSection({
     handleAdd,
     children,
     isLoading = false,
+    searchValue,
+    onSearchChange,
+    onSearchClear,
+    enableFrontendSearch = true,
+    footer,
+    searchPlaceholder = 'Search',
 }: AdminPanelSectionProps) {
     const [addedItems, setAddedItems] = useState<SearchableChild[]>([]);
     const combinedItems = useMemo(
@@ -37,9 +49,25 @@ export default function AdminPanelSection({
     );
     const { searchVal, setSearchVal, filteredChildren } =
         useFrontendSearch(combinedItems);
+    const effectiveSearchValue = onSearchChange ? searchValue || '' : searchVal;
+    const handleSearchValueChange = (value: string) => {
+        if (onSearchChange) {
+            onSearchChange(value);
+            return;
+        }
+        setSearchVal(value);
+    };
+    const handleSearchValueClear = () => {
+        if (onSearchClear) {
+            onSearchClear();
+            return;
+        }
+        setSearchVal('');
+    };
+    const visibleChildren = enableFrontendSearch ? filteredChildren : combinedItems;
     // Sort the filtered children based on their key property
-    const sortedFilteredChildren = filteredChildren
-        ? filteredChildren.sort((a, b) => {
+    const sortedFilteredChildren = visibleChildren
+        ? visibleChildren.sort((a, b) => {
               // Convert keys to strings to ensure proper lexicographical comparison
               const aKey = a.key?.toString() || '';
               const bKey = b.key?.toString() || '';
@@ -58,14 +86,14 @@ export default function AdminPanelSection({
                     </button>
                     <input
                         type='text'
-                        placeholder='Search'
+                        placeholder={searchPlaceholder}
                         className='flex-grow bg-transparent text-sm outline-none text-cradle-text-primary placeholder:text-cradle-text-muted rounded-none font-mono'
-                        onChange={(e) => setSearchVal(e.target.value)}
-                        value={searchVal}
+                        onChange={(e) => handleSearchValueChange(e.target.value)}
+                        value={effectiveSearchValue}
                     />
-                    {searchVal && (
+                    {effectiveSearchValue && (
                         <button
-                            onClick={() => setSearchVal('')}
+                            onClick={handleSearchValueClear}
                             className='p-1 flex-shrink-0 text-cradle-text-muted hover:text-cradle-text-primary transition-colors'
                             title='Clear search'
                         >
@@ -108,6 +136,7 @@ export default function AdminPanelSection({
                     </div>
                 )}
             </div>
+            {footer && <div className='w-full'>{footer}</div>}
         </div>
     );
 }

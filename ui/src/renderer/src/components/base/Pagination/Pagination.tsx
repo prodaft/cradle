@@ -20,6 +20,8 @@ export interface PaginationProps {
     selectedCount?: number;
     /** Total number of rows */
     totalRows?: number;
+    /** Use a tighter horizontal layout */
+    compact?: boolean;
 }
 
 /**
@@ -45,6 +47,7 @@ export default function Pagination({
     onPageSizeChange = null,
     selectedCount,
     totalRows,
+    compact = false,
 }: PaginationProps): JSX.Element {
     const handlePageSizeChange = (e: ChangeEvent<HTMLSelectElement>) => {
         if (!onPageSizeChange) return;
@@ -73,7 +76,9 @@ export default function Pagination({
             )}
 
             {/* Right side: Pagination controls */}
-            <div className='flex items-center space-x-6 lg:space-x-8'>
+            <div
+                className={`flex items-center ${compact ? 'space-x-4 lg:space-x-5' : 'space-x-6 lg:space-x-8'}`}
+            >
                 {/* Rows per page selector */}
                 {pageSize !== null && onPageSizeChange && (
                     <div className='flex items-center space-x-2'>
@@ -104,7 +109,9 @@ export default function Pagination({
                 )}
 
                 {/* Page info */}
-                <div className='flex w-[100px] items-center justify-center text-sm font-medium'>
+                <div
+                    className={`flex ${compact ? 'w-[80px]' : 'w-[100px]'} items-center justify-center text-sm font-medium`}
+                >
                     Page {currentPage} of {totalPages}
                 </div>
 
