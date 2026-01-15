@@ -12,5 +12,5 @@ frontend).
 
 {{< cards >}}
 {{< card link="user-guide" title="User Guide" icon="document-text" subtitle="Analyst and administrator workflows" >}}
-{{< card link="developer-guide" title="Developer Guide" icon="code-bracket" subtitle="Backend and frontend development" >}}
+{{< card link="developer-guide" title="Developer Guide" icon="code" subtitle="Backend and frontend development" >}}
 {{< /cards >}}

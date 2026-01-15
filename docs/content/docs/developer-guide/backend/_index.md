@@ -8,16 +8,16 @@ weight = 1
 This section covers backend architecture and development workflows.
 
 {{< cards columns="2" >}}
-{{< card link="architecture" title="Architecture Overview" icon="code-bracket" >}}
-{{< card link="data-model" title="Data Model" icon="circle-stack" >}}
+{{< card link="architecture" title="Architecture Overview" icon="code" >}}
+{{< card link="data-model" title="Data Model" icon="database" >}}
 {{< card link="auth" title="Authentication and Authorization" icon="shield-check" >}}
 {{< card link="api-structure" title="API Structure" icon="server" >}}
 {{< card link="knowledge-graph" title="Knowledge Graph" icon="sparkles" >}}
-{{< card link="enrichment" title="Enrichment System" icon="bolt" >}}
+{{< card link="enrichment" title="Enrichment System" icon="lightning-bolt" >}}
 {{< card link="file-pipeline" title="File Pipeline" icon="paper-clip" >}}
-{{< card link="reporting" title="Reports and Publishing" icon="document-arrow-down" >}}
+{{< card link="reporting" title="Reports and Publishing" icon="download" >}}
 {{< card link="background-tasks" title="Background Tasks" icon="clock" >}}
-{{< card link="configuration" title="Configuration" icon="cog-6-tooth" >}}
+{{< card link="configuration" title="Configuration" icon="cog" >}}
 {{< card link="testing" title="Testing" icon="beaker" >}}
 {{< card link="logging-observability" title="Logging and Observability" icon="chart-bar" >}}
 {{< card link="deployment" title="Deployment Basics" icon="cloud" >}}

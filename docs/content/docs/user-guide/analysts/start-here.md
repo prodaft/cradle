@@ -6,53 +6,40 @@ weight = 1
 +++
 
 CRADLE is a collaborative threat intelligence platform for analysts. It helps
-teams capture findings, link related evidence, and publish reports from a
-shared knowledge base.
+teams capture findings, connect related evidence, and publish reports from a
+shared knowledge base. Use it to turn scattered indicators and notes into a
+traceable investigation record that your team can reuse and build on.
 
-## Glossary
+## What you work with
 
-- Entry
-  The core unit within CRADLE, representing either an entity or an artifact.
-  - Entity: A high-level object under investigation (case, organization,
+- **Entry classes** keep data consistent:
+  - **Type**: Entity or artifact.
+  - **Subtype**: A more specific label (for example, `malware/ransomware` or
+    `ip/v4`).
+  - **Validation**: Rules like regex patterns or fixed option lists.
+
+- **Entries** are the building blocks of CRADLE. Each entry is either:
+  - **Entity**: A high-level object under investigation (case, organization,
     campaign).
-  - Artifact: A specific piece of evidence (IP address, domain name, file hash).
+  - **Artifact**: A specific piece of evidence (IP address, domain name, file
+    hash).
 
-- Note
-  A document that records analysis, observations, or findings related to one or
-  more entries.
-  - Publishable note: A finalized note suitable for external sharing and
-    reports.
-  - Non-publishable note: An internal draft intended for private or team use.
+- **Notes** capture your analysis and link it to one or more entries.
+  - **Fleeting notes** are auto-saved drafts for quick capture. They stay
+    private until you finalize them and link entries.
 
-- Fleeting note
-  A temporary, auto-saved draft used to capture information quickly. These
-  remain private until finalized and linked to entries.
+- **Enrichment** pulls in external context to expand an entry with related
+  indicators, metadata, or classifications.
 
-- Access types
-  Permission levels that define how users interact with entries:
-  - None: No access to view or modify notes.
-  - Read: Can view notes referencing the entry.
-  - Read-write: Can view and create notes referencing the entry.
+- **Digests** are curated summaries that group related findings and link them
+  back to the underlying entries.
 
-- Roles
-  Predefined user roles with additional capabilities:
-  - Admin: Full system control.
-  - Manager: Manages system configuration and content, excluding user admin.
-  - Entry manager: Manages entities, entry types, and metadata.
-  - User: Standard access for creating and viewing notes.
-
-- Relations
-  Automatically generated links between entries when they are referenced in
-  notes. These connections form the knowledge graph.
-
-- Entry class
-  A categorization system for entries:
-  - Type: Entity or artifact.
-  - Subtype: A more detailed classification (for example, malware/ransomware or
-    ip/v4).
-  - Validation rules: Regex patterns or enumerated options.
+- **Graph** is the connected view of all your entries and evidence in CRADLE.
+  - **Nodes** are the entries themselves (entities and artifacts).
+  - **Relations** are the links between nodes, created by references in notes,
+    enrichments, or digests.
 
 ## Navigation basics
-- Use the search bar at the top to find entries.
-- Notes are searched from the notes page, by content or author.
-- Dashboards are the primary entry detail views.
+- Use the global search to find entries by name or identifier.
+- Search notes from the Notes page by content, author, or linked entries.
+- Open an entry dashboard to review its notes, graph connections, and context.

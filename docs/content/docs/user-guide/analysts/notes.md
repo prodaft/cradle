@@ -5,10 +5,9 @@ draft = false
 weight = 2
 +++
 
-CRADLE allows users to create and manage notes associated with specific
-entities and artifacts. When a note is created, the system automatically links
-entities and artifacts mentioned in it. These connections appear in dashboards
-and the graph explorer.
+CRADLE notes capture analyst thinking and connect evidence as you write. As you
+link entries, CRADLE builds a graph that appears in dashboards and the graph
+explorer.
 
 Notes are composed using extended markdown with syntax highlighting and live
 preview.
@@ -18,7 +17,7 @@ preview.
 CRADLE extends standard markdown with features for linking entries.
 
 ### Basic markdown support
-- Headers (#, ##, ###)
+- Headers (`#`, `##`, `###`)
 - Lists (bulleted and numbered)
 - Text formatting (bold, italic, strikethrough)
 - Code (inline and blocks)
@@ -29,12 +28,27 @@ CRADLE extends standard markdown with features for linking entries.
 ### Entity and artifact linking
 Use double brackets to link entries by subtype:
 
-- [[subtype:value|alias]] links to an entry.
-  Examples: [[case:PTI-42]] or [[ip:1.1.1.1|C2 IP]].
+- `[[subtype:value]]` links to an entry, for example `[[case:PTI-42]]` or
+  `[[ip:1.1.1.1]]`.
+- `[[subtype:value|alias]]` links to an entry and displays an alias, for
+  example `[[ip:1.1.1.1|C2 IP]]`.
+- Linking with an alias also creates an `alias` entry in the graph, and the
+  original entry is linked to that alias node.
+- When adding links in tables, escape the alias separator, for example
+  `[[ip:1.1.1.1\|C2 IP]]`.
 
-The alias portion is optional and can display a friendlier name. When adding
-links in tables, escape the alias separator to avoid conflicts, for example:
-[[ip:1.1.1.1\|C2 IP]].
+### Link dates
+If you need link dates to remain stable across note edits, add a date suffix
+after the link in `(MM-DD-YYYY)` format. CRADLE can add these dates
+automatically.
+
+Example: `[[ip:1.1.1.1]] (10-10-1000)`.
+
+### Graph exclusions
+Prefix a link with `~` to keep it out of the graph while still mentioning it
+in the note.
+
+Example: `~[[domain:example.com]]`.
 
 ### Best practices
 - Use aliases to improve readability.
@@ -52,14 +66,19 @@ pasting from the clipboard. Uploaded files appear in a table below the editor
 where you can insert references, copy references, or delete files.
 
 If a file is an image, it renders in the note when you prepend its reference
-with an exclamation mark, for example: ![image][image.png].
+with an exclamation mark, for example `![image][image.png]`.
 
 ## Role of notes in linking entries
 
-Finalizing a note triggers automatic detection of references (double brackets)
-and creates bi-directional links between entries and artifacts. These links are
-visible only to users with appropriate access. If a note is deleted, its links
-are removed unless supported by other notes.
+Finalizing a note triggers detection of entry links. Links that appear in the
+same markdown section are connected to each other in the graph. If a section
+contains too many links, CRADLE creates a `virtual` note node and connects all
+linked entries to that node instead of creating every pairwise edge. This keeps
+the graph from exploding in size. The clustering threshold is configurable by
+an administrator.
+
+This graph clustering does not change graph search or discovery algorithms; it
+only changes how connections are rendered and stored.
 
 ## Fleeting notes
 

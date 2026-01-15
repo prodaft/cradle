@@ -5,19 +5,26 @@ draft = false
 weight = 5
 +++
 
-CRADLE supports adding multiple files to notes. Upload size is limited by
-system settings and may be overridden per user by an administrator. Storage
-bucket size also applies.
+CRADLE lets you attach evidence directly to notes and treat it as first-class
+graph data. Files you upload become entries, so they can be linked, searched,
+and connected to related artifacts.
 
-## Uploading files
-- Use the file selection button in the editor, or paste from the clipboard.
-- Uploaded files appear in a table below the editor.
-- You can insert references, copy references, or delete files.
+## Add files to a note
+- Use the file picker in the editor, or paste directly from the clipboard.
+- Uploaded files appear in the attachments table below the editor.
+- From the table, insert a reference into the note, copy a reference, or delete
+  the file.
+- All uploaded files can be browsed in the Files panel.
 
-## Rendering images
+## Files in the graph
+- Every uploaded file is automatically linked in the graph as an entry.
+- Files below a configured size threshold are automatically hashed and linked
+  to their hash entries.
+
+## Render images inline
 If a file is an image, it renders in the note when you prepend its reference
-with an exclamation mark, for example: ![image][image.png].
+with an exclamation mark, for example `![image][image.png]`.
 
-## Storage limits
-If you hit a limit, contact your administrator to review upload settings and
-bucket size.
+## Storage and limits
+Upload limits and total storage are set by system configuration and may vary by
+user or team. If you hit a limit, contact an administrator to adjust settings.

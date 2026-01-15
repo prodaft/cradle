@@ -5,44 +5,42 @@ draft = false
 weight = 4
 +++
 
+The graph and search tools help you move from a single indicator to the wider
+context around it.
+
 ## Graph explorer
-The graph explorer visualizes relationships between entries.
 
-- Nodes represent entities and artifacts.
-- Edges represent relationships established through notes.
+The graph explorer is a connected view of entries and their relationships.
 
-### Querying and filters
+- **Nodes** are entries (entities and artifacts).
+- **Relations** are links created by notes, enrichments, and digests.
+- **Virtual edges** are special relations that treat connected nodes as the
+  same node for graph traversal and grouping.
 
-- Use the search field to focus on specific nodes.
-- Filter by entry types to reduce visual noise.
-- Use display controls to adjust node size and label visibility.
+### Explore and focus
+- Search within the graph to jump to a specific node.
+- Expand neighbors to trace related infrastructure or actors.
+- Filter by entry subtype to reduce noise.
+- Adjust labels and node sizes to keep dense views readable.
 
-### Viewing and browsing
+### Inspect relationships
+- Select a node to see its linked notes, enrichments, and digests.
+- Select an edge to view the source that created the relationship.
 
-- The graph view displays nodes and edges and lets you explore neighbors.
-- Clicking an edge reveals the notes that established the relationship.
-- The legend can be toggled to show or hide node categories.
+## Entry search
 
-## Searching for entries
+Use the global search bar to find entries by name or identifier. Subtypes are
+hierarchical and use slashes for nesting.
 
-Use the search bar at the top of the page. You can filter by entry name or
-entry subtype. Subtypes are hierarchical and use slashes for nesting.
+### Query patterns
+- `subtype:value` searches a specific subtype (for example, `ip:1.1.1.1`).
+- `*` can be used as a wildcard, for example `ip:1.1.*`.
+- `"quoted"` text is treated literally with no wildcard behavior.
+- A query without `:` searches entry names and entity descriptions.
 
-### Advanced search
+## Notes search
 
-- String queries: type a query into the search bar.
-- Subtype querying: ip:1.1.1.1 searches for subtype ip with value.
-- Wildcards: use * on either side, for example ip:1.1.*.
-- Literal quoting: quotes treat characters literally (no wildcard behavior).
-- No subtype: a query without a colon searches the entry name and entity
-  descriptions.
+Search notes from the Notes page or from an entry dashboard.
 
-## Searching for notes
-
-Notes are searched from the notes page using two fields:
-
-- Search by content
-- Search by author
-
-This search is also available in dashboards to filter notes linked to a
-specific entry.
+- Filter by content or author.
+- Use entry dashboards to filter notes linked to a specific entry.
