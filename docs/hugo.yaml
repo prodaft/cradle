@@ -36,7 +36,7 @@ menu:
   main:
     - identifier: menu-docs
       name: Documentation
-      pageRef: /docs/
+      pageRef: /docs/getting-started
       weight: 1
     - identifier: menu-help
       name: "Issues"
