@@ -13,7 +13,7 @@ processing, report generation, and enrichment.
 Start a worker with:
 
 ```shell
-uv run celery -A cradle worker -Q email,notes,publish,import -l INFO
+uv run celery -A cradle worker --beat -Q "email,notes,graph,publish,import,access,enrich,digest,files" --loglevel="info" --concurrency="4"
 ```
 
 ## Common tasks

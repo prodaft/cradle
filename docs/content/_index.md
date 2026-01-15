@@ -6,9 +6,9 @@ layout = "hextra-home"
 +++
 
 {{< hextra/hero-container
-  image="/images/screenshots/welcome.png"
-  imageTitle="CRADLE Graph View"
-  imageWidth="1400"
+  imageGallery="/images/screenshots/welcome.png|/images/screenshots/dashboard.png|/images/screenshots/editor.png|/images/screenshots/graph_bfs.png"
+  imageGalleryTitles="CRADLE Graph View|CRADLE Dashboard|CRADLE Editor|CRADLE Graph"
+  imageGalleryClass="cradle-hero-carousel"
 >}}
 {{< hextra/hero-badge link="https://github.com/prodaft/cradle/tree/v2.10.2-beta.9bd46310" >}}
   <div class="hx-w-2 hx-h-2 hx-rounded-full hx-bg-primary-400"></div>

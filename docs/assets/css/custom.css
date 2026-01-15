@@ -208,6 +208,41 @@ header,
   box-shadow: none !important;
 }
 
+.cradle-hero-carousel {
+  width: min(48vw, 520px);
+}
+
+.cradle-hero-carousel .auto-carousel {
+  margin: 0 !important;
+}
+
+.cradle-hero-carousel .auto-carousel ul {
+  background: transparent;
+}
+
+.cradle-hero-carousel .auto-carousel ul li > img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--cradle-border-primary);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+  object-fit: cover;
+  aspect-ratio: 16 / 9;
+}
+
+.cradle-hero-carousel .auto-carousel ol li a {
+  border-color: var(--cradle-text-primary);
+}
+
+.cradle-hero-carousel .auto-carousel ol li.selected a {
+  background: var(--cradle-text-primary);
+}
+
+.cradle-hero-carousel .auto-carousel .prev,
+.cradle-hero-carousel .auto-carousel .next {
+  color: var(--cradle-text-primary);
+}
+
 .cradle-feature-lines {
   display: flex;
   flex-direction: column;
@@ -284,6 +319,10 @@ header,
   }
 
   .cradle-feature-card-image {
+    width: 100%;
+  }
+
+  .cradle-hero-carousel {
     width: 100%;
   }
 }
