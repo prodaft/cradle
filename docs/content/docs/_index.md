@@ -10,6 +10,19 @@ Welcome to the CRADLE documentation. This site is organized into two main parts:
 User Guide (for analysts and administrators) and Developer Guide (backend and
 frontend).
 
+{{< hextra/hero-container
+  imageGallery="/images/screenshots/welcome.png|/images/screenshots/graph-explorer.png|/images/screenshots/case-notes.png|/images/screenshots/access-control.png"
+  imageGalleryTitles="Welcome Screen|Graph Explorer|Case Notes|Access Control"
+  imageGalleryClass="cradle-hero-carousel"
+>}}
+{{< hextra/hero-headline >}}
+  Explore CRADLE in action
+{{< /hextra/hero-headline >}}
+{{< hextra/hero-subtitle >}}
+  A quick visual tour of key workflows you'll find documented below.
+{{< /hextra/hero-subtitle >}}
+{{< /hextra/hero-container >}}
+
 {{< cards >}}
 {{< card link="getting-started" title="Getting Started" icon="document-text" subtitle="Run a local demo in minutes" >}}
 {{< card link="user-guide" title="User Guide" icon="document-text" subtitle="Analyst and administrator workflows" >}}
