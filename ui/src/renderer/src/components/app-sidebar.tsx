@@ -1,5 +1,3 @@
-'use client';
-
 import Logo from '@/components/base/Logo/Logo';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { Link, useMatchRoute, useRouter } from '@tanstack/react-router';

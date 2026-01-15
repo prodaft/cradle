@@ -17,18 +17,7 @@ import { EditorSelection } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { Xmark } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import {
-    VscArrowDown,
-    VscArrowUp,
-    VscChevronDown,
-    VscChevronRight,
-    VscListSelection,
-    VscRegex,
-    VscReplace,
-    VscReplaceAll,
-    VscTextSize,
-    VscWholeWord,
-} from 'react-icons/vsc';
+import * as VscIcons from 'react-icons/vsc';
 
 interface FindReplaceProps {
     view: EditorView | null;
@@ -202,9 +191,9 @@ export default function FindReplace({
                         onClick={() => setShowReplace(!showReplace)}
                     >
                         {showReplace ? (
-                            <VscChevronDown className='text-sm' />
+                            <VscIcons.VscChevronDown className='text-sm' />
                         ) : (
-                            <VscChevronRight className='text-sm' />
+                            <VscIcons.VscChevronRight className='text-sm' />
                         )}
                     </Button>
 
@@ -237,7 +226,7 @@ export default function FindReplace({
                                             }`}
                                             title='Match Case'
                                         >
-                                            <VscTextSize className='text-xs' />
+                                            <VscIcons.VscTextSize className='text-xs' />
                                         </InputGroupButton>
                                         <InputGroupButton
                                             variant='ghost'
@@ -250,7 +239,7 @@ export default function FindReplace({
                                             }`}
                                             title='Match Whole Word'
                                         >
-                                            <VscWholeWord className='text-xs' />
+                                            <VscIcons.VscWholeWord className='text-xs' />
                                         </InputGroupButton>
                                         <InputGroupButton
                                             variant='ghost'
@@ -263,7 +252,7 @@ export default function FindReplace({
                                             }`}
                                             title='Use Regular Expression'
                                         >
-                                            <VscRegex className='text-xs' />
+                                            <VscIcons.VscRegex className='text-xs' />
                                         </InputGroupButton>
                                     </InputGroupAddon>
                                 </InputGroup>
@@ -275,7 +264,7 @@ export default function FindReplace({
                                         className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Previous match (Shift+Enter)'
                                     >
-                                        <VscArrowUp className='text-lg' />
+                                        <VscIcons.VscArrowUp className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
@@ -284,7 +273,7 @@ export default function FindReplace({
                                         className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Next match (Enter)'
                                     >
-                                        <VscArrowDown className='text-lg' />
+                                        <VscIcons.VscArrowDown className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
@@ -293,7 +282,7 @@ export default function FindReplace({
                                         className='w-8 h-8 text-foreground hover:bg-secondary hover:text-foreground'
                                         title='Find All'
                                     >
-                                        <VscListSelection className='text-lg' />
+                                        <VscIcons.VscListSelection className='text-lg' />
                                     </Button>
                                     <Button
                                         variant='ghost'
@@ -336,7 +325,7 @@ export default function FindReplace({
                                             className='text-primary hover:bg-muted hover:text-primary'
                                             title='Replace'
                                         >
-                                            <VscReplace className='text-lg' />
+                                            <VscIcons.VscReplace className='text-lg' />
                                         </Button>
                                         <Button
                                             variant='ghost'
@@ -346,7 +335,7 @@ export default function FindReplace({
                                             className='text-primary hover:bg-muted hover:text-primary'
                                             title='Replace All'
                                         >
-                                            <VscReplaceAll className='text-lg' />
+                                            <VscIcons.VscReplaceAll className='text-lg' />
                                         </Button>
                                     </div>
                                 </div>
