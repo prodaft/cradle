@@ -209,7 +209,7 @@ header,
 }
 
 .cradle-hero-carousel {
-  width: min(48vw, 520px);
+  width: min(69.1vw, 749px);
 }
 
 .cradle-hero-carousel .auto-carousel {
@@ -231,16 +231,37 @@ header,
 }
 
 .cradle-hero-carousel .auto-carousel ol li a {
-  border-color: var(--cradle-text-primary);
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--cradle-border-interactive);
+  background: transparent;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .cradle-hero-carousel .auto-carousel ol li.selected a {
-  background: var(--cradle-text-primary);
+  background: var(--cradle-text-secondary);
+  border-color: var(--cradle-border-interactive);
+  opacity: 0.9;
 }
 
 .cradle-hero-carousel .auto-carousel .prev,
 .cradle-hero-carousel .auto-carousel .next {
-  color: var(--cradle-text-primary);
+  color: var(--cradle-text-muted);
+  opacity: 0.55;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  font-size: 36px;
+  padding: 18px 12px;
+}
+
+.cradle-hero-carousel .auto-carousel .prev:hover,
+.cradle-hero-carousel .auto-carousel .next:hover,
+.cradle-hero-carousel .auto-carousel ol li a:hover {
+  opacity: 0.7;
+}
+
+.cradle-hero {
+  font-size: 1.44em;
 }
 
 .cradle-feature-lines {
@@ -300,7 +321,7 @@ header,
 }
 
 .cradle-feature-line .hextra-feature-card:hover img {
-  transform: translateY(-4px);
+  transform: scale(1.02);
   box-shadow: 0 20px 36px rgba(0, 0, 0, 0.12);
   filter: saturate(1.05);
 }

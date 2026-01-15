@@ -6,6 +6,7 @@ layout = "hextra-home"
 +++
 
 {{< hextra/hero-container
+  class="cradle-hero"
   imageGallery="/images/screenshots/welcome.png|/images/screenshots/dashboard.png|/images/screenshots/editor.png|/images/screenshots/graph_bfs.png"
   imageGalleryTitles="CRADLE Graph View|CRADLE Dashboard|CRADLE Editor|CRADLE Graph"
   imageGalleryClass="cradle-hero-carousel"
