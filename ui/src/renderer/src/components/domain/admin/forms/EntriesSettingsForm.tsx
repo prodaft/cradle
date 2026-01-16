@@ -1,10 +1,16 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle, InfoCircle, Server, Trash, WarningCircle } from 'iconoir-react';
-import { useState } from 'react';
-import { SettingsButton, SettingsCard } from '../../../forms';
+import { Server, Trash } from 'iconoir-react';
+import { toast } from 'sonner';
 
 export default function EntriesManagement() {
     const { managementApi } = useApi();
@@ -19,16 +25,10 @@ export default function EntriesManagement() {
             suppressNotification: true,
         },
         onSuccess: () => {
-            setAlert({
-                type: 'success',
-                message: 'Propagate Access Vectors action triggered successfully!',
-            });
+            toast.success('Propagate Access Vectors action triggered successfully!');
         },
         onError: () => {
-            setAlert({
-                type: 'error',
-                message: 'Error occurred while propagating access vectors.',
-            });
+            toast.error('Error occurred while propagating access vectors.');
         },
     });
 
@@ -43,22 +43,14 @@ export default function EntriesManagement() {
             suppressNotification: true,
         },
         onSuccess: (response) => {
-            setAlert({
-                type: 'success',
-                message: (response as any)?.message || 'Action completed successfully!',
-            });
+            toast.success(
+                (response as any)?.message || 'Action completed successfully!',
+            );
         },
         onError: () => {
-            setAlert({
-                type: 'error',
-                message: 'Error occurred while deleting hanging artifacts.',
-            });
+            toast.error('Error occurred while deleting hanging artifacts.');
         },
     });
-    const [alert, setAlert] = useState<{
-        type: 'success' | 'error' | 'warning' | null;
-        message: string;
-    }>({ type: null, message: '' });
 
     const handlePropagateAccessVectors = () => {
         propagateAccessMutation.mutate();
@@ -81,38 +73,52 @@ export default function EntriesManagement() {
                     </p>
 
                     <div className='space-y-4'>
-                        {alert.type && (
-                            <Alert
-                                variant={
-                                    alert.type === 'error' ? 'destructive' : 'default'
-                                }
-                            >
-                                {alert.type === 'success' && <CheckCircle />}
-                                {alert.type === 'error' && <WarningCircle />}
-                                {alert.type === 'warning' && <InfoCircle />}
-                                <AlertDescription>{alert.message}</AlertDescription>
-                            </Alert>
-                        )}
-                        <SettingsCard>
-                            <SettingsButton
-                                label='Propagate Access Vectors'
-                                description='Update access permissions across all entries'
-                                buttonText='Propagate'
-                                icon={<Server className='w-3.5 h-3.5' />}
-                                onClick={handlePropagateAccessVectors}
-                            />
+                        <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                            <CardContent className='px-4 py-1'>
+                                <Field orientation='horizontal' className='py-2'>
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            Propagate Access Vectors
+                                        </FieldLabel>
+                                        <FieldDescription className='text-sm'>
+                                            Update access permissions across all entries
+                                        </FieldDescription>
+                                    </FieldContent>
+                                    <Button
+                                        type='button'
+                                        variant='outline'
+                                        size='sm'
+                                        onClick={handlePropagateAccessVectors}
+                                    >
+                                        <Server className='w-3.5 h-3.5' />
+                                        Propagate
+                                    </Button>
+                                </Field>
 
-                            <Separator />
+                                <Separator />
 
-                            <SettingsButton
-                                label='Delete Hanging Artifacts'
-                                description='Remove artifacts that are no longer referenced'
-                                buttonText='Delete'
-                                icon={<Trash className='w-3.5 h-3.5' />}
-                                variant='danger'
-                                onClick={handleDeleteHangingArtifacts}
-                            />
-                        </SettingsCard>
+                                <Field orientation='horizontal' className='py-2'>
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            Delete Hanging Artifacts
+                                        </FieldLabel>
+                                        <FieldDescription className='text-sm'>
+                                            Remove artifacts that are no longer
+                                            referenced
+                                        </FieldDescription>
+                                    </FieldContent>
+                                    <Button
+                                        type='button'
+                                        variant='destructive'
+                                        size='sm'
+                                        onClick={handleDeleteHangingArtifacts}
+                                    >
+                                        <Trash className='w-3.5 h-3.5' />
+                                        Delete
+                                    </Button>
+                                </Field>
+                            </CardContent>
+                        </Card>
                     </div>
                 </section>
             </div>

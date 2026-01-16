@@ -1,7 +1,15 @@
-import AdminSetPasswordModal from '@/components/modals/admin/AdminSetPasswordModal';
-import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
+import AdminSetPasswordModal from '@/components/dialogs/admin/AdminSetPasswordModal';
+import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,7 +25,6 @@ import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@/services/cradle/models';
-import { SettingsButton, SettingsCard, SettingsField } from '@components/forms';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
@@ -342,75 +349,186 @@ export default function AdminUserSettings({
                             )}
 
                             {/* Basic Information Card */}
-                            <SettingsCard>
-                                <SettingsField
-                                    label='Username'
-                                    description='User display name across the platform'
-                                    placeholder='Username'
-                                    {...register('username')}
-                                    error={errors.username}
-                                />
-
-                                <Separator />
-
-                                <SettingsField
-                                    label='Email'
-                                    description='Used for login and notifications'
-                                    type='text'
-                                    placeholder='Email'
-                                    {...register('email')}
-                                    error={errors.email}
-                                />
-
-                                <Separator />
-
-                                <SettingsField
-                                    label='User ID'
-                                    description='Unique identifier for API integrations'
-                                >
-                                    <Input
-                                        type='text'
-                                        value={user?.id || ''}
-                                        className='opacity-60'
-                                        disabled
-                                        readOnly
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <Controller
+                                        name='username'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='username'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Username
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        User display name across the
+                                                        platform
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='username'
+                                                        placeholder='Username'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'username-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
                                     />
-                                </SettingsField>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsField
-                                    label='Role'
-                                    description='Determines access permissions'
-                                    error={errors.role}
-                                >
+                                    <Controller
+                                        name='email'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='email'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Email
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Used for login and notifications
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='email'
+                                                        type='text'
+                                                        placeholder='Email'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'email-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
+
+                                    <Separator />
+
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel
+                                                htmlFor='userId'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                User ID
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Unique identifier for API integrations
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <div className='w-auto'>
+                                            <Input
+                                                id='userId'
+                                                type='text'
+                                                value={user?.id || ''}
+                                                className='opacity-60'
+                                                disabled
+                                                readOnly
+                                            />
+                                        </div>
+                                    </Field>
+
+                                    <Separator />
+
                                     <Controller
                                         name='role'
                                         control={control}
-                                        render={({ field }) => (
-                                            <Select
-                                                value={field.value}
-                                                onValueChange={field.onChange}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
                                             >
-                                                <SelectTrigger className='w-full'>
-                                                    <SelectValue placeholder='Select a role' />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value='author'>
-                                                        User
-                                                    </SelectItem>
-                                                    <SelectItem value='entrymanager'>
-                                                        Entry Manager
-                                                    </SelectItem>
-                                                    <SelectItem value='admin'>
-                                                        Admin
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                        Role
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Determines access permissions
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-full'>
+                                                    <Select
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                    >
+                                                        <SelectTrigger
+                                                            className='w-full'
+                                                            aria-invalid={
+                                                                fieldState.invalid
+                                                            }
+                                                            aria-describedby={
+                                                                fieldState.invalid
+                                                                    ? 'role-error'
+                                                                    : undefined
+                                                            }
+                                                        >
+                                                            <SelectValue placeholder='Select a role' />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value='author'>
+                                                                User
+                                                            </SelectItem>
+                                                            <SelectItem value='entrymanager'>
+                                                                Entry Manager
+                                                            </SelectItem>
+                                                            <SelectItem value='admin'>
+                                                                Admin
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </Field>
                                         )}
                                     />
-                                </SettingsField>
-                            </SettingsCard>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
                 )}
@@ -419,86 +537,139 @@ export default function AdminUserSettings({
                 {showSection('administrative') && (
                     <section id='administrative' className='pb-8'>
                         <div className='space-y-4'>
-                            <SettingsCard>
-                                <div className='py-2'>
-                                    <div className='flex items-center justify-between gap-4'>
-                                        <div className='flex-1'>
-                                            <Label
-                                                htmlFor='emailConfirmed'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Email Confirmed
-                                            </Label>
-                                            <p className='text-sm text-muted-foreground'>
-                                                User's email confirmation status
-                                            </p>
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label
+                                                    htmlFor='emailConfirmed'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
+                                                    Email Confirmed
+                                                </Label>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    User's email confirmation status
+                                                </p>
+                                            </div>
+                                            <Controller
+                                                name='emailConfirmed'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='emailConfirmed'
+                                                        name={field.name}
+                                                        data-testid='emailConfirmed-toggle'
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
                                         </div>
-                                        <Controller
-                                            name='emailConfirmed'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Switch
-                                                    id='emailConfirmed'
-                                                    name={field.name}
-                                                    data-testid='emailConfirmed-toggle'
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            )}
-                                        />
                                     </div>
-                                </div>
 
-                                <Separator />
+                                    <Separator />
 
-                                <div className='py-2'>
-                                    <div className='flex items-center justify-between gap-4'>
-                                        <div className='flex-1'>
-                                            <Label
-                                                htmlFor='isActive'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Active
-                                            </Label>
-                                            <p className='text-sm text-muted-foreground'>
-                                                Disabled accounts cannot log in
-                                            </p>
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label
+                                                    htmlFor='isActive'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
+                                                    Active
+                                                </Label>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Disabled accounts cannot log in
+                                                </p>
+                                            </div>
+                                            <Controller
+                                                name='isActive'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='isActive'
+                                                        name={field.name}
+                                                        data-testid='isActive-toggle'
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
                                         </div>
-                                        <Controller
-                                            name='isActive'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Switch
-                                                    id='isActive'
-                                                    name={field.name}
-                                                    data-testid='isActive-toggle'
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            )}
-                                        />
                                     </div>
-                                </div>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsField
-                                    label='File Upload Limit Override'
-                                    description='Override global file upload limit for this user (e.g., 100MB, 1GB). Leave empty to use global default.'
-                                    placeholder='e.g., 100MB, 1GB'
-                                    {...register('fileUploadLimitOverride')}
-                                    error={errors.fileUploadLimitOverride}
-                                />
+                                    <Controller
+                                        name='fileUploadLimitOverride'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='fileUploadLimitOverride'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        File Upload Limit Override
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Override global file upload
+                                                        limit for this user (e.g.,
+                                                        100MB, 1GB). Leave empty to use
+                                                        global default.
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='fileUploadLimitOverride'
+                                                        placeholder='e.g., 100MB, 1GB'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'fileUploadLimitOverride-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsButton
-                                    label='Password'
-                                    description='Set a new password for this user'
-                                    buttonText='Set Password'
-                                    onClick={openAdminSetPasswordModal}
-                                />
-                            </SettingsCard>
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Password
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Set a new password for this user
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={openAdminSetPasswordModal}
+                                        >
+                                            Set Password
+                                        </Button>
+                                    </Field>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
                 )}
@@ -516,42 +687,92 @@ export default function AdminUserSettings({
                 {showSection('management') && (
                     <section id='admin-actions' className='pb-8'>
                         <div className='space-y-4'>
-                            <SettingsCard>
-                                <SettingsButton
-                                    label='Simulate Session'
-                                    description='Jump into a session for this user'
-                                    buttonText='Simulate'
-                                    onClick={simulateSession}
-                                />
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Simulate Session
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Jump into a session for this user
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={simulateSession}
+                                        >
+                                            Simulate
+                                        </Button>
+                                    </Field>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsButton
-                                    label='Email Confirmation'
-                                    description='Send email verification to user'
-                                    buttonText='Send Email'
-                                    onClick={sendEmailConfirmation}
-                                />
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Email Confirmation
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Send email verification to user
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={sendEmailConfirmation}
+                                        >
+                                            Send Email
+                                        </Button>
+                                    </Field>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsButton
-                                    label='Password Reset'
-                                    description='Send password reset email'
-                                    buttonText='Send Reset'
-                                    onClick={sendPasswordResetEmail}
-                                />
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Password Reset
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Send password reset email
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={sendPasswordResetEmail}
+                                        >
+                                            Send Reset
+                                        </Button>
+                                    </Field>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsButton
-                                    label='Delete User'
-                                    description='Permanently remove this user and all their data'
-                                    buttonText='Delete'
-                                    variant='danger'
-                                    onClick={openDeleteUserModal}
-                                />
-                            </SettingsCard>
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Delete User
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Permanently remove this user and all
+                                                their data
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='destructive'
+                                            size='sm'
+                                            onClick={openDeleteUserModal}
+                                        >
+                                            Delete
+                                        </Button>
+                                    </Field>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
                 )}

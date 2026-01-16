@@ -8,7 +8,7 @@
 export * from './domain/notifications';
 
 // Modal Dialogs
-export * from './modals';
+export * from './dialogs';
 
 // Form Components
 export * from './forms';

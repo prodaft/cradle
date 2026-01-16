@@ -674,7 +674,6 @@ class DefaultNoteTemplateView(APIView):
         operation_id="users_sessions_list",
         summary="List user sessions",
         description="Returns a list of active sessions for the specified user. Users can only view their own sessions.",
-        operation_id="users_sessions_list",
         parameters=[
             OpenApiParameter(
                 name="user_id",
@@ -730,7 +729,6 @@ class UserSessionsListView(APIView):
         operation_id="users_sessions_destroy",
         summary="Revoke user session",
         description="Revokes a specific session by ID. Users can only revoke their own sessions.",
-        operation_id="users_sessions_destroy",
         parameters=[
             OpenApiParameter(
                 name="user_id",

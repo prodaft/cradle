@@ -1,5 +1,13 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -16,17 +24,12 @@ import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClassTypeEnum } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
-import { CheckCircle, InfoCircle, Refresh, WarningCircle } from 'iconoir-react';
+import { Refresh } from 'iconoir-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import {
-    SelectOption,
-    SettingsButton,
-    SettingsCard,
-    SettingsField,
-} from '../../../forms';
+import { SelectOption } from '../../../forms';
 
 interface SubtypeOption extends SelectOption<string> {
     value: string;
@@ -106,13 +109,10 @@ export default function FileSettingsForm() {
             suppressNotification: true,
         },
         onSuccess: () => {
-            setActionAlert({
-                type: 'success',
-                message: 'Files are being re-processed',
-            });
+            toast.success('Files are being re-processed');
         },
         onError: () => {
-            setActionAlert({ type: 'error', message: 'Failed to re-process files' });
+            toast.error('Failed to re-process files');
         },
     });
 
@@ -170,13 +170,6 @@ export default function FileSettingsForm() {
 
     const [isLoading, setIsLoading] = useState(true);
     const [subtypes, setSubtypes] = useState<SubtypeOption[]>([]);
-    const [actionAlert, setActionAlert] = useState<{
-        type: 'success' | 'error' | 'warning' | null;
-        message: string;
-    }>({
-        type: null,
-        message: '',
-    });
 
     const {
         register,
@@ -287,211 +280,359 @@ export default function FileSettingsForm() {
                         </p>
 
                         <div className='space-y-4'>
-                            <SettingsCard>
-                                <div className='py-2'>
-                                    <div className='flex items-center justify-between gap-4'>
-                                        <div className='flex-1'>
-                                            <Label
-                                                htmlFor='autoprocessFiles'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Autoprocess Files
-                                            </Label>
-                                            <p className='text-sm text-muted-foreground'>
-                                                Automatically process uploaded files
-                                            </p>
-                                            {errors.autoprocessFiles && (
-                                                <p className='text-sm text-destructive mt-1'>
-                                                    {errors.autoprocessFiles.message}
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <div className='py-2'>
+                                        <div className='flex items-center justify-between gap-4'>
+                                            <div className='flex-1'>
+                                                <Label
+                                                    htmlFor='autoprocessFiles'
+                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                >
+                                                    Autoprocess Files
+                                                </Label>
+                                                <p className='text-sm text-muted-foreground'>
+                                                    Automatically process uploaded files
                                                 </p>
-                                            )}
+                                                {errors.autoprocessFiles && (
+                                                    <p className='text-sm text-destructive mt-1'>
+                                                        {
+                                                            errors.autoprocessFiles
+                                                                .message
+                                                        }
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <Controller
+                                                name='autoprocessFiles'
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Switch
+                                                        id='autoprocessFiles'
+                                                        name={field.name}
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                    />
+                                                )}
+                                            />
                                         </div>
-                                        <Controller
-                                            name='autoprocessFiles'
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Switch
-                                                    id='autoprocessFiles'
-                                                    name={field.name}
-                                                    checked={field.value}
-                                                    onCheckedChange={field.onChange}
-                                                />
-                                            )}
-                                        />
                                     </div>
-                                </div>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsField
-                                    label='MD5 Subtype'
-                                    description='Entry class for MD5 hash artifacts'
-                                    error={errors.md5Subtype?.message?.toString()}
-                                    inputWidth='w-72'
-                                >
                                     <Controller
                                         name='md5Subtype'
                                         control={control}
-                                        render={({ field }) => (
-                                            <Select
-                                                value={field.value?.value || ''}
-                                                onValueChange={(value) => {
-                                                    const option = subtypes.find(
-                                                        (opt) => opt.value === value,
-                                                    );
-                                                    field.onChange(
-                                                        option
-                                                            ? {
-                                                                  value: option.value,
-                                                                  label: option.label,
-                                                              }
-                                                            : null,
-                                                    );
-                                                }}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
                                             >
-                                                <SelectTrigger
-                                                    className='w-72'
-                                                    aria-invalid={Boolean(
-                                                        errors.md5Subtype,
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                        MD5 Subtype
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Entry class for MD5 hash
+                                                        artifacts
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
                                                     )}
-                                                >
-                                                    <SelectValue placeholder='Select MD5 subtype' />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {subtypes.map((option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
+                                                </FieldContent>
+                                                <div className='w-72'>
+                                                    <Select
+                                                        value={field.value?.value || ''}
+                                                        onValueChange={(value) => {
+                                                            const option =
+                                                                subtypes.find(
+                                                                    (opt) =>
+                                                                        opt.value ===
+                                                                        value,
+                                                                );
+                                                            field.onChange(
+                                                                option
+                                                                    ? {
+                                                                          value: option.value,
+                                                                          label: option.label,
+                                                                      }
+                                                                    : null,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <SelectTrigger
+                                                            className='w-72'
+                                                            aria-invalid={
+                                                                fieldState.invalid
+                                                            }
+                                                            aria-describedby={
+                                                                fieldState.invalid
+                                                                    ? 'md5Subtype-error'
+                                                                    : undefined
+                                                            }
                                                         >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                            <SelectValue placeholder='Select MD5 subtype' />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {subtypes.map((option) => (
+                                                                <SelectItem
+                                                                    key={option.value}
+                                                                    value={option.value}
+                                                                >
+                                                                    {option.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </Field>
                                         )}
                                     />
-                                </SettingsField>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsField
-                                    label='SHA1 Subtype'
-                                    description='Entry class for SHA1 hash artifacts'
-                                    error={errors.sha1Subtype?.message?.toString()}
-                                    inputWidth='w-72'
-                                >
                                     <Controller
                                         name='sha1Subtype'
                                         control={control}
-                                        render={({ field }) => (
-                                            <Select
-                                                value={field.value?.value || ''}
-                                                onValueChange={(value) => {
-                                                    const option = subtypes.find(
-                                                        (opt) => opt.value === value,
-                                                    );
-                                                    field.onChange(
-                                                        option
-                                                            ? {
-                                                                  value: option.value,
-                                                                  label: option.label,
-                                                              }
-                                                            : null,
-                                                    );
-                                                }}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
                                             >
-                                                <SelectTrigger
-                                                    className='w-72'
-                                                    aria-invalid={Boolean(
-                                                        errors.sha1Subtype,
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                        SHA1 Subtype
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Entry class for SHA1 hash
+                                                        artifacts
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
                                                     )}
-                                                >
-                                                    <SelectValue placeholder='Select SHA1 subtype' />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {subtypes.map((option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
+                                                </FieldContent>
+                                                <div className='w-72'>
+                                                    <Select
+                                                        value={field.value?.value || ''}
+                                                        onValueChange={(value) => {
+                                                            const option =
+                                                                subtypes.find(
+                                                                    (opt) =>
+                                                                        opt.value ===
+                                                                        value,
+                                                                );
+                                                            field.onChange(
+                                                                option
+                                                                    ? {
+                                                                          value: option.value,
+                                                                          label: option.label,
+                                                                      }
+                                                                    : null,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <SelectTrigger
+                                                            className='w-72'
+                                                            aria-invalid={
+                                                                fieldState.invalid
+                                                            }
+                                                            aria-describedby={
+                                                                fieldState.invalid
+                                                                    ? 'sha1Subtype-error'
+                                                                    : undefined
+                                                            }
                                                         >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                            <SelectValue placeholder='Select SHA1 subtype' />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {subtypes.map((option) => (
+                                                                <SelectItem
+                                                                    key={option.value}
+                                                                    value={option.value}
+                                                                >
+                                                                    {option.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </Field>
                                         )}
                                     />
-                                </SettingsField>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsField
-                                    label='SHA256 Subtype'
-                                    description='Entry class for SHA256 hash artifacts'
-                                    error={errors.sha256Subtype?.message?.toString()}
-                                    inputWidth='w-72'
-                                >
                                     <Controller
                                         name='sha256Subtype'
                                         control={control}
-                                        render={({ field }) => (
-                                            <Select
-                                                value={field.value?.value || ''}
-                                                onValueChange={(value) => {
-                                                    const option = subtypes.find(
-                                                        (opt) => opt.value === value,
-                                                    );
-                                                    field.onChange(
-                                                        option
-                                                            ? {
-                                                                  value: option.value,
-                                                                  label: option.label,
-                                                              }
-                                                            : null,
-                                                    );
-                                                }}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
                                             >
-                                                <SelectTrigger
-                                                    className='w-72'
-                                                    aria-invalid={Boolean(
-                                                        errors.sha256Subtype,
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                        SHA256 Subtype
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Entry class for SHA256 hash
+                                                        artifacts
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
                                                     )}
-                                                >
-                                                    <SelectValue placeholder='Select SHA256 subtype' />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {subtypes.map((option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
+                                                </FieldContent>
+                                                <div className='w-72'>
+                                                    <Select
+                                                        value={field.value?.value || ''}
+                                                        onValueChange={(value) => {
+                                                            const option =
+                                                                subtypes.find(
+                                                                    (opt) =>
+                                                                        opt.value ===
+                                                                        value,
+                                                                );
+                                                            field.onChange(
+                                                                option
+                                                                    ? {
+                                                                          value: option.value,
+                                                                          label: option.label,
+                                                                      }
+                                                                    : null,
+                                                            );
+                                                        }}
+                                                    >
+                                                        <SelectTrigger
+                                                            className='w-72'
+                                                            aria-invalid={
+                                                                fieldState.invalid
+                                                            }
+                                                            aria-describedby={
+                                                                fieldState.invalid
+                                                                    ? 'sha256Subtype-error'
+                                                                    : undefined
+                                                            }
                                                         >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                            <SelectValue placeholder='Select SHA256 subtype' />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {subtypes.map((option) => (
+                                                                <SelectItem
+                                                                    key={option.value}
+                                                                    value={option.value}
+                                                                >
+                                                                    {option.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </Field>
                                         )}
                                     />
-                                </SettingsField>
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsField
-                                    label='Maximum File Size for Hashing'
-                                    description='Maximum file size for hashing'
-                                    {...register('maxFileSizeForHashing')}
-                                    error={errors.maxFileSizeForHashing}
-                                />
+                                    <Controller
+                                        name='maxFileSizeForHashing'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='maxFileSizeForHashing'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Maximum File Size for Hashing
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Maximum file size for hashing
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='maxFileSizeForHashing'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'maxFileSizeForHashing-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
 
-                                <Separator />
+                                    <Separator />
 
-                                <SettingsField
-                                    label='Upload Limit'
-                                    description='Maximum file size allowed for uploads (per user limit can override this)'
-                                    {...register('uploadLimit')}
-                                    error={errors.uploadLimit}
-                                />
-                            </SettingsCard>
+                                    <Controller
+                                        name='uploadLimit'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='uploadLimit'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Upload Limit
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Maximum file size allowed for
+                                                        uploads (per user limit can
+                                                        override this)
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='uploadLimit'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'uploadLimit-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
 
@@ -505,31 +646,30 @@ export default function FileSettingsForm() {
                         </p>
 
                         <div className='space-y-4'>
-                            {actionAlert.type && (
-                                <Alert
-                                    variant={
-                                        actionAlert.type === 'error'
-                                            ? 'destructive'
-                                            : 'default'
-                                    }
-                                >
-                                    {actionAlert.type === 'success' && <CheckCircle />}
-                                    {actionAlert.type === 'error' && <WarningCircle />}
-                                    {actionAlert.type === 'warning' && <InfoCircle />}
-                                    <AlertDescription>
-                                        {actionAlert.message}
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                            <SettingsCard>
-                                <SettingsButton
-                                    label='Process All Files'
-                                    description='Re-process all files with current settings'
-                                    buttonText='Process'
-                                    icon={<Refresh className='w-3.5 h-3.5' />}
-                                    onClick={handleReProcessAllFiles}
-                                />
-                            </SettingsCard>
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Process All Files
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Re-process all files with current
+                                                settings
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={handleReProcessAllFiles}
+                                        >
+                                            <Refresh className='w-3.5 h-3.5' />
+                                            Process
+                                        </Button>
+                                    </Field>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
 

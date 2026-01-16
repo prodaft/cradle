@@ -1,3 +1,4 @@
+import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
@@ -10,7 +11,6 @@ import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import type { EnrichmentRequestList } from '@services/cradle/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';

@@ -1,4 +1,4 @@
-import FileUploadModal from '@/components/modals/notes/FileUploadModal';
+import FileUploadModal from '@/components/dialogs/notes/FileUploadModal';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -46,9 +46,9 @@ import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import ConfirmDeletionModal from '../../dialogs/base/ConfirmDeletionModal';
+import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
 import FileInput from '../../forms/FileInput';
-import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
-import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
 import ActivityList from '../activity/ActivityList';
 import { EnrichmentRequestModal } from '../enrichment';
 import GraphExplorer from '../graph/GraphExplorer';

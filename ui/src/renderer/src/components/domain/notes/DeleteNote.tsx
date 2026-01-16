@@ -1,6 +1,6 @@
+import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
 import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import { useMutation } from '@tanstack/react-query';
 import { Trash } from 'iconoir-react/regular';
 import { useState } from 'react';

@@ -1,6 +1,5 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import SearchFilter from '@components/forms/SearchFilter';
 import { FilterList, NavArrowDown, NavArrowUp } from 'iconoir-react';
 import React, { Dispatch, SetStateAction } from 'react';
 
@@ -85,15 +84,32 @@ export default function SearchFilterSection({
                     <div className='flex flex-wrap gap-1.5'>
                         {entrySubtypes.map((subtype) => {
                             const color = entryClassColors.get(subtype);
+                            const isActive = entrySubtypeFilters.includes(subtype);
+                            const toggleFilter = () => {
+                                setEntrySubtypeFilters((prevFilters) =>
+                                    isActive
+                                        ? prevFilters.filter((item) => item !== subtype)
+                                        : [...prevFilters, subtype],
+                                );
+                            };
                             return (
-                                <SearchFilter
+                                <Badge
                                     key={subtype}
-                                    text={subtype}
-                                    option={subtype}
-                                    filters={entrySubtypeFilters}
-                                    setFilters={setEntrySubtypeFilters}
-                                    color={color}
-                                />
+                                    variant={isActive ? 'default' : 'outline'}
+                                    onClick={toggleFilter}
+                                    className='cursor-pointer mr-1.5 mb-1.5'
+                                    style={
+                                        color
+                                            ? {
+                                                  backgroundColor: color,
+                                                  borderColor: color,
+                                                  color: '#fff',
+                                              }
+                                            : undefined
+                                    }
+                                >
+                                    {subtype}
+                                </Badge>
                             );
                         })}
                     </div>

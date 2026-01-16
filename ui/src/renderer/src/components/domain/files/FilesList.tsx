@@ -1,4 +1,4 @@
-import { ConfirmDeletionModal } from '@/components/modals';
+import { ConfirmDeletionModal } from '@/components/dialogs';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';

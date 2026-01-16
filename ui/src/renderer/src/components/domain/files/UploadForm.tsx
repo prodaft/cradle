@@ -11,18 +11,13 @@ import {
 } from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
+import { SelectOption } from '@components/forms';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Upload } from 'iconoir-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
-
-interface SelectOption<T = string | number> {
-    value: T;
-    label: string;
-    [key: string]: any;
-}
 
 interface DataTypeOption extends SelectOption<string> {
     inferEntities: boolean;

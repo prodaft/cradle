@@ -5,7 +5,7 @@ import { useAuthState } from '@/hooks/auth/useAuth';
 import { useMutation } from '@tanstack/react-query';
 import { ClockRotateRight, EditPencil, Trash } from 'iconoir-react/regular';
 import { ReactNode, useState } from 'react';
-import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
+import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
 import EntryTypeForm from '../forms/EntryTypeForm';
 

@@ -1,9 +1,9 @@
+import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import MarkdownEditorModal from '@/components/dialogs/notes/MarkdownEditorModal';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { logger } from '@/utils/logger';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
-import MarkdownEditorModal from '@components/modals/notes/MarkdownEditorModal';
 import useApi from '@hooks/api/useApi';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Edit, Plus, Trash } from 'iconoir-react/regular';

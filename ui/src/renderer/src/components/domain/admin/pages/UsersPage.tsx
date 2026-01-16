@@ -37,8 +37,8 @@ import {
 } from 'iconoir-react/regular';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import AddUserModal from '../../../modals/admin/AddUserModal';
-import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
+import AddUserModal from '../../../dialogs/admin/AddUserModal';
+import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
 import AdminPageLayout from '../AdminPageLayout';
 import AdminUserSettings from './AdminUserSettings';
 

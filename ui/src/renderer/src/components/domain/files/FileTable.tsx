@@ -1,4 +1,4 @@
-import { ConfirmDeletionModal } from '@/components/modals';
+import { ConfirmDeletionModal } from '@/components/dialogs';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

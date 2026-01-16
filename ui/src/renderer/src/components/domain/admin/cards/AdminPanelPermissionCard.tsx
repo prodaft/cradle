@@ -1,5 +1,12 @@
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import useApi from '@/hooks/api/useApi';
-import { SettingsRadio } from '@components/forms';
 import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
@@ -57,15 +64,37 @@ export default function AdminPanelPermissionCard({
 
     return (
         <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1'>
-            <SettingsRadio
-                label={text}
-                description={`Entity access permissions`}
-                name={`access-${entityId}`}
-                options={ACCESS_OPTIONS}
-                value={currentAccess}
-                onChange={handleChange}
-                layout='horizontal'
-            />
+            <Field orientation='horizontal' className='py-2'>
+                <FieldContent className='flex-1'>
+                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                        {text}
+                    </FieldLabel>
+                    <FieldDescription className='text-sm'>
+                        Entity access permissions
+                    </FieldDescription>
+                </FieldContent>
+                <RadioGroup
+                    value={currentAccess}
+                    onValueChange={handleChange}
+                    name={`access-${entityId}`}
+                    className='flex-row gap-3'
+                >
+                    {ACCESS_OPTIONS.map((option) => {
+                        const optionId = `access-${entityId}-${option.value}`;
+                        return (
+                            <div key={option.value} className='flex items-center gap-2'>
+                                <RadioGroupItem value={option.value} id={optionId} />
+                                <Label
+                                    htmlFor={optionId}
+                                    className='text-sm text-foreground cursor-pointer'
+                                >
+                                    {option.label}
+                                </Label>
+                            </div>
+                        );
+                    })}
+                </RadioGroup>
+            </Field>
         </div>
     );
 }

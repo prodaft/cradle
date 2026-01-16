@@ -1,9 +1,16 @@
-import ApiKeyGenerateModal from '@/components/modals/auth/ApiKeyGenerateModal';
-import ChangePasswordModal from '@/components/modals/auth/ChangePasswordModal';
-import TwoFactorSetupModal from '@/components/modals/auth/TwoFactorSetupModal';
-import ConfirmDeletionModal from '@/components/modals/base/ConfirmDeletionModal';
-import MarkdownEditorModal from '@/components/modals/notes/MarkdownEditorModal';
+import ApiKeyGenerateModal from '@/components/dialogs/auth/ApiKeyGenerateModal';
+import ChangePasswordModal from '@/components/dialogs/auth/ChangePasswordModal';
+import TwoFactorSetupModal from '@/components/dialogs/auth/TwoFactorSetupModal';
+import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import MarkdownEditorModal from '@/components/dialogs/notes/MarkdownEditorModal';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -19,7 +26,6 @@ import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { UserConfig, UserRetrieve } from '@/services/cradle/models';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
-import { SettingsButton, SettingsCard } from '@components/forms';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -631,10 +637,11 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                             e.preventDefault();
                                             handleTabChange(tab.id);
                                         }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${isActive
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
+                                            isActive
                                                 ? 'bg-muted hover:bg-accent active'
                                                 : ''
-                                            }`}
+                                        }`}
                                         data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
@@ -674,66 +681,122 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                         <section id='security' className='pb-8'>
                                             <div className='space-y-4'>
                                                 {/* Authentication Card */}
-                                                <SettingsCard>
-                                                    <SettingsButton
-                                                        label='Password'
-                                                        description='Change your account password'
-                                                        buttonText='Change'
-                                                        onClick={
-                                                            openChangePasswordModal
-                                                        }
-                                                        title='Change Password'
-                                                    />
-
-                                                    <Separator />
-
-                                                    <SettingsButton
-                                                        label='API Key'
-                                                        description='Generate key for API access'
-                                                        buttonText='Generate'
-                                                        onClick={openApiKeyModal}
-                                                        title='Generate API Key'
-                                                    />
-
-                                                    <Separator />
-
-                                                    <div className='flex items-center justify-between py-2'>
-                                                        <div>
-                                                            <span className='text-sm text-muted-foreground block mb-0.5'>
-                                                                Two-Factor Auth
-                                                            </span>
-                                                            <span className='text-sm text-muted-foreground'>
-                                                                Protect your account
-                                                                with one-time codes from
-                                                                an authenticator app
-                                                            </span>
-                                                        </div>
-                                                        <Button
-                                                            type='button'
-                                                            variant={
-                                                                twoFactorEnabled
-                                                                    ? 'destructive'
-                                                                    : 'outline'
-                                                            }
-                                                            size='sm'
-                                                            onClick={openTwoFactorModal}
+                                                <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                                    <CardContent className='px-4 py-1'>
+                                                        <Field
+                                                            orientation='horizontal'
+                                                            className='py-2'
                                                         >
-                                                            {twoFactorEnabled
-                                                                ? 'Disable'
-                                                                : 'Enable'}
-                                                        </Button>
-                                                    </div>
+                                                            <FieldContent className='flex-1'>
+                                                                <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    Password
+                                                                </FieldLabel>
+                                                                <FieldDescription className='text-sm'>
+                                                                    Change your account
+                                                                    password
+                                                                </FieldDescription>
+                                                            </FieldContent>
+                                                            <Button
+                                                                type='button'
+                                                                variant='outline'
+                                                                size='sm'
+                                                                onClick={
+                                                                    openChangePasswordModal
+                                                                }
+                                                                title='Change Password'
+                                                            >
+                                                                Change
+                                                            </Button>
+                                                        </Field>
 
-                                                    <Separator />
+                                                        <Separator />
 
-                                                    <SettingsButton
-                                                        label='Delete Account'
-                                                        description='Permanently remove account and data'
-                                                        buttonText='Delete'
-                                                        variant='danger'
-                                                        onClick={openDeleteAccountModal}
-                                                    />
-                                                </SettingsCard>
+                                                        <Field
+                                                            orientation='horizontal'
+                                                            className='py-2'
+                                                        >
+                                                            <FieldContent className='flex-1'>
+                                                                <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    API Key
+                                                                </FieldLabel>
+                                                                <FieldDescription className='text-sm'>
+                                                                    Generate key for API
+                                                                    access
+                                                                </FieldDescription>
+                                                            </FieldContent>
+                                                            <Button
+                                                                type='button'
+                                                                variant='outline'
+                                                                size='sm'
+                                                                onClick={
+                                                                    openApiKeyModal
+                                                                }
+                                                                title='Generate API Key'
+                                                            >
+                                                                Generate
+                                                            </Button>
+                                                        </Field>
+
+                                                        <Separator />
+
+                                                        <div className='flex items-center justify-between py-2'>
+                                                            <div>
+                                                                <span className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    Two-Factor Auth
+                                                                </span>
+                                                                <span className='text-sm text-muted-foreground'>
+                                                                    Protect your account
+                                                                    with one-time codes
+                                                                    from an
+                                                                    authenticator app
+                                                                </span>
+                                                            </div>
+                                                            <Button
+                                                                type='button'
+                                                                variant={
+                                                                    twoFactorEnabled
+                                                                        ? 'destructive'
+                                                                        : 'outline'
+                                                                }
+                                                                size='sm'
+                                                                onClick={
+                                                                    openTwoFactorModal
+                                                                }
+                                                            >
+                                                                {twoFactorEnabled
+                                                                    ? 'Disable'
+                                                                    : 'Enable'}
+                                                            </Button>
+                                                        </div>
+
+                                                        <Separator />
+
+                                                        <Field
+                                                            orientation='horizontal'
+                                                            className='py-2'
+                                                        >
+                                                            <FieldContent className='flex-1'>
+                                                                <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    Delete Account
+                                                                </FieldLabel>
+                                                                <FieldDescription className='text-sm'>
+                                                                    Permanently remove
+                                                                    account and data
+                                                                </FieldDescription>
+                                                            </FieldContent>
+                                                            <Button
+                                                                type='button'
+                                                                variant='destructive'
+                                                                size='sm'
+                                                                onClick={
+                                                                    openDeleteAccountModal
+                                                                }
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                        </Field>
+                                                    </CardContent>
+                                                </Card>
                                             </div>
                                         </section>
                                     )}
@@ -748,88 +811,97 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {/* OAuth Section */}
                                     {activeTab === 'oauth' &&
                                         Object.keys(mergedOAuthConnections).length >
-                                        0 && (
+                                            0 && (
                                             <section id='oauth' className='pb-8'>
                                                 <div className='space-y-4'>
-                                                    <SettingsCard>
-                                                        {Object.entries(
-                                                            mergedOAuthConnections,
-                                                        ).map(
-                                                            (
-                                                                [provider, connected],
-                                                                index,
-                                                                all,
-                                                            ) => {
-                                                                const method =
-                                                                    oauthMethods.find(
-                                                                        (item) =>
-                                                                            getOAuthKey(
-                                                                                item,
-                                                                            ) ===
-                                                                            provider,
-                                                                    );
-                                                                const label = method
-                                                                    ? getOAuthLabel(
-                                                                        method,
-                                                                    )
-                                                                    : provider;
-                                                                return (
-                                                                    <div key={provider}>
-                                                                        <div className='flex items-center justify-between py-2'>
-                                                                            <div>
-                                                                                <span className='text-sm text-muted-foreground block mb-0.5'>
-                                                                                    {
-                                                                                        label
-                                                                                    }
-                                                                                </span>
-                                                                                <span className='text-sm text-muted-foreground'>
-                                                                                    {connected
-                                                                                        ? 'Connected'
-                                                                                        : 'Not connected'}
-                                                                                </span>
-                                                                            </div>
-                                                                            <Button
-                                                                                type='button'
-                                                                                variant={
-                                                                                    connected
-                                                                                        ? 'destructive'
-                                                                                        : 'outline'
-                                                                                }
-                                                                                size='sm'
-                                                                                onClick={() => {
-                                                                                    if (
+                                                    <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                                        <CardContent className='px-4 py-1'>
+                                                            {Object.entries(
+                                                                mergedOAuthConnections,
+                                                            ).map(
+                                                                (
+                                                                    [
+                                                                        provider,
+                                                                        connected,
+                                                                    ],
+                                                                    index,
+                                                                    all,
+                                                                ) => {
+                                                                    const method =
+                                                                        oauthMethods.find(
+                                                                            (item) =>
+                                                                                getOAuthKey(
+                                                                                    item,
+                                                                                ) ===
+                                                                                provider,
+                                                                        );
+                                                                    const label = method
+                                                                        ? getOAuthLabel(
+                                                                              method,
+                                                                          )
+                                                                        : provider;
+                                                                    return (
+                                                                        <div
+                                                                            key={
+                                                                                provider
+                                                                            }
+                                                                        >
+                                                                            <div className='flex items-center justify-between py-2'>
+                                                                                <div>
+                                                                                    <span className='text-sm text-muted-foreground block mb-0.5'>
+                                                                                        {
+                                                                                            label
+                                                                                        }
+                                                                                    </span>
+                                                                                    <span className='text-sm text-muted-foreground'>
+                                                                                        {connected
+                                                                                            ? 'Connected'
+                                                                                            : 'Not connected'}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <Button
+                                                                                    type='button'
+                                                                                    variant={
                                                                                         connected
-                                                                                    ) {
-                                                                                        handleOAuthDisconnect(
-                                                                                            provider,
-                                                                                        );
-                                                                                    } else {
-                                                                                        handleOAuthConnect(
-                                                                                            provider,
-                                                                                        );
+                                                                                            ? 'destructive'
+                                                                                            : 'outline'
                                                                                     }
-                                                                                }}
-                                                                                disabled={
-                                                                                    oauthBusyProvider ===
-                                                                                    provider ||
-                                                                                    oauthDisconnectMutation.isPending
-                                                                                }
-                                                                            >
-                                                                                {connected
-                                                                                    ? 'Disconnect'
-                                                                                    : 'Connect'}
-                                                                            </Button>
-                                                                        </div>
-                                                                        {index <
-                                                                            all.length -
-                                                                            1 && (
+                                                                                    size='sm'
+                                                                                    onClick={() => {
+                                                                                        if (
+                                                                                            connected
+                                                                                        ) {
+                                                                                            handleOAuthDisconnect(
+                                                                                                provider,
+                                                                                            );
+                                                                                        } else {
+                                                                                            handleOAuthConnect(
+                                                                                                provider,
+                                                                                            );
+                                                                                        }
+                                                                                    }}
+                                                                                    disabled={
+                                                                                        oauthBusyProvider ===
+                                                                                            provider ||
+                                                                                        oauthDisconnectMutation.isPending
+                                                                                    }
+                                                                                >
+                                                                                    {connected
+                                                                                        ? 'Disconnect'
+                                                                                        : 'Connect'}
+                                                                                </Button>
+                                                                            </div>
+                                                                            {index <
+                                                                                all.length -
+                                                                                    1 && (
                                                                                 <Separator />
                                                                             )}
-                                                                    </div>
-                                                                );
-                                                            },
-                                                        )}
-                                                    </SettingsCard>
+                                                                        </div>
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </CardContent>
+                                                    </Card>
                                                 </div>
                                             </section>
                                         )}
@@ -837,7 +909,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {/* OAuth empty state */}
                                     {activeTab === 'oauth' &&
                                         Object.keys(mergedOAuthConnections).length ===
-                                        0 && (
+                                            0 && (
                                             <section id='oauth' className='pb-8'>
                                                 <p className='text-sm text-muted-foreground'>
                                                     No OAuth providers are configured
@@ -849,40 +921,44 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'appearance' && (
                                         <section id='appearance' className='pb-8'>
                                             <div className='space-y-4'>
-                                                <SettingsCard>
-                                                    <div className='flex items-center justify-between gap-4 py-2'>
-                                                        <div className='flex-1'>
-                                                            <Label className='text-sm text-muted-foreground block mb-0.5'>
-                                                                Theme
-                                                            </Label>
-                                                            <p className='text-sm text-muted-foreground'>
-                                                                Choose your preferred
-                                                                color scheme
-                                                            </p>
-                                                        </div>
-                                                        <Button
-                                                            type='button'
-                                                            variant='ghost'
-                                                            size='icon'
-                                                            onClick={() =>
-                                                                setValue(
-                                                                    'theme',
-                                                                    watch('theme') ===
-                                                                        'dark'
-                                                                        ? 'light'
-                                                                        : 'dark',
-                                                                )
-                                                            }
-                                                        >
-                                                            {watch('theme') ===
+                                                <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                                    <CardContent className='px-4 py-1'>
+                                                        <div className='flex items-center justify-between gap-4 py-2'>
+                                                            <div className='flex-1'>
+                                                                <Label className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    Theme
+                                                                </Label>
+                                                                <p className='text-sm text-muted-foreground'>
+                                                                    Choose your
+                                                                    preferred color
+                                                                    scheme
+                                                                </p>
+                                                            </div>
+                                                            <Button
+                                                                type='button'
+                                                                variant='ghost'
+                                                                size='icon'
+                                                                onClick={() =>
+                                                                    setValue(
+                                                                        'theme',
+                                                                        watch(
+                                                                            'theme',
+                                                                        ) === 'dark'
+                                                                            ? 'light'
+                                                                            : 'dark',
+                                                                    )
+                                                                }
+                                                            >
+                                                                {watch('theme') ===
                                                                 'dark' ? (
-                                                                <SunLight className='w-5 h-5' />
-                                                            ) : (
-                                                                <HalfMoon className='w-5 h-5' />
-                                                            )}
-                                                        </Button>
-                                                    </div>
-                                                </SettingsCard>
+                                                                    <SunLight className='w-5 h-5' />
+                                                                ) : (
+                                                                    <HalfMoon className='w-5 h-5' />
+                                                                )}
+                                                            </Button>
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
                                                 <div className='flex justify-end pt-2'>
                                                     <Button
                                                         type='button'
@@ -905,71 +981,118 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'editor' && (
                                         <section id='editor' className='pb-8'>
                                             <div className='space-y-4'>
-                                                <SettingsCard>
-                                                    <div className='py-2'>
-                                                        <div className='flex items-center justify-between gap-4'>
-                                                            <div className='flex-1'>
-                                                                <Label
-                                                                    htmlFor={vimModeId}
-                                                                    className='text-sm text-muted-foreground block mb-0.5'
-                                                                >
-                                                                    Vim Mode
-                                                                </Label>
-                                                                <p className='text-sm text-muted-foreground'>
-                                                                    Use Vim keybindings
-                                                                    in the markdown
-                                                                    editor
-                                                                </p>
+                                                <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                                    <CardContent className='px-4 py-1'>
+                                                        <div className='py-2'>
+                                                            <div className='flex items-center justify-between gap-4'>
+                                                                <div className='flex-1'>
+                                                                    <Label
+                                                                        htmlFor={
+                                                                            vimModeId
+                                                                        }
+                                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                                    >
+                                                                        Vim Mode
+                                                                    </Label>
+                                                                    <p className='text-sm text-muted-foreground'>
+                                                                        Use Vim
+                                                                        keybindings in
+                                                                        the markdown
+                                                                        editor
+                                                                    </p>
+                                                                </div>
+                                                                <Controller
+                                                                    name='vimMode'
+                                                                    control={control}
+                                                                    render={({
+                                                                        field,
+                                                                    }) => (
+                                                                        <Switch
+                                                                            id={
+                                                                                vimModeId
+                                                                            }
+                                                                            name={
+                                                                                field.name
+                                                                            }
+                                                                            data-testid='vim-toggle'
+                                                                            checked={
+                                                                                field.value
+                                                                            }
+                                                                            onCheckedChange={
+                                                                                field.onChange
+                                                                            }
+                                                                        />
+                                                                    )}
+                                                                />
                                                             </div>
-                                                            <Controller
-                                                                name='vimMode'
-                                                                control={control}
-                                                                render={({ field }) => (
-                                                                    <Switch
-                                                                        id={vimModeId}
-                                                                        name={
-                                                                            field.name
-                                                                        }
-                                                                        data-testid='vim-toggle'
-                                                                        checked={
-                                                                            field.value
-                                                                        }
-                                                                        onCheckedChange={
-                                                                            field.onChange
-                                                                        }
-                                                                    />
-                                                                )}
-                                                            />
                                                         </div>
-                                                    </div>
 
-                                                    <Separator />
+                                                        <Separator />
 
-                                                    <SettingsButton
-                                                        label='Note Template'
-                                                        description='Preset structure for new notes you create'
-                                                        buttonText='Edit'
-                                                        onClick={openNoteTemplateModal}
-                                                        disabled={noteTemplateLoading}
-                                                        loading={noteTemplateLoading}
-                                                    />
+                                                        <Field
+                                                            orientation='horizontal'
+                                                            className='py-2'
+                                                        >
+                                                            <FieldContent className='flex-1'>
+                                                                <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    Note Template
+                                                                </FieldLabel>
+                                                                <FieldDescription className='text-sm'>
+                                                                    Preset structure for
+                                                                    new notes you create
+                                                                </FieldDescription>
+                                                            </FieldContent>
+                                                            <Button
+                                                                type='button'
+                                                                variant='outline'
+                                                                size='sm'
+                                                                onClick={
+                                                                    openNoteTemplateModal
+                                                                }
+                                                                disabled={
+                                                                    noteTemplateLoading
+                                                                }
+                                                            >
+                                                                {noteTemplateLoading
+                                                                    ? 'Loading...'
+                                                                    : 'Edit'}
+                                                            </Button>
+                                                        </Field>
 
-                                                    <Separator />
+                                                        <Separator />
 
-                                                    <SettingsButton
-                                                        label='Note Snippets'
-                                                        description='Reusable text blocks you can insert with shortcuts'
-                                                        buttonText='New Snippet'
-                                                        onClick={() => {
-                                                            snippetListRef.current?.handleAddSnippet();
-                                                        }}
-                                                    />
-                                                    <SnippetList
-                                                        ref={snippetListRef}
-                                                        userId={target}
-                                                        showTitle={false}
-                                                    />
-                                                </SettingsCard>
+                                                        <Field
+                                                            orientation='horizontal'
+                                                            className='py-2'
+                                                        >
+                                                            <FieldContent className='flex-1'>
+                                                                <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    Note Snippets
+                                                                </FieldLabel>
+                                                                <FieldDescription className='text-sm'>
+                                                                    Reusable text blocks
+                                                                    you can insert with
+                                                                    shortcuts
+                                                                </FieldDescription>
+                                                            </FieldContent>
+                                                            <Button
+                                                                type='button'
+                                                                variant='outline'
+                                                                size='sm'
+                                                                onClick={() => {
+                                                                    snippetListRef.current?.handleAddSnippet();
+                                                                }}
+                                                            >
+                                                                New Snippet
+                                                            </Button>
+                                                        </Field>
+                                                        <SnippetList
+                                                            ref={snippetListRef}
+                                                            userId={target}
+                                                            showTitle={false}
+                                                        />
+                                                    </CardContent>
+                                                </Card>
                                                 <div className='flex justify-end pt-2'>
                                                     <Button
                                                         type='button'

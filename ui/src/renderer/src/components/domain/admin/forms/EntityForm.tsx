@@ -1,4 +1,13 @@
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
@@ -10,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,12 +30,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/OfflineIndicator';
-import {
-    SelectOption,
-    SettingsCard,
-    SettingsField,
-    SettingsTextArea,
-} from '../../../forms';
+import { SelectOption } from '../../../forms';
 import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 
 interface EntityFormProps {
@@ -164,15 +169,18 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         data: entityData,
         isPending,
         isPaused,
-    } = useQuery({
+    } = useQuery<Entity>({
         queryKey: queryKeys.entities.detail(String(id)),
-        queryFn: () => entriesApi.entitiesRetrieve({ entityId: Number(id) }),
+        queryFn: async () => {
+            const result = await entriesApi.entitiesRetrieve({ entityId: Number(id) });
+            return result as Entity;
+        },
         enabled: !!id,
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to fetch entity',
-        },
-        suppressNotification: true,
+            suppressNotification: true,
+        } as any,
     });
 
     // Query for access data when editing
@@ -252,165 +260,264 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             {/* Basic Section */}
             <section id='basic' className='pb-8'>
                 <div className='space-y-4'>
-                    <SettingsCard>
-                        <SettingsField
-                            label='Name'
-                            description='Unique identifier for this entity'
-                            {...register('name')}
-                            error={errors.name}
-                            disabled={true}
-                            required
-                        />
+                    <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                        <CardContent className='px-4 py-1'>
+                            <Controller
+                                name='name'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='py-2'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel
+                                                htmlFor='name'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Name
+                                                <span className='text-destructive ml-1'>
+                                                    *
+                                                </span>
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Unique identifier for this entity
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div className='w-auto'>
+                                            <Input
+                                                {...field}
+                                                id='name'
+                                                disabled={true}
+                                                aria-invalid={fieldState.invalid}
+                                                aria-describedby={
+                                                    fieldState.invalid
+                                                        ? 'name-error'
+                                                        : undefined
+                                                }
+                                            />
+                                        </div>
+                                    </Field>
+                                )}
+                            />
 
-                        <Separator />
+                            <Separator />
 
-                        <SettingsField
-                            label='Subtype'
-                            description='Entity class type'
-                            required
-                            error={errors.subtype?.message?.toString()}
-                            inputWidth='w-72'
-                        >
                             <Controller
                                 name='subtype'
                                 control={control}
-                                render={({ field }) => (
-                                    <Select
-                                        value={field.value?.value || ''}
-                                        onValueChange={(value) => {
-                                            const option = subtypeOptions.find(
-                                                (opt) => opt.value === value,
-                                            );
-                                            field.onChange(
-                                                option
-                                                    ? {
-                                                          value: option.value,
-                                                          label: option.label,
-                                                      }
-                                                    : null,
-                                            );
-                                        }}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='py-2'
+                                        data-invalid={fieldState.invalid}
                                     >
-                                        <SelectTrigger
-                                            className='w-72'
-                                            aria-invalid={Boolean(errors.subtype)}
-                                        >
-                                            <SelectValue placeholder='Select subtype' />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {subtypeOptions.map((option) => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Subtype
+                                                <span className='text-destructive ml-1'>
+                                                    *
+                                                </span>
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Entity class type
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div className='w-72'>
+                                            <Select
+                                                value={field.value?.value || ''}
+                                                onValueChange={(value) => {
+                                                    const option = subtypeOptions.find(
+                                                        (opt) => opt.value === value,
+                                                    );
+                                                    field.onChange(
+                                                        option
+                                                            ? {
+                                                                  value: option.value,
+                                                                  label: option.label,
+                                                              }
+                                                            : null,
+                                                    );
+                                                }}
+                                            >
+                                                <SelectTrigger
+                                                    className='w-72'
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-describedby={
+                                                        fieldState.invalid
+                                                            ? 'subtype-error'
+                                                            : undefined
+                                                    }
                                                 >
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                                    <SelectValue placeholder='Select subtype' />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {subtypeOptions.map((option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </Field>
                                 )}
                             />
-                        </SettingsField>
 
-                        <Separator />
+                            <Separator />
 
-                        <div className='py-2'>
-                            <div className='flex items-center justify-between gap-4'>
-                                <div className='flex-1'>
-                                    <Label
-                                        htmlFor='isPublic'
-                                        className='text-sm text-muted-foreground block mb-0.5'
+                            <Controller
+                                name='isPublic'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='py-2'
+                                        data-invalid={fieldState.invalid}
                                     >
-                                        Publicly Available
-                                    </Label>
-                                    <p className='text-sm text-muted-foreground'>
-                                        Allow public access to this entity
-                                    </p>
-                                    {errors.isPublic && (
-                                        <p className='text-sm text-destructive mt-1'>
-                                            {errors.isPublic.message}
-                                        </p>
-                                    )}
-                                </div>
-                                <Controller
-                                    name='isPublic'
-                                    control={control}
-                                    render={({ field }) => (
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel
+                                                htmlFor='isPublic'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Publicly Available
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Allow public access to this entity
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
                                         <Switch
                                             id='isPublic'
                                             name={field.name}
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'isPublic-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </Field>
+                                )}
+                            />
+
+                            <Separator />
+
+                            <Controller
+                                name='description'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='vertical'
+                                        className='py-2 w-full'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent>
+                                            <FieldLabel
+                                                htmlFor='description'
+                                                className='text-sm text-muted-foreground block mb-0.5'
+                                            >
+                                                Description
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm mb-2'>
+                                                Brief explanation of this entity
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Textarea
+                                            {...field}
+                                            id='description'
+                                            placeholder='Description'
+                                            rows={4}
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'description-error'
+                                                    : undefined
+                                            }
+                                        />
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </Field>
+                                )}
+                            />
+
+                            <Separator />
+
+                            <div className='py-2'>
+                                <Label className='text-sm text-muted-foreground block mb-0.5'>
+                                    Aliases
+                                </Label>
+                                <p className='text-sm text-muted-foreground mb-2'>
+                                    Alternate names or references for this entity
+                                </p>
+                                <Controller
+                                    name='aliases'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <MultipleSelector
+                                            value={
+                                                (field.value?.map((a) => ({
+                                                    value: String(a.value),
+                                                    label: a.label,
+                                                })) || []) as Option[]
+                                            }
+                                            defaultOptions={[]}
+                                            placeholder='Select aliases...'
+                                            onSearch={async (query) => {
+                                                const results =
+                                                    await fetchAliases(query);
+                                                return results.map((a) => ({
+                                                    value: String(a.value),
+                                                    label: a.label,
+                                                })) as unknown as Option[];
+                                            }}
+                                            onChange={(options) => {
+                                                field.onChange(
+                                                    options.map((o) => ({
+                                                        value: Number(o.value),
+                                                        label: o.label,
+                                                    })),
+                                                );
+                                            }}
+                                            emptyIndicator={
+                                                <p className='text-center text-sm'>
+                                                    No aliases found
+                                                </p>
+                                            }
                                         />
                                     )}
                                 />
-                            </div>
-                        </div>
-
-                        <Separator />
-
-                        <SettingsTextArea
-                            label='Description'
-                            description='Brief explanation of this entity'
-                            placeholder='Description'
-                            rows={4}
-                            {...register('description')}
-                            error={errors.description}
-                            layout='vertical'
-                        />
-
-                        <Separator />
-
-                        <div className='py-2'>
-                            <Label className='text-sm text-muted-foreground block mb-0.5'>
-                                Aliases
-                            </Label>
-                            <p className='text-sm text-muted-foreground mb-2'>
-                                Alternate names or references for this entity
-                            </p>
-                            <Controller
-                                name='aliases'
-                                control={control}
-                                render={({ field }) => (
-                                    <MultipleSelector
-                                        value={
-                                            (field.value?.map((a) => ({
-                                                value: String(a.value),
-                                                label: a.label,
-                                            })) || []) as Option[]
-                                        }
-                                        defaultOptions={[]}
-                                        placeholder='Select aliases...'
-                                        onSearch={async (query) => {
-                                            const results = await fetchAliases(query);
-                                            return results.map((a) => ({
-                                                value: String(a.value),
-                                                label: a.label,
-                                            })) as unknown as Option[];
-                                        }}
-                                        onChange={(options) => {
-                                            field.onChange(
-                                                options.map((o) => ({
-                                                    value: Number(o.value),
-                                                    label: o.label,
-                                                })),
-                                            );
-                                        }}
-                                        emptyIndicator={
-                                            <p className='text-center text-sm'>
-                                                No aliases found
-                                            </p>
-                                        }
-                                    />
+                                {errors.aliases && (
+                                    <p className='text-sm text-destructive mt-1'>
+                                        {errors.aliases.message}
+                                    </p>
                                 )}
-                            />
-                            {errors.aliases && (
-                                <p className='text-sm text-destructive mt-1'>
-                                    {errors.aliases.message}
-                                </p>
-                            )}
-                        </div>
-                    </SettingsCard>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
             </section>
 

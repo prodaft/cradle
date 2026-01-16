@@ -1,18 +1,24 @@
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { CheckCircle, InfoCircle, Plus, Refresh, WarningCircle } from 'iconoir-react';
+import { Plus, Refresh } from 'iconoir-react';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import SnippetList, { SnippetListRef } from '../../../base/SnippetList/SnippetList';
-import { SettingsButton, SettingsCard, SettingsField } from '../../../forms';
 
 const noteSettingsSchema = z.object({
     minEntries: z.coerce.number().min(1, { error: 'Must be at least 1' }),
@@ -27,13 +33,6 @@ export default function NoteSettingsForm() {
     const { managementApi } = useApi();
     const [isLoading, setIsLoading] = useState(true);
     const snippetListRef = useRef<SnippetListRef>(null);
-    const [actionAlert, setActionAlert] = useState<{
-        type: 'success' | 'error' | 'warning' | null;
-        message: string;
-    }>({
-        type: null,
-        message: '',
-    });
 
     const {
         register,
@@ -94,16 +93,10 @@ export default function NoteSettingsForm() {
             suppressNotification: true,
         },
         onSuccess: () => {
-            setActionAlert({
-                type: 'success',
-                message: 'Re-Link all Notes action triggered!',
-            });
+            toast.success('Re-Link all Notes action triggered!');
         },
         onError: () => {
-            setActionAlert({
-                type: 'error',
-                message: 'Failed to trigger Re-Link action',
-            });
+            toast.error('Failed to trigger Re-Link action');
         },
     });
 
@@ -159,75 +152,192 @@ export default function NoteSettingsForm() {
                         </p>
 
                         <div className='space-y-4'>
-                            <SettingsCard>
-                                <SettingsField
-                                    label='Minimum Entries'
-                                    description='Minimum number of entries required in a note'
-                                    type='number'
-                                    {...register('minEntries')}
-                                    error={errors.minEntries}
-                                />
-
-                                <Separator />
-
-                                <SettingsField
-                                    label='Minimum Entities'
-                                    description='Minimum number of entities required in a note'
-                                    type='number'
-                                    {...register('minEntities')}
-                                    error={errors.minEntities}
-                                />
-
-                                <Separator />
-
-                                <SettingsField
-                                    label='Maximum Clique Size'
-                                    description='Maximum size for clique detection'
-                                    type='number'
-                                    {...register('maxCliqueSize')}
-                                    error={errors.maxCliqueSize}
-                                />
-
-                                <Separator />
-
-                                <div className='py-2'>
-                                    <div className='flex items-center justify-between gap-4'>
-                                        <div className='flex-1'>
-                                            <Label
-                                                htmlFor='allowDynamicEntryClassCreation'
-                                                className='text-sm text-muted-foreground block mb-0.5'
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <Controller
+                                        name='minEntries'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
                                             >
-                                                Dynamic Entry Class Creation
-                                            </Label>
-                                            <p className='text-sm text-muted-foreground'>
-                                                Allow automatic creation of new entry
-                                                classes
-                                            </p>
-                                            {errors.allowDynamicEntryClassCreation && (
-                                                <p className='text-sm text-destructive mt-1'>
-                                                    {
-                                                        errors
-                                                            .allowDynamicEntryClassCreation
-                                                            .message
-                                                    }
-                                                </p>
-                                            )}
-                                        </div>
-                                        <Controller
-                                            name='allowDynamicEntryClassCreation'
-                                            control={control}
-                                            render={({ field }) => (
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='minEntries'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Minimum Entries
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Minimum number of entries
+                                                        required in a note
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='minEntries'
+                                                        type='number'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'minEntries-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
+
+                                    <Separator />
+
+                                    <Controller
+                                        name='minEntities'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='minEntities'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Minimum Entities
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Minimum number of entities
+                                                        required in a note
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='minEntities'
+                                                        type='number'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'minEntities-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
+
+                                    <Separator />
+
+                                    <Controller
+                                        name='maxCliqueSize'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='maxCliqueSize'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Maximum Clique Size
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Maximum size for clique
+                                                        detection
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='w-auto'>
+                                                    <Input
+                                                        {...field}
+                                                        id='maxCliqueSize'
+                                                        type='number'
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'maxCliqueSize-error'
+                                                                : undefined
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
+
+                                    <Separator />
+
+                                    <Controller
+                                        name='allowDynamicEntryClassCreation'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='allowDynamicEntryClassCreation'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Dynamic Entry Class Creation
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Allow automatic creation of new
+                                                        entry classes
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
                                                 <Switch
                                                     id='allowDynamicEntryClassCreation'
                                                     name={field.name}
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-describedby={
+                                                        fieldState.invalid
+                                                            ? 'allowDynamicEntryClassCreation-error'
+                                                            : undefined
+                                                    }
                                                 />
-                                            )}
-                                        />
-                                    </div>
-                                </div>
-                            </SettingsCard>
+                                            </Field>
+                                        )}
+                                    />
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
 
@@ -244,22 +354,37 @@ export default function NoteSettingsForm() {
                         </p>
 
                         <div className='space-y-4'>
-                            <SettingsCard>
-                                <SettingsButton
-                                    label='Global Snippets'
-                                    description='Reusable text blocks available to all users'
-                                    buttonText='New Snippet'
-                                    icon={<Plus className='w-3.5 h-3.5' />}
-                                    onClick={() => {
-                                        snippetListRef.current?.handleAddSnippet();
-                                    }}
-                                />
-                                <SnippetList
-                                    ref={snippetListRef}
-                                    userId='null'
-                                    showTitle={false}
-                                />
-                            </SettingsCard>
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Global Snippets
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Reusable text blocks available to all
+                                                users
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={() => {
+                                                snippetListRef.current?.handleAddSnippet();
+                                            }}
+                                        >
+                                            <Plus className='w-3.5 h-3.5' />
+                                            New Snippet
+                                        </Button>
+                                    </Field>
+                                    <SnippetList
+                                        ref={snippetListRef}
+                                        userId='null'
+                                        showTitle={false}
+                                    />
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
 
@@ -273,31 +398,30 @@ export default function NoteSettingsForm() {
                         </p>
 
                         <div className='space-y-4'>
-                            {actionAlert.type && (
-                                <Alert
-                                    variant={
-                                        actionAlert.type === 'error'
-                                            ? 'destructive'
-                                            : 'default'
-                                    }
-                                >
-                                    {actionAlert.type === 'success' && <CheckCircle />}
-                                    {actionAlert.type === 'error' && <WarningCircle />}
-                                    {actionAlert.type === 'warning' && <InfoCircle />}
-                                    <AlertDescription>
-                                        {actionAlert.message}
-                                    </AlertDescription>
-                                </Alert>
-                            )}
-                            <SettingsCard>
-                                <SettingsButton
-                                    label='Re-Link All Notes'
-                                    description='Regenerate all note links based on current entries'
-                                    buttonText='Re-Link'
-                                    icon={<Refresh className='w-3.5 h-3.5' />}
-                                    onClick={handleReLinkNotes}
-                                />
-                            </SettingsCard>
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <Field orientation='horizontal' className='py-2'>
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Re-Link All Notes
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Regenerate all note links based on
+                                                current entries
+                                            </FieldDescription>
+                                        </FieldContent>
+                                        <Button
+                                            type='button'
+                                            variant='outline'
+                                            size='sm'
+                                            onClick={handleReLinkNotes}
+                                        >
+                                            <Refresh className='w-3.5 h-3.5' />
+                                            Re-Link
+                                        </Button>
+                                    </Field>
+                                </CardContent>
+                            </Card>
                         </div>
                     </section>
 

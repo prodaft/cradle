@@ -1,4 +1,5 @@
 import type { SortDirection } from '@/components/base/ListView/types';
+import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable } from '@/components/ui/data-table/data-table';
@@ -13,7 +14,6 @@ import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarButton } from '@components/base/ActionBar/ActionBar';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
-import ConfirmDeletionModal from '@components/modals/base/ConfirmDeletionModal';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     useParams,

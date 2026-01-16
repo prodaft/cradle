@@ -17,8 +17,8 @@ import { ColumnDef } from '@tanstack/react-table';
 import { ClockRotateRight, Trash } from 'iconoir-react/regular';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AddEntryTypeModal from '../../../modals/admin/AddEntryTypeModal';
-import ConfirmDeletionModal from '../../../modals/base/ConfirmDeletionModal';
+import AddEntryTypeModal from '../../../dialogs/admin/AddEntryTypeModal';
+import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
 import AdminPageLayout from '../AdminPageLayout';
 import EntryTypeForm from '../forms/EntryTypeForm';
 

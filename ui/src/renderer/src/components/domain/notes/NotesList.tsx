@@ -36,10 +36,10 @@ import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '../../base/TableActionsButton';
+import ConfirmDeletionModal from '../../dialogs/base/ConfirmDeletionModal';
+import EnrichmentRequestModal from '../../dialogs/enrichment/EnrichmentRequestModal';
+import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
-import ConfirmDeletionModal from '../../modals/base/ConfirmDeletionModal';
-import EnrichmentRequestModal from '../../modals/enrichment/EnrichmentRequestModal';
-import ReportGenerationModal from '../../modals/reports/ReportGenerationModal';
 import { NotePreviewContent } from './NotePreviewContent';
 
 interface Alert {
@@ -281,12 +281,12 @@ export default function NotesList({
     };
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-    {
-        author: (value) => handleColumnFilter('author', value),
-        editor: (value) => handleColumnFilter('editor', value),
-        createdAt: (value) => handleColumnFilter('createdAt', value),
-        lastChanged: (value) => handleColumnFilter('lastChanged', value),
-    };
+        {
+            author: (value) => handleColumnFilter('author', value),
+            editor: (value) => handleColumnFilter('editor', value),
+            createdAt: (value) => handleColumnFilter('createdAt', value),
+            lastChanged: (value) => handleColumnFilter('lastChanged', value),
+        };
 
     const handleStatusChange = (status: string) => {
         setColumnFilters((prev) => ({
@@ -574,11 +574,11 @@ export default function NotesList({
 
         return columnId
             ? [
-                {
-                    id: columnId,
-                    desc: sortDirection === 'desc',
-                },
-            ]
+                  {
+                      id: columnId,
+                      desc: sortDirection === 'desc',
+                  },
+              ]
             : [];
     }, [sortField, sortDirection]);
 

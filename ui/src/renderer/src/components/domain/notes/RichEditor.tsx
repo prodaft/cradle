@@ -70,7 +70,7 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
-import FileUploadModal from '../../modals/notes/FileUploadModal';
+import FileUploadModal from '../../dialogs/notes/FileUploadModal';
 import FileTable from '../files/FileTable';
 
 // Type alias for compatibility with referenceLinks
@@ -372,16 +372,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             }),
             ...(!source
                 ? [
-                    prosemarkBasicSetup(),
-                    prosemarkBaseThemeSetup(),
-                    htmlBlockExtension,
-                    codeBlockCopyExtension,
-                    clickLinkHandler.of((url: string) => {
-                        window.open(url, '_blank', 'noopener,noreferrer');
-                    }),
-                    // Syntax highlighting for both modes
-                    baseSyntaxHighlights,
-                ]
+                      prosemarkBasicSetup(),
+                      prosemarkBaseThemeSetup(),
+                      htmlBlockExtension,
+                      codeBlockCopyExtension,
+                      clickLinkHandler.of((url: string) => {
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                      }),
+                      // Syntax highlighting for both modes
+                      baseSyntaxHighlights,
+                  ]
                 : [sourceModeSyntaxHighlighting]),
             pasteHandler,
             Prec.high(cradleTheme),

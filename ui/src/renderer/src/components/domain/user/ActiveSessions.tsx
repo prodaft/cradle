@@ -1,6 +1,6 @@
 import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import TableActionsButton from '@/components/base/TableActionsButton';
-import ActionConfirmationModal from '@/components/modals/base/ActionConfirmationModal';
+import ActionConfirmationModal from '@/components/dialogs/base/ActionConfirmationModal';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable, type BulkAction } from '@/components/ui/data-table/data-table';

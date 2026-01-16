@@ -225,9 +225,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                                     edges={filteredEdges}
                                     activePanel={
                                         activePanel as
-                                        | 'explorer'
-                                        | 'display'
-                                        | 'filters'
+                                            | 'explorer'
+                                            | 'display'
+                                            | 'filters'
                                     }
                                     onClosePanel={() => setActivePanel(null)}
                                     cosmographRef={cosmographRef}
