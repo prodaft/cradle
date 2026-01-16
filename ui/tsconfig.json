@@ -33,19 +33,20 @@
         /* Path aliases */
         "baseUrl": ".",
         "paths": {
-            "@/*": ["./src/renderer/src/*"],
-            "@components": ["./src/renderer/src/components"],
-            "@components/*": ["./src/renderer/src/components/*"],
-            "@contexts": ["./src/renderer/src/contexts"],
-            "@contexts/*": ["./src/renderer/src/contexts/*"],
-            "@hooks": ["./src/renderer/src/hooks"],
-            "@hooks/*": ["./src/renderer/src/hooks/*"],
-            "@services": ["./src/renderer/src/services"],
-            "@services/*": ["./src/renderer/src/services/*"],
-            "@utils": ["./src/renderer/src/utils"],
-            "@utils/*": ["./src/renderer/src/utils/*"],
-            "@types": ["./src/renderer/src/types"],
-            "@types/*": ["./src/renderer/src/types/*"]
+            "@/*": ["./src/*"],
+            "@components": ["src/components"],
+            "@components/*": ["src/components/*"],
+            "@contexts": ["src/contexts"],
+            "@contexts/*": ["src/contexts/*"],
+            "@hooks": ["src/hooks"],
+            "@hooks/*": ["src/hooks/*"],
+            "@services": ["src/services"],
+            "@services/*": ["src/services/*"],
+            "@utils": ["src/utils"],
+            "@utils/*": ["src/utils/*"],
+            "@types": ["src/types"],
+            "@types/*": ["src/types/*"],
+            "src/*": ["./src/*"]
         }
     },
     "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.js", "src/**/*.jsx"],

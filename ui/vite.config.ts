@@ -14,13 +14,14 @@ export default defineConfig(({ mode }) => ({
     server: { port: 5173 },
     resolve: {
         alias: {
-            '@': path.resolve(__dirname, './src/renderer/src'),
-            '@components': path.resolve(__dirname, './src/renderer/src/components'),
-            '@contexts': path.resolve(__dirname, './src/renderer/src/contexts'),
-            '@hooks': path.resolve(__dirname, './src/renderer/src/hooks'),
-            '@services': path.resolve(__dirname, './src/renderer/src/services'),
-            '@utils': path.resolve(__dirname, './src/renderer/src/utils'),
-            '@types': path.resolve(__dirname, './src/renderer/src/types'),
+            '@': path.resolve(__dirname, './src'),
+            '@components': path.resolve(__dirname, './src/components'),
+            '@contexts': path.resolve(__dirname, './src/contexts'),
+            '@hooks': path.resolve(__dirname, './src/hooks'),
+            '@services': path.resolve(__dirname, './src/services'),
+            '@utils': path.resolve(__dirname, './src/utils'),
+            '@types': path.resolve(__dirname, './src/types'),
+            'src': path.resolve(__dirname, './src'),
         },
     },
 }));

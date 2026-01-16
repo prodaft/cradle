@@ -29,7 +29,7 @@ docs
 *.sw?
 
 #Tailwind CSS
-src/renderer/src/styles/output.css
+src/styles/output.css
 
 .env
 .vscode

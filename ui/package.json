@@ -23,7 +23,7 @@
         "url": "https://github.com/prodaft/cradle/issues"
     },
     "imports": {
-        "@/": "./ui/src/renderer/src/"
+        "@/": "./src/"
     },
     "optionalDependencies": {
         "@esbuild/linux-x64": "0.27.1",
@@ -36,7 +36,7 @@
         "typecheck": "tsc --noEmit",
         "lint": "eslint src/**/*.ts",
         "verify": "bun run typecheck && bun run lint",
-        "generate-api": "rm -rf src/renderer/src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/schema/} -c openapitools.json -o src/renderer/src/services/cradle/ && node scripts/fix-openapi-imports.ts"
+        "generate-api": "rm -rf src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/schema/} -c openapitools.json -o src/services/cradle/ && node scripts/fix-openapi-imports.ts"
     },
     "overrides": {
         "@react-three/fiber": "8.15.19"
