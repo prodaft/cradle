@@ -10,11 +10,12 @@ export function createCradleTheme(isDarkMode: boolean) {
             '&': {
                 backgroundColor: 'var(--background)',
                 color: 'inherit',
+                '--pm-cursor-color': 'hsl(var(--foreground))',
             },
             '.cm-content': {
                 color: 'inherit',
+                caretColor: 'var(--pm-cursor-color)',
                 // Map Prosemark CSS variables to our theme colors
-                '--pm-cursor-color': 'hsl(var(--foreground))',
                 '--pm-header-mark-color': 'var(--primary)',
                 '--pm-heading-color': 'var(--foreground)',
                 '--pm-list-mark-color': 'var(--primary)',
@@ -42,6 +43,9 @@ export function createCradleTheme(isDarkMode: boolean) {
             },
             '.cm-editor, .cm-scroller': {
                 backgroundColor: 'var(--background)',
+            },
+            '.cm-cursor, .cm-dropCursor, .cm-caret': {
+                borderLeftColor: 'var(--pm-cursor-color) !important',
             },
             '.cm-selectionBackground': {
                 backgroundColor:
