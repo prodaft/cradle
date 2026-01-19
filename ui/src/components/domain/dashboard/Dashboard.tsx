@@ -9,7 +9,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
 import { useMutation } from '@tanstack/react-query';
-import { useLoaderData, useRouter } from '@tanstack/react-router';
+import { useLoaderData, useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, FolderOpen, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -43,8 +43,21 @@ export default function Dashboard() {
     const contentObject = loaderData?.entry || undefined;
     const { entriesApi } = useApi();
     const router = useRouter();
+    const search = useSearch({ from: '/_authenticated/dashboards/$subtype/$name' });
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const dashboard = useRef<HTMLDivElement>(null);
-    const [activeTab, setActiveTab] = useState('notes');
+    const [activeTab, setActiveTab] = useState((search as any).tab || 'notes');
+
+    const handleTabChange = (tab: string) => {
+        setActiveTab(tab);
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...search, tab } as any,
+            replace: true,
+        });
+    };
     const tabs = useMemo(
         () => [
             { id: 'notes', label: 'Notes', icon: FileText },
@@ -75,7 +88,17 @@ export default function Dashboard() {
     }, [contentObject]);
 
     useEffect(() => {
-        setActiveTab('notes');
+        const tab = (search as any).tab;
+        if (tab && tab !== activeTab) {
+            setActiveTab(tab);
+        }
+    }, [search, activeTab]);
+
+    useEffect(() => {
+        // Only reset if no tab is specified in URL
+        if (!(search as any).tab) {
+            setActiveTab('notes');
+        }
     }, [contentObject?.id]);
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -121,7 +144,7 @@ export default function Dashboard() {
                                 <div className='p-1 md:hidden'>
                                     <Select
                                         value={activeTab}
-                                        onValueChange={setActiveTab}
+                                        onValueChange={handleTabChange}
                                     >
                                         <SelectTrigger className='h-12 sm:w-48'>
                                         <SelectValue>
@@ -167,7 +190,7 @@ export default function Dashboard() {
                                                     href='#'
                                                     onClick={(e) => {
                                                         e.preventDefault();
-                                                        setActiveTab(tab.id);
+                                                        handleTabChange(tab.id);
                                                     }}
                                                     className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 hover:bg-accent justify-start ${
                                                         isActive
@@ -195,7 +218,7 @@ export default function Dashboard() {
                                     </nav>
                                 </div>
                             </aside>
-                            <div className='flex w-full overflow-hidden p-1'>
+                            <div className='flex w-full overflow-x-auto p-1'>
                                 <div className='flex flex-1 flex-col'>
                                     <div className='flex-none'>
                                         <h2 className='text-lg font-semibold'>
