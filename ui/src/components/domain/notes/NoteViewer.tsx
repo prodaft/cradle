@@ -100,7 +100,7 @@ export default function NoteViewer() {
             : true,
     );
     const search = useSearch({ from: '/_authenticated/notes/$id' });
-    const [enableEditing, setEnableEditing] = useState(false);
+    const [enableEditing, setEnableEditing] = useState((search as any).edit === true);
     const [markdownContent, setMarkdownContent] = useState('');
     const [enrichmentModalOpen, setEnrichmentModalOpen] = useState(false);
     const [enrichmentEntities, setEnrichmentEntities] = useState<
@@ -119,7 +119,7 @@ export default function NoteViewer() {
     >([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [activeView, setActiveView] = useState<ViewMode>(ViewMode.CONTENT);
+    const [activeView, setActiveView] = useState<ViewMode>((search as any).view as ViewMode || ViewMode.CONTENT);
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -192,6 +192,30 @@ export default function NoteViewer() {
             });
     };
 
+    // Sync view and edit mode with URL
+    useEffect(() => {
+        const s = search as any;
+        if (s.view && s.view !== activeView) {
+            setActiveView(s.view as ViewMode);
+        }
+        if (s.edit !== undefined && s.edit !== enableEditing) {
+            if (!isFleeting) {
+                setEnableEditing(s.edit);
+            }
+        }
+    }, [search, activeView, enableEditing, isFleeting]);
+
+    const handleViewChange = useCallback(
+        (newView: ViewMode) => {
+            setActiveView(newView);
+            router.navigate({
+                search: (prev: any) => ({ ...prev, view: newView }),
+                replace: true,
+            });
+        },
+        [router],
+    );
+
     const toggleOutline = useCallback(() => {
         const newValue = !showOutline;
         setShowOutline(newValue);
@@ -202,8 +226,13 @@ export default function NoteViewer() {
         if (isFleeting) {
             return;
         }
-        setEnableEditing((prev) => !prev);
-    }, [isFleeting]);
+        const newValue = !enableEditing;
+        setEnableEditing(newValue);
+        router.navigate({
+            search: (prev: any) => ({ ...prev, edit: newValue }),
+            replace: true,
+        });
+    }, [isFleeting, enableEditing, router]);
 
     const handleEnableEditingWithConfirmation = useCallback(() => {
         // If we're already in editing mode, there's nothing to do
@@ -659,7 +688,7 @@ export default function NoteViewer() {
                                     richEditor={richEditor}
                                     enableEditing={enableEditing}
                                     toggleEditing={toggleEditing}
-                                    setActiveView={setActiveView}
+                                    setActiveView={handleViewChange}
                                     setRichEditor={setRichEditor}
                                     showOutline={showOutline}
                                     toggleOutline={toggleOutline}
