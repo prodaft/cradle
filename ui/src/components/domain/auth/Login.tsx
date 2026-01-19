@@ -549,7 +549,7 @@ export default function Login() {
             <div className='absolute bottom-0 right-0 top-0 hidden w-[65%] bg-muted dark:bg-black lg:block'>
                 <GlobeVisualization
                     showSatellites={false}
-                    showArcs={false}
+                    showArcs={true}
                     showHexPolygons={true}
                     showAtmosphere={true}
                     autoRotate={true}

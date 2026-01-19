@@ -85,6 +85,7 @@
         "react-resizable-panels": "3.0.6",
         "recharts": "2.15.4",
         "satellite.js": "^6.0.2",
+        "simplex-noise": "^4.0.3",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.4.0",
         "three": "0.170.0",
@@ -2179,6 +2180,8 @@
     "simple-swizzle": ["simple-swizzle@0.2.4", "", { "dependencies": { "is-arrayish": "^0.3.1" } }, "sha512-nAu1WFPQSMNr2Zn9PGSZK9AGn4t/y97lEm+MXTtUDwfP0ksAIX4nO+6ruD9Jwut4C49SB1Ws+fbXsm/yScWOHw=="],
 
     "simplesignal": ["simplesignal@2.1.7", "", {}, "sha512-PEo2qWpUke7IMhlqiBxrulIFvhJRLkl1ih52Rwa+bPjzhJepcd4GIjn2RiQmFSx3dQvsEAgF0/lXMwMN7vODaA=="],
+
+    "simplex-noise": ["simplex-noise@4.0.3", "", {}, "sha512-qSE2I4AngLQG7BXqoZj51jokT4WUXe8mOBrvfOXpci8+6Yu44+/dD5zqDpOx3Ux792eamTd2lLcI8jqFntk/lg=="],
 
     "sisteransi": ["sisteransi@1.0.5", "", {}, "sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg=="],
 

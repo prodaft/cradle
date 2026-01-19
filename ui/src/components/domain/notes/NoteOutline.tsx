@@ -113,7 +113,7 @@ const NoteOutline: React.FC<NoteOutlineProps> = ({
 }) => {
     return (
         <div className='pt-3'>
-            <div className='text-muted-foreground text-base'>
+            <div className='text-muted-foreground text-sm'>
                 {data.map((node, index) => (
                     <React.Fragment key={`${index}_${node.nodeName}`}>
                         {showSeparators && node.separatorBefore && (

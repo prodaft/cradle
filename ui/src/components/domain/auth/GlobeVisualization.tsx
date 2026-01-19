@@ -2,10 +2,13 @@ import { useTheme } from '@/contexts/ui/ThemeContext';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Globe from 'react-globe.gl';
 import * as satellite from 'satellite.js';
+import { createNoise3D } from 'simplex-noise';
 
 const EARTH_RADIUS_KM = 6371; // km
 const TIME_STEP = 3 * 1000; // simulated time step
+const POLYGON_TIME_STEP = 200; // smoother polygon animation step
 const TICK_MS = 200; // throttle updates to reduce re-renders
+const POLYGON_TICK_MS = 100; // smoother cadence for hex polygon recolors
 
 interface GlobeVisualizationProps {
     showArcs?: boolean;
@@ -24,33 +27,103 @@ interface SatelliteData {
     alt?: number;
 }
 
-const fade = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
-const lerp = (a: number, b: number, t: number) => a + t * (b - a);
-const dotGridGradient = (ix: number, iy: number, x: number, y: number) => {
-    const random = 2920 * Math.sin(ix * 21942 + iy * 171324 + ix * iy * 23157);
-    const gradX = Math.cos(random);
-    const gradY = Math.sin(random);
-    const dx = x - ix;
-    const dy = y - iy;
-    return dx * gradX + dy * gradY;
+// Create simplex noise generator
+const noise3D = createNoise3D();
+
+// Fractal Brownian Motion using simplex noise
+const fbm = (x: number, y: number, z: number, octaves: number = 4, lacunarity: number = 2.0, gain: number = 0.5) => {
+    let amplitude = 1.0;
+    let frequency = 1.0;
+    let result = 0.0;
+    let maxValue = 0.0;
+
+    for (let i = 0; i < octaves; i++) {
+        result += noise3D(x * frequency, y * frequency, z * frequency) * amplitude;
+        maxValue += amplitude;
+        amplitude *= gain;
+        frequency *= lacunarity;
+    }
+
+    return result / maxValue;
 };
-const perlin2D = (x: number, y: number) => {
-    const x0 = Math.floor(x);
-    const x1 = x0 + 1;
-    const y0 = Math.floor(y);
-    const y1 = y0 + 1;
 
-    const sx = fade(x - x0);
-    const sy = fade(y - y0);
+// Smoothstep for better contrast
+const smoothstep = (edge0: number, edge1: number, x: number) => {
+    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+    return t * t * (3 - 2 * t);
+};
 
-    const n0 = dotGridGradient(x0, y0, x, y);
-    const n1 = dotGridGradient(x1, y0, x, y);
-    const ix0 = lerp(n0, n1, sx);
-    const n2 = dotGridGradient(x0, y1, x, y);
-    const n3 = dotGridGradient(x1, y1, x, y);
-    const ix1 = lerp(n2, n3, sx);
+const centroidFromRing = (ring: number[][]) => {
+    const len = ring.length;
+    if (len < 3) return null;
 
-    return lerp(ix0, ix1, sy);
+    const first = ring[0];
+    const last = ring[len - 1];
+    const isClosed = first[0] === last[0] && first[1] === last[1];
+    const count = isClosed ? len - 1 : len;
+    if (count < 3) return null;
+
+    let areaTimes2 = 0;
+    let cxTimes6 = 0;
+    let cyTimes6 = 0;
+    for (let i = 0; i < count; i++) {
+        const [xi, yi] = ring[i];
+        const [xj, yj] = ring[(i + 1) % count];
+        const cross = xi * yj - xj * yi;
+        areaTimes2 += cross;
+        cxTimes6 += (xi + xj) * cross;
+        cyTimes6 += (yi + yj) * cross;
+    }
+
+    if (areaTimes2 === 0) {
+        let sumX = 0;
+        let sumY = 0;
+        for (let i = 0; i < count; i++) {
+            sumX += ring[i][0];
+            sumY += ring[i][1];
+        }
+        return { lng: sumX / count, lat: sumY / count, area: 0 };
+    }
+
+    const area = areaTimes2 / 2;
+    return {
+        lng: cxTimes6 / (3 * areaTimes2),
+        lat: cyTimes6 / (3 * areaTimes2),
+        area,
+    };
+};
+
+const computeGeometryCentroid = (geometry: any) => {
+    if (!geometry) return null;
+
+    if (geometry.type === 'Polygon' && Array.isArray(geometry.coordinates)) {
+        const ring = geometry.coordinates[0];
+        if (!Array.isArray(ring)) return null;
+        const centroid = centroidFromRing(ring);
+        if (!centroid) return null;
+        return { lng: centroid.lng, lat: centroid.lat };
+    }
+
+    if (geometry.type === 'MultiPolygon' && Array.isArray(geometry.coordinates)) {
+        let sumLng = 0;
+        let sumLat = 0;
+        let totalArea = 0;
+        for (const polygon of geometry.coordinates) {
+            const ring = polygon?.[0];
+            if (!Array.isArray(ring)) continue;
+            const centroid = centroidFromRing(ring);
+            if (!centroid) continue;
+            const weight = Math.abs(centroid.area);
+            if (weight === 0) continue;
+            sumLng += centroid.lng * weight;
+            sumLat += centroid.lat * weight;
+            totalArea += weight;
+        }
+        if (totalArea === 0) return null;
+        return { lng: sumLng / totalArea, lat: sumLat / totalArea };
+    }
+
+    return null;
 };
 
 export default function GlobeVisualization({
@@ -69,6 +142,8 @@ export default function GlobeVisualization({
     // Satellite state
     const [satData, setSatData] = useState<SatelliteData[]>([]);
     const [time, setTime] = useState(new Date());
+    const polygonTimeRef = useRef(new Date());
+    const [polygonTick, setPolygonTick] = useState(0);
 
     // Countries data for hex polygons
     const [countries, setCountries] = useState<{ features: any[] }>({ features: [] });
@@ -132,17 +207,28 @@ export default function GlobeVisualization({
         fetch('/datasets/ne_110m_admin_0_countries.geojson')
             .then(res => res.json())
             .then(data => {
-                setCountries(data);
+                const features = (data?.features ?? []).map((feature: any) => {
+                    const centroid = computeGeometryCentroid(feature.geometry);
+                    if (!centroid) return feature;
+                    return {
+                        ...feature,
+                        properties: {
+                            ...feature.properties,
+                            __centroid: centroid,
+                        },
+                    };
+                });
+                setCountries({ ...data, features });
             })
             .catch(error => {
                 console.error('[GlobeVisualization] Failed to fetch countries data:', error);
             });
     }, []);
 
-    // Time ticker - runs when satellites or hex polygons are enabled
+    // Time ticker - runs when satellites are enabled
     useEffect(() => {
-        if (!showSatellites && !showHexPolygons) return;
-        if (showSatellites && satData.length === 0) return;
+        if (!showSatellites) return;
+        if (satData.length === 0) return;
 
         const intervalId = window.setInterval(() => {
             setTime(prevTime => new Date(prevTime.getTime() + TIME_STEP));
@@ -151,9 +237,22 @@ export default function GlobeVisualization({
         return () => {
             clearInterval(intervalId);
         };
-    }, [showSatellites, showHexPolygons, satData.length]);
+    }, [showSatellites, satData.length]);
 
-    // Update satellite positions and return as array of arrays - matching React example
+    useEffect(() => {
+        if (!showHexPolygons) return;
+
+        const intervalId = window.setInterval(() => {
+            polygonTimeRef.current = new Date(polygonTimeRef.current.getTime() + POLYGON_TIME_STEP);
+            setPolygonTick(tick => (tick + 1) % 1000000);
+        }, POLYGON_TICK_MS);
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [showHexPolygons]);
+
+    // Update satellite positions for particles layer
     const particlesData = useMemo(() => {
         if (!showSatellites || satData.length === 0) return [];
 
@@ -172,8 +271,7 @@ export default function GlobeVisualization({
             }
         }).filter(d => !isNaN(d.lat!) && !isNaN(d.lng!) && !isNaN(d.alt!));
 
-        // CRITICAL: Return array of arrays, not flat array!
-        return [updatedSats];
+        return updatedSats;
     }, [satData, time, showSatellites]);
 
     const N = 20;
@@ -210,24 +308,69 @@ export default function GlobeVisualization({
         return countries.features;
     }, [showHexPolygons, countries.features]);
 
-    // Breathing effect color function - perlin noise shimmer across globe
+    // Breathing effect color function - dramatic localized breathing patches
     const hexPolygonColor = useCallback((feature: any) => {
         if (!showHexPolygons) return 'rgba(0,0,0,0)';
 
-        const centroidLng = feature.properties?.LABEL_X ?? 0;
-        const centroidLat = feature.properties?.LABEL_Y ?? 0;
-        const t = time.getTime() / 10000;
-        const noise = perlin2D(centroidLng * 0.02 + t * 0.25, centroidLat * 0.02 + t * 0.15);
-        const normalized = Math.min(Math.max((noise + 1) / 2, 0), 1);
-        const brightness = 0.42 + normalized * 0.22;
+        const centroidLng = feature.properties?.__centroid?.lng
+            ?? feature.properties?.LABEL_X
+            ?? 0;
+        const centroidLat = feature.properties?.__centroid?.lat
+            ?? feature.properties?.LABEL_Y
+            ?? 0;
 
-        // Create cyan/blue color with breathing effect
-        const r = Math.floor(0 * 255);
-        const g = Math.floor(brightness * 180);
-        const b = Math.floor(brightness * 240);
+        // Convert lat/lng to 3D sphere coordinates (unit sphere)
+        const latRad = (centroidLat * Math.PI) / 180;
+        const lngRad = (centroidLng * Math.PI) / 180;
+        const px = Math.cos(latRad) * Math.cos(lngRad);
+        const py = Math.sin(latRad);
+        const pz = Math.cos(latRad) * Math.sin(lngRad);
 
-        return `rgba(${r}, ${g}, ${b}, 0.5)`;
-    }, [showHexPolygons, time]);
+        // Time evolution - tuned for visible but smooth animation
+        const t = polygonTimeRef.current.getTime() / 8000;
+
+        // Base spatial frequency - larger patches
+        const scale = 1.8;
+
+        // Primary noise layer - regional breathing patches
+        const noise1 = fbm(
+            (px + t * 0.12) * scale,
+            (py + t * 0.09) * scale,
+            (pz + t * 0.07) * scale,
+            4, // octaves
+            2.0, // lacunarity
+            0.5 // gain
+        );
+
+        // Secondary detail layer - adds texture
+        const noise2 = fbm(
+            (px - t * 0.08) * scale * 2.3,
+            (py - t * 0.06) * scale * 2.3,
+            (pz - t * 0.05) * scale * 2.3,
+            3, // fewer octaves for smoother detail
+            2.0,
+            0.6
+        );
+
+        // Combine: dominant regional + subtle detail
+        const combined = noise1 * 0.75 + noise2 * 0.25;
+
+        // Map noise from [-1, 1] to [0, 1]
+        const normalized = (combined + 1) * 0.5;
+
+        // Apply strong smoothstep for distinct bright/dark regions
+        const shaped = smoothstep(0.2, 0.6, normalized);
+
+        // Wide brightness range for dramatic effect
+        const brightness = 0.2 + shaped * 0.95;
+
+        // Cyan/blue color with high contrast
+        const r = Math.floor(brightness * 25);
+        const g = Math.floor(brightness * 170);
+        const b = Math.floor(brightness * 255);
+
+        return `rgba(${r}, ${g}, ${b}, 0.85)`;
+    }, [showHexPolygons, polygonTick]);
 
     return (
         <div

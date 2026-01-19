@@ -199,8 +199,11 @@ export default function NoteViewer() {
     }, [showOutline]);
 
     const toggleEditing = useCallback(() => {
+        if (isFleeting) {
+            return;
+        }
         setEnableEditing((prev) => !prev);
-    }, []);
+    }, [isFleeting]);
 
     const handleEnableEditingWithConfirmation = useCallback(() => {
         // If we're already in editing mode, there's nothing to do
@@ -331,7 +334,11 @@ export default function NoteViewer() {
 
         logger.info('NoteViewer - Note loaded successfully', { noteData });
         setNote(noteData);
-        setIsFleeting(Boolean(noteData.fleeting));
+        const nextIsFleeting = Boolean(noteData.fleeting);
+        setIsFleeting(nextIsFleeting);
+        if (nextIsFleeting) {
+            setEnableEditing(true);
+        }
         setMarkdownContent(noteData.content);
         setInitialMarkdown(noteData.content);
         setFileData(noteData.files || []);
