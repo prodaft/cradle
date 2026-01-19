@@ -12,6 +12,8 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
+import { useTheme } from '@/contexts/ui/ThemeContext';
+import { PRESET_THEMES } from '@/utils/themes';
 import {
     Select,
     SelectContent,
@@ -86,6 +88,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     const { usersApi, basePath } = useApi();
     const { logOut } = useAuthActions();
     const queryClient = useQueryClient();
+    const { setTheme } = useTheme();
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
@@ -191,6 +194,10 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     // Note template loading state
     const [noteTemplateLoading, setNoteTemplateLoading] = useState(false);
 
+    // Theme selection state
+    const [selectedThemeType, setSelectedThemeType] = useState<string>('dark');
+    const [customThemeJSON, setCustomThemeJSON] = useState<string>('');
+
     const defaultValues: AccountFormData = {
         id: '',
         username: '',
@@ -291,6 +298,39 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
 
         // Store initial values for comparison
         previousValuesRef.current = initialData;
+
+        // Determine theme type based on name field
+        if (userData.theme) {
+            const themeName = (userData.theme as any)?.name;
+            if (themeName && themeName !== 'custom') {
+                // Check if it's a valid preset
+                const matchedPreset = PRESET_THEMES.find(
+                    (preset) => preset.id === themeName,
+                );
+                if (matchedPreset) {
+                    setSelectedThemeType(themeName);
+                    setCustomThemeJSON('');
+                } else {
+                    // Unknown theme name, treat as custom
+                    setSelectedThemeType('custom');
+                    const { name, ...themeWithoutName } = userData.theme as any;
+                    setCustomThemeJSON(JSON.stringify(themeWithoutName, null, 2));
+                }
+            } else {
+                // Custom theme or no name field
+                setSelectedThemeType('custom');
+                const { name, ...themeWithoutName } = userData.theme as any;
+                setCustomThemeJSON(
+                    JSON.stringify(
+                        Object.keys(themeWithoutName).length > 0
+                            ? themeWithoutName
+                            : userData.theme,
+                        null,
+                        2,
+                    ),
+                );
+            }
+        }
     }, [userData, target, reset]);
 
     // Query for OAuth configuration
@@ -558,6 +598,43 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             setNoteTemplateModalOpen(true);
         } finally {
             setNoteTemplateLoading(false);
+        }
+    };
+
+    const handleThemeTypeChange = (themeType: string) => {
+        setSelectedThemeType(themeType);
+
+        if (themeType === 'custom') {
+            // When switching to custom, populate with current theme without name
+            const currentTheme = userData?.theme || PRESET_THEMES[0].theme;
+            const { name, ...themeWithoutName } = currentTheme as any;
+            setCustomThemeJSON(JSON.stringify(themeWithoutName, null, 2));
+        } else {
+            // Apply preset theme immediately
+            const preset = PRESET_THEMES.find((p) => p.id === themeType);
+            if (preset) {
+                setTheme(preset.theme);
+                toast.success(`Applied ${preset.label} theme`);
+            }
+        }
+    };
+
+    const handleApplyCustomTheme = () => {
+        try {
+            const parsed = JSON.parse(customThemeJSON);
+            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+                toast.error('Theme must be a JSON object.');
+                return;
+            }
+            // Auto-add name field as 'custom'
+            const themeWithName = {
+                name: 'custom',
+                ...parsed,
+            };
+            setTheme(themeWithName);
+            toast.success('Custom theme applied');
+        } catch (error) {
+            toast.error('Invalid JSON format');
         }
     };
 
@@ -958,51 +1035,84 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                             <div className='space-y-4'>
                                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                                     <CardContent className='px-4 py-1'>
-                                                        <div className='flex items-center justify-between gap-4 py-2'>
-                                                            <div className='flex-1 space-y-1'>
+                                                        <div className='py-2 space-y-4'>
+                                                            <div className='space-y-2'>
                                                                 <Label className='text-sm text-muted-foreground block'>
-                                                                    Theme JSON
+                                                                    Theme
                                                                 </Label>
-                                                                <p className='text-sm text-muted-foreground'>
-                                                                    Provide a JSON
-                                                                    object with an
-                                                                    optional
-                                                                    <span className='font-mono text-xs'>
-                                                                        {' '}
-                                                                        mode
-                                                                    </span>{' '}
-                                                                    and CSS variable
-                                                                    values in
-                                                                    <span className='font-mono text-xs'>
-                                                                        {' '}
-                                                                        vars
-                                                                    </span>
-                                                                    .
-                                                                </p>
+                                                                <Select
+                                                                    value={selectedThemeType}
+                                                                    onValueChange={
+                                                                        handleThemeTypeChange
+                                                                    }
+                                                                >
+                                                                    <SelectTrigger className='w-full sm:w-64'>
+                                                                        <SelectValue />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        {PRESET_THEMES.map(
+                                                                            (preset) => (
+                                                                                <SelectItem
+                                                                                    key={
+                                                                                        preset.id
+                                                                                    }
+                                                                                    value={
+                                                                                        preset.id
+                                                                                    }
+                                                                                >
+                                                                                    {
+                                                                                        preset.label
+                                                                                    }
+                                                                                </SelectItem>
+                                                                            ),
+                                                                        )}
+                                                                        <SelectItem value='custom'>
+                                                                            Custom
+                                                                        </SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
                                                             </div>
+
+                                                            {selectedThemeType ===
+                                                                'custom' && (
+                                                                <div className='space-y-2'>
+                                                                    <Label className='text-sm text-muted-foreground block'>
+                                                                        Custom Theme JSON
+                                                                    </Label>
+                                                                    <p className='text-sm text-muted-foreground'>
+                                                                        Provide a JSON object
+                                                                        with CSS variable
+                                                                        values.
+                                                                    </p>
+                                                                    <Textarea
+                                                                        rows={10}
+                                                                        className='font-mono text-xs'
+                                                                        placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
+                                                                        value={
+                                                                            customThemeJSON
+                                                                        }
+                                                                        onChange={(e) =>
+                                                                            setCustomThemeJSON(
+                                                                                e.target.value,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                    <div className='flex justify-end'>
+                                                                        <Button
+                                                                            type='button'
+                                                                            onClick={
+                                                                                handleApplyCustomTheme
+                                                                            }
+                                                                        >
+                                                                            Apply Custom
+                                                                            Theme
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                        <Textarea
-                                                            rows={10}
-                                                            className='font-mono text-xs'
-                                                            placeholder='{"mode":"dark","vars":{"--background":"oklch(0.145 0 0)"}}'
-                                                            {...register('theme')}
-                                                        />
                                                     </CardContent>
                                                 </Card>
-                                                <div className='flex justify-end pt-2'>
-                                                    <Button
-                                                        type='button'
-                                                        onClick={handleSave}
-                                                        disabled={
-                                                            saveMutation.isPending ||
-                                                            !isDirty
-                                                        }
-                                                    >
-                                                        {saveMutation.isPending
-                                                            ? 'Saving...'
-                                                            : 'Save Changes'}
-                                                    </Button>
-                                                </div>
                                             </div>
                                         </section>
                                     )}

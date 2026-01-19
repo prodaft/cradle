@@ -78,7 +78,10 @@ class UserRoles(models.TextChoices):
     USER = "author"  # Writer of notes
 
 
-DEFAULT_THEME = THEME_DARK_VARS
+DEFAULT_THEME = {
+    "name": "dark",
+    **THEME_DARK_VARS,
+}
 
 
 def default_theme():

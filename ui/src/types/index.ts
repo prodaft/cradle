@@ -15,12 +15,9 @@ export interface BaseComponentProps {
 // Theme Types
 // ============================================================================
 
-export type ThemeMode = 'light' | 'dark';
-
 export interface ThemeConfig {
-    mode?: ThemeMode;
-    vars?: Record<string, string>;
-    [key: string]: unknown;
+    name?: string;
+    [key: string]: string | undefined;
 }
 
 export interface ThemeContextValue {
