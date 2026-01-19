@@ -7,6 +7,7 @@ import {
     CollapsibleContent,
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -30,14 +31,12 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
-import { queryKeys } from '@/hooks/query';
-import Datepicker from '@components/base/Datepicker/Datepicker';
 import type { EventLog } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { diff_match_patch } from 'diff-match-patch';
 import dayjs from 'dayjs';
+import { diff_match_patch } from 'diff-match-patch';
 import { NavArrowDown, Search } from 'iconoir-react';
 import { useMemo, useState } from 'react';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
@@ -372,8 +371,8 @@ export default function ActivityList({
                         typeof log.timestamp === 'string'
                             ? log.timestamp
                             : log.timestamp instanceof Date
-                              ? log.timestamp.toISOString()
-                              : new Date().toISOString(),
+                                ? log.timestamp.toISOString()
+                                : new Date().toISOString(),
                     type: log.type,
                     username: log.user?.username || 'unknown',
                     contentType:
@@ -385,13 +384,13 @@ export default function ActivityList({
                     details: log.details || undefined,
                     srcLog: (log as any).src_log
                         ? {
-                              id: (log as any).src_log.id,
-                              type: (log as any).src_log.type,
-                              details: (log as any).src_log.details,
-                              content_type: (log as any).src_log.content_type,
-                              object_id: (log as any).src_log.object_id,
-                              object_repr: (log as any).src_log.object_repr,
-                          }
+                            id: (log as any).src_log.id,
+                            type: (log as any).src_log.type,
+                            details: (log as any).src_log.details,
+                            content_type: (log as any).src_log.content_type,
+                            object_id: (log as any).src_log.object_id,
+                            object_repr: (log as any).src_log.object_repr,
+                        }
                         : undefined,
                 }),
             );
@@ -454,7 +453,7 @@ export default function ActivityList({
 
                         {/* Date range picker */}
                         <div className='flex-1 min-w-[320px]'>
-                            <Datepicker
+                            <DateRangePicker
                                 startDate={
                                     searchFilters.start_date
                                         ? new Date(searchFilters.start_date)
@@ -466,17 +465,29 @@ export default function ActivityList({
                                         : null
                                 }
                                 onChange={([start, end]) => {
+                                    const normalizedStart = start
+                                        ? dayjs(start).startOf('day').toDate()
+                                        : null;
+                                    const normalizedEnd = start
+                                        ? dayjs(end ?? start).endOf('day').toDate()
+                                        : null;
                                     setSearchFilters((prev) => ({
                                         ...prev,
-                                        start_date: start
-                                            ? format(start, "yyyy-MM-dd'T'HH:mm")
+                                        start_date: normalizedStart
+                                            ? format(
+                                                normalizedStart,
+                                                "yyyy-MM-dd'T'HH:mm",
+                                            )
                                             : '',
-                                        end_date: end
-                                            ? format(end, "yyyy-MM-dd'T'HH:mm")
+                                        end_date: normalizedEnd
+                                            ? format(
+                                                normalizedEnd,
+                                                "yyyy-MM-dd'T'HH:mm",
+                                            )
                                             : '',
                                     }));
                                 }}
-                                className='h-10 py-1 px-4 text-sm w-full max-w-full'
+                                className='h-9 w-full max-w-full font-mono'
                             />
                         </div>
 

@@ -181,15 +181,17 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
 
     return (
         <ScrollArea className='w-full h-full'>
-            <div className='w-[95%] h-full flex flex-col p-6'>
-                <DataTable
-                    columns={columns}
-                    data={files}
-                    loading={false}
-                    emptyMessage='No files found!'
-                    manualPagination={true}
-                    manualSorting={true}
-                />
+            <div className='flex items-start justify-center w-full min-h-full p-6'>
+                <div className='w-[95%] flex flex-col'>
+                    <DataTable
+                        columns={columns}
+                        data={files}
+                        loading={false}
+                        emptyMessage='No files found!'
+                        manualPagination={true}
+                        manualSorting={true}
+                    />
+                </div>
             </div>
         </ScrollArea>
     );

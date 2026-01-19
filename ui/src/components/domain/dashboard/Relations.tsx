@@ -1,31 +1,28 @@
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable } from '@/components/ui/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { Input } from '@/components/ui/input';
-import {
-    InputGroup,
-    InputGroupAddon,
-    InputGroupInput,
-} from '@/components/ui/input-group';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
+import {
+    ActionBar,
+    ActionBarButton,
+    ActionBarSearch,
+} from '@components/base/ActionBar/ActionBar';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ColumnDef } from '@tanstack/react-table';
-import { Check, Copy, Search, WarningCircle } from 'iconoir-react';
+import { Check, Copy, WarningCircle } from 'iconoir-react';
 import {
     ChangeEvent,
-    KeyboardEvent,
     MouseEvent,
     useCallback,
     useEffect,
     useMemo,
-    useRef,
     useState,
 } from 'react';
 
@@ -58,7 +55,6 @@ interface RelationsProps {
 export default function Relations({ obj }: RelationsProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [depth, setDepth] = useState(2);
-    const inputRef = useRef<HTMLInputElement>(null);
     const [showFilters, setShowFilters] = useState(false);
     const [entrySubtypeFilters, setEntrySubtypeFilters] = useState<string[]>([]);
     const [results, setResults] = useState<Result[] | null>(null);
@@ -126,14 +122,6 @@ export default function Relations({ obj }: RelationsProps) {
         });
         return colors;
     }, [entrySubtypesData]);
-
-    const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            setPage(1);
-            performSearch(depth, 1);
-        }
-    };
 
     // Query parameters for relations search
     const relationsQueryParams = useMemo(() => {
@@ -367,28 +355,30 @@ export default function Relations({ obj }: RelationsProps) {
             {
                 accessorKey: 'subtype',
                 id: 'subtype',
-                header: 'Type',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='Type' />
+                ),
                 cell: ({ row }) => {
                     const dashboardLink = createDashboardLink(row.original);
                     return (
                         <div
-                            className='py-3 px-4 cursor-pointer'
+                            className='truncate w-32 cursor-pointer'
                             onClick={() =>
                                 router.navigate({ to: dashboardLink as any })
                             }
                         >
-                            <span
-                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium text-primary-foreground shadow-sm ${!row.original.color ? 'bg-muted' : ''}`}
+                            <Badge
+                                className={`rounded-full ${!row.original.color ? 'bg-muted' : ''}`}
                                 style={
                                     row.original.color
                                         ? {
-                                            backgroundColor: row.original.color,
-                                        }
+                                              backgroundColor: row.original.color,
+                                          }
                                         : undefined
                                 }
                             >
                                 {row.original.subtype}
-                            </span>
+                            </Badge>
                         </div>
                     );
                 },
@@ -396,17 +386,21 @@ export default function Relations({ obj }: RelationsProps) {
             {
                 accessorKey: 'name',
                 id: 'name',
-                header: 'Name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='Name' />
+                ),
                 cell: ({ row }) => {
                     const dashboardLink = createDashboardLink(row.original);
                     return (
                         <div
-                            className='py-3 px-4 cursor-pointer'
+                            className='truncate w-48 cursor-pointer'
                             onClick={() =>
                                 router.navigate({ to: dashboardLink as any })
                             }
                         >
-                            {row.original.name}
+                            <span className='truncate'>
+                                {row.original.name}
+                            </span>
                         </div>
                     );
                 },
@@ -414,12 +408,14 @@ export default function Relations({ obj }: RelationsProps) {
             {
                 accessorKey: 'depth',
                 id: 'depth',
-                header: 'Depth',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} title='Depth' />
+                ),
                 cell: ({ row }) => {
                     const dashboardLink = createDashboardLink(row.original);
                     return (
                         <div
-                            className='py-3 px-4 cursor-pointer'
+                            className='w-20 cursor-pointer'
                             onClick={() =>
                                 router.navigate({ to: dashboardLink as any })
                             }
@@ -461,119 +457,7 @@ export default function Relations({ obj }: RelationsProps) {
     );
 
     return (
-        <div className='flex flex-col h-full gap-4'>
-            <Card className='cradle-card-compact'>
-                <CardContent className='p-3'>
-                    <div className='flex flex-wrap items-center justify-between gap-4'>
-                        <div className='flex items-center gap-2 flex-shrink-0'>
-                            {/* Copy CSV Action */}
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        onClick={copyToCSV}
-                                        disabled={selectedIds.length === 0}
-                                        variant='outline'
-                                        size='icon'
-                                        className='rounded-full'
-                                        title={
-                                            selectedIds.length > 0
-                                                ? `Copy ${selectedIds.length} selected to CSV`
-                                                : 'Select items to copy'
-                                        }
-                                    >
-                                        {isCopied ? (
-                                            <Check className='w-4 h-4 text-primary' />
-                                        ) : (
-                                            <Copy
-                                                className={
-                                                    selectedIds.length > 0
-                                                        ? 'text-primary'
-                                                        : 'text-muted-foreground'
-                                                }
-                                                width={18}
-                                                height={18}
-                                            />
-                                        )}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Copy to CSV</TooltipContent>
-                            </Tooltip>
-                            <div className='h-8 w-px bg-border' />
-
-                            {/* Depth Control */}
-                            <div className='flex items-center gap-2 px-3 h-10 border border-border rounded-full bg-transparent'>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Input
-                                            id='depth-input'
-                                            type='number'
-                                            min='0'
-                                            max='5'
-                                            className='bg-transparent text-foreground h-full w-8 outline-none text-center font-mono text-sm border-0 shadow-none p-0'
-                                            value={depth}
-                                            onChange={handleDepthChange}
-                                        />
-                                    </TooltipTrigger>
-                                    <TooltipContent>Copy to CSV</TooltipContent>
-                                </Tooltip>
-                                <div className='h-8 w-px bg-cradle-border-accent' />
-
-                                {/* Depth Control */}
-                                <div className='flex items-center gap-2 px-3 h-10 border border-cradle-border-accent rounded-full bg-transparent'>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Input
-                                                id='depth-input'
-                                                type='number'
-                                                min='0'
-                                                max='5'
-                                                className='bg-transparent text-foreground h-full w-8 outline-none text-center font-mono text-sm border-0 shadow-none p-0'
-                                                value={depth}
-                                                onChange={handleDepthChange}
-                                            />
-                                        </TooltipTrigger>
-                                        <TooltipContent>Depth</TooltipContent>
-                                    </Tooltip>
-                                </div>
-
-                                <div className='h-8 w-px bg-cradle-border-accent' />
-
-                                {/* Search */}
-                                <InputGroup className='min-w-[280px]'>
-                                    <InputGroupInput
-                                        ref={inputRef}
-                                        placeholder='Search relations...'
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        onKeyDown={handleKeyDown}
-                                    />
-                                    <InputGroupAddon>
-                                        <Search />
-                                    </InputGroupAddon>
-                                    {results && (
-                                        <InputGroupAddon align='inline-end'>
-                                            {results.length}{' '}
-                                            {results.length === 1
-                                                ? 'result'
-                                                : 'results'}
-                                        </InputGroupAddon>
-                                    )}
-                                </InputGroup>
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            <SearchFilterSection
-                showFilters={showFilters}
-                setShowFilters={setShowFilters}
-                entrySubtypes={entrySubtypes}
-                entrySubtypeFilters={entrySubtypeFilters}
-                setEntrySubtypeFilters={setEntrySubtypeFilters}
-                entryClassColors={entryClassColors}
-            />
-
+        <div className='flex flex-col space-y-4'>
             {alert.show && (
                 <AlertComponent
                     variant={
@@ -587,25 +471,89 @@ export default function Relations({ obj }: RelationsProps) {
                 </AlertComponent>
             )}
 
-            <div className='flex-grow overflow-hidden flex flex-col'>
-                <div className='flex-grow overflow-auto'>
-                    <DataTable
-                        columns={columns}
-                        data={results || []}
-                        loading={isPending}
-                        emptyMessage='No relations found'
-                        enableRowSelection={true}
-                        selectedRows={selectedIds.map((id) => String(id))}
-                        onRowSelectionChange={handleRowSelectionChange}
-                        manualPagination={true}
-                        manualSorting={true}
-                        pageCount={calculatedTotalPages}
-                        initialPageIndex={page - 1}
-                        initialPageSize={pageSize}
-                        onPaginationChange={handlePaginationChange}
-                        showPagination={true}
+            <ActionBar
+                left={
+                    <ActionBarSearch
+                        placeholder='Search relations...'
+                        value={searchQuery}
+                        defaultExpanded={Boolean(searchQuery)}
+                        debounceMs={300}
+                        onDebouncedChange={(value) => {
+                            setSearchQuery(value);
+                            performSearch(depth, 1);
+                        }}
+                        onSubmit={(value) => {
+                            setSearchQuery(value ?? '');
+                            performSearch(depth, 1);
+                        }}
+                        onClear={() => performSearch(depth, 1)}
                     />
-                </div>
+                }
+                right={
+                    <>
+                        <div className='flex items-center gap-2 px-3 h-10 border border-border rounded-full bg-transparent'>
+                            <span className='text-xs text-muted-foreground uppercase tracking-wide'>
+                                Depth
+                            </span>
+                            <Input
+                                id='depth-input'
+                                type='number'
+                                min='0'
+                                max='5'
+                                className='bg-transparent text-foreground h-full w-10 outline-none text-center font-mono text-sm border-0 shadow-none p-0'
+                                value={depth}
+                                onChange={handleDepthChange}
+                            />
+                        </div>
+                        <ActionBarButton
+                            tooltip='Copy to CSV'
+                            variant='circle'
+                            icon={
+                                isCopied ? (
+                                    <Check className='w-4 h-4 text-primary' />
+                                ) : (
+                                    <Copy width={18} height={18} />
+                                )
+                            }
+                            iconActive={selectedIds.length > 0 || isCopied}
+                            onClick={copyToCSV}
+                            disabled={selectedIds.length === 0}
+                            title={
+                                selectedIds.length > 0
+                                    ? `Copy ${selectedIds.length} selected to CSV`
+                                    : 'Select items to copy'
+                            }
+                        />
+                    </>
+                }
+            />
+
+            <SearchFilterSection
+                showFilters={showFilters}
+                setShowFilters={setShowFilters}
+                entrySubtypes={entrySubtypes}
+                entrySubtypeFilters={entrySubtypeFilters}
+                setEntrySubtypeFilters={setEntrySubtypeFilters}
+                entryClassColors={entryClassColors}
+            />
+
+            <div className='grid grid-cols-1 gap-2'>
+                <DataTable
+                    columns={columns}
+                    data={results || []}
+                    loading={isPending}
+                    emptyMessage='No relations found'
+                    enableRowSelection={true}
+                    selectedRows={selectedIds.map((id) => String(id))}
+                    onRowSelectionChange={handleRowSelectionChange}
+                    manualPagination={true}
+                    manualSorting={true}
+                    pageCount={calculatedTotalPages}
+                    initialPageIndex={page - 1}
+                    initialPageSize={pageSize}
+                    onPaginationChange={handlePaginationChange}
+                    showPagination={true}
+                />
             </div>
         </div>
     );

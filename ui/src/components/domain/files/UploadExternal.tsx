@@ -1,8 +1,8 @@
 import { Button } from '@/components/ui/button';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/useApi';
 import type { Alert } from '@/types';
-import Datepicker from '@components/base/Datepicker/Datepicker';
 import type { DigestSubclass } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -190,10 +190,10 @@ export default function UploadExternal() {
                 : undefined,
             created_at_lte: dateRangeValue?.endDate
                 ? (() => {
-                      const endDate = new Date(dateRangeValue.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(dateRangeValue.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : undefined,
         };
 
@@ -217,10 +217,10 @@ export default function UploadExternal() {
                 : '',
             created_at_lte: dateRangeValue?.endDate
                 ? (() => {
-                      const endDate = new Date(dateRangeValue.endDate);
-                      endDate.setHours(23, 59, 59, 999);
-                      return endDate.toISOString();
-                  })()
+                    const endDate = new Date(dateRangeValue.endDate);
+                    endDate.setHours(23, 59, 59, 999);
+                    return endDate.toISOString();
+                })()
                 : '',
         });
     };
@@ -307,7 +307,7 @@ export default function UploadExternal() {
                     onSubmit={handleSearchSubmit}
                     className='flex space-x-4 px-3 pb-2'
                 >
-                    <Datepicker
+                    <DateRangePicker
                         startDate={dateRange.startDate}
                         endDate={dateRange.endDate}
                         onChange={([start, end]) => {
@@ -316,7 +316,7 @@ export default function UploadExternal() {
                                 endDate: end,
                             });
                         }}
-                        className='input input-block py-1 px-2 text-sm flex-grow !max-w-full w-full'
+                        className='h-9 flex-grow !max-w-full w-full font-mono'
                         placeholderText='Select date range'
                     />
                     <Input
