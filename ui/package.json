@@ -39,7 +39,8 @@
         "generate-api": "rm -rf src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/api/schema/} -c openapitools.json -o src/services/cradle/ && node scripts/fix-openapi-imports.ts"
     },
     "overrides": {
-        "@react-three/fiber": "8.15.19"
+        "@react-three/fiber": "8.15.19",
+        "three": "0.170.0"
     },
     "dependencies": {
         "@codemirror/autocomplete": "^6.20.0",
@@ -122,8 +123,10 @@
         "react-icons": "^5.5.0",
         "react-resizable-panels": "3.0.6",
         "recharts": "2.15.4",
+        "satellite.js": "^6.0.2",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.4.0",
+        "three": "0.170.0",
         "ts-node": "^10.9.2",
         "tw-animate-css": "^1.4.0",
         "y-codemirror.next": "^0.3.5",
@@ -139,15 +142,16 @@
         "@types/diff": "^8.0.0",
         "@types/diff-match-patch": "^1.0.36",
         "@types/dompurify": "^3.2.0",
+        "@types/js-yaml": "^4.0.9",
         "@types/lodash": "^4.17.23",
         "@types/markdown-it": "^14.1.2",
         "@types/marked": "^6.0.0",
-        "@types/js-yaml": "^4.0.9",
         "@types/node": "^24.10.9",
         "@types/prismjs": "^1.26.5",
         "@types/qs": "^6.14.0",
         "@types/react": "^19.2.8",
         "@types/react-dom": "^19.2.3",
+        "@types/three": "0.170.0",
         "@vitejs/plugin-react": "^5.1.2",
         "axios": "^1.13.2",
         "axios-mock-adapter": "^2.1.0",

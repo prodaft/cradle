@@ -106,7 +106,7 @@ class EntityAccessList(APIView):
     permission_classes = [IsAuthenticated, HasAdminRole]
 
     def get(self, request: Request, entity_id: int) -> Response:
-        """Allows an admin to get the access priviliges of a User
+        """Allows an admin to get the access priviliges of all users
             on an entity.
 
         Args:
@@ -121,9 +121,17 @@ class EntityAccessList(APIView):
         if not entity:
             raise EntityNotFoundException(detail="Entity does not exist")
 
-        accesses = Access.objects.filter(
-            Q(entity=entity) & ~Q(access_type=AccessType.NONE) & ~Q(user__role=UserRoles.ADMIN)
-        )
-        serializer = AccessUserSerializer(accesses, many=True)
+        accesses = Access.objects.filter(Q(entity=entity) & ~Q(user__role=UserRoles.ADMIN)).select_related("user")
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        none_users = CradleUser.objects.filter(
+            ~Q(id__in=accesses.values_list("user_id", flat=True)) & ~Q(role=UserRoles.ADMIN)
+        )
+
+        combined: list[object] = list(accesses) + [
+            {"user": user, "access_type": AccessType.NONE} for user in none_users
+        ]
+
+        serializer = AccessUserSerializer(combined, many=True)
+        data = sorted(serializer.data, key=lambda row: row.get("user", {}).get("username", "").lower())
+
+        return Response(data, status=status.HTTP_200_OK)

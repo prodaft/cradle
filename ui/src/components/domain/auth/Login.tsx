@@ -20,6 +20,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
 import { HalfMoon, SunLight, Undo, WarningCircle } from 'iconoir-react';
 import { useEffect, useState } from 'react';
+import GlobeVisualization from './GlobeVisualization';
 
 interface Alert {
     show: boolean;
@@ -231,9 +232,9 @@ export default function Login() {
     }
 
     return (
-        <div className='grid min-h-svh lg:grid-cols-2'>
+        <div className='relative min-h-svh w-full overflow-hidden'>
             {/* Left Column - Form */}
-            <div className='flex flex-col gap-4 p-6 md:p-10 relative'>
+            <div className='relative z-10 flex h-full min-h-svh flex-col gap-4 bg-background p-6 md:p-10 lg:w-1/2'>
                 {/* Branding */}
                 <div className='flex justify-between items-center gap-2'>
                     <a href='#' className='flex items-center gap-2 font-medium'>
@@ -352,7 +353,7 @@ export default function Login() {
                                             <Alert
                                                 variant={
                                                     alert.color === 'red' ||
-                                                    alert.color === 'error'
+                                                        alert.color === 'error'
                                                         ? 'destructive'
                                                         : 'default'
                                                 }
@@ -429,7 +430,7 @@ export default function Login() {
                                             <Alert
                                                 variant={
                                                     alert.color === 'red' ||
-                                                    alert.color === 'error'
+                                                        alert.color === 'error'
                                                         ? 'destructive'
                                                         : 'default'
                                                 }
@@ -474,18 +475,18 @@ export default function Login() {
                                                             onClick={() => {
                                                                 const redirectPath =
                                                                     typeof from ===
-                                                                    'string'
+                                                                        'string'
                                                                         ? from.includes(
-                                                                              '#',
-                                                                          )
+                                                                            '#',
+                                                                        )
                                                                             ? from.slice(
-                                                                                  from.indexOf(
-                                                                                      '#',
-                                                                                  ) + 1,
-                                                                              ) || '/'
+                                                                                from.indexOf(
+                                                                                    '#',
+                                                                                ) + 1,
+                                                                            ) || '/'
                                                                             : from
                                                                         : from?.pathname ||
-                                                                          '/';
+                                                                        '/';
                                                                 sessionStorage.setItem(
                                                                     'oauth_login_redirect',
                                                                     redirectPath,
@@ -544,12 +545,15 @@ export default function Login() {
                 </div>
             </div>
 
-            {/* Right Column - Image */}
-            <div className='bg-muted relative hidden lg:block'>
-                <img
-                    src='/auth-image.jpeg'
-                    alt='Image'
-                    className='absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale'
+            {/* Right Column - Globe */}
+            <div className='absolute bottom-0 right-0 top-0 hidden w-[65%] bg-muted dark:bg-black lg:block'>
+                <GlobeVisualization
+                    showSatellites={false}
+                    showArcs={false}
+                    showHexPolygons={true}
+                    showAtmosphere={true}
+                    autoRotate={true}
+                    autoRotateSpeed={0.5}
                 />
             </div>
         </div>

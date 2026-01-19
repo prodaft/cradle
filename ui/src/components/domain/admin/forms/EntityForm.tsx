@@ -25,7 +25,7 @@ import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AccessUser, Entity } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -50,15 +50,7 @@ interface SubtypeOption extends SelectOption<string> {
 
 const entitySchema = z.object({
     name: z.string().min(1, { error: 'Name is required' }),
-    subtype: z
-        .object({
-            value: z.string().min(1),
-            label: z.string().min(1),
-        })
-        .nullable()
-        .refine((val) => val !== null, {
-            error: 'Subtype is required',
-        }),
+    subtype: z.string().min(1, { error: 'Subtype is required' }),
     description: z.string().default(''),
     isPublic: z.boolean().default(false),
     aliases: z
@@ -116,6 +108,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         register,
         handleSubmit: handleFormSubmit,
         reset,
+        setValue,
         watch,
         control,
         getValues,
@@ -124,7 +117,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         resolver: zodResolver(entitySchema) as any,
         defaultValues: {
             name: '',
-            subtype: null as any,
+            subtype: '',
             description: '',
             isPublic: false,
             aliases: [],
@@ -183,6 +176,20 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         } as any,
     });
 
+    const resolvedSubtypeOptions = useMemo(() => {
+        if (!entityData?.subtype) return subtypeOptions;
+
+        const hasCurrent = subtypeOptions.some(
+            (option) => option.value === entityData.subtype,
+        );
+        if (hasCurrent) return subtypeOptions;
+
+        return [
+            ...subtypeOptions,
+            { value: entityData.subtype, label: entityData.subtype },
+        ];
+    }, [entityData?.subtype, subtypeOptions]);
+
     // Query for access data when editing
     const { data: accessData } = useQuery({
         queryKey: ['entities', 'access', String(id)],
@@ -199,10 +206,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         if (entityData) {
             reset({
                 name: entityData.name,
-                subtype: {
-                    value: entityData.subtype,
-                    label: entityData.subtype,
-                },
+                subtype: entityData.subtype || '',
                 description: entityData.description || '',
                 isPublic: entityData.isPublic || false,
                 aliases:
@@ -217,6 +221,14 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         }
     }, [entityData, reset]);
 
+    useEffect(() => {
+        if (!entityData?.subtype) return;
+        setValue('subtype', entityData.subtype, {
+            shouldValidate: false,
+            shouldDirty: false,
+        });
+    }, [entityData?.subtype, setValue]);
+
     // Update access users when access data loads
     useEffect(() => {
         if (accessData) {
@@ -230,7 +242,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             type: 'entity',
             name: data.name,
             description: data.description,
-            subtype: data.subtype?.value || '',
+            subtype: data.subtype || '',
             is_public: data.isPublic,
             aliases: data.aliases.map((alias) => alias.value),
         };
@@ -312,70 +324,64 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             <Controller
                                 name='subtype'
                                 control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='horizontal'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
-                                    >
+                                render={({ field, fieldState }) => {
+                                    console.log('subtype field', field);
+                                    console.log('subtype fieldState', fieldState);
+                                    return (
+                                        <Field
+                                            orientation='horizontal'
+                                            className='py-2'
+                                            data-invalid={fieldState.invalid}
+                                        >
                                         <FieldContent className='flex-1'>
                                             <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
                                                 Subtype
                                                 <span className='text-destructive ml-1'>
                                                     *
-                                                </span>
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Entity class type
-                                            </FieldDescription>
-                                            {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
-                                                    {fieldState.error?.message}
-                                                </FieldError>
-                                            )}
-                                        </FieldContent>
-                                        <div className='w-72'>
-                                            <Select
-                                                value={field.value?.value || ''}
-                                                onValueChange={(value) => {
-                                                    const option = subtypeOptions.find(
-                                                        (opt) => opt.value === value,
-                                                    );
-                                                    field.onChange(
-                                                        option
-                                                            ? {
-                                                                  value: option.value,
-                                                                  label: option.label,
-                                                              }
-                                                            : null,
-                                                    );
-                                                }}
-                                            >
-                                                <SelectTrigger
-                                                    className='w-72'
-                                                    aria-invalid={fieldState.invalid}
-                                                    aria-describedby={
-                                                        fieldState.invalid
-                                                            ? 'subtype-error'
-                                                            : undefined
-                                                    }
+                                                    </span>
+                                                </FieldLabel>
+                                                <FieldDescription className='text-sm'>
+                                                    Entity class type
+                                                </FieldDescription>
+                                                {fieldState.invalid && (
+                                                    <FieldError className='text-sm mt-1'>
+                                                        {fieldState.error?.message}
+                                                    </FieldError>
+                                                )}
+                                            </FieldContent>
+                                            <div className='w-72'>
+                                                <Select
+                                                    value={field.value || entityData?.subtype || ''}
+                                                    onValueChange={field.onChange}
                                                 >
-                                                    <SelectValue placeholder='Select subtype' />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {subtypeOptions.map((option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                    <SelectTrigger
+                                                        className='w-72'
+                                                        aria-invalid={fieldState.invalid}
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'subtype-error'
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        <SelectValue placeholder='Select subtype' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {resolvedSubtypeOptions.map(
+                                                            (option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
                                         </div>
                                     </Field>
-                                )}
+                                    );
+                                }}
                             />
 
                             <Separator />

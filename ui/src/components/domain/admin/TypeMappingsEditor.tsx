@@ -1,8 +1,26 @@
 import { Button } from '@/components/ui/button';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
+import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
+import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import { startCase } from 'lodash';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -43,6 +61,79 @@ interface TypeMappingsEditorProps {
     name?: string;
     onSave?: () => void;
 }
+
+interface InternalClassComboboxProps {
+    value: Option | null | undefined;
+    options: Option[];
+    placeholder: string;
+    onChange: (option: Option) => void;
+}
+
+const InternalClassCombobox = ({
+    value,
+    options,
+    placeholder,
+    onChange,
+}: InternalClassComboboxProps) => {
+    const [open, setOpen] = useState(false);
+    const selectedLabel = value?.label ?? '';
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant='outline'
+                    role='combobox'
+                    aria-expanded={open}
+                    className='w-full justify-between'
+                >
+                    <span
+                        className={cn(
+                            'truncate',
+                            !selectedLabel && 'text-muted-foreground',
+                        )}
+                    >
+                        {selectedLabel || placeholder}
+                    </span>
+                    <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent
+                className='w-[var(--radix-popover-trigger-width)] p-0'
+                align='start'
+            >
+                <Command>
+                    <CommandInput placeholder='Search class...' />
+                    <CommandList>
+                        <CommandEmpty>No matches found.</CommandEmpty>
+                        <CommandGroup>
+                            {options.map((option) => (
+                                <CommandItem
+                                    key={option.value}
+                                    value={option.label || option.value}
+                                    onSelect={() => {
+                                        onChange(option);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <CheckIcon
+                                        className={cn(
+                                            'mr-2 size-4',
+                                            option.value === value?.value
+                                                ? 'opacity-100'
+                                                : 'opacity-0',
+                                        )}
+                                    />
+                                    {option.label}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+};
 
 const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     const [columnDefinitions, setColumnDefinitions] =
@@ -95,7 +186,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         mutationFn: async (rowData: Record<string, any>) => {
             return await intelioApi.mappingsSchemaCreateOrUpdate({
                 className: id,
-                ...rowData,
+                requestBody: rowData,
             });
         },
         meta: {
@@ -108,7 +199,10 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
         mutationFn: async (dataToSave: Record<string, any>[]) => {
             // Save all mappings sequentially
             const promises = dataToSave.map((rowData) =>
-                intelioApi.mappingsSchemaCreateOrUpdate({ className: id, ...rowData }),
+                intelioApi.mappingsSchemaCreateOrUpdate({
+                    className: id,
+                    requestBody: rowData,
+                }),
             );
             return await Promise.all(promises);
         },
@@ -602,21 +696,91 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                         const colType = colDef?.type;
 
                                         if (colType === 'options') {
+                                            const options = colDef?.options || [];
+                                            const selectedValue = row[column]?.value ?? '';
+                                            const isInternalClass =
+                                                column === 'internal_class';
                                             return (
                                                 <td
                                                     key={`${index}-${column}`}
                                                     className='px-2 py-2'
                                                 >
-                                                    <Input
-                                                        value={row[column]?.label || ''}
-                                                        disabled={true}
-                                                        className='w-full'
-                                                        placeholder={
-                                                            colDef.required
-                                                                ? 'Required...'
-                                                                : 'Select...'
-                                                        }
-                                                    />
+                                                    {isInternalClass ? (
+                                                        <InternalClassCombobox
+                                                            value={row[column]}
+                                                            options={options}
+                                                            placeholder={
+                                                                colDef.required
+                                                                    ? 'Required...'
+                                                                    : 'Select...'
+                                                            }
+                                                            onChange={(
+                                                                selectedOption,
+                                                            ) => {
+                                                                handleCellChange(
+                                                                    index,
+                                                                    column,
+                                                                    selectedOption,
+                                                                );
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Select
+                                                            value={
+                                                                selectedValue
+                                                                    ? selectedValue
+                                                                    : undefined
+                                                            }
+                                                            onValueChange={(
+                                                                value,
+                                                            ) => {
+                                                                const selectedOption =
+                                                                    options.find(
+                                                                        (
+                                                                            option,
+                                                                        ) =>
+                                                                            option.value ===
+                                                                            value,
+                                                                    );
+                                                                handleCellChange(
+                                                                    index,
+                                                                    column,
+                                                                    selectedOption ?? {
+                                                                        value,
+                                                                        label: value,
+                                                                    },
+                                                                );
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className='w-full'>
+                                                                <SelectValue
+                                                                    placeholder={
+                                                                        colDef.required
+                                                                            ? 'Required...'
+                                                                            : 'Select...'
+                                                                    }
+                                                                />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {options.map(
+                                                                    (option) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                option.value
+                                                                            }
+                                                                            value={
+                                                                                option.value
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                option.label
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
                                                 </td>
                                             );
                                         } else if (colType === 'number') {
