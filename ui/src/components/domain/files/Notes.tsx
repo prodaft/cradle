@@ -13,14 +13,14 @@ import { FilePlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface SearchFilters {
-    any_field: string;
+    any_field?: string;
     content: string;
-    author__username: string;
-    editor__username: string;
-    created_date_from: string;
-    created_date_to: string;
-    updated_date_from: string;
-    updated_date_to: string;
+    author__username?: string;
+    editor__username?: string;
+    created_date_from?: string;
+    created_date_to?: string;
+    updated_date_from?: string;
+    updated_date_to?: string;
 }
 
 /**
@@ -60,22 +60,22 @@ export default function Notes() {
     });
 
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-        any_field: ('any_field' in search ? search.any_field : undefined) || '',
-        content: ('content' in search ? search.content : undefined) || '',
+        any_field: ('any_field' in search ? search.any_field as string : undefined) || '',
+        content: ('content' in search ? search.content as string : undefined) || '',
         author__username:
-            ('author__username' in search ? search.author__username : undefined) || '',
+            ('author__username' in search ? search.author__username as string : undefined) || '',
         editor__username:
-            ('editor__username' in search ? search.editor__username : undefined) || '',
+            ('editor__username' in search ? search.editor__username as string : undefined) || '',
         created_date_from:
-            ('created_date_from' in search ? search.created_date_from : undefined) ||
+            ('created_date_from' in search ? search.created_date_from as string : undefined) ||
             '',
         created_date_to:
-            ('created_date_to' in search ? search.created_date_to : undefined) || '',
+            ('created_date_to' in search ? search.created_date_to as string : undefined) || '',
         updated_date_from:
-            ('updated_date_from' in search ? search.updated_date_from : undefined) ||
+            ('updated_date_from' in search ? search.updated_date_from as string : undefined) ||
             '',
         updated_date_to:
-            ('updated_date_to' in search ? search.updated_date_to : undefined) || '',
+            ('updated_date_to' in search ? search.updated_date_to as string : undefined) || '',
     });
     const searchFiltersRef = useRef(searchFilters);
     useEffect(() => {
@@ -165,27 +165,27 @@ export default function Notes() {
 
     useEffect(() => {
         const initialFilters: SearchFilters = {
-            any_field: ('any_field' in search ? search.any_field : undefined) || '',
-            content: ('content' in search ? search.content : undefined) || '',
+            any_field: ('any_field' in search ? search.any_field as string : undefined) || '',
+            content: ('content' in search ? search.content as string : undefined) || '',
             author__username:
-                ('author__username' in search ? search.author__username : undefined) ||
+                ('author__username' in search ? search.author__username as string : undefined) ||
                 '',
             editor__username:
-                ('editor__username' in search ? search.editor__username : undefined) ||
+                ('editor__username' in search ? search.editor__username as string : undefined) ||
                 '',
             created_date_from:
                 ('created_date_from' in search
-                    ? search.created_date_from
+                    ? search.created_date_from as string
                     : undefined) || '',
             created_date_to:
-                ('created_date_to' in search ? search.created_date_to : undefined) ||
+                ('created_date_to' in search ? search.created_date_to as string : undefined) ||
                 '',
             updated_date_from:
                 ('updated_date_from' in search
-                    ? search.updated_date_from
+                    ? search.updated_date_from as string
                     : undefined) || '',
             updated_date_to:
-                ('updated_date_to' in search ? search.updated_date_to : undefined) ||
+                ('updated_date_to' in search ? search.updated_date_to as string : undefined) ||
                 '',
         };
 
@@ -240,7 +240,7 @@ export default function Notes() {
                         onCreateNote={handleCreateNewNote}
                         onTotalCountChange={setNotesCount}
                         contentSearch={{
-                            value: searchFilters.any_field,
+                            value: searchFilters.any_field || '',
                             onChange: (value: string) => {
                                 const updatedFilters = {
                                     ...searchFilters,

@@ -1,5 +1,5 @@
 import { useTheme } from '@contexts/ui';
-import { useEffect, useState } from 'react';
+import { JSX, useEffect, useState } from 'react';
 
 import logo_dark from '@/assets/logos/dark_notext.svg';
 import logo_light from '@/assets/logos/light_notext.svg';
@@ -63,7 +63,7 @@ export default function Logo({
         <img
             src={logo}
             alt='CRADLE'
-            onClick={onClick || (() => {})}
+            onClick={onClick || (() => { })}
             style={{
                 width: width,
                 height: height,

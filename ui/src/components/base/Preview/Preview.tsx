@@ -137,7 +137,7 @@ export default function Preview({
                 // Silently fail - scroll error is non-critical
             }
         }
-    }, [searchParams, previewElement]);
+    }, [previewElement]);
 
     return (
         <>

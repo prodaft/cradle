@@ -4,6 +4,7 @@
 
 import type {
     AccessApi,
+    AuthApi,
     EntriesApi,
     FileTransferApi,
     IntelioApi,
@@ -36,6 +37,7 @@ export interface ApiContextValue {
     queryApi: QueryApi;
     reportsApi: PublishApi;
     usersApi: UserApi;
+    authApi: AuthApi;
     basePath: string;
 }
 

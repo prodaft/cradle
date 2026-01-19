@@ -202,7 +202,7 @@ export default function GraphViewer({
                             clickedNodes.unshift(node);
                         }
                     } catch (e) {
-                        logger.warn('[Graph] Error getting connected points:', e);
+                        logger.warn('[Graph] Error getting connected points:', { error: e });
                     }
                 }
 
@@ -220,7 +220,7 @@ export default function GraphViewer({
                 try {
                     cosmographRef.current?.setFocusedPoint(index);
                 } catch (e) {
-                    logger.warn('[Graph] Error setting focused point:', e);
+                    logger.warn('[Graph] Error setting focused point:', { error: e });
                 }
 
                 setSelectedNodes(newNodes);
@@ -288,7 +288,7 @@ export default function GraphViewer({
                     cosmographRef.current.fitView(500, 0.1);
                 }
             } catch (e) {
-                logger.warn('[Graph] Could not fit view:', e);
+                logger.warn('[Graph] Could not fit view:', { error: e });
             }
         }, 300);
 
@@ -306,7 +306,7 @@ export default function GraphViewer({
                     cosmographRef.current.destroy();
                 }
             } catch (e) {
-                logger.warn('[Graph] Error during cleanup:', e);
+                logger.warn('[Graph] Error during cleanup:', { error: e });
             }
         };
     }, []);
@@ -373,9 +373,8 @@ export default function GraphViewer({
                                     activePanel === 'explorer' ? 'outline' : 'outline'
                                 }
                                 size='icon'
-                                className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'explorer' ? 'border-primary' : ''
-                                }`}
+                                className={`p-1.5 w-8 h-8 ${activePanel === 'explorer' ? 'border-primary' : ''
+                                    }`}
                                 title='Toggle explorer panel'
                                 onClick={() => onTogglePanel('explorer')}
                             >
@@ -391,9 +390,8 @@ export default function GraphViewer({
                                     activePanel === 'display' ? 'outline' : 'outline'
                                 }
                                 size='icon'
-                                className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'display' ? 'border-primary' : ''
-                                }`}
+                                className={`p-1.5 w-8 h-8 ${activePanel === 'display' ? 'border-primary' : ''
+                                    }`}
                                 title='Toggle display panel'
                                 onClick={() => onTogglePanel('display')}
                             >
@@ -409,9 +407,8 @@ export default function GraphViewer({
                                     activePanel === 'filters' ? 'outline' : 'outline'
                                 }
                                 size='icon'
-                                className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'filters' ? 'border-primary' : ''
-                                }`}
+                                className={`p-1.5 w-8 h-8 ${activePanel === 'filters' ? 'border-primary' : ''
+                                    }`}
                                 title='Toggle filters panel'
                                 onClick={() => onTogglePanel('filters')}
                             >

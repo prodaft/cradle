@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { JSX, useState } from 'react';
 import { Button } from 'src/components/ui/button';
 import {
     Dialog,

@@ -26,7 +26,7 @@ const parseOAuthState = (stateValue: string | null): OAuthState | null => {
 };
 
 export default function OAuthCallback() {
-    const { usersApi } = useApi();
+    const { authApi } = useApi();
     const { basePath } = useAuthState();
     const { isLoggedIn, getAccessToken, setTokensDirectly } = useAuthActions();
     const router = useRouter();
@@ -94,7 +94,7 @@ export default function OAuthCallback() {
                         return;
                     }
 
-                    await usersApi.usersOauthConnect({
+                    await authApi.authOauthLogin({
                         oAuthConnectRequest: {
                             provider,
                             code,
@@ -116,7 +116,7 @@ export default function OAuthCallback() {
                     return;
                 }
 
-                const data = await usersApi.usersOauthLogin({
+                const data = await authApi.authOauthLogin({
                     oAuthConnectRequest: {
                         provider,
                         code,
@@ -140,7 +140,7 @@ export default function OAuthCallback() {
                     sessionStorage.getItem('oauth_login_redirect') || '/';
                 const normalizedRedirect =
                     redirectPath === '/oauth/callback' ||
-                    redirectPath === '#/oauth/callback'
+                        redirectPath === '#/oauth/callback'
                         ? '/'
                         : redirectPath;
                 sessionStorage.removeItem('oauth_login_redirect');

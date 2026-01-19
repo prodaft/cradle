@@ -30,13 +30,13 @@ export default function ResetPassword() {
     const searchAny = search as any;
     const token = searchAny?.token as string | undefined;
     const router = useRouter();
-    const { usersApi } = useApi();
+    const { authApi } = useApi();
     const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
 
     const resetPasswordMutation = useMutation({
         mutationFn: async (data: { token: string; password: string }) => {
-            await usersApi.usersResetPasswordUpdate({
+            await authApi.authResetPasswordUpdate({
                 passwordResetConfirmRequest: {
                     token: data.token,
                     password: data.password,

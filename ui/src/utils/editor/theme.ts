@@ -14,7 +14,7 @@ export function createCradleTheme(isDarkMode: boolean) {
             '.cm-content': {
                 color: 'inherit',
                 // Map Prosemark CSS variables to our theme colors
-                '--pm-cursor-color': 'var(--foreground))',
+                '--pm-cursor-color': 'hsl(var(--foreground))',
                 '--pm-header-mark-color': 'var(--primary)',
                 '--pm-heading-color': 'var(--foreground)',
                 '--pm-list-mark-color': 'var(--primary)',

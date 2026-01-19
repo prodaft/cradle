@@ -245,8 +245,6 @@ export default function ReportList() {
     // Retry mutation
     const retryMutation = useMutation({
         mutationFn: (id: string) => reportsApi.reportsRetryCreate({ id }),
-        // Note: We don't invalidate queries here because retry is async and refetching causes a full table rerender
-        invalidateQueries: [],
     });
 
     const executeBulkDelete = async (selectedIds: string[]) => {
@@ -302,11 +300,11 @@ export default function ReportList() {
 
         return columnId
             ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
+                {
+                    id: columnId,
+                    desc: sortDirection === 'desc',
+                },
+            ]
             : [];
     }, [sortField, sortDirection]);
 
@@ -368,8 +366,8 @@ export default function ReportList() {
             status === 'error'
                 ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                 : status === 'warning'
-                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                  : '';
+                    ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+                    : '';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
@@ -486,9 +484,9 @@ export default function ReportList() {
                     <div className='w-36'>
                         {row.original.createdAt
                             ? format(
-                                  new Date(row.original.createdAt),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
+                                new Date(row.original.createdAt),
+                                'dd/MM/yyyy, HH:mm',
+                            )
                             : 'N/A'}
                     </div>
                 ),

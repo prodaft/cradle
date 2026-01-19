@@ -40,14 +40,14 @@ export default function ForgotPassword() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const { usersApi } = useApi();
+    const { authApi } = useApi();
     const router = useRouter();
     const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
 
     const resetPasswordMutation = useMutation({
         mutationFn: async (email: string) => {
-            await usersApi.usersResetPasswordCreate({
+            await authApi.authResetPasswordCreate({
                 passwordResetRequestRequest: {
                     email,
                 },
@@ -175,7 +175,7 @@ export default function ForgotPassword() {
                                     <Alert
                                         variant={
                                             alert.color === 'red' ||
-                                            alert.color === 'error'
+                                                alert.color === 'error'
                                                 ? 'destructive'
                                                 : 'default'
                                         }

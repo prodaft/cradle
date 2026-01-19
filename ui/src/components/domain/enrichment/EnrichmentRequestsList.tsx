@@ -29,7 +29,7 @@ import { toast } from 'sonner';
 type EnrichmentRequest = EnrichmentRequestList;
 
 interface ColumnFilter {
-    [key: string]: string | DateRangeFilter | undefined;
+    [key: string]: string | undefined;
     status: string;
     user: string;
 }
@@ -82,17 +82,17 @@ function EnrichmentRequestsList({
     sortDirection = 'desc',
     onSort,
     pageSize = 10,
-    setPageSize = () => {},
+    setPageSize = () => { },
     onColumnFilterChange = null,
     columnFilters = { status: 'all', user: '' },
     searchFilters = {},
-    onSearchChange = () => {},
-    onSearchSubmit = () => {},
+    onSearchChange = () => { },
+    onSearchSubmit = () => { },
     selectedRequests = [],
-    setSelectedRequests = () => {},
-    onDeleteSelected = () => {},
-    onRerunSelected = () => {},
-    onCreateRequest = () => {},
+    setSelectedRequests = () => { },
+    onDeleteSelected = () => { },
+    onRerunSelected = () => { },
+    onCreateRequest = () => { },
 }: EnrichmentRequestsListProps) {
     const router = useRouter();
     const { intelioApi } = useApi();
@@ -150,11 +150,11 @@ function EnrichmentRequestsList({
 
         return columnId
             ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
+                {
+                    id: columnId,
+                    desc: sortDirection === 'desc',
+                },
+            ]
             : [];
     }, [sortField, sortDirection]);
 
@@ -172,19 +172,6 @@ function EnrichmentRequestsList({
         },
         [onSort],
     );
-
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        onColumnFilterChange
-            ? {
-                  user: (value: string | DateRangeFilter) => {
-                      if (typeof value === 'string') {
-                          onColumnFilterChange('user', value);
-                      }
-                  },
-              }
-            : {
-                  status: (value: string | DateRangeFilter) => {},
-              };
 
     const errorMsg = (request: EnrichmentRequest) => {
         let msgs: string[] = [];
@@ -267,8 +254,8 @@ function EnrichmentRequestsList({
             status === 'error'
                 ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                 : status === 'waiting'
-                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                  : '';
+                    ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+                    : '';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
@@ -394,9 +381,9 @@ function EnrichmentRequestsList({
                     <div className='w-40'>
                         {row.original.createdAt
                             ? format(
-                                  new Date(row.original.createdAt),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
+                                new Date(row.original.createdAt),
+                                'dd/MM/yyyy, HH:mm',
+                            )
                             : 'N/A'}
                     </div>
                 ),
@@ -466,7 +453,7 @@ function EnrichmentRequestsList({
                             debounceMs={300}
                             onDebouncedChange={(value) => {
                                 const event = {
-                                    preventDefault: () => {},
+                                    preventDefault: () => { },
                                     target: { name: 'title', value },
                                 } as ChangeEvent<HTMLInputElement>;
                                 onSearchChange(event);
@@ -475,7 +462,7 @@ function EnrichmentRequestsList({
                             }}
                             onSubmit={(value) => {
                                 const event = {
-                                    preventDefault: () => {},
+                                    preventDefault: () => { },
                                     target: { name: 'title', value },
                                 } as any;
                                 onSearchSubmit(event);

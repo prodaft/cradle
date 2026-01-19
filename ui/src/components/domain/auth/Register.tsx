@@ -67,7 +67,7 @@ export default function Register() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const { usersApi, basePath } = useApi();
+    const { authApi, usersApi, basePath } = useApi();
     const { role } = useAuthState();
     const { isLoggedIn } = useAuthActions();
 
@@ -77,7 +77,7 @@ export default function Register() {
             email: string;
             password: string;
         }) => {
-            return await usersApi.authSignupCreate({
+            return await authApi.authSignupCreate({
                 userCreateRequest: {
                     username: data.username,
                     email: data.email,
@@ -403,8 +403,8 @@ export default function Register() {
                                         {signup === false
                                             ? 'Registration Disabled'
                                             : form.formState.isSubmitting
-                                              ? 'Creating...'
-                                              : 'Create Account'}
+                                                ? 'Creating...'
+                                                : 'Create Account'}
                                     </Button>
                                 </Field>
                                 {oauthOptions.length > 0 && (
@@ -428,7 +428,7 @@ export default function Register() {
                                                         let redirectPath = '/';
                                                         if (
                                                             typeof location.state ===
-                                                                'object' &&
+                                                            'object' &&
                                                             location.state !== null &&
                                                             'from' in location.state
                                                         ) {
@@ -440,15 +440,15 @@ export default function Register() {
                                                                 redirectPath =
                                                                     from.includes('#')
                                                                         ? from.slice(
-                                                                              from.indexOf(
-                                                                                  '#',
-                                                                              ) + 1,
-                                                                          ) || '/'
+                                                                            from.indexOf(
+                                                                                '#',
+                                                                            ) + 1,
+                                                                        ) || '/'
                                                                         : from;
                                                             } else if (
                                                                 from &&
                                                                 typeof from ===
-                                                                    'object' &&
+                                                                'object' &&
                                                                 'pathname' in from
                                                             ) {
                                                                 redirectPath =

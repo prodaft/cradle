@@ -53,11 +53,11 @@ export default function ChangePasswordModal({
     open,
     onOpenChange,
 }: ChangePasswordModalProps) {
-    const { usersApi } = useApi();
+    const { authApi } = useApi();
 
     const changePasswordMutation = useMutation({
         mutationFn: async (data: { oldPassword: string; newPassword: string }) => {
-            await usersApi.usersChangePasswordCreate({
+            await authApi.authChangePasswordCreate({
                 changePasswordRequestRequest: {
                     oldPassword: data.oldPassword,
                     newPassword: data.newPassword,

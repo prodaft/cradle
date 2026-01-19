@@ -195,8 +195,8 @@ export default function Relations({ obj }: RelationsProps) {
                 const filteredResults =
                     entrySubtypeFilters.length > 0
                         ? resultsWithDepth.filter((r) =>
-                              entrySubtypeFilters.includes(r.subtype),
-                          )
+                            entrySubtypeFilters.includes(r.subtype),
+                        )
                         : resultsWithDepth;
                 setResults(filteredResults);
             }
@@ -290,8 +290,8 @@ export default function Relations({ obj }: RelationsProps) {
         const itemsToCopy =
             selectedIds.length > 0
                 ? results.filter(
-                      (r) => r.id !== undefined && selectedIds.includes(r.id),
-                  )
+                    (r) => r.id !== undefined && selectedIds.includes(r.id),
+                )
                 : results;
 
         if (itemsToCopy.length > 0) {
@@ -377,8 +377,8 @@ export default function Relations({ obj }: RelationsProps) {
                                 style={
                                     row.original.color
                                         ? {
-                                              backgroundColor: row.original.color,
-                                          }
+                                            backgroundColor: row.original.color,
+                                        }
                                         : undefined
                                 }
                             >

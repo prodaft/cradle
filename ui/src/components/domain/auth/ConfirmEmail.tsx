@@ -23,12 +23,12 @@ export default function ConfirmEmail() {
         color: 'red',
     });
     const search = useSearch({ from: '/confirm-email' });
-    const token = 'token' in search ? search.token : undefined;
-    const { usersApi } = useApi();
+    const token = 'token' in search ? search.token as string : undefined;
+    const { authApi } = useApi();
 
     const confirmMutation = useMutation({
         mutationFn: async (token: string) => {
-            await usersApi.usersEmailConfirmCreate({
+            await authApi.authEmailConfirmCreate({
                 emailConfirmRequest: { token },
             });
         },

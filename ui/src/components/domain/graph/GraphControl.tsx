@@ -105,24 +105,24 @@ export default function GraphControl({
                 {nodes.length > 0 && (
                     <div className='px-4 mt-4'>
                         <CosmographSearch
-                            accessor='_label'
+                            accessor='label'
                             onSelect={(suggestion: any) => {
-                                    if (
-                                        suggestion == null ||
-                                        cosmographRef.current == null
-                                    )
-                                        return;
-                                    const index = suggestion._index;
-                                    if (index !== undefined) {
-                                        cosmographRef.current.setFocusedPoint(index);
-                                        cosmographRef.current.zoomToPoint(index);
-                                        const node = indexToNode.get(index);
-                                        if (node) {
-                                            setSelectedEntries(new Set([node]));
-                                        }
+                                if (
+                                    suggestion == null ||
+                                    cosmographRef.current == null
+                                )
+                                    return;
+                                const index = suggestion._index;
+                                if (index !== undefined) {
+                                    cosmographRef.current.setFocusedPoint(index);
+                                    cosmographRef.current.zoomToPoint(index);
+                                    const node = indexToNode.get(index);
+                                    if (node) {
+                                        setSelectedEntries(new Set([node]));
                                     }
-                                }}
-                            />
+                                }
+                            }}
+                        />
                     </div>
                 )}
                 {/* Explorer Panel */}

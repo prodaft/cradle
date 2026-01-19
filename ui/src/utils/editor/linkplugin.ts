@@ -88,7 +88,7 @@ export class CradleLinkWidget extends WidgetType {
         linkSpan.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.navigate(url, { event: e as unknown as React.MouseEvent });
+            this.navigate(url, {});
         });
 
         linkSpan.addEventListener('mouseenter', () => {
@@ -117,7 +117,7 @@ export class CradleLinkWidget extends WidgetType {
         timestampSpan.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            this.navigate(url, { event: e as unknown as React.MouseEvent });
+            this.navigate(url, {});
         });
         timestampSpan.addEventListener('mouseenter', () => {
             timestampSpan.style.opacity = '0.8';

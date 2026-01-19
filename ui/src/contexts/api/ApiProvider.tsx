@@ -2,6 +2,7 @@ import { ApiContext } from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import {
     AccessApi,
+    AuthApi,
     EntriesApi,
     FileTransferApi,
     IntelioApi,
@@ -61,6 +62,7 @@ export function ApiProvider({ children }: ApiProviderProps) {
             queryApi: new QueryApi(configuration),
             reportsApi: new PublishApi(configuration),
             usersApi: new UserApi(configuration),
+            authApi: new AuthApi(configuration),
         };
     }, [configuration]);
 
