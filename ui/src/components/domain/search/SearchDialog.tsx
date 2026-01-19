@@ -229,7 +229,7 @@ export default function SearchDialog({
                 className='w-11/12 md:w-3/4 lg:w-[640px] max-h-[75vh] bg-card border flex flex-col relative overflow-hidden rounded-lg shadow-md'
                 onClick={(e) => e.stopPropagation()}
             >
-                <Command className='h-full flex flex-col'>
+                <Command className='h-full flex flex-col' shouldFilter={false}>
                     <div className='relative'>
                         <CommandInput
                             ref={inputRef}

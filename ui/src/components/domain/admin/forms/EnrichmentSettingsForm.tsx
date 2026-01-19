@@ -586,6 +586,7 @@ export default function EnrichmentSettingsForm({
                                                         }
                                                         defaultOptions={[]}
                                                         placeholder='Select entry classes...'
+                                                        triggerSearchOnFocus
                                                         onSearch={async (query) => {
                                                             const results =
                                                                 await fetchEntryClasses(
