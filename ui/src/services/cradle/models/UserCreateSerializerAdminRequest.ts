@@ -51,14 +51,11 @@ export interface UserCreateSerializerAdminRequest {
      */
     vimMode?: boolean;
     /**
-     * Theme to use in the UI
      * 
-     * * `dark` - Dark
-     * * `light` - Light
-     * @type {string}
+     * @type {any}
      * @memberof UserCreateSerializerAdminRequest
      */
-    theme?: UserCreateSerializerAdminRequestThemeEnum;
+    theme?: any | null;
     /**
      * * `admin` - Admin
      * * `manager` - Manager
@@ -94,15 +91,6 @@ export interface UserCreateSerializerAdminRequest {
     fileUploadLimitOverride?: number | null;
 }
 
-
-/**
- * @export
- */
-export const UserCreateSerializerAdminRequestThemeEnum = {
-    Dark: 'dark',
-    Light: 'light'
-} as const;
-export type UserCreateSerializerAdminRequestThemeEnum = typeof UserCreateSerializerAdminRequestThemeEnum[keyof typeof UserCreateSerializerAdminRequestThemeEnum];
 
 /**
  * @export

@@ -7,7 +7,7 @@ import { Toaster } from 'src/components/ui/sonner';
 import { TooltipProvider } from 'src/components/ui/tooltip';
 import { ApiProvider } from 'src/contexts/api/ApiProvider';
 import { QueryProvider } from 'src/contexts/query/QueryProvider';
-import { ThemeProvider } from 'src/contexts/ui/ThemeContext';
+import { ThemeProvider } from '@/contexts/ui';
 
 export const Route = createRootRoute({
     component: () => {

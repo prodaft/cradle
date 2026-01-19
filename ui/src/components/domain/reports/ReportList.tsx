@@ -445,7 +445,15 @@ export default function ReportList() {
                 accessorKey: 'title',
                 id: 'title',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Title' />
+                    <div className='flex items-center gap-2'>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={statusFilter}
+                            statusOptions={['all', 'done', 'working', 'error']}
+                            triggerClassName='size-[18px] p-0'
+                        />
+                        <DataTableColumnHeader column={column} title='Title' />
+                    </div>
                 ),
                 cell: ({ row }) => (
                     <div
@@ -633,18 +641,7 @@ export default function ReportList() {
                                 />
                             }
                             right={
-                                <>
-                                    <StatusHeaderDropdown
-                                        onStatusChange={handleStatusChange}
-                                        status={statusFilter}
-                                        statusOptions={[
-                                            'all',
-                                            'done',
-                                            'working',
-                                            'error',
-                                        ]}
-                                    />
-                                </>
+                                null
                             }
                         />
                     )}

@@ -1,4 +1,4 @@
-import { useTheme } from '@/contexts/ui/ThemeContext';
+import { useTheme } from '@/contexts/ui';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';

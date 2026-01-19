@@ -51,26 +51,12 @@ export interface UserCreateRequest {
      */
     vimMode?: boolean;
     /**
-     * Theme to use in the UI
      * 
-     * * `dark` - Dark
-     * * `light` - Light
-     * @type {string}
+     * @type {any}
      * @memberof UserCreateRequest
      */
-    theme?: UserCreateRequestThemeEnum;
+    theme?: any | null;
 }
-
-
-/**
- * @export
- */
-export const UserCreateRequestThemeEnum = {
-    Dark: 'dark',
-    Light: 'light'
-} as const;
-export type UserCreateRequestThemeEnum = typeof UserCreateRequestThemeEnum[keyof typeof UserCreateRequestThemeEnum];
-
 
 /**
  * Check if a given object implements the UserCreateRequest interface.

@@ -328,7 +328,17 @@ function DigestList({
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => <span>Title</span>,
+                header: () => (
+                    <div className='flex items-center gap-2'>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status || 'all'}
+                            statusOptions={['all', 'done', 'working', 'error']}
+                            triggerClassName='size-[18px] p-0'
+                        />
+                        <span>Title</span>
+                    </div>
+                ),
                 cell: ({ row }) => (
                     <div className='truncate max-w-xs' title={row.original.title}>
                         <div className='flex items-center gap-2 min-w-0'>
@@ -576,15 +586,7 @@ function DigestList({
                         />
                     </>
                 }
-                right={
-                    <>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status || 'all'}
-                            statusOptions={['all', 'done', 'working', 'error']}
-                        />
-                    </>
-                }
+                right={null}
             />
 
             <DataTable

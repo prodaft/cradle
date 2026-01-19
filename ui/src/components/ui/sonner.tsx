@@ -1,4 +1,4 @@
-import { useTheme } from '@/contexts/ui/ThemeContext';
+import { useTheme } from '@/contexts/ui';
 import {
     CircleCheckIcon,
     InfoIcon,

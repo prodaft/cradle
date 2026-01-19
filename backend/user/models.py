@@ -1,4 +1,5 @@
 import uuid
+from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -16,7 +17,7 @@ from management.settings import cradle_settings
 
 from .managers import CradleUserManager
 
-DARK_THEME = {
+THEME_DARK_VARS = {
     "--background": "oklch(0.145 0 0)",
     "--foreground": "oklch(0.985 0 0)",
     "--card": "oklch(0.205 0 0)",
@@ -77,9 +78,11 @@ class UserRoles(models.TextChoices):
     USER = "author"  # Writer of notes
 
 
-class Theme(models.TextChoices):
-    DARK = "dark"
-    LIGHT = "light"
+DEFAULT_THEME = THEME_DARK_VARS
+
+
+def default_theme():
+    return deepcopy(DEFAULT_THEME)
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):
@@ -105,7 +108,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
     default_note_template = models.TextField(blank=True, null=True, help_text="Default template for new notes")
     vim_mode = models.BooleanField(default=False, help_text="Whether to enable Vim keybindings in the editor")
 
-    theme = models.CharField(default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI")
+    theme = models.JSONField(default=default_theme, help_text="Theme settings to use in the UI")
 
     file_upload_limit_override: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
         default=None, null=True, help_text="File upload limit in bytes"

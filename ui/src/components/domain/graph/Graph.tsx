@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Spinner } from '@/components/ui/spinner';
-import { useTheme } from '@/contexts/ui/ThemeContext';
+import { useTheme } from '@/contexts/ui';
 import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
 import { FilterList, PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';

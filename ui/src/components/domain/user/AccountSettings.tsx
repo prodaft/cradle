@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
@@ -30,7 +31,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import bytes from 'bytes';
-import { ClockRotateRight, EditPencil, HalfMoon, SunLight } from 'iconoir-react';
+import { ClockRotateRight, EditPencil } from 'iconoir-react';
 import { Link, Lock, Palette } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -201,6 +202,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         emailConfirmed: false,
         isActive: false,
         fileUploadLimitOverride: '',
+        theme: '',
     };
 
     const {
@@ -208,14 +210,26 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         handleSubmit,
         reset,
         getValues,
-        watch,
-        setValue,
         control,
-        formState: { errors, isDirty },
+        formState: { isDirty },
     } = useForm<AccountFormData>({
         resolver: zodResolver(accountSettingsSchema) as any,
         defaultValues,
     });
+
+    const serializeThemeForForm = (themeValue: unknown) => {
+        if (!themeValue) {
+            return '';
+        }
+        if (typeof themeValue === 'string') {
+            return themeValue;
+        }
+        try {
+            return JSON.stringify(themeValue, null, 2);
+        } catch {
+            return '';
+        }
+    };
 
     const [alert, setAlert] = useState<Alert>({
         show: false,
@@ -261,7 +275,9 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             username: userData.username,
             email: userData.email,
             password: 'password',
-            theme: userData.theme || 'dark',
+            theme:
+                serializeThemeForForm(userData.theme) ||
+                JSON.stringify({ mode: 'dark' }, null, 2),
             catalystApiKey: userData.catalystApiKey ? 'apikey' : '',
             role: userData.role || 'author',
             emailConfirmed: userData.emailConfirmed || false,
@@ -450,7 +466,26 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
             payload.vimMode = data.vimMode;
         }
         if (data.theme !== previousData?.theme) {
-            payload.theme = data.theme;
+            const themeValue = (data.theme || '').trim();
+            if (!themeValue) {
+                toast.error('Theme JSON cannot be empty.');
+                return;
+            }
+            try {
+                const parsed = JSON.parse(themeValue);
+                if (
+                    typeof parsed !== 'object' ||
+                    parsed === null ||
+                    Array.isArray(parsed)
+                ) {
+                    toast.error('Theme must be a JSON object.');
+                    return;
+                }
+                payload.theme = parsed;
+            } catch (error) {
+                toast.error('Theme must be valid JSON.');
+                return;
+            }
         }
 
         if (Object.keys(payload).length === 0) {
@@ -924,40 +959,34 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                                     <CardContent className='px-4 py-1'>
                                                         <div className='flex items-center justify-between gap-4 py-2'>
-                                                            <div className='flex-1'>
-                                                                <Label className='text-sm text-muted-foreground block mb-0.5'>
-                                                                    Theme
+                                                            <div className='flex-1 space-y-1'>
+                                                                <Label className='text-sm text-muted-foreground block'>
+                                                                    Theme JSON
                                                                 </Label>
                                                                 <p className='text-sm text-muted-foreground'>
-                                                                    Choose your
-                                                                    preferred color
-                                                                    scheme
+                                                                    Provide a JSON
+                                                                    object with an
+                                                                    optional
+                                                                    <span className='font-mono text-xs'>
+                                                                        {' '}
+                                                                        mode
+                                                                    </span>{' '}
+                                                                    and CSS variable
+                                                                    values in
+                                                                    <span className='font-mono text-xs'>
+                                                                        {' '}
+                                                                        vars
+                                                                    </span>
+                                                                    .
                                                                 </p>
                                                             </div>
-                                                            <Button
-                                                                type='button'
-                                                                variant='ghost'
-                                                                size='icon'
-                                                                onClick={() =>
-                                                                    setValue(
-                                                                        'theme',
-                                                                        watch(
-                                                                            'theme',
-                                                                        ) === 'dark'
-                                                                            ? 'light'
-                                                                            : 'dark',
-                                                                        { shouldDirty: true },
-                                                                    )
-                                                                }
-                                                            >
-                                                                {watch('theme') ===
-                                                                'dark' ? (
-                                                                    <SunLight className='w-5 h-5' />
-                                                                ) : (
-                                                                    <HalfMoon className='w-5 h-5' />
-                                                                )}
-                                                            </Button>
                                                         </div>
+                                                        <Textarea
+                                                            rows={10}
+                                                            className='font-mono text-xs'
+                                                            placeholder='{"mode":"dark","vars":{"--background":"oklch(0.145 0 0)"}}'
+                                                            {...register('theme')}
+                                                        />
                                                     </CardContent>
                                                 </Card>
                                                 <div className='flex justify-end pt-2'>

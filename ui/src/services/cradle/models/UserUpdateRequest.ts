@@ -51,14 +51,11 @@ export interface UserUpdateRequest {
      */
     vimMode?: boolean;
     /**
-     * Theme to use in the UI
      * 
-     * * `dark` - Dark
-     * * `light` - Light
-     * @type {string}
+     * @type {any}
      * @memberof UserUpdateRequest
      */
-    theme?: UserUpdateRequestThemeEnum;
+    theme?: any | null;
     /**
      * * `admin` - Admin
      * * `manager` - Manager
@@ -94,15 +91,6 @@ export interface UserUpdateRequest {
     fileUploadLimitOverride?: number | null;
 }
 
-
-/**
- * @export
- */
-export const UserUpdateRequestThemeEnum = {
-    Dark: 'dark',
-    Light: 'light'
-} as const;
-export type UserUpdateRequestThemeEnum = typeof UserUpdateRequestThemeEnum[keyof typeof UserUpdateRequestThemeEnum];
 
 /**
  * @export

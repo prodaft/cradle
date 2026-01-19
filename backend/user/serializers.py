@@ -18,6 +18,7 @@ from .utils.validators import password_validator
 
 class UserCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
+    theme = serializers.JSONField(required=False)
 
     class Meta:
         model = CradleUser
@@ -60,6 +61,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 raise InvalidPasswordException(e.messages)
 
         return super().validate(data)
+
+    def validate_theme(self, value: Any) -> Any:
+        if value is None:
+            return value
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Theme must be a JSON object.")
+        return value
 
     def create(self, validated_data: Any):
         """Creates a new Users entry based on the validated data.

@@ -15,11 +15,17 @@ export interface BaseComponentProps {
 // Theme Types
 // ============================================================================
 
-export type Theme = 'light' | 'dark';
+export type ThemeMode = 'light' | 'dark';
+
+export interface ThemeConfig {
+    mode?: ThemeMode;
+    vars?: Record<string, string>;
+    [key: string]: unknown;
+}
 
 export interface ThemeContextValue {
     isDarkMode: boolean;
-    setTheme: (theme: Theme) => void;
+    setTheme: (theme: ThemeConfig) => void;
     toggleTheme: () => void;
 }
 
@@ -38,7 +44,7 @@ export interface Profile {
     id: string;
     username: string;
     email: string;
-    theme: Theme;
+    theme: ThemeConfig;
     firstName?: string;
     lastName?: string;
     // Add other profile properties as needed

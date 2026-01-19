@@ -84,14 +84,11 @@ export interface UserRetrieve {
      */
     fileUploadLimitOverride?: number | null;
     /**
-     * Theme to use in the UI
-     * 
-     * * `dark` - Dark
-     * * `light` - Light
-     * @type {string}
+     * Theme settings to use in the UI
+     * @type {any}
      * @memberof UserRetrieve
      */
-    theme?: UserRetrieveThemeEnum;
+    theme?: any | null;
     /**
      * 
      * @type {{ [key: string]: any; }}
@@ -111,15 +108,6 @@ export const UserRetrieveRoleEnum = {
     Author: 'author'
 } as const;
 export type UserRetrieveRoleEnum = typeof UserRetrieveRoleEnum[keyof typeof UserRetrieveRoleEnum];
-
-/**
- * @export
- */
-export const UserRetrieveThemeEnum = {
-    Dark: 'dark',
-    Light: 'light'
-} as const;
-export type UserRetrieveThemeEnum = typeof UserRetrieveThemeEnum[keyof typeof UserRetrieveThemeEnum];
 
 
 /**
