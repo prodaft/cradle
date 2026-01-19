@@ -11,6 +11,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
+    ColorPicker,
+    ColorPickerArea,
+    ColorPickerContent,
+    ColorPickerEyeDropper,
+    ColorPickerFormatSelect,
+    ColorPickerHueSlider,
+    ColorPickerInput,
+    ColorPickerSwatch,
+    ColorPickerTrigger,
+} from '@/components/ui/color-picker';
+import {
     Select,
     SelectContent,
     SelectItem,
@@ -29,8 +40,7 @@ import {
     EntryClassRequestTypeEnum,
 } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { HexColorPicker } from 'react-colorful';
+import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -102,8 +112,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [showColorPicker, setShowColorPicker] = useState(false);
-    const colorButtonRef = useRef<HTMLDivElement>(null);
 
     const {
         register,
@@ -258,7 +266,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
-    const watchColor = watch('color');
     const isArtifact = watchType?.value === EntryClassRequestTypeEnum.Artifact;
     const isEntity = watchType?.value === EntryClassRequestTypeEnum.Entity;
     const isOptions = watchTypeFormat?.value === 'options';
@@ -450,106 +457,63 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                 <p className='text-sm text-muted-foreground mb-2'>
                                     Display color for this entry type
                                 </p>
-                                <div className='flex items-center space-x-2'>
-                                    <Controller
-                                        name='color'
-                                        control={control}
-                                        render={({ field }) => (
-                                            <Input
-                                                type='text'
-                                                className='w-full text-sm h-10 rounded-full'
-                                                {...field}
-                                            />
-                                        )}
-                                    />
-                                    <div
-                                        ref={colorButtonRef}
-                                        className='h-10 w-12 rounded cursor-pointer border border-border flex-shrink-0'
-                                        style={{
-                                            backgroundColor: watchColor,
-                                        }}
-                                        onClick={() =>
-                                            setShowColorPicker(!showColorPicker)
-                                        }
-                                    />
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        size='default'
-                                        className='h-10 px-3 flex-shrink-0'
-                                        onClick={generateRandomColor}
-                                    >
-                                        <svg
-                                            xmlns='http://www.w3.org/2000/svg'
-                                            className='h-4 w-4'
-                                            fill='none'
-                                            viewBox='0 0 24 24'
-                                            stroke='currentColor'
+                                <Controller
+                                    name='color'
+                                    control={control}
+                                    render={({ field }) => (
+                                        <ColorPicker
+                                            value={field.value}
+                                            onValueChange={field.onChange}
                                         >
-                                            <path
-                                                strokeLinecap='round'
-                                                strokeLinejoin='round'
-                                                strokeWidth={2}
-                                                d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-                                            />
-                                        </svg>
-                                    </Button>
-                                </div>
-                                {showColorPicker &&
-                                    colorButtonRef.current &&
-                                    (() => {
-                                        const buttonRect =
-                                            colorButtonRef.current!.getBoundingClientRect();
-                                        const pickerWidth = 200; // Approximate width of HexColorPicker
-                                        const pickerHeight = 200; // Approximate height of HexColorPicker
-
-                                        // Calculate horizontal position
-                                        let leftPos = buttonRect.left;
-                                        // If picker would go off the right edge, align it to the right of the button
-                                        if (
-                                            leftPos + pickerWidth >
-                                            window.innerWidth
-                                        ) {
-                                            leftPos = buttonRect.right - pickerWidth;
-                                        }
-                                        // Ensure it doesn't go off the left edge either
-                                        leftPos = Math.max(8, leftPos);
-
-                                        // Calculate vertical position (above the button)
-                                        const bottomPos =
-                                            window.innerHeight - buttonRect.top + 8;
-
-                                        return (
-                                            <>
-                                                <div
-                                                    className='fixed inset-0 z-10'
-                                                    onClick={() =>
-                                                        setShowColorPicker(false)
-                                                    }
+                                            <div className='flex items-center space-x-2'>
+                                                <ColorPickerInput
+                                                    withoutAlpha
+                                                    className='w-full text-sm h-10 rounded-full'
                                                 />
-                                                <div
-                                                    className='fixed z-20'
-                                                    style={{
-                                                        left: `${leftPos}px`,
-                                                        bottom: `${bottomPos}px`,
-                                                    }}
+                                                <ColorPickerTrigger asChild>
+                                                    <Button
+                                                        type='button'
+                                                        variant='outline'
+                                                        size='icon'
+                                                        className='h-10 w-12 p-0 flex-shrink-0'
+                                                    >
+                                                        <ColorPickerSwatch className='size-6' />
+                                                    </Button>
+                                                </ColorPickerTrigger>
+                                                <Button
+                                                    type='button'
+                                                    variant='outline'
+                                                    size='default'
+                                                    className='h-10 px-3 flex-shrink-0'
+                                                    onClick={generateRandomColor}
                                                 >
-                                                    <Controller
-                                                        name='color'
-                                                        control={control}
-                                                        render={({ field }) => (
-                                                            <HexColorPicker
-                                                                color={field.value}
-                                                                onChange={
-                                                                    field.onChange
-                                                                }
-                                                            />
-                                                        )}
-                                                    />
+                                                    <svg
+                                                        xmlns='http://www.w3.org/2000/svg'
+                                                        className='h-4 w-4'
+                                                        fill='none'
+                                                        viewBox='0 0 24 24'
+                                                        stroke='currentColor'
+                                                    >
+                                                        <path
+                                                            strokeLinecap='round'
+                                                            strokeLinejoin='round'
+                                                            strokeWidth={2}
+                                                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                                                        />
+                                                    </svg>
+                                                </Button>
+                                            </div>
+                                            <ColorPickerContent>
+                                                <ColorPickerArea />
+                                                <div className='flex items-center justify-between gap-2'>
+                                                    <ColorPickerEyeDropper />
+                                                    <ColorPickerFormatSelect />
                                                 </div>
-                                            </>
-                                        );
-                                    })()}
+                                                <ColorPickerHueSlider />
+                                            </ColorPickerContent>
+                                        </ColorPicker>
+                                    )}
+                                />
                                 {errors.color && (
                                     <p className='text-sm text-destructive mt-1'>
                                         {errors.color.message}

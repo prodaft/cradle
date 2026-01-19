@@ -25,7 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import useApi from '@/hooks/api/useApi';
-import { useAuthActions } from '@/hooks/auth/useAuth';
+import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { UserConfig, UserRetrieve } from '@/services/cradle/models';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
@@ -39,6 +39,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import UserActivityList from '../admin/UserActivityList';
 import ActiveSessions from './ActiveSessions';
 
 interface AccountSettingsProps {
@@ -87,6 +88,7 @@ type AccountFormData = z.infer<typeof accountSettingsSchema>;
 export default function AccountSettings({ target = 'me' }: AccountSettingsProps) {
     const { usersApi, basePath } = useApi();
     const { logOut } = useAuthActions();
+    const { isAdmin } = useAuthState();
     const queryClient = useQueryClient();
     const { setTheme } = useTheme();
 
@@ -158,6 +160,10 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
 
     // Get active tab from URL search params, default to 'security'
     const validTabs = ['security', 'sessions', 'oauth', 'appearance', 'editor'];
+    if (isAdmin) {
+        validTabs.push('activity');
+    }
+
     const getActiveTab = () => {
         const tab = (search as any)?.tab;
         return validTabs.includes(tab || '') ? tab : 'security';
@@ -181,7 +187,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         } else {
             setActiveTab(tab);
         }
-    }, [(search as any)?.tab, router, location.pathname, search]);
+    }, [(search as any)?.tab, router, location.pathname, search, validTabs]);
     const [user, setUser] = useState<UserRetrieve | null>(null);
     const [oauthConnections, setOauthConnections] = useState<Record<string, boolean>>(
         {},
@@ -671,12 +677,17 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         { id: 'editor', label: 'Editor', icon: EditPencil },
     ];
 
+    if (isAdmin) {
+        settingsTabs.push({ id: 'activity', label: 'Activity', icon: ClockRotateRight });
+    }
+
     const tabDescriptions: Record<string, string> = {
         security: 'Authentication, API keys, and account security',
         sessions: 'Manage your active sessions across devices',
         oauth: 'Link or unlink external identity providers',
         appearance: 'Customize your visual appearance and theme',
         editor: 'Configure editor behavior, templates, and snippets',
+        activity: 'View account activity and audit logs',
     };
 
     const currentTab = settingsTabs.find((tab) => tab.id === activeTab);
@@ -917,6 +928,13 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'sessions' && (
                                         <section id='sessions'>
                                             <ActiveSessions userId={target} />
+                                        </section>
+                                    )}
+
+                                    {/* Activity Section */}
+                                    {activeTab === 'activity' && isAdmin && (
+                                        <section id='activity'>
+                                            <UserActivityList username={user.username} />
                                         </section>
                                     )}
 
