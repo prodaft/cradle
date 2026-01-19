@@ -125,6 +125,13 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
         return activeThemeStr !== lightThemeStr;
     }, [activeTheme]);
 
+    // Sync profile theme to localStorage for instant load on refresh
+    useEffect(() => {
+        if (profileTheme) {
+            localStorage.setItem('theme', JSON.stringify(profileTheme));
+        }
+    }, [profileTheme]);
+
     // Apply theme CSS variables from the theme settings.
     useEffect(() => {
         const root = document.documentElement;

@@ -1,5 +1,5 @@
 <!doctype html>
-<html data-theme="light" class="bg-primary1" lang="en">
+<html data-theme="light" lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -8,6 +8,23 @@
             http-equiv="Content-Security-Policy"
         />
         <title>CRADLE</title>
+        <!-- Blocking script to prevent theme flash on load -->
+        <script>
+            (function() {
+                try {
+                    var stored = localStorage.getItem('theme');
+                    if (stored) {
+                        var theme = JSON.parse(stored);
+                        var root = document.documentElement;
+                        for (var key in theme) {
+                            if (key !== 'name' && typeof theme[key] === 'string') {
+                                root.style.setProperty(key, theme[key]);
+                            }
+                        }
+                    }
+                } catch (e) {}
+            })();
+        </script>
         <link
             rel="icon"
             type="image/svg+xml"
