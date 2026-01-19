@@ -116,6 +116,7 @@
         "react-day-picker": "^9.13.0",
         "react-dom": "^19.2.3",
         "react-dropzone": "^14.3.8",
+        "react-globe.gl": "^2.37.0",
         "react-hook-form": "^7.71.1",
         "react-hotkeys-hook": "^5.2.3",
         "react-icons": "^5.5.0",

@@ -479,9 +479,9 @@ export default function Reports() {
         const tooltipContent = errorMessage || startCase(status);
         const tooltipColorClass =
             status === 'error'
-                ? 'bg-destructive text-destructive-foreground'
+                ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                 : status === 'warning'
-                  ? 'bg-accent text-accent-foreground'
+                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
                   : '';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {

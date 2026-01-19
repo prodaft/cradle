@@ -630,7 +630,24 @@ export default function NotesList({
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => <span>Title</span>,
+                header: () => (
+                    <div className='flex items-center gap-2'>
+                        <StatusHeaderDropdown
+                            onStatusChange={handleStatusChange}
+                            status={columnFilters.status}
+                            statusOptions={[
+                                'all',
+                                'fleeting',
+                                'healthy',
+                                'warning',
+                                'invalid',
+                                'processing',
+                            ]}
+                            triggerClassName='size-7'
+                        />
+                        <span>Title</span>
+                    </div>
+                ),
                 cell: ({ row }) => (
                     <PreviewTip
                         content={renderNotePreview(row.original)}
@@ -926,22 +943,6 @@ export default function NotesList({
                                     onSubmit={(v) => contentSearch.onSubmit?.(v)}
                                 />
                             )}
-                        </>
-                    }
-                    right={
-                        <>
-                            <StatusHeaderDropdown
-                                onStatusChange={handleStatusChange}
-                                status={columnFilters.status}
-                                statusOptions={[
-                                    'all',
-                                    'fleeting',
-                                    'healthy',
-                                    'warning',
-                                    'invalid',
-                                    'processing',
-                                ]}
-                            />
                         </>
                     }
                 />

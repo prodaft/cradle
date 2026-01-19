@@ -235,7 +235,7 @@ function DigestList({
                 case 'waiting':
                     return (
                         <WarningTriangleSolid
-                            className='text-muted-foreground'
+                            className='text-[var(--chart-4)] dark:text-[var(--chart-3)]'
                             width='18'
                             height='18'
                         />
@@ -265,9 +265,9 @@ function DigestList({
         const tooltipContent = errorMessage || statusCapitalized;
         const tooltipColorClass =
             status === 'error'
-                ? 'bg-destructive text-destructive-foreground'
+                ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                 : status === 'waiting'
-                  ? 'bg-accent text-accent-foreground'
+                  ? '[--tooltip-bg:var(--chart-4)] dark:[--tooltip-bg:var(--chart-3)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
                   : '';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
@@ -385,14 +385,14 @@ function DigestList({
                     <div className='w-8'>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-accent-foreground shadow-sm bg-accent'>
+                                <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-foreground shadow-sm bg-[var(--chart-4)] dark:bg-[var(--chart-3)]'>
                                     {row.original.warnings?.length || 0}
                                 </span>
                             </TooltipTrigger>
                             {row.original.warnings?.length > 0 && (
                                 <TooltipContent
-                                    side='left'
-                                    className='bg-accent text-accent-foreground'
+                                    side='bottom'
+                                    className='[--tooltip-bg:var(--chart-4)] dark:[--tooltip-bg:var(--chart-3)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
                                 >
                                     {row.original.warnings.slice(0, 10).join('\n') +
                                         (row.original.warnings.length > 10
@@ -419,8 +419,8 @@ function DigestList({
                             </TooltipTrigger>
                             {row.original.errors?.length > 0 && (
                                 <TooltipContent
-                                    side='left'
-                                    className='bg-destructive text-destructive-foreground'
+                                    side='bottom'
+                                    className='[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                                 >
                                     {row.original.errors.slice(0, 10).join('\n') +
                                         (row.original.errors.length > 10

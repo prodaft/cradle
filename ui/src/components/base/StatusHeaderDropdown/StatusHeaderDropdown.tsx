@@ -14,6 +14,7 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export type StatusOption =
     | 'all'
@@ -33,12 +34,14 @@ interface StatusHeaderDropdownProps {
     status?: string | null;
     hideFleetingNotes?: boolean;
     statusOptions: StatusOption[];
+    triggerClassName?: string;
 }
 
 export default function StatusHeaderDropdown({
     onStatusChange,
     status = null,
     statusOptions,
+    triggerClassName,
 }: StatusHeaderDropdownProps) {
     const [currentStatus, setCurrentStatus] = useState(status || 'all');
 
@@ -140,22 +143,26 @@ export default function StatusHeaderDropdown({
                 <Button
                     variant='ghost'
                     size='icon-sm'
-                    className='inline-flex items-center justify-center hover:bg-secondary hover:text-foreground'
+                    className={cn(
+                        'inline-flex items-center justify-center hover:bg-secondary hover:text-foreground',
+                        triggerClassName,
+                    )}
                 >
                     {getStatusIcon(currentStatus)}
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align='center' className='p-2'>
+            <DropdownMenuContent align='center' className='min-w-0 w-auto p-1'>
                 <DropdownMenuRadioGroup
                     value={currentStatus}
                     onValueChange={handleStatusSelect}
+                    className='flex flex-col items-center gap-1'
                 >
                     {options.map((statusOption) => (
                         <Tooltip key={statusOption}>
                             <TooltipTrigger asChild>
                                 <DropdownMenuRadioItem
                                     value={statusOption}
-                                    className={`flex items-center justify-center w-9 h-9 ${currentStatus === statusOption ? 'bg-secondary ring-1 ring-primary' : ''}`}
+                                    className={`flex items-center justify-center w-9 h-9 p-0 pl-0 pr-0 gap-0 [&>span]:hidden ${currentStatus === statusOption ? 'bg-secondary ring-1 ring-primary' : ''}`}
                                 >
                                     {getStatusIcon(statusOption)}
                                 </DropdownMenuRadioItem>

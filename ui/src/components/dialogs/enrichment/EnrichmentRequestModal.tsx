@@ -589,7 +589,7 @@ export default function EnrichmentRequestModal({
                                 </div>
                             </TooltipTrigger>
                             {selectedNoteIds.size > 0 && (
-                                <TooltipContent className='bg-primary text-primary-foreground'>
+                                <TooltipContent className='[--tooltip-bg:var(--primary)] [--tooltip-fg:var(--primary-foreground)]'>
                                     Entities will be selected from the selected notes
                                 </TooltipContent>
                             )}
