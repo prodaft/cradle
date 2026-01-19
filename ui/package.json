@@ -36,7 +36,7 @@
         "typecheck": "tsc --noEmit",
         "lint": "eslint src/**/*.ts",
         "verify": "bun run typecheck && bun run lint",
-        "generate-api": "rm -rf src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/schema/} -c openapitools.json -o src/services/cradle/ && node scripts/fix-openapi-imports.ts"
+        "generate-api": "rm -rf src/services/cradle/; openapi-generator-cli generate -g typescript-fetch --input-spec ${npm_config_input:-http://localhost:8000/api/schema/} -c openapitools.json -o src/services/cradle/ && node scripts/fix-openapi-imports.ts"
     },
     "overrides": {
         "@react-three/fiber": "8.15.19"

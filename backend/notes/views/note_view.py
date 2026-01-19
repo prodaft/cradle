@@ -138,6 +138,13 @@ from ..serializers import (
                 required=False,
                 default="-timestamp",
             ),
+            OpenApiParameter(
+                name="any_field",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter with an or over all fields (case-insensitive partial match)",
+                required=False,
+            ),
         ],
         responses={
             200: TotalPagesPagination().get_paginated_response_serializer(NoteRetrieveSerializer),
@@ -221,6 +228,14 @@ class NoteList(APIView):
             queryset = queryset.filter(fleeting=False)
         elif status_filter not in (None, "fleeting"):
             queryset = queryset.filter(status=status_filter, fleeting=False)
+
+        if "any_field" in request.query_params:
+            queryset = queryset.filter(
+                Q(content__icontains=request.query_params.get("any_field"))
+                | Q(title__icontains=request.query_params.get("any_field"))
+                | Q(author__username__icontains=request.query_params.get("any_field"))
+                | Q(editor__username__icontains=request.query_params.get("any_field"))
+            )
 
         filterset = NoteFilter(request.query_params, queryset=queryset)
 
@@ -547,7 +562,7 @@ class NoteFinalize(APIView):
                 name="mimetype",
                 type=str,
                 location=OpenApiParameter.QUERY,
-                description="Filter files by wildcard match with mimetype",
+                description="Filter files by mimetype (case-insensitive partial match)",
             ),
             OpenApiParameter(
                 name="date",
@@ -583,6 +598,13 @@ class NoteFinalize(APIView):
                 description="Order files by field(s). Prefix with '-' for descending order. Multiple fields can be separated by commas. Valid fields: timestamp, file_name, mimetype. Default: -timestamp",  # noqa: E501
                 required=False,
                 default="-timestamp",
+            ),
+            OpenApiParameter(
+                name="any_field",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter with an or over all fields (case-insensitive partial match)",
+                required=False,
             ),
         ],
         responses={
@@ -660,7 +682,11 @@ class NoteFiles(APIView):
         if "keyword" in request.query_params:
             keyword = request.query_params.get("keyword")
             files = files.filter(
-                Q(file_name__contains=keyword) | Q(md5_hash=keyword) | Q(sha256_hash=keyword) | Q(sha1_hash=keyword)
+                Q(file_name__contains=keyword)
+                | Q(md5_hash=keyword)
+                | Q(sha256_hash=keyword)
+                | Q(sha1_hash=keyword)
+                | Q(mimetype__icontains=keyword)
             )
 
         # Filter by mimetype (wildcard match)

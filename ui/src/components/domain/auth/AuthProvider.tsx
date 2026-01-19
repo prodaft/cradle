@@ -3,7 +3,7 @@ import {
     SessionExpiredException,
 } from '@/exceptions/AuthExceptions';
 import { parseAPIError } from '@/utils/api';
-import { UsersApi } from '@services/cradle/apis/UsersApi';
+import { UserApi } from '@services/cradle/apis/UserApi';
 import {
     TokenObtainRequest,
     TokenPairRetrieve,
@@ -65,7 +65,7 @@ export interface AuthActionsValue {
 }
 
 // Combined interface kept for type compatibility (useAuth removed)
-export interface AuthContextValue extends AuthStateValue, AuthActionsValue {}
+export interface AuthContextValue extends AuthStateValue, AuthActionsValue { }
 
 /**
  * AuthStateContext - provides authentication state (role, userId, isLoading, basePath)
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const config = new Configuration({
             basePath: basePath,
         });
-        return new UsersApi(config);
+        return new UserApi(config);
     }, [basePath]);
 
     // Store tokens and expiration in refs (not state) to avoid re-renders
@@ -342,7 +342,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                             setUserId(extractedUserId);
                         }
                     }
-                } catch (e) {}
+                } catch (e) { }
 
                 return { result: AuthResult.SUCCESS };
             } catch (error: any) {

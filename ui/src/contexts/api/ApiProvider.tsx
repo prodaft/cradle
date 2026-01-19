@@ -11,9 +11,9 @@ import {
     ManagementApi,
     NotesApi,
     NotificationsApi,
+    PublishApi,
     QueryApi,
-    ReportsApi,
-    UsersApi,
+    UserApi,
 } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
 import { ReactNode, useMemo } from 'react';
@@ -59,8 +59,8 @@ export function ApiProvider({ children }: ApiProviderProps) {
             notesApi: new NotesApi(configuration),
             notificationsApi: new NotificationsApi(configuration),
             queryApi: new QueryApi(configuration),
-            reportsApi: new ReportsApi(configuration),
-            usersApi: new UsersApi(configuration),
+            reportsApi: new PublishApi(configuration),
+            usersApi: new UserApi(configuration),
         };
     }, [configuration]);
 

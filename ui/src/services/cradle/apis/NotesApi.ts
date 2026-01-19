@@ -62,6 +62,7 @@ export interface NotesDeleteRequest {
 }
 
 export interface NotesFilesRetrieveRequest {
+    anyField?: string;
     date?: string;
     keyword?: string;
     linkedTo?: string;
@@ -83,6 +84,7 @@ export interface NotesGraphRetrieveRequest {
 }
 
 export interface NotesListRequest {
+    anyField?: string;
     authorUsername?: string;
     content?: string;
     date?: string;
@@ -238,6 +240,10 @@ export class NotesApi extends runtime.BaseAPI {
      */
     async notesFilesRetrieveRaw(requestParameters: NotesFilesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedFileReferenceWithNoteSerializerResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['anyField'] != null) {
+            queryParameters['any_field'] = requestParameters['anyField'];
+        }
 
         if (requestParameters['date'] != null) {
             queryParameters['date'] = requestParameters['date'];
@@ -411,6 +417,10 @@ export class NotesApi extends runtime.BaseAPI {
      */
     async notesListRaw(requestParameters: NotesListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedNoteRetrieveSerializerResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['anyField'] != null) {
+            queryParameters['any_field'] = requestParameters['anyField'];
+        }
 
         if (requestParameters['authorUsername'] != null) {
             queryParameters['author__username'] = requestParameters['authorUsername'];

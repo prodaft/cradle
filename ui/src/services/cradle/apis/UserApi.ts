@@ -18,21 +18,12 @@ import * as runtime from '../runtime';
 import type {
   APIKeyResponse,
   AccessEntityList404Response,
-  ChangePasswordRequestRequest,
-  ChangePasswordResponse,
   DefaultNoteTemplateRequest,
   DefaultNoteTemplateResponse,
-  EmailConfirmRequest,
   Enable2FA,
   OAuthConnectRequest,
-  PasswordResetConfirmRequest,
-  PasswordResetRequestRequest,
-  TokenObtainRequest,
-  TokenPairRetrieve,
-  TokenRefreshRequest,
-  TokenRefreshRetrieve,
   UserConfig,
-  UserCreateRequest,
+  UserCreateSerializerAdminRequest,
   UserManageResponse,
   UserRetrieve,
   UserSession,
@@ -44,36 +35,18 @@ import {
     APIKeyResponseToJSON,
     AccessEntityList404ResponseFromJSON,
     AccessEntityList404ResponseToJSON,
-    ChangePasswordRequestRequestFromJSON,
-    ChangePasswordRequestRequestToJSON,
-    ChangePasswordResponseFromJSON,
-    ChangePasswordResponseToJSON,
     DefaultNoteTemplateRequestFromJSON,
     DefaultNoteTemplateRequestToJSON,
     DefaultNoteTemplateResponseFromJSON,
     DefaultNoteTemplateResponseToJSON,
-    EmailConfirmRequestFromJSON,
-    EmailConfirmRequestToJSON,
     Enable2FAFromJSON,
     Enable2FAToJSON,
     OAuthConnectRequestFromJSON,
     OAuthConnectRequestToJSON,
-    PasswordResetConfirmRequestFromJSON,
-    PasswordResetConfirmRequestToJSON,
-    PasswordResetRequestRequestFromJSON,
-    PasswordResetRequestRequestToJSON,
-    TokenObtainRequestFromJSON,
-    TokenObtainRequestToJSON,
-    TokenPairRetrieveFromJSON,
-    TokenPairRetrieveToJSON,
-    TokenRefreshRequestFromJSON,
-    TokenRefreshRequestToJSON,
-    TokenRefreshRetrieveFromJSON,
-    TokenRefreshRetrieveToJSON,
     UserConfigFromJSON,
     UserConfigToJSON,
-    UserCreateRequestFromJSON,
-    UserCreateRequestToJSON,
+    UserCreateSerializerAdminRequestFromJSON,
+    UserCreateSerializerAdminRequestToJSON,
     UserManageResponseFromJSON,
     UserManageResponseToJSON,
     UserRetrieveFromJSON,
@@ -98,12 +71,8 @@ export interface UsersApikeyCreateRequest {
     userId: string;
 }
 
-export interface UsersChangePasswordCreateRequest {
-    changePasswordRequestRequest: ChangePasswordRequestRequest;
-}
-
 export interface UsersCreateRequest {
-    userCreateRequest: UserCreateRequest;
+    userCreateSerializerAdminRequest: UserCreateSerializerAdminRequest;
 }
 
 export interface UsersDefaultNoteTemplateCreateRequest {
@@ -119,14 +88,6 @@ export interface UsersDestroyRequest {
     userId: string;
 }
 
-export interface UsersEmailConfirmCreateRequest {
-    emailConfirmRequest: EmailConfirmRequest;
-}
-
-export interface UsersLoginCreateRequest {
-    tokenObtainRequest: TokenObtainRequest;
-}
-
 export interface UsersManageRetrieveRequest {
     actionName: string;
     userId: string;
@@ -138,22 +99,6 @@ export interface UsersOauthConnectRequest {
 
 export interface UsersOauthDisconnectRequest {
     provider: string;
-}
-
-export interface UsersOauthLoginRequest {
-    oAuthConnectRequest: OAuthConnectRequest;
-}
-
-export interface UsersRefreshCreateRequest {
-    tokenRefreshRequest: TokenRefreshRequest;
-}
-
-export interface UsersResetPasswordCreateRequest {
-    passwordResetRequestRequest: PasswordResetRequestRequest;
-}
-
-export interface UsersResetPasswordUpdateRequest {
-    passwordResetConfirmRequest: PasswordResetConfirmRequest;
 }
 
 export interface UsersRetrieveRequest {
@@ -177,7 +122,7 @@ export interface UsersUpdateRequest {
 /**
  * 
  */
-export class UsersApi extends runtime.BaseAPI {
+export class UserApi extends runtime.BaseAPI {
 
     /**
      * Disables 2FA for the user
@@ -372,55 +317,6 @@ export class UsersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Allows authenticated users to change their password by providing their old password and a new password.
-     * Change Password
-     */
-    async usersChangePasswordCreateRaw(requestParameters: UsersChangePasswordCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ChangePasswordResponse>> {
-        if (requestParameters['changePasswordRequestRequest'] == null) {
-            throw new runtime.RequiredError(
-                'changePasswordRequestRequest',
-                'Required parameter "changePasswordRequestRequest" was null or undefined when calling usersChangePasswordCreate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        if (this.configuration && this.configuration.accessToken) {
-            const token = this.configuration.accessToken;
-            const tokenString = await token("jwtAuth", []);
-
-            if (tokenString) {
-                headerParameters["Authorization"] = `Bearer ${tokenString}`;
-            }
-        }
-
-        let urlPath = `/auth/change_password/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: ChangePasswordRequestRequestToJSON(requestParameters['changePasswordRequestRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => ChangePasswordResponseFromJSON(jsonValue));
-    }
-
-    /**
-     * Allows authenticated users to change their password by providing their old password and a new password.
-     * Change Password
-     */
-    async usersChangePasswordCreate(requestParameters: UsersChangePasswordCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<ChangePasswordResponse> {
-        const response = await this.usersChangePasswordCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Returns OAuth configuration metadata and signup status.
      * Get user config
      */
@@ -452,14 +348,14 @@ export class UsersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Creates a new user account. Available to unauthenticated users.
+     * Creates a new user account. Only available to admin users.
      * Create user
      */
     async usersCreateRaw(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserRetrieve>> {
-        if (requestParameters['userCreateRequest'] == null) {
+        if (requestParameters['userCreateSerializerAdminRequest'] == null) {
             throw new runtime.RequiredError(
-                'userCreateRequest',
-                'Required parameter "userCreateRequest" was null or undefined when calling usersCreate().'
+                'userCreateSerializerAdminRequest',
+                'Required parameter "userCreateSerializerAdminRequest" was null or undefined when calling usersCreate().'
             );
         }
 
@@ -485,14 +381,14 @@ export class UsersApi extends runtime.BaseAPI {
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: UserCreateRequestToJSON(requestParameters['userCreateRequest']),
+            body: UserCreateSerializerAdminRequestToJSON(requestParameters['userCreateSerializerAdminRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => UserRetrieveFromJSON(jsonValue));
     }
 
     /**
-     * Creates a new user account. Available to unauthenticated users.
+     * Creates a new user account. Only available to admin users.
      * Create user
      */
     async usersCreate(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserRetrieve> {
@@ -651,51 +547,6 @@ export class UsersApi extends runtime.BaseAPI {
     }
 
     /**
-     * Confirms a user\'s email using the token sent to their email address.
-     * Email confirmation
-     */
-    async usersEmailConfirmCreateRaw(requestParameters: UsersEmailConfirmCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['emailConfirmRequest'] == null) {
-            throw new runtime.RequiredError(
-                'emailConfirmRequest',
-                'Required parameter "emailConfirmRequest" was null or undefined when calling usersEmailConfirmCreate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/auth/email_confirm/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: EmailConfirmRequestToJSON(requestParameters['emailConfirmRequest']),
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Confirms a user\'s email using the token sent to their email address.
-     * Email confirmation
-     */
-    async usersEmailConfirmCreate(requestParameters: UsersEmailConfirmCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.usersEmailConfirmCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
      * Returns a list of all users. Only available to admin users.
      * List users
      */
@@ -731,87 +582,6 @@ export class UsersApi extends runtime.BaseAPI {
      */
     async usersList(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<UserRetrieve>> {
         const response = await this.usersListRaw(initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, a two_factor_token must be provided.
-     * Obtain JWT Pair
-     */
-    async usersLoginCreateRaw(requestParameters: UsersLoginCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TokenPairRetrieve>> {
-        if (requestParameters['tokenObtainRequest'] == null) {
-            throw new runtime.RequiredError(
-                'tokenObtainRequest',
-                'Required parameter "tokenObtainRequest" was null or undefined when calling usersLoginCreate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/auth/login/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: TokenObtainRequestToJSON(requestParameters['tokenObtainRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => TokenPairRetrieveFromJSON(jsonValue));
-    }
-
-    /**
-     * Obtain a new pair of access and refresh tokens by providing valid user credentials. If 2FA is enabled for the user, a two_factor_token must be provided.
-     * Obtain JWT Pair
-     */
-    async usersLoginCreate(requestParameters: UsersLoginCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TokenPairRetrieve> {
-        const response = await this.usersLoginCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Creates a new user account. Available to unauthenticated users.
-     * User signup
-     */
-    async authSignupCreateRaw(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UserRetrieve>> {
-        if (requestParameters['userCreateRequest'] == null) {
-            throw new runtime.RequiredError(
-                'userCreateRequest',
-                'Required parameter "userCreateRequest" was null or undefined when calling authSignupCreate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-        let urlPath = `/auth/signup/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: UserCreateRequestToJSON(requestParameters['userCreateRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => UserRetrieveFromJSON(jsonValue));
-    }
-
-    /**
-     * Creates a new user account. Available to unauthenticated users.
-     * User signup
-     */
-    async authSignupCreate(requestParameters: UsersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<UserRetrieve> {
-        const response = await this.authSignupCreateRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
@@ -966,176 +736,6 @@ export class UsersApi extends runtime.BaseAPI {
      */
     async usersOauthDisconnect(requestParameters: UsersOauthDisconnectRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.usersOauthDisconnectRaw(requestParameters, initOverrides);
-    }
-
-    /**
-     * Login with OAuth provider
-     */
-    async usersOauthLoginRaw(requestParameters: UsersOauthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TokenPairRetrieve>> {
-        if (requestParameters['oAuthConnectRequest'] == null) {
-            throw new runtime.RequiredError(
-                'oAuthConnectRequest',
-                'Required parameter "oAuthConnectRequest" was null or undefined when calling usersOauthLogin().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/auth/oauth/login/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: OAuthConnectRequestToJSON(requestParameters['oAuthConnectRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => TokenPairRetrieveFromJSON(jsonValue));
-    }
-
-    /**
-     * Login with OAuth provider
-     */
-    async usersOauthLogin(requestParameters: UsersOauthLoginRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TokenPairRetrieve> {
-        const response = await this.usersOauthLoginRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Refresh the access token using a valid refresh token.
-     * Refresh Access Token
-     */
-    async usersRefreshCreateRaw(requestParameters: UsersRefreshCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<TokenRefreshRetrieve>> {
-        if (requestParameters['tokenRefreshRequest'] == null) {
-            throw new runtime.RequiredError(
-                'tokenRefreshRequest',
-                'Required parameter "tokenRefreshRequest" was null or undefined when calling usersRefreshCreate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/auth/refresh/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: TokenRefreshRequestToJSON(requestParameters['tokenRefreshRequest']),
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => TokenRefreshRetrieveFromJSON(jsonValue));
-    }
-
-    /**
-     * Refresh the access token using a valid refresh token.
-     * Refresh Access Token
-     */
-    async usersRefreshCreate(requestParameters: UsersRefreshCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<TokenRefreshRetrieve> {
-        const response = await this.usersRefreshCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Sends a password reset email to the user using their email address.
-     * Request password reset
-     */
-    async usersResetPasswordCreateRaw(requestParameters: UsersResetPasswordCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['passwordResetRequestRequest'] == null) {
-            throw new runtime.RequiredError(
-                'passwordResetRequestRequest',
-                'Required parameter "passwordResetRequestRequest" was null or undefined when calling usersResetPasswordCreate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/auth/reset_password/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'POST',
-            headers: headerParameters,
-            query: queryParameters,
-            body: PasswordResetRequestRequestToJSON(requestParameters['passwordResetRequestRequest']),
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Sends a password reset email to the user using their email address.
-     * Request password reset
-     */
-    async usersResetPasswordCreate(requestParameters: UsersResetPasswordCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.usersResetPasswordCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Resets user password using a valid reset token and new password.
-     * Reset password with token
-     */
-    async usersResetPasswordUpdateRaw(requestParameters: UsersResetPasswordUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<any>> {
-        if (requestParameters['passwordResetConfirmRequest'] == null) {
-            throw new runtime.RequiredError(
-                'passwordResetConfirmRequest',
-                'Required parameter "passwordResetConfirmRequest" was null or undefined when calling usersResetPasswordUpdate().'
-            );
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        headerParameters['Content-Type'] = 'application/json';
-
-
-        let urlPath = `/auth/reset_password/`;
-
-        const response = await this.request({
-            path: urlPath,
-            method: 'PUT',
-            headers: headerParameters,
-            query: queryParameters,
-            body: PasswordResetConfirmRequestToJSON(requestParameters['passwordResetConfirmRequest']),
-        }, initOverrides);
-
-        if (this.isJsonMime(response.headers.get('content-type'))) {
-            return new runtime.JSONApiResponse<any>(response);
-        } else {
-            return new runtime.TextApiResponse(response) as any;
-        }
-    }
-
-    /**
-     * Resets user password using a valid reset token and new password.
-     * Reset password with token
-     */
-    async usersResetPasswordUpdate(requestParameters: UsersResetPasswordUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<any> {
-        const response = await this.usersResetPasswordUpdateRaw(requestParameters, initOverrides);
-        return await response.value();
     }
 
     /**

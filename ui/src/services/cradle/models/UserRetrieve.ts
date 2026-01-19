@@ -13,6 +13,7 @@
  * Do not edit the class manually.
  */
 
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -139,8 +140,7 @@ export function UserRetrieveFromJSONTyped(json: any, ignoreDiscriminator: boolea
         return json;
     }
     return {
-
-
+        
         'id': json['id'] == null ? undefined : json['id'],
         'username': json['username'],
         'email': json['email'],
@@ -160,14 +160,13 @@ export function UserRetrieveToJSON(json: any): UserRetrieve {
     return UserRetrieveToJSONTyped(json, false);
 }
 
-export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id' | 'catalyst_api_key' | 'oauth_connections'> | null, ignoreDiscriminator: boolean = false): any {
+export function UserRetrieveToJSONTyped(value?: Omit<UserRetrieve, 'id'|'catalyst_api_key'|'oauth_connections'> | null, ignoreDiscriminator: boolean = false): any {
     if (value == null) {
         return value;
     }
 
     return {
-
-
+        
         'username': value['username'],
         'email': value['email'],
         'role': value['role'],

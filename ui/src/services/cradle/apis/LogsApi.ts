@@ -40,7 +40,7 @@ export interface LogsListRequest {
 export class LogsApi extends runtime.BaseAPI {
 
     /**
-     * Returns a filtered list of event logs. Only available to admin users.
+     * Returns a paginated and filtered list of event logs. Only available to admin users.
      * List event logs
      */
     async logsListRaw(requestParameters: LogsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedEventLogList>> {
@@ -102,7 +102,7 @@ export class LogsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Returns a filtered list of event logs. Only available to admin users.
+     * Returns a paginated and filtered list of event logs. Only available to admin users.
      * List event logs
      */
     async logsList(requestParameters: LogsListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedEventLogList> {

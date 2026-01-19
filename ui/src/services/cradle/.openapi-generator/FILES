@@ -1,5 +1,7 @@
 .openapi-generator-ignore
 apis/AccessApi.ts
+apis/AuthApi.ts
+apis/CradleStatisticsApi.ts
 apis/EntriesApi.ts
 apis/FileTransferApi.ts
 apis/IntelioApi.ts
@@ -9,10 +11,9 @@ apis/LspApi.ts
 apis/ManagementApi.ts
 apis/NotesApi.ts
 apis/NotificationsApi.ts
+apis/PublishApi.ts
 apis/QueryApi.ts
-apis/ReportsApi.ts
-apis/StatisticsApi.ts
-apis/UsersApi.ts
+apis/UserApi.ts
 apis/index.ts
 index.ts
 models/APIKeyResponse.ts
@@ -124,6 +125,7 @@ models/UnreadNotifications.ts
 models/UpdateNotificationRequest.ts
 models/UserConfig.ts
 models/UserCreateRequest.ts
+models/UserCreateSerializerAdminRequest.ts
 models/UserManageResponse.ts
 models/UserRetrieve.ts
 models/UserRetrieveRequest.ts

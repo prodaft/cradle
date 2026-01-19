@@ -110,6 +110,7 @@ export * from './UnreadNotifications';
 export * from './UpdateNotificationRequest';
 export * from './UserConfig';
 export * from './UserCreateRequest';
+export * from './UserCreateSerializerAdminRequest';
 export * from './UserManageResponse';
 export * from './UserRetrieve';
 export * from './UserRetrieveRequest';

@@ -2,6 +2,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export * from './AccessApi';
+export * from './AuthApi';
+export * from './CradleStatisticsApi';
 export * from './EntriesApi';
 export * from './FileTransferApi';
 export * from './IntelioApi';
@@ -11,7 +13,6 @@ export * from './LspApi';
 export * from './ManagementApi';
 export * from './NotesApi';
 export * from './NotificationsApi';
+export * from './PublishApi';
 export * from './QueryApi';
-export * from './ReportsApi';
-export * from './StatisticsApi';
-export * from './UsersApi';
+export * from './UserApi';
