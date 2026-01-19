@@ -1,6 +1,18 @@
-import { createFileRoute } from '@tanstack/react-router';
-import MainDashboard from 'src/components/domain/dashboard/MainDashboard';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { isLoggedIn } from 'src/utils/auth';
 
 export const Route = createFileRoute('/_authenticated/')({
-    component: MainDashboard,
+    beforeLoad: () => {
+        if (!isLoggedIn()) {
+            throw redirect({
+                to: '/login',
+                replace: true,
+            });
+        }
+
+        throw redirect({
+            to: '/notes',
+            replace: true,
+        });
+    },
 });

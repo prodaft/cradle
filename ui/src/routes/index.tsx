@@ -11,7 +11,7 @@ export const Route = createFileRoute('/')({
         }
 
         throw redirect({
-            to: '/_authenticated',
+            to: '/notes',
             replace: true,
         });
     },

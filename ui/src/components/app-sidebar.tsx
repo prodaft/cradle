@@ -12,7 +12,6 @@ import {
     FileText,
     HelpCircle,
     Layers,
-    LayoutDashboard,
     Link2,
     Network,
     Settings,
@@ -62,12 +61,6 @@ export function AppSidebar({
 
     // Map current navigation items
     const navMain = [
-        {
-            title: 'Dashboard',
-            url: '/',
-            icon: LayoutDashboard,
-            isActive: !!matchRoute({ to: '/' }),
-        },
         {
             title: 'Notes',
             url: '/notes',
@@ -120,7 +113,7 @@ export function AppSidebar({
             <SidebarHeader
                 className={`flex ${isCollapsed ? 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2' : 'flex-col items-center gap-2 pt-4 px-4 pb-0'}`}
             >
-                <Link to='/' className={isCollapsed ? 'shrink-0' : 'flex w-full justify-center'}>
+                <Link to='/notes' className={isCollapsed ? 'shrink-0' : 'flex w-full justify-center'}>
                     <Logo
                         text={!isCollapsed}
                         height={isCollapsed ? '24px' : '36px'}
