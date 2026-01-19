@@ -1,22 +1,34 @@
 import { ConfirmDeletionModal } from '@/components/dialogs';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
-import TableActionsButton from '@components/base/TableActionsButton';
+import { ActionBar as BaseActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { useDroppable } from '@dnd-kit/core';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    type SortingState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
 import { Download, RefreshCircle, Trash, WarningCircle } from 'iconoir-react';
@@ -130,16 +142,24 @@ export default function FilesList({
             errorMessage: 'Failed to reprocess file',
         },
     });
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const { notesApi, fileTransferApi } = useApi();
     const [statusFilter, setStatusFilter] = useState<'all' | 'healthy' | 'warning'>(
         'all',
     );
+    const [activeFile, setActiveFile] = useState<FileReferenceWithNote | null>(
+        null,
+    );
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
     });
+
+    const selectedFileIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
 
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
@@ -277,11 +297,11 @@ export default function FilesList({
 
     // Download selected files
     const handleDownloadSelected = useCallback(async () => {
-        if (selectedFiles.length === 0) return;
+        if (selectedFileIds.length === 0) return;
 
         try {
             const downloads = await Promise.all(
-                selectedFiles
+                selectedFileIds
                     .filter((fileId) => fileId)
                     .map((fileId) => downloadFileMutation.mutateAsync(fileId)),
             );
@@ -297,25 +317,25 @@ export default function FilesList({
         } catch (error) {
             toast.error('Failed to download files. Please try again.');
         }
-    }, [selectedFiles, downloadFileMutation]);
+    }, [selectedFileIds, downloadFileMutation]);
 
     const handleReprocessSelected = useCallback(async () => {
-        if (selectedFiles.length === 0) return;
+        if (selectedFileIds.length === 0) return;
 
         try {
             await Promise.all(
-                selectedFiles.map((fileId) =>
+                selectedFileIds.map((fileId) =>
                     reprocessFileMutation.mutateAsync(fileId),
                 ),
             );
             toast.success(
-                `Queued ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} for reprocessing`,
+                `Queued ${selectedFileIds.length} file${selectedFileIds.length > 1 ? 's' : ''} for reprocessing`,
             );
-            setSelectedFiles([]);
+            setRowSelection({});
         } catch (error) {
             // Error handled by mutation
         }
-    }, [selectedFiles, reprocessFileMutation]);
+    }, [selectedFileIds, reprocessFileMutation]);
 
     // Delete mutation
     const deleteMutation = useMutation({
@@ -337,16 +357,16 @@ export default function FilesList({
             toast.success(
                 `Deleted ${fileIds.length} file${fileIds.length > 1 ? 's' : ''}`,
             );
-            setSelectedFiles([]);
+            setRowSelection({});
         } catch (error) {
             toast.error('Failed to delete files');
         }
     };
 
     const handleDeleteSelected = useCallback(async () => {
-        if (selectedFiles.length === 0) return;
+        if (selectedFileIds.length === 0) return;
         setBulkDeleteModalOpen(true);
-    }, [selectedFiles]);
+    }, [selectedFileIds]);
 
     const resetToFirstPage = useCallback(() => {
         setPage(1);
@@ -457,16 +477,17 @@ export default function FilesList({
                 accessorKey: 'name',
                 id: 'name',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Name' />
+                    <DataTableColumnHeader column={column} label='Name' />
                 ),
                 cell: ({ row }) => (
                     <div
                         className='truncate w-32 cursor-pointer'
-                        onClick={() =>
+                        onClick={(event) => {
+                            event.stopPropagation();
                             router.navigate({
                                 to: `/notes/${row.original.noteId}` as any,
-                            })
-                        }
+                            });
+                        }}
                     >
                         <span className='truncate'>
                             {truncateText(row.original.fileName, 32)}
@@ -512,7 +533,7 @@ export default function FilesList({
                 accessorKey: 'mimetype',
                 id: 'mimetype',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='MimeType' />
+                    <DataTableColumnHeader column={column} label='MimeType' />
                 ),
                 cell: ({ row }) => (
                     <div className='truncate w-32'>
@@ -524,7 +545,7 @@ export default function FilesList({
                 accessorKey: 'fileSize',
                 id: 'fileSize',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Size' />
+                    <DataTableColumnHeader column={column} label='Size' />
                 ),
                 cell: ({ row }) => (
                     <div className='w-24'>
@@ -568,7 +589,7 @@ export default function FilesList({
                 accessorKey: 'uploadedAt',
                 id: 'uploadedAt',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Uploaded At' />
+                    <DataTableColumnHeader column={column} label='Uploaded At' />
                 ),
                 cell: ({ row }) => (
                     <div className='w-32'>
@@ -581,56 +602,8 @@ export default function FilesList({
                     </div>
                 ),
             },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const file = row.original;
-                    const handleDownload = () => {
-                        handleDownloadFile(file);
-                    };
-
-                    const handleReprocess = () => {
-                        reprocessFileMutation.mutate(file.id!);
-                    };
-
-                    const handleDelete = () => {
-                        setDeletingFileId(file.id!);
-                        setDeleteModalOpen(true);
-                    };
-
-                    return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    <DropdownMenuItem onClick={handleDownload}>
-                                        <Download width='18' height='18' />
-                                        Download
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleReprocess}>
-                                        <RefreshCircle width='18' height='18' />
-                                        Reprocess
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={handleDelete}
-                                        variant='destructive'
-                                    >
-                                        <Trash width='18' height='18' />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
-                enableSorting: false,
-            },
         ],
-        [copyToClipboard, router, handleDownloadFile, reprocessFileMutation],
+        [copyToClipboard, router],
     );
 
     // Convert sortField and sortDirection to TanStack Table sorting state
@@ -651,10 +624,54 @@ export default function FilesList({
             : [];
     }, [sortField, sortDirection]);
 
-    // Handle row selection
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedFiles(selectedIds);
+    const onTableSortingChange = useCallback(
+        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+            const nextSorting =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            handleSortingChange(nextSorting);
+        },
+        [handleSortingChange, sorting],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
     }, []);
+
+    const table = useReactTable({
+        data: filteredData,
+        columns,
+        state: {
+            sorting,
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? index),
+        onSortingChange: onTableSortingChange,
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        manualSorting: true,
+        pageCount: totalPages,
+    });
+
+    useEffect(() => {
+        if (selectedFileIds.length > 0) {
+            setActiveFile(null);
+        }
+    }, [selectedFileIds.length]);
 
     return (
         <>
@@ -673,7 +690,7 @@ export default function FilesList({
                 )}
 
                 {/* Compact Control Bar - Actions and Pagination */}
-                <ActionBar
+                <BaseActionBar
                     left={
                         <>
                             <ActionBarSearch
@@ -697,65 +714,115 @@ export default function FilesList({
                 )}
 
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
-                    <DataTable
-                        columns={columns}
-                        data={filteredData}
-                        loading={loading}
-                        emptyMessage='No files found!'
-                        enableRowSelection={true}
-                        selectedRows={selectedFiles}
-                        onRowSelectionChange={handleRowSelectionChange}
-                        sorting={sorting}
-                        onSortingChange={handleSortingChange}
-                        manualPagination={true}
-                        manualSorting={true}
-                        pageCount={totalPages}
-                        initialPageIndex={page - 1}
-                        initialPageSize={pageSize}
-                        onPaginationChange={handlePaginationChange}
-                        showPagination={true}
-                        bulkActions={[
-                            {
-                                id: 'download',
-                                label: 'Download files',
-                                icon: <Download width={18} height={18} />,
-                                onClick: handleDownloadSelected,
-                                disabled:
-                                    loading ||
-                                    files.length === 0 ||
-                                    selectedFiles.length === 0,
-                            },
-                            {
-                                id: 'delete',
-                                label: 'Delete files',
-                                icon: <Trash width={18} height={18} />,
-                                onClick: handleDeleteSelected,
-                                disabled:
-                                    loading ||
-                                    files.length === 0 ||
-                                    selectedFiles.length === 0,
-                                variant: 'destructive',
-                            },
-                            {
-                                id: 'reprocess',
-                                label: 'Reprocess files',
-                                icon: <RefreshCircle width={18} height={18} />,
-                                onClick: handleReprocessSelected,
-                                disabled:
-                                    loading ||
-                                    files.length === 0 ||
-                                    selectedFiles.length === 0,
-                            },
-                        ]}
-                        itemLabel='file'
-                    />
+                    {loading ? (
+                        <div className='flex min-h-[200px] items-center justify-center'>
+                            Loading...
+                        </div>
+                    ) : (
+                        <DataTable
+                            table={table}
+                            onRowClick={(row) => setActiveFile(row)}
+                        />
+                    )}
                 </div>
             </div>
+            <ActionBar
+                open={selectedFileIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedFileIds.length} file
+                    {selectedFileIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={handleDownloadSelected}
+                        disabled={loading || files.length === 0 || selectedFileIds.length === 0}
+                    >
+                        <Download width={18} height={18} />
+                        Download
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={handleReprocessSelected}
+                        disabled={loading || files.length === 0 || selectedFileIds.length === 0}
+                    >
+                        <RefreshCircle width={18} height={18} />
+                        Reprocess
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={handleDeleteSelected}
+                        disabled={loading || files.length === 0 || selectedFileIds.length === 0}
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose
+                    className='px-2 text-sm'
+                    onClick={clearSelection}
+                >
+                    Clear
+                </ActionBarClose>
+            </ActionBar>
+            <ActionBar
+                open={!!activeFile}
+                onOpenChange={(open) => {
+                    if (!open) setActiveFile(null);
+                }}
+                align='end'
+            >
+                <ActionBarSelection>
+                    {activeFile ? truncateText(activeFile.fileName, 24) : 'File actions'}
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (activeFile) handleDownloadFile(activeFile);
+                        }}
+                        disabled={!activeFile?.id}
+                    >
+                        <Download width={18} height={18} />
+                        Download
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (activeFile?.id) {
+                                reprocessFileMutation.mutate(activeFile.id);
+                            }
+                        }}
+                        disabled={!activeFile?.id}
+                    >
+                        <RefreshCircle width={18} height={18} />
+                        Reprocess
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (activeFile?.id) {
+                                setDeletingFileId(activeFile.id);
+                                setDeleteModalOpen(true);
+                            }
+                        }}
+                        disabled={!activeFile?.id}
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm'>Close</ActionBarClose>
+            </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
                 onOpenChange={setBulkDeleteModalOpen}
-                text={`Are you sure you want to delete ${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''}?`}
-                onConfirm={() => deleteFiles(selectedFiles)}
+                text={`Are you sure you want to delete ${selectedFileIds.length} file${selectedFileIds.length > 1 ? 's' : ''}?`}
+                onConfirm={() => deleteFiles(selectedFileIds)}
             />
             {deletingFileId && (
                 <ConfirmDeletionModal

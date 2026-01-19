@@ -62,7 +62,7 @@ import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { Prec } from '@uiw/react-codemirror';
-import { NavArrowDown, NavArrowUp } from 'iconoir-react';
+import { NavArrowDown } from 'iconoir-react';
 import {
     forwardRef,
     memo,
@@ -632,35 +632,29 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 />
             </div>
             {fileData && fileData.length > 0 && (
-                <div className='flex-none max-h-[25%] rounded-md flex flex-col justify-end z-30'>
-                    <div
-                        className='bg-muted text-foreground px-4 py-[2px] hover:cursor-pointer flex flex-row space-x-2 border-b border-border'
+                <div className='flex-none max-h-[30%] flex flex-col z-30 border-t border-border bg-card'>
+                    <button
+                        type='button'
+                        className='flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer w-full text-left'
                         onClick={toggleFileList}
                     >
-                        <span>
-                            {showFileList ? (
-                                <NavArrowDown width='20px' />
-                            ) : (
-                                <NavArrowUp width='20px' />
-                            )}
+                        <NavArrowDown
+                            className={`size-4 text-muted-foreground transition-transform duration-200 ${showFileList ? '' : '-rotate-90'}`}
+                        />
+                        <span>Attached Files</span>
+                        <span className='text-xs text-muted-foreground ml-1'>
+                            ({fileData.length})
                         </span>
-                        <span>
-                            {showFileList
-                                ? 'Hide Uploaded Files'
-                                : 'Show Uploaded Files'}
-                        </span>
-                    </div>
-                    <div
-                        className={`overflow-auto h-full rounded-md ${showFileList && 'min-h-24'}`}
-                    >
-                        {showFileList && (
+                    </button>
+                    {showFileList && (
+                        <div className='overflow-auto flex-1 min-h-24 border-t border-border'>
                             <FileTable
                                 fileData={fileData}
                                 setFileData={setFileData}
                                 insertTextCallback={insertTextToCodeMirror}
                             />
-                        )}
-                    </div>
+                        </div>
+                    )}
                 </div>
             )}
 
