@@ -3,7 +3,7 @@
  * Loaders run before React context is available, so we need to create API instances directly
  */
 
-import { QueryApi, UsersApi } from '@services/cradle/apis';
+import { AuthApi, QueryApi, UserApi } from '@services/cradle/apis';
 import { Configuration } from '@services/cradle/runtime';
 
 /**
@@ -32,9 +32,9 @@ function createLoaderConfiguration(): Configuration {
         basePath: apiBasePath,
         accessToken: accessToken
             ? async () => {
-                  // Return token from localStorage
-                  return accessToken;
-              }
+                // Return token from localStorage
+                return accessToken;
+            }
             : undefined,
     });
 }
@@ -48,6 +48,7 @@ export function createLoaderApis() {
 
     return {
         queryApi: new QueryApi(configuration),
-        usersApi: new UsersApi(configuration),
+        usersApi: new UserApi(configuration),
+        authApi: new AuthApi(configuration),
     };
 }

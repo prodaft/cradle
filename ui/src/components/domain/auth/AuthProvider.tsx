@@ -2,8 +2,8 @@ import {
     AuthTokenException,
     SessionExpiredException,
 } from '@/exceptions/AuthExceptions';
+import { AuthApi } from '@/services/cradle';
 import { parseAPIError } from '@/utils/api';
-import { UserApi } from '@services/cradle/apis/UserApi';
 import {
     TokenObtainRequest,
     TokenPairRetrieve,
@@ -111,11 +111,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [isLoading, setIsLoading] = useState(false);
     const basePath = getBaseUrl();
 
-    const usersApi = useMemo(() => {
+    const authApi = useMemo(() => {
         const config = new Configuration({
             basePath: basePath,
         });
-        return new UserApi(config);
+        return new AuthApi(config);
     }, [basePath]);
 
     // Store tokens and expiration in refs (not state) to avoid re-renders
@@ -209,7 +209,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
 
         try {
-            const data: TokenRefreshRetrieve = await usersApi.usersRefreshCreate({
+            const data: TokenRefreshRetrieve = await authApi.authRefreshCreate({
                 tokenRefreshRequest: { refresh: refreshToken },
             });
 
@@ -239,7 +239,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             }
             return false;
         }
-    }, [usersApi, storeTokens, clearTokens]);
+    }, [authApi, storeTokens, clearTokens]);
 
     /**
      * Schedule automatic token refresh before expiration
@@ -316,7 +316,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                     ...(twoFactorToken && { twoFactorToken }),
                 };
 
-                const data: TokenPairRetrieve = await usersApi.usersLoginCreate({
+                const data: TokenPairRetrieve = await authApi.authLoginCreate({
                     tokenObtainRequest: tokenRequest,
                 });
 
@@ -411,7 +411,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
                 setIsLoading(false);
             }
         },
-        [usersApi, storeTokens],
+        [authApi, storeTokens],
     );
 
     /**

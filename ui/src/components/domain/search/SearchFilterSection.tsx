@@ -82,7 +82,7 @@ export default function SearchFilterSection({
             >
                 <div className='px-4 py-3 bg-secondary/50 overflow-y-auto max-h-56'>
                     <div className='flex flex-wrap gap-1.5'>
-                        {entrySubtypes.map((subtype) => {
+                        {[...entrySubtypes].sort((a, b) => a.localeCompare(b)).map((subtype) => {
                             const color = entryClassColors.get(subtype);
                             const isActive = entrySubtypeFilters.includes(subtype);
                             const toggleFilter = () => {
@@ -97,9 +97,11 @@ export default function SearchFilterSection({
                                     key={subtype}
                                     variant={isActive ? 'default' : 'outline'}
                                     onClick={toggleFilter}
-                                    className='cursor-pointer mr-1.5 mb-1.5'
+                                    className={`cursor-pointer mr-1.5 mb-1.5 ${
+                                        isActive ? '' : 'opacity-60'
+                                    }`}
                                     style={
-                                        color
+                                        color && isActive
                                             ? {
                                                   backgroundColor: color,
                                                   borderColor: color,

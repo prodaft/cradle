@@ -10,25 +10,27 @@ import { QueryProvider } from 'src/contexts/query/QueryProvider';
 import { ThemeProvider } from 'src/contexts/ui/ThemeContext';
 
 export const Route = createRootRoute({
-    component: () => (
-        <AuthProvider>
-            <QueryProvider>
-                <ApiProvider>
-                    <ThemeProvider>
-                        <Toaster />
-                        <TooltipProvider>
-                            <div id='root-content'>
-                                <Suspense fallback={<Loading logo={true} />}>
-                                    <Outlet />
-                                </Suspense>
-                            </div>
-                            <div id='portal-root'></div>
-                        </TooltipProvider>
-                    </ThemeProvider>
-                </ApiProvider>
-            </QueryProvider>
+    component: () => {
+        return (
+            <AuthProvider>
+                <QueryProvider>
+                    <ApiProvider>
+                        <ThemeProvider>
+                            <Toaster />
+                            <TooltipProvider>
+                                <div id='root-content'>
+                                    <Suspense fallback={<Loading logo={true} />}>
+                                        <Outlet />
+                                    </Suspense>
+                                </div>
+                                <div id='portal-root'></div>
+                            </TooltipProvider>
+                        </ThemeProvider>
+                    </ApiProvider>
+                </QueryProvider>
 
-            {import.meta.env.DEV && <TanStackRouterDevtools />}
-        </AuthProvider>
-    ),
+                {import.meta.env.DEV && <TanStackRouterDevtools />}
+            </AuthProvider>
+        );
+    },
 });

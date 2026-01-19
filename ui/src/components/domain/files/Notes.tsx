@@ -13,6 +13,7 @@ import { FilePlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface SearchFilters {
+    any_field: string;
     content: string;
     author__username: string;
     editor__username: string;
@@ -59,6 +60,7 @@ export default function Notes() {
     });
 
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+        any_field: ('any_field' in search ? search.any_field : undefined) || '',
         content: ('content' in search ? search.content : undefined) || '',
         author__username:
             ('author__username' in search ? search.author__username : undefined) || '',
@@ -88,6 +90,7 @@ export default function Notes() {
     const updateSearchParams = (filters: SearchFilters) => {
         const newSearch: any = {
             ...search,
+            any_field: filters.any_field || undefined,
             content: filters.content || undefined,
             author__username: filters.author__username || undefined,
             editor__username: filters.editor__username || undefined,
@@ -162,6 +165,7 @@ export default function Notes() {
 
     useEffect(() => {
         const initialFilters: SearchFilters = {
+            any_field: ('any_field' in search ? search.any_field : undefined) || '',
             content: ('content' in search ? search.content : undefined) || '',
             author__username:
                 ('author__username' in search ? search.author__username : undefined) ||
@@ -236,18 +240,18 @@ export default function Notes() {
                         onCreateNote={handleCreateNewNote}
                         onTotalCountChange={setNotesCount}
                         contentSearch={{
-                            value: searchFilters.content,
+                            value: searchFilters.any_field,
                             onChange: (value: string) => {
                                 const updatedFilters = {
                                     ...searchFilters,
-                                    content: value,
+                                    any_field: value,
                                 };
                                 setSearchFilters(updatedFilters);
                             },
                             onSubmit: (value?: string) => {
                                 const next = {
                                     ...searchFiltersRef.current,
-                                    content: value ?? searchFiltersRef.current.content,
+                                    any_field: value ?? searchFiltersRef.current.any_field,
                                 };
                                 updateSearchParams(next);
                             },

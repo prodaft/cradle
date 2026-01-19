@@ -539,7 +539,7 @@ export default function UsersPage() {
                             }
                         />
                     </div>
-                    <div className='flex-1'>
+                    <div className='flex-1 space-y-4'>
                         <DataTable
                             columns={columns}
                             data={paginatedUsers}

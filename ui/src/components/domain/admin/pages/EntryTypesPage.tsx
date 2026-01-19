@@ -336,7 +336,7 @@ export default function EntryTypesPage() {
                             }
                         />
                     </div>
-                    <div className='flex-1'>
+                    <div className='flex-1 space-y-4'>
                         <DataTable
                             columns={columns}
                             data={paginatedEntryTypes}

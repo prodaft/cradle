@@ -50,6 +50,7 @@ interface Alert {
 }
 
 interface Query {
+    any_field?: string;
     content?: string;
     author__username?: string;
     editor__username?: string;
@@ -154,6 +155,7 @@ export default function NotesList({
     const [pageSize, setPageSize] = useState((search as any)?.notes_pagesize || 10);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
+        any_field: query?.any_field || '',
         author: query?.author__username || '',
         editor: query?.editor__username || '',
         createdAt: {
@@ -282,12 +284,12 @@ export default function NotesList({
     };
 
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        {
-            author: (value) => handleColumnFilter('author', value),
-            editor: (value) => handleColumnFilter('editor', value),
-            createdAt: (value) => handleColumnFilter('createdAt', value),
-            lastChanged: (value) => handleColumnFilter('lastChanged', value),
-        };
+    {
+        author: (value) => handleColumnFilter('author', value),
+        editor: (value) => handleColumnFilter('editor', value),
+        createdAt: (value) => handleColumnFilter('createdAt', value),
+        lastChanged: (value) => handleColumnFilter('lastChanged', value),
+    };
 
     const handleStatusChange = (status: string) => {
         setColumnFilters((prev) => ({
@@ -298,6 +300,7 @@ export default function NotesList({
 
     useEffect(() => {
         setColumnFilters({
+            any_field: query?.any_field || '',
             author: query?.author__username || '',
             editor: query?.editor__username || '',
             createdAt: {
@@ -323,6 +326,7 @@ export default function NotesList({
             status: 'all',
         });
     }, [
+        query?.any_field,
         query?.author__username,
         query?.editor__username,
         query?.created_date_from,
@@ -357,6 +361,7 @@ export default function NotesList({
                         ? 'finalized'
                         : null
                     : columnFilters.status,
+            anyField: query.any_field,
             content: query.content,
             authorUsername: query.author__username,
             date: query.date,
@@ -575,11 +580,11 @@ export default function NotesList({
 
         return columnId
             ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
+                {
+                    id: columnId,
+                    desc: sortDirection === 'desc',
+                },
+            ]
             : [];
     }, [sortField, sortDirection]);
 
@@ -759,9 +764,9 @@ export default function NotesList({
                     <div className='w-36'>
                         {row.original.timestamp
                             ? format(
-                                  new Date(row.original.timestamp),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
+                                new Date(row.original.timestamp),
+                                'dd/MM/yyyy, HH:mm',
+                            )
                             : 'N/A'}
                     </div>
                 ),
@@ -784,9 +789,9 @@ export default function NotesList({
                     <div className='w-36'>
                         {row.original.editTimestamp
                             ? format(
-                                  new Date(row.original.editTimestamp),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
+                                new Date(row.original.editTimestamp),
+                                'dd/MM/yyyy, HH:mm',
+                            )
                             : '-'}
                     </div>
                 ),

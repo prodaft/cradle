@@ -286,10 +286,10 @@ export default function SearchDialog({
                                         style={
                                             color
                                                 ? {
-                                                      backgroundColor: color,
-                                                      borderColor: color,
-                                                      color: '#fff',
-                                                  }
+                                                    backgroundColor: color,
+                                                    borderColor: color,
+                                                    color: '#fff',
+                                                }
                                                 : undefined
                                         }
                                     >
@@ -302,7 +302,7 @@ export default function SearchDialog({
                                 variant='ghost'
                                 size='sm'
                                 onClick={() => setEntrySubtypeFilters([])}
-                                className='text-xs h-auto'
+                                className='text-xs h-auto cursor-pointer'
                             >
                                 Clear all
                             </Button>
@@ -340,12 +340,21 @@ export default function SearchDialog({
                                                     {} as React.MouseEvent,
                                                 );
                                             }}
-                                            className='px-4 py-3'
+                                            className='px-4 py-3 cursor-pointer'
+                                            value={result.name}
                                         >
                                             {result.subtype && (
                                                 <Badge
                                                     variant='outline'
                                                     className='mr-3'
+                                                    style={
+                                                        entryClassColors.get(result.subtype)
+                                                            ? {
+                                                                backgroundColor: entryClassColors.get(result.subtype),
+                                                                borderColor: entryClassColors.get(result.subtype),
+                                                            }
+                                                            : undefined
+                                                    }
                                                 >
                                                     {result.subtype}
                                                 </Badge>
@@ -375,13 +384,12 @@ export default function SearchDialog({
 
                 {/* Footer with Pagination */}
                 {results && results.length > 0 && (
-                    <div className='flex-shrink-0 -mt-3 py-2 px-4 border-t'>
-                        <Pagination
-                            currentPage={page}
-                            totalPages={totalPages}
-                            onPageChange={setPage}
-                        />
-                    </div>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={setPage}
+                        className='flex-shrink-0 py-2 px-4 border-t'
+                    />
                 )}
 
                 {/* Keyboard hints */}

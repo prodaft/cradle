@@ -118,17 +118,14 @@ export function AppSidebar({
     return (
         <Sidebar collapsible='icon' {...props}>
             <SidebarHeader
-                className={`flex flex-row items-center gap-2 ${isCollapsed ? 'justify-center pt-4 px-2 pb-2' : 'pl-4 pt-4 pr-2 pb-2'}`}
+                className={`flex ${isCollapsed ? 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2' : 'flex-col items-center gap-2 pt-4 px-4 pb-0'}`}
             >
-                <Link to='/' className='shrink-0'>
-                    <Logo text={false} height='24px' />
+                <Link to='/' className={isCollapsed ? 'shrink-0' : 'flex w-full justify-center'}>
+                    <Logo
+                        text={!isCollapsed}
+                        height={isCollapsed ? '24px' : '36px'}
+                    />
                 </Link>
-                {!isCollapsed && (
-                    <div className='flex flex-col text-[10px] text-muted-foreground leading-tight min-w-0'>
-                        <span>Copyright © 2025 PRODAFT</span>
-                        <span>v2.10.2-beta.a070af1b</span>
-                    </div>
-                )}
             </SidebarHeader>
             <SidebarContent>
                 <NavMain items={navMain} showLabel={true} label='General' />
@@ -217,6 +214,12 @@ export function AppSidebar({
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <NavUser />
+                {!isCollapsed && (
+                    <div className='mt-2 flex flex-col text-[10px] text-muted-foreground leading-tight'>
+                        <span>Copyright © 2025 PRODAFT</span>
+                        <span>v2.10.2-beta.a070af1b</span>
+                    </div>
+                )}
             </SidebarFooter>
         </Sidebar>
     );
