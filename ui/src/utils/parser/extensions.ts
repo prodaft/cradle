@@ -96,7 +96,7 @@ export function renderCradleLink(
     const hidden = (token as any).hidden;
     const displayedName = alias || name;
     const url = createDashboardLink({ name, subtype: type });
-    const colorClass = entryColors.get(type) || 'hsl(var(--foreground))';
+    const colorClass = entryColors.get(type) || 'var(--foreground)';
 
     let displayText = displayedName;
 
@@ -108,9 +108,8 @@ export function renderCradleLink(
         displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
 
-    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
-        date ? `data-timestamp="${date}"` : ''
-    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
+    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${date ? `data-timestamp="${date}"` : ''
+        } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
 // Match ![....][....] or [....][....]

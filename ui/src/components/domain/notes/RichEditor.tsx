@@ -372,22 +372,22 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 markerType: 'codeOnly',
                 thickness: 0.5,
                 colors: {
-                    light: 'hsl(var(--muted) / 0.3)',
-                    dark: 'hsl(var(--muted-foreground) / 0.2)',
+                    light: 'var(--muted) / 0.3',
+                    dark: 'var(--muted-foreground) / 0.2',
                 },
             }),
             ...(!source
                 ? [
-                      prosemarkBasicSetup(),
-                      prosemarkBaseThemeSetup(),
-                      htmlBlockExtension,
-                      codeBlockCopyExtension,
-                      clickLinkHandler.of((url: string) => {
-                          window.open(url, '_blank', 'noopener,noreferrer');
-                      }),
-                      // Syntax highlighting for both modes
-                      baseSyntaxHighlights,
-                  ]
+                    prosemarkBasicSetup(),
+                    prosemarkBaseThemeSetup(),
+                    htmlBlockExtension,
+                    codeBlockCopyExtension,
+                    clickLinkHandler.of((url: string) => {
+                        window.open(url, '_blank', 'noopener,noreferrer');
+                    }),
+                    // Syntax highlighting for both modes
+                    baseSyntaxHighlights,
+                ]
                 : [sourceModeSyntaxHighlighting]),
             pasteHandler,
             Prec.high(cradleTheme),

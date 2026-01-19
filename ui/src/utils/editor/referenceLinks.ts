@@ -57,7 +57,7 @@ export class ReferenceLinkWidget extends WidgetType {
         // Styling to make it look like a regular link within the editor
         span.style.cursor = 'pointer';
         span.style.textDecoration = 'underline';
-        span.style.color = 'var(--cradle-link-color, hsl(var(--primary)))';
+        span.style.color = 'var(--cradle-link-color, var(--primary))';
 
         span.addEventListener('click', (e) => {
             e.preventDefault();
@@ -259,12 +259,12 @@ export function referenceLinkSyntax(
                                 cx.elt('ExternalReferenceText', textStart, textEnd),
                                 ...(labelStart !== -1
                                     ? [
-                                          cx.elt(
-                                              'ExternalReferenceLabel',
-                                              labelStart,
-                                              labelEnd,
-                                          ),
-                                      ]
+                                        cx.elt(
+                                            'ExternalReferenceLabel',
+                                            labelStart,
+                                            labelEnd,
+                                        ),
+                                    ]
                                     : []),
                             ]),
                         );
@@ -384,12 +384,12 @@ export function referenceLinkSyntax(
                                 cx.elt('ExternalReferenceText', textStart, textEnd),
                                 ...(labelStart !== -1
                                     ? [
-                                          cx.elt(
-                                              'ExternalReferenceLabel',
-                                              labelStart,
-                                              labelEnd,
-                                          ),
-                                      ]
+                                        cx.elt(
+                                            'ExternalReferenceLabel',
+                                            labelStart,
+                                            labelEnd,
+                                        ),
+                                    ]
                                     : []),
                             ]),
                         );

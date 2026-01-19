@@ -15,7 +15,7 @@ export async function parseMarkdown(
         const entries = await entriesApi.entryClassesList({});
         const entryColors = new Map<string, string>();
         for (const entry of entries) {
-            entryColors.set(entry.subtype, entry.color || 'hsl(var(--primary))');
+            entryColors.set(entry.subtype, entry.color || 'var(--primary)');
         }
 
         const md = new MarkdownIt({
@@ -24,7 +24,7 @@ export async function parseMarkdown(
                 if (lang && Prism.languages[lang]) {
                     try {
                         return Prism.highlight(code, Prism.languages[lang], lang);
-                    } catch {}
+                    } catch { }
                 }
                 return '';
             },
