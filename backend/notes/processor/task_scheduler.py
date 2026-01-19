@@ -4,6 +4,7 @@ from celery import chain
 from diff_match_patch import diff_match_patch
 from django.db import transaction
 from django.utils import timezone
+
 from entries.enums import EntryType
 from user.models import CradleUser
 

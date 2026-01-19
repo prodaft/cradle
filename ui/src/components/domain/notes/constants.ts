@@ -1,6 +1,6 @@
 export enum ViewMode {
-    CONTENT = 'CONTENT',
-    GRAPH = 'GRAPH',
-    HISTORY = 'HISTORY',
-    FILES = 'FILES',
+    CONTENT = 'content',
+    GRAPH = 'graph',
+    HISTORY = 'history',
+    FILES = 'files',
 }

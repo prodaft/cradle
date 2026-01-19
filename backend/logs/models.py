@@ -98,9 +98,5 @@ class LoggableModelMixin:
         # Fetch events are not propagated
         return EventLog.objects.create(user=user, content_object=self, type=EventType.FETCH)
 
-    def log_link(self, user, details=None):
-        # Link events are not propagated (the linked object already gets an edit event)
-        return EventLog.objects.create(user=user, content_object=self, type=EventType.LINK, details=details)
-
     def __repr__(self):
         return f"<{self.__class__.__name__}:{self.pk}>"

@@ -31,7 +31,7 @@ export function QueryProvider({ children }: QueryProviderProps) {
             // Navigate to login with current location for post-login redirect
             router.navigate({
                 to: '/login',
-                search: { from: router.state.location.href },
+                state: { from: router.state.location.href },
             });
         });
     }, [router, logOut]);

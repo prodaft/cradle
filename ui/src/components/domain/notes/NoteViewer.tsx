@@ -36,7 +36,6 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     useParams,
-    useNavigate,
     useRouter,
     useRouterState,
     useSearch,
@@ -79,7 +78,6 @@ export default function NoteViewer() {
     const { id } = useParams({ from: '/_authenticated/notes/$id' });
     const noteId = id || '';
     const router = useRouter();
-    const navigate = useNavigate({ from: '/_authenticated/notes/$id' });
     const queryClient = useQueryClient();
     const location = useRouterState({
         select: (state) => state.location,
@@ -96,12 +94,16 @@ export default function NoteViewer() {
         meta: { showErrorToast: false },
     });
     const [note, setNote] = useState<NoteRetrieve | null>(null);
-    const [richEditor, setRichEditor] = useState(
-        localStorage.getItem('richEditor')
-            ? localStorage.getItem('richEditor') === 'true'
-            : true,
-    );
     const search = useSearch({ from: '/_authenticated/notes/$id' });
+    const [richEditor, setRichEditor] = useState(() => {
+        // URL param takes precedence, then localStorage, then default to true
+        const s = search as any;
+        if (s.source !== undefined) {
+            return !s.source; // source=true means NOT rich editor
+        }
+        const stored = localStorage.getItem('richEditor');
+        return stored ? stored === 'true' : true;
+    });
     const [enableEditing, setEnableEditing] = useState((search as any).edit === true);
     const [markdownContent, setMarkdownContent] = useState('');
     const [enrichmentModalOpen, setEnrichmentModalOpen] = useState(false);
@@ -194,7 +196,7 @@ export default function NoteViewer() {
             });
     };
 
-    // Sync view and edit mode with URL
+    // Sync view, edit mode, and source mode with URL
     useEffect(() => {
         const s = search as any;
         if (s.view && s.view !== activeView) {
@@ -205,17 +207,37 @@ export default function NoteViewer() {
                 setEnableEditing(s.edit);
             }
         }
-    }, [search, activeView, enableEditing, isFleeting]);
+        if (s.source !== undefined) {
+            const urlRichEditor = !s.source;
+            if (urlRichEditor !== richEditor) {
+                setRichEditor(urlRichEditor);
+            }
+        }
+    }, [search, activeView, enableEditing, isFleeting, richEditor]);
 
     const handleViewChange = useCallback(
         (newView: ViewMode) => {
             setActiveView(newView);
-            navigate({
-                search: (prev) => ({ ...prev, view: newView }),
+            router.navigate({
+                to: location.pathname as any,
+                search: { ...(search as any), view: newView },
                 replace: true,
             });
         },
-        [navigate],
+        [router, location.pathname, search],
+    );
+
+    const handleRichEditorChange = useCallback(
+        (rich: boolean) => {
+            setRichEditor(rich);
+            localStorage.setItem('richEditor', rich.toString());
+            router.navigate({
+                to: location.pathname as any,
+                search: { ...(search as any), source: !rich },
+                replace: true,
+            });
+        },
+        [router, location.pathname, search],
     );
 
     const toggleOutline = useCallback(() => {
@@ -230,11 +252,12 @@ export default function NoteViewer() {
         }
         const newValue = !enableEditing;
         setEnableEditing(newValue);
-        navigate({
-            search: (prev) => ({ ...prev, edit: newValue }),
+        router.navigate({
+            to: location.pathname as any,
+            search: { ...(search as any), edit: newValue },
             replace: true,
         });
-    }, [isFleeting, enableEditing, navigate]);
+    }, [isFleeting, enableEditing, router, location.pathname, search]);
 
     const handleEnableEditingWithConfirmation = useCallback(() => {
         // If we're already in editing mode, there's nothing to do
@@ -567,10 +590,6 @@ export default function NoteViewer() {
         };
     }, [markdownContent, initialMarkdown, debouncedSaveNote]);
 
-    useEffect(() => {
-        localStorage.setItem('richEditor', richEditor.toString());
-    }, [richEditor]);
-
     // Compute note outline from markdown content
     useEffect(() => {
         const content = markdownContent || '';
@@ -691,7 +710,7 @@ export default function NoteViewer() {
                                     enableEditing={enableEditing}
                                     toggleEditing={toggleEditing}
                                     setActiveView={handleViewChange}
-                                    setRichEditor={setRichEditor}
+                                    setRichEditor={handleRichEditorChange}
                                     showOutline={showOutline}
                                     toggleOutline={toggleOutline}
                                     lspLoaded={lspLoaded}

@@ -31,13 +31,13 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
+import { CaretDownIcon, GitForkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import type { EventLog } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import dayjs from 'dayjs';
 import { diff_match_patch } from 'diff-match-patch';
-import { NavArrowDown, Search } from 'iconoir-react';
 import { useMemo, useState } from 'react';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
 
@@ -175,9 +175,11 @@ const formatDiff = (diffTxt: string): string => {
 
 function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: boolean }) {
     const [open, setOpen] = useState(false);
+    console.log(event);
 
-    const effectiveDetails = event.details || event.srcLog?.details;
-    const hasDetails = !!effectiveDetails;
+    const hasDetails = !!event.details;
+    const hasSrcLog = !!event.srcLog;
+    const isExpandable = hasDetails || hasSrcLog;
 
     const { text: objectText, fullId, isDeleted } = formatObjectRepr(
         event.objectRepr,
@@ -190,16 +192,30 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
 
     const rowContent = (
         <TableRow
-            className={hasDetails ? 'cursor-pointer hover:bg-muted/50' : ''}
-            onClick={() => hasDetails && setOpen(!open)}
+            className={isExpandable ? 'cursor-pointer hover:bg-muted/50' : ''}
+            onClick={() => isExpandable && setOpen(!open)}
         >
             <TableCell>
-                <Badge
-                    variant={getTypeBadgeVariant(event.type)}
-                    className='capitalize'
-                >
-                    {event.type}
-                </Badge>
+                <div className='flex items-center gap-1.5'>
+                    <Badge
+                        variant={getTypeBadgeVariant(event.type)}
+                        className='capitalize'
+                    >
+                        {event.type}
+                    </Badge>
+                    {hasSrcLog && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className='text-muted-foreground'>
+                                    <GitForkIcon className='size-3.5' />
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <span className='text-xs'>Triggered by another event</span>
+                            </TooltipContent>
+                        </Tooltip>
+                    )}
+                </div>
             </TableCell>
             {showUser && (
                 <TableCell className='text-muted-foreground'>
@@ -212,40 +228,23 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
                 </span>
             </TableCell>
             <TableCell>
-                <div className='flex flex-col gap-0.5'>
-                    <div className='flex items-center gap-2'>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span
-                                    className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                >
-                                    {objectText}
-                                </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <span className='font-mono text-xs'>{fullId}</span>
-                            </TooltipContent>
-                        </Tooltip>
-                        {hasDetails && (
-                            <NavArrowDown
-                                className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
-                            />
-                        )}
-                    </div>
-                    {event.srcLog && srcLogFormatted && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <span className='text-xs text-muted-foreground cursor-help'>
-                                    via {event.srcLog.content_type}:{' '}
-                                    {srcLogFormatted.text}
-                                </span>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <span className='font-mono text-xs'>
-                                    {srcLogFormatted.fullId}
-                                </span>
-                            </TooltipContent>
-                        </Tooltip>
+                <div className='flex items-center gap-2'>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span
+                                className={`cursor-help ${isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                            >
+                                {objectText}
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <span className='font-mono text-xs'>{fullId}</span>
+                        </TooltipContent>
+                    </Tooltip>
+                    {isExpandable && (
+                        <CaretDownIcon
+                            className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+                        />
                     )}
                 </div>
             </TableCell>
@@ -255,7 +254,7 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
         </TableRow>
     );
 
-    if (!hasDetails) {
+    if (!isExpandable) {
         return rowContent;
     }
 
@@ -268,12 +267,71 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
                 <CollapsibleContent asChild>
                     <tr>
                         <td colSpan={colSpan} className='p-0'>
-                            <div className='px-4 py-3 bg-muted/30 border-t'>
-                                <div
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatDiff(effectiveDetails!),
-                                    }}
-                                />
+                            <div className='px-4 py-3 bg-muted/30 border-t space-y-3'>
+                                {/* Main event details */}
+                                {hasDetails && (
+                                    <div>
+                                        <div className='text-xs font-medium text-muted-foreground mb-1.5'>
+                                            Changes
+                                        </div>
+                                        <div
+                                            dangerouslySetInnerHTML={{
+                                                __html: formatDiff(event.details!),
+                                            }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Source log section */}
+                                {hasSrcLog && srcLogFormatted && (
+                                    <div className='relative'>
+                                        <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
+                                            <GitForkIcon className='size-3.5' />
+                                            <span>Triggered by</span>
+                                        </div>
+                                        <div className='ml-1 pl-3 border-l-2 border-primary/30'>
+                                            <div className='bg-background rounded-md border border-border p-3'>
+                                                {/* Source log header */}
+                                                <div className='flex flex-wrap items-baseline gap-2 mb-2'>
+                                                    <Badge
+                                                        variant={getTypeBadgeVariant(event.srcLog!.type)}
+                                                        className='capitalize text-xs'
+                                                    >
+                                                        {event.srcLog!.type}
+                                                    </Badge>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span
+                                                                className={`text-xs cursor-help ${srcLogFormatted.isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                                            >
+                                                                {srcLogFormatted.text}
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <span className='font-mono text-xs'>
+                                                                {srcLogFormatted.fullId}
+                                                            </span>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </div>
+
+                                                {/* Source log details/diff */}
+                                                {event.srcLog!.details && (
+                                                    <div className='mt-2'>
+                                                        <div className='text-xs font-medium text-muted-foreground mb-1'>
+                                                            Changes
+                                                        </div>
+                                                        <div
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: formatDiff(event.srcLog!.details),
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </td>
                     </tr>
@@ -382,14 +440,14 @@ export default function ActivityList({
                     objectId: (log as any).object_id || (log as any).objectId || '',
                     objectRepr: log.objectRepr || '',
                     details: log.details || undefined,
-                    srcLog: (log as any).src_log
+                    srcLog: log.srcLog
                         ? {
-                            id: (log as any).src_log.id,
-                            type: (log as any).src_log.type,
-                            details: (log as any).src_log.details,
-                            content_type: (log as any).src_log.content_type,
-                            object_id: (log as any).src_log.object_id,
-                            object_repr: (log as any).src_log.object_repr,
+                            id: log.srcLog.id,
+                            type: log.srcLog.type,
+                            details: log.srcLog.details,
+                            content_type: log.srcLog.content_type,
+                            object_id: log.srcLog.object_id,
+                            object_repr: log.srcLog.object_repr,
                         }
                         : undefined,
                 }),
@@ -434,7 +492,7 @@ export default function ActivityList({
                         {/* Username input */}
                         <div className='flex-1 min-w-[200px]'>
                             <div className='relative'>
-                                <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
+                                <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
                                 <Input
                                     type='text'
                                     name='username'
@@ -518,7 +576,7 @@ export default function ActivityList({
 
                         {/* Search button */}
                         <Button type='submit' variant='outline'>
-                            <Search className='size-4' />
+                            <MagnifyingGlassIcon className='size-4' />
                             Search
                         </Button>
                     </form>

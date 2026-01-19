@@ -334,8 +334,7 @@ class Entry(LifecycleModel, LoggableModelMixin):
         self.save(update_fields=["last_seen"])
 
     def propagate_from(self, log):
-        if self.entry_class.type == EntryType.ENTITY:
-            super().propagate_from(log)
+        super().propagate_from(log)
 
     def log_create(self, user):
         super().log_create(user)

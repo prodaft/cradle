@@ -92,18 +92,6 @@ def smart_linker_task(note_id, user_id=None):
             ]
         )
 
-        # Log entity linking events
-        if user:
-            linked_entities = set()
-            for src, dst, virtual, date in pairs_resolved:
-                if src.entry_class.type == EntryType.ENTITY:
-                    linked_entities.add(src)
-                if dst.entry_class.type == EntryType.ENTITY:
-                    linked_entities.add(dst)
-
-            for entity in linked_entities:
-                entity.log_link(user, details={"note_id": str(note_id)})
-
         note.last_linked = timezone.now()
         note.save()
 
