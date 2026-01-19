@@ -100,6 +100,7 @@ export interface RichEditorRef {
 }
 
 // Custom syntax highlighting for source mode - colors and text decorations
+// Uses Prosemark CSS variables which are now mapped to our theme colors in createCradleTheme
 const sourceModeSyntaxHighlighting = syntaxHighlighting(
     HighlightStyle.define([
         // Markdown syntax elements
@@ -109,7 +110,7 @@ const sourceModeSyntaxHighlighting = syntaxHighlighting(
         { tag: tags.emphasis, fontStyle: 'italic' },
         { tag: tags.strikethrough, textDecoration: 'line-through' },
         { tag: tags.meta, color: 'var(--pm-muted-color)' },
-        { tag: tags.comment, color: 'var(--pm-muted-color)' },
+        { tag: tags.comment, color: 'var(--pm-syntax-comment)' },
         { tag: markdownTags.escapeMark, color: 'var(--pm-muted-color)' },
         { tag: markdownTags.inlineCode, color: 'var(--pm-syntax-keyword)' },
         {

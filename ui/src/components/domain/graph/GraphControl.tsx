@@ -104,10 +104,9 @@ export default function GraphControl({
                 {/* Graph Search - Only render when nodes are available */}
                 {nodes.length > 0 && (
                     <div className='px-4 mt-4'>
-                        <div className='bg-background border border-border rounded-lg p-3'>
-                            <CosmographSearch
-                                accessor='_label'
-                                onSelect={(suggestion: any) => {
+                        <CosmographSearch
+                            accessor='_label'
+                            onSelect={(suggestion: any) => {
                                     if (
                                         suggestion == null ||
                                         cosmographRef.current == null
@@ -124,11 +123,10 @@ export default function GraphControl({
                                     }
                                 }}
                             />
-                        </div>
                     </div>
                 )}
                 {/* Explorer Panel */}
-                <div className='border-t-2 border-t-zinc-400 dark:border-t-zinc-800 mt-4'>
+                <div className='border-t border-border mt-4'>
                     <ExplorerPanel
                         selectedNodes={selectedEntries}
                         allNodes={nodes}

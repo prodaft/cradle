@@ -5,14 +5,12 @@ draft = false
 weight = 7
 +++
 
-CRADLE maintains logs for system activity. Each log entry captures:
-
-- User: The individual who performed the action.
-- Object: The object affected by the action.
-- Action: The operation performed (create, edit, delete).
+CRADLE maintains logs for system activity. Each log entry captures the **user**
+who performed the action, the **object** affected, and the **action** itself
+(create, edit, delete).
 
 ## Log propagation
 
-Logs propagate across affected entities. For example, when a note referencing an
-entity is created, an edit log for that entity is generated. This provides a
+Logs propagate across affected entities. For example, when a note referencing
+an entity is created, an edit log for that entity is generated. This provides a
 consistent audit trail across related objects.

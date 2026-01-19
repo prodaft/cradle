@@ -207,7 +207,7 @@ h6:hover .header-anchor-icon {
     margin-bottom: 1rem;
     font-weight: 600;
     line-height: 1.25;
-    color: var(--foreground);
+    color: var(--pm-heading-color);
 }
 
 .markdown-body h1 {
@@ -242,18 +242,21 @@ h6:hover .header-anchor-icon {
     font-size: 1.6em;
     font-weight: 700;
     line-height: 1.25;
+    color: var(--pm-heading-color);
 }
 
 .cm-line.cm-heading-2 {
     font-size: 1.4em;
     font-weight: 700;
     line-height: 1.25;
+    color: var(--pm-heading-color);
 }
 
 .cm-line.cm-heading-3 {
     font-size: 1.2em;
     font-weight: 700;
     line-height: 1.25;
+    color: var(--pm-heading-color);
 }
 
 .cm-line.cm-heading-4,
@@ -261,6 +264,7 @@ h6:hover .header-anchor-icon {
 .cm-line.cm-heading-6 {
     font-weight: 700;
     line-height: 1.25;
+    color: var(--pm-heading-color);
 }
 
 .markdown-body p {
@@ -284,7 +288,7 @@ h6:hover .header-anchor-icon {
 
 /* Bullet points and numbers in CodeMirror */
 .markdown-body .cm-rendered-list-mark {
-    color: #ff8c00;
+    color: var(--pm-list-mark-color);
 }
 
 /* Ensure PTI links inherit parent typography in the rich editor. */

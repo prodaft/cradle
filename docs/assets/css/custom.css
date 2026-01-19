@@ -99,6 +99,11 @@ h2.hx-bg-clip-text {
   padding-bottom: 0 !important;
 }
 
+nav a {
+  color: var(--cradle-text-primary);
+  text-decoration: none;
+}
+
 .content a,
 a {
   color: var(--cradle-accent-primary);
@@ -203,6 +208,62 @@ header,
   box-shadow: none !important;
 }
 
+.cradle-hero-carousel {
+  width: min(69.1vw, 749px);
+}
+
+.cradle-hero-carousel .auto-carousel {
+  margin: 0 !important;
+}
+
+.cradle-hero-carousel .auto-carousel ul {
+  background: transparent;
+}
+
+.cradle-hero-carousel .auto-carousel ul li > img {
+  width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+  border: 1px solid var(--cradle-border-primary);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+  object-fit: cover;
+  aspect-ratio: 16 / 9;
+}
+
+.cradle-hero-carousel .auto-carousel ol li a {
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--cradle-border-interactive);
+  background: transparent;
+  opacity: 0.7;
+  transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.cradle-hero-carousel .auto-carousel ol li.selected a {
+  background: var(--cradle-text-secondary);
+  border-color: var(--cradle-border-interactive);
+  opacity: 0.9;
+}
+
+.cradle-hero-carousel .auto-carousel .prev,
+.cradle-hero-carousel .auto-carousel .next {
+  color: var(--cradle-text-muted);
+  opacity: 0.55;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  font-size: 36px;
+  padding: 18px 12px;
+}
+
+.cradle-hero-carousel .auto-carousel .prev:hover,
+.cradle-hero-carousel .auto-carousel .next:hover,
+.cradle-hero-carousel .auto-carousel ol li a:hover {
+  opacity: 0.7;
+}
+
+.cradle-hero {
+  font-size: 1.44em;
+}
+
 .cradle-feature-lines {
   display: flex;
   flex-direction: column;
@@ -216,7 +277,7 @@ header,
   animation: cradle-feature-rise 0.7s ease-out both;
 }
 
-.cradle-feature-line + .cradle-feature-line {
+.cradle-feature-line+.cradle-feature-line {
   border-top: 1px solid var(--cradle-border-primary);
 }
 
@@ -235,7 +296,7 @@ header,
   flex-direction: row-reverse;
 }
 
-.cradle-feature-line .hextra-feature-card > div {
+.cradle-feature-line .hextra-feature-card>div {
   flex: 1 1 50%;
   width: auto !important;
   max-width: 520px;
@@ -260,7 +321,7 @@ header,
 }
 
 .cradle-feature-line .hextra-feature-card:hover img {
-  transform: translateY(-4px);
+  transform: scale(1.02);
   box-shadow: 0 20px 36px rgba(0, 0, 0, 0.12);
   filter: saturate(1.05);
 }
@@ -271,6 +332,7 @@ header,
 }
 
 @media (max-width: 900px) {
+
   .cradle-feature-line .hextra-feature-card,
   .cradle-feature-line:nth-child(even) .hextra-feature-card {
     flex-direction: column;
@@ -280,6 +342,10 @@ header,
   .cradle-feature-card-image {
     width: 100%;
   }
+
+  .cradle-hero-carousel {
+    width: 100%;
+  }
 }
 
 @keyframes cradle-feature-rise {
@@ -287,6 +353,7 @@ header,
     opacity: 0;
     transform: translateY(12px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -354,7 +421,7 @@ footer {
   color: var(--cradle-text-secondary);
 }
 
-.content p + p {
+.content p+p {
   margin-top: 0.8rem;
 }
 
@@ -364,7 +431,7 @@ footer {
   margin-bottom: 0.6rem;
 }
 
-.content li + li {
+.content li+li {
   margin-top: 0.35rem;
 }
 

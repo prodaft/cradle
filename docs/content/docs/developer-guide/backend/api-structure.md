@@ -7,7 +7,7 @@ weight = 4
 
 ## Creating new views
 
-Use class-based views in views.py to keep code maintainable.
+Use class-based views in `views.py` to keep code maintainable.
 
 ```python
 from rest_framework.views import APIView
@@ -22,7 +22,7 @@ class HelloWorldList(APIView):
 
 ## Including URL configurations
 
-Map your view in the app's urls.py:
+Map your view in the app's `urls.py`:
 
 ```python
 from django.urls import path

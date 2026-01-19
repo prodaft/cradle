@@ -101,7 +101,7 @@ export default function GraphQuery({
                     <XIcon />
                     <span className='sr-only'>Close</span>
                 </button>
-                <div className='border-b-2 border-b-zinc-400 dark:border-b-zinc-800' />
+                <div className='border-b border-border' />
                 <ScrollArea className='flex-1'>
                     <GraphControl
                         settingsProps={settingsProps}

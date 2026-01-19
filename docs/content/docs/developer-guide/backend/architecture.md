@@ -5,33 +5,33 @@ draft = false
 weight = 1
 +++
 
-CRADLE's backend uses Django REST Framework and follows a modular app
+CRADLE's backend uses **Django REST Framework** and follows a modular app
 structure.
 
 ## App structure
 
 ### Core applications
-- user: user management
-- entries: entry management
-- notes: note-taking
-- access: entity-level access control
-- core: shared utilities and common services
+- `user` for user management.
+- `entries` for entry management.
+- `notes` for note-taking.
+- `access` for entity-level access control.
+- `core` for shared utilities and common services.
 
 ### Additional applications
-- notifications: notification system
-- lsp: editor LSP retrieval
-- publish: report creation and importing
-- logs: logging functionality
-- fleeting_notes: temporary notes
-- query: query logic
-- knowledge_graph: graph retrieval
-- management: settings and admin operations
-- cradle_statistics: usage statistics
-- intelio: enrichment orchestration
+- `notifications` for the notification system.
+- `lsp` for editor LSP retrieval.
+- `publish` for report creation and importing.
+- `logs` for logging functionality.
+- `fleeting_notes` for temporary notes.
+- `query` for query logic.
+- `knowledge_graph` for graph retrieval.
+- `management` for settings and admin operations.
+- `cradle_statistics` for usage statistics.
+- `intelio` for enrichment orchestration.
 
 ### External service applications
-- file_transfer: file uploads and downloads
-- mail: mail templates and events
+- `file_transfer` for file uploads and downloads.
+- `mail` for mail templates and events.
 
 Core applications are essential to CRADLE. Additional apps depend on core apps
 and can be modified with less impact on the system.

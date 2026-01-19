@@ -9,16 +9,14 @@ CRADLE handles uploads through a pending-upload flow and stores files in
 S3-compatible storage.
 
 ## Upload lifecycle
-- Pending uploads track initiated uploads that are not finalized.
-- Finalized uploads create FileReference records.
-- Files can be linked to notes, digests, and users.
+Pending uploads track initiated uploads that are not finalized. Finalized
+uploads create `FileReference` records, and files can be linked to notes,
+digests, and users.
 
 ## Processing
-- Files can be auto-processed to compute hashes and metadata.
-- Hashing is limited by configured max file size.
+Files can be **auto-processed** to compute hashes and metadata, and hashing is
+limited by the configured maximum file size.
 
 ## Storage
-- Storage uses a pluggable backend with bucket configuration.
-- File paths include UUIDs for traceability.
-
-See also: {{< ref "/docs/user-guide/analysts/files" >}}.
+Storage uses a pluggable backend with bucket configuration, and file paths
+include UUIDs for traceability.

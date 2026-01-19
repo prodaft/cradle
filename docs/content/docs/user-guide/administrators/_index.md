@@ -13,10 +13,5 @@ This section covers setup, governance, and operational tasks.
 {{< card link="entry-taxonomy" title="Entry Taxonomy Management" icon="tag" >}}
 {{< card link="enrichment" title="Enrichment Configuration" icon="lightning-bolt" >}}
 {{< card link="system-settings" title="System Settings" icon="cog" >}}
-{{< card link="file-storage" title="File Storage Operations" icon="archive" >}}
 {{< card link="monitoring-logs" title="Monitoring and Logs" icon="chart-bar" >}}
-{{< card link="backups-recovery" title="Backups and Recovery" icon="refresh" >}}
-{{< card link="upgrades-maintenance" title="Upgrades and Maintenance" icon="arrow-circle-up" >}}
-{{< card link="troubleshooting" title="Troubleshooting" icon="support" >}}
-{{< card link="security-practices" title="Security Practices" icon="shield-check" >}}
 {{< /cards >}}

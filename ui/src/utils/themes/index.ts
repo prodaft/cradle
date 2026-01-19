@@ -1,5 +1,6 @@
 import type { ThemeConfig } from '@/types/index';
 import { catppuccinFrappe, catppuccinLatte, catppuccinMacchiato, catppuccinMocha } from './catppuccin';
+import { cradleDark, cradleLight } from './cradle';
 import { darkTheme } from './dark';
 import { lightTheme } from './light';
 
@@ -19,6 +20,16 @@ export const PRESET_THEMES: PresetTheme[] = [
         id: 'light',
         label: 'Light',
         theme: lightTheme,
+    },
+    {
+        id: 'cradle-dark',
+        label: 'Cradle Dark',
+        theme: cradleDark,
+    },
+    {
+        id: 'cradle-light',
+        label: 'Cradle Light',
+        theme: cradleLight,
     },
     {
         id: 'catppuccin-latte',
@@ -47,6 +58,8 @@ export {
     catppuccinLatte,
     catppuccinMacchiato,
     catppuccinMocha,
+    cradleDark,
+    cradleLight,
     darkTheme,
     lightTheme,
 };
