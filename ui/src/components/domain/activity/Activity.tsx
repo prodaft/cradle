@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { formatDate } from '@/utils/dates';
+import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-diff';
@@ -30,7 +30,7 @@ export default function Activity({ log }: ActivityProps) {
     const [formattedTimestamp, setFormattedTimestamp] = useState('');
 
     useEffect(() => {
-        setFormattedTimestamp(formatDate(new Date(log.timestamp)));
+        setFormattedTimestamp(format(new Date(log.timestamp), 'dd/MM/yyyy, HH:mm'));
     }, [log.timestamp]);
 
     useEffect(() => {

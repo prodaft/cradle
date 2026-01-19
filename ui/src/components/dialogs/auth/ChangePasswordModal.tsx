@@ -1,3 +1,6 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@tanstack/react-query';
+import { Controller, useForm } from 'react-hook-form';
 import { Button } from 'src/components/ui/button';
 import {
     Dialog,
@@ -9,9 +12,6 @@ import {
 import { Field, FieldContent, FieldError, FieldLabel } from 'src/components/ui/field';
 import { Input } from 'src/components/ui/input';
 import useApi from 'src/hooks/api/useApi';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
-import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 const changePasswordSchema = z

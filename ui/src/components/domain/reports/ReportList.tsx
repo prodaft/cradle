@@ -9,8 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { ReportList as ReportListModel } from '@/services/cradle';
-import { capitalizeString, truncateText } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
+import { truncateText } from '@/utils/dashboard';
 import { ActionBar, ActionBarButton } from '@components/base/ActionBar/ActionBar';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
@@ -22,6 +21,7 @@ import {
     useSearch,
 } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import {
     Edit,
     Eye,
@@ -32,6 +32,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
+import { startCase } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
@@ -362,7 +363,7 @@ export default function ReportList() {
             }
         })();
 
-        const tooltipContent = errorMessage || capitalizeString(status);
+        const tooltipContent = errorMessage || startCase(status);
         const tooltipColorClass =
             status === 'error'
                 ? 'bg-destructive text-destructive-foreground'
@@ -475,7 +476,12 @@ export default function ReportList() {
                 ),
                 cell: ({ row }) => (
                     <div className='w-36'>
-                        {formatDate(new Date(row.original.createdAt || ''))}
+                        {row.original.createdAt
+                            ? format(
+                                  new Date(row.original.createdAt),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
+                            : 'N/A'}
                     </div>
                 ),
             },

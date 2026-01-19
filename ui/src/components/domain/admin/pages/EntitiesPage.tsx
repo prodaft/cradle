@@ -244,10 +244,7 @@ export default function EntitiesPage() {
                 cell: ({ row }) => {
                     const entity = row.original;
                     return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
+                        <div className='w-12' onClick={(e) => e.stopPropagation()}>
                             <div className='flex justify-end'>
                                 <TableActionsButton>
                                     {isAdmin && (
@@ -292,7 +289,7 @@ export default function EntitiesPage() {
                         title={`Entity: ${entityData?.name || 'Loading...'}`}
                         description='Manage entity properties and settings'
                     />
-                    <div className='p-5 flex-1'>
+                    <div className='px-4 pb-4 flex-1'>
                         <EntityForm
                             id={entityId!}
                             onAdd={(newEntity: Entity) => {
@@ -403,26 +400,28 @@ export default function EntitiesPage() {
                 onOpenChange={setAddEntityModalOpen}
                 onAdd={handleEntityAdded}
             />
-            {deleteEntityId !== null && (
-                <ConfirmDeletionModal
-                    open={deleteModalOpen}
-                    onOpenChange={(open) => {
-                        setDeleteModalOpen(open);
-                        if (!open) setDeleteEntityId(null);
-                    }}
-                    onConfirm={() => {
-                        if (deleteEntityId !== null) {
-                            deleteMutation.mutate(deleteEntityId);
-                        }
-                    }}
-                    confirmText={
-                        entities.find((e) => e.id === deleteEntityId)
-                            ? `${entities.find((e) => e.id === deleteEntityId)!.subtype}:${entities.find((e) => e.id === deleteEntityId)!.name}`
-                            : ''
-                    }
-                    text='Are you sure you want to delete this entity? This will keep its related notes but remove the links to it.'
-                />
-            )}
+            {deleteEntityId !== null &&
+                (() => {
+                    const entity = entities.find((e) => e.id === deleteEntityId);
+                    return (
+                        <ConfirmDeletionModal
+                            open={deleteModalOpen}
+                            onOpenChange={(open) => {
+                                setDeleteModalOpen(open);
+                                if (!open) setDeleteEntityId(null);
+                            }}
+                            onConfirm={() => {
+                                if (deleteEntityId !== null) {
+                                    deleteMutation.mutate(deleteEntityId);
+                                }
+                            }}
+                            confirmText={
+                                entity ? `${entity.subtype}:${entity.name}` : ''
+                            }
+                            text='Are you sure you want to delete this entity? This will keep its related notes but remove the links to it.'
+                        />
+                    );
+                })()}
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
                 onOpenChange={setBulkDeleteModalOpen}

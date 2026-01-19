@@ -1,11 +1,11 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { capitalizeString } from '@/utils/dashboard';
 import {
     DesignNib,
     InfoCircleSolid,
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
+import { startCase } from 'lodash';
 
 type SaveStatus = 'empty' | 'saving' | 'unsaved' | 'saved';
 type NoteStatus = 'healthy' | 'processing' | 'warning' | 'invalid' | null;
@@ -144,7 +144,7 @@ export default function StatusIndicators({
                     <TooltipContent>
                         {isFleeting
                             ? 'Fleeting note'
-                            : noteStatusMessage || capitalizeString(noteStatus)}
+                            : noteStatusMessage || startCase(noteStatus)}
                     </TooltipContent>
                 </Tooltip>
             )}

@@ -9,10 +9,10 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import useApi from '@/hooks/api/useApi';
-import { capitalizeString } from '@/utils/dashboard';
 import { MappingSubclass } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
+import { startCase } from 'lodash';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import AdminPageLayout from '../AdminPageLayout';
@@ -124,11 +124,9 @@ export default function TypeMappingsPage() {
                                                 onClick={() =>
                                                     handleMappingClick(mapping)
                                                 }
-                                                tooltip={capitalizeString(mapping.name)}
+                                                tooltip={startCase(mapping.name)}
                                             >
-                                                <span>
-                                                    {capitalizeString(mapping.name)}
-                                                </span>
+                                                <span>{startCase(mapping.name)}</span>
                                             </SidebarMenuButton>
                                         </SidebarMenuItem>
                                     ))

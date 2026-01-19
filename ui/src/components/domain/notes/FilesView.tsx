@@ -5,10 +5,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { truncateText } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import { Download } from 'iconoir-react';
 import { useMemo } from 'react';
 
@@ -144,8 +144,9 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                 id: 'uploadedAt',
                 header: 'Uploaded At',
                 cell: ({ row }) =>
-                    row.original.timestamp &&
-                    formatDate(new Date(row.original.timestamp)),
+                    row.original.timestamp
+                        ? format(new Date(row.original.timestamp), 'dd/MM/yyyy, HH:mm')
+                        : 'N/A',
                 enableSorting: false,
             },
             {

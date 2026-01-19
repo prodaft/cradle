@@ -9,11 +9,12 @@ import {
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { Relation } from '@/services/cradle';
-import { capitalizeString, createDashboardLink } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
+import { createDashboardLink } from '@/utils/dashboard';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { format } from 'date-fns';
 import { Trash } from 'iconoir-react';
+import { startCase } from 'lodash';
 import { useEffect, useState } from 'react';
 
 interface RelationCardProps {
@@ -44,8 +45,16 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
     });
 
     useEffect(() => {
-        setFormattedCreated(formatDate(new Date(relation.createdAt || '')));
-        setFormattedSeen(formatDate(new Date(relation.lastSeen || '')));
+        setFormattedCreated(
+            relation.createdAt
+                ? format(new Date(relation.createdAt), 'dd/MM/yyyy, HH:mm')
+                : 'N/A',
+        );
+        setFormattedSeen(
+            relation.lastSeen
+                ? format(new Date(relation.lastSeen), 'dd/MM/yyyy, HH:mm')
+                : 'N/A',
+        );
     }, [relation.createdAt, relation.lastSeen]);
 
     const handleDelete = () => {
@@ -63,7 +72,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
         'Last Seen': formattedSeen,
         ...Object.fromEntries(
             Object.entries(relation.details).map(([key, value]) => [
-                capitalizeString(key),
+                startCase(key),
                 value,
             ]),
         ),
@@ -74,7 +83,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>{capitalizeString(relation.reason || 'Relation')}</CardTitle>
+                <CardTitle>{startCase(relation.reason || 'Relation')}</CardTitle>
                 {isAdmin && (
                     <CardAction>
                         <Button

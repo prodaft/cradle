@@ -10,7 +10,6 @@ import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import TableActionsButton from '@components/base/TableActionsButton';
 import { useDroppable } from '@dnd-kit/core';
@@ -19,6 +18,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import bytes from 'bytes';
+import { format } from 'date-fns';
 import { Download, RefreshCircle, Trash, WarningCircle } from 'iconoir-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -573,7 +573,10 @@ export default function FilesList({
                 cell: ({ row }) => (
                     <div className='w-32'>
                         {row.original.timestamp
-                            ? formatDate(row.original.timestamp)
+                            ? format(
+                                  new Date(row.original.timestamp),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : '-'}
                     </div>
                 ),

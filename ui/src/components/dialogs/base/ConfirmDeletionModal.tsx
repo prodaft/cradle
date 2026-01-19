@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from 'src/components/ui/button';
 import {
     Dialog,
@@ -8,7 +9,6 @@ import {
 } from 'src/components/ui/dialog';
 import { Input } from 'src/components/ui/input';
 import { Label } from 'src/components/ui/label';
-import { useState } from 'react';
 
 /**
  * ConfirmDeletionModal component props

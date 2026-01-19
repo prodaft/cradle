@@ -12,7 +12,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
-import { formatDate } from '@/utils/dates';
 import ReactJson from '@microlink/react-json-view';
 import {
     EnrichmentRequestDetailStatusEnum,
@@ -20,6 +19,7 @@ import {
 } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
+import { format } from 'date-fns';
 import {
     Calendar,
     CheckCircle,
@@ -350,13 +350,23 @@ export default function EnrichmentResults() {
                         {enrichmentDetails.createdAt && (
                             <div className='flex items-center gap-1.5'>
                                 <Calendar width='14' height='14' />
-                                <span>{formatDate(enrichmentDetails.createdAt)}</span>
+                                <span>
+                                    {format(
+                                        new Date(enrichmentDetails.createdAt),
+                                        'dd/MM/yyyy, HH:mm',
+                                    )}
+                                </span>
                             </div>
                         )}
                         {enrichmentDetails.completedAt && (
                             <div className='flex items-center gap-1.5'>
                                 <Clock width='14' height='14' />
-                                <span>{formatDate(enrichmentDetails.completedAt)}</span>
+                                <span>
+                                    {format(
+                                        new Date(enrichmentDetails.completedAt),
+                                        'dd/MM/yyyy, HH:mm',
+                                    )}
+                                </span>
                             </div>
                         )}
                         {enrichmentDetails.userDetail && (

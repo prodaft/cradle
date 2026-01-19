@@ -3,10 +3,10 @@ import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { createDashboardLink } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
+import { format } from 'date-fns';
 import { Download } from 'iconoir-react';
 import { forwardRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -126,7 +126,9 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                         )}
                         <span className='text-muted-foreground mx-1'>|</span>
                         <span className='text-muted-foreground'>
-                            {file.timestamp ? formatDate(file.timestamp) : 'N/A'}
+                            {file.timestamp
+                                ? format(new Date(file.timestamp), 'dd/MM/yyyy, HH:mm')
+                                : 'N/A'}
                         </span>
 
                         {file.sha256Hash && (

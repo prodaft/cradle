@@ -1,6 +1,6 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { formatDate } from '@/utils/dates';
 import type { NoteRetrieve } from '@services/cradle/models';
+import { format } from 'date-fns';
 import { Clock, Link, User } from 'iconoir-react';
 
 interface NoteMetadataProps {
@@ -19,7 +19,9 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                     <span className='inline-flex items-center gap-1.5'>
                         <Clock width='16' height='16' />
                         <span className='text-muted-foreground'>
-                            {note.timestamp && formatDate(new Date(note.timestamp))}
+                            {note.timestamp
+                                ? format(new Date(note.timestamp), 'dd/MM/yyyy, HH:mm')
+                                : 'N/A'}
                         </span>
                     </span>
                 </TooltipTrigger>
@@ -45,8 +47,12 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                             <span className='inline-flex items-center gap-1.5'>
                                 <Clock width='16' height='16' />
                                 <span className='text-muted-foreground'>
-                                    {note.editTimestamp &&
-                                        formatDate(new Date(note.editTimestamp))}
+                                    {note.editTimestamp
+                                        ? format(
+                                              new Date(note.editTimestamp),
+                                              'dd/MM/yyyy, HH:mm',
+                                          )
+                                        : 'N/A'}
                                 </span>
                             </span>
                         </TooltipTrigger>
@@ -71,7 +77,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                         <span className='inline-flex items-center gap-1.5'>
                             <Link width='16' height='16' />
                             <span className='text-muted-foreground'>
-                                {formatDate(new Date(note.lastLinked))}
+                                {format(new Date(note.lastLinked), 'dd/MM/yyyy, HH:mm')}
                             </span>
                         </span>
                     </TooltipTrigger>

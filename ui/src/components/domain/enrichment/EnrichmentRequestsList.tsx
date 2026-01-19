@@ -7,7 +7,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { truncateText } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import TableActionsButton from '@components/base/TableActionsButton';
@@ -15,6 +14,7 @@ import type { EnrichmentRequestList } from '@services/cradle/models';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import {
     InfoCircleSolid,
     RefreshCircle,
@@ -383,7 +383,10 @@ function EnrichmentRequestsList({
                 cell: ({ row }) => (
                     <div className='w-40'>
                         {row.original.createdAt
-                            ? formatDate(new Date(row.original.createdAt))
+                            ? format(
+                                  new Date(row.original.createdAt),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : 'N/A'}
                     </div>
                 ),

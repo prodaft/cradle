@@ -10,9 +10,6 @@ export * from './api';
 // Dashboard utilities
 export * from './dashboard';
 
-// Date utilities
-export * from './dates';
-
 // File utilities
 export * from './files';
 

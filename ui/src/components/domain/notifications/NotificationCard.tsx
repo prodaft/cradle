@@ -1,3 +1,9 @@
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from '@tanstack/react-router';
+import { format } from 'date-fns';
+import { Mail, MailOpen } from 'iconoir-react';
+import React, { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from 'src/components/ui/button';
 import { Card, CardContent } from 'src/components/ui/card';
 import { Tooltip, TooltipContent, TooltipTrigger } from 'src/components/ui/tooltip';
@@ -12,12 +18,6 @@ import {
     ReportProcessingErrorNotification,
     ReportRenderNotification,
 } from 'src/services/cradle';
-import { formatDate } from 'src/utils/dates';
-import { useMutation } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
-import { Mail, MailOpen } from 'iconoir-react';
-import React, { useState } from 'react';
-import { toast } from 'sonner';
 
 interface NotificationCardProps {
     notification: Notification;
@@ -141,7 +141,9 @@ export default function NotificationCard({
         viewReportMutation.mutate(notif.publishedReportId);
     };
 
-    const formattedDate = timestamp ? formatDate(new Date(timestamp)) : 'N/A';
+    const formattedDate = timestamp
+        ? format(new Date(timestamp), 'dd/MM/yyyy, HH:mm')
+        : 'N/A';
 
     return (
         <Card>

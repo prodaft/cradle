@@ -36,7 +36,7 @@ export default function PageHeader({
 }: PageHeaderProps) {
     return (
         <div
-            className={`flex flex-wrap items-end justify-between gap-2 px-4 pt-4 ${className}`}
+            className={`flex flex-wrap items-end justify-between gap-2 px-4 pt-4 pb-4 ${className}`}
         >
             <div>
                 <h2 className='text-2xl font-bold tracking-tight'>{title}</h2>

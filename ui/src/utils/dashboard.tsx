@@ -3,9 +3,6 @@
  */
 
 import { EntryListCompressedTree } from '@/services/cradle';
-import DashboardCard from '@components/domain/dashboard/DashboardCard';
-import DashboardHorizontalSection from '@components/domain/dashboard/DashboardHorizontalSection';
-import { ReactElement } from 'react';
 
 /**
  * Dashboard entry structure
@@ -232,111 +229,6 @@ export const groupSubtypes = <T,>(
 };
 
 /**
- * Render a dashboard section with entries
- *
- * @param entries - The entries to render
- * @param relatedEntriesTitle - The title of the section
- * @returns React element or null
- */
-export const renderDashboardSection = (
-    entries: DashboardEntry[] | null,
-    relatedEntriesTitle: string,
-): ReactElement | null => {
-    if (!entries) {
-        return null;
-    }
-
-    return (
-        <DashboardHorizontalSection title={relatedEntriesTitle}>
-            {groupSubtypes(entries, (e) => (
-                <DashboardCard
-                    key={`${e.subtype}:${e.name}`}
-                    type={e.subtype}
-                    name={e.name}
-                    link={createDashboardLink(e)}
-                />
-            )).map((l) => (
-                <DashboardHorizontalSection
-                    title={l[0].props.type}
-                    key={l[0].props.type}
-                >
-                    {l}
-                </DashboardHorizontalSection>
-            ))}
-        </DashboardHorizontalSection>
-    );
-};
-
-/**
- * Render a dashboard section with entries and inaccessible entries
- *
- * @param entries - Accessible entries
- * @param inaccessibleEntries - Inaccessible entries
- * @param relatedEntriesTitle - Title of the section
- * @param inaccessibleEntriesMessage - Message for inaccessible entries
- * @param requestAccessMessage - Message for request access link
- * @param handleRequestEntryAccess - Handler for requesting access
- * @returns React element or null
- */
-export const renderDashboardSectionWithInaccessibleEntries = (
-    entries: DashboardEntry[] | null,
-    inaccessibleEntries: DashboardEntry[] | null,
-    relatedEntriesTitle: string,
-    inaccessibleEntriesMessage: string,
-    requestAccessMessage: string,
-    handleRequestEntryAccess: (entries: DashboardEntry[]) => void,
-): ReactElement | null => {
-    if (!entries) {
-        return null;
-    }
-
-    const inaccessibleEntriesDiv =
-        inaccessibleEntries && inaccessibleEntries.length > 0
-            ? [
-                  <div
-                      key='inaccessible-entries'
-                      className='w-full h-fit mt-1 flex flex-row justify-between items-center text-muted-foreground'
-                  >
-                      <p>
-                          {inaccessibleEntriesMessage}
-                          <span
-                              className='underline cursor-pointer'
-                              onClick={() =>
-                                  handleRequestEntryAccess(inaccessibleEntries)
-                              }
-                          >
-                              {requestAccessMessage}
-                          </span>
-                      </p>
-                  </div>,
-              ]
-            : [];
-
-    return (
-        <DashboardHorizontalSection title={relatedEntriesTitle}>
-            {[
-                ...groupSubtypes(entries, (e) => (
-                    <DashboardCard
-                        key={`${e.subtype}:${e.name}`}
-                        type={e.subtype}
-                        name={e.name}
-                        link={createDashboardLink(e)}
-                    />
-                )).map((l) => (
-                    <DashboardHorizontalSection
-                        title={l[0].props.type}
-                        key={l[0].props.type}
-                    >
-                        {l}
-                    </DashboardHorizontalSection>
-                )),
-                ...inaccessibleEntriesDiv,
-            ]}
-        </DashboardHorizontalSection>
-    );
-};
-
-/**
  * Truncate text to a specific length
  *
  * @param text - The text to truncate
@@ -359,22 +251,6 @@ export const truncateText = (
 
     return text.slice(0, maxLength) + '...';
 };
-
-/**
- * Capitalize a string (underscore-separated to title case)
- *
- * @param input - Input string with underscores
- * @returns Capitalized string
- */
-export function capitalizeString(input: string): string {
-    const words = input.split('_');
-
-    const formattedWords = words.map(
-        (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-    );
-
-    return formattedWords.join(' ');
-}
 
 /**
  * Natural sort comparison function for strings with numbers

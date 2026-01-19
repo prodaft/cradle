@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
-import { capitalizeString } from '@/utils/dashboard';
 import { EditPencil } from 'iconoir-react/regular';
+import { startCase } from 'lodash';
 import { ReactNode } from 'react';
 import TypeMappingsEditor from '../TypeMappingsEditor';
 
@@ -26,7 +26,7 @@ export default function AdminPanelCardTypeMapping({
             onClick={handleEditClick}
         >
             <CardHeader>
-                <CardTitle>{capitalizeString(name)}</CardTitle>
+                <CardTitle>{startCase(name)}</CardTitle>
                 <CardAction>
                     <Button
                         variant='ghost'

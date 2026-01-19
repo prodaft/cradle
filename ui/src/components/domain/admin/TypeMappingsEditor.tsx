@@ -2,8 +2,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
-import { capitalizeString } from '@/utils/dashboard';
 import { useMutation } from '@tanstack/react-query';
+import { startCase } from 'lodash';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -285,25 +285,25 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             colDef.required &&
             (value === null || value === undefined || value === '')
         ) {
-            return `${capitalizeString(column)} is required`;
+            return `${startCase(column)} is required`;
         }
 
         // Type-specific validations
         switch (colDef.type) {
             case 'options':
                 if (colDef.required && !value?.value) {
-                    return `${capitalizeString(column)} must be selected`;
+                    return `${startCase(column)} must be selected`;
                 }
                 break;
             case 'number':
                 if (value !== '' && isNaN(Number(value))) {
-                    return `${capitalizeString(column)} must be a number`;
+                    return `${startCase(column)} must be a number`;
                 }
                 if (colDef.min !== undefined && Number(value) < colDef.min) {
-                    return `${capitalizeString(column)} must be at least ${colDef.min}`;
+                    return `${startCase(column)} must be at least ${colDef.min}`;
                 }
                 if (colDef.max !== undefined && Number(value) > colDef.max) {
-                    return `${capitalizeString(column)} must be at most ${colDef.max}`;
+                    return `${startCase(column)} must be at most ${colDef.max}`;
                 }
                 break;
             case 'text':
@@ -313,16 +313,16 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                         colDef.minLength !== undefined &&
                         value.length < colDef.minLength
                     ) {
-                        return `${capitalizeString(column)} must be at least ${colDef.minLength} characters`;
+                        return `${startCase(column)} must be at least ${colDef.minLength} characters`;
                     }
                     if (
                         colDef.maxLength !== undefined &&
                         value.length > colDef.maxLength
                     ) {
-                        return `${capitalizeString(column)} must be at most ${colDef.maxLength} characters`;
+                        return `${startCase(column)} must be at most ${colDef.maxLength} characters`;
                     }
                     if (colDef.pattern && !new RegExp(colDef.pattern).test(value)) {
-                        return `${capitalizeString(column)} has an invalid format`;
+                        return `${startCase(column)} has an invalid format`;
                     }
                 }
                 break;
@@ -528,7 +528,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
     return (
         <div className='w-full h-full overflow-auto'>
             {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
+            <div className='flex items-end gap-2 px-4 pt-4'>
                 <div>
                     <h2 className='text-2xl font-bold tracking-tight'>
                         Edit Type Mappings
@@ -539,170 +539,158 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 </div>
             </div>
 
-            <div className='p-5'>
-                <div className='rounded-lg border-border bg-muted/5 p-4'>
-                    {/* Save All button moved to the left */}
-                    <div className='flex justify-start mb-4'>
-                        <Button
-                            variant='default'
-                            onClick={handleSaveAll}
-                            disabled={!rows.some((row) => row.edited)}
-                        >
-                            Save All
-                        </Button>
-                    </div>
-
-                    {/* Table container with fixed height and scrollable */}
-                    <div className='overflow-x-auto overflow-y-auto h-[70vh] border border-border rounded-md'>
-                        <table className='table-auto w-full mb-4 w-dvh'>
-                            <thead className='sticky top-0 bg-card z-10'>
-                                <tr>
-                                    {/* Actions column */}
-                                    <th className='px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border'>
-                                        Actions
-                                    </th>
-                                    {allColumns.map((column) => (
-                                        <th
-                                            key={column}
-                                            className='px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-96 border-b border-border'
-                                        >
-                                            {capitalizeString(column)}
-                                            {columnDefinitions[column]?.required && (
-                                                <span className='text-destructive ml-1'>
-                                                    *
-                                                </span>
-                                            )}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, index) => (
-                                    <tr
-                                        key={index}
-                                        className={`border-b border-border/50 ${
-                                            index < rows.length - 1 && !row.edited
-                                                ? 'bg-transparent'
-                                                : ''
-                                        } hover:bg-secondary/20 transition-colors`}
+            <div className='rounded-lg bg-muted/5 p-4'>
+                {/* Table container with fixed height and scrollable */}
+                <div className='overflow-auto h-[70vh] border border-border rounded-md'>
+                    <table className='table-auto w-full'>
+                        <thead className='sticky top-0 bg-card z-10'>
+                            <tr>
+                                {/* Actions column */}
+                                <th className='px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider border-b border-border'>
+                                    Actions
+                                </th>
+                                {allColumns.map((column) => (
+                                    <th
+                                        key={column}
+                                        className='px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider w-96 border-b border-border'
                                     >
-                                        {/* Actions cell with Delete and Save buttons */}
-                                        <td className='px-4 py-2 whitespace-nowrap'>
-                                            <div className='flex space-x-2'>
-                                                {index !== rows.length - 1 && (
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='sm'
-                                                        onClick={() =>
-                                                            handleDeleteRow(index)
-                                                        }
-                                                        className='text-destructive hover:text-destructive/80'
-                                                    >
-                                                        Delete
-                                                    </Button>
-                                                )}
-                                                {row.edited && (
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='sm'
-                                                        onClick={() =>
-                                                            handleSaveRow(index)
-                                                        }
-                                                        className='text-primary hover:text-primary/80'
-                                                    >
-                                                        Save
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </td>
-                                        {allColumns.map((column) => {
-                                            const colDef = columnDefinitions[column];
-                                            const colType = colDef?.type;
-                                            const errorKey = `${index}-${column}`;
-                                            const hasError = validationErrors[errorKey];
-
-                                            if (colType === 'options') {
-                                                return (
-                                                    <td
-                                                        key={`${index}-${column}`}
-                                                        className='px-2 py-2'
-                                                    >
-                                                        <Input
-                                                            value={
-                                                                row[column]?.label || ''
-                                                            }
-                                                            disabled={true}
-                                                            className='w-full'
-                                                            placeholder={
-                                                                colDef.required
-                                                                    ? 'Required...'
-                                                                    : 'Select...'
-                                                            }
-                                                        />
-                                                    </td>
-                                                );
-                                            } else if (colType === 'number') {
-                                                return (
-                                                    <td
-                                                        key={`${index}-${column}`}
-                                                        className='px-2 py-2'
-                                                    >
-                                                        <Input
-                                                            type='number'
-                                                            value={row[column] ?? ''}
-                                                            onChange={(e) =>
-                                                                handleCellChange(
-                                                                    index,
-                                                                    column,
-                                                                    e.target.value,
-                                                                )
-                                                            }
-                                                            className='w-full'
-                                                            min={colDef.min}
-                                                            max={colDef.max}
-                                                            placeholder={
-                                                                colDef.required
-                                                                    ? 'Required'
-                                                                    : ''
-                                                            }
-                                                        />
-                                                    </td>
-                                                );
-                                            } else {
-                                                return (
-                                                    <td
-                                                        key={`${index}-${column}`}
-                                                        className='px-2 py-2'
-                                                    >
-                                                        <Input
-                                                            type='text'
-                                                            value={row[column] ?? ''}
-                                                            onChange={(e) =>
-                                                                handleCellChange(
-                                                                    index,
-                                                                    column,
-                                                                    e.target.value,
-                                                                )
-                                                            }
-                                                            className='w-full'
-                                                            minLength={colDef.minLength}
-                                                            maxLength={colDef.maxLength}
-                                                            pattern={colDef.pattern}
-                                                            placeholder={
-                                                                colDef.required
-                                                                    ? 'Required'
-                                                                    : ''
-                                                            }
-                                                        />
-                                                    </td>
-                                                );
-                                            }
-                                        })}
-                                    </tr>
+                                        {startCase(column)}
+                                        {columnDefinitions[column]?.required && (
+                                            <span className='text-destructive ml-1'>
+                                                *
+                                            </span>
+                                        )}
+                                    </th>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((row, index) => (
+                                <tr
+                                    key={index}
+                                    className='border-b border-border/50 hover:bg-secondary/20 transition-colors'
+                                >
+                                    {/* Actions cell with Delete and Save buttons */}
+                                    <td className='px-4 py-2 whitespace-nowrap'>
+                                        <div className='flex space-x-2'>
+                                            {index !== rows.length - 1 && (
+                                                <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    onClick={() =>
+                                                        handleDeleteRow(index)
+                                                    }
+                                                    className='text-destructive hover:text-destructive/80'
+                                                >
+                                                    Delete
+                                                </Button>
+                                            )}
+                                            {row.edited && (
+                                                <Button
+                                                    variant='ghost'
+                                                    size='sm'
+                                                    onClick={() => handleSaveRow(index)}
+                                                    className='text-primary hover:text-primary/80'
+                                                >
+                                                    Save
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </td>
+                                    {allColumns.map((column) => {
+                                        const colDef = columnDefinitions[column];
+                                        const colType = colDef?.type;
+
+                                        if (colType === 'options') {
+                                            return (
+                                                <td
+                                                    key={`${index}-${column}`}
+                                                    className='px-2 py-2'
+                                                >
+                                                    <Input
+                                                        value={row[column]?.label || ''}
+                                                        disabled={true}
+                                                        className='w-full'
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required...'
+                                                                : 'Select...'
+                                                        }
+                                                    />
+                                                </td>
+                                            );
+                                        } else if (colType === 'number') {
+                                            return (
+                                                <td
+                                                    key={`${index}-${column}`}
+                                                    className='px-2 py-2'
+                                                >
+                                                    <Input
+                                                        type='number'
+                                                        value={row[column] ?? ''}
+                                                        onChange={(e) =>
+                                                            handleCellChange(
+                                                                index,
+                                                                column,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className='w-full'
+                                                        min={colDef.min}
+                                                        max={colDef.max}
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required'
+                                                                : ''
+                                                        }
+                                                    />
+                                                </td>
+                                            );
+                                        } else {
+                                            return (
+                                                <td
+                                                    key={`${index}-${column}`}
+                                                    className='px-2 py-2'
+                                                >
+                                                    <Input
+                                                        type='text'
+                                                        value={row[column] ?? ''}
+                                                        onChange={(e) =>
+                                                            handleCellChange(
+                                                                index,
+                                                                column,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className='w-full'
+                                                        minLength={colDef.minLength}
+                                                        maxLength={colDef.maxLength}
+                                                        pattern={colDef.pattern}
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required'
+                                                                : ''
+                                                        }
+                                                    />
+                                                </td>
+                                            );
+                                        }
+                                    })}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Save All button at the bottom */}
+                <div className='flex justify-end mt-4'>
+                    <Button
+                        variant='default'
+                        onClick={handleSaveAll}
+                        disabled={!rows.some((row) => row.edited)}
+                    >
+                        Save All
+                    </Button>
                 </div>
             </div>
         </div>

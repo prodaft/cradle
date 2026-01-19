@@ -1,7 +1,7 @@
-import { createLoaderApis } from 'src/utils/apiLoader';
-import type { EntryResponse } from 'src/services/cradle/models';
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { lazy } from 'react';
+import type { EntryResponse } from 'src/services/cradle/models';
+import { createLoaderApis } from 'src/utils/apiLoader';
 import { z } from 'zod';
 
 const Dashboard = lazy(() => import('src/components/domain/dashboard/Dashboard'));

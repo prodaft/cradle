@@ -1,9 +1,9 @@
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useState } from 'react';
 import Loading from 'src/components/base/Loading/Loading';
 import { ScrollArea } from 'src/components/ui/scroll-area';
 import useApi from 'src/hooks/api/useApi';
 import { Notification } from 'src/services/cradle';
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useMemo, useState } from 'react';
 import NotificationCard from './NotificationCard';
 
 interface NotificationsPanelProps {

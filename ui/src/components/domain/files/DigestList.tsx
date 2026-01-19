@@ -7,7 +7,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -15,6 +14,7 @@ import TableActionsButton from '@components/base/TableActionsButton';
 import type { BaseDigest } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import {
     InfoCircleSolid,
     Trash,
@@ -450,7 +450,10 @@ function DigestList({
                 cell: ({ row }) => (
                     <div className='w-36'>
                         {row.original.createdAt
-                            ? formatDate(row.original.createdAt)
+                            ? format(
+                                  new Date(row.original.createdAt),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : 'N/A'}
                     </div>
                 ),

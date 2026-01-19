@@ -7,13 +7,13 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import type { OptimizedEntryResponse } from '@/services/cradle';
-import { capitalizeString, truncateText } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
+import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
 import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import {
     DesignNib,
     InfoCircleSolid,
@@ -25,6 +25,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
+import { startCase } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -668,9 +669,7 @@ export default function NotesList({
                                             </TooltipTrigger>
                                             <TooltipContent>
                                                 {row.original.statusMessage ||
-                                                    capitalizeString(
-                                                        row.original.status,
-                                                    )}
+                                                    startCase(row.original.status)}
                                             </TooltipContent>
                                         </Tooltip>
                                     )
@@ -758,8 +757,12 @@ export default function NotesList({
                 },
                 cell: ({ row }) => (
                     <div className='w-36'>
-                        {row.original.timestamp &&
-                            formatDate(new Date(row.original.timestamp))}
+                        {row.original.timestamp
+                            ? format(
+                                  new Date(row.original.timestamp),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
+                            : 'N/A'}
                     </div>
                 ),
             },
@@ -780,7 +783,10 @@ export default function NotesList({
                 cell: ({ row }) => (
                     <div className='w-36'>
                         {row.original.editTimestamp
-                            ? formatDate(new Date(row.original.editTimestamp))
+                            ? format(
+                                  new Date(row.original.editTimestamp),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : '-'}
                     </div>
                 ),

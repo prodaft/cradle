@@ -19,9 +19,9 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
-import { capitalizeString } from '@/utils/dashboard';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { startCase } from 'lodash';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -150,7 +150,6 @@ export default function EnrichmentSettingsForm({
     const {
         control,
         reset,
-        watch,
         formState: { errors, isSubmitting },
     } = form;
 
@@ -250,7 +249,7 @@ export default function EnrichmentSettingsForm({
                                 >
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                            {capitalizeString(key)}
+                                            {startCase(key)}
                                             {field.required && (
                                                 <span className='text-destructive ml-1'>
                                                     *
@@ -301,7 +300,7 @@ export default function EnrichmentSettingsForm({
                                     >
                                         <FieldContent className='flex-1'>
                                             <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                {capitalizeString(key)}
+                                                {startCase(key)}
                                                 {field.required && (
                                                     <span className='text-destructive ml-1'>
                                                         *
@@ -320,7 +319,6 @@ export default function EnrichmentSettingsForm({
                                                 onValueChange={controllerField.onChange}
                                             >
                                                 <SelectTrigger
-                                                    className='w-72'
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -329,7 +327,7 @@ export default function EnrichmentSettingsForm({
                                                     }
                                                 >
                                                     <SelectValue
-                                                        placeholder={`Select ${capitalizeString(key)}...`}
+                                                        placeholder={`Select ${startCase(key)}...`}
                                                     />
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -363,7 +361,7 @@ export default function EnrichmentSettingsForm({
                                             htmlFor={`settings.${key}`}
                                             className='text-sm text-muted-foreground block mb-0.5'
                                         >
-                                            {capitalizeString(key)}
+                                            {startCase(key)}
                                             {field.required && (
                                                 <span className='text-destructive ml-1'>
                                                     *
@@ -381,7 +379,7 @@ export default function EnrichmentSettingsForm({
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-auto'>
+                                    <div>
                                         <Input
                                             {...controllerField}
                                             id={`settings.${key}`}
@@ -418,7 +416,7 @@ export default function EnrichmentSettingsForm({
                                             htmlFor={`settings.${key}`}
                                             className='text-sm text-muted-foreground block mb-0.5'
                                         >
-                                            {capitalizeString(key)}
+                                            {startCase(key)}
                                             {field.required && (
                                                 <span className='text-destructive ml-1'>
                                                     *
@@ -436,7 +434,7 @@ export default function EnrichmentSettingsForm({
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-auto'>
+                                    <div>
                                         <Input
                                             {...controllerField}
                                             id={`settings.${key}`}
@@ -485,7 +483,7 @@ export default function EnrichmentSettingsForm({
     return (
         <div className='w-full h-full'>
             {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
+            <div className='flex items-end gap-2 px-4 pt-4 pb-4'>
                 <div>
                     <h2 className='text-2xl font-bold tracking-tight'>
                         {displayName} Settings
@@ -497,183 +495,160 @@ export default function EnrichmentSettingsForm({
             </div>
 
             {/* Content Area */}
-            <div className='p-5'>
-                <div className='w-full'>
-                    {' '}
-                    {/* Removed max-w-4xl here */}
-                    <form onSubmit={form.handleSubmit(onSubmit)}>
-                        {/* General Section */}
-                        <section id='general' className='pb-8'>
+            <div className='px-4 pb-4'>
+                <form onSubmit={form.handleSubmit(onSubmit)}>
+                    {/* General Section */}
+                    <section id='general' className='pb-8'>
+                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
+                            General Information
+                        </h2>
+                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
+                            Core configuration for this enrichment
+                        </p>
+
+                        <div className='space-y-4'>
+                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                                <CardContent className='px-4 py-1'>
+                                    <Controller
+                                        name='enabled'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='enabled'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Enabled
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Enable or disable this
+                                                        enrichment source
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <Switch
+                                                    id='enabled'
+                                                    name={field.name}
+                                                    checked={field.value ?? false}
+                                                    onCheckedChange={field.onChange}
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-describedby={
+                                                        fieldState.invalid
+                                                            ? 'enabled-error'
+                                                            : undefined
+                                                    }
+                                                />
+                                            </Field>
+                                        )}
+                                    />
+
+                                    <Separator />
+
+                                    <Controller
+                                        name='for_eclasses'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                        Entry Classes
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Entry classes to apply this
+                                                        enrichment to
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <div className='flex-1'>
+                                                    <MultipleSelector
+                                                        value={
+                                                            (field.value?.map((e) => ({
+                                                                value: e.value,
+                                                                label: e.label,
+                                                            })) || []) as Option[]
+                                                        }
+                                                        defaultOptions={[]}
+                                                        placeholder='Select entry classes...'
+                                                        onSearch={async (query) => {
+                                                            const results =
+                                                                await fetchEntryClasses(
+                                                                    query,
+                                                                );
+                                                            return results.map((e) => ({
+                                                                value: e.value,
+                                                                label: e.label,
+                                                            })) as unknown as Option[];
+                                                        }}
+                                                        onChange={(options) => {
+                                                            field.onChange(
+                                                                options.map((o) => ({
+                                                                    value: o.value,
+                                                                    label: o.label,
+                                                                })),
+                                                            );
+                                                        }}
+                                                        emptyIndicator={
+                                                            <p className='text-center text-sm'>
+                                                                No entry classes found
+                                                            </p>
+                                                        }
+                                                    />
+                                                </div>
+                                            </Field>
+                                        )}
+                                    />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </section>
+
+                    {/* Settings Section */}
+                    {Object.keys(formFields).length > 0 && (
+                        <section
+                            id='settings'
+                            className='border-t border-white/5 pt-5 pb-8'
+                        >
                             <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                General Information
+                                Enrichment Parameters
                             </h2>
                             <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                Core configuration for this enrichment
+                                Specific settings for the enrichment provider
                             </p>
 
                             <div className='space-y-4'>
                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                     <CardContent className='px-4 py-1'>
-                                        <Controller
-                                            name='enabled'
-                                            control={control}
-                                            render={({ field, fieldState }) => (
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='py-2'
-                                                    data-invalid={fieldState.invalid}
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel
-                                                            htmlFor='enabled'
-                                                            className='text-sm text-muted-foreground block mb-0.5'
-                                                        >
-                                                            Enabled
-                                                        </FieldLabel>
-                                                        <FieldDescription className='text-sm'>
-                                                            Enable or disable this
-                                                            enrichment source
-                                                        </FieldDescription>
-                                                        {fieldState.invalid && (
-                                                            <FieldError className='text-sm mt-1'>
-                                                                {
-                                                                    fieldState.error
-                                                                        ?.message
-                                                                }
-                                                            </FieldError>
-                                                        )}
-                                                    </FieldContent>
-                                                    <Switch
-                                                        id='enabled'
-                                                        name={field.name}
-                                                        checked={field.value ?? false}
-                                                        onCheckedChange={field.onChange}
-                                                        aria-invalid={
-                                                            fieldState.invalid
-                                                        }
-                                                        aria-describedby={
-                                                            fieldState.invalid
-                                                                ? 'enabled-error'
-                                                                : undefined
-                                                        }
-                                                    />
-                                                </Field>
-                                            )}
-                                        />
-
-                                        <Separator />
-
-                                        <Controller
-                                            name='for_eclasses'
-                                            control={control}
-                                            render={({ field, fieldState }) => (
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='py-2'
-                                                    data-invalid={fieldState.invalid}
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                            Entry Classes
-                                                        </FieldLabel>
-                                                        <FieldDescription className='text-sm'>
-                                                            Entry classes to apply this
-                                                            enrichment to
-                                                        </FieldDescription>
-                                                        {fieldState.invalid && (
-                                                            <FieldError className='text-sm mt-1'>
-                                                                {
-                                                                    fieldState.error
-                                                                        ?.message
-                                                                }
-                                                            </FieldError>
-                                                        )}
-                                                    </FieldContent>
-                                                    <div className='w-auto flex-1'>
-                                                        <MultipleSelector
-                                                            value={
-                                                                (field.value?.map(
-                                                                    (e) => ({
-                                                                        value: e.value,
-                                                                        label: e.label,
-                                                                    }),
-                                                                ) || []) as Option[]
-                                                            }
-                                                            defaultOptions={[]}
-                                                            placeholder='Select entry classes...'
-                                                            onSearch={async (query) => {
-                                                                const results =
-                                                                    await fetchEntryClasses(
-                                                                        query,
-                                                                    );
-                                                                return results.map(
-                                                                    (e) => ({
-                                                                        value: e.value,
-                                                                        label: e.label,
-                                                                    }),
-                                                                ) as unknown as Option[];
-                                                            }}
-                                                            onChange={(options) => {
-                                                                field.onChange(
-                                                                    options.map(
-                                                                        (o) => ({
-                                                                            value: o.value,
-                                                                            label: o.label,
-                                                                        }),
-                                                                    ),
-                                                                );
-                                                            }}
-                                                            emptyIndicator={
-                                                                <p className='text-center text-sm'>
-                                                                    No entry classes
-                                                                    found
-                                                                </p>
-                                                            }
-                                                        />
-                                                    </div>
-                                                </Field>
-                                            )}
-                                        />
+                                        {renderSettingsFields()}
                                     </CardContent>
                                 </Card>
                             </div>
                         </section>
+                    )}
 
-                        {/* Settings Section */}
-                        {Object.keys(formFields).length > 0 && (
-                            <section
-                                id='settings'
-                                className='border-t border-white/5 pt-5 pb-8'
-                            >
-                                <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                                    Enrichment Parameters
-                                </h2>
-                                <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                                    Specific settings for the enrichment provider
-                                </p>
-
-                                <div className='space-y-4'>
-                                    <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
-                                        <CardContent className='px-4 py-1'>
-                                            {renderSettingsFields()}
-                                        </CardContent>
-                                    </Card>
-                                </div>
-                            </section>
-                        )}
-
-                        {/* Save Button */}
-                        <div className='pt-2 flex justify-end'>
-                            <Button
-                                type='submit'
-                                variant='default'
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                        </div>
-                    </form>
-                </div>
+                    {/* Save Button */}
+                    <div className='pt-2 flex justify-end'>
+                        <Button type='submit' variant='default' disabled={isSubmitting}>
+                            {isSubmitting ? 'Saving...' : 'Save Changes'}
+                        </Button>
+                    </div>
+                </form>
             </div>
         </div>
     );

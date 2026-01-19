@@ -4,8 +4,8 @@
 // NOTE: When possible, use generated types from @services/cradle/models instead of defining custom types.
 // Generated types are automatically synced with the backend API and include type guards and serialization.
 
-import type { FileReferenceWithNote } from 'src/services/cradle/models';
 import type React from 'react';
+import type { FileReferenceWithNote } from 'src/services/cradle/models';
 
 // Re-export generated models for domain types
 export type {

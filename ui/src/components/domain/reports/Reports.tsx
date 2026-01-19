@@ -7,8 +7,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { ReportList } from '@/services/cradle';
-import { capitalizeString, truncateText } from '@/utils/dashboard';
-import { formatDate } from '@/utils/dates';
+import { truncateText } from '@/utils/dashboard';
 import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import PageHeader from '@components/base/PageHeader';
@@ -17,6 +16,7 @@ import TableActionsButton from '@components/base/TableActionsButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import {
     Download,
     Edit,
@@ -27,6 +27,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
+import { startCase } from 'lodash';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -475,7 +476,7 @@ export default function Reports() {
             }
         })();
 
-        const tooltipContent = errorMessage || capitalizeString(status);
+        const tooltipContent = errorMessage || startCase(status);
         const tooltipColorClass =
             status === 'error'
                 ? 'bg-destructive text-destructive-foreground'
@@ -487,7 +488,7 @@ export default function Reports() {
             return (
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <span className='inline-flex items-center align-middle flex-shrink-0'>
+                        <span className='inline-flex items-center flex-shrink-0'>
                             {icon}
                         </span>
                     </TooltipTrigger>
@@ -501,7 +502,7 @@ export default function Reports() {
         return (
             <Tooltip>
                 <TooltipTrigger asChild>
-                    <span className='inline-flex items-center align-middle flex-shrink-0'>
+                    <span className='inline-flex items-center flex-shrink-0'>
                         {icon}
                     </span>
                 </TooltipTrigger>
@@ -586,7 +587,7 @@ export default function Reports() {
                 ),
                 cell: ({ row }) => (
                     <div className='text-foreground'>
-                        {capitalizeString(row.original.strategy || 'N/A')}
+                        {startCase(row.original.strategy || 'N/A')}
                     </div>
                 ),
             },
@@ -618,7 +619,12 @@ export default function Reports() {
                 },
                 cell: ({ row }) => (
                     <div className='text-foreground'>
-                        {formatDate(new Date(row.original.createdAt || ''))}
+                        {row.original.createdAt
+                            ? format(
+                                  new Date(row.original.createdAt),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
+                            : 'N/A'}
                     </div>
                 ),
             },
@@ -664,10 +670,7 @@ export default function Reports() {
                     };
 
                     return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
+                        <div className='w-12' onClick={(e) => e.stopPropagation()}>
                             <div className='flex justify-end'>
                                 <TableActionsButton>
                                     {report.status === 'done' && (
@@ -706,10 +709,8 @@ export default function Reports() {
         ],
         [
             columnFilters,
-            handleStatusChange,
             getStatusIcon,
             fetchReportMutation,
-            reportsApi,
             router,
             deleteMutation,
             retryMutation,
@@ -726,7 +727,7 @@ export default function Reports() {
             <PageHeader title='Reports' description='Manage & View Your Reports' />
 
             {/* Content Area */}
-            <div className='flex flex-col space-y-4 p-4'>
+            <div className='flex flex-col space-y-4 px-4 pb-4'>
                 <ActionBar
                     left={
                         <>

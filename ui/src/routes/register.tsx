@@ -1,6 +1,6 @@
-import { createLoaderApis } from 'src/utils/apiLoader';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { lazy } from 'react';
+import { createLoaderApis } from 'src/utils/apiLoader';
 
 const Register = lazy(() => import('src/components/domain/auth/Register'));
 

@@ -12,6 +12,7 @@ import { UserSession } from '@/services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
+import { format } from 'date-fns';
 import { Trash } from 'iconoir-react/regular';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -171,7 +172,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const formatDate = useCallback((date: Date | string | undefined): string => {
         if (!date) return '';
         const dateObj = date instanceof Date ? date : new Date(date);
-        return dateObj.toLocaleString();
+        return format(dateObj, 'dd/MM/yyyy, HH:mm');
     }, []);
 
     const formatDeviceInfo = useCallback((deviceInfo: string | null): string => {

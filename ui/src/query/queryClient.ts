@@ -3,8 +3,6 @@
  * All cross-cutting behavior lives here: toasts, session-expired, invalidation
  */
 
-import { SessionExpiredException } from 'src/exceptions/AuthExceptions';
-import { handleAPIError, parseAPIError } from 'src/utils/api';
 import {
     MutationCache,
     QueryCache,
@@ -12,6 +10,8 @@ import {
     QueryKey,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { SessionExpiredException } from 'src/exceptions/AuthExceptions';
+import { handleAPIError, parseAPIError } from 'src/utils/api';
 
 export type InvalidateTarget = { queryKey: QueryKey };
 
