@@ -1,218 +1,206 @@
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import useApi from '@/hooks/api/useApi';
-import { useAuthActions } from '@/hooks/auth/useAuth';
-import { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
+import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
-import { useRouter } from '@tanstack/react-router';
-import { Search, Xmark } from 'iconoir-react';
+import { Search } from 'iconoir-react';
 import { useEffect, useState } from 'react';
-import AdminPanelPermissionCard from './cards/AdminPanelPermissionCard';
 
 interface AdminPanelUserPermissionsProps {
-    username: string;
     id: string;
 }
 
-/**
- * AdminPanelUserPermissions component - Displays and manages permissions for a specific user
- */
+interface PermissionEntity {
+    id: number;
+    name: string;
+    description?: string;
+    accessType: 'none' | 'read' | 'read-write';
+}
+
+const ACCESS_OPTIONS = [
+    { value: 'none', label: 'None' },
+    { value: 'read', label: 'Read' },
+    { value: 'read-write', label: 'Read-Write' },
+];
+
+function PermissionRow({
+    entity,
+    userId,
+}: {
+    entity: PermissionEntity;
+    userId: string;
+}) {
+    const [currentAccess, setCurrentAccess] = useState(entity.accessType);
+    const { accessApi } = useApi();
+
+    const updateAccessMutation = useMutation({
+        mutationFn: async (accessType: AccessRequestAccessTypeEnum) => {
+            await accessApi.accessUserUpdate({
+                userId: userId,
+                entityId: entity.id,
+                accessRequest: { accessType },
+            });
+        },
+        meta: {
+            successMessage: 'Access updated successfully',
+        },
+        onSuccess: (_, accessType) => {
+            setCurrentAccess(accessType as PermissionEntity['accessType']);
+        },
+    });
+
+    const handleChange = (newAccess: string) => {
+        if (currentAccess !== newAccess) {
+            updateAccessMutation.mutate(newAccess as AccessRequestAccessTypeEnum);
+        }
+    };
+
+    return (
+        <TableRow>
+            <TableCell className='text-muted-foreground'>{entity.id}</TableCell>
+            <TableCell className='font-medium'>{entity.name}</TableCell>
+            <TableCell className='text-muted-foreground text-sm'>
+                {entity.description || '-'}
+            </TableCell>
+            <TableCell>
+                <Select
+                    value={currentAccess}
+                    onValueChange={handleChange}
+                    disabled={updateAccessMutation.isPending}
+                >
+                    <SelectTrigger className='w-[140px]'>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {ACCESS_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </TableCell>
+        </TableRow>
+    );
+}
+
 export default function AdminPanelUserPermissions({
-    username,
     id,
 }: AdminPanelUserPermissionsProps) {
-    const [entities, setEntities] = useState<SearchableChild[]>([]);
+    const [entities, setEntities] = useState<PermissionEntity[]>([]);
     const [searchVal, setSearchVal] = useState('');
-    const { accessApi, usersApi } = useApi();
-    const router = useRouter();
-    const { setTokensDirectly } = useAuthActions();
-
-    const simulateSessionMutation = useMutation({
-        mutationFn: async () => {
-            return await usersApi.usersManageRetrieve({
-                userId: String(id),
-                actionName: 'simulate',
-            });
-        },
-        meta: {
-            errorMessage: 'Failed to simulate session',
-        },
-        onSuccess: (res) => {
-            setTokensDirectly(res as any);
-            router.navigate({ to: '/', replace: true });
-        },
-    });
-
-    const sendEmailConfirmationMutation = useMutation({
-        mutationFn: async () => {
-            await usersApi.usersManageRetrieve({
-                userId: String(id),
-                actionName: 'send_email_confirmation',
-            });
-        },
-        meta: {
-            successMessage: 'Email confirmation sent successfully',
-        },
-    });
-
-    const sendPasswordResetEmailMutation = useMutation({
-        mutationFn: async () => {
-            await usersApi.usersManageRetrieve({
-                userId: String(id),
-                actionName: 'password_reset_email',
-            });
-        },
-        meta: {
-            successMessage: 'Password reset email sent successfully',
-        },
-    });
-
-    const fetchPermissionsMutation = useMutation({
-        mutationFn: async () => {
-            return await accessApi.accessUserList({ userId: String(id) });
-        },
-        meta: {
-            errorMessage: 'Failed to load user permissions',
-        },
-    });
-
-    const simulateSession = () => {
-        simulateSessionMutation.mutate();
-    };
-
-    const sendEmailConfirmation = () => {
-        sendEmailConfirmationMutation.mutate();
-    };
-
-    const sendPasswordResetEmail = () => {
-        sendPasswordResetEmailMutation.mutate();
-    };
+    const [isLoading, setIsLoading] = useState(true);
+    const { accessApi } = useApi();
 
     useEffect(() => {
         const fetchPermissions = async () => {
+            setIsLoading(true);
             try {
-                const permissions = await fetchPermissionsMutation.mutateAsync();
+                const permissions = await accessApi.accessUserList({
+                    userId: String(id),
+                });
                 setEntities(
-                    permissions
-                        .map((c) => {
-                            return (
-                                <AdminPanelPermissionCard
-                                    key={c.name}
-                                    userId={String(id)}
-                                    text={c.name}
-                                    entityId={c.id}
-                                    searchKey={`${c.name || ''} ${(c as { description?: string }).description || ''}`.trim()}
-                                    accessLevel={
-                                        (c.accessType ?? 'none') as
-                                            | 'none'
-                                            | 'read'
-                                            | 'read-write'
-                                    }
-                                />
-                            );
-                        })
-                        .sort((a, b) => {
-                            const aKey = a.key?.toString() || '';
-                            const bKey = b.key?.toString() || '';
-                            return naturalSort(aKey, bKey);
-                        }),
+                    permissions.map((c) => ({
+                        id: c.id,
+                        name: c.name,
+                        description: (c as { description?: string }).description,
+                        accessType: (c.accessType ?? 'none') as PermissionEntity['accessType'],
+                    })),
                 );
             } catch (error) {
-                // Error already handled
                 setEntities([]);
+            } finally {
+                setIsLoading(false);
             }
         };
 
-        fetchPermissions();
-    }, [id, accessApi, fetchPermissionsMutation]);
+        if (id) {
+            fetchPermissions();
+        }
+    }, [id]);
 
     // Filter entities based on search
-    const filteredEntities = entities.filter((entity) => {
-        const searchKey = (entity.props?.searchKey || '').toLowerCase();
-        return searchKey.includes(searchVal.toLowerCase());
-    });
+    const filteredEntities = entities
+        .filter((entity) => {
+            const searchKey =
+                `${entity.name || ''} ${entity.description || ''}`.toLowerCase();
+            return searchKey.includes(searchVal.toLowerCase());
+        })
+        .sort((a, b) => naturalSort(a.name || '', b.name || ''));
+
+    if (isLoading) {
+        return (
+            <div className='flex items-center justify-center min-h-[200px]'>
+                <Spinner className='size-8' />
+            </div>
+        );
+    }
 
     return (
-        <div className='w-full h-full'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>
-                        User Permissions: {username}
-                    </h2>
-                    <p className='text-muted-foreground'>
-                        Manage entity access and user actions
-                    </p>
-                </div>
+        <div className='space-y-4'>
+            {/* Search */}
+            <div className='relative'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
+                <Input
+                    type='text'
+                    placeholder='Search entities...'
+                    className='pl-9'
+                    onChange={(e) => setSearchVal(e.target.value)}
+                    value={searchVal}
+                />
             </div>
 
-            {/* Content Area */}
-            <div className='p-5'>
-                <div className='w-full'>
-                    {/* Permissions Section */}
-                    <section id='permissions'>
-                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                            Entity Permissions
-                        </h2>
-                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                            Configure access levels for each entity
-                        </p>
-
-                        {/* Search Bar */}
-                        <div className='mb-4'>
-                            <div className='flex items-center gap-2 bg-card border border-border h-10 px-2 rounded-full'>
-                                <Button
-                                    variant='ghost'
-                                    size='icon-sm'
-                                    className='p-1 flex-shrink-0 text-muted-foreground hover:text-foreground'
-                                    title='Search'
-                                >
-                                    <Search className='w-4 h-4' />
-                                </Button>
-                                <Input
-                                    type='text'
-                                    placeholder='Search entities'
-                                    className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
-                                    onChange={(e) => setSearchVal(e.target.value)}
-                                    value={searchVal}
-                                />
-                                {searchVal && (
-                                    <Button
-                                        variant='ghost'
-                                        size='icon-sm'
-                                        onClick={() => setSearchVal('')}
-                                        className='p-1 flex-shrink-0 text-muted-foreground hover:text-foreground'
-                                        title='Clear search'
-                                    >
-                                        <Xmark className='w-4 h-4' />
-                                    </Button>
-                                )}
-                            </div>
+            {/* Permissions Table */}
+            <Card className='rounded-lg border-border bg-muted/5'>
+                <CardContent className='p-0'>
+                    {filteredEntities.length > 0 ? (
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className='w-[60px]'>ID</TableHead>
+                                    <TableHead className='w-[200px]'>Entity</TableHead>
+                                    <TableHead>Description</TableHead>
+                                    <TableHead className='w-[160px]'>Access</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredEntities.map((entity) => (
+                                    <PermissionRow
+                                        key={entity.id}
+                                        entity={entity}
+                                        userId={id}
+                                    />
+                                ))}
+                            </TableBody>
+                        </Table>
+                    ) : (
+                        <div className='text-center py-8'>
+                            <p className='text-sm text-muted-foreground'>
+                                {searchVal
+                                    ? 'No entities found matching your search'
+                                    : 'No entities available'}
+                            </p>
                         </div>
-
-                        {/* Permissions List */}
-                        <ScrollArea className='space-y-2 max-h-[60vh]'>
-                            {filteredEntities.length > 0 ? (
-                                filteredEntities.sort((a, b) => {
-                                    const aKey = a.key?.toString() || '';
-                                    const bKey = b.key?.toString() || '';
-                                    return naturalSort(aKey, bKey);
-                                })
-                            ) : (
-                                <div className='text-center py-8'>
-                                    <p className='text-sm text-muted-foreground'>
-                                        {searchVal
-                                            ? 'No entities found matching your search'
-                                            : 'No entities available'}
-                                    </p>
-                                </div>
-                            )}
-                        </ScrollArea>
-                    </section>
-                </div>
-            </div>
+                    )}
+                </CardContent>
+            </Card>
         </div>
     );
 }

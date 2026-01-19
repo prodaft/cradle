@@ -77,19 +77,21 @@ export default function NotificationsPanel({
             data-testid='notifications-panel'
         >
             {/* Notifications list */}
-            <ScrollArea className='flex-1 overflow-x-hidden p-3 space-y-2'>
+            <ScrollArea className='flex-1 overflow-x-hidden'>
                 {notifications && notifications.length > 0 ? (
-                    notifications.map((notification, index) => (
-                        <NotificationCard
-                            key={notification.id || index}
-                            notification={notification}
-                            updateFlaggedNotificationsCount={
-                                updateFlaggedNotificationsCount
-                            }
-                        />
-                    ))
+                    <div className='flex flex-col gap-3 p-3'>
+                        {notifications.map((notification, index) => (
+                            <NotificationCard
+                                key={notification.id || index}
+                                notification={notification}
+                                updateFlaggedNotificationsCount={
+                                    updateFlaggedNotificationsCount
+                                }
+                            />
+                        ))}
+                    </div>
                 ) : (
-                    <div className='flex flex-col items-center justify-center h-full text-muted-foreground'>
+                    <div className='flex flex-col items-center justify-center h-full p-3 text-muted-foreground'>
                         {!loading && <span className='text-sm'>No notifications</span>}
                         {loading && <Loading />}
                     </div>

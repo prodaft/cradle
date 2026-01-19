@@ -271,7 +271,7 @@ export default function FileSettingsForm() {
             <div className='w-full'>
                 <form onSubmit={handleFormSubmit(onSubmit as any)}>
                     {/* Processing Section */}
-                    <section id='processing' className='pb-8'>
+                    <section id='processing'>
                         <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                             Processing
                         </h2>

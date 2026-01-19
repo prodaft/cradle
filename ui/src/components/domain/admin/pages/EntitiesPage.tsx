@@ -73,6 +73,7 @@ export default function EntitiesPage() {
 
     const handleActivityClick = (entity: EntityData, e: React.MouseEvent) => {
         e.stopPropagation();
+        router.navigate({ to: `/manage/entities/${entity.id}` as any });
     };
 
     // Delete mutation

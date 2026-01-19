@@ -6,7 +6,7 @@ import {
 import { EdgeRelation } from '@/services/cradle';
 import { logger } from '@/utils/logger';
 import { CosmographProvider } from '@cosmograph/react';
-import { ComponentType, useMemo, useRef, useState } from 'react';
+import { ComponentType, useCallback, useMemo, useRef, useState } from 'react';
 import Graph from './Graph';
 import { filterGraph, Node } from './graphFilterUtils';
 import GraphQuery from './GraphQuery';
@@ -28,9 +28,23 @@ interface GraphConfig {
     randomSeed?: string | number;
 }
 
+interface FetchProgress {
+    currentPage: number;
+    totalPages: number;
+    isPaused: boolean;
+}
+
+interface FetchControls {
+    pause: () => void;
+    resume: () => void;
+}
+
 interface SearchComponentProps {
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
+    onLoadingChange?: (isLoading: boolean) => void;
+    onFetchProgressChange?: (progress: FetchProgress | null) => void;
+    onFetchControlsReady?: (controls: FetchControls) => void;
 }
 
 interface GraphExplorerProps {
@@ -64,7 +78,22 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     const [activePanel, setActivePanel] = useState<
         'explorer' | 'display' | 'filters' | null
     >('explorer');
+    const [isLoading, setIsLoading] = useState(true);
+    const [fetchProgress, setFetchProgress] = useState<FetchProgress | null>(null);
+    const [fetchControls, setFetchControls] = useState<FetchControls | null>(null);
     const cosmographRef = useRef<any>(null);
+
+    const handleLoadingChange = useCallback((loading: boolean) => {
+        setIsLoading(loading);
+    }, []);
+
+    const handleFetchProgressChange = useCallback((progress: FetchProgress | null) => {
+        setFetchProgress(progress);
+    }, []);
+
+    const handleFetchControlsReady = useCallback((controls: FetchControls) => {
+        setFetchControls(controls);
+    }, []);
 
     // Maintain sets for tracking existing IDs
     const [nodeIds, setNodeIds] = useState<Set<string>>(new Set());
@@ -231,6 +260,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                                     }
                                     onClosePanel={() => setActivePanel(null)}
                                     cosmographRef={cosmographRef}
+                                    onLoadingChange={handleLoadingChange}
+                                    onFetchProgressChange={handleFetchProgressChange}
+                                    onFetchControlsReady={handleFetchControlsReady}
                                 />
                             </ResizablePanel>
                             <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
@@ -256,6 +288,9 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
                                     setActivePanel(activePanel === panel ? null : panel)
                                 }
                                 cosmographRef={cosmographRef}
+                                isLoading={isLoading}
+                                fetchProgress={fetchProgress}
+                                fetchControls={fetchControls}
                             />
                         </div>
                     </ResizablePanel>

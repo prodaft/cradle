@@ -110,7 +110,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             <div className='w-full'>
                 <form onSubmit={handleSubmit(onSubmit as any)}>
                     {/* Registration Section */}
-                    <section id='registration' className='pb-8'>
+                    <section id='registration'>
                         <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                             Registration
                         </h2>

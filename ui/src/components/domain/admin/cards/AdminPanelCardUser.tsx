@@ -39,11 +39,7 @@ export default function AdminPanelCardUser({
 
     const handlePermissionsClick = () => {
         setRightPane(
-            <AdminPanelUserPermissions
-                username={name}
-                id={String(id)}
-                key={String(id)}
-            />,
+            <AdminPanelUserPermissions id={String(id)} key={String(id)} />,
         );
     };
 

@@ -4,6 +4,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.pagination import TotalPagesPagination
 from user.permissions import HasAdminRole
 
 from .filters import EventLogFilter
@@ -13,7 +14,7 @@ from .serializers import EventLogSerializer  # Create this serializer in step 3
 
 @extend_schema(
     summary="List event logs",
-    description="Returns a filtered list of event logs. Only available to admin users.",
+    description="Returns a paginated and filtered list of event logs. Only available to admin users.",
     responses={
         200: EventLogSerializer,
         401: {"description": "User is not authenticated"},
@@ -21,10 +22,11 @@ from .serializers import EventLogSerializer  # Create this serializer in step 3
     },
 )
 class EventLogListView(ListAPIView):
-    queryset = EventLog.objects.all()
+    queryset = EventLog.objects.all().order_by('-timestamp')
     serializer_class = EventLogSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = EventLogFilter
+    pagination_class = TotalPagesPagination
 
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated, HasAdminRole]

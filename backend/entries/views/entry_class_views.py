@@ -216,7 +216,7 @@ class EntryClassDetail(APIView):
 
         entity_class.rename(None, request.user.id)
 
-        return Response("Requested entry class was deleted", status=status.HTTP_200_OK)
+        return Response({"message": "Requested entry class was deleted"}, status=status.HTTP_200_OK)
 
     def post(self, request: Request, class_subtype: str) -> Response:
         if class_subtype in settings.INTERNAL_SUBTYPES:

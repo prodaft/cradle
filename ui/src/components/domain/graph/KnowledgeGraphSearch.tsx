@@ -19,16 +19,28 @@ interface Alert {
     color: string;
 }
 
+interface FetchProgress {
+    currentPage: number;
+    totalPages: number;
+    isPaused: boolean;
+}
+
 interface KnowledgeGraphSearchProps {
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
+    onLoadingChange?: (isLoading: boolean) => void;
+    onFetchProgressChange?: (progress: FetchProgress | null) => void;
+    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
 }
 
 export default function KnowledgeGraphSearch({
     addEdges,
     addNodes,
     addBoth,
+    onLoadingChange,
+    onFetchProgressChange,
+    onFetchControlsReady,
 }: KnowledgeGraphSearchProps) {
     const [isGraphFetching, setIsGraphFetching] = useState(false);
     const [alert, setAlert] = useState<Alert>({
@@ -39,6 +51,8 @@ export default function KnowledgeGraphSearch({
     const { knowledgeGraphApi } = useApi();
     const router = useRouter();
     const hasFetchedRef = useRef(false);
+    const isPausedRef = useRef(false);
+    const resumeResolverRef = useRef<(() => void) | null>(null);
     const pageSize = 100;
 
     const fetchGraphPage = async (
@@ -130,6 +144,32 @@ export default function KnowledgeGraphSearch({
         },
     });
 
+    const isLoading = loading || isGraphFetching;
+    useEffect(() => {
+        onLoadingChange?.(isLoading);
+    }, [isLoading, onLoadingChange]);
+
+    useEffect(() => {
+        const controls = {
+            pause: () => {
+                isPausedRef.current = true;
+                onFetchProgressChange?.({
+                    currentPage: 0,
+                    totalPages: 0,
+                    isPaused: true,
+                });
+            },
+            resume: () => {
+                isPausedRef.current = false;
+                if (resumeResolverRef.current) {
+                    resumeResolverRef.current();
+                    resumeResolverRef.current = null;
+                }
+            },
+        };
+        onFetchControlsReady?.(controls);
+    }, [onFetchControlsReady, onFetchProgressChange]);
+
     // Fetch remaining pages when first page loads
     useEffect(() => {
         if (!firstPageData || hasFetchedRef.current) return;
@@ -150,7 +190,27 @@ export default function KnowledgeGraphSearch({
         // Fetch remaining pages incrementally
         const fetchRemainingPages = async () => {
             try {
-                for (let page = 2; page <= firstPageData.totalPages; page++) {
+                const totalPages = firstPageData.totalPages;
+                
+                for (let page = 2; page <= totalPages; page++) {
+                    // Check if paused, wait for resume
+                    if (isPausedRef.current) {
+                        onFetchProgressChange?.({
+                            currentPage: page - 1,
+                            totalPages,
+                            isPaused: true,
+                        });
+                        await new Promise<void>((resolve) => {
+                            resumeResolverRef.current = resolve;
+                        });
+                    }
+
+                    onFetchProgressChange?.({
+                        currentPage: page,
+                        totalPages,
+                        isPaused: false,
+                    });
+
                     const pageData = await fetchGraphPage(page);
 
                     if (pageData.nodes.length > 0 || pageData.edges.length > 0) {
@@ -162,6 +222,8 @@ export default function KnowledgeGraphSearch({
                         }
                     }
                 }
+
+                onFetchProgressChange?.(null);
 
                 // If no data was processed
                 if (
@@ -188,6 +250,7 @@ export default function KnowledgeGraphSearch({
                         parsed.detail || 'An error occurred while loading the graph.',
                     color: 'red',
                 });
+                onFetchProgressChange?.(null);
             } finally {
                 setIsGraphFetching(false);
             }

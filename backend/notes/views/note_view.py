@@ -465,7 +465,7 @@ class NoteDetail(APIView):
 
         refresh_edges_materialized_view.apply_async()
 
-        return Response("Note was deleted.", status=status.HTTP_200_OK)
+        return Response({"message": "Note was deleted."}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(

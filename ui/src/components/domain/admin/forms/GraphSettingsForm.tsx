@@ -63,7 +63,7 @@ export default function GraphSettingsForm() {
         <div className='w-full h-full'>
             <div className='w-full'>
                 {/* Actions Section */}
-                <section id='actions' className='pb-8'>
+                <section id='actions'>
                     <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                         Actions
                     </h2>

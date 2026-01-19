@@ -258,7 +258,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     return (
         <form onSubmit={handleFormSubmit(onSubmit as any)}>
             {/* Basic Section */}
-            <section id='basic' className='pb-8'>
+            <section id='basic'>
                 <div className='space-y-4'>
                     <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                         <CardContent className='px-4 py-1'>

@@ -498,7 +498,7 @@ export default function EnrichmentSettingsForm({
             <div className='px-4 pb-4'>
                 <form onSubmit={form.handleSubmit(onSubmit)}>
                     {/* General Section */}
-                    <section id='general' className='pb-8'>
+                    <section id='general'>
                         <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                             General Information
                         </h2>

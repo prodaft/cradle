@@ -286,7 +286,7 @@ class UserDetail(APIView):
             raise DisallowedActionException(detail="You are not allowed to delete this user.")
 
         removed_user.delete()
-        return Response("Requested user account was deleted.", status=status.HTTP_200_OK)
+        return Response({"message": "Requested user account was deleted."}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -508,7 +508,7 @@ class EmailConfirm(APIView):
         user.email_confirmation_token = ""
         user.save()
 
-        return Response("Email confirmed.", status=status.HTTP_200_OK)
+        return Response({"message": "Email confirmed."}, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(
@@ -552,7 +552,7 @@ class PasswordReset(APIView):
             user = user_qs[0]
             user.send_password_reset()
 
-        return Response("Password reset email sent.", status=status.HTTP_200_OK)
+        return Response({"message": "Password reset email sent."}, status=status.HTTP_200_OK)
 
     def put(self, request):
         from core.exceptions import ValidationException
@@ -575,7 +575,7 @@ class PasswordReset(APIView):
             user.set_password(password)
             user.save()
 
-            return Response("Password reset successfully.", status=status.HTTP_200_OK)
+            return Response({"message": "Password reset successfully."}, status=status.HTTP_200_OK)
 
         raise ValidationException(detail="Token not found!")
 

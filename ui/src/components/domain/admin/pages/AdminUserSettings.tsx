@@ -35,6 +35,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import ActiveSessions from '../../user/ActiveSessions';
+import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
+import UserActivityList from '../UserActivityList';
 
 interface AdminUserSettingsProps {
     userId: string;
@@ -327,7 +329,7 @@ export default function AdminUserSettings({
             <form onSubmit={(e) => e.preventDefault()}>
                 {/* Account Section - Basic Information First */}
                 {showSection('account') && (
-                    <section id='account' className='pb-8'>
+                    <section id='account'>
                         <div className='space-y-4'>
                             {/* Alert */}
                             {alert.show && (
@@ -535,7 +537,7 @@ export default function AdminUserSettings({
 
                 {/* Administrative Settings */}
                 {showSection('administrative') && (
-                    <section id='administrative' className='pb-8'>
+                    <section id='administrative'>
                         <div className='space-y-4'>
                             <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                 <CardContent className='px-4 py-1'>
@@ -674,9 +676,27 @@ export default function AdminUserSettings({
                     </section>
                 )}
 
+                {/* Permissions Section */}
+                {showSection('permissions') && (
+                    <section id='permissions'>
+                        <div className='space-y-4'>
+                            <AdminPanelUserPermissions id={userId} />
+                        </div>
+                    </section>
+                )}
+
+                {/* Activity Section */}
+                {showSection('activity') && (
+                    <section id='activity'>
+                        <div className='space-y-4'>
+                            <UserActivityList username={user?.username || ''} />
+                        </div>
+                    </section>
+                )}
+
                 {/* Active Sessions Section */}
                 {showSection('sessions') && (
-                    <section id='sessions' className='pb-8'>
+                    <section id='sessions'>
                         <div className='space-y-4'>
                             <ActiveSessions userId={userId} />
                         </div>
@@ -685,7 +705,7 @@ export default function AdminUserSettings({
 
                 {/* User Management Actions Section */}
                 {showSection('management') && (
-                    <section id='admin-actions' className='pb-8'>
+                    <section id='admin-actions'>
                         <div className='space-y-4'>
                             <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                 <CardContent className='px-4 py-1'>

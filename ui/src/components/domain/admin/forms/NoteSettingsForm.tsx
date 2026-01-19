@@ -143,7 +143,7 @@ export default function NoteSettingsForm() {
             <div className='w-full'>
                 <form onSubmit={handleFormSubmit(onSubmit)}>
                     {/* General Section */}
-                    <section id='general' className='pb-8'>
+                    <section id='general'>
                         <h2 className='text-lg font-semibold text-foreground tracking-tight'>
                             General
                         </h2>

@@ -97,14 +97,14 @@ class NotificationDetail(APIView):
         try:
             notification: MessageNotification = MessageNotification.objects.get(id=notification_id, user=request.user)
         except MessageNotification.DoesNotExist:
-            return Response("The notification does not exist", status=status.HTTP_404_NOT_FOUND)
+            return Response({"message": "The notification does not exist"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = UpdateNotificationSerializer(notification, data=request.data)
         if serializer.is_valid():
             serializer.save()
-            return Response("Notification updated successfully", status=status.HTTP_200_OK)
+            return Response({"message": "Notification updated successfully"}, status=status.HTTP_200_OK)
 
-        return Response("Request body is invalid.", status=status.HTTP_400_BAD_REQUEST)
+        return Response({"message": "Request body is invalid."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @extend_schema_view(

@@ -678,7 +678,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                 >
                                     {/* Security Section */}
                                     {activeTab === 'security' && (
-                                        <section id='security' className='pb-8'>
+                                        <section id='security'>
                                             <div className='space-y-4'>
                                                 {/* Authentication Card */}
                                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
@@ -803,7 +803,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
 
                                     {/* Sessions Section */}
                                     {activeTab === 'sessions' && (
-                                        <section id='sessions' className='pb-8'>
+                                        <section id='sessions'>
                                             <ActiveSessions userId={target} />
                                         </section>
                                     )}
@@ -812,7 +812,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'oauth' &&
                                         Object.keys(mergedOAuthConnections).length >
                                             0 && (
-                                            <section id='oauth' className='pb-8'>
+                                            <section id='oauth'>
                                                 <div className='space-y-4'>
                                                     <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                                         <CardContent className='px-4 py-1'>
@@ -910,7 +910,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'oauth' &&
                                         Object.keys(mergedOAuthConnections).length ===
                                             0 && (
-                                            <section id='oauth' className='pb-8'>
+                                            <section id='oauth'>
                                                 <p className='text-sm text-muted-foreground'>
                                                     No OAuth providers are configured
                                                 </p>
@@ -919,7 +919,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
 
                                     {/* Appearance Section */}
                                     {activeTab === 'appearance' && (
-                                        <section id='appearance' className='pb-8'>
+                                        <section id='appearance'>
                                             <div className='space-y-4'>
                                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                                     <CardContent className='px-4 py-1'>
@@ -946,6 +946,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                         ) === 'dark'
                                                                             ? 'light'
                                                                             : 'dark',
+                                                                        { shouldDirty: true },
                                                                     )
                                                                 }
                                                             >
@@ -979,7 +980,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
 
                                     {/* Editor Settings Section */}
                                     {activeTab === 'editor' && (
-                                        <section id='editor' className='pb-8'>
+                                        <section id='editor'>
                                             <div className='space-y-4'>
                                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                                     <CardContent className='px-4 py-1'>

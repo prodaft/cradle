@@ -15,10 +15,19 @@ interface Entry {
     [key: string]: any;
 }
 
+interface FetchProgress {
+    currentPage: number;
+    totalPages: number;
+    isPaused: boolean;
+}
+
 interface SearchComponentProps {
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
+    onLoadingChange?: (isLoading: boolean) => void;
+    onFetchProgressChange?: (progress: FetchProgress | null) => void;
+    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
 }
 
 interface GraphControlProps {
@@ -38,6 +47,9 @@ interface GraphControlProps {
     cosmographRef: React.MutableRefObject<any>;
     selectedEntries: Set<Entry>;
     setSelectedEntries: (entries: Set<Entry>) => void;
+    onLoadingChange?: (isLoading: boolean) => void;
+    onFetchProgressChange?: (progress: FetchProgress | null) => void;
+    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
 }
 
 export default function GraphControl({
@@ -55,6 +67,9 @@ export default function GraphControl({
     cosmographRef,
     selectedEntries,
     setSelectedEntries,
+    onLoadingChange,
+    onFetchProgressChange,
+    onFetchControlsReady,
 }: GraphControlProps) {
     const toggleDisabledType = (type: string) => {
         setDisabledTypes((prev) => {
@@ -82,6 +97,9 @@ export default function GraphControl({
                     addEdges={addEdges}
                     addNodes={addNodes}
                     addBoth={addBoth}
+                    onLoadingChange={onLoadingChange}
+                    onFetchProgressChange={onFetchProgressChange}
+                    onFetchControlsReady={onFetchControlsReady}
                 />
                 {/* Graph Search - Only render when nodes are available */}
                 {nodes.length > 0 && (

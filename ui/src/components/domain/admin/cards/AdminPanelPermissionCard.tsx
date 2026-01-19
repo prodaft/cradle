@@ -63,8 +63,8 @@ export default function AdminPanelPermissionCard({
     };
 
     return (
-        <div className='rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-1'>
-            <Field orientation='horizontal' className='py-2'>
+        <div className='px-4 py-3'>
+            <Field orientation='horizontal'>
                 <FieldContent className='flex-1'>
                     <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
                         {text}

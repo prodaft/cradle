@@ -288,7 +288,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
             <div className='px-4 pb-4 flex-1 overflow-auto'>
                 <form onSubmit={handleFormSubmit(onSubmit)}>
                     {/* Basic Section */}
-                    <section id='basic' className='pb-8'>
+                    <section id='basic'>
                         <div className='space-y-4'>
                             <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                 <CardContent className='px-4 py-1'>

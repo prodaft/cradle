@@ -45,8 +45,10 @@ import AdminUserSettings from './AdminUserSettings';
 const USER_SETTINGS_ITEMS = [
     { id: 'account', label: 'Account', icon: User },
     { id: 'administrative', label: 'Administrative', icon: Settings },
-    { id: 'sessions', label: 'Sessions', icon: ClockRotateRight },
-    { id: 'management', label: 'Management', icon: Lock },
+    { id: 'permissions', label: 'Permissions', icon: Lock },
+    { id: 'activity', label: 'Activity', icon: ClockRotateRight },
+    { id: 'sessions', label: 'Sessions', icon: Settings },
+    { id: 'management', label: 'Management', icon: Settings },
 ];
 
 function UserSettingsPage({ userId }: { userId: string }) {
@@ -96,6 +98,8 @@ function UserSettingsPage({ userId }: { userId: string }) {
     const tabDescriptions: Record<string, string> = {
         account: 'Manage user account information and basic settings',
         administrative: 'Configure user permissions and administrative settings',
+        permissions: 'Manage entity access permissions for this user',
+        activity: 'View user activity and audit logs',
         sessions: 'View and manage active user sessions',
         management: 'Administrative actions for user management',
     };
@@ -231,6 +235,7 @@ export default function UsersPage() {
     const { usersApi } = useApi();
     const [addUserModalOpen, setAddUserModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
     const fetchUsersMutation = useMutation({
         mutationFn: async () => {
@@ -278,12 +283,10 @@ export default function UsersPage() {
         router.navigate({ to: `/manage/users/${user.id || user.username}` as any });
     };
 
-    const handleActivityClick = (user: UserRetrieve, e: React.MouseEvent) => {
+    const handleDeleteClick = (user: UserRetrieve, e: React.MouseEvent) => {
         e.stopPropagation();
-    };
-
-    const handlePermissionsClick = (user: UserRetrieve, e: React.MouseEvent) => {
-        e.stopPropagation();
+        setDeleteUserId(user.id || user.username || null);
+        setDeleteModalOpen(true);
     };
 
     const getRoleBadgeVariant = (role?: string) => {
@@ -480,16 +483,11 @@ export default function UsersPage() {
                             <div className='flex justify-end'>
                                 <TableActionsButton>
                                     <DropdownMenuItem
-                                        onClick={(e) => handleActivityClick(user, e)}
+                                        onClick={(e) => handleDeleteClick(user, e)}
+                                        variant='destructive'
                                     >
-                                        <ClockRotateRight width='18' height='18' />
-                                        View Activity
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem
-                                        onClick={(e) => handlePermissionsClick(user, e)}
-                                    >
-                                        <Lock width='18' height='18' />
-                                        Edit Permissions
+                                        <Trash width='18' height='18' />
+                                        Delete
                                     </DropdownMenuItem>
                                 </TableActionsButton>
                             </div>
@@ -585,10 +583,23 @@ export default function UsersPage() {
             />
             <ConfirmDeletionModal
                 open={deleteModalOpen}
-                onOpenChange={setDeleteModalOpen}
-                onConfirm={() => handleDeleteUsers(selectedUsers)}
+                onOpenChange={(open) => {
+                    setDeleteModalOpen(open);
+                    if (!open) setDeleteUserId(null);
+                }}
+                onConfirm={() => {
+                    if (deleteUserId) {
+                        handleDeleteUsers([deleteUserId]);
+                    } else {
+                        handleDeleteUsers(selectedUsers);
+                    }
+                }}
                 confirmText='DELETE'
-                text={`Are you sure you want to delete ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}? This action is irreversible.`}
+                text={
+                    deleteUserId
+                        ? 'Are you sure you want to delete this user? This action is irreversible.'
+                        : `Are you sure you want to delete ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}? This action is irreversible.`
+                }
             />
         </AdminPageLayout>
     );

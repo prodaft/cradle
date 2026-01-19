@@ -14,9 +14,18 @@ interface Entry {
     [key: string]: any;
 }
 
+interface FetchProgress {
+    currentPage: number;
+    totalPages: number;
+    isPaused: boolean;
+}
+
 interface SearchComponentProps {
     addEdges: (edges: EdgeRelation[]) => void;
     addNodes: (nodes: Node[]) => void;
+    onLoadingChange?: (isLoading: boolean) => void;
+    onFetchProgressChange?: (progress: FetchProgress | null) => void;
+    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
 }
 
 interface GraphQueryProps {
@@ -38,6 +47,9 @@ interface GraphQueryProps {
     activePanel: 'explorer' | 'display' | 'filters';
     onClosePanel: () => void;
     cosmographRef: React.MutableRefObject<any>;
+    onLoadingChange?: (isLoading: boolean) => void;
+    onFetchProgressChange?: (progress: FetchProgress | null) => void;
+    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
 }
 
 export default function GraphQuery({
@@ -57,6 +69,9 @@ export default function GraphQuery({
     cosmographRef,
     selectedEntries,
     setSelectedEntries,
+    onLoadingChange,
+    onFetchProgressChange,
+    onFetchControlsReady,
 }: GraphQueryProps) {
     const settingsProps = {
         config,
@@ -103,6 +118,9 @@ export default function GraphQuery({
                         cosmographRef={cosmographRef}
                         selectedEntries={selectedEntries}
                         setSelectedEntries={setSelectedEntries}
+                        onLoadingChange={onLoadingChange}
+                        onFetchProgressChange={onFetchProgressChange}
+                        onFetchControlsReady={onFetchControlsReady}
                     />
                 </ScrollArea>
             </div>

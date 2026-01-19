@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
+import { Spinner } from '@/components/ui/spinner';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
@@ -25,6 +26,17 @@ interface GraphConfig {
     randomSeed?: string | number;
 }
 
+interface FetchProgress {
+    currentPage: number;
+    totalPages: number;
+    isPaused: boolean;
+}
+
+interface FetchControls {
+    pause: () => void;
+    resume: () => void;
+}
+
 interface GraphViewerProps {
     selectedNodes: Set<Node>;
     setSelectedNodes: (nodes: Set<Node>) => void;
@@ -35,6 +47,9 @@ interface GraphViewerProps {
     activePanel?: 'explorer' | 'display' | 'filters' | null;
     onTogglePanel?: (panel: 'explorer' | 'display' | 'filters') => void;
     cosmographRef?: React.MutableRefObject<any>;
+    isLoading?: boolean;
+    fetchProgress?: FetchProgress | null;
+    fetchControls?: FetchControls | null;
 }
 
 /**
@@ -77,6 +92,9 @@ export default function GraphViewer({
     activePanel = null,
     onTogglePanel,
     cosmographRef: externalCosmographRef,
+    isLoading = false,
+    fetchProgress = null,
+    fetchControls = null,
 }: GraphViewerProps) {
     const { isDarkMode } = useTheme();
     const internalCosmographRef = useRef<any>(null);
@@ -296,10 +314,55 @@ export default function GraphViewer({
     // Only render Cosmograph when we have valid data
     const hasValidData = pointsData.length > 0;
 
+    const spaceSize = useMemo(() => {
+        const nodeCount = pointsData.length;
+        return Math.max(2048, Math.sqrt(nodeCount) * 150);
+    }, [pointsData.length]);
+
     return (
         <div className='w-full h-full bg-background relative overflow-hidden'>
             {hasValidData ? (
                 <>
+                    {/* Bottom status bar with stats and loading indicator */}
+                    <div className='absolute bottom-2 left-2 z-10 bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 flex items-center gap-3 shadow-md text-xs'>
+                        <span className='text-muted-foreground'>
+                            <span className='font-medium text-foreground'>{pointsData.length}</span> nodes
+                        </span>
+                        <span className='text-muted-foreground'>
+                            <span className='font-medium text-foreground'>{linksData.length}</span> edges
+                        </span>
+                        {fetchProgress && (
+                            <>
+                                <span className='text-border'>|</span>
+                                <Spinner className='size-3' />
+                                <span className='text-muted-foreground'>
+                                    {fetchProgress.currentPage}/{fetchProgress.totalPages}
+                                    {fetchProgress.isPaused && ' (paused)'}
+                                </span>
+                                {fetchControls && (
+                                    <Button
+                                        variant='ghost'
+                                        size='icon-sm'
+                                        className='size-5'
+                                        onClick={() => {
+                                            if (fetchProgress.isPaused) {
+                                                fetchControls.resume();
+                                            } else {
+                                                fetchControls.pause();
+                                            }
+                                        }}
+                                        title={fetchProgress.isPaused ? 'Resume loading' : 'Pause loading'}
+                                    >
+                                        {fetchProgress.isPaused ? (
+                                            <PlaySolid className='size-3' />
+                                        ) : (
+                                            <PauseSolid className='size-3' />
+                                        )}
+                                    </Button>
+                                )}
+                            </>
+                        )}
+                    </div>
                     {/* Graph controls - left side */}
                     <div className='absolute top-2 left-2 z-10 flex flex-col gap-1'>
                         {/* Search Panel Toggle Button */}
@@ -549,7 +612,7 @@ export default function GraphViewer({
                             40 * (config.nodeRadiusCoefficient ?? 1),
                         ]}
                         showDynamicLabels={true}
-                        spaceSize={1024}
+                        spaceSize={spaceSize}
                         enableSimulation={enableSimulation}
                         simulationGravity={config.simulationGravity}
                         simulationRepulsion={config.simulationRepulsion}
@@ -578,8 +641,49 @@ export default function GraphViewer({
             ) : (
                 <div className='flex items-center justify-center h-full text-muted-foreground'>
                     <div className='text-center'>
-                        <p className='text-lg mb-2'>No graph data available</p>
-                        <p className='text-sm'>Add nodes to visualize the graph</p>
+                        {isLoading ? (
+                            <>
+                                <Spinner className='size-8 mx-auto mb-3' />
+                                <p className='text-lg'>Loading graph data...</p>
+                                {fetchProgress && (
+                                    <p className='text-sm mt-1'>
+                                        Page {fetchProgress.currentPage} of {fetchProgress.totalPages}
+                                        {fetchProgress.isPaused && ' (paused)'}
+                                    </p>
+                                )}
+                                {fetchControls && fetchProgress && (
+                                    <Button
+                                        variant='outline'
+                                        size='sm'
+                                        className='mt-3'
+                                        onClick={() => {
+                                            if (fetchProgress.isPaused) {
+                                                fetchControls.resume();
+                                            } else {
+                                                fetchControls.pause();
+                                            }
+                                        }}
+                                    >
+                                        {fetchProgress.isPaused ? (
+                                            <>
+                                                <PlaySolid className='size-4 mr-1' />
+                                                Resume
+                                            </>
+                                        ) : (
+                                            <>
+                                                <PauseSolid className='size-4 mr-1' />
+                                                Pause
+                                            </>
+                                        )}
+                                    </Button>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <p className='text-lg mb-2'>No graph data available</p>
+                                <p className='text-sm'>Add nodes to visualize the graph</p>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
