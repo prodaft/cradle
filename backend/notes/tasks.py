@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 @shared_task
 @distributed_lock("smartlinker_note_{note_id}", timeout=1800)
-def smart_linker_task(note_id):
+def smart_linker_task(note_id, user_id=None):
     from entries.tasks import refresh_edges_materialized_view
 
     """
@@ -33,9 +33,11 @@ def smart_linker_task(note_id):
 
     Args:
         note_id: ID of the Note object to process
+        user_id: ID of the user performing the action (optional, for logging)
     """
 
     note = Note.objects.get(id=note_id)
+    user = CradleUser.objects.get(id=user_id) if user_id else None
 
     try:
         Relation.objects.filter(note=note, reason=RelationReason.NOTE).delete()
@@ -89,6 +91,18 @@ def smart_linker_task(note_id):
                 for src, dst, virtual, date in pairs_resolved
             ]
         )
+
+        # Log entity linking events
+        if user:
+            linked_entities = set()
+            for src, dst, virtual, date in pairs_resolved:
+                if src.entry_class.type == EntryType.ENTITY:
+                    linked_entities.add(src)
+                if dst.entry_class.type == EntryType.ENTITY:
+                    linked_entities.add(dst)
+
+            for entity in linked_entities:
+                entity.log_link(user, details={"note_id": str(note_id)})
 
         note.last_linked = timezone.now()
         note.save()

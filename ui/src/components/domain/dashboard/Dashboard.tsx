@@ -8,11 +8,13 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
+import { useAuthState } from '@/hooks/auth/useAuth';
 import { useMutation } from '@tanstack/react-query';
 import { useLoaderData, useRouter, useRouterState, useSearch } from '@tanstack/react-router';
+import { FileText, FolderOpen, History, Share2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, FolderOpen, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
+import ActivityList from '../activity/ActivityList';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './Relations';
@@ -42,6 +44,7 @@ export default function Dashboard() {
     }) as { entry: EntryResponse };
     const contentObject = loaderData?.entry || undefined;
     const { entriesApi } = useApi();
+    const { isAdmin } = useAuthState();
     const router = useRouter();
     const search = useSearch({ from: '/_authenticated/dashboards/$subtype/$name' });
     const location = useRouterState({
@@ -63,8 +66,9 @@ export default function Dashboard() {
             { id: 'notes', label: 'Notes', icon: FileText },
             { id: 'relations', label: 'Relations', icon: Share2 },
             { id: 'files', label: 'Files', icon: FolderOpen },
+            ...(isAdmin ? [{ id: 'eventlog', label: 'Event Log', icon: History }] : []),
         ],
-        [],
+        [isAdmin],
     );
     const currentTab = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
@@ -147,16 +151,16 @@ export default function Dashboard() {
                                         onValueChange={handleTabChange}
                                     >
                                         <SelectTrigger className='h-12 sm:w-48'>
-                                        <SelectValue>
-                                            <div className='flex gap-x-3 px-2 py-1 items-center'>
-                                                <span className='scale-125 flex items-center'>
-                                                    <currentTab.icon className='w-[18px] h-[18px]' />
-                                                </span>
-                                                <span className='text-md'>
-                                                    {currentTab.label}
-                                                </span>
-                                            </div>
-                                        </SelectValue>
+                                            <SelectValue>
+                                                <div className='flex gap-x-3 px-2 py-1 items-center'>
+                                                    <span className='scale-125 flex items-center'>
+                                                        <currentTab.icon className='w-[18px] h-[18px]' />
+                                                    </span>
+                                                    <span className='text-md'>
+                                                        {currentTab.label}
+                                                    </span>
+                                                </div>
+                                            </SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             {tabs.map((tab) => {
@@ -192,11 +196,10 @@ export default function Dashboard() {
                                                         e.preventDefault();
                                                         handleTabChange(tab.id);
                                                     }}
-                                                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 hover:bg-accent justify-start ${
-                                                        isActive
+                                                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 hover:bg-accent justify-start ${isActive
                                                             ? 'bg-muted hover:bg-accent active'
                                                             : ''
-                                                    }`}
+                                                        }`}
                                                     data-status={
                                                         isActive
                                                             ? 'active'
@@ -254,6 +257,16 @@ export default function Dashboard() {
                                                 <CardContent className='pt-4'>
                                                     <Files
                                                         obj={contentObject}
+                                                    />
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                        {activeTab === 'eventlog' && isAdmin && (
+                                            <Card>
+                                                <CardContent className='pt-4'>
+                                                    <ActivityList
+                                                        name={contentObject.name}
+                                                        objectId={contentObject.id?.toString()}
                                                     />
                                                 </CardContent>
                                             </Card>

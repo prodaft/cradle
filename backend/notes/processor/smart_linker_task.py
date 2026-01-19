@@ -23,4 +23,4 @@ class SmartLinkerTask(BaseTask):
         Returns:
             The processed note object.
         """
-        return smart_linker_task.si(note.id), entries
+        return smart_linker_task.si(note.id, user_id=self.user.id if self.user else None), entries

@@ -365,7 +365,7 @@ export default function AdminUserSettings({
                                                 <FieldContent className='flex-1'>
                                                     <FieldLabel
                                                         htmlFor='username'
-                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                        className='text-sm text-muted-foreground block'
                                                     >
                                                         Username
                                                     </FieldLabel>
@@ -412,7 +412,7 @@ export default function AdminUserSettings({
                                                 <FieldContent className='flex-1'>
                                                     <FieldLabel
                                                         htmlFor='email'
-                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                        className='text-sm text-muted-foreground block'
                                                     >
                                                         Email
                                                     </FieldLabel>
@@ -451,7 +451,7 @@ export default function AdminUserSettings({
                                         <FieldContent className='flex-1'>
                                             <FieldLabel
                                                 htmlFor='userId'
-                                                className='text-sm text-muted-foreground block mb-0.5'
+                                                className='text-sm text-muted-foreground block'
                                             >
                                                 User ID
                                             </FieldLabel>
@@ -483,7 +483,7 @@ export default function AdminUserSettings({
                                                 data-invalid={fieldState.invalid}
                                             >
                                                 <FieldContent className='flex-1'>
-                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                    <FieldLabel className='text-sm text-muted-foreground block'>
                                                         Role
                                                     </FieldLabel>
                                                     <FieldDescription className='text-sm'>
@@ -495,13 +495,13 @@ export default function AdminUserSettings({
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-full'>
+                                                <div className='w-auto'>
                                                     <Select
                                                         value={field.value}
                                                         onValueChange={field.onChange}
                                                     >
                                                         <SelectTrigger
-                                                            className='w-full'
+                                                            className='w-full sm:w-64'
                                                             aria-invalid={
                                                                 fieldState.invalid
                                                             }
@@ -546,7 +546,7 @@ export default function AdminUserSettings({
                                             <div className='flex-1'>
                                                 <Label
                                                     htmlFor='emailConfirmed'
-                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                    className='text-sm text-muted-foreground block'
                                                 >
                                                     Email Confirmed
                                                 </Label>
@@ -577,7 +577,7 @@ export default function AdminUserSettings({
                                             <div className='flex-1'>
                                                 <Label
                                                     htmlFor='isActive'
-                                                    className='text-sm text-muted-foreground block mb-0.5'
+                                                    className='text-sm text-muted-foreground block'
                                                 >
                                                     Active
                                                 </Label>
@@ -615,7 +615,7 @@ export default function AdminUserSettings({
                                                 <FieldContent className='flex-1'>
                                                     <FieldLabel
                                                         htmlFor='fileUploadLimitOverride'
-                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                        className='text-sm text-muted-foreground block'
                                                     >
                                                         File Upload Limit Override
                                                     </FieldLabel>
@@ -654,7 +654,7 @@ export default function AdminUserSettings({
 
                                     <Field orientation='horizontal' className='py-2'>
                                         <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            <FieldLabel className='text-sm text-muted-foreground block'>
                                                 Password
                                             </FieldLabel>
                                             <FieldDescription className='text-sm'>
@@ -711,7 +711,7 @@ export default function AdminUserSettings({
                                 <CardContent className='px-4 py-1'>
                                     <Field orientation='horizontal' className='py-2'>
                                         <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            <FieldLabel className='text-sm text-muted-foreground block'>
                                                 Simulate Session
                                             </FieldLabel>
                                             <FieldDescription className='text-sm'>
@@ -732,7 +732,7 @@ export default function AdminUserSettings({
 
                                     <Field orientation='horizontal' className='py-2'>
                                         <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            <FieldLabel className='text-sm text-muted-foreground block'>
                                                 Email Confirmation
                                             </FieldLabel>
                                             <FieldDescription className='text-sm'>
@@ -753,7 +753,7 @@ export default function AdminUserSettings({
 
                                     <Field orientation='horizontal' className='py-2'>
                                         <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            <FieldLabel className='text-sm text-muted-foreground block'>
                                                 Password Reset
                                             </FieldLabel>
                                             <FieldDescription className='text-sm'>
@@ -774,7 +774,7 @@ export default function AdminUserSettings({
 
                                     <Field orientation='horizontal' className='py-2'>
                                         <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            <FieldLabel className='text-sm text-muted-foreground block'>
                                                 Delete User
                                             </FieldLabel>
                                             <FieldDescription className='text-sm'>

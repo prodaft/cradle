@@ -80,6 +80,9 @@ class EntityList(APIView):
         # Create new entity
         serializer.save()
 
+        # Log entity creation
+        serializer.instance.log_create(request.user)
+
         # Refresh edges materialized view
         refresh_edges_materialized_view.delay()
 

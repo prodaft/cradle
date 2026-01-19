@@ -36,6 +36,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     useParams,
+    useNavigate,
     useRouter,
     useRouterState,
     useSearch,
@@ -78,6 +79,7 @@ export default function NoteViewer() {
     const { id } = useParams({ from: '/_authenticated/notes/$id' });
     const noteId = id || '';
     const router = useRouter();
+    const navigate = useNavigate({ from: '/_authenticated/notes/$id' });
     const queryClient = useQueryClient();
     const location = useRouterState({
         select: (state) => state.location,
@@ -208,12 +210,12 @@ export default function NoteViewer() {
     const handleViewChange = useCallback(
         (newView: ViewMode) => {
             setActiveView(newView);
-            router.navigate({
-                search: (prev: any) => ({ ...prev, view: newView }),
+            navigate({
+                search: (prev) => ({ ...prev, view: newView }),
                 replace: true,
             });
         },
-        [router],
+        [navigate],
     );
 
     const toggleOutline = useCallback(() => {
@@ -228,11 +230,11 @@ export default function NoteViewer() {
         }
         const newValue = !enableEditing;
         setEnableEditing(newValue);
-        router.navigate({
-            search: (prev: any) => ({ ...prev, edit: newValue }),
+        navigate({
+            search: (prev) => ({ ...prev, edit: newValue }),
             replace: true,
         });
-    }, [isFleeting, enableEditing, router]);
+    }, [isFleeting, enableEditing, navigate]);
 
     const handleEnableEditingWithConfirmation = useCallback(() => {
         // If we're already in editing mode, there's nothing to do

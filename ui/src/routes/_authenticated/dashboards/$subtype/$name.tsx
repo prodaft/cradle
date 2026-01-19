@@ -9,7 +9,7 @@ const Dashboard = lazy(() => import('src/components/domain/dashboard/Dashboard')
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({
     validateSearch: z.object({
         heading: z.string().optional(),
-        tab: z.enum(['notes', 'relations', 'files']).optional(),
+        tab: z.enum(['notes', 'relations', 'files', 'eventlog']).optional(),
     }),
     loader: async ({ params }) => {
         const { subtype, name } = params;
