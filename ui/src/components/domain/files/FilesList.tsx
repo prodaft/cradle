@@ -450,6 +450,9 @@ export default function FilesList({
         () => [
             {
                 id: 'select',
+                size: 36,
+                minSize: 36,
+                maxSize: 36,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
