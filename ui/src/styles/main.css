@@ -261,6 +261,17 @@ h6:hover .header-anchor-icon {
     color: #ff8c00;
 }
 
+/* Ensure PTI links inherit parent typography in the rich editor. */
+.cradle-link-widget-container,
+.cradle-link-widget,
+.cradle-link-widget a,
+.cradle-link-timestamp {
+    font: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+    line-height: inherit;
+}
+
 /* ============================================
    CODE BLOCKS
    ============================================ */

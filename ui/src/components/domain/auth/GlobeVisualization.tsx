@@ -17,6 +17,12 @@ interface GlobeVisualizationProps {
     showAtmosphere?: boolean;
     autoRotate?: boolean;
     autoRotateSpeed?: number;
+    initialView?: {
+        lat?: number;
+        lng?: number;
+        altitude?: number;
+    };
+    viewOffsetX?: number;
 }
 
 interface SatelliteData {
@@ -133,9 +139,12 @@ export default function GlobeVisualization({
     showAtmosphere = true,
     autoRotate = true,
     autoRotateSpeed = 0.5,
+    initialView,
+    viewOffsetX = 0,
 }: GlobeVisualizationProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const globeRef = useRef<any>(undefined);
+    const hasSetInitialView = useRef(false);
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const { isDarkMode } = useTheme();
 
@@ -165,13 +174,27 @@ export default function GlobeVisualization({
     }, []);
 
     useEffect(() => {
-        if (globeRef.current) {
-            globeRef.current.controls().autoRotate = autoRotate;
-            globeRef.current.controls().autoRotateSpeed = autoRotateSpeed;
-            globeRef.current.controls().enableZoom = false;
-            globeRef.current.pointOfView({ altitude: 1.8 });
-        }
-    }, [dimensions, autoRotate, autoRotateSpeed]);
+        if (!globeRef.current) return;
+
+        const controls = globeRef.current.controls();
+        controls.autoRotate = autoRotate;
+        controls.autoRotateSpeed = autoRotateSpeed;
+        controls.enableZoom = true;
+        controls.enableRotate = true;
+        controls.enablePan = false;
+    }, [autoRotate, autoRotateSpeed, dimensions]);
+
+    useEffect(() => {
+        if (!globeRef.current) return;
+        if (hasSetInitialView.current) return;
+
+        globeRef.current.pointOfView({
+            lat: initialView?.lat ?? 0,
+            lng: initialView?.lng ?? 0,
+            altitude: initialView?.altitude ?? 1.8,
+        });
+        hasSetInitialView.current = true;
+    }, [dimensions, initialView?.lat, initialView?.lng, initialView?.altitude]);
 
     // Fetch and parse TLE data
     useEffect(() => {
@@ -285,10 +308,10 @@ export default function GlobeVisualization({
             endLng: (Math.random() - 0.5) * 360,
             color: isDarkMode
                 ? ['#ffffff', '#cccccc', '#999999', '#666666'][
-                Math.floor(Math.random() * 4)
+                    Math.floor(Math.random() * 4)
                 ]
                 : ['#111111', '#333333', '#555555', '#777777'][
-                Math.floor(Math.random() * 4)
+                    Math.floor(Math.random() * 4)
                 ],
             dashLength: Math.random(),
             dashGap: Math.random(),
@@ -376,6 +399,7 @@ export default function GlobeVisualization({
         <div
             ref={containerRef}
             className='absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden bg-transparent grayscale opacity-50 dark:opacity-100'
+            style={viewOffsetX ? { transform: `translateX(${viewOffsetX}px)` } : undefined}
         >
             {dimensions.width > 0 && (
                 <Globe

@@ -106,9 +106,6 @@ export class CradleLinkWidget extends WidgetType {
         const timestampSpan = document.createElement('span');
         timestampSpan.textContent = this.timestamp;
         timestampSpan.style.color = this.color || '#FF8C00';
-        timestampSpan.style.fontSize = '0.85em';
-        timestampSpan.style.fontStyle = 'italic';
-        timestampSpan.style.opacity = '0.7';
         timestampSpan.style.marginLeft = '4px';
         timestampSpan.style.textDecoration = 'underline';
         timestampSpan.style.display = 'inline';

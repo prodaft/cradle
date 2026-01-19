@@ -554,6 +554,8 @@ export default function Login() {
                     showAtmosphere={true}
                     autoRotate={true}
                     autoRotateSpeed={0.5}
+                    initialView={{ lat: 20, lng: 0, altitude: 1.8 }}
+                    viewOffsetX={120}
                 />
             </div>
         </div>
