@@ -237,6 +237,32 @@ h6:hover .header-anchor-icon {
     color: var(--pm-muted-color);
 }
 
+/* Ensure heading lines carry typography so widgets inherit size/weight. */
+.cm-line.cm-heading-1 {
+    font-size: 1.6em;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.cm-line.cm-heading-2 {
+    font-size: 1.4em;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.cm-line.cm-heading-3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.cm-line.cm-heading-4,
+.cm-line.cm-heading-5,
+.cm-line.cm-heading-6 {
+    font-weight: 700;
+    line-height: 1.25;
+}
+
 .markdown-body p {
     margin-top: 0;
     margin-bottom: 10px;

@@ -109,7 +109,22 @@ export class CradleLinkWidget extends WidgetType {
         timestampSpan.style.marginLeft = '4px';
         timestampSpan.style.textDecoration = 'underline';
         timestampSpan.style.display = 'inline';
+        timestampSpan.style.cursor = 'pointer';
         timestampSpan.className = 'cradle-link-timestamp';
+        const url = `/dashboards/${encodeURIComponent(this.type)}/${encodeURIComponent(this.name)}/`;
+        timestampSpan.setAttribute('data-link-url', url);
+        timestampSpan.setAttribute('data-link-full-text', this.fullText);
+        timestampSpan.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.navigate(url, { event: e as unknown as React.MouseEvent });
+        });
+        timestampSpan.addEventListener('mouseenter', () => {
+            timestampSpan.style.opacity = '0.8';
+        });
+        timestampSpan.addEventListener('mouseleave', () => {
+            timestampSpan.style.opacity = '1';
+        });
         return timestampSpan;
     }
 
@@ -194,6 +209,60 @@ export function cradleLinksPlugin(
                 });
 
                 return Decoration.set(widgets, true);
+            }
+        },
+        {
+            decorations: (v) => v.decorations,
+        },
+    );
+}
+
+/**
+ * Adds heading-level classes to lines so widgets inherit heading typography.
+ */
+export function headingLineClassPlugin(sourceMode: boolean) {
+    return ViewPlugin.fromClass(
+        class {
+            sourceMode: boolean;
+            decorations: ReturnType<typeof Decoration.set>;
+
+            constructor(view: EditorView) {
+                this.sourceMode = sourceMode;
+                this.decorations = this.buildDecorations(view);
+            }
+
+            update(update: { docChanged: boolean; viewportChanged: boolean; view: EditorView }) {
+                if (update.docChanged || update.viewportChanged) {
+                    this.decorations = this.buildDecorations(update.view);
+                }
+            }
+
+            buildDecorations(view: EditorView) {
+                if (this.sourceMode) {
+                    return Decoration.set([], true);
+                }
+
+                const decorations: Range<Decoration>[] = [];
+                const seenLines = new Set<number>();
+                const doc = view.state.doc;
+                const tree = syntaxTree(view.state);
+
+                tree.iterate({
+                    enter: (node) => {
+                        const level = headingLevelFromNodeName(node.type.name);
+                        if (!level) return;
+                        const line = doc.lineAt(node.from);
+                        if (seenLines.has(line.from)) return;
+                        seenLines.add(line.from);
+                        decorations.push(
+                            Decoration.line({
+                                class: `cm-heading-${level}`,
+                            }).range(line.from),
+                        );
+                    },
+                });
+
+                return Decoration.set(decorations, true);
             }
         },
         {
@@ -291,6 +360,18 @@ function collectDiagnostics(state: EditorState): Diagnostic[] {
         diagnostics.push(diagnostic);
     });
     return diagnostics;
+}
+
+function headingLevelFromNodeName(name: string): number | null {
+    const atxMatch = /^ATXHeading([1-6])$/.exec(name);
+    if (atxMatch) {
+        return Number(atxMatch[1]);
+    }
+    const setextMatch = /^SetextHeading([1-2])$/.exec(name);
+    if (setextMatch) {
+        return Number(setextMatch[1]);
+    }
+    return null;
 }
 
 function parseCradleLink(

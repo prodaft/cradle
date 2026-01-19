@@ -3,7 +3,11 @@ import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { CradleEditor } from '@/utils/editor/enhancements';
-import { cradleLinkColorPlugin, cradleLinksPlugin } from '@/utils/editor/linkplugin';
+import {
+    cradleLinkColorPlugin,
+    cradleLinksPlugin,
+    headingLineClassPlugin,
+} from '@/utils/editor/linkplugin';
 import {
     referenceLinksPlugin,
     referenceLinkSyntax,
@@ -346,6 +350,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         let exts: Extension[] = [
             cradleLinksPlugin(entryColors, navigate, source),
             cradleLinkColorPlugin(entryColors, source),
+            headingLineClassPlugin(source),
             referenceLinksPlugin(referenceMappings, navigate, fileDownloadFn, source),
             yamlFrontmatter({
                 content: markdown({
