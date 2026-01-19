@@ -80,7 +80,7 @@ export default function FilesList({
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/files' });
+    const search = useSearch({ strict: false });
 
     const [alert, setInternalAlert] = useState<Alert>({
         show: false,

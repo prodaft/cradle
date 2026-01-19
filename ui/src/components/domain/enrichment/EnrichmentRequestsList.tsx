@@ -26,10 +26,14 @@ import { capitalize } from 'lodash';
 import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
+import { DateRangeFilter } from '@/components/base/ListView/types';
+
+// ...
+
 type EnrichmentRequest = EnrichmentRequestList;
 
 interface ColumnFilter {
-    [key: string]: string | undefined;
+    [key: string]: string | DateRangeFilter | undefined;
     status: string;
     user: string;
 }
@@ -331,6 +335,7 @@ function EnrichmentRequestsList({
                         className='truncate max-w-xs cursor-pointer'
                         title={row.original.title}
                         onClick={() =>
+                            row.original.id &&
                             router.navigate({
                                 to: '/enrichment/$id',
                                 params: { id: row.original.id.toString() },
@@ -521,6 +526,7 @@ function EnrichmentRequestsList({
                 ]}
                 itemLabel='request'
                 onRowClick={(request) =>
+                    request.id &&
                     router.navigate({
                         to: '/enrichment/$id',
                         params: { id: request.id.toString() },

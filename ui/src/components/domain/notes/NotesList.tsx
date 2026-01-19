@@ -111,7 +111,7 @@ export default function NotesList({
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/notes' });
+    const search = useSearch({ strict: false });
     const [alert, setAlert] = useState<Alert>({
         show: false,
         message: '',

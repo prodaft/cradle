@@ -119,6 +119,14 @@ export default function Relations({ obj }: RelationsProps) {
         return (entrySubtypesData || []).map((c: any) => c.subtype);
     }, [entrySubtypesData]);
 
+    const entryClassColors = useMemo(() => {
+        const colors = new Map<string, string>();
+        (entrySubtypesData || []).forEach((c: any) => {
+            if (c.color) colors.set(c.subtype, c.color);
+        });
+        return colors;
+    }, [entrySubtypesData]);
+
     const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -260,14 +268,11 @@ export default function Relations({ obj }: RelationsProps) {
         }
     }, [inaccessibleData, handleRequestAccess]);
 
-    const performSearch = useCallback(
-        (depth: number, page: number) => {
-            setAlert({ ...alert, show: false });
-            setInaccessibleEntities([]);
-            setPage(page);
-        },
-        [alert],
-    );
+    const performSearch = useCallback((_depth: number, page: number) => {
+        setAlert((prev) => ({ ...prev, show: false }));
+        setInaccessibleEntities([]);
+        setPage(page);
+    }, []);
 
     const handleDepthChange = (event: ChangeEvent<HTMLInputElement>) => {
         const value = parseInt(event.target.value, 10);
@@ -317,7 +322,7 @@ export default function Relations({ obj }: RelationsProps) {
 
     const handleResultClick = (link: string) => (e: MouseEvent) => {
         e.preventDefault();
-        setAlert({ ...alert, show: false });
+        setAlert((prev) => ({ ...prev, show: false }));
         router.navigate({ to: link as any });
     };
 
@@ -566,6 +571,7 @@ export default function Relations({ obj }: RelationsProps) {
                 entrySubtypes={entrySubtypes}
                 entrySubtypeFilters={entrySubtypeFilters}
                 setEntrySubtypeFilters={setEntrySubtypeFilters}
+                entryClassColors={entryClassColors}
             />
 
             {alert.show && (

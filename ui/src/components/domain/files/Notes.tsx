@@ -38,7 +38,7 @@ export default function Notes() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/notes' });
+    const search = useSearch({ strict: false });
     // navigate and navigateLink removed - use router.navigate() or Link component directly
     const { notesApi } = useApi();
     const [isCreatingNote, setIsCreatingNote] = useState(false);
@@ -86,6 +86,15 @@ export default function Notes() {
         null,
     );
     const [notesCount, setNotesCount] = useState({ current: 0, total: 0 });
+
+    const handleNotesCountChange = (count: { current: number; total: number }) => {
+        setNotesCount((prev) => {
+            if (prev.current === count.current && prev.total === count.total) {
+                return prev;
+            }
+            return count;
+        });
+    };
 
     const updateSearchParams = (filters: SearchFilters) => {
         const newSearch: any = {
@@ -238,7 +247,7 @@ export default function Notes() {
                         noteActions={[{ Component: DeleteNote, props: {} }]}
                         onFilterChange={handleColumnFilterChange}
                         onCreateNote={handleCreateNewNote}
-                        onTotalCountChange={setNotesCount}
+                        onTotalCountChange={handleNotesCountChange}
                         contentSearch={{
                             value: searchFilters.any_field || '',
                             onChange: (value: string) => {

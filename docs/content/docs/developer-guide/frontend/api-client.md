@@ -8,9 +8,9 @@ weight = 4
 The UI consumes the backend API through generated models and service helpers.
 
 ## Generated models
-- OpenAPI models are generated into `src/renderer/src/services/cradle/models`.
+- OpenAPI models are generated into `src/services/cradle/models`.
 - Types are used throughout hooks and components.
 
 ## Usage patterns
-- Use hooks in `src/renderer/src/hooks/api` for request handling.
+- Use hooks in `src/hooks/api` for request handling.
 - Prefer typed model responses for UI state.

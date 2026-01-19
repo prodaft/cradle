@@ -23,10 +23,14 @@ import Relations from './Relations';
  * @returns {Dashboard}
  * @constructor
  */
+import type { EntryResponse } from 'src/services/cradle/models';
+
+// ...
+
 export default function Dashboard() {
     const loaderData = useLoaderData({
         from: '/_authenticated/dashboards/$subtype/$name',
-    });
+    }) as { entry: EntryResponse };
     const contentObject = loaderData?.entry || undefined;
     const { entriesApi } = useApi();
     const router = useRouter();
