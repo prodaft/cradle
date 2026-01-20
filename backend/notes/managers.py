@@ -57,7 +57,7 @@ class NoteQuerySet(models.QuerySet):
 
         queryset = self.annotate(
             bit_or=ExpressionWrapper(F("access_vector").bitor(Value(v)), output_field=fieldtype)
-        ).filter(Q(bit_or=v) | Q(fleeting=True, author=user))
+        ).filter(Q(bit_or=v, fleeting=False) | Q(fleeting=True, author=user))
 
         return queryset
 

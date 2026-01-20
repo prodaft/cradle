@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
     const isDev = mode === "development";
 
     return {
-        base: './',
+        base: '/',
         cacheDir: '.vite-cache',
         plugins: [tailwindcss(), react(), visualizer(), nodePolyfills()],
         build: {
