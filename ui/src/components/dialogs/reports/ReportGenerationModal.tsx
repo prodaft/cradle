@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import useApi from '@/hooks/api/useApi';
 import { useMutation } from '@tanstack/react-query';
-import { Code, Download, Eye, EyeClosed, Page } from 'iconoir-react';
+import { CodeIcon, DownloadSimpleIcon, EyeIcon, EyeSlashIcon, FileTextIcon } from '@phosphor-icons/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -242,15 +242,15 @@ export default function ReportGenerationModal({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value='html'>
-                                <Page className='size-4' />
+                                <FileTextIcon className='size-4' weight="bold" />
                                 <span>HTML</span>
                             </SelectItem>
                             <SelectItem value='json'>
-                                <Code className='size-4' />
+                                <CodeIcon className='size-4' weight="bold" />
                                 <span>JSON</span>
                             </SelectItem>
                             <SelectItem value='plain'>
-                                <Download className='size-4' />
+                                <DownloadSimpleIcon className='size-4' weight="bold" />
                                 <span>Plain Text</span>
                             </SelectItem>
                         </SelectContent>
@@ -270,11 +270,11 @@ export default function ReportGenerationModal({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value='anonymized'>
-                                <EyeClosed className='size-4' />
+                                <EyeSlashIcon className='size-4' weight="bold" />
                                 <span>Anonymized</span>
                             </SelectItem>
                             <SelectItem value='transparent'>
-                                <Eye className='size-4' />
+                                <EyeIcon className='size-4' weight="bold" />
                                 <span>Transparent</span>
                             </SelectItem>
                         </SelectContent>

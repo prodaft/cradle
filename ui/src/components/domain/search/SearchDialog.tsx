@@ -17,7 +17,7 @@ import { useApi } from '@hooks';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { createDashboardLink } from '@utils/dashboard';
-import { Search, WarningCircle, Xmark } from 'iconoir-react';
+import { MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
 import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';
@@ -248,7 +248,7 @@ export default function SearchDialog({
                                 className='absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 p-0'
                                 title='Clear search'
                             >
-                                <Xmark className='h-3 w-3' />
+                                <XIcon className='h-3 w-3' weight="bold" />
                             </Button>
                         )}
                     </div>
@@ -271,7 +271,7 @@ export default function SearchDialog({
                                     : 'default'
                             }
                         >
-                            <WarningCircle />
+                            <WarningCircleIcon weight="fill" />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>
                     )}
@@ -323,7 +323,7 @@ export default function SearchDialog({
                         ) : (
                             <CommandEmpty>
                                 <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
-                                    <Search className='w-10 h-10 mb-3 opacity-30' />
+                                    <MagnifyingGlassIcon className='w-10 h-10 mb-3 opacity-30' weight="bold" />
                                     <span className='text-sm'>No results found</span>
                                     {searchQuery && (
                                         <span className='text-xs mt-1 opacity-70'>

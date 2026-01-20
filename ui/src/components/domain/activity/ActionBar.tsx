@@ -6,7 +6,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Spinner } from '@/components/ui/spinner';
-import { Download, Trash } from 'iconoir-react';
+import { DownloadSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 interface Action {
@@ -97,10 +97,10 @@ export default function ActionBar({
                             onClick={() => handleActionSelect(action.value)}
                         >
                             {action.value === 'download' && (
-                                <Download width='16' height='16' />
+                                <DownloadSimpleIcon size={16} weight="bold" />
                             )}
                             {action.value === 'delete' && (
-                                <Trash width='16' height='16' />
+                                <TrashIcon size={16} weight="bold" />
                             )}
                             {action.label}
                         </DropdownMenuItem>

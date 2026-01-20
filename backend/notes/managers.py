@@ -51,7 +51,7 @@ class NoteQuerySet(models.QuerySet):
         Get the notes that are accessible by the current user
         """
         if user.is_cradle_admin:
-            return self
+            return self.filter(Q(fleeting=False) | Q(fleeting=True, author=user))
 
         v = user.access_vector
 

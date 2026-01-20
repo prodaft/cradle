@@ -2,7 +2,7 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import useApi from '@/hooks/api/useApi';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
-import { WarningCircle } from 'iconoir-react';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 interface Alert {
@@ -82,7 +82,7 @@ export default function ConfirmEmail() {
                                     : 'default'
                             }
                         >
-                            <WarningCircle />
+                            <WarningCircleIcon size={18} weight="bold" />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>
                     )}

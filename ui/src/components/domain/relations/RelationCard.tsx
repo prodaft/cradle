@@ -13,7 +13,7 @@ import { createDashboardLink } from '@/utils/dashboard';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { Trash } from 'iconoir-react';
+import { TrashIcon } from '@phosphor-icons/react';
 import { startCase } from 'lodash';
 import { useEffect, useState } from 'react';
 
@@ -92,7 +92,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                             onClick={handleDelete}
                             title='Delete Relation'
                         >
-                            <Trash className='w-5 h-5' />
+                            <TrashIcon className='w-5 h-5' weight="bold" />
                         </Button>
                     </CardAction>
                 )}

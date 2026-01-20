@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
-import { EditPencil } from 'iconoir-react/regular';
+import { PencilSimpleIcon } from '@phosphor-icons/react';
 import { ReactNode } from 'react';
 import EnrichmentSettingsForm from '../forms/EnrichmentSettingsForm';
 
@@ -36,7 +36,7 @@ export default function AdminPanelCardEnrichment({
                         }}
                         title='Edit'
                     >
-                        <EditPencil />
+                        <PencilSimpleIcon size={16} weight="bold" />
                     </Button>
                 </CardAction>
             </CardHeader>

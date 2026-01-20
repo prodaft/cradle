@@ -18,7 +18,7 @@ import Logo from '@components/base/Logo/Logo';
 import { UserConfig } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { HalfMoon, SunLight, Undo, WarningCircle } from 'iconoir-react';
+import { MoonIcon, SunIcon, ArrowULeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import GlobeVisualization from './GlobeVisualization';
 
@@ -257,7 +257,7 @@ export default function Login() {
                             data-testid='back-button'
                             title='Back to Login'
                         >
-                            <Undo width={18} height={18} />
+                            <ArrowULeftIcon size={18} weight="bold" />
                         </Button>
                     ) : (
                         <Button
@@ -269,9 +269,9 @@ export default function Login() {
                             title='Toggle Theme'
                         >
                             {isDarkMode ? (
-                                <SunLight width={18} height={18} />
+                                <SunIcon size={18} weight="bold" />
                             ) : (
-                                <HalfMoon width={18} height={18} />
+                                <MoonIcon size={18} weight="bold" />
                             )}
                         </Button>
                     )}
@@ -358,7 +358,7 @@ export default function Login() {
                                                         : 'default'
                                                 }
                                             >
-                                                <WarningCircle />
+                                                <WarningCircleIcon size={18} weight="bold" />
                                                 <AlertDescription>
                                                     {alert.message}
                                                 </AlertDescription>
@@ -435,7 +435,7 @@ export default function Login() {
                                                         : 'default'
                                                 }
                                             >
-                                                <WarningCircle />
+                                                <WarningCircleIcon size={18} weight="bold" />
                                                 <AlertDescription>
                                                     {alert.message}
                                                 </AlertDescription>

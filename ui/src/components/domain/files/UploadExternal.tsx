@@ -6,7 +6,7 @@ import type { Alert } from '@/types';
 import type { DigestSubclass } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { Search } from 'iconoir-react';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useState } from 'react';
 import DigestList from './DigestList';
 

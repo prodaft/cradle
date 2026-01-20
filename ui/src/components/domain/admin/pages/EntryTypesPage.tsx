@@ -1,4 +1,4 @@
-import { ActionBar as BaseActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
+import { ClockCounterClockwiseIcon, GearIcon, PencilIcon, TrashIcon } from '@phosphor-icons/react';
 import { EntryClass } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -40,7 +41,6 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ClockRotateRight, Edit, Settings, Trash } from 'iconoir-react/regular';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddEntryTypeModal from '../../../dialogs/admin/AddEntryTypeModal';
@@ -56,8 +56,8 @@ interface EntryTypeData {
 }
 
 const ENTRY_TYPE_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'activity', label: 'Activity', icon: ClockRotateRight },
+    { id: 'settings', label: 'Settings', icon: GearIcon },
+    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
 ];
 
 function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
@@ -169,11 +169,10 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                                             e.preventDefault();
                                             handleTabClick(item.id);
                                         }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
-                                            isActive
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${isActive
                                                 ? 'bg-muted hover:bg-accent active'
                                                 : ''
-                                        }`}
+                                            }`}
                                         data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
@@ -258,6 +257,9 @@ export default function EntryTypesPage() {
     );
     const [addEntryTypeModalOpen, setAddEntryTypeModalOpen] = useState(false);
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteEntryTypeSubtypes, setBulkDeleteEntryTypeSubtypes] = useState<
+        string[]
+    >([]);
 
     const selectedEntryTypeIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -314,6 +316,7 @@ export default function EntryTypesPage() {
 
     const handleDeleteSelected = useCallback(() => {
         if (selectedEntryTypeIds.length === 0) return;
+        setBulkDeleteEntryTypeSubtypes(selectedEntryTypeIds);
         setBulkDeleteModalOpen(true);
     }, [selectedEntryTypeIds]);
 
@@ -572,7 +575,7 @@ export default function EntryTypesPage() {
                         onClick={handleEditSelected}
                         disabled={isPending || selectedEntryTypeIds.length !== 1}
                     >
-                        <Edit width={18} height={18} />
+                        <PencilIcon size={18} weight="bold" />
                         Edit
                     </ActionBarItem>
                     {isAdmin && (
@@ -580,7 +583,7 @@ export default function EntryTypesPage() {
                             onClick={handleViewActivitySelected}
                             disabled={isPending || selectedEntryTypeIds.length !== 1}
                         >
-                            <ClockRotateRight width={18} height={18} />
+                            <ClockCounterClockwiseIcon size={18} weight="bold" />
                             View Activity
                         </ActionBarItem>
                     )}
@@ -590,7 +593,7 @@ export default function EntryTypesPage() {
                             disabled={isPending || selectedEntryTypeIds.length === 0}
                             className='text-destructive'
                         >
-                            <Trash width={18} height={18} />
+                            <TrashIcon size={18} weight="bold" />
                             Delete
                         </ActionBarItem>
                     )}
@@ -623,10 +626,22 @@ export default function EntryTypesPage() {
             )}
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
-                onOpenChange={setBulkDeleteModalOpen}
-                onConfirm={() => handleDeleteEntryTypes(selectedEntryTypeIds)}
-                confirmText='DELETE'
-                text={`Are you sure you want to delete ${selectedEntryTypeIds.length} entry type${selectedEntryTypeIds.length > 1 ? 's' : ''}? This action is irreversible.`}
+                onOpenChange={(open) => {
+                    setBulkDeleteModalOpen(open);
+                    if (!open) {
+                        setBulkDeleteEntryTypeSubtypes([]);
+                    }
+                }}
+                onConfirm={() => {
+                    handleDeleteEntryTypes(bulkDeleteEntryTypeSubtypes);
+                    setBulkDeleteEntryTypeSubtypes([]);
+                }}
+                confirmText={
+                    bulkDeleteEntryTypeSubtypes.length === 1
+                        ? bulkDeleteEntryTypeSubtypes[0]
+                        : `DELETE ${bulkDeleteEntryTypeSubtypes.length}`
+                }
+                text={`Are you sure you want to delete ${bulkDeleteEntryTypeSubtypes.length} entry type${bulkDeleteEntryTypeSubtypes.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
         </AdminPageLayout>
     );

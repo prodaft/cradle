@@ -50,10 +50,11 @@ export default function ConfirmDeletionModal({
     open,
     onOpenChange,
 }: ConfirmDeletionModalProps): JSX.Element {
+    const confirmTextStripped = confirmText?.trim();
     const [userInput, setUserInput] = useState('');
 
     // If confirmText is provided, enable confirm only when the input matches
-    const isConfirmEnabled = confirmText ? userInput === confirmText : true;
+    const isConfirmEnabled = confirmTextStripped ? userInput === confirmTextStripped : true;
 
     const handleConfirm = () => {
         if (isConfirmEnabled) {
@@ -71,11 +72,10 @@ export default function ConfirmDeletionModal({
                 </DialogHeader>
 
                 {/* Confirmation input */}
-                {confirmText && (
+                {confirmTextStripped && (
                     <div className='grid w-full items-center gap-3 mb-5'>
                         <Label htmlFor='confirm-input'>
-                            Type "
-                            <span className='text-border-primary'>{confirmText}</span>"
+                            Type <span className='text-border-primary'>"{confirmTextStripped}"</span>
                             to confirm
                         </Label>
                         <Input
@@ -83,7 +83,7 @@ export default function ConfirmDeletionModal({
                             type='text'
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            placeholder={confirmText}
+                            placeholder={confirmTextStripped}
                         />
                     </div>
                 )}

@@ -10,7 +10,7 @@ import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
-import { NavArrowDown, NavArrowRight } from 'iconoir-react';
+import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 interface ReferenceTreeProps {
@@ -137,8 +137,8 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                 size='sm'
                                 className='group hover:text-border-primary'
                             >
-                                <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
-                                <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
+                                <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
                                 <span>References</span>
                             </Button>
                         </CollapsibleTrigger>
@@ -158,8 +158,8 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                         size='sm'
                                                         className='group hover:text-border-primary'
                                                     >
-                                                        <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
-                                                        <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                                        <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
+                                                        <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
                                                         <span>{value}</span>
                                                     </Button>
                                                 </CollapsibleTrigger>
@@ -195,8 +195,8 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                             size='sm'
                                                             className='group hover:text-border-primary'
                                                         >
-                                                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
-                                                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                                            <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
+                                                            <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
                                                             <span>{value}</span>
                                                         </Button>
                                                     </CollapsibleTrigger>

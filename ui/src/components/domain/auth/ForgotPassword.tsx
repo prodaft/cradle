@@ -17,7 +17,7 @@ import Logo from '@components/base/Logo/Logo';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { Undo, WarningCircle } from 'iconoir-react';
+import { ArrowULeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -123,7 +123,7 @@ export default function ForgotPassword() {
                         data-testid='back-button'
                         title='Back to Login'
                     >
-                        <Undo width={18} height={18} />
+                        <ArrowULeftIcon size={18} weight="bold" />
                     </Button>
                 </div>
 
@@ -180,7 +180,7 @@ export default function ForgotPassword() {
                                                 : 'default'
                                         }
                                     >
-                                        <WarningCircle />
+                                        <WarningCircleIcon size={18} weight="bold" />
                                         <AlertDescription>
                                             {alert.message}
                                         </AlertDescription>

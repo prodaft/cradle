@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import SearchDialog from '@components/domain/search/SearchDialog';
-import { Search } from 'iconoir-react';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import React, { useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
@@ -45,7 +45,7 @@ export default function Navbar(): React.JSX.Element {
                     className='rounded-full max-w-xs w-full justify-between text-muted-foreground'
                 >
                     <div className='flex items-center gap-2'>
-                        <Search className='h-4 w-4' />
+                        <MagnifyingGlassIcon className='h-4 w-4' weight="bold" />
                         <span className='text-sm'>Search...</span>
                     </div>
                     <KbdGroup className='hidden sm:flex'>

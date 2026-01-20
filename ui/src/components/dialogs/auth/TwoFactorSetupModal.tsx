@@ -13,7 +13,7 @@ import useApi from '@/hooks/api/useApi';
 import { Enable2FA } from '@/services/cradle/models';
 import { Alert } from '@/types';
 import { useQuery } from '@tanstack/react-query';
-import { WarningCircle } from 'iconoir-react';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { QRCodeSVG } from 'qrcode.react';
 import React, { useEffect, useState } from 'react';
 

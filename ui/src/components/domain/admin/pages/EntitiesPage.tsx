@@ -1,4 +1,4 @@
-import { ActionBar as BaseActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
@@ -25,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
+import { ClockCounterClockwiseIcon, GearIcon, PencilIcon, TrashIcon } from '@phosphor-icons/react';
 import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -40,7 +41,6 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ClockRotateRight, Edit, Settings, Trash } from 'iconoir-react/regular';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddEntityModal from '../../../dialogs/admin/AddEntityModal';
@@ -54,8 +54,8 @@ interface EntityData extends Entity {
 }
 
 const ENTITY_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'activity', label: 'Activity', icon: ClockRotateRight },
+    { id: 'settings', label: 'Settings', icon: GearIcon },
+    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
 ];
 
 function EntitySettingsPage({ entityId }: { entityId: string }) {
@@ -168,8 +168,8 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                                             handleTabClick(item.id);
                                         }}
                                         className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${isActive
-                                                ? 'bg-muted hover:bg-accent active'
-                                                : ''
+                                            ? 'bg-muted hover:bg-accent active'
+                                            : ''
                                             }`}
                                         data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
@@ -250,6 +250,7 @@ export default function EntitiesPage() {
     const [deleteEntityId, setDeleteEntityId] = useState<number | null>(null);
     const [addEntityModalOpen, setAddEntityModalOpen] = useState(false);
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteEntityIds, setBulkDeleteEntityIds] = useState<string[]>([]);
 
     const selectedEntityIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -305,6 +306,7 @@ export default function EntitiesPage() {
 
     const handleDeleteSelected = useCallback(() => {
         if (selectedEntityIds.length === 0) return;
+        setBulkDeleteEntityIds(selectedEntityIds);
         setBulkDeleteModalOpen(true);
     }, [selectedEntityIds]);
 
@@ -581,7 +583,7 @@ export default function EntitiesPage() {
                         onClick={handleEditSelected}
                         disabled={isPending || selectedEntityIds.length !== 1}
                     >
-                        <Edit width={18} height={18} />
+                        <PencilIcon size={18} weight="bold" />
                         Edit
                     </ActionBarItem>
                     {isAdmin && (
@@ -589,7 +591,7 @@ export default function EntitiesPage() {
                             onClick={handleViewActivitySelected}
                             disabled={isPending || selectedEntityIds.length !== 1}
                         >
-                            <ClockRotateRight width={18} height={18} />
+                            <ClockCounterClockwiseIcon size={18} weight="bold" />
                             View Activity
                         </ActionBarItem>
                     )}
@@ -599,7 +601,7 @@ export default function EntitiesPage() {
                             disabled={isPending || selectedEntityIds.length === 0}
                             className='text-destructive'
                         >
-                            <Trash width={18} height={18} />
+                            <TrashIcon size={18} weight="bold" />
                             Delete
                         </ActionBarItem>
                     )}
@@ -638,10 +640,29 @@ export default function EntitiesPage() {
                 })()}
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
-                onOpenChange={setBulkDeleteModalOpen}
-                onConfirm={() => handleDeleteEntities(selectedEntityIds)}
-                confirmText='DELETE'
-                text={`Are you sure you want to delete ${selectedEntityIds.length} entit${selectedEntityIds.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}
+                onOpenChange={(open) => {
+                    setBulkDeleteModalOpen(open);
+                    if (!open) {
+                        setBulkDeleteEntityIds([]);
+                    }
+                }}
+                onConfirm={() => {
+                    handleDeleteEntities(bulkDeleteEntityIds);
+                    setBulkDeleteEntityIds([]);
+                }}
+                confirmText={
+                    bulkDeleteEntityIds.length === 1
+                        ? (() => {
+                            const entity = entities.find(
+                                (e) => String(e.id) === bulkDeleteEntityIds[0],
+                            );
+                            return entity
+                                ? `${entity.subtype}:${entity.name}`
+                                : 'DELETE';
+                        })()
+                        : `DELETE ${bulkDeleteEntityIds.length}`
+                }
+                text={`Are you sure you want to delete ${bulkDeleteEntityIds.length} entit${bulkDeleteEntityIds.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}
             />
         </AdminPageLayout>
     );

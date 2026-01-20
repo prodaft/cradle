@@ -29,7 +29,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import bytes from 'bytes';
-import { WarningCircle } from 'iconoir-react';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -342,7 +342,7 @@ export default function AdminUserSettings({
                                                 : 'default'
                                         }
                                     >
-                                        <WarningCircle />
+                                        <WarningCircleIcon size={18} weight="bold" />
                                         <AlertDescription>
                                             {alert.message}
                                         </AlertDescription>

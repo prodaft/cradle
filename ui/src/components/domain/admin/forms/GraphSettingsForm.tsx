@@ -8,9 +8,9 @@ import {
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
+import { ArrowClockwiseIcon, HardDrivesIcon } from '@phosphor-icons/react';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { useMutation } from '@tanstack/react-query';
-import { Refresh, Server } from 'iconoir-react';
 import { toast } from 'sonner';
 
 export default function GraphSettingsForm() {
@@ -89,7 +89,7 @@ export default function GraphSettingsForm() {
                                         size='sm'
                                         onClick={handleRefreshMaterializedGraph}
                                     >
-                                        <Refresh className='w-3.5 h-3.5' />
+                                        <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
                                         Refresh
                                     </Button>
                                 </Field>
@@ -111,7 +111,7 @@ export default function GraphSettingsForm() {
                                         size='sm'
                                         onClick={handleRecalculateNodePositions}
                                     >
-                                        <Server className='w-3.5 h-3.5' />
+                                        <HardDrivesIcon className='w-3.5 h-3.5' weight="bold" />
                                         Recalculate
                                     </Button>
                                 </Field>

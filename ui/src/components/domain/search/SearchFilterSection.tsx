@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FilterList, NavArrowDown, NavArrowUp, Xmark } from 'iconoir-react';
+import { FunnelIcon, CaretDownIcon, CaretUpIcon, XIcon } from '@phosphor-icons/react';
 import React, { Dispatch, SetStateAction } from 'react';
 
 /**
@@ -59,7 +59,7 @@ export default function SearchFilterSection({
                 className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary group h-auto rounded-none'
             >
                 <div className='flex items-center gap-2'>
-                    <FilterList className='w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors' />
+                    <FunnelIcon className='w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors' weight="bold" />
                     <span className='text-sm text-foreground font-medium'>
                         Filter by type
                     </span>
@@ -68,9 +68,9 @@ export default function SearchFilterSection({
                     )}
                 </div>
                 {showFilters ? (
-                    <NavArrowUp className='w-4 h-4 text-muted-foreground' />
+                    <CaretUpIcon className='w-4 h-4 text-muted-foreground' weight="bold" />
                 ) : (
-                    <NavArrowDown className='w-4 h-4 text-muted-foreground' />
+                    <CaretDownIcon className='w-4 h-4 text-muted-foreground' weight="bold" />
                 )}
             </Button>
 
@@ -145,7 +145,7 @@ export default function SearchFilterSection({
                                 }
                             >
                                 {filter}
-                                <Xmark className='w-3 h-3' />
+                                <XIcon className='w-3 h-3' weight="bold" />
                             </Badge>
                         );
                     })}

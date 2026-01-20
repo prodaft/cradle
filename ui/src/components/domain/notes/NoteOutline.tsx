@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { HeaderNode } from '@/utils/editor/outline';
-import { NavArrowDown, NavArrowRight } from 'iconoir-react';
+import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import React, { useState } from 'react';
 
 interface TreeNodeProps {
@@ -52,16 +52,16 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                         title={expanded ? 'Collapse' : 'Expand'}
                     >
                         {expanded ? (
-                            <NavArrowRight
+                            <CaretRightIcon
                                 className='text-primary'
-                                width='14'
-                                height='14'
+                                size={14}
+                                weight="bold"
                             />
                         ) : (
-                            <NavArrowDown
+                            <CaretDownIcon
                                 className='text-primary'
-                                width='14'
-                                height='14'
+                                size={14}
+                                weight="bold"
                             />
                         )}
                     </Button>

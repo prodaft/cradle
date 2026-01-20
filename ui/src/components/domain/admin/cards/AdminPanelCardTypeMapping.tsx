@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
-import { EditPencil } from 'iconoir-react/regular';
+import { PencilSimpleIcon } from '@phosphor-icons/react';
 import { startCase } from 'lodash';
 import { ReactNode } from 'react';
 import TypeMappingsEditor from '../TypeMappingsEditor';
@@ -37,7 +37,7 @@ export default function AdminPanelCardTypeMapping({
                         }}
                         title='Edit'
                     >
-                        <EditPencil />
+                        <PencilSimpleIcon size={16} weight="bold" />
                     </Button>
                 </CardAction>
             </CardHeader>

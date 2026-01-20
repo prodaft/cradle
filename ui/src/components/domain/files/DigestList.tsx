@@ -26,13 +26,9 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import {
-    InfoCircleSolid,
-    Trash,
-    WarningCircleSolid,
-    WarningTriangleSolid,
-} from 'iconoir-react';
+import { TrashIcon } from '@phosphor-icons/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { StatusIcon, type StatusType } from '../notes/StatusIcon';
 
 interface DataTypeOption {
     value: string;
@@ -90,6 +86,7 @@ function DigestList({
     onUpload,
 }: DigestListProps) {
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteDigestIds, setBulkDeleteDigestIds] = useState<string[]>([]);
     const { intelioApi } = useApi();
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -204,56 +201,6 @@ function DigestList({
     const getStatusIcon = (status?: string, errorMessage?: string) => {
         if (!status) return null;
 
-        const icon = (() => {
-            switch (status) {
-                case 'done':
-                    return (
-                        <svg
-                            width='18'
-                            height='18'
-                            viewBox='0 0 24 24'
-                            fill='none'
-                            xmlns='http://www.w3.org/2000/svg'
-                            className='text-primary'
-                        >
-                            <path
-                                d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
-                                stroke='currentColor'
-                                strokeWidth='2'
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                            />
-                        </svg>
-                    );
-                case 'waiting':
-                    return (
-                        <WarningTriangleSolid
-                            className='text-[var(--chart-4)] dark:text-[var(--chart-3)]'
-                            width='18'
-                            height='18'
-                        />
-                    );
-                case 'error':
-                    return (
-                        <WarningCircleSolid
-                            className='text-destructive'
-                            width='18'
-                            height='18'
-                        />
-                    );
-                case 'working':
-                    return (
-                        <InfoCircleSolid
-                            className='text-primary'
-                            width='18'
-                            height='18'
-                        />
-                    );
-                default:
-                    return null;
-            }
-        })();
-
         const statusCapitalized = status.charAt(0).toUpperCase() + status.slice(1);
         const tooltipContent = errorMessage || statusCapitalized;
         const tooltipColorClass =
@@ -263,12 +210,16 @@ function DigestList({
                   ? '[--tooltip-bg:var(--chart-4)] dark:[--tooltip-bg:var(--chart-3)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
                   : '';
 
+        const iconElement = status === 'waiting' 
+            ? <StatusIcon status={status as StatusType} className='text-[var(--chart-4)] dark:text-[var(--chart-3)]' />
+            : <StatusIcon status={status as StatusType} />;
+
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <span className='inline-flex items-center align-middle flex-shrink-0'>
-                            {icon}
+                            {iconElement}
                         </span>
                     </TooltipTrigger>
                     <TooltipContent className={tooltipColorClass}>
@@ -282,7 +233,7 @@ function DigestList({
             <Tooltip>
                 <TooltipTrigger asChild>
                     <span className='inline-flex items-center align-middle flex-shrink-0'>
-                        {icon}
+                        {iconElement}
                     </span>
                 </TooltipTrigger>
                 <TooltipContent>{tooltipContent}</TooltipContent>
@@ -510,7 +461,10 @@ function DigestList({
     }, [externalSetSelectedDigests]);
 
     const handleDeleteSelected = async () => {
-        setBulkDeleteModalOpen(true);
+        if (selectedDigestIds.length > 0) {
+            setBulkDeleteDigestIds(selectedDigestIds);
+            setBulkDeleteModalOpen(true);
+        }
     };
 
     const executeBulkDelete = async (selectedIds: string[]) => {
@@ -611,7 +565,7 @@ function DigestList({
                         disabled={loading || digests.length === 0 || selectedDigestIds.length === 0}
                         className='text-destructive'
                     >
-                        <Trash width={18} height={18} />
+                        <TrashIcon size={18} weight="bold" />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>
@@ -620,11 +574,17 @@ function DigestList({
             </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
-                onOpenChange={setBulkDeleteModalOpen}
-                text={`Are you sure you want to delete ${selectedDigestIds.length} digest${selectedDigestIds.length > 1 ? 's' : ''}?`}
+                onOpenChange={(open) => {
+                    setBulkDeleteModalOpen(open);
+                    if (!open) {
+                        setBulkDeleteDigestIds([]);
+                    }
+                }}
+                text={`Are you sure you want to delete ${bulkDeleteDigestIds.length} digest${bulkDeleteDigestIds.length > 1 ? 's' : ''}?`}
                 onConfirm={() => {
-                    if (selectedDigestIds.length > 0) {
-                        executeBulkDelete(selectedDigestIds);
+                    if (bulkDeleteDigestIds.length > 0) {
+                        executeBulkDelete(bulkDeleteDigestIds);
+                        setBulkDeleteDigestIds([]);
                     }
                 }}
             />

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
-import { ClockRotateRight, Lock } from 'iconoir-react/regular';
+import { ClockCounterClockwiseIcon, LockKeyIcon } from '@phosphor-icons/react';
 import { ReactNode } from 'react';
 import ActivityList from '../../activity/ActivityList';
 import AdminPanelUserPermissions from '../AdminPanelUserPermissions';
@@ -60,7 +60,7 @@ export default function AdminPanelCardUser({
                         }}
                         title='View Activity'
                     >
-                        <ClockRotateRight />
+                        <ClockCounterClockwiseIcon size={16} weight="bold" />
                     </Button>
                     <Button
                         variant='ghost'
@@ -71,7 +71,7 @@ export default function AdminPanelCardUser({
                         }}
                         title='Edit'
                     >
-                        <Lock height={20} width={20} />
+                        <LockKeyIcon size={20} weight="bold" />
                     </Button>
                 </CardAction>
             </CardHeader>

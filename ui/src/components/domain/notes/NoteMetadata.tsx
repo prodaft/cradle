@@ -1,7 +1,7 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { format } from 'date-fns';
-import { Clock, Link, User } from 'iconoir-react';
+import { ClockIcon, LinkIcon, UserIcon } from '@phosphor-icons/react';
 
 interface NoteMetadataProps {
     note: NoteRetrieve;
@@ -17,7 +17,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
             <Tooltip>
                 <TooltipTrigger asChild>
                     <span className='inline-flex items-center gap-1.5'>
-                        <Clock width='16' height='16' />
+                        <ClockIcon size={16} weight="bold" />
                         <span className='text-muted-foreground'>
                             {note.timestamp
                                 ? format(new Date(note.timestamp), 'dd/MM/yyyy, HH:mm')
@@ -31,7 +31,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <span className='inline-flex items-center gap-1.5'>
-                            <User width='16' height='16' />
+                            <UserIcon size={16} weight="bold" />
                             <span className='text-foreground'>
                                 {note?.author ? note.author.username : 'Unknown'}
                             </span>
@@ -45,7 +45,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <span className='inline-flex items-center gap-1.5'>
-                                <Clock width='16' height='16' />
+                                <ClockIcon size={16} weight="bold" />
                                 <span className='text-muted-foreground'>
                                     {note.editTimestamp
                                         ? format(
@@ -61,7 +61,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <span className='inline-flex items-center gap-1.5'>
-                                <User width='16' height='16' />
+                                <UserIcon size={16} weight="bold" />
                                 <span className='text-foreground'>
                                     {note?.editor ? note.editor.username : 'Unknown'}
                                 </span>
@@ -75,7 +75,7 @@ export default function NoteMetadata({ note, isFleeting }: NoteMetadataProps) {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <span className='inline-flex items-center gap-1.5'>
-                            <Link width='16' height='16' />
+                            <LinkIcon size={16} weight="bold" />
                             <span className='text-muted-foreground'>
                                 {format(new Date(note.lastLinked), 'dd/MM/yyyy, HH:mm')}
                             </span>

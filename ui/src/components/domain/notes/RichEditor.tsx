@@ -62,7 +62,7 @@ import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { Prec } from '@uiw/react-codemirror';
-import { NavArrowDown } from 'iconoir-react';
+import { CaretDownIcon } from '@phosphor-icons/react';
 import {
     forwardRef,
     memo,
@@ -638,8 +638,9 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                         className='flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors cursor-pointer w-full text-left'
                         onClick={toggleFileList}
                     >
-                        <NavArrowDown
+                        <CaretDownIcon
                             className={`size-4 text-muted-foreground transition-transform duration-200 ${showFileList ? '' : '-rotate-90'}`}
+                            weight="bold"
                         />
                         <span>Attached Files</span>
                         <span className='text-xs text-muted-foreground ml-1'>

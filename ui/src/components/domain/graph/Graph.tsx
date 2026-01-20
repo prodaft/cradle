@@ -4,7 +4,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTheme } from '@/contexts/ui';
 import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
-import { FilterList, PauseSolid, PlaySolid, Search, Settings } from 'iconoir-react';
+import { FunnelIcon, PauseIcon, PlayIcon, MagnifyingGlassIcon, GearIcon } from '@phosphor-icons/react';
 import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
@@ -354,9 +354,9 @@ export default function GraphViewer({
                                         title={fetchProgress.isPaused ? 'Resume loading' : 'Pause loading'}
                                     >
                                         {fetchProgress.isPaused ? (
-                                            <PlaySolid className='size-3' />
+                                            <PlayIcon className='size-3' weight="fill" />
                                         ) : (
-                                            <PauseSolid className='size-3' />
+                                            <PauseIcon className='size-3' weight="fill" />
                                         )}
                                     </Button>
                                 )}
@@ -378,7 +378,7 @@ export default function GraphViewer({
                                 title='Toggle explorer panel'
                                 onClick={() => onTogglePanel('explorer')}
                             >
-                                <Search width='16' height='16' />
+                                <MagnifyingGlassIcon size={16} weight="bold" />
                             </Button>
                         )}
 
@@ -395,7 +395,7 @@ export default function GraphViewer({
                                 title='Toggle display panel'
                                 onClick={() => onTogglePanel('display')}
                             >
-                                <Settings width={16} height={16} />
+                                <GearIcon size={16} weight="bold" />
                             </Button>
                         )}
 
@@ -412,7 +412,7 @@ export default function GraphViewer({
                                 title='Toggle filters panel'
                                 onClick={() => onTogglePanel('filters')}
                             >
-                                <FilterList width={16} height={16} />
+                                <FunnelIcon size={16} weight="bold" />
                             </Button>
                         )}
 
@@ -432,9 +432,9 @@ export default function GraphViewer({
                             }}
                         >
                             {enableSimulation ? (
-                                <PauseSolid width='16' height='16' />
+                                <PauseIcon size={16} weight="fill" />
                             ) : (
-                                <PlaySolid width='16' height='16' />
+                                <PlayIcon size={16} weight="fill" />
                             )}
                         </Button>
                     </div>
@@ -663,12 +663,12 @@ export default function GraphViewer({
                                     >
                                         {fetchProgress.isPaused ? (
                                             <>
-                                                <PlaySolid className='size-4 mr-1' />
+                                                <PlayIcon className='size-4 mr-1' weight="fill" />
                                                 Resume
                                             </>
                                         ) : (
                                             <>
-                                                <PauseSolid className='size-4 mr-1' />
+                                                <PauseIcon className='size-4 mr-1' weight="fill" />
                                                 Pause
                                             </>
                                         )}

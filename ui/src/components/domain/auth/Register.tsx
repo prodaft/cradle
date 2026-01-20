@@ -19,7 +19,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { UserConfig } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { Undo, WarningCircle } from 'iconoir-react';
+import { ArrowULeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -251,7 +251,7 @@ export default function Register() {
                         data-testid='back-button'
                         title='Back to Login'
                     >
-                        <Undo width={18} height={18} />
+                        <ArrowULeftIcon size={18} weight="bold" />
                     </Button>
                 </div>
 
@@ -273,7 +273,7 @@ export default function Register() {
                                 </div>
                                 {signup === false && (
                                     <Alert>
-                                        <WarningCircle />
+                                        <WarningCircleIcon size={18} weight="bold" />
                                         <AlertDescription>
                                             Registration is disabled. Use single sign-on
                                             or contact an administrator.

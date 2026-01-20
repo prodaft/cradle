@@ -15,7 +15,7 @@ import {
 } from '@codemirror/search';
 import { EditorSelection } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { Xmark } from 'iconoir-react';
+import { XIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import {
     VscArrowDown,
@@ -302,7 +302,7 @@ export default function FindReplace({
                                         className='w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground'
                                         aria-label='Close'
                                     >
-                                        <Xmark width='18' height='18' />
+                                        <XIcon size={18} weight="bold" />
                                     </Button>
                                 </div>
                             </div>

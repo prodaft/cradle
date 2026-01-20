@@ -10,7 +10,7 @@ import {
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import { useMutation } from '@tanstack/react-query';
-import { Copy, Eye, EyeClosed, WarningCircle } from 'iconoir-react';
+import { CopyIcon, EyeIcon, EyeSlashIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 /**
@@ -180,9 +180,9 @@ export default function ApiKeyGenerateModal({
                                             }
                                         >
                                             {showApiKey ? (
-                                                <Eye className='w-4 h-4' />
+                                                <EyeIcon className='w-4 h-4' weight="bold" />
                                             ) : (
-                                                <EyeClosed className='w-4 h-4' />
+                                                <EyeSlashIcon className='w-4 h-4' weight="bold" />
                                             )}
                                         </Button>
                                         <Button
@@ -192,7 +192,7 @@ export default function ApiKeyGenerateModal({
                                             onClick={handleCopy}
                                             title={copied ? 'Copied!' : 'Copy API key'}
                                         >
-                                            <Copy className='w-4 h-4' />
+                                            <CopyIcon className='w-4 h-4' weight="bold" />
                                         </Button>
                                     </div>
                                     {copied && (

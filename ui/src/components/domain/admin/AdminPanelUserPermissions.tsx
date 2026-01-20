@@ -20,7 +20,7 @@ import useApi from '@/hooks/api/useApi';
 import { naturalSort } from '@/utils/dashboard';
 import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
-import { Search } from 'iconoir-react';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 interface AdminPanelUserPermissionsProps {
@@ -157,7 +157,7 @@ export default function AdminPanelUserPermissions({
         <div className='space-y-4'>
             {/* Search */}
             <div className='relative'>
-                <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
+                <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' weight="bold" />
                 <Input
                     type='text'
                     placeholder='Search entities...'

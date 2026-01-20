@@ -16,7 +16,7 @@ import { queryKeys } from '@/hooks/query';
 import type { OptimizedEntryResponse } from '@/services/cradle';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
-import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
+import type { NoteRetrieve } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import {
@@ -27,18 +27,14 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import {
-    DesignNib,
-    InfoCircleSolid,
-    PlusCircle,
-    RefreshCircle,
-    Sparks,
-    StatsReport,
-    Trash,
-    WarningCircleSolid,
-    WarningTriangleSolid,
-} from 'iconoir-react';
 import { startCase } from 'lodash';
+import { 
+    PlusCircleIcon, 
+    ArrowClockwiseIcon, 
+    ChartBarIcon, 
+    SparkleIcon, 
+    TrashIcon 
+} from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -54,6 +50,7 @@ import EnrichmentRequestModal from '../../dialogs/enrichment/EnrichmentRequestMo
 import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
 import { NotePreviewContent } from './NotePreviewContent';
+import { StatusIcon } from './StatusIcon';
 
 interface Alert {
     show: boolean;
@@ -138,6 +135,7 @@ export default function NotesList({
     );
     const { notesApi, managementApi } = useApi();
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteNoteIds, setBulkDeleteNoteIds] = useState<string[]>([]);
     const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
     const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
     const [reportModalOpen, setReportModalOpen] = useState(false);
@@ -148,6 +146,8 @@ export default function NotesList({
     const [enrichmentNotesList, setEnrichmentNotesList] = useState<
         Array<{ id: string; title: string; entities: OptimizedEntryResponse[] }>
     >([]);
+    const [relinkModalOpen, setRelinkModalOpen] = useState(false);
+    const [relinkNoteIds, setRelinkNoteIds] = useState<string[]>([]);
     const queryClient = useQueryClient();
 
     const retryNotesMutation = useMutation({
@@ -195,62 +195,15 @@ export default function NotesList({
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Mapping of table columns to API field names
-    const sortFieldMapping: Record<string, string> = {
+    const sortFieldMapping = useMemo<Record<string, string>>(() => ({
         title: 'title',
         description: 'timestamp',
         author: 'author__username',
         editor: 'editor__username',
         createdAt: 'timestamp',
         lastChanged: 'edit_timestamp',
-    };
+    }), []);
 
-    const getStatusIcon = (status?: NoteRetrieveStatusEnum) => {
-        if (!status) return null;
-
-        switch (status) {
-            case 'healthy':
-                return (
-                    <svg
-                        width='18'
-                        height='18'
-                        viewBox='0 0 24 24'
-                        fill='none'
-                        xmlns='http://www.w3.org/2000/svg'
-                        className='text-primary'
-                    >
-                        <path
-                            d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
-                            stroke='currentColor'
-                            strokeWidth='2'
-                            strokeLinecap='round'
-                            strokeLinejoin='round'
-                        />
-                    </svg>
-                );
-            case 'processing':
-                return (
-                    <InfoCircleSolid className='text-primary' width='18' height='18' />
-                );
-            case 'warning':
-                return (
-                    <WarningTriangleSolid
-                        className='text-muted-foreground'
-                        width='18'
-                        height='18'
-                    />
-                );
-            case 'invalid':
-                return (
-                    <WarningCircleSolid
-                        className='text-destructive'
-                        width='18'
-                        height='18'
-                    />
-                );
-            default:
-                return null;
-        }
-    };
 
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
@@ -284,7 +237,7 @@ export default function NotesList({
         [search, router, location.pathname, sortFieldMapping],
     );
 
-    const handleColumnFilter = (column: string, value: string | DateRangeFilter) => {
+    const handleColumnFilter = useCallback((column: string, value: string | DateRangeFilter) => {
         setColumnFilters((prev) => ({
             ...prev,
             [column]: value,
@@ -293,22 +246,21 @@ export default function NotesList({
         if (onFilterChange) {
             onFilterChange(column, value);
         }
-    };
+    }, [onFilterChange]);
 
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-    {
+    const filterableColumns = useMemo<Record<string, (value: string | DateRangeFilter) => void>>(() => ({
         author: (value) => handleColumnFilter('author', value),
         editor: (value) => handleColumnFilter('editor', value),
         createdAt: (value) => handleColumnFilter('createdAt', value),
         lastChanged: (value) => handleColumnFilter('lastChanged', value),
-    };
+    }), [handleColumnFilter]);
 
-    const handleStatusChange = (status: string) => {
+    const handleStatusChange = useCallback((status: string) => {
         setColumnFilters((prev) => ({
             ...prev,
             status,
         }));
-    };
+    }, []);
 
     useEffect(() => {
         setColumnFilters({
@@ -456,6 +408,15 @@ export default function NotesList({
     }, [notes.length, totalCount, onTotalCountChange]);
 
     const handleRetrySelected = useCallback(
+        (selectedIds: string[]) => {
+            if (selectedIds.length === 0) return;
+            setRelinkNoteIds(selectedIds);
+            setRelinkModalOpen(true);
+        },
+        [],
+    );
+
+    const executeRelink = useCallback(
         async (selectedIds: string[]) => {
             if (selectedIds.length === 0) return;
 
@@ -592,16 +553,16 @@ export default function NotesList({
         [rowSelection],
     );
 
-    // Filter out filtered notes
+    // Filter out filtered notes - optimized with Set for O(n) instead of O(n*m)
     const filteredData = useMemo(() => {
-        return notes.filter((note) => {
-            return !filteredNotes.some((n) => n.id === note.id);
-        });
+        if (filteredNotes.length === 0) return notes;
+        const filteredNoteIds = new Set(filteredNotes.map(n => n.id));
+        return notes.filter((note) => !filteredNoteIds.has(note.id));
     }, [notes, filteredNotes]);
 
-    const renderNotePreview = (note: NoteRetrieve) => {
+    const renderNotePreview = useCallback((note: NoteRetrieve) => {
         return <NotePreviewContent note={note} />;
-    };
+    }, []);
 
     // Memoize columns to prevent recreation on every render
     const columns = useMemo<ColumnDef<NoteRetrieve>[]>(
@@ -679,11 +640,7 @@ export default function NotesList({
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <span className='inline-flex items-center align-middle flex-shrink-0'>
-                                                <DesignNib
-                                                    className='text-primary'
-                                                    width='18'
-                                                    height='18'
-                                                />
+                                                <StatusIcon status='fleeting' />
                                             </span>
                                         </TooltipTrigger>
                                         <TooltipContent>Fleeting Note</TooltipContent>
@@ -693,7 +650,7 @@ export default function NotesList({
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <span className='inline-flex items-center align-middle flex-shrink-0'>
-                                                    {getStatusIcon(row.original.status)}
+                                                    <StatusIcon status={row.original.status} />
                                                 </span>
                                             </TooltipTrigger>
                                             <TooltipContent>
@@ -823,10 +780,8 @@ export default function NotesList({
         ],
         [
             columnFilters,
-            getStatusIcon,
             router,
-            retryNotesMutation,
-            queryClient,
+            handleStatusChange,
         ],
     );
 
@@ -860,11 +815,19 @@ export default function NotesList({
         pageCount: totalPages,
     });
 
+    // Memoize notes map to avoid recreating it on every render
+    const noteById = useMemo(() => {
+        const map = new Map<string, NoteRetrieve>();
+        for (const note of notes) {
+            if (note.id) {
+                map.set(String(note.id), note);
+            }
+        }
+        return map;
+    }, [notes]);
+
     const handleReportSelected = useCallback(() => {
         if (selectedNoteIds.length === 0) return;
-        const noteById = new Map(
-            notes.filter((n) => n.id).map((n) => [String(n.id!), n]),
-        );
         const selectedNoteObjects = selectedNoteIds.map((id) => {
             const note = noteById.get(id);
             return {
@@ -874,13 +837,10 @@ export default function NotesList({
         });
         setReportSelectedNotes(selectedNoteObjects);
         setReportModalOpen(true);
-    }, [notes, selectedNoteIds]);
+    }, [noteById, selectedNoteIds]);
 
     const handleEnrichSelected = useCallback(() => {
         if (selectedNoteIds.length === 0) return;
-        const noteById = new Map(
-            notes.filter((n) => n.id).map((n) => [String(n.id!), n]),
-        );
         const selectedNoteObjects = selectedNoteIds.map((id) => {
             const note = noteById.get(id);
             return {
@@ -891,7 +851,7 @@ export default function NotesList({
         });
         setEnrichmentNotesList(selectedNoteObjects);
         setEnrichmentModalOpen(true);
-    }, [notes, selectedNoteIds]);
+    }, [noteById, selectedNoteIds]);
 
     return (
         <PreviewTipProvider delayDuration={800}>
@@ -911,7 +871,7 @@ export default function NotesList({
                                         </>
                                     }
                                     variant='circle'
-                                    icon={<PlusCircle width={18} height={18} />}
+                                    icon={<PlusCircleIcon width={18} height={18} />}
                                     iconActive={true}
                                     onClick={onCreateNote}
                                     disabled={loading}
@@ -975,7 +935,7 @@ export default function NotesList({
                             loading || notes.length === 0 || selectedNoteIds.length === 0
                         }
                     >
-                        <RefreshCircle width={18} height={18} />
+                        <ArrowClockwiseIcon width={18} height={18} />
                         Relink
                     </ActionBarItem>
                     <ActionBarItem
@@ -984,7 +944,7 @@ export default function NotesList({
                             loading || notes.length === 0 || selectedNoteIds.length === 0
                         }
                     >
-                        <StatsReport width={18} height={18} />
+                        <ChartBarIcon width={18} height={18} />
                         Report
                     </ActionBarItem>
                     <ActionBarItem
@@ -993,12 +953,13 @@ export default function NotesList({
                             loading || notes.length === 0 || selectedNoteIds.length === 0
                         }
                     >
-                        <Sparks width={18} height={18} />
+                        <SparkleIcon width={18} height={18} />
                         Enrich
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={() => {
                             if (selectedNoteIds.length > 0) {
+                                setBulkDeleteNoteIds(selectedNoteIds);
                                 setBulkDeleteModalOpen(true);
                             }
                         }}
@@ -1007,7 +968,7 @@ export default function NotesList({
                         }
                         className='text-destructive'
                     >
-                        <Trash width={18} height={18} />
+                        <TrashIcon width={18} height={18} />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>
@@ -1016,13 +977,19 @@ export default function NotesList({
             </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
-                onOpenChange={setBulkDeleteModalOpen}
-                onConfirm={async () => {
-                    if (selectedNoteIds.length > 0) {
-                        await executeBulkDelete(selectedNoteIds);
+                onOpenChange={(open) => {
+                    setBulkDeleteModalOpen(open);
+                    if (!open) {
+                        setBulkDeleteNoteIds([]);
                     }
                 }}
-                text={`Are you sure you want to delete ${selectedNoteIds.length} note${selectedNoteIds.length > 1 ? 's' : ''}? This action is irreversible.`}
+                onConfirm={async () => {
+                    if (bulkDeleteNoteIds.length > 0) {
+                        await executeBulkDelete(bulkDeleteNoteIds);
+                        setBulkDeleteNoteIds([]);
+                    }
+                }}
+                text={`Are you sure you want to delete ${bulkDeleteNoteIds.length} note${bulkDeleteNoteIds.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
             {deletingNoteId && (
                 <ConfirmDeletionModal
@@ -1061,6 +1028,20 @@ export default function NotesList({
                 open={enrichmentModalOpen}
                 onOpenChange={setEnrichmentModalOpen}
                 notesList={enrichmentNotesList}
+            />
+            <ConfirmDeletionModal
+                open={relinkModalOpen}
+                onOpenChange={(open) => {
+                    setRelinkModalOpen(open);
+                    if (!open) setRelinkNoteIds([]);
+                }}
+                text={`Are you sure you want to relink ${relinkNoteIds.length} ${relinkNoteIds.length > 1 ? 'notes' : 'note'}? This will reprocess the relationships between notes and entities.`}
+                onConfirm={async () => {
+                    if (relinkNoteIds.length > 0) {
+                        await executeRelink(relinkNoteIds);
+                        setRelinkNoteIds([]);
+                    }
+                }}
             />
         </PreviewTipProvider>
     );

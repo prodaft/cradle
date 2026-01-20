@@ -9,7 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useFrontendSearch, { SearchableChild } from '@/hooks/search/useFrontendSearch';
 import { naturalSort } from '@/utils/dashboard';
-import { PlusCircle, Search, Xmark } from 'iconoir-react';
+import { PlusCircleIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
 import { ReactNode, useMemo, useState } from 'react';
 
 interface AdminPanelSectionProps {
@@ -98,11 +98,11 @@ export default function AdminPanelSection({
                     {searchVal && (
                         <InputGroupAddon
                             align='inline-end'
-                            onClick={() => setSearchVal('')}
-                            className='cursor-pointer'
-                        >
-                            <Xmark />
-                        </InputGroupAddon>
+                        onClick={() => setSearchVal('')}
+                        className='cursor-pointer'
+                    >
+                        <XIcon size={16} weight="bold" />
+                    </InputGroupAddon>
                     )}
                 </InputGroup>
                 {addEnabled && (
@@ -115,11 +115,11 @@ export default function AdminPanelSection({
                                 onClick={() =>
                                     handleAdd((x) =>
                                         setAddedItems((prev) => [...prev, x]),
-                                    )
-                                }
-                            >
-                                <PlusCircle />
-                            </Button>
+                                )
+                            }
+                        >
+                            <PlusCircleIcon size={20} weight="bold" />
+                        </Button>
                         </TooltipTrigger>
                         <TooltipContent>{addTooltipText}</TooltipContent>
                     </Tooltip>

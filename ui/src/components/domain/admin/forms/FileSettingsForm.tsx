@@ -24,7 +24,7 @@ import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClassTypeEnum } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
-import { Refresh } from 'iconoir-react';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -664,7 +664,7 @@ export default function FileSettingsForm() {
                                             size='sm'
                                             onClick={handleReProcessAllFiles}
                                         >
-                                            <Refresh className='w-3.5 h-3.5' />
+                                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
                                             Process
                                         </Button>
                                     </Field>

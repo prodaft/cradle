@@ -7,7 +7,7 @@ import type { FileReference } from '@/types';
 import { createDownloadPath } from '@/utils/links';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { Download, InputField, PasteClipboard, Trash } from 'iconoir-react';
+import { DownloadSimpleIcon, TextboxIcon, ClipboardTextIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 
 /**
@@ -141,7 +141,7 @@ export default function FileTable({
                                             );
                                         }}
                                     >
-                                        <InputField className='size-4' />
+                                        <TextboxIcon className='size-4' weight="bold" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Insert into editor</TooltipContent>
@@ -161,7 +161,7 @@ export default function FileTable({
                                             );
                                         }}
                                     >
-                                        <PasteClipboard className='size-4' />
+                                        <ClipboardTextIcon className='size-4' weight="bold" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Copy reference</TooltipContent>
@@ -179,7 +179,7 @@ export default function FileTable({
                                             await handleDownload(data);
                                         }}
                                     >
-                                        <Download className='size-4' />
+                                        <DownloadSimpleIcon className='size-4' weight="bold" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Download</TooltipContent>
@@ -198,7 +198,7 @@ export default function FileTable({
                                             setDeleteModalOpen(true);
                                         }}
                                     >
-                                        <Trash className='size-4' />
+                                        <TrashIcon className='size-4' weight="bold" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Remove</TooltipContent>

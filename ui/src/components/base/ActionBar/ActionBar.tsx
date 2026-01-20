@@ -5,7 +5,7 @@ import {
     InputGroupInput,
 } from '@/components/ui/input-group';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { MoreHoriz, Search, Xmark } from 'iconoir-react';
+import { DotsThreeIcon, MagnifyingGlassIcon, XIcon } from '@phosphor-icons/react';
 import { debounce } from 'lodash';
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -157,7 +157,7 @@ export const ActionBarSearch = memo(function ActionBarSearch({
                 }}
             />
             <InputGroupAddon>
-                <Search />
+                <MagnifyingGlassIcon size={16} weight="bold" />
             </InputGroupAddon>
             {currentValue && (
                 <InputGroupAddon
@@ -165,7 +165,7 @@ export const ActionBarSearch = memo(function ActionBarSearch({
                     onClick={handleClear}
                     className='cursor-pointer'
                 >
-                    <Xmark />
+                    <XIcon size={16} weight="bold" />
                 </InputGroupAddon>
             )}
         </InputGroup>
@@ -337,8 +337,10 @@ export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
                         variant='outline'
                         size={selectedCount > 0 ? 'default' : 'icon'}
                     >
-                        <MoreHoriz
-                            className={`w-5 h-5 ${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
+                        <DotsThreeIcon
+                            size={20}
+                            weight="bold"
+                            className={`${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
                         />
                         {selectedCount > 0 && (
                             <span className='text-sm text-foreground font-mono'>

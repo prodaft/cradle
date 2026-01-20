@@ -8,8 +8,8 @@ import {
 } from '@/components/ui/field';
 import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
+import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { Server, Trash } from 'iconoir-react';
 import { toast } from 'sonner';
 
 export default function EntriesManagement() {
@@ -90,7 +90,7 @@ export default function EntriesManagement() {
                                         size='sm'
                                         onClick={handlePropagateAccessVectors}
                                     >
-                                        <Server className='w-3.5 h-3.5' />
+                                        <HardDrivesIcon className='w-3.5 h-3.5' weight="bold" />
                                         Propagate
                                     </Button>
                                 </Field>
@@ -113,7 +113,7 @@ export default function EntriesManagement() {
                                         size='sm'
                                         onClick={handleDeleteHangingArtifacts}
                                     >
-                                        <Trash className='w-3.5 h-3.5' />
+                                        <TrashIcon className='w-3.5 h-3.5' weight="bold" />
                                         Delete
                                     </Button>
                                 </Field>

@@ -23,7 +23,7 @@ import type {
     FileUploadFinalizeRequest,
 } from '@services/cradle/models';
 import { uploadFile } from '@utils/files';
-import { CloudUpload, Upload, Xmark } from 'iconoir-react';
+import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
 import React, { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -213,7 +213,7 @@ export default function FileUploadModal({
                     >
                         <FileUploadDropzone className='min-h-[120px]'>
                             <div className='flex flex-col items-center gap-2 text-center'>
-                                <CloudUpload className='h-8 w-8 text-muted-foreground' />
+                                <CloudArrowUpIcon className='h-8 w-8 text-muted-foreground' weight="bold" />
                                 <div className='text-sm text-muted-foreground'>
                                     <span className='font-medium text-foreground'>
                                         Drop files here
@@ -292,7 +292,7 @@ export default function FileUploadModal({
                                                     size='icon'
                                                     className='h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity'
                                                 >
-                                                    <Xmark className='h-4 w-4' />
+                                                    <XIcon className='h-4 w-4' weight="bold" />
                                                     <span className='sr-only'>
                                                         Remove file
                                                     </span>
@@ -339,7 +339,7 @@ export default function FileUploadModal({
                                 </>
                             ) : (
                                 <>
-                                    <Upload className='h-4 w-4' />
+                                    <UploadSimpleIcon className='h-4 w-4' weight="bold" />
                                     Upload{' '}
                                     {pendingFiles.length > 1
                                         ? `(${pendingFiles.length})`

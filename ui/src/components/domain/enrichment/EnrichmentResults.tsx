@@ -21,18 +21,18 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import {
-    Calendar,
-    CheckCircle,
-    Clock,
-    Download,
-    EyeClosed,
-    InfoCircle,
-    Search,
-    User,
-    WarningCircle,
-    WarningTriangle,
-    Xmark,
-} from 'iconoir-react';
+    CalendarIcon,
+    CheckCircleIcon,
+    ClockIcon,
+    DownloadSimpleIcon,
+    EyeSlashIcon,
+    InfoIcon,
+    MagnifyingGlassIcon,
+    UserIcon,
+    WarningCircleIcon,
+    WarningIcon,
+    XIcon,
+} from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 /**
@@ -151,24 +151,24 @@ export default function EnrichmentResults() {
 
         switch (status) {
             case 'done':
-                return <CheckCircle className='text-primary' width='18' height='18' />;
+                return <CheckCircleIcon className='text-primary' size={18} weight="fill" />;
             case 'working':
             case 'waiting':
-                return <InfoCircle className='text-primary' width='18' height='18' />;
+                return <InfoIcon className='text-primary' size={18} weight="fill" />;
             case 'warning':
                 return (
-                    <WarningTriangle
+                    <WarningIcon
                         className='text-muted-foreground'
-                        width='18'
-                        height='18'
+                        size={18}
+                        weight="fill"
                     />
                 );
             case 'error':
                 return (
-                    <WarningCircle
+                    <WarningCircleIcon
                         className='text-destructive'
-                        width='18'
-                        height='18'
+                        size={18}
+                        weight="fill"
                     />
                 );
             default:
@@ -349,7 +349,7 @@ export default function EnrichmentResults() {
                         )}
                         {enrichmentDetails.createdAt && (
                             <div className='flex items-center gap-1.5'>
-                                <Calendar width='14' height='14' />
+                                <CalendarIcon size={14} weight="bold" />
                                 <span>
                                     {format(
                                         new Date(enrichmentDetails.createdAt),
@@ -360,7 +360,7 @@ export default function EnrichmentResults() {
                         )}
                         {enrichmentDetails.completedAt && (
                             <div className='flex items-center gap-1.5'>
-                                <Clock width='14' height='14' />
+                                <ClockIcon size={14} weight="bold" />
                                 <span>
                                     {format(
                                         new Date(enrichmentDetails.completedAt),
@@ -371,7 +371,7 @@ export default function EnrichmentResults() {
                         )}
                         {enrichmentDetails.userDetail && (
                             <div className='flex items-center gap-1.5'>
-                                <User width='14' height='14' />
+                                <UserIcon size={14} weight="bold" />
                                 <span>{enrichmentDetails.userDetail.username}</span>
                             </div>
                         )}
@@ -521,7 +521,7 @@ export default function EnrichmentResults() {
                                                         title='Search'
                                                         onClick={handleSearch}
                                                     >
-                                                        <Search className='w-4 h-4' />
+                                                        <MagnifyingGlassIcon className='w-4 h-4' weight="bold" />
                                                     </Button>
                                                     <Input
                                                         type='text'
@@ -549,7 +549,7 @@ export default function EnrichmentResults() {
                                                             className='p-1 flex-shrink-0'
                                                             title='Clear'
                                                         >
-                                                            <Xmark className='w-4 h-4' />
+                                                            <XIcon className='w-4 h-4' weight="bold" />
                                                         </Button>
                                                     )}
                                                 </div>
@@ -563,7 +563,7 @@ export default function EnrichmentResults() {
                                                         title='Search Details'
                                                         onClick={handleSearch}
                                                     >
-                                                        <Search className='w-4 h-4' />
+                                                        <MagnifyingGlassIcon className='w-4 h-4' weight="bold" />
                                                     </Button>
                                                     <Input
                                                         type='text'
@@ -591,7 +591,7 @@ export default function EnrichmentResults() {
                                                             className='p-1 flex-shrink-0'
                                                             title='Clear'
                                                         >
-                                                            <Xmark className='w-4 h-4' />
+                                                            <XIcon className='w-4 h-4' weight="bold" />
                                                         </Button>
                                                     )}
                                                 </div>
@@ -612,7 +612,7 @@ export default function EnrichmentResults() {
                                                     }
                                                     title='Download results as JSON'
                                                 >
-                                                    <Download width='18' height='18' />
+                                                    <DownloadSimpleIcon size={18} weight="bold" />
                                                 </Button>
 
                                                 {/* Pagination */}

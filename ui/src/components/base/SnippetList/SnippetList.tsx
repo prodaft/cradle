@@ -6,7 +6,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { logger } from '@/utils/logger';
 import useApi from '@hooks/api/useApi';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Edit, Plus, Trash } from 'iconoir-react/regular';
+import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
 import { forwardRef, MouseEvent, useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -159,7 +159,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                             size='sm'
                             className='flex items-center gap-2'
                         >
-                            <Plus className='w-4 h-4' />
+                            <PlusIcon className='w-4 h-4' weight="bold" />
                             New Snippet
                         </Button>
                     </div>
@@ -198,7 +198,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                             className='p-1 hover:bg-muted'
                                             title='Edit snippet'
                                         >
-                                            <Edit className='w-4 h-4 text-primary' />
+                                            <PencilIcon className='w-4 h-4 text-primary' weight="bold" />
                                         </Button>
                                         <Button
                                             onClick={(e) =>
@@ -209,7 +209,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                             className='p-1 hover:bg-destructive/10'
                                             title='Delete snippet'
                                         >
-                                            <Trash className='w-4 h-4 text-destructive' />
+                                            <TrashIcon className='w-4 h-4 text-destructive' weight="bold" />
                                         </Button>
                                     </div>
                                 </div>

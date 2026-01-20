@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { Plus, Refresh } from 'iconoir-react';
+import { PlusIcon, ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -374,7 +374,7 @@ export default function NoteSettingsForm() {
                                                 snippetListRef.current?.handleAddSnippet();
                                             }}
                                         >
-                                            <Plus className='w-3.5 h-3.5' />
+                                            <PlusIcon className='w-3.5 h-3.5' weight="bold" />
                                             New Snippet
                                         </Button>
                                     </Field>
@@ -416,7 +416,7 @@ export default function NoteSettingsForm() {
                                             size='sm'
                                             onClick={handleReLinkNotes}
                                         >
-                                            <Refresh className='w-3.5 h-3.5' />
+                                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
                                             Re-Link
                                         </Button>
                                     </Field>

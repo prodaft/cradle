@@ -1,15 +1,9 @@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-    DesignNib,
-    InfoCircleSolid,
-    WarningCircleSolid,
-    WarningTriangleSolid,
-} from 'iconoir-react';
 import { startCase } from 'lodash';
-import { JSX } from 'react';
+import { StatusIcon, type StatusType } from './StatusIcon';
 
 type SaveStatus = 'empty' | 'saving' | 'unsaved' | 'saved';
-type NoteStatus = 'healthy' | 'processing' | 'warning' | 'invalid' | null;
+type NoteStatus = StatusType | null;
 
 export function getSaveStatus(
     markdownContent: string,
@@ -26,59 +20,6 @@ export function getSaveStatus(
         return 'unsaved';
     }
     return 'saved';
-}
-
-export function getStatusIcon(
-    isFleeting: boolean,
-    status: NoteStatus,
-): JSX.Element | null {
-    if (isFleeting) {
-        return <DesignNib className='text-primary' width='18' height='18' />;
-    }
-
-    if (!status) return null;
-
-    switch (status) {
-        case 'healthy':
-            return (
-                <svg
-                    width='18'
-                    height='18'
-                    viewBox='0 0 24 24'
-                    fill='none'
-                    xmlns='http://www.w3.org/2000/svg'
-                    className='text-primary'
-                >
-                    <path
-                        d='M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z'
-                        stroke='currentColor'
-                        strokeWidth='2'
-                        strokeLinecap='round'
-                        strokeLinejoin='round'
-                    />
-                </svg>
-            );
-        case 'processing':
-            return <InfoCircleSolid className='text-primary' width='18' height='18' />;
-        case 'warning':
-            return (
-                <WarningTriangleSolid
-                    className='text-muted-foreground'
-                    width='18'
-                    height='18'
-                />
-            );
-        case 'invalid':
-            return (
-                <WarningCircleSolid
-                    className='text-destructive'
-                    width='18'
-                    height='18'
-                />
-            );
-        default:
-            return null;
-    }
 }
 
 interface StatusIndicatorsProps {
@@ -134,17 +75,19 @@ export default function StatusIndicators({
                 </TooltipContent>
             </Tooltip>
 
-            {noteStatus && (
+            {(noteStatus || isFleeting) && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <div className='flex items-center justify-center text-muted-foreground'>
-                            {getStatusIcon(isFleeting, noteStatus)}
+                            <StatusIcon 
+                                status={isFleeting ? 'fleeting' : (noteStatus as StatusType)} 
+                            />
                         </div>
                     </TooltipTrigger>
                     <TooltipContent>
                         {isFleeting
                             ? 'Fleeting note'
-                            : noteStatusMessage || startCase(noteStatus)}
+                            : noteStatusMessage || startCase(noteStatus || '')}
                     </TooltipContent>
                 </Tooltip>
             )}

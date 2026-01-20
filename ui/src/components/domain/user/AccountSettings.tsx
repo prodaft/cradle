@@ -43,7 +43,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import bytes from 'bytes';
-import { ClockRotateRight, EditPencil } from 'iconoir-react';
+import { ClockCounterClockwiseIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { Check, ChevronsUpDown, Link, Lock, Palette } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -682,14 +682,14 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
 
     const settingsTabs = [
         { id: 'security', label: 'Security', icon: Lock },
-        { id: 'sessions', label: 'Sessions', icon: ClockRotateRight },
+        { id: 'sessions', label: 'Sessions', icon: ClockCounterClockwiseIcon },
         { id: 'oauth', label: 'OAuth', icon: Link },
         { id: 'appearance', label: 'Appearance', icon: Palette },
-        { id: 'editor', label: 'Editor', icon: EditPencil },
+        { id: 'editor', label: 'Editor', icon: PencilSimpleIcon },
     ];
 
     if (isAdmin) {
-        settingsTabs.push({ id: 'activity', label: 'Activity', icon: ClockRotateRight });
+        settingsTabs.push({ id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon });
     }
 
     const tabDescriptions: Record<string, string> = {

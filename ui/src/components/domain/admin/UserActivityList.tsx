@@ -25,7 +25,7 @@ import type { EventLog } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
-import { NavArrowDown } from 'iconoir-react';
+import { CaretDownIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 
 interface UserActivityListProps {
@@ -201,7 +201,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
                             </TooltipContent>
                         </Tooltip>
                         {hasDetails && (
-                            <NavArrowDown
+                            <CaretDownIcon
                                 className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
                             />
                         )}

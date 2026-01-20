@@ -1,5 +1,5 @@
 import { useRouterState } from '@tanstack/react-router';
-import { NavArrowDown, NavArrowUp } from 'iconoir-react';
+import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react';
 import { ReactNode, useEffect, useState } from 'react';
 
 interface DashboardHorizontalSectionProps {
@@ -46,12 +46,11 @@ export default function DashboardHorizontalSection({
             >
                 {title}
                 {expanded ? (
-                    <NavArrowUp className='text-inherit' height='1.5em' width='1.5em' />
+                    <CaretUpIcon className='text-inherit' size={24} />
                 ) : (
-                    <NavArrowDown
+                    <CaretDownIcon
                         className='text-inherit'
-                        height='1.5em'
-                        width='1.5em'
+                        size={24}
                     />
                 )}
             </div>

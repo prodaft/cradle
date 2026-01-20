@@ -13,7 +13,7 @@ import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { SelectOption } from '@components/forms';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Upload } from 'iconoir-react';
+import { UploadSimpleIcon } from '@phosphor-icons/react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Controller, useForm } from 'react-hook-form';
@@ -438,7 +438,7 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                                 </>
                             ) : (
                                 <>
-                                    <Upload className='mr-2 text-primary' />
+                                    <UploadSimpleIcon className='mr-2 text-primary' weight="bold" />
                                     Upload
                                 </>
                             )}

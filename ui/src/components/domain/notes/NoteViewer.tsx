@@ -40,7 +40,7 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { Book, EditPencil } from 'iconoir-react';
+import { BookOpenIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { debounce } from 'lodash';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
@@ -75,13 +75,20 @@ interface LocationState {
  * NoteViewer component - displays note content with editing capabilities
  */
 export default function NoteViewer() {
-    const { id } = useParams({ from: '/_authenticated/notes/$id' });
-    const noteId = id || '';
+    const params = useParams({ from: '/_authenticated/notes/$id', strict: false });
     const router = useRouter();
     const queryClient = useQueryClient();
     const location = useRouterState({
         select: (state) => state.location,
     });
+    const noteId = useMemo(() => {
+        const routeId = (params as { id?: string }).id;
+        if (routeId) {
+            return routeId;
+        }
+        const match = location.pathname.match(/\/notes\/([^/]+)/);
+        return match?.[1] ?? '';
+    }, [params, location.pathname]);
     const locationState = (location.state as LocationState) || {};
     const { isAdmin } = useAuthState();
     const { from, state } = locationState;
@@ -436,7 +443,7 @@ export default function NoteViewer() {
 
     const handleSaveNote = useCallback(
         async (showAlert = false) => {
-            if (!id) return;
+            if (!noteId) return;
 
             const {
                 markdownContent: content,
@@ -470,7 +477,7 @@ export default function NoteViewer() {
     );
 
     const handleDelete = useCallback(async () => {
-        if (!id) return;
+        if (!noteId) return;
 
         try {
             await deleteMutation.mutateAsync();
@@ -483,10 +490,10 @@ export default function NoteViewer() {
         } catch (error) {
             // Error already handled by mutation
         }
-    }, [noteId, deleteMutation, queryClient, router, id, state, from]);
+    }, [noteId, deleteMutation, queryClient, router, state, from]);
 
     const handleSaveAsFinal = useCallback(() => {
-        if (!id || !markdownContent || markdownContent.trim().length === 0) {
+        if (!noteId || !markdownContent || markdownContent.trim().length === 0) {
             toast.error('Cannot save empty note.');
             return;
         }
@@ -500,15 +507,15 @@ export default function NoteViewer() {
     }, [noteId, markdownContent, finalizeNoteMutation]);
 
     const handleRelinkNote = useCallback(() => {
-        if (!id) return;
+        if (!noteId) return;
         relinkNoteMutation.mutate(noteId);
         toast.info('Relinking note...');
     }, [noteId, relinkNoteMutation]);
 
     const handlePublish = useCallback(() => {
-        if (!note || !id) return;
+        if (!note || !noteId) return;
         setReportModalOpen(true);
-    }, [note, id]);
+    }, [note, noteId]);
 
     const handleDeleteWithConfirmation = useCallback(() => {
         setDeleteModalOpen(true);
@@ -692,9 +699,9 @@ export default function NoteViewer() {
                                     data-testid='actions-dropdown-btn'
                                 >
                                     {enableEditing ? (
-                                        <EditPencil width='20' height='20' />
+                                        <PencilSimpleIcon size={20} weight="bold" />
                                     ) : (
-                                        <Book width='20' height='20' />
+                                        <BookOpenIcon size={20} weight="bold" />
                                     )}
                                 </Button>
                             </TooltipTrigger>
@@ -741,7 +748,7 @@ export default function NoteViewer() {
                             setFileData={setUploadedFileData}
                             pendingFiles={pendingFiles}
                             setPendingFiles={setPendingFiles}
-                            noteId={id}
+                            noteId={noteId}
                         />
                     </div>
                 )}
@@ -905,7 +912,7 @@ export default function NoteViewer() {
             <ReportGenerationModal
                 open={reportModalOpen}
                 onOpenChange={setReportModalOpen}
-                noteId={id}
+                noteId={noteId}
                 noteTitle={note?.title}
             />
             <ConfirmDeletionModal
@@ -919,7 +926,7 @@ export default function NoteViewer() {
                 onOpenChange={setFileUploadModalOpen}
                 files={fileData}
                 onFilesChange={handleFilesChange}
-                noteId={id}
+                noteId={noteId}
             />
         </>
     );

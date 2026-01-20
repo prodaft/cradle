@@ -9,7 +9,7 @@ import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Download } from 'iconoir-react';
+import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import { useMemo } from 'react';
 
 interface Alert {
@@ -167,7 +167,7 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     className='text-primary hover:text-primary/80'
                                     title='Download'
                                 >
-                                    <Download className='w-4 h-4' aria-hidden='true' />
+                                    <DownloadSimpleIcon className='w-4 h-4' weight="bold" aria-hidden='true' />
                                 </Button>
                             )}
                         </div>

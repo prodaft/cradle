@@ -33,7 +33,7 @@ import { DigestUploadFinalizeCreateRequest } from '@/services/cradle/models/Dige
 import { uploadFile } from '@/utils/files';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CloudUpload, Upload, Xmark } from 'iconoir-react';
+import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
 import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -322,7 +322,7 @@ export default function UploadDigestModal({
                                                     {!hasSelectedFile && (
                                                         <FileUploadDropzone className='min-h-[100px]'>
                                                             <div className='flex flex-col items-center gap-2 text-center'>
-                                                                <CloudUpload className='h-6 w-6 text-muted-foreground' />
+                                                                <CloudArrowUpIcon className='h-6 w-6 text-muted-foreground' weight="bold" />
                                                                 <div className='text-sm text-muted-foreground'>
                                                                     <span className='font-medium text-foreground'>
                                                                         Drop file here
@@ -369,7 +369,7 @@ export default function UploadDigestModal({
                                                                             uploadMutation.isPending
                                                                         }
                                                                     >
-                                                                        <Xmark className='h-4 w-4' />
+                                                                        <XIcon className='h-4 w-4' weight="bold" />
                                                                         <span className='sr-only'>
                                                                             Remove file
                                                                         </span>
@@ -524,7 +524,7 @@ export default function UploadDigestModal({
                                     </>
                                 ) : (
                                     <>
-                                        <Upload width={16} height={16} />
+                                        <UploadSimpleIcon size={16} weight="bold" />
                                         Upload
                                     </>
                                 )}

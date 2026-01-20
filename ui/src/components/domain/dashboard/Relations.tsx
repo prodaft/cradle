@@ -34,7 +34,7 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { Copy, WarningCircle } from 'iconoir-react';
+import { CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import {
     MouseEvent,
     useCallback,
@@ -515,7 +515,7 @@ export default function Relations({ obj }: RelationsProps) {
                             : 'default'
                     }
                 >
-                    <WarningCircle />
+                    <WarningCircleIcon size={18} weight="bold" />
                     <AlertDescription>{alert.message}</AlertDescription>
                 </AlertComponent>
             )}
@@ -597,7 +597,7 @@ export default function Relations({ obj }: RelationsProps) {
                         onClick={copyToCSV}
                         disabled={isPending || selectedIds.length === 0}
                     >
-                        <Copy width={18} height={18} />
+                        <CopyIcon size={18} weight="bold" />
                         Copy to CSV
                     </ActionBarItem>
                 </ActionBarGroup>

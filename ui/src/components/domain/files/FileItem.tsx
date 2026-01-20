@@ -7,7 +7,7 @@ import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { Download } from 'iconoir-react';
+import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import { forwardRef, useState } from 'react';
 import { toast } from 'sonner';
 

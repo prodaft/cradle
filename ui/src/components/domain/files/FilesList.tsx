@@ -31,7 +31,7 @@ import {
 } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
-import { Download, RefreshCircle, Trash, WarningCircle } from 'iconoir-react';
+import { DownloadSimpleIcon, ArrowClockwiseIcon, TrashIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
@@ -109,6 +109,7 @@ export default function FilesList({
     );
     const [pageSize, setPageSize] = useState((search as any)?.files_pagesize || 10);
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteFileIds, setBulkDeleteFileIds] = useState<string[]>([]);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
 
@@ -362,6 +363,7 @@ export default function FilesList({
 
     const handleDeleteSelected = useCallback(async () => {
         if (selectedFileIds.length === 0) return;
+        setBulkDeleteFileIds(selectedFileIds);
         setBulkDeleteModalOpen(true);
     }, [selectedFileIds]);
 
@@ -678,7 +680,7 @@ export default function FilesList({
                                 : 'default'
                         }
                     >
-                        <WarningCircle />
+                        <WarningCircleIcon />
                         <AlertDescription>{alert.message}</AlertDescription>
                     </AlertComponent>
                 )}
@@ -733,14 +735,14 @@ export default function FilesList({
                         onClick={handleDownloadSelected}
                         disabled={loading || files.length === 0 || selectedFileIds.length === 0}
                     >
-                        <Download width={18} height={18} />
+                        <DownloadSimpleIcon size={18} weight="bold" />
                         Download
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={handleReprocessSelected}
                         disabled={loading || files.length === 0 || selectedFileIds.length === 0}
                     >
-                        <RefreshCircle width={18} height={18} />
+                        <ArrowClockwiseIcon size={18} weight="bold" />
                         Reprocess
                     </ActionBarItem>
                     <ActionBarItem
@@ -748,7 +750,7 @@ export default function FilesList({
                         disabled={loading || files.length === 0 || selectedFileIds.length === 0}
                         className='text-destructive'
                     >
-                        <Trash width={18} height={18} />
+                        <TrashIcon size={18} weight="bold" />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>
@@ -762,9 +764,17 @@ export default function FilesList({
             </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
-                onOpenChange={setBulkDeleteModalOpen}
-                text={`Are you sure you want to delete ${selectedFileIds.length} file${selectedFileIds.length > 1 ? 's' : ''}?`}
-                onConfirm={() => deleteFiles(selectedFileIds)}
+                onOpenChange={(open) => {
+                    setBulkDeleteModalOpen(open);
+                    if (!open) {
+                        setBulkDeleteFileIds([]);
+                    }
+                }}
+                text={`Are you sure you want to delete ${bulkDeleteFileIds.length} file${bulkDeleteFileIds.length > 1 ? 's' : ''}?`}
+                onConfirm={() => {
+                    deleteFiles(bulkDeleteFileIds);
+                    setBulkDeleteFileIds([]);
+                }}
             />
             {deletingFileId && (
                 <ConfirmDeletionModal

@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { Mail, MailOpen } from 'iconoir-react';
+import { EnvelopeIcon, EnvelopeOpenIcon } from '@phosphor-icons/react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from 'src/components/ui/button';
@@ -165,16 +165,16 @@ export default function NotificationCard({
                                     onClick={handleMarkUnread}
                                 >
                                     {unreadStatus ? (
-                                        <Mail
-                                            width='16'
-                                            height='16'
+                                        <EnvelopeIcon
+                                            size={16}
+                                            weight="bold"
                                             className='text-primary'
                                             data-testid='mark-read'
                                         />
                                     ) : (
-                                        <MailOpen
-                                            width='16'
-                                            height='16'
+                                        <EnvelopeOpenIcon
+                                            size={16}
+                                            weight="bold"
                                             className='text-muted-foreground hover:text-foreground'
                                             data-testid='mark-unread'
                                         />

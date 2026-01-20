@@ -7,7 +7,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { GraphEdge } from '@/types/index';
-import { InfoCircle } from 'iconoir-react';
+import { InfoIcon } from '@phosphor-icons/react';
 import { ChangeEvent } from 'react';
 
 interface Node {
@@ -237,7 +237,7 @@ export default function GraphSettings({
                                                     <Label className='text-xs'>{label}</Label>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <InfoCircle className='size-3 text-muted-foreground cursor-help' />
+                                                            <InfoIcon className='size-3 text-muted-foreground cursor-help' weight="bold" />
                                                         </TooltipTrigger>
                                                         <TooltipContent side='right'>
                                                             <p className='text-xs'>{description}</p>
@@ -279,7 +279,7 @@ export default function GraphSettings({
                                     <Label className='text-xs'>Random Seed</Label>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <InfoCircle className='size-3 text-muted-foreground cursor-help' />
+                                            <InfoIcon className='size-3 text-muted-foreground cursor-help' weight="bold" />
                                         </TooltipTrigger>
                                         <TooltipContent side='right'>
                                             <p className='text-xs'>Set a seed for consistent layouts</p>
@@ -312,7 +312,7 @@ export default function GraphSettings({
                                         <Label className='text-xs'>Cluster Separation</Label>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <InfoCircle className='size-3 text-muted-foreground cursor-help' />
+                                                <InfoIcon className='size-3 text-muted-foreground cursor-help' weight="bold" />
                                             </TooltipTrigger>
                                             <TooltipContent side='right'>
                                                 <p className='text-xs'>Force separating node clusters</p>

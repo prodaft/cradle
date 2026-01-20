@@ -1,4 +1,4 @@
-import { ActionBar as BaseActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
@@ -24,6 +24,16 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
+import {
+    ClockCounterClockwiseIcon,
+    GearSixIcon,
+    LockKeyIcon,
+    PasswordIcon,
+    PencilIcon,
+    TrashIcon,
+    UserIcon,
+    UserPlusIcon
+} from '@phosphor-icons/react';
 import { UserRetrieve } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import {
@@ -39,15 +49,6 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import {
-    ClockRotateRight,
-    Edit,
-    Lock,
-    Settings,
-    Trash,
-    User,
-    UserPlus,
-} from 'iconoir-react/regular';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import AddUserModal from '../../../dialogs/admin/AddUserModal';
@@ -56,12 +57,12 @@ import AdminPageLayout from '../AdminPageLayout';
 import AdminUserSettings from './AdminUserSettings';
 
 const USER_SETTINGS_ITEMS = [
-    { id: 'account', label: 'Account', icon: User },
-    { id: 'administrative', label: 'Administrative', icon: Settings },
-    { id: 'permissions', label: 'Permissions', icon: Lock },
-    { id: 'activity', label: 'Activity', icon: ClockRotateRight },
-    { id: 'sessions', label: 'Sessions', icon: Settings },
-    { id: 'management', label: 'Management', icon: Settings },
+    { id: 'account', label: 'Account', icon: UserIcon },
+    { id: 'administrative', label: 'Administrative', icon: GearSixIcon },
+    { id: 'permissions', label: 'Permissions', icon: LockKeyIcon },
+    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
+    { id: 'sessions', label: 'Sessions', icon: PasswordIcon },
+    { id: 'management', label: 'Management', icon: GearSixIcon },
 ];
 
 function UserSettingsPage({ userId }: { userId: string }) {
@@ -188,11 +189,10 @@ function UserSettingsPage({ userId }: { userId: string }) {
                                             e.preventDefault();
                                             handleTabClick(item.id);
                                         }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
-                                            isActive
-                                                ? 'bg-muted hover:bg-accent active'
-                                                : ''
-                                        }`}
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${isActive
+                                            ? 'bg-muted hover:bg-accent active'
+                                            : ''
+                                            }`}
                                         data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
@@ -249,6 +249,7 @@ export default function UsersPage() {
     const [addUserModalOpen, setAddUserModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+    const [deleteUserIds, setDeleteUserIds] = useState<string[]>([]);
 
     const selectedUserIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
@@ -345,6 +346,7 @@ export default function UsersPage() {
 
     const handleDeleteSelected = useCallback(() => {
         if (selectedUserIds.length === 0) return;
+        setDeleteUserIds(selectedUserIds);
         setDeleteModalOpen(true);
         setDeleteUserId(null); // Clear single delete user id to use bulk delete
     }, [selectedUserIds]);
@@ -559,7 +561,7 @@ export default function UsersPage() {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button onClick={handleAddUser}>
-                                    <UserPlus />
+                                    <UserPlusIcon size={18} weight="bold" />
                                     Add User
                                 </Button>
                             </TooltipTrigger>
@@ -607,7 +609,7 @@ export default function UsersPage() {
                         onClick={handleEditSelected}
                         disabled={isLoading || selectedUserIds.length !== 1}
                     >
-                        <Edit width={18} height={18} />
+                        <PencilIcon size={18} weight="bold" />
                         Edit
                     </ActionBarItem>
                     <ActionBarItem
@@ -615,7 +617,7 @@ export default function UsersPage() {
                         disabled={isLoading || selectedUserIds.length === 0}
                         className='text-destructive'
                     >
-                        <Trash width={18} height={18} />
+                        <TrashIcon size={18} weight="bold" />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>
@@ -633,20 +635,35 @@ export default function UsersPage() {
                 open={deleteModalOpen}
                 onOpenChange={(open) => {
                     setDeleteModalOpen(open);
-                    if (!open) setDeleteUserId(null);
+                    if (!open) {
+                        setDeleteUserId(null);
+                        setDeleteUserIds([]);
+                    }
                 }}
                 onConfirm={() => {
                     if (deleteUserId) {
                         handleDeleteUsers([deleteUserId]);
-                    } else {
-                        handleDeleteUsers(selectedUserIds);
+                        setDeleteUserId(null);
+                    } else if (deleteUserIds.length > 0) {
+                        handleDeleteUsers(deleteUserIds);
+                        setDeleteUserIds([]);
                     }
                 }}
-                confirmText='DELETE'
+                confirmText={
+                    deleteUserId
+                        ? users.find((u) => (u.id || u.username) === deleteUserId)
+                            ?.username || 'DELETE'
+                        : deleteUserIds.length === 1
+                            ? users.find(
+                                (u) =>
+                                    (u.id || u.username) === deleteUserIds[0],
+                            )?.username || 'DELETE'
+                            : `DELETE ${deleteUserIds.length}`
+                }
                 text={
                     deleteUserId
                         ? 'Are you sure you want to delete this user? This action is irreversible.'
-                        : `Are you sure you want to delete ${selectedUserIds.length} user${selectedUserIds.length > 1 ? 's' : ''}? This action is irreversible.`
+                        : `Are you sure you want to delete ${deleteUserIds.length} user${deleteUserIds.length > 1 ? 's' : ''}? This action is irreversible.`
                 }
             />
         </AdminPageLayout>

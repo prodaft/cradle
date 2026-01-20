@@ -13,7 +13,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { Trash } from 'iconoir-react/regular';
+import { TrashIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -411,7 +411,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                         }}
                                         variant='destructive'
                                     >
-                                        <Trash width='18' height='18' />
+                                        <TrashIcon size={18} weight="bold" />
                                         Revoke
                                     </DropdownMenuItem>
                                 </TableActionsButton>
@@ -429,7 +429,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         {
             id: 'revoke',
             label: 'Revoke',
-            icon: <Trash width={18} height={18} />,
+            icon: <TrashIcon size={18} weight="bold" />,
             onClick: () => {
                 if (selectedSessions.length > 0) {
                     setBulkRevokeModalOpen(true);

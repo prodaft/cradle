@@ -5,7 +5,7 @@ import {
     CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { SubtypeHierarchy } from '@/utils/dashboard';
-import { NavArrowDown, NavArrowRight } from 'iconoir-react';
+import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { ReactNode } from 'react';
 
 interface GraphLegendProps {
@@ -71,8 +71,8 @@ const GraphLegend = ({
                             size='sm'
                             className='group hover:text-border-primary'
                         >
-                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
-                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                            <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
+                            <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
                             Legend
                         </Button>
                     </CollapsibleTrigger>
@@ -128,8 +128,8 @@ const GraphLegend = ({
                                                             size='sm'
                                                             className='group hover:text-border-primary'
                                                         >
-                                                            <NavArrowRight className='w-4 h-4 group-data-[state=open]:hidden' />
-                                                            <NavArrowDown className='w-4 h-4 hidden group-data-[state=open]:block' />
+                                                            <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
+                                                            <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
                                                             <span>{value}</span>
                                                         </Button>
                                                     </CollapsibleTrigger>
