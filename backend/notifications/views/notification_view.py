@@ -1,6 +1,6 @@
 from typing import cast
 
-from django.db.models import Q
+from django.db.models import Case, Q, When
 from drf_spectacular.utils import (
     OpenApiParameter,
     PolymorphicProxySerializer,
@@ -37,7 +37,7 @@ from ..serializers import (
 @extend_schema_view(
     get=extend_schema(
         summary="Fetch Notifications",
-        description="Retrieve paginated notifications for the authenticated user, sorted from newest to oldest.",  # noqa: E501
+        description="Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.",  # noqa: E501
         parameters=[
             OpenApiParameter(
                 name="page_size",
@@ -103,7 +103,13 @@ class NotificationList(APIView):
         notifications = (
             MessageNotification.objects.filter(user=cast(CradleUser, request.user))
             .select_subclasses()  # type: ignore
-            .order_by("-timestamp")
+            .annotate(
+                is_unread_status=Case(
+                    When(Q(is_unread=True) | Q(is_marked_unread=True), then=True),
+                    default=False,
+                )
+            )
+            .order_by("-is_unread_status", "-timestamp")
         )
 
         # Mark notifications as read (update only unread ones)

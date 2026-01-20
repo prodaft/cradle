@@ -9,7 +9,6 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
@@ -50,7 +49,6 @@ import {
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
-import TableActionsButton from '../../base/TableActionsButton';
 import ConfirmDeletionModal from '../../dialogs/base/ConfirmDeletionModal';
 import EnrichmentRequestModal from '../../dialogs/enrichment/EnrichmentRequestModal';
 import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
@@ -821,81 +819,6 @@ export default function NotesList({
                             : '-'}
                     </div>
                 ),
-            },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const note = row.original;
-                    const handleDelete = () => {
-                        setDeletingNoteId(note.id!);
-                        setSingleDeleteModalOpen(true);
-                    };
-
-                    const handleRetry = async () => {
-                        try {
-                            await retryNotesMutation.mutateAsync(note.id!);
-                            toast.success('Relinking note...');
-                            queryClient.invalidateQueries({
-                                queryKey: queryKeys.notes.lists(),
-                            });
-                        } catch (error) {
-                            toast.error('Failed to retry note');
-                        }
-                    };
-
-                    const handleReport = () => {
-                        const noteObject = {
-                            id: note.id!,
-                            title: note.metadata?.title || note.title || 'Untitled',
-                        };
-                        setReportSelectedNotes([noteObject]);
-                        setReportModalOpen(true);
-                    };
-
-                    const handleEnrich = () => {
-                        const noteObject = {
-                            id: note.id!,
-                            title: note.metadata?.title || note.title || 'Untitled',
-                            entities: note.entities || [],
-                        };
-                        setEnrichmentNotesList([noteObject]);
-                        setEnrichmentModalOpen(true);
-                    };
-
-                    return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    <DropdownMenuItem onClick={handleRetry}>
-                                        <RefreshCircle width='18' height='18' />
-                                        Retry
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleReport}>
-                                        <StatsReport width='18' height='18' />
-                                        Generate Report
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleEnrich}>
-                                        <Sparks width='18' height='18' />
-                                        Enrich
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={handleDelete}
-                                        variant='destructive'
-                                    >
-                                        <Trash width='18' height='18' />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
-                enableSorting: false,
             },
         ],
         [
