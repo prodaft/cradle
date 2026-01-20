@@ -1,8 +1,14 @@
 import type { ThemeConfig } from '@/types/index';
+import { ayuDark, ayuLight, ayuMirage } from './ayu';
 import { catppuccinFrappe, catppuccinLatte, catppuccinMacchiato, catppuccinMocha } from './catppuccin';
+import { celestial } from './celestial';
 import { cradleDark, cradleLight } from './cradle';
 import { darkTheme } from './dark';
+import { dracula } from './dracula';
+import { gruvboxDark, gruvboxLight } from './gruvbox';
 import { lightTheme } from './light';
+import { solarizedDark, solarizedLight } from './solarized';
+import { vscodeDark, vscodeLight } from './vscode';
 
 export interface PresetTheme {
     id: string;
@@ -11,6 +17,7 @@ export interface PresetTheme {
 }
 
 export const PRESET_THEMES: PresetTheme[] = [
+    // Default themes
     {
         id: 'dark',
         label: 'Dark',
@@ -21,6 +28,7 @@ export const PRESET_THEMES: PresetTheme[] = [
         label: 'Light',
         theme: lightTheme,
     },
+    // Cradle themes
     {
         id: 'cradle-dark',
         label: 'Cradle Dark',
@@ -31,6 +39,68 @@ export const PRESET_THEMES: PresetTheme[] = [
         label: 'Cradle Light',
         theme: cradleLight,
     },
+    // VS Code themes
+    {
+        id: 'vscode-dark',
+        label: 'VS Code Dark+',
+        theme: vscodeDark,
+    },
+    {
+        id: 'vscode-light',
+        label: 'VS Code Light+',
+        theme: vscodeLight,
+    },
+    // Ayu themes
+    {
+        id: 'ayu-dark',
+        label: 'Ayu Dark',
+        theme: ayuDark,
+    },
+    {
+        id: 'ayu-light',
+        label: 'Ayu Light',
+        theme: ayuLight,
+    },
+    {
+        id: 'ayu-mirage',
+        label: 'Ayu Mirage',
+        theme: ayuMirage,
+    },
+    // Dracula
+    {
+        id: 'dracula',
+        label: 'Dracula',
+        theme: dracula,
+    },
+    // Celestial
+    {
+        id: 'celestial',
+        label: 'Celestial',
+        theme: celestial,
+    },
+    // Solarized
+    {
+        id: 'solarized-light',
+        label: 'Solarized Light',
+        theme: solarizedLight,
+    },
+    {
+        id: 'solarized-dark',
+        label: 'Solarized Dark',
+        theme: solarizedDark,
+    },
+    // Gruvbox
+    {
+        id: 'gruvbox-dark',
+        label: 'Gruvbox Dark',
+        theme: gruvboxDark,
+    },
+    {
+        id: 'gruvbox-light',
+        label: 'Gruvbox Light',
+        theme: gruvboxLight,
+    },
+    // Catppuccin themes
     {
         id: 'catppuccin-latte',
         label: 'Catppuccin Latte',
@@ -54,12 +124,32 @@ export const PRESET_THEMES: PresetTheme[] = [
 ];
 
 export {
+    // Ayu themes
+    ayuDark,
+    ayuLight,
+    ayuMirage,
+    // Catppuccin themes
     catppuccinFrappe,
     catppuccinLatte,
     catppuccinMacchiato,
     catppuccinMocha,
+    // Celestial
+    celestial,
+    // Cradle themes
     cradleDark,
     cradleLight,
+    // Default themes
     darkTheme,
-    lightTheme,
+    // Dracula
+    dracula,
+    // Gruvbox
+    gruvboxDark,
+    gruvboxLight, lightTheme,
+    // Solarized
+    solarizedDark,
+    solarizedLight,
+    // VS Code themes
+    vscodeDark,
+    vscodeLight
 };
+

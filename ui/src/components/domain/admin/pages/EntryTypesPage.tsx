@@ -278,7 +278,7 @@ export default function EntryTypesPage() {
         },
     });
 
-    const entryTypes = useMemo(() => {
+    const entryTypes = useMemo<EntryTypeData[]>(() => {
         const entryTypesList = (entryTypesData as any[]) || [];
         return entryTypesList.map((c) => ({
             id: c.subtype,

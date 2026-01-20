@@ -17,7 +17,7 @@ import { useApi } from '@hooks';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { createDashboardLink } from '@utils/dashboard';
-import { Search, WarningCircle } from 'iconoir-react';
+import { Search, WarningCircle, Xmark } from 'iconoir-react';
 import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';

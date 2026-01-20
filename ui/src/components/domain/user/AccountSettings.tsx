@@ -21,6 +21,16 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,7 +44,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import bytes from 'bytes';
 import { ClockRotateRight, EditPencil } from 'iconoir-react';
-import { Link, Lock, Palette } from 'lucide-react';
+import { Check, ChevronsUpDown, Link, Lock, Palette } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -203,6 +213,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     // Theme selection state
     const [selectedThemeType, setSelectedThemeType] = useState<string>('dark');
     const [customThemeJSON, setCustomThemeJSON] = useState<string>('');
+    const [themePopoverOpen, setThemePopoverOpen] = useState(false);
 
     const defaultValues: AccountFormData = {
         id: '',
@@ -1058,37 +1069,78 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 <Label className='text-sm text-muted-foreground block'>
                                                                     Theme
                                                                 </Label>
-                                                                <Select
-                                                                    value={selectedThemeType}
-                                                                    onValueChange={
-                                                                        handleThemeTypeChange
-                                                                    }
+                                                                <Popover
+                                                                    open={themePopoverOpen}
+                                                                    onOpenChange={setThemePopoverOpen}
                                                                 >
-                                                                    <SelectTrigger className='w-full sm:w-64'>
-                                                                        <SelectValue />
-                                                                    </SelectTrigger>
-                                                                    <SelectContent>
-                                                                        {PRESET_THEMES.map(
-                                                                            (preset) => (
-                                                                                <SelectItem
-                                                                                    key={
-                                                                                        preset.id
-                                                                                    }
-                                                                                    value={
-                                                                                        preset.id
-                                                                                    }
-                                                                                >
-                                                                                    {
-                                                                                        preset.label
-                                                                                    }
-                                                                                </SelectItem>
-                                                                            ),
-                                                                        )}
-                                                                        <SelectItem value='custom'>
-                                                                            Custom
-                                                                        </SelectItem>
-                                                                    </SelectContent>
-                                                                </Select>
+                                                                    <PopoverTrigger asChild>
+                                                                        <Button
+                                                                            variant='outline'
+                                                                            role='combobox'
+                                                                            aria-expanded={themePopoverOpen}
+                                                                            className='w-full sm:w-64 justify-between'
+                                                                        >
+                                                                            <span className='truncate'>
+                                                                                {selectedThemeType === 'custom'
+                                                                                    ? 'Custom'
+                                                                                    : PRESET_THEMES.find(
+                                                                                          (p) => p.id === selectedThemeType,
+                                                                                      )?.label || 'Select theme...'}
+                                                                            </span>
+                                                                            <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+                                                                        </Button>
+                                                                    </PopoverTrigger>
+                                                                    <PopoverContent
+                                                                        className='w-[var(--radix-popover-trigger-width)] p-0'
+                                                                        align='start'
+                                                                    >
+                                                                        <Command>
+                                                                            <CommandInput placeholder='Search themes...' />
+                                                                            <CommandList>
+                                                                                <CommandEmpty>No themes found.</CommandEmpty>
+                                                                                <CommandGroup>
+                                                                                    {PRESET_THEMES.map((preset) => (
+                                                                                        <CommandItem
+                                                                                            key={preset.id}
+                                                                                            value={preset.label}
+                                                                                            onSelect={() => {
+                                                                                                handleThemeTypeChange(preset.id);
+                                                                                                setThemePopoverOpen(false);
+                                                                                            }}
+                                                                                        >
+                                                                                            <Check
+                                                                                                className={cn(
+                                                                                                    'mr-2 size-4',
+                                                                                                    selectedThemeType === preset.id
+                                                                                                        ? 'opacity-100'
+                                                                                                        : 'opacity-0',
+                                                                                                )}
+                                                                                            />
+                                                                                            {preset.label}
+                                                                                        </CommandItem>
+                                                                                    ))}
+                                                                                    <CommandItem
+                                                                                        value='Custom'
+                                                                                        onSelect={() => {
+                                                                                            handleThemeTypeChange('custom');
+                                                                                            setThemePopoverOpen(false);
+                                                                                        }}
+                                                                                    >
+                                                                                        <Check
+                                                                                            className={cn(
+                                                                                                'mr-2 size-4',
+                                                                                                selectedThemeType === 'custom'
+                                                                                                    ? 'opacity-100'
+                                                                                                    : 'opacity-0',
+                                                                                            )}
+                                                                                        />
+                                                                                        Custom
+                                                                                    </CommandItem>
+                                                                                </CommandGroup>
+                                                                            </CommandList>
+                                                                        </Command>
+                                                                    </PopoverContent>
+                                                                </Popover>
                                                             </div>
 
                                                             {selectedThemeType ===

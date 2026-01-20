@@ -89,7 +89,7 @@ export default function FileTable({
                     const data = row.original;
                     return (
                         <div className='text-foreground flex items-center'>
-                            <span className='truncate max-w-[200px]' title={data.fileName}>
+                            <span className='truncate max-w-[200px]' title={data.fileName ?? undefined}>
                                 {data.fileName}
                             </span>
                         </div>
