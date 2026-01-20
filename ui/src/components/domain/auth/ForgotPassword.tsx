@@ -15,9 +15,9 @@ import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { ArrowULeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -123,7 +123,7 @@ export default function ForgotPassword() {
                         data-testid='back-button'
                         title='Back to Login'
                     >
-                        <ArrowULeftIcon size={18} weight="bold" />
+                        <ArrowUUpLeftIcon size={18} weight="bold" />
                     </Button>
                 </div>
 

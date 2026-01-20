@@ -54,7 +54,23 @@
       "color": "#79d298",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "AS"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "Autonomous-System"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "asn"
+          }
+        ]
+      }
     },
     {
       "subtype": "case",
@@ -194,7 +210,49 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "dns": [
+          {
+            "record_type": "CNAME"
+          },
+          {
+            "record_type": "PTR"
+          },
+          {
+            "record_type": "NS"
+          },
+          {
+            "record_type": "MX"
+          },
+          {
+            "record_type": "SRV"
+          }
+        ],
+        "misp": [
+          {
+            "attribute_type": "domain"
+          },
+          {
+            "attribute_type": "domain|ip"
+          },
+          {
+            "attribute_type": "hostname"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "Domain-Name"
+          },
+          {
+            "observable_type": "Hostname"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "domain"
+          }
+        ]
+      }
     },
     {
       "subtype": "email",
@@ -210,7 +268,24 @@
       "children": [
         "domain"
       ],
-      "type_mappings": {}
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "email"
+          },
+          {
+            "attribute_type": "email-src"
+          },
+          {
+            "attribute_type": "email-dst"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "Email-Addr"
+          }
+        ]
+      }
     },
     {
       "subtype": "enabler",
@@ -238,7 +313,50 @@
       "color": "#7f8389",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "filename"
+          },
+          {
+            "attribute_type": "filename|md5"
+          },
+          {
+            "attribute_type": "filename|sha1"
+          },
+          {
+            "attribute_type": "filename|sha256"
+          },
+          {
+            "attribute_type": "email-attachment"
+          },
+          {
+            "attribute_type": "malware-sample"
+          }
+        ],
+        "mwdb": [
+          {
+            "artifact_type": "file"
+          },
+          {
+            "artifact_type": "config"
+          },
+          {
+            "artifact_type": "blob"
+          },
+          {
+            "artifact_type": "text_blob"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "File"
+          },
+          {
+            "observable_type": "Artifact"
+          }
+        ]
+      }
     },
     {
       "subtype": "hash/md5",
@@ -252,7 +370,23 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "md5"
+          }
+        ],
+        "mwdb": [
+          {
+            "artifact_type": "md5"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "StixFile:hashes.MD5"
+          }
+        ]
+      }
     },
     {
       "subtype": "hash/sha1",
@@ -266,7 +400,23 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "sha1"
+          }
+        ],
+        "mwdb": [
+          {
+            "artifact_type": "sha1"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "StixFile:hashes.SHA-1"
+          }
+        ]
+      }
     },
     {
       "subtype": "hash/sha256",
@@ -280,7 +430,28 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "sha256"
+          }
+        ],
+        "mwdb": [
+          {
+            "artifact_type": "sha256"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "StixFile:hashes.SHA-256"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "hash"
+          }
+        ]
+      }
     },
     {
       "subtype": "id/antichat",
@@ -644,7 +815,37 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "dns": [
+          {
+            "record_type": "A"
+          }
+        ],
+        "misp": [
+          {
+            "attribute_type": "ip-dst"
+          },
+          {
+            "attribute_type": "ip-src"
+          },
+          {
+            "attribute_type": "ip-dst|port"
+          },
+          {
+            "attribute_type": "ip-src|port"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "IPv4-Addr"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "ip"
+          }
+        ]
+      }
     },
     {
       "subtype": "ipv6",
@@ -658,7 +859,18 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "dns": [
+          {
+            "record_type": "AAAA"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "IPv6-Addr"
+          }
+        ]
+      }
     },
     {
       "subtype": "location/city",
@@ -686,7 +898,13 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
-      "type_mappings": {}
+      "type_mappings": {
+        "urlscan": [
+          {
+            "observable_type": "country"
+          }
+        ]
+      }
     },
     {
       "subtype": "lolzteam/id",
@@ -969,7 +1187,29 @@
         "domain",
         "ip"
       ],
-      "type_mappings": {}
+      "type_mappings": {
+        "misp": [
+          {
+            "attribute_type": "url"
+          },
+          {
+            "attribute_type": "uri"
+          },
+          {
+            "attribute_type": "link"
+          }
+        ],
+        "opencti": [
+          {
+            "observable_type": "URL"
+          }
+        ],
+        "urlscan": [
+          {
+            "observable_type": "url"
+          }
+        ]
+      }
     },
     {
       "subtype": "username/antichat",

@@ -16,10 +16,10 @@ import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowUUpLeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { UserConfig } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { ArrowULeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -251,7 +251,7 @@ export default function Register() {
                         data-testid='back-button'
                         title='Back to Login'
                     >
-                        <ArrowULeftIcon size={18} weight="bold" />
+                        <ArrowUUpLeftIcon size={18} weight="bold" />
                     </Button>
                 </div>
 

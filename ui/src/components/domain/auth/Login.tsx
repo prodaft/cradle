@@ -15,12 +15,13 @@ import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
+import { ArrowUUpLeftIcon, MoonIcon, SunIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { UserConfig } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
-import { MoonIcon, SunIcon, ArrowULeftIcon, WarningCircleIcon } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
-import GlobeVisualization from './GlobeVisualization';
+import { lazy, Suspense, useEffect, useState } from 'react';
+
+const GlobeVisualization = lazy(() => import('./GlobeVisualization'));
 
 interface Alert {
     show: boolean;
@@ -257,7 +258,7 @@ export default function Login() {
                             data-testid='back-button'
                             title='Back to Login'
                         >
-                            <ArrowULeftIcon size={18} weight="bold" />
+                            <ArrowUUpLeftIcon size={18} weight="bold" />
                         </Button>
                     ) : (
                         <Button
@@ -547,16 +548,18 @@ export default function Login() {
 
             {/* Right Column - Globe */}
             <div className='absolute bottom-0 right-0 top-0 hidden w-[65%] bg-muted dark:bg-black lg:block'>
-                <GlobeVisualization
-                    showSatellites={false}
-                    showArcs={true}
-                    showHexPolygons={true}
-                    showAtmosphere={true}
-                    autoRotate={true}
-                    autoRotateSpeed={0.5}
-                    initialView={{ lat: 20, lng: 0, altitude: 1.8 }}
-                    viewOffsetX={120}
-                />
+                <Suspense fallback={null}>
+                    <GlobeVisualization
+                        showSatellites={false}
+                        showArcs={true}
+                        showHexPolygons={true}
+                        showAtmosphere={true}
+                        autoRotate={true}
+                        autoRotateSpeed={0.5}
+                        initialView={{ lat: 20, lng: 0, altitude: 1.8 }}
+                        viewOffsetX={120}
+                    />
+                </Suspense>
             </div>
         </div>
     );
