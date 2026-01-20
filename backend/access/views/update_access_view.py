@@ -66,9 +66,7 @@ class UpdateAccess(APIView):
     permission_classes = [IsAuthenticated]
     serializer_class = AccessSerializer
 
-    def __can_update_access(
-        self, request_user: CradleUser, updated_user: CradleUser, updated_entity: Entry
-    ) -> bool:
+    def __can_update_access(self, request_user: CradleUser, updated_user: CradleUser, updated_entity: Entry) -> bool:
         """Determines whether the request_user can change the access of updated_user
         for entity updated_entity. We can outline three entities:
         1. request_user is an admin: they can change the access of
@@ -94,9 +92,7 @@ class UpdateAccess(APIView):
             if updated_user.is_cradle_admin:
                 return False
 
-        elif Access.objects.check_user_access(
-            request_user, updated_entity, AccessType.READ_WRITE
-        ):
+        elif Access.objects.check_user_access(request_user, updated_entity, AccessType.READ_WRITE):
             # Entity 2: user has read-write access
             if updated_user.is_cradle_admin or Access.objects.check_user_access(
                 updated_user, updated_entity, AccessType.READ_WRITE
@@ -150,13 +146,9 @@ class UpdateAccess(APIView):
 
         user: CradleUser = cast(CradleUser, request.user)
         if not self.__can_update_access(user, updated_user, updated_entity):
-            raise UpdateNotAllowedException(
-                detail="User is not allowed to perform this operation"
-            )
+            raise UpdateNotAllowedException(detail="User is not allowed to perform this operation")
 
-        updated_access, _ = Access.objects.get_or_create(
-            user=updated_user, entity=updated_entity
-        )
+        updated_access, _ = Access.objects.get_or_create(user=updated_user, entity=updated_entity)
 
         serializer = AccessSerializer(updated_access, data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -166,8 +158,7 @@ class UpdateAccess(APIView):
                 user=updated_user,
                 entity=updated_entity,
                 message=(
-                    f"Your access for entity {updated_entity.name} has "
-                    f"been changed to {request.data['access_type']}"
+                    f"Your access for entity {updated_entity.name} has been changed to {request.data['access_type']}"
                 ),
             )
 

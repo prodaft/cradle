@@ -72,9 +72,7 @@ class DNSEnricher(BaseEnricher):
                     try:
                         answers = resolver.resolve(hostname, "A")
                         for answer in answers:
-                            ip_entry, _ = Entry.objects.get_or_create(
-                                entry_class=ipv4_class, name=answer.to_text()
-                            )
+                            ip_entry, _ = Entry.objects.get_or_create(entry_class=ipv4_class, name=answer.to_text())
                             rels.append(
                                 Relation(
                                     e1=entry,
@@ -96,9 +94,7 @@ class DNSEnricher(BaseEnricher):
                     except dns.resolver.NoAnswer:
                         logger.debug(f"No A record for {hostname}")
                     except Exception as e:
-                        self.request._append_warning(
-                            f"DNS A record lookup failed for {hostname}: {str(e)}"
-                        )
+                        self.request._append_warning(f"DNS A record lookup failed for {hostname}: {str(e)}")
                 elif "A" not in unmapped_types:
                     unmapped_types.add("A")
                     logger.debug("Skipping DNS A records - no mapping configured")
@@ -109,9 +105,7 @@ class DNSEnricher(BaseEnricher):
                     try:
                         answers = resolver.resolve(hostname, "AAAA")
                         for answer in answers:
-                            ip_entry, _ = Entry.objects.get_or_create(
-                                entry_class=ipv6_class, name=answer.to_text()
-                            )
+                            ip_entry, _ = Entry.objects.get_or_create(entry_class=ipv6_class, name=answer.to_text())
                             rels.append(
                                 Relation(
                                     e1=entry,
@@ -133,9 +127,7 @@ class DNSEnricher(BaseEnricher):
                     except dns.resolver.NoAnswer:
                         logger.debug(f"No AAAA record for {hostname}")
                     except Exception as e:
-                        self.request._append_warning(
-                            f"DNS AAAA record lookup failed for {hostname}: {str(e)}"
-                        )
+                        self.request._append_warning(f"DNS AAAA record lookup failed for {hostname}: {str(e)}")
                 elif "AAAA" not in unmapped_types:
                     unmapped_types.add("AAAA")
                     logger.debug("Skipping DNS AAAA records - no mapping configured")

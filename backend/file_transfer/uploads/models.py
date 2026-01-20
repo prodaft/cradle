@@ -14,9 +14,7 @@ class BasePendingUpload(models.Model):
     that have been initiated but not yet finalized.
     """
 
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     object_key: models.CharField = models.CharField(max_length=512)
     file_name: models.CharField = models.CharField(max_length=255)
     user: models.ForeignKey = models.ForeignKey(
@@ -50,6 +48,4 @@ class BasePendingUpload(models.Model):
         Raises:
             NotImplementedError: If not overridden in subclass
         """
-        raise NotImplementedError(
-            f"{self.__class__.__name__} must implement get_bucket_name()"
-        )
+        raise NotImplementedError(f"{self.__class__.__name__} must implement get_bucket_name()")

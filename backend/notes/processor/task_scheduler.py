@@ -4,6 +4,7 @@ from celery import chain
 from diff_match_patch import diff_match_patch
 from django.db import transaction
 from django.utils import timezone
+
 from entries.enums import EntryType
 from user.models import CradleUser
 
@@ -74,9 +75,7 @@ class TaskScheduler:
             if not note:
                 note = Note.objects.create(author=self.user, **self.kwargs)
             else:
-                patches = dmp.patch_make(
-                    note.content, self.kwargs.get("content", note.content)
-                )
+                patches = dmp.patch_make(note.content, self.kwargs.get("content", note.content))
 
                 for i in self.kwargs:
                     setattr(note, i, self.kwargs[i])
@@ -101,14 +100,10 @@ class TaskScheduler:
             transaction.on_commit(lambda: task_chain.apply_async())
 
             if update_acvec:
-                note.access_vector = calculate_acvec(
-                    [x for x in entries if x.entry_class.type == EntryType.ENTITY]
-                )
+                note.access_vector = calculate_acvec([x for x in entries if x.entry_class.type == EntryType.ENTITY])
 
             if len(note.description) > Note.description.field.max_length:
-                raise FieldTooLongException(
-                    "description", Note.description.field.max_length
-                )
+                raise FieldTooLongException("description", Note.description.field.max_length)
 
             if len(note.title) > Note.title.field.max_length:
                 raise FieldTooLongException("title", Note.title.field.max_length)

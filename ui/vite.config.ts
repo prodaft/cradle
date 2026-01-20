@@ -1,5 +1,5 @@
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
+import react from '@vitejs/plugin-react-swc';
 import dns from 'dns';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -8,18 +8,29 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
 dns.setDefaultResultOrder('verbatim');
 
-export default defineConfig(({ mode }) => ({
-    base: './',
-    plugins: [tailwindcss(), react(), visualizer(), nodePolyfills()],
-    resolve: {
-        alias: {
-            '@': path.resolve(__dirname, './src/renderer/src'),
-            '@components': path.resolve(__dirname, './src/renderer/src/components'),
-            '@contexts': path.resolve(__dirname, './src/renderer/src/contexts'),
-            '@hooks': path.resolve(__dirname, './src/renderer/src/hooks'),
-            '@services': path.resolve(__dirname, './src/renderer/src/services'),
-            '@utils': path.resolve(__dirname, './src/renderer/src/utils'),
-            '@types': path.resolve(__dirname, './src/renderer/src/types'),
+export default defineConfig(({ mode }) => {
+    const isDev = mode === "development";
+
+    return {
+        base: './',
+        cacheDir: '.vite-cache',
+        plugins: [tailwindcss(), react(), visualizer(), nodePolyfills()],
+        build: {
+            sourcemap: isDev,
+            minify: "esbuild",
         },
-    },
-}));
+        server: { port: 5173 },
+        resolve: {
+            alias: {
+                '@': path.resolve(__dirname, './src'),
+                '@components': path.resolve(__dirname, './src/components'),
+                '@contexts': path.resolve(__dirname, './src/contexts'),
+                '@hooks': path.resolve(__dirname, './src/hooks'),
+                '@services': path.resolve(__dirname, './src/services'),
+                '@utils': path.resolve(__dirname, './src/utils'),
+                '@types': path.resolve(__dirname, './src/types'),
+                src: path.resolve(__dirname, './src'),
+            },
+        },
+    }
+});

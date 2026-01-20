@@ -9,15 +9,9 @@ class DeleteUserTest(UserTestCase):
     def setUp(self):
         super().setUp()
 
-        self.user = CradleUser.objects.create_user(
-            username="user", password="user", email="a@b.c"
-        )
-        self.user2 = CradleUser.objects.create_user(
-            username="user2", password="user2", email="a@b.e"
-        )
-        self.admin = CradleUser.objects.create_superuser(
-            username="admin", password="admin", email="b@c.d"
-        )
+        self.user = CradleUser.objects.create_user(username="user", password="user", email="a@b.c")
+        self.user2 = CradleUser.objects.create_user(username="user2", password="user2", email="a@b.e")
+        self.admin = CradleUser.objects.create_superuser(username="admin", password="admin", email="b@c.d")
         self.token_admin = str(AccessToken.for_user(self.admin))
         self.token_normal = str(AccessToken.for_user(self.user))
         self.token_normal2 = str(AccessToken.for_user(self.user2))
@@ -42,9 +36,7 @@ class DeleteUserTest(UserTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_delete_user_not_authenticated(self):
-        response = self.client.delete(
-            reverse("user_detail", kwargs={"user_id": self.user.id})
-        )
+        response = self.client.delete(reverse("user_detail", kwargs={"user_id": self.user.id}))
 
         self.assertEqual(response.status_code, 401)
 

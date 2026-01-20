@@ -1,28 +1,18 @@
-from .views.token_view import TokenObtainPairLogView, TokenRefreshLogView
 from .views.two_factor_view import Enable2FAView, Verify2FASetupView, Disable2FAView
+from .views.oauth_view import OAuthConnectView, OAuthDisconnectView
 
 from django.urls import path
 from .views import user_view
 
 urlpatterns = [
-    path("login/", TokenObtainPairLogView.as_view(), name="user_login"),
-    path("refresh/", TokenRefreshLogView.as_view(), name="user_refresh"),
+    path("config/", user_view.UserConfigView.as_view(), name="user_config"),
+    path("oauth/connect/", OAuthConnectView.as_view(), name="user_oauth_connect"),
+    path(
+        "oauth/disconnect/<str:provider>/",
+        OAuthDisconnectView.as_view(),
+        name="user_oauth_disconnect",
+    ),
     path("", user_view.UserList.as_view(), name="user_list"),
-    path(
-        "change_password/",
-        user_view.ChangePasswordView.as_view(),
-        name="change-password",
-    ),
-    path(
-        "email_confirm/",
-        user_view.EmailConfirm.as_view(),
-        name="email_confirm",
-    ),
-    path(
-        "reset_password/",
-        user_view.PasswordReset.as_view(),
-        name="reset_password",
-    ),
     path(
         "<str:user_id>/",
         user_view.UserDetail.as_view(),
@@ -45,12 +35,12 @@ urlpatterns = [
     ),
     path(
         "<str:user_id>/sessions/",
-        user_view.UserSessionsView.as_view(),
+        user_view.UserSessionsListView.as_view(),
         name="user_sessions_list",
     ),
     path(
         "<str:user_id>/sessions/<uuid:session_id>/",
-        user_view.UserSessionsView.as_view(),
+        user_view.UserSessionRevokeView.as_view(),
         name="user_session_revoke",
     ),
     path("2fa/enable/", Enable2FAView.as_view(), name="enable-2fa"),

@@ -32,9 +32,7 @@ class GraphInaccessibleResponseSerializer(serializers.Serializer):
 
 
 class SubGraphSerializer(serializers.Serializer):
-    entries = EntryListCompressedTreeSerializer(
-        fields=("name", "id", "location", "degree", "note_id")
-    )
+    entries = EntryListCompressedTreeSerializer(fields=("name", "id", "location", "degree", "note_id"))
     relations = EdgeRelationSerializer(many=True)
     colors = serializers.DictField()
 
@@ -76,11 +74,7 @@ class SubGraphSerializer(serializers.Serializer):
                     try:
                         note = Note.objects.get(id=note_uuid)
                         # Use metadata title if available, otherwise fall back to title field
-                        note_title = (
-                            (note.metadata or {}).get("title")
-                            or note.title
-                            or note_uuid
-                        )
+                        note_title = (note.metadata or {}).get("title") or note.title or note_uuid
                         entry.name = note_title
                     except Note.DoesNotExist:
                         # If note not found, keep the UUID
@@ -91,11 +85,7 @@ class SubGraphSerializer(serializers.Serializer):
             else:
                 entry.note_id = None
 
-        colors = {
-            e.entry_class.subtype: e.entry_class.color
-            for e in entries
-            if e.entry_class.subtype is not None
-        }
+        colors = {e.entry_class.subtype: e.entry_class.color for e in entries if e.entry_class.subtype is not None}
 
         serializer = cls(
             {

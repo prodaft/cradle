@@ -28,9 +28,7 @@ urlpatterns = [
         name="next_name",
     ),
     path("entries/", entry_view.EntryView.as_view(), name="entry-list-create"),
-    path(
-        "entries/<uuid:id>/", entry_view.EntryDetailView.as_view(), name="entry-detail"
-    ),
+    path("entries/<uuid:id>/", entry_view.EntryDetailView.as_view(), name="entry-detail"),
     path("relations/", relation_view.RelationListView.as_view(), name="relation-list"),
     path(
         "relations/<uuid:relation_id>/",

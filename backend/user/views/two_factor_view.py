@@ -75,9 +75,7 @@ class Verify2FASetupView(APIView):
             raise InvalidTwoFactorTokenException(detail="Invalid token")
 
         with transaction.atomic():
-            confirmed_devices = TOTPDevice.objects.select_for_update().filter(
-                user=request.user, confirmed=True
-            )
+            confirmed_devices = TOTPDevice.objects.select_for_update().filter(user=request.user, confirmed=True)
 
             if confirmed_devices.count() > 1:
                 newest_device = confirmed_devices.order_by("-id").first()

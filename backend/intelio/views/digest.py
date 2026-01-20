@@ -169,30 +169,21 @@ class DigestUploadAPIView(APIView):
     def get(self, request):
         file_name = request.query_params.get("fileName")
         if not file_name:
-            raise InvalidFileNameException(
-                detail="The 'fileName' query parameter is required."
-            )
+            raise InvalidFileNameException(detail="The 'fileName' query parameter is required.")
 
         # Get and validate file size
         file_size_str = request.query_params.get("fileSize")
         if not file_size_str:
-            raise InvalidFileSizeException(
-                detail="The 'fileSize' query parameter is required."
-            )
+            raise InvalidFileSizeException(detail="The 'fileSize' query parameter is required.")
 
         try:
             file_size = int(file_size_str)
         except ValueError:
-            raise InvalidFileSizeException(
-                detail="The 'fileSize' parameter must be a valid integer."
-            )
+            raise InvalidFileSizeException(detail="The 'fileSize' parameter must be a valid integer.")
 
         # Non-admin users cannot have concurrent uploads
         # (admins can have multiple pending uploads)
-        if (
-            PendingDigestUpload.objects.filter(user=request.user).exists()
-            and not request.user.is_cradle_admin
-        ):
+        if PendingDigestUpload.objects.filter(user=request.user).exists() and not request.user.is_cradle_admin:
             from file_transfer.uploads.exceptions import AlreadyUploadingException
 
             raise AlreadyUploadingException(
@@ -245,20 +236,14 @@ class DigestUploadFinalizeAPIView(APIView):
 
         # Finalize upload via flow
         try:
-            response_data = digest_upload_flow.finalize(
-                uuid.UUID(upload_id), request.user, **validated_data
-            )
+            response_data = digest_upload_flow.finalize(uuid.UUID(upload_id), request.user, **validated_data)
         except ValueError:
-            raise InvalidFileNameException(
-                detail="The 'upload_id' parameter must be a valid UUID."
-            )
+            raise InvalidFileNameException(detail="The 'upload_id' parameter must be a valid UUID.")
 
         # Extract digest from response
         digest = response_data["digest"]
 
-        return Response(
-            BaseDigestSerializer(digest).data, status=status.HTTP_201_CREATED
-        )
+        return Response(BaseDigestSerializer(digest).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(
@@ -359,12 +344,8 @@ class DigestSubclassesAPIView(APIView):
         ),
     ],
     responses={
-        200: TotalPagesPagination().get_paginated_response_serializer(
-            BaseDigestSerializer
-        ),
-        **get_error_responses(
-            IntelioErrorCodes.INVALID_PAGE_SIZE, IntelioErrorCodes.PAGE_SIZE_TOO_LARGE
-        ),
+        200: TotalPagesPagination().get_paginated_response_serializer(BaseDigestSerializer),
+        **get_error_responses(IntelioErrorCodes.INVALID_PAGE_SIZE, IntelioErrorCodes.PAGE_SIZE_TOO_LARGE),
         **get_common_error_responses(),
     },
     methods=["GET"],
@@ -409,14 +390,10 @@ class DigestAPIView(GenericAPIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size value. Must be an integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            raise PageSizeTooLargeException(
-                detail="page_size cannot be greater than 200."
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 200.")
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -485,9 +462,7 @@ class DigestAPIView(GenericAPIView):
         ],
         responses={
             204: {"description": "Digest deleted successfully"},
-            **get_error_responses(
-                IntelioErrorCodes.MISSING_DIGEST_ID, IntelioErrorCodes.DIGEST_NOT_FOUND
-            ),
+            **get_error_responses(IntelioErrorCodes.MISSING_DIGEST_ID, IntelioErrorCodes.DIGEST_NOT_FOUND),
             **get_common_error_responses(),
         },
     )

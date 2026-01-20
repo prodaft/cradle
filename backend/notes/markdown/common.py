@@ -14,20 +14,8 @@ LINK_REGEX = (
     + r"(?:\|(?P<cl_alias>(?:\\[\[\]\|]|[^\[\]\|])+?))?\]\]"
     + r"(?:\((?:(?P<cl_time>\d{2}:\d{2}\s+)?(?P<cl_date>\d{2}-\d{2}-\d{4}))\))?"
 )
-INLINE_FOOTNOTE = (
-    r"\[(?P<footnote_value>"
-    + LINK_LABEL
-    + r")\]\[(?P<footnote_key>"
-    + LINK_LABEL
-    + r")\]"
-)
-INLINE_FOOTNOTE_IMG = (
-    r"!\[(?P<img_footnote_value>"
-    + LINK_LABEL
-    + r")\]\[(?P<img_footnote_key>"
-    + LINK_LABEL
-    + r")\]"
-)
+INLINE_FOOTNOTE = r"\[(?P<footnote_value>" + LINK_LABEL + r")\]\[(?P<footnote_key>" + LINK_LABEL + r")\]"
+INLINE_FOOTNOTE_IMG = r"!\[(?P<img_footnote_value>" + LINK_LABEL + r")\]\[(?P<img_footnote_key>" + LINK_LABEL + r")\]"
 
 
 class ErrorBypassYAMLHandler(frontmatter.YAMLHandler):
@@ -38,9 +26,7 @@ class ErrorBypassYAMLHandler(frontmatter.YAMLHandler):
             return {}
 
 
-def parse_cradle_link(
-    inline: "InlineParser", m: Match[str], state: "InlineState"
-) -> int:
+def parse_cradle_link(inline: "InlineParser", m: Match[str], state: "InlineState") -> int:
     """Parse a cradle link of the form [[type:value|alias]] (HH:MM dd-mm-yyyy)."""
     pos = m.end()
 
@@ -56,19 +42,9 @@ def parse_cradle_link(
                     "key": m.group("cl_type").strip(),
                     "value": m.group("cl_value").strip(),
                     "hidden": True if m.group("cl_hidden") else False,
-                    "alias": m.group("cl_alias").strip()
-                    if m.group("cl_alias")
-                    else None,
-                    "time": (
-                        make_aware(datetime.datetime.strptime(time, "%H:%M"))
-                        if time
-                        else None
-                    ),
-                    "date": (
-                        make_aware(datetime.datetime.strptime(date, "%d-%m-%Y"))
-                        if date
-                        else None
-                    ),
+                    "alias": m.group("cl_alias").strip() if m.group("cl_alias") else None,
+                    "time": (make_aware(datetime.datetime.strptime(time, "%H:%M")) if time else None),
+                    "date": (make_aware(datetime.datetime.strptime(date, "%d-%m-%Y")) if date else None),
                 },
             }
         )
@@ -97,9 +73,7 @@ def parse_footnote(inline: "InlineParser", m: Match[str], state: "InlineState") 
     return m.end()
 
 
-def parse_img_footnote(
-    inline: "InlineParser", m: Match[str], state: "InlineState"
-) -> int:
+def parse_img_footnote(inline: "InlineParser", m: Match[str], state: "InlineState") -> int:
     """Parse an image footnote reference of the form ![text][key]."""
     key = m.group("img_footnote_key")
     value = m.group("img_footnote_value")
@@ -126,6 +100,4 @@ def cradle_link_plugin(md: "Markdown") -> None:
 
 def footnote_plugin(md: "Markdown") -> None:
     md.inline.register("footnote", INLINE_FOOTNOTE, parse_footnote, before="link")
-    md.inline.register(
-        "img_footnote", INLINE_FOOTNOTE_IMG, parse_img_footnote, before="link"
-    )
+    md.inline.register("img_footnote", INLINE_FOOTNOTE_IMG, parse_img_footnote, before="link")

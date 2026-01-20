@@ -35,9 +35,7 @@ class PendingUpload(BasePendingUpload):
 
 
 class FileReference(models.Model, LifecycleModelMixin):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
 
     # New django-storages FileField
@@ -49,15 +47,9 @@ class FileReference(models.Model, LifecycleModelMixin):
     )
 
     # Legacy fields for migration from old MinIO storage (and for display/download filename)
-    minio_file_name: models.CharField = models.CharField(
-        max_length=255, null=True, blank=True
-    )
-    file_name: models.CharField = models.CharField(
-        max_length=255, null=True, blank=True
-    )
-    bucket_name: models.CharField = models.CharField(
-        max_length=255, null=True, blank=True
-    )
+    minio_file_name: models.CharField = models.CharField(max_length=255, null=True, blank=True)
+    file_name: models.CharField = models.CharField(max_length=255, null=True, blank=True)
+    bucket_name: models.CharField = models.CharField(max_length=255, null=True, blank=True)
 
     note: models.ForeignKey = models.ForeignKey(
         "notes.Note",
@@ -83,13 +75,9 @@ class FileReference(models.Model, LifecycleModelMixin):
 
     md5_hash: models.CharField = models.CharField(max_length=32, null=True, blank=True)
     sha1_hash: models.CharField = models.CharField(max_length=40, null=True, blank=True)
-    sha256_hash: models.CharField = models.CharField(
-        max_length=64, null=True, blank=True
-    )
+    sha256_hash: models.CharField = models.CharField(max_length=64, null=True, blank=True)
     mimetype: models.CharField = models.CharField(max_length=255, null=True, blank=True)
-    file_size: models.BigIntegerField = models.PositiveBigIntegerField(
-        null=True, blank=True
-    )
+    file_size: models.BigIntegerField = models.PositiveBigIntegerField(null=True, blank=True)
 
     def to_dict(self) -> dict[str, str | None]:
         return {
@@ -102,25 +90,14 @@ class FileReference(models.Model, LifecycleModelMixin):
     def entities(self) -> list[str]:
         if self.note:
             # Use prefetched data if available to avoid N+1 queries
-            if (
-                hasattr(self.note, "_prefetched_objects_cache")
-                and "entries" in self.note._prefetched_objects_cache
-            ):
-                return [
-                    entry
-                    for entry in self.note.entries.all()
-                    if entry.entry_class.type == EntryType.ENTITY
-                ]
-            return list(
-                self.note.entries.filter(entry_class__type=EntryType.ENTITY).all()
-            )
+            if hasattr(self.note, "_prefetched_objects_cache") and "entries" in self.note._prefetched_objects_cache:
+                return [entry for entry in self.note.entries.all() if entry.entry_class.type == EntryType.ENTITY]
+            return list(self.note.entries.filter(entry_class__type=EntryType.ENTITY).all())
         return []
 
     @property
     def entry(self):
-        file_class, _ = EntryClass.objects.get_or_create(
-            type=EntryType.ARTIFACT, subtype="file"
-        )
+        file_class, _ = EntryClass.objects.get_or_create(type=EntryType.ARTIFACT, subtype="file")
 
         entry, _ = Entry.objects.get_or_create(
             entry_class=file_class,

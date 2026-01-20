@@ -10,9 +10,7 @@ from django.db.models import Value, IntegerField
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
 
-def get_neighbors(
-    sourceset, depth, user=None, skip_virtual=False, cumulative=False, filter=None
-):
+def get_neighbors(sourceset, depth, user=None, skip_virtual=False, cumulative=False, filter=None):
     """
     Returns a QuerySet of Entry objects that are exactly `depth` hops away from source_entry.
     Only follows relations where accessible=True, and ensures nodes visited at earlier
@@ -27,10 +25,7 @@ def get_neighbors(
             virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
             virt_ids = virt_edges.values_list("dst", flat=True).distinct()
 
-            edges = Edge.objects.filter(
-                Q(src__in=current_level, virtual=False)
-                | Q(src__in=virt_ids, virtual=True)
-            )
+            edges = Edge.objects.filter(Q(src__in=current_level, virtual=False) | Q(src__in=virt_ids, virtual=True))
         else:
             edges = Edge.objects.filter(src__in=current_level)
 
@@ -99,10 +94,7 @@ def get_neighbors_paginated(
             virt_edges = Edge.objects.filter(src__in=current_level, virtual=True)
             virt_ids = virt_edges.values_list("dst", flat=True).distinct()
 
-            edges = Edge.objects.filter(
-                Q(src__in=current_level, virtual=False)
-                | Q(src__in=virt_ids, virtual=True)
-            )
+            edges = Edge.objects.filter(Q(src__in=current_level, virtual=False) | Q(src__in=virt_ids, virtual=True))
         else:
             edges = Edge.objects.filter(src__in=current_level)
 

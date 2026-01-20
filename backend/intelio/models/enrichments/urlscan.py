@@ -107,12 +107,8 @@ class URLScanEnricher(BaseEnricher):
             ],
             help_text="Scan visibility (only for submit_result mode)",
         ),
-        "search_size": models.IntegerField(
-            default=10, help_text="Maximum number of search results to return"
-        ),
-        "timeout": models.IntegerField(
-            default=30, help_text="API request timeout in seconds"
-        ),
+        "search_size": models.IntegerField(default=10, help_text="Maximum number of search results to return"),
+        "timeout": models.IntegerField(default=30, help_text="API request timeout in seconds"),
         "extract_artifacts": models.BooleanField(
             default=True,
             blank=True,
@@ -134,10 +130,7 @@ class URLScanEnricher(BaseEnricher):
             return "No entries provided for enrichment"
 
         # Warn if mappings are missing and artifact extraction is enabled
-        if (
-            self.settings.get("extract_artifacts", True)
-            and not URLScanMapping.objects.exists()
-        ):
+        if self.settings.get("extract_artifacts", True) and not URLScanMapping.objects.exists():
             self.request._append_warning(
                 "No URLScan type mappings configured. "
                 "Artifact extraction will be disabled. "
@@ -167,9 +160,7 @@ class URLScanEnricher(BaseEnricher):
                 elif analysis_mode == "submit_result":
                     result = self._urlscan_submit_and_poll(entry, headers, timeout)
                 else:
-                    self.request._append_warning(
-                        f"Unknown analysis mode: {analysis_mode}"
-                    )
+                    self.request._append_warning(f"Unknown analysis mode: {analysis_mode}")
                     continue
 
                 if result:
@@ -190,13 +181,9 @@ class URLScanEnricher(BaseEnricher):
                         self._extract_artifacts(entry, result)
 
             except requests.RequestException as e:
-                self.request._append_warning(
-                    f"URLScan API failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"URLScan API failed for {entry.name}: {str(e)}")
             except Exception as e:
-                self.request._append_warning(
-                    f"Unexpected error enriching {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"Unexpected error enriching {entry.name}: {str(e)}")
 
     def _urlscan_search(self, entry: Entry, headers: dict, timeout: int) -> dict:
         """Search for existing scans of the URL/domain."""
@@ -223,9 +210,7 @@ class URLScanEnricher(BaseEnricher):
 
         return response.json()
 
-    def _urlscan_submit_and_poll(
-        self, entry: Entry, headers: dict, timeout: int
-    ) -> dict:
+    def _urlscan_submit_and_poll(self, entry: Entry, headers: dict, timeout: int) -> dict:
         """Submit URL for scanning and poll for results."""
         visibility = self.settings.get("visibility", "public")
 
@@ -331,9 +316,7 @@ class URLScanEnricher(BaseEnricher):
 
             if target_class:
                 # Create entry for the discovered artifact
-                artifact_entry, _ = Entry.objects.get_or_create(
-                    entry_class=target_class, name=str(value)
-                )
+                artifact_entry, _ = Entry.objects.get_or_create(entry_class=target_class, name=str(value))
 
                 # Create relation
                 Relation.objects.create(
@@ -353,9 +336,7 @@ class URLScanEnricher(BaseEnricher):
             else:
                 # Track unmapped type
                 unmapped_types.append(observable_type)
-                logger.debug(
-                    f"Skipping URLScan observable type '{observable_type}' - no mapping configured"
-                )
+                logger.debug(f"Skipping URLScan observable type '{observable_type}' - no mapping configured")
 
         # Warn if unmapped types were encountered
         if unmapped_types:

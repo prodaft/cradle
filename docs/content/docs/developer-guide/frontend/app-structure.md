@@ -7,7 +7,7 @@ weight = 2
 
 ## Route layout
 
-Routes are defined in `src/renderer/src/App.tsx` and rendered inside
+Routes are defined in `src/App.tsx` and rendered inside
 `MainLayout`. `PrivateRoute` protects authenticated routes, while auth pages
 live outside that wrapper.
 
@@ -24,6 +24,6 @@ global state, add it here to keep scope explicit.
 
 ## Adding a new route
 
-1. Create your view under `src/renderer/src/components/domain`.
+1. Create your view under `src/components/domain`.
 2. Add a `Route` entry in `App.tsx` within the `MainLayout` routes.
 3. Add a navigation item in the sidebar if needed.

@@ -38,12 +38,8 @@ class EntryQuerySet(models.QuerySet):
         Filter all entries accessible to a user
         """
         Edge = apps.get_model("entries", "Edge")
-        accessible_vertices = Edge.objects.accessible(user).values_list(
-            "src", flat=True
-        )
-        return self.filter(
-            Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY)
-        )
+        accessible_vertices = Edge.objects.accessible(user).values_list("src", flat=True)
+        return self.filter(Q(id__in=accessible_vertices) | Q(entry_class__type=EntryType.ENTITY))
 
     def non_virtual(self) -> models.QuerySet:
         """

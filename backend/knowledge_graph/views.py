@@ -8,7 +8,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from access.enums import AccessType
 from access.models import Access
-from core.pagination import LazyPaginator
+from core.pagination import LazyPaginator, TotalPagesPagination
 from entries.enums import EntryType
 from entries.models import Entry, Relation
 from knowledge_graph.utils import get_neighbors, get_neighbors_paginated
@@ -71,9 +71,7 @@ from .serializers import (
         ),
     ],
     responses={
-        200: LazyPaginator().get_paginated_response_serializer(
-            EntryWithDepthSerializerView
-        ),
+        200: LazyPaginator().get_paginated_response_serializer(EntryWithDepthSerializerView),
         400: {"description": "Invalid parameters or query syntax"},
         401: {"description": "User is not authenticated"},
         404: {"description": "Source entry not found"},
@@ -92,9 +90,7 @@ class GraphNeighborsView(APIView):
             depth = int(request.query_params.get("depth", 1))
             page_size = int(request.query_params.get("page_size", 200))
         except ValueError:
-            return Response(
-                {"error": "depth, page and page_size must be integers."}, status=400
-            )
+            return Response({"error": "depth, page and page_size must be integers."}, status=400)
 
         if depth < 0 or depth > 5:
             return Response({"error": "depth must be between 0 and 5."}, status=400)
@@ -103,19 +99,12 @@ class GraphNeighborsView(APIView):
         source_entry = Entry.objects.filter(pk=source_id).first()
 
         if not source_entry:
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
-        if (
-            source_entry.entry_class.type == EntryType.ENTITY
-            and not Access.objects.has_access_to_entities(
-                request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
-            )
+        if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
+            request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
         ):
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
@@ -227,19 +216,12 @@ class GraphInaccessibleView(APIView):
         source_entry = Entry.objects.filter(pk=source_id).first()
 
         if not source_entry:
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
-        if (
-            source_entry.entry_class.type == EntryType.ENTITY
-            and not Access.objects.has_access_to_entities(
-                request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
-            )
+        if source_entry.entry_class.type == EntryType.ENTITY and not Access.objects.has_access_to_entities(
+            request.user, {source_entry}, {AccessType.READ, AccessType.READ_WRITE}
         ):
-            return Response(
-                {"error": f"Entry with ID {source_id} not found."}, status=404
-            )
+            return Response({"error": f"Entry with ID {source_id} not found."}, status=404)
 
         sourceset = source_entry.aliasqs(request.user).non_virtual()
 
@@ -261,9 +243,26 @@ class GraphInaccessibleView(APIView):
 
 @extend_schema(
     summary="Get knowledge graph",
-    description="Returns the full knowledge graph accessible to the user.",
+    description="Returns the knowledge graph accessible to the user with pagination support.",
+    parameters=[
+        OpenApiParameter(
+            name="page",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Page number for pagination",
+            default=1,
+        ),
+        OpenApiParameter(
+            name="page_size",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Number of relations per page. Max 200.",
+            default=100,
+        ),
+    ],
     responses={
-        200: SubGraphSerializer,
+        200: TotalPagesPagination().get_paginated_response_serializer(SubGraphSerializer),
+        400: {"description": "Invalid pagination parameters"},
         401: {"description": "User is not authenticated"},
     },
 )
@@ -277,16 +276,45 @@ class KnowledgeGraphView(APIView):
 
         # Check if there are any relations
         if not rels.exists():
-            # Return empty graph
+            # Return empty graph with pagination metadata
             return Response(
                 {
-                    "entries": {},
-                    "relations": [],
-                    "colors": {},
-                    "message": "No graph relations are accessible.",
+                    "page": 1,
+                    "count": 0,
+                    "total_pages": 1,
+                    "results": {
+                        "entries": {},
+                        "relations": [],
+                        "colors": {},
+                        "message": "No graph relations are accessible.",
+                    },
                 },
                 status=status.HTTP_200_OK,
             )
 
-        serializer = SubGraphSerializer.from_relations(rels.all())
+        # Handle page_size parameter
+        try:
+            page_size = int(request.query_params.get("page_size", 100))
+        except ValueError:
+            return Response(
+                {"error": "Invalid page_size value. Must be an integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 200:
+            return Response(
+                {"error": "page_size cannot be greater than 200."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Apply pagination
+        paginator = TotalPagesPagination(page_size=page_size)
+        paginated_rels = paginator.paginate_queryset(rels, request)
+
+        if paginated_rels is not None:
+            serializer = SubGraphSerializer.from_relations(list(paginated_rels))
+            return paginator.get_paginated_response(serializer.data)
+
+        # Fallback if pagination is not applied
+        serializer = SubGraphSerializer.from_relations(list(rels.all()))
         return Response(serializer.data, status=status.HTTP_200_OK)

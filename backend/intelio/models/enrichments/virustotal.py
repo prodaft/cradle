@@ -47,9 +47,7 @@ class VirusTotalEnricher(BaseEnricher):
             max_length=255,
             help_text="VirusTotal API key (get from https://www.virustotal.com/gui/my-apikey)",
         ),
-        "timeout": models.IntegerField(
-            default=30, help_text="API request timeout in seconds"
-        ),
+        "timeout": models.IntegerField(default=30, help_text="API request timeout in seconds"),
         "min_detections": models.IntegerField(
             default=1,
             help_text="Minimum detections to create relation (0 = always create)",
@@ -91,18 +89,14 @@ class VirusTotalEnricher(BaseEnricher):
                 # Determine hash type
                 hash_type = self._detect_hash_type(entry.name)
                 if not hash_type:
-                    self.request._append_warning(
-                        f"Could not determine hash type for {entry.name}"
-                    )
+                    self.request._append_warning(f"Could not determine hash type for {entry.name}")
                     continue
 
                 # Query VirusTotal
                 result = self._query_virustotal(entry.name, api_key, timeout)
 
                 if result is None:
-                    self.request._append_warning(
-                        f"No VirusTotal data found for {entry.name}"
-                    )
+                    self.request._append_warning(f"No VirusTotal data found for {entry.name}")
                     continue
 
                 # Check minimum detections threshold
@@ -134,13 +128,9 @@ class VirusTotalEnricher(BaseEnricher):
                 relations_to_create.append(relation)
 
             except requests.RequestException as e:
-                self.request._append_warning(
-                    f"API request failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"API request failed for {entry.name}: {str(e)}")
             except Exception as e:
-                self.request._append_warning(
-                    f"Unexpected error enriching {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"Unexpected error enriching {entry.name}: {str(e)}")
 
         # Bulk create all relations
         if relations_to_create:
@@ -194,8 +184,6 @@ class VirusTotalEnricher(BaseEnricher):
 
         for engine, scan_result in scans.items():
             if scan_result.get("detected"):
-                positives.append(
-                    {"engine": engine, "result": scan_result.get("result", "")}
-                )
+                positives.append({"engine": engine, "result": scan_result.get("result", "")})
 
         return positives[:10]  # Limit to top 10 to reduce data size

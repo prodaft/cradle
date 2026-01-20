@@ -3,16 +3,10 @@ from .models import EventLog
 
 
 class EventLogFilter(filters.FilterSet):
-    type = filters.CharFilter(
-        field_name="type", lookup_expr="iexact"
-    )  # Case-insensitive search on event type
+    type = filters.CharFilter(field_name="type", lookup_expr="iexact")  # Case-insensitive search on event type
     username = filters.CharFilter(field_name="user__username")  # Filter by user ID
-    start_date = filters.DateTimeFilter(
-        field_name="timestamp", lookup_expr="gte"
-    )  # Filter by start timestamp
-    end_date = filters.DateTimeFilter(
-        field_name="timestamp", lookup_expr="lte"
-    )  # Filter by end timestamp
+    start_date = filters.DateTimeFilter(field_name="timestamp", lookup_expr="gte")  # Filter by start timestamp
+    end_date = filters.DateTimeFilter(field_name="timestamp", lookup_expr="lte")  # Filter by end timestamp
     content_type = filters.CharFilter(
         field_name="content_type__model", lookup_expr="iexact"
     )  # Filter by content type model

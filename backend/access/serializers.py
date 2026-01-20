@@ -48,9 +48,7 @@ class AccessEntitySerializer(serializers.Serializer):
         if self.context["is_admin"]:
             data["access_type"] = AccessType.READ_WRITE
         else:
-            data["access_type"] = (
-                AccessType.NONE if data["access_type"] is None else data["access_type"]
-            )
+            data["access_type"] = AccessType.NONE if data["access_type"] is None else data["access_type"]
         return data
 
 

@@ -165,9 +165,7 @@ class NotificationSerializer(serializers.ModelSerializer):
     def to_representation(self, instance: Any) -> dict[str, Any]:
         model_class = instance.__class__
 
-        serializer_class = NOTIFICATION_SERIALIZER_MAP.get(
-            model_class, MessageNotificationSerializer
-        )
+        serializer_class = NOTIFICATION_SERIALIZER_MAP.get(model_class, MessageNotificationSerializer)
 
         data = serializer_class(instance, context=self.context).data
         return data

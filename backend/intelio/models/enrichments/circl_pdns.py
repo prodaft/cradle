@@ -91,9 +91,7 @@ class CIRCLPDNSEnricher(BaseEnricher):
                 # Extract domain from entry
                 domain = self._extract_domain(entry)
                 if not domain:
-                    self.request._append_warning(
-                        f"Could not extract domain from {entry.name}"
-                    )
+                    self.request._append_warning(f"Could not extract domain from {entry.name}")
                     continue
 
                 # Query PDNS
@@ -116,9 +114,7 @@ class CIRCLPDNSEnricher(BaseEnricher):
                             continue
 
                         # Create entry for the discovered artifact
-                        artifact_entry, _ = Entry.objects.get_or_create(
-                            entry_class=target_class, name=rdata
-                        )
+                        artifact_entry, _ = Entry.objects.get_or_create(entry_class=target_class, name=rdata)
 
                         # Create relation
                         Relation.objects.create(
@@ -131,12 +127,8 @@ class CIRCLPDNSEnricher(BaseEnricher):
                             inherit_av=True,
                             details={
                                 "record_type": record_type,
-                                "time_first": self._format_timestamp(
-                                    record.get("time_first")
-                                ),
-                                "time_last": self._format_timestamp(
-                                    record.get("time_last")
-                                ),
+                                "time_first": self._format_timestamp(record.get("time_first")),
+                                "time_last": self._format_timestamp(record.get("time_last")),
                                 "count": record.get("count", 0),
                                 "source": "circl_pdns",
                             },
@@ -144,19 +136,13 @@ class CIRCLPDNSEnricher(BaseEnricher):
                     elif record_type not in unmapped_types:
                         # Track unmapped type
                         unmapped_types.add(record_type)
-                        logger.debug(
-                            f"Skipping DNS record type '{record_type}' - no mapping configured"
-                        )
+                        logger.debug(f"Skipping DNS record type '{record_type}' - no mapping configured")
 
             except pypdns.errors.UnauthorizedError:
-                self.request._append_warning(
-                    "CIRCL PDNS authentication failed. Check credentials."
-                )
+                self.request._append_warning("CIRCL PDNS authentication failed. Check credentials.")
                 break  # Stop processing if auth fails
             except Exception as e:
-                self.request._append_warning(
-                    f"PDNS lookup failed for {entry.name}: {str(e)}"
-                )
+                self.request._append_warning(f"PDNS lookup failed for {entry.name}: {str(e)}")
 
         # Warn if unmapped types were encountered
         if unmapped_types:

@@ -60,9 +60,7 @@ class TemplatedMail(Mail):
 class ResetPasswordMail(TemplatedMail):
     def __init__(self, user) -> None:
         self.user = user
-        reset_url = (
-            f"{settings.FRONTEND_URL}/#reset-password?token={user.password_reset_token}"
-        )
+        reset_url = f"{settings.FRONTEND_URL}/#reset-password?token={user.password_reset_token}"
         params = {
             "user": user,
             "reset_url": reset_url,
@@ -181,8 +179,7 @@ class ReportErrorMail(TemplatedMail):
         params = {
             "user": user,
             "report": published_report,
-            "error_message": error_message
-            or "Unknown error occurred during report processing.",
+            "error_message": error_message or "Unknown error occurred during report processing.",
         }
         super().__init__(
             subject="CRADLE - Error Processing Your Report",
@@ -221,8 +218,7 @@ class EnrichmentErrorMail(TemplatedMail):
         params = {
             "user": user,
             "enrichment": enrichment_request,
-            "error_message": error_message
-            or "Unknown error occurred during enrichment processing.",
+            "error_message": error_message or "Unknown error occurred during enrichment processing.",
         }
         super().__init__(
             subject="CRADLE - Error Processing Your Enrichment",

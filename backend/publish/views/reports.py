@@ -90,22 +90,16 @@ class ReportListDeleteAPIView(generics.ListAPIView):
         # Handle search parameter
         search = request.query_params.get("search")
         if search:
-            queryset = queryset.filter(
-                Q(id__icontains=search) | Q(title__icontains=search)
-            )
+            queryset = queryset.filter(Q(id__icontains=search) | Q(title__icontains=search))
 
         # Handle page_size parameter
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size value. Must be an integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 200:
-            raise PageSizeTooLargeException(
-                detail="page_size cannot be greater than 200."
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 200.")
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
@@ -170,14 +164,10 @@ class ReportRetryAPIView(APIView):
             raise ReportNotFoundException(detail="Report not found.")
 
         if report.status == ReportStatus.WORKING:
-            raise ReportAlreadyGeneratingException(
-                detail="Report is already being generated."
-            )
+            raise ReportAlreadyGeneratingException(detail="Report is already being generated.")
 
         if report.status == ReportStatus.DONE:
-            raise ReportAlreadyCompletedException(
-                detail="Report already generated successfully."
-            )
+            raise ReportAlreadyCompletedException(detail="Report already generated successfully.")
 
         report.status = ReportStatus.WORKING
         report.error_message = ""
@@ -234,16 +224,12 @@ class ReportDetailAPIView(generics.RetrieveAPIView):
     def get(self, request, pk):
         download_url = request.query_params.get("download_url", False) == "true"
         return Response(
-            ReportDetailSerializer(
-                self.get_object(), context={"download_url": download_url}
-            ).data,
+            ReportDetailSerializer(self.get_object(), context={"download_url": download_url}).data,
             status=status.HTTP_200_OK,
         )
 
     def get_queryset(self):
-        return PublishedReport.objects.filter(user=self.request.user).order_by(
-            "-created_at"
-        )
+        return PublishedReport.objects.filter(user=self.request.user).order_by("-created_at")
 
     def delete(self, request, pk):
         if not pk:

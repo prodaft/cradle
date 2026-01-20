@@ -59,9 +59,7 @@ class TotalPagesPagination(PageNumberPagination):
             fields={
                 "page": serializers.IntegerField(help_text="Current page number"),
                 "count": serializers.IntegerField(help_text="Total number of items"),
-                "total_pages": serializers.IntegerField(
-                    help_text="Total number of pages"
-                ),
+                "total_pages": serializers.IntegerField(help_text="Total number of pages"),
                 "results": serializer_class(many=many),
             },
         )
@@ -115,9 +113,7 @@ class LazyPaginator(PageNumberPagination):
             name=name,
             fields={
                 "page": serializers.IntegerField(help_text="Current page number"),
-                "has_next": serializers.BooleanField(
-                    help_text="Whether there are more pages available"
-                ),
+                "has_next": serializers.BooleanField(help_text="Whether there are more pages available"),
                 "results": serializer_class(many=many),
             },
         )

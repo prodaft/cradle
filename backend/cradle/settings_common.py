@@ -34,7 +34,6 @@ INSTALLED_APPS = [
     "query.apps.QueryConfig",
     "access.apps.AccessConfig",
     "entries.apps.EntriesConfig",
-    "fleeting_notes.apps.FleetingNotesConfig",
     "user.apps.UserConfig",
     "notes.apps.NotesConfig",
     "mail.apps.MailConfig",
@@ -137,7 +136,7 @@ REST_FRAMEWORK = {
         "user.authentication.APIKeyAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "core.openapi.CradleAutoSchema",
     "DEFAULT_PARSER_CLASSES": ("rest_framework.parsers.JSONParser",),
     "EXCEPTION_HANDLER": "core.exception_handler.custom_exception_handler",
 }
@@ -150,7 +149,11 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": r"/api/v[0-9]",
     "COMPONENT_SPLIT_REQUEST": True,
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
-    "POSTPROCESSING_HOOKS": ["cradle.schema_processors.postprocess_schema_enums"],
+    "POSTPROCESSING_HOOKS": [
+        "cradle.schema_processors.postprocess_schema_enums",
+        "cradle.schema_processors.postprocess_schema_operation_ids",
+        "cradle.schema_processors.postprocess_schema_path_prefix",
+    ],
     # Error handling - RFC 9457 compliant
     "ENUM_NAME_OVERRIDES": {
         "ErrorCodeEnum": "core.exceptions.ErrorCode",
@@ -163,6 +166,27 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=14),
     "ROTATE_REFRESH_TOKENS": True,
 }
+
+# OAuth provider metadata exposed by the users/config endpoint.
+OAUTH_METHODS = []
+# OAuth provider settings used by backend OAuth flows.
+OAUTH_PROVIDERS = {}
+
+
+def build_oauth_methods(oauth_providers: dict) -> list[dict]:
+    methods = []
+    for provider, config in oauth_providers.items():
+        if not isinstance(config, dict):
+            continue
+        method = {
+            "id": provider,
+            "label": config.get("label") or provider,
+        }
+        if config.get("authorization_url"):
+            method["authorization_url"] = config["authorization_url"]
+        methods.append(method)
+    return methods
+
 
 ROOT_URLCONF = "cradle.urls"
 

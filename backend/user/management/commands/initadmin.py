@@ -30,9 +30,7 @@ class Command(BaseCommand):
 
             alphabet = string.ascii_letters + string.digits + string.punctuation
 
-            password = os.environ.get(
-                "CRADLE_ADMIN_PASSWORD", "".join(random.choices(alphabet, k=20))
-            )
+            password = os.environ.get("CRADLE_ADMIN_PASSWORD", "".join(random.choices(alphabet, k=20)))
             email = os.environ.get("CRADLE_ADMIN_EMAIL", "admin@prodaft.com")
             print("Creating admin account: %s" % username)
             print("With password %s" % password)

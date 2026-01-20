@@ -28,9 +28,7 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
         "description": "description",
     }
 
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     content: models.CharField = models.CharField()
     timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)
     fleeting: models.BooleanField = models.BooleanField(default=False)
@@ -43,26 +41,18 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
     status_message: models.CharField = models.CharField(default="")
     status_timestamp: models.DateTimeField = models.DateTimeField(null=True)
 
-    entries: models.ManyToManyField = models.ManyToManyField(
-        Entry, related_name="notes"
-    )
+    entries: models.ManyToManyField = models.ManyToManyField(Entry, related_name="notes")
 
     title: models.CharField = models.CharField(max_length=255, default="")
     description: models.TextField = models.TextField(default="", max_length=4096)
     metadata: models.JSONField = models.JSONField(default=dict, blank=True, null=True)
     content_offset: models.IntegerField = models.IntegerField(default=0)
 
-    author = models.ForeignKey[CradleUser](
-        CradleUser, related_name="author", on_delete=models.SET_NULL, null=True
-    )
+    author = models.ForeignKey[CradleUser](CradleUser, related_name="author", on_delete=models.SET_NULL, null=True)
 
-    editor = models.ForeignKey[CradleUser](
-        CradleUser, related_name="editor", on_delete=models.SET_NULL, null=True
-    )
+    editor = models.ForeignKey[CradleUser](CradleUser, related_name="editor", on_delete=models.SET_NULL, null=True)
 
-    access_vector: BitStringField = BitStringField(
-        max_length=2048, null=False, default=1 << 2047, varying=False
-    )
+    access_vector: BitStringField = BitStringField(max_length=2048, null=False, default=1 << 2047, varying=False)
 
     edit_timestamp: models.DateTimeField = models.DateTimeField(null=True)
 
@@ -70,9 +60,7 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     relations = GenericRelation(Relation, related_query_name="note")
 
-    digest = models.ForeignKey(
-        BaseDigest, related_name="notes", null=True, on_delete=models.CASCADE
-    )
+    digest = models.ForeignKey(BaseDigest, related_name="notes", null=True, on_delete=models.CASCADE)
 
     last_linked = models.DateTimeField(default=None, null=True)
 
@@ -80,9 +68,7 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
     class Meta:
         indexes = [
-            models.Index(
-                fields=["-timestamp", "fleeting"]
-            ),  # For get_accessible_notes ordering
+            models.Index(fields=["-timestamp", "fleeting"]),  # For get_accessible_notes ordering
             models.Index(fields=["fleeting", "timestamp"]),  # Alternative order
             models.Index(fields=["author", "-timestamp"]),  # For author filtering
             models.Index(fields=["editor", "-edit_timestamp"]),  # For editor filtering
@@ -129,20 +115,14 @@ class Note(LifecycleModelMixin, LoggableModelMixin, models.Model):
 
 
 class ArchivedNote(models.Model):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     content: models.CharField = models.CharField()
     timestamp: models.DateTimeField = models.DateTimeField()
 
 
 class Snippet(models.Model):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    owner = models.ForeignKey(
-        CradleUser, related_name="snippets", on_delete=models.CASCADE, null=True
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    owner = models.ForeignKey(CradleUser, related_name="snippets", on_delete=models.CASCADE, null=True)
     default: models.BooleanField = models.BooleanField(default=False)
     name: models.CharField = models.CharField(max_length=255)
     content: models.TextField = models.TextField()

@@ -29,8 +29,6 @@ class Command(BaseCommand):
         notes = Note.objects.all()
 
         for note in notes:
-            note.access_vector = calculate_acvec(
-                note.entries.filter(entry_class__type=EntryType.ENTITY)
-            )
+            note.access_vector = calculate_acvec(note.entries.filter(entry_class__type=EntryType.ENTITY))
             note.save()
             transaction.on_commit(lambda: propagate_acvec.apply_async((note.id,)))

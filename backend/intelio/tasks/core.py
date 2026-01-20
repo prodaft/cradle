@@ -18,9 +18,7 @@ def run_enricher(enricher_id: uuid.UUID, request_id: uuid.UUID):
     settings = EnricherSettings.objects.get(id=enricher_id)
     enricher = settings.enricher(request)
 
-    entries = request.entries(
-        set(settings.for_eclasses.all().values_list("subtype", flat=True))
-    )
+    entries = request.entries(set(settings.for_eclasses.all().values_list("subtype", flat=True)))
     try:
         enricher.pre_enrich(entries)
         enricher.enrich(entries)

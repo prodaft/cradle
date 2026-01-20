@@ -8,8 +8,8 @@ on:
   pull_request:
 
 jobs:
-  flake8:
-    name: Static Analysis - flake8
+  ruff:
+    name: Static Analysis - ruff
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -28,8 +28,8 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: uv sync --extra dev
-      - name: Run flake8
-        run: uv run flake8 --verbose .
+      - name: Run ruff
+        run: uv run ruff check .
 
   tests:
     name: Run Django Tests

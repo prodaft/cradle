@@ -26,10 +26,7 @@ class StatisticsNoteSerializer(serializers.Serializer):
     def get_content(self, note):
         content = note.content
         if self.truncate > -1 and len(content) - note.content_offset > self.truncate:
-            content = (
-                content[note.content_offset : note.content_offset + self.truncate]
-                + "..."
-            )
+            content = content[note.content_offset : note.content_offset + self.truncate] + "..."
         return content
 
 

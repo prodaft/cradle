@@ -53,9 +53,7 @@ def process_file_task(file_id):
             file_ref.file_size = storage.size(file_ref.file.name)
             file_ref.save(update_fields=["file_size"])
         except Exception as e:
-            logger.error(
-                f"Failed to fetch file size for {file_ref.file.name}: {str(e)}"
-            )
+            logger.error(f"Failed to fetch file size for {file_ref.file.name}: {str(e)}")
 
     # Fetch the mimetype if it is not set
     if file_ref.mimetype is None:
@@ -107,9 +105,7 @@ def process_file_task(file_id):
     if file_ref.note:
         from notes.tasks import link_files_task
 
-        transaction.on_commit(
-            lambda: link_files_task.apply_async(args=(str(file_ref.note.id),))
-        )
+        transaction.on_commit(lambda: link_files_task.apply_async(args=(str(file_ref.note.id),)))
 
 
 @shared_task

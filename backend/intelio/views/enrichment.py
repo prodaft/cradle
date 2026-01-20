@@ -65,11 +65,7 @@ class EnrichmentSubclassesAPIView(APIView):
     def get(self, request, *args, **kwargs):
         subclasses = BaseEnricher.__subclasses__()
 
-        enabled_enrichers = set(
-            EnricherSettings.objects.filter(enabled=True).values_list(
-                "enricher_type", flat=True
-            )
-        )
+        enabled_enrichers = set(EnricherSettings.objects.filter(enabled=True).values_list("enricher_type", flat=True))
 
         subclass_data = [
             {
@@ -188,9 +184,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                EnrichmentRequestListSerializer
-            ),
+            200: TotalPagesPagination().get_paginated_response_serializer(EnrichmentRequestListSerializer),
             **get_error_responses(
                 IntelioErrorCodes.INVALID_PAGE_SIZE,
                 IntelioErrorCodes.PAGE_SIZE_TOO_LARGE,
@@ -202,8 +196,7 @@ class EnrichmentSettingsAPIView(GenericAPIView):
         operation_id="enrichment_request_create",
         summary="Create enrichment request",
         description=(
-            "Create a new enrichment request for an entity. "
-            "Required fields: enricher_name, entity, title, and request."
+            "Create a new enrichment request for an entity. Required fields: enricher_name, entity, title, and request."
         ),
         request=EnrichmentRequestSerializer,
         responses={
@@ -236,14 +229,10 @@ class EnrichmentAPIView(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size value. Must be an integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 100:
-            raise PageSizeTooLargeException(
-                detail="page_size cannot be greater than 100."
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
 
         # Filter by user username
         user_username = request.query_params.get("user__username")
@@ -277,30 +266,22 @@ class EnrichmentAPIView(APIView):
         if request.query_params.get("status"):
             queryset = queryset.filter(status=request.query_params.get("status"))
 
-        queryset = queryset.select_related("user").prefetch_related(
-            "enrichers_settings"
-        )
+        queryset = queryset.select_related("user").prefetch_related("enrichers_settings")
 
         # Apply pagination
         paginator = TotalPagesPagination(page_size=page_size)
         result_page = paginator.paginate_queryset(queryset, request)
 
-        serializer = EnrichmentRequestListSerializer(
-            result_page, many=True, context={"request": request}
-        )
+        serializer = EnrichmentRequestListSerializer(result_page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         """Create a new enrichment request"""
-        serializer = EnrichmentRequestSerializer(
-            data=request.data, context={"request": request}
-        )
+        serializer = EnrichmentRequestSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         enrichment_request = serializer.save()
         return Response(
-            EnrichmentRequestSerializer(
-                enrichment_request, context={"request": request}
-            ).data,
+            EnrichmentRequestSerializer(enrichment_request, context={"request": request}).data,
             status=status.HTTP_201_CREATED,
         )
 
@@ -350,9 +331,7 @@ class EnrichmentDetailAPIView(APIView):
         else:
             queryset = EnrichmentRequest.objects.get_accessible_by(user)
         try:
-            return queryset.prefetch_related("enrichers_settings", "entities").get(
-                pk=pk
-            )
+            return queryset.prefetch_related("enrichers_settings", "entities").get(pk=pk)
         except EnrichmentRequest.DoesNotExist:
             return None
 
@@ -361,15 +340,11 @@ class EnrichmentDetailAPIView(APIView):
         enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(
-                detail="Enrichment request not found."
-            )
+            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(
-                detail="You don't have permission to view this enrichment request."
-            )
+            raise PermissionDeniedException(detail="You don't have permission to view this enrichment request.")
 
         serializer = EnrichmentRequestDetailSerializer(enrichment_request)
         return Response(serializer.data)
@@ -379,15 +354,11 @@ class EnrichmentDetailAPIView(APIView):
         enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(
-                detail="Enrichment request not found."
-            )
+            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(
-                detail="You don't have permission to delete this enrichment request."
-            )
+            raise PermissionDeniedException(detail="You don't have permission to delete this enrichment request.")
 
         enrichment_request.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -426,9 +397,7 @@ class EnrichmentRestartAPIView(APIView):
             queryset = EnrichmentRequest.objects.get_accessible_by(user)
 
         try:
-            return queryset.prefetch_related("enrichers_settings", "entities").get(
-                pk=pk
-            )
+            return queryset.prefetch_related("enrichers_settings", "entities").get(pk=pk)
         except EnrichmentRequest.DoesNotExist:
             return None
 
@@ -437,15 +406,11 @@ class EnrichmentRestartAPIView(APIView):
         enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(
-                detail="Enrichment request not found."
-            )
+            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(
-                detail="You don't have permission to restart this enrichment request."
-            )
+            raise PermissionDeniedException(detail="You don't have permission to restart this enrichment request.")
 
         # Reset the enrichment request state
         enrichment_request.status = EnrichmentStatus.WAITING
@@ -513,30 +478,21 @@ class EnrichmentRequestEnricherAPIView(APIView):
         enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(
-                detail="Enrichment request not found."
-            )
+            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(
-                detail="You don't have permission to view this enrichment request."
-            )
+            raise PermissionDeniedException(detail="You don't have permission to view this enrichment request.")
 
         # Verify enricher_type is valid for this enrichment request
-        enricher_types = [
-            settings.enricher_type
-            for settings in enrichment_request.enrichers_settings.all()
-        ]
+        enricher_types = [settings.enricher_type for settings in enrichment_request.enrichers_settings.all()]
         if enricher_type not in enricher_types:
             raise EnricherTypeNotFoundException(
                 detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
             )
 
         # Get enricher information
-        serializer = EnrichmentRequestEnricherSerializer.for_enrichment(
-            enrichment_request, enricher_type
-        )
+        serializer = EnrichmentRequestEnricherSerializer.for_enrichment(enrichment_request, enricher_type)
         return Response(serializer.data)
 
 
@@ -575,9 +531,7 @@ class EnrichmentRequestEnricherAPIView(APIView):
             ),
         ],
         responses={
-            200: TotalPagesPagination().get_paginated_response_serializer(
-                EnrichmentRelationSerializer
-            ),
+            200: TotalPagesPagination().get_paginated_response_serializer(EnrichmentRelationSerializer),
             **get_error_responses(
                 IntelioErrorCodes.ENRICHMENT_REQUEST_NOT_FOUND,
                 IntelioErrorCodes.ENRICHER_TYPE_NOT_FOUND,
@@ -617,21 +571,14 @@ class EnrichmentRelationsAPIView(APIView):
         enrichment_request = self.get_object(pk, request.user)
 
         if enrichment_request is None:
-            raise EnrichmentRequestNotFoundException(
-                detail="Enrichment request not found."
-            )
+            raise EnrichmentRequestNotFoundException(detail="Enrichment request not found.")
 
         # Check if user has access to this request
         if enrichment_request.user != request.user and not request.user.is_staff:
-            raise PermissionDeniedException(
-                detail="You don't have permission to view this enrichment request."
-            )
+            raise PermissionDeniedException(detail="You don't have permission to view this enrichment request.")
 
         # Verify enricher_type is valid for this enrichment request
-        enricher_types = [
-            settings.enricher_type
-            for settings in enrichment_request.enrichers_settings.all()
-        ]
+        enricher_types = [settings.enricher_type for settings in enrichment_request.enrichers_settings.all()]
         if enricher_type not in enricher_types:
             raise EnricherTypeNotFoundException(
                 detail=f"Enricher type '{enricher_type}' not found in this enrichment request."
@@ -644,23 +591,17 @@ class EnrichmentRelationsAPIView(APIView):
         try:
             page_size = int(request.query_params.get("page_size", 10))
         except ValueError:
-            raise InvalidPageSizeException(
-                detail="Invalid page_size value. Must be an integer."
-            )
+            raise InvalidPageSizeException(detail="Invalid page_size value. Must be an integer.")
 
         if page_size > 100:
-            raise PageSizeTooLargeException(
-                detail="page_size cannot be greater than 100."
-            )
+            raise PageSizeTooLargeException(detail="page_size cannot be greater than 100.")
 
         query_str = request.query_params.get("query")
         if query_str:
             try:
                 query_filter = parse_query(query_str + "*")
             except Exception as e:
-                raise InvalidQuerySyntaxException(
-                    detail=f"Invalid query syntax: {str(e)}"
-                )
+                raise InvalidQuerySyntaxException(detail=f"Invalid query syntax: {str(e)}")
 
             entries_qs = Entry.objects.filter(query_filter)
             relations = relations.filter(Q(e1__in=entries_qs) | Q(e2__in=entries_qs))

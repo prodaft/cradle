@@ -29,9 +29,7 @@ class AccessControlTask(BaseTask):
 
         access_level = {AccessType.READ_WRITE}
 
-        entities = set(
-            [x.id for x in entries if x.entry_class.type == EntryType.ENTITY]
-        )
+        entities = set([x.id for x in entries if x.entry_class.type == EntryType.ENTITY])
 
         inaccessible = Access.objects.inaccessible_entries(
             self.user,

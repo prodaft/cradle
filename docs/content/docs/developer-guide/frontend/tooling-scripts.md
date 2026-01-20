@@ -9,15 +9,13 @@ weight = 11
 
 Common Bun scripts:
 
-- `bun run dev`: start the Electron dev server.
-- `bun run dev-web`: start the web dev server.
+- `bun run dev`: start the web dev server.
 - `bun run build`: build the Electron bundle.
-- `bun run build-web`: build the web bundle.
 - `bun run lint`: run ESLint on `src/**/*.ts`.
 - `bun run typecheck`: run TypeScript checks.
 - `bun run verify`: run the verify script as defined in `package.json`.
 - `bun run prettier`: format with Prettier.
-- `bun run generate-api`: regenerate OpenAPI clients.
+- `bun run generate-api`: regenerate OpenAPI clients, for this you need to have the backend running locally or pass it a valid remote api path
 
 ## Prettier
 

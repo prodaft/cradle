@@ -95,12 +95,7 @@ class HTMLPublish(BasePublishStrategy):
         context = {
             "title": sanitized_title,
             "body": body,
-            "styles": "\n".join(
-                [
-                    f'[entry-type="{k}"] {{ background-color: {v}44; }}'
-                    for k, v in colors.items()
-                ]
-            ),
+            "styles": "\n".join([f'[entry-type="{k}"] {{ background-color: {v}44; }}' for k, v in colors.items()]),
         }
         return template.render(context)
 
@@ -109,9 +104,7 @@ class HTMLPublish(BasePublishStrategy):
 
         try:
             # Save HTML content to FileField - Django handles S3 upload
-            report.file.save(
-                f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True
-            )
+            report.file.save(f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True)
         except Exception as e:
             logging.exception(e)
             report.error_message = "Failed to upload HTML report."
@@ -130,9 +123,7 @@ class HTMLPublish(BasePublishStrategy):
                 report.file.delete(save=False)
 
             # Save new HTML content to FileField
-            report.file.save(
-                f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True
-            )
+            report.file.save(f"{report.id}.html", ContentFile(full_html.encode("utf-8")), save=True)
         except Exception:
             report.error_message = "Failed to upload HTML report."
             report.status = ReportStatus.ERROR

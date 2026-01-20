@@ -19,8 +19,6 @@ const CRADLE_MODELS_PATH = path.join(
     __dirname,
     '..',
     'src',
-    'renderer',
-    'src',
     'services',
     'cradle',
     'models',

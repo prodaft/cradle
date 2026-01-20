@@ -5,6 +5,10 @@ class NotesSettings(BaseSettingsSection):
     prefix = "notes"
 
     @property
+    def default_note_template(self):
+        return self.get("default_note_template", "")
+
+    @property
     def min_entries(self):
         return self.get("min_entries", 2)
 

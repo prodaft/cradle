@@ -44,14 +44,3 @@ filename = "backend/pyproject.toml"
 search = "version = \"{current_version}\""
 replace = "version = \"{new_version}\""
 
-[[tool.bumpversion.files]]
-filename = "ui/src/renderer/src/components/Welcome/Welcome.jsx"
-
-[[tool.bumpversion.files]]
-filename = "ui/src/renderer/src/components/Login/Login.jsx"
-
-[[tool.bumpversion.files]]
-filename = "ui/src/renderer/src/components/Register/Register.jsx"
-
-[[tool.bumpversion.files]]
-filename = "ui/src/renderer/src/components/ForgotPassword/ForgotPassword.jsx"

@@ -16,32 +16,18 @@ class UpdateAccessTest(AccessTestCase):
         super().setUp()
 
         self.users = [
-            CradleUser.objects.create_user(
-                username=f"user{id}", password="user", email=f"a{id}@gmail.com"
-            )
+            CradleUser.objects.create_user(username=f"user{id}", password="user", email=f"a{id}@gmail.com")
             for id in range(3)
         ]
-        self.users.append(
-            CradleUser.objects.create_superuser(
-                username="admin", password="admin", email="b@c.d"
-            )
-        )
+        self.users.append(CradleUser.objects.create_superuser(username="admin", password="admin", email="b@c.d"))
         self.entity = Entry.objects.create(name="entity", entry_class=self.entryclass1)
 
         self.tokens = [str(AccessToken.for_user(self.users[id])) for id in range(4)]
-        self.headers = [
-            {"HTTP_AUTHORIZATION": f"Bearer {self.tokens[id]}"} for id in range(4)
-        ]
+        self.headers = [{"HTTP_AUTHORIZATION": f"Bearer {self.tokens[id]}"} for id in range(4)]
 
-        Access.objects.create(
-            user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE
-        )
-        Access.objects.create(
-            user=self.users[1], entity=self.entity, access_type=AccessType.READ
-        )
-        Access.objects.create(
-            user=self.users[2], entity=self.entity, access_type=AccessType.NONE
-        )
+        Access.objects.create(user=self.users[0], entity=self.entity, access_type=AccessType.READ_WRITE)
+        Access.objects.create(user=self.users[1], entity=self.entity, access_type=AccessType.READ)
+        Access.objects.create(user=self.users[2], entity=self.entity, access_type=AccessType.NONE)
 
     def test_update_access_not_authenticated(self):
         response = self.client.put(
@@ -56,9 +42,7 @@ class UpdateAccessTest(AccessTestCase):
         self.assertEqual(response.status_code, 401)
         self.assertEqual(MessageNotification.objects.count(), 0)
         self.assertTrue(
-            Access.objects.filter(
-                user=self.users[2], entity=self.entity, access_type=AccessType.NONE
-            ).exists()
+            Access.objects.filter(user=self.users[2], entity=self.entity, access_type=AccessType.NONE).exists()
         )
 
     def test_update_access_user_not_found(self):
@@ -152,9 +136,7 @@ class UpdateAccessTest(AccessTestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(MessageNotification.objects.count(), 0)
         self.assertTrue(
-            Access.objects.filter(
-                user=self.users[2], entity=self.entity, access_type=AccessType.NONE
-            ).exists()
+            Access.objects.filter(user=self.users[2], entity=self.entity, access_type=AccessType.NONE).exists()
         )
 
     def test_update_access_bad_request(self):

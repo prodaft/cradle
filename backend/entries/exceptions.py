@@ -185,10 +185,7 @@ class InvalidEntryException(CradleAPIException):
     error_code = EntriesErrorCodes.INVALID_ENTRY
 
     def __init__(self, entry_class: str, data: str, *args, **kwargs) -> None:
-        detail = (
-            f"Entry ({entry_class}: {data}) does not"
-            + " obey the specified format for the entry type!"
-        )
+        detail = f"Entry ({entry_class}: {data}) does not" + " obey the specified format for the entry type!"
         super().__init__(detail=detail, *args, **kwargs)
 
 

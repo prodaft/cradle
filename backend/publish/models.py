@@ -40,9 +40,7 @@ class PublishedReport(models.Model, LoggableModelMixin):
     title = models.CharField(max_length=512, default="Title", null=False, blank=False)
     notes = models.ManyToManyField(Note, related_name="published_reports")
     created_at = models.DateTimeField(auto_now_add=True)
-    strategy = models.CharField(
-        max_length=255, choices=UploadStrategies.choices + DownloadStrategies.choices
-    )
+    strategy = models.CharField(max_length=255, choices=UploadStrategies.choices + DownloadStrategies.choices)
     anonymized = models.BooleanField(default=False)
     extra_data = models.JSONField(null=True, blank=True)
 

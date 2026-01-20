@@ -23,16 +23,10 @@ class LoggingUtils:
         """
         remote_addr = request.META.get("REMOTE_ADDR", "-")
         timestamp = datetime.now().strftime("%d/%b/%Y:%H:%M:%S %z")
-        request_line = (
-            f"{request.method} {request.path} "
-            + f"{request.META.get('SERVER_PROTOCOL', 'HTTP/1.1')}"
-        )
+        request_line = f"{request.method} {request.path} " + f"{request.META.get('SERVER_PROTOCOL', 'HTTP/1.1')}"
         user_agent = request.META.get("HTTP_USER_AGENT", "-")
 
-        return (
-            f'{remote_addr} - {request.user} [{timestamp}] "{request_line}" '
-            + f'{status} "{user_agent}" {message}'
-        )
+        return f'{remote_addr} - {request.user} [{timestamp}] "{request_line}" ' + f'{status} "{user_agent}" {message}'
 
     @staticmethod
     def log_login_success(request: Request, response: Optional[Response] = None):
@@ -122,7 +116,5 @@ class LoggingUtils:
         assert response is not None
 
         message = f"failed with Status Code: {response.status_code}"
-        log_artifact = LoggingUtils.__format_nginx_log(
-            request, response.status_code, message
-        )
+        log_artifact = LoggingUtils.__format_nginx_log(request, response.status_code, message)
         error_logger.warning(log_artifact)

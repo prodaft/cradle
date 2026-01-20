@@ -29,13 +29,9 @@ from .models import BaseEnricher, EnricherSettings
 class DigestSubclassSerializer(serializers.Serializer):
     """Serializer for digest subclass information."""
 
-    class_name = serializers.CharField(
-        source="class", help_text="The class name of the digest"
-    )
+    class_name = serializers.CharField(source="class", help_text="The class name of the digest")
     name = serializers.CharField(help_text="The display name of the digest")
-    infer_entities = serializers.BooleanField(
-        help_text="Whether this digest type can infer entities"
-    )
+    infer_entities = serializers.BooleanField(help_text="Whether this digest type can infer entities")
 
     class Meta:
         ref_name = "DigestSubclass"
@@ -44,9 +40,7 @@ class DigestSubclassSerializer(serializers.Serializer):
 class EnrichmentSubclassSerializer(serializers.Serializer):
     """Serializer for enrichment subclass information."""
 
-    class_name = serializers.CharField(
-        source="class", help_text="The class name of the enricher"
-    )
+    class_name = serializers.CharField(source="class", help_text="The class name of the enricher")
     name = serializers.CharField(help_text="The display name of the enricher")
     enabled = serializers.BooleanField(help_text="Whether the enricher is enabled")
 
@@ -57,9 +51,7 @@ class EnrichmentSubclassSerializer(serializers.Serializer):
 class MappingSubclassSerializer(serializers.Serializer):
     """Serializer for mapping subclass information."""
 
-    class_name = serializers.CharField(
-        source="class", help_text="The class name of the mapping"
-    )
+    class_name = serializers.CharField(source="class", help_text="The class name of the mapping")
     name = serializers.CharField(help_text="The display name of the mapping")
 
     class Meta:
@@ -100,9 +92,7 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
     for_eclasses = serializers.PrimaryKeyRelatedField(
         queryset=EntryClass.objects.all(), many=True, write_only=True, required=False
     )
-    for_eclasses_detail = EntryClassSerializer(
-        source="for_eclasses", many=True, read_only=True
-    )
+    for_eclasses_detail = EntryClassSerializer(source="for_eclasses", many=True, read_only=True)
     enricher_type = serializers.CharField(read_only=True)
 
     form_fields = SerializerMethodField()
@@ -127,9 +117,7 @@ class EnrichmentSettingsSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(serializers.DictField())
     def get_form_fields(self, obj):
-        return fields_to_form(
-            BaseEnricher.get_subclass(obj.enricher_type).settings_fields
-        )
+        return fields_to_form(BaseEnricher.get_subclass(obj.enricher_type).settings_fields)
 
     def create(self, validated_data):
         for_eclasses_data = validated_data.pop("for_eclasses", [])
@@ -152,14 +140,10 @@ class BaseDigestSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(read_only=True)
     display_name = serializers.SerializerMethodField()
 
-    entity = serializers.PrimaryKeyRelatedField(
-        queryset=Entry.objects.all(), write_only=True, required=False
-    )
+    entity = serializers.PrimaryKeyRelatedField(queryset=Entry.objects.all(), write_only=True, required=False)
     entity_detail = EntrySerializer(source="entity", read_only=True)
 
-    user = serializers.PrimaryKeyRelatedField(
-        queryset=CradleUser.objects.all(), write_only=True, required=True
-    )
+    user = serializers.PrimaryKeyRelatedField(queryset=CradleUser.objects.all(), write_only=True, required=True)
     user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
 
     class Meta:
@@ -209,9 +193,7 @@ class BaseDigestSerializer(serializers.ModelSerializer):
 class BaseDigestCreateSerializer(serializers.ModelSerializer):
     """Serializer for creating digests with file upload."""
 
-    file = serializers.FileField(
-        write_only=True, help_text="The file to be processed by the digest"
-    )
+    file = serializers.FileField(write_only=True, help_text="The file to be processed by the digest")
 
     entities = serializers.ListField(
         child=serializers.PrimaryKeyRelatedField(
@@ -290,18 +272,14 @@ class EnrichmentRequestEnricherMinimal(serializers.Serializer):
         enricher_cls = BaseEnricher.get_subclass(enricher_type)
         enricher_settings = request.enrichers_settings.get(enricher_type=enricher_type)
         if enricher_settings is None:
-            raise serializers.ValidationError(
-                f"Enricher type {enricher_type} not found"
-            )
+            raise serializers.ValidationError(f"Enricher type {enricher_type} not found")
 
         return cls(
             {
                 "enricher_type": enricher_type,
                 "display_name": enricher_cls.display_name,
                 "enabled": enricher_settings.enabled,
-                "status": request.enricher_status.get(
-                    enricher_type, EnrichmentStatus.WAITING
-                ),
+                "status": request.enricher_status.get(enricher_type, EnrichmentStatus.WAITING),
             }
         )
 
@@ -328,14 +306,10 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
         warnings = []
 
         if enricher_settings is None:
-            raise serializers.ValidationError(
-                f"Enricher type {enricher_type} not found"
-            )
+            raise serializers.ValidationError(f"Enricher type {enricher_type} not found")
 
         artifacts = []
-        enabled_eclasses = set(
-            enricher_settings.for_eclasses.values_list("subtype", flat=True)
-        )
+        enabled_eclasses = set(enricher_settings.for_eclasses.values_list("subtype", flat=True))
 
         for req in request.request:
             if req["entry_class"] in enabled_eclasses:
@@ -346,9 +320,7 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
                 "enricher_type": enricher_type,
                 "display_name": enricher_cls.display_name,
                 "enabled": enricher_settings.enabled,
-                "status": request.enricher_status.get(
-                    enricher_type, EnrichmentStatus.WAITING
-                ),
+                "status": request.enricher_status.get(enricher_type, EnrichmentStatus.WAITING),
                 "errors": errors,
                 "warnings": warnings,
                 "artifacts": artifacts,
@@ -442,9 +414,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         queryset=Entry.objects.all(), many=True, help_text="The entities to enrich"
     )
 
-    user = serializers.PrimaryKeyRelatedField(
-        read_only=True, help_text="The user who created the request"
-    )
+    user = serializers.PrimaryKeyRelatedField(read_only=True, help_text="The user who created the request")
 
     # Read-only details
     user_detail = EssentialUserRetrieveSerializer(source="user", read_only=True)
@@ -521,9 +491,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
             enricher = EnricherSettings.objects.get(enricher_type=value, enabled=True)
             if not enricher:
-                raise serializers.ValidationError(
-                    f"Unknown or disabled enricher: {value}"
-                )
+                raise serializers.ValidationError(f"Unknown or disabled enricher: {value}")
 
             validated.add(enricher)
             validated_names.add(value)
@@ -538,9 +506,7 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         values = set(values)
 
-        if not Access.objects.has_access_to_entities(
-            user, values, {AccessType.READ_WRITE}
-        ):
+        if not Access.objects.has_access_to_entities(user, values, {AccessType.READ_WRITE}):
             raise EntityNotFoundException("You don't have access to all the entities")
 
         return list(values)

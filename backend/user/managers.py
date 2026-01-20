@@ -42,12 +42,8 @@ class CradleUserManager(BaseUserManager):
         user = self.model(
             username=username,
             email=email,
-            is_active=extra_fields.pop(
-                "is_active", not cradle_settings.users.require_admin_confirmation
-            ),
-            email_confirmed=extra_fields.pop(
-                "email_confirmed", not cradle_settings.users.require_email_confirmation
-            ),
+            is_active=extra_fields.pop("is_active", not cradle_settings.users.require_admin_confirmation),
+            email_confirmed=extra_fields.pop("email_confirmed", not cradle_settings.users.require_email_confirmation),
             **extra_fields,
         )
         user.set_password(password)

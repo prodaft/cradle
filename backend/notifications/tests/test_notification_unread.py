@@ -30,18 +30,10 @@ class NotificationListTest(NotificationsTestCase):
 
     def test_unread_notifications_messages(self):
         fields = {"user": self.user, "message": ""}
-        MessageNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=False
-        )
-        MessageNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=True
-        )
-        MessageNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=True
-        )
-        MessageNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=False
-        )
+        MessageNotification.objects.create(**fields, is_unread=True, is_marked_unread=False)
+        MessageNotification.objects.create(**fields, is_unread=False, is_marked_unread=True)
+        MessageNotification.objects.create(**fields, is_unread=True, is_marked_unread=True)
+        MessageNotification.objects.create(**fields, is_unread=False, is_marked_unread=False)
 
         response = self.client.get(reverse("notification_unread"), **self.headers)
 
@@ -55,18 +47,10 @@ class NotificationListTest(NotificationsTestCase):
             "entity": self.entity,
             "message": "",
         }
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=False
-        )
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=True
-        )
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=True, is_marked_unread=True
-        )
-        AccessRequestNotification.objects.create(
-            **fields, is_unread=False, is_marked_unread=False
-        )
+        AccessRequestNotification.objects.create(**fields, is_unread=True, is_marked_unread=False)
+        AccessRequestNotification.objects.create(**fields, is_unread=False, is_marked_unread=True)
+        AccessRequestNotification.objects.create(**fields, is_unread=True, is_marked_unread=True)
+        AccessRequestNotification.objects.create(**fields, is_unread=False, is_marked_unread=False)
 
         response = self.client.get(reverse("notification_unread"), **self.headers)
 

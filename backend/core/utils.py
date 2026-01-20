@@ -23,9 +23,7 @@ def fields_to_form(fields):
             if hasattr(field, "choices") and field.choices:
                 field_type = "options"
                 options = [choice[0] for choice in field.choices]
-        elif isinstance(field, models.IntegerField) or isinstance(
-            field, models.FloatField
-        ):
+        elif isinstance(field, models.IntegerField) or isinstance(field, models.FloatField):
             field_type = "number"
             options = None
         elif isinstance(field, models.BooleanField):
@@ -47,17 +45,13 @@ def fields_to_form(fields):
             "options": options,
             "description": description,
             "required": not field.null and not field.blank,
-            "default": (
-                field.default if field.default != models.fields.NOT_PROVIDED else None
-            ),
+            "default": (field.default if field.default != models.fields.NOT_PROVIDED else None),
         }
 
     return field_mapping
 
 
-def validate_order_by(
-    order_by: str, valid_fields: List[str]
-) -> Tuple[Optional[List[str]], Optional[Response]]:
+def validate_order_by(order_by: str, valid_fields: List[str]) -> Tuple[Optional[List[str]], Optional[Response]]:
     """
     Validate and parse the order_by parameter.
 

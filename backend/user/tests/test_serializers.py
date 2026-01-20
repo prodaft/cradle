@@ -8,9 +8,7 @@ class TokenObtainSerializerTest(UserTestCase):
         super().setUp()
 
         self.token_serializer = TokenObtainSerializer()
-        self.normal_user = CradleUser.objects.create_user(
-            username="user", password="pass1", email="alabala@a.b"
-        )
+        self.normal_user = CradleUser.objects.create_user(username="user", password="pass1", email="alabala@a.b")
         self.admin_user = CradleUser.objects.create_superuser(
             username="admin", password="pass2", email="bla@a.b", role=UserRoles.ADMIN
         )

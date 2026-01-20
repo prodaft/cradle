@@ -11,19 +11,11 @@ from .managers import EventLogManager
 
 
 class EventLog(models.Model):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    timestamp: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True
-    )  # Logs creation time automatically
-    type: models.CharField = models.CharField(
-        choices=EventType.choices, null=False
-    )  # Queue type of event
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    timestamp: models.DateTimeField = models.DateTimeField(auto_now_add=True)  # Logs creation time automatically
+    type: models.CharField = models.CharField(choices=EventType.choices, null=False)  # Queue type of event
 
-    user: models.ForeignKey = models.ForeignKey(
-        "user.CradleUser", on_delete=models.CASCADE, related_name="event_logs"
-    )
+    user: models.ForeignKey = models.ForeignKey("user.CradleUser", on_delete=models.CASCADE, related_name="event_logs")
     details: Optional[dict] = models.CharField(blank=True, null=True)
 
     # Reference to the log that triggered this event, if applicable
@@ -36,13 +28,9 @@ class EventLog(models.Model):
     )
 
     # Generic relation fields
-    content_type: models.ForeignKey = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE
-    )
+    content_type: models.ForeignKey = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id: models.CharField = models.CharField()
-    content_object: Union[models.Model, None] = GenericForeignKey(
-        "content_type", "object_id"
-    )
+    content_object: Union[models.Model, None] = GenericForeignKey("content_type", "object_id")
 
     class Meta:
         ordering = ["-timestamp"]  # Orders by most recent events first
@@ -98,31 +86,17 @@ class LoggableModelMixin:
         return log
 
     def log_create(self, user, details=None):
-        return self._save_log(
-            EventLog(
-                user=user, content_object=self, type=EventType.CREATE, details=details
-            )
-        )
+        return self._save_log(EventLog(user=user, content_object=self, type=EventType.CREATE, details=details))
 
     def log_delete(self, user, details=None):
-        return self._save_log(
-            EventLog(
-                user=user, content_object=self, type=EventType.DELETE, details=details
-            )
-        )
+        return self._save_log(EventLog(user=user, content_object=self, type=EventType.DELETE, details=details))
 
     def log_edit(self, user, details=None):
-        return self._save_log(
-            EventLog(
-                user=user, content_object=self, type=EventType.EDIT, details=details
-            )
-        )
+        return self._save_log(EventLog(user=user, content_object=self, type=EventType.EDIT, details=details))
 
     def log_fetch(self, user, details=None):
         # Fetch events are not propagated
-        return EventLog.objects.create(
-            user=user, content_object=self, type=EventType.FETCH
-        )
+        return EventLog.objects.create(user=user, content_object=self, type=EventType.FETCH)
 
     def __repr__(self):
         return f"<{self.__class__.__name__}:{self.pk}>"

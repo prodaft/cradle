@@ -36,28 +36,16 @@ class CradleDigest(BaseDigest):
             # Import or create entry classes
             for eclass in report_data.get("entry_classes", []):
                 if not EntryClass.objects.filter(subtype=eclass["subtype"]).exists():
-                    EntryClass.objects.create(
-                        **{
-                            k: v
-                            for k, v in eclass.items()
-                            if k in valid_entryclass_fields
-                        }
-                    )
+                    EntryClass.objects.create(**{k: v for k, v in eclass.items() if k in valid_entryclass_fields})
 
             # Cache existing entity subtypes
-            entity_subtypes = set(
-                EntryClass.objects.filter(type=EntryType.ENTITY).values_list(
-                    "subtype", flat=True
-                )
-            )
+            entity_subtypes = set(EntryClass.objects.filter(type=EntryType.ENTITY).values_list("subtype", flat=True))
 
             # Create new entries if needed
             for entry in report_data.get("entries", []):
                 if (
                     entry["subtype"] in entity_subtypes
-                    and not Entry.objects.filter(
-                        name=entry["name"], entry_class_id=entry["subtype"]
-                    ).exists()
+                    and not Entry.objects.filter(name=entry["name"], entry_class_id=entry["subtype"]).exists()
                 ):
                     Entry.objects.create(
                         name=entry["name"],
@@ -74,9 +62,7 @@ class CradleDigest(BaseDigest):
             download_tasks = []
 
             for idx, note_data in enumerate(report_data.get("notes", [])):
-                scheduler = TaskScheduler(
-                    self.user, content=note_data["content"], digest=self
-                )
+                scheduler = TaskScheduler(self.user, content=note_data["content"], digest=self)
                 try:
                     created_note = scheduler.run_pipeline(validate=True)
                 except Exception:
@@ -86,9 +72,7 @@ class CradleDigest(BaseDigest):
                 file_urls = note_data.get("file_urls", {})
                 for file_identifier, url in file_urls.items():
                     download_tasks.append(
-                        download_file_for_note.si(
-                            created_note.id, file_identifier, url, bucket_name, self.id
-                        )
+                        download_file_for_note.si(created_note.id, file_identifier, url, bucket_name, self.id)
                     )
                 created_note.save()
                 created_notes.append(created_note)

@@ -2,7 +2,7 @@
 name = "cradle-backend"
 version = "2.10.2"
 description = "CRADLE Backend"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "django==5.0.4",
     "djangorestframework==3.15.1",
@@ -53,15 +53,10 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "bump-my-version",
-    "deptry",
-    "coverage",
-    "flake8==7.0.0",
-    "black==24.4.2",
-    "mypy==1.10.0",
-    "ipython",
-    "autoflake",
-    "flake8-pyproject",
+    "bump-my-version>=1.2.6",
+    "coverage>=7.13.1",
+    "ruff>=0.14.11",
+    "ipython>=9.9.0",
 ]
 
 [tool.mypy]
@@ -88,11 +83,18 @@ exclude = '''
 '''
 
 [tool.ruff]
+line-length = 120
 exclude = [
     ".git",
     "__pycache__",
     ".venv",
     "env",
     "venv",
+    ".vscode",
+    "cradle",
+    "manage.py",
     "*/migrations/*"
 ]
+
+[tool.ruff.lint]
+ignore = ["E203"]

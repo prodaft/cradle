@@ -1,7 +1,9 @@
 import uuid
+from copy import deepcopy
 from datetime import datetime, timedelta
 from typing import Optional
 
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -15,6 +17,97 @@ from management.settings import cradle_settings
 
 from .managers import CradleUserManager
 
+THEME_DARK_VARS = {
+    "--background": "oklch(0.145 0 0)",
+    "--foreground": "oklch(0.985 0 0)",
+    "--card": "oklch(0.205 0 0)",
+    "--card-foreground": "oklch(0.985 0 0)",
+    "--popover": "oklch(0.205 0 0)",
+    "--popover-foreground": "oklch(0.985 0 0)",
+    "--primary": "oklch(0.922 0 0)",
+    "--primary-foreground": "oklch(0.205 0 0)",
+    "--secondary": "oklch(0.269 0 0)",
+    "--secondary-foreground": "oklch(0.985 0 0)",
+    "--muted": "oklch(0.269 0 0)",
+    "--muted-foreground": "oklch(0.708 0 0)",
+    "--accent": "oklch(0.269 0 0)",
+    "--accent-foreground": "oklch(0.985 0 0)",
+    "--destructive": "oklch(0.704 0.191 22.216)",
+    "--destructive-foreground": "oklch(0.985 0 0)",
+    "--border": "oklch(1 0 0 / 10%)",
+    "--input": "oklch(1 0 0 / 15%)",
+    "--ring": "oklch(0.556 0 0)",
+    "--chart-1": "oklch(0.488 0.243 264.376)",
+    "--chart-2": "oklch(0.696 0.17 162.48)",
+    "--chart-3": "oklch(0.769 0.188 70.08)",
+    "--chart-4": "oklch(0.627 0.265 303.9)",
+    "--chart-5": "oklch(0.645 0.246 16.439)",
+    "--sidebar": "oklch(0.205 0 0)",
+    "--sidebar-foreground": "oklch(0.985 0 0)",
+    "--sidebar-primary": "oklch(0.488 0.243 264.376)",
+    "--sidebar-primary-foreground": "oklch(0.985 0 0)",
+    "--sidebar-accent": "oklch(0.269 0 0)",
+    "--sidebar-accent-foreground": "oklch(0.985 0 0)",
+    "--sidebar-border": "oklch(1 0 0 / 10%)",
+    "--sidebar-ring": "oklch(0.556 0 0)",
+    "--font-sans": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'",
+    "--font-serif": "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif",
+    "--font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    "--radius": "0.625rem",
+    "--shadow-x": "0",
+    "--shadow-y": "1px",
+    "--shadow-blur": "3px",
+    "--shadow-spread": "0px",
+    "--shadow-opacity": "0.1",
+    "--shadow-color": "oklch(0 0 0)",
+    "--shadow-2xs": "0 1px 3px 0px hsl(0 0% 0% / 0.05)",
+    "--shadow-xs": "0 1px 3px 0px hsl(0 0% 0% / 0.05)",
+    "--shadow-sm": "0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)",
+    "--shadow": "0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1)",
+    "--shadow-md": "0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1)",
+    "--shadow-lg": "0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1)",
+    "--shadow-xl": "0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1)",
+    "--shadow-2xl": "0 1px 3px 0px hsl(0 0% 0% / 0.25)",
+}
+
+THEME_CRADLE_DARK_VARS = {
+    **THEME_DARK_VARS,
+    "--background": "#1a1a1a",
+    "--foreground": "#ffffff",
+    "--card": "#1f1f1f",
+    "--card-foreground": "#bfbfbf",
+    "--popover": "#1f1f1f",
+    "--popover-foreground": "#bfbfbf",
+    "--primary": "#c7772a",
+    "--primary-foreground": "#ffffff",
+    "--secondary": "#2a2a2a",
+    "--secondary-foreground": "#bfbfbf",
+    "--muted": "#2a2a2a",
+    "--muted-foreground": "#999999",
+    "--accent": "#2a2a2a",
+    "--accent-foreground": "#ffffff",
+    "--destructive": "#b85d30",
+    "--destructive-foreground": "#ffffff",
+    "--border": "#2a2a2a",
+    "--input": "#2a2a2a",
+    "--ring": "#c7772a",
+    "--sidebar": "#1a1a1a",
+    "--sidebar-foreground": "#999999",
+    "--sidebar-primary": "#c7772a",
+    "--sidebar-primary-foreground": "#ffffff",
+    "--sidebar-accent": "#2a2a2a",
+    "--sidebar-accent-foreground": "#ffffff",
+    "--sidebar-border": "#2a2a2a",
+    "--pm-header-mark-color": "#c7772a",
+    "--pm-link-color": "#c7772a",
+    "--pm-muted-color": "#999999",
+    "--pm-code-background-color": "#1a1a1a",
+    "--pm-code-btn-background-color": "#2a2a2a",
+    "--pm-code-btn-hover-background-color": "#404040",
+    "--pm-blockquote-vertical-line-background-color": "#2a2a2a",
+    "--pm-cursor-color": "#ffffff",
+}
+
 
 class UserRoles(models.TextChoices):
     ADMIN = "admin"  # Superuser
@@ -23,49 +116,40 @@ class UserRoles(models.TextChoices):
     USER = "author"  # Writer of notes
 
 
-class Theme(models.TextChoices):
-    DARK = "dark"
-    LIGHT = "light"
+DEFAULT_THEME = {
+    "name": "cradle-dark",
+    **THEME_CRADLE_DARK_VARS,
+}
+
+
+def default_theme():
+    return deepcopy(DEFAULT_THEME)
 
 
 class CradleUser(AbstractUser, LoggableModelMixin):
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email: models.EmailField = models.EmailField(unique=True)
-    role: models.CharField = models.CharField(
-        max_length=32, choices=UserRoles.choices, default=UserRoles.USER
-    )
+    role: models.CharField = models.CharField(max_length=32, choices=UserRoles.choices, default=UserRoles.USER)
 
     api_key: Optional[str] = models.CharField(max_length=128, blank=True, null=True)
 
     catalyst_api_key: Optional[str] = models.TextField(null=True, blank=True)
 
     password_reset_token: Optional[str] = models.TextField(null=True, blank=True)
-    password_reset_token_expiry: Optional[models.DateTimeField] = models.DateTimeField(
-        null=True, blank=True
-    )
+    password_reset_token_expiry: Optional[models.DateTimeField] = models.DateTimeField(null=True, blank=True)
 
     email_confirmed: models.BooleanField = models.BooleanField(default=False)
     email_confirmation_token: Optional[str] = models.TextField(null=True, blank=True)
-    email_confirmation_token_expiry: Optional[models.DateTimeField] = (
-        models.DateTimeField(null=True, blank=True)
-    )
+    email_confirmation_token_expiry: Optional[models.DateTimeField] = models.DateTimeField(null=True, blank=True)
 
     is_active: models.BooleanField = models.BooleanField(default=False)
 
     two_factor_enabled = models.BooleanField(default=False)
 
-    default_note_template = models.TextField(
-        blank=True, null=True, help_text="Default template for new notes"
-    )
-    vim_mode = models.BooleanField(
-        default=False, help_text="Whether to enable Vim keybindings in the editor"
-    )
+    default_note_template = models.TextField(blank=True, null=True, help_text="Default template for new notes")
+    vim_mode = models.BooleanField(default=False, help_text="Whether to enable Vim keybindings in the editor")
 
-    theme = models.CharField(
-        default=Theme.DARK, choices=Theme.choices, help_text="Theme to use in the UI"
-    )
+    theme = models.JSONField(default=default_theme, help_text="Theme settings to use in the UI")
 
     file_upload_limit_override: models.PositiveBigIntegerField = models.PositiveBigIntegerField(
         default=None, null=True, help_text="File upload limit in bytes"
@@ -155,9 +239,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
                 continue
             acvec |= 1 << access.entity.acvec_offset
 
-        fieldtype = BitStringField(
-            max_length=2048, null=False, default=1, varying=False
-        )
+        fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
         return fieldtype.get_prep_value(acvec)
 
@@ -172,9 +254,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
                 continue
             acvec |= 1 << access.entity.acvec_offset
 
-        fieldtype = BitStringField(
-            max_length=2048, null=False, default=1, varying=False
-        )
+        fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
         inverter = 1
         for i in range(2048):
@@ -218,9 +298,7 @@ class CradleUser(AbstractUser, LoggableModelMixin):
         from django.db import transaction
 
         with transaction.atomic():
-            unconfirmed_devices = TOTPDevice.objects.select_for_update().filter(
-                user=self, confirmed=False
-            )
+            unconfirmed_devices = TOTPDevice.objects.select_for_update().filter(user=self, confirmed=False)
 
             for device in unconfirmed_devices:
                 if device.verify_token(token):
@@ -248,15 +326,48 @@ class CradleUser(AbstractUser, LoggableModelMixin):
             self.save(update_fields=["two_factor_enabled"])
 
 
+class ExternalIdentity(models.Model):
+    """Links a Cradle user to an external OAuth/OIDC identity."""
+
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user: models.ForeignKey = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="external_identities",
+    )
+    provider: models.CharField = models.CharField(max_length=64)
+    subject: models.CharField = models.CharField(max_length=255)
+    issuer: Optional[str] = models.CharField(max_length=255, blank=True, null=True)
+    email: Optional[str] = models.EmailField(blank=True, null=True)
+    email_verified: models.BooleanField = models.BooleanField(default=False)
+    display_name: Optional[str] = models.CharField(max_length=255, blank=True, null=True)
+    raw_claims: Optional[dict] = models.JSONField(blank=True, null=True)
+    last_login_at: Optional[datetime] = models.DateTimeField(blank=True, null=True)
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    updated_at: models.DateTimeField = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["provider", "subject", "issuer"]),
+            models.Index(fields=["user"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["provider", "subject", "issuer"],
+                name="unique_external_identity",
+            ),
+        ]
+
+    def __str__(self):
+        issuer_part = f"@{self.issuer}" if self.issuer else ""
+        return f"{self.provider}:{self.subject}{issuer_part}"
+
+
 class UserSession(models.Model):
     """Track active user sessions based on refresh tokens."""
 
-    id: models.UUIDField = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
-    user: models.ForeignKey = models.ForeignKey(
-        CradleUser, on_delete=models.CASCADE, related_name="sessions"
-    )
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user: models.ForeignKey = models.ForeignKey(CradleUser, on_delete=models.CASCADE, related_name="sessions")
     refresh_token_jti: models.CharField = models.CharField(
         max_length=255,
         unique=True,
@@ -269,15 +380,9 @@ class UserSession(models.Model):
     ip_address: Optional[str] = models.CharField(
         max_length=45, blank=True, null=True, help_text="IP address of the session"
     )
-    created_at: models.DateTimeField = models.DateTimeField(
-        auto_now_add=True, help_text="When the session was created"
-    )
-    last_activity: models.DateTimeField = models.DateTimeField(
-        auto_now=True, help_text="Last activity timestamp"
-    )
-    expires_at: models.DateTimeField = models.DateTimeField(
-        help_text="When the refresh token expires"
-    )
+    created_at: models.DateTimeField = models.DateTimeField(auto_now_add=True, help_text="When the session was created")
+    last_activity: models.DateTimeField = models.DateTimeField(auto_now=True, help_text="Last activity timestamp")
+    expires_at: models.DateTimeField = models.DateTimeField(help_text="When the refresh token expires")
     is_current: models.BooleanField = models.BooleanField(
         default=False, help_text="Whether this is the current session"
     )
@@ -290,9 +395,7 @@ class UserSession(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
-        )
+        return f"Session for {self.user.username} - {self.device_info or 'Unknown device'}"
 
     def is_expired(self):
         """Check if the session has expired."""
@@ -311,9 +414,7 @@ class BlacklistedToken(models.Model):
     blacklisted_at: models.DateTimeField = models.DateTimeField(
         auto_now_add=True, help_text="When the token was blacklisted"
     )
-    expires_at: models.DateTimeField = models.DateTimeField(
-        help_text="When the token expires (for cleanup purposes)"
-    )
+    expires_at: models.DateTimeField = models.DateTimeField(help_text="When the token expires (for cleanup purposes)")
 
     class Meta:
         ordering = ["-blacklisted_at"]

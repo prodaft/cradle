@@ -43,9 +43,7 @@ class BaseDigest(LifecycleModel):
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
     title: models.CharField = models.CharField(max_length=255, null=False, blank=False)
-    user = models.ForeignKey(
-        "user.CradleUser", on_delete=models.CASCADE, related_name="digests"
-    )
+    user = models.ForeignKey("user.CradleUser", on_delete=models.CASCADE, related_name="digests")
 
     # Digest file stored in S3
     file: models.FileField = models.FileField(
@@ -89,21 +87,15 @@ class BaseDigest(LifecycleModel):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.digest_type = (
-            self.__class__.__name__ if not self.digest_type else self.digest_type
-        )
+        self.digest_type = self.__class__.__name__ if not self.digest_type else self.digest_type
 
     @property
     def entry(self) -> Entry:
         """
         Return the entry representing this digest.
         """
-        entry_class, _ = EntryClass.objects.get_or_create(
-            subtype="digest", type=EntryType.ARTIFACT
-        )
-        entry, _ = Entry.objects.create(
-            name=f"{self.digest_type} Digest {self.title}", entry_class=entry_class
-        )
+        entry_class, _ = EntryClass.objects.get_or_create(subtype="digest", type=EntryType.ARTIFACT)
+        entry, _ = Entry.objects.create(name=f"{self.digest_type} Digest {self.title}", entry_class=entry_class)
         return entry
 
     @property
@@ -144,9 +136,7 @@ class BaseDigest(LifecycleModel):
 
         display_name = getattr(cls, "display_name", None)
         if not isinstance(display_name, str):
-            raise TypeError(
-                f"{cls.__name__} must define a class attribute 'name' as a string"
-            )
+            raise TypeError(f"{cls.__name__} must define a class attribute 'name' as a string")
 
     @hook(AFTER_DELETE)
     def delete_file(self):
@@ -219,9 +209,7 @@ class BaseDigest(LifecycleModel):
             self._digest()
         except Exception as e:
             self.status = DigestStatus.ERROR
-            self.errors.append(
-                "An unknown error has occured, please contact your administrator"
-            )
+            self.errors.append("An unknown error has occured, please contact your administrator")
             self.save()
             raise e
         finally:
@@ -340,9 +328,7 @@ class EnricherSettings(models.Model):
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    for_eclasses = models.ManyToManyField(
-        EntryClass, related_name="enrichers", blank=True
-    )
+    for_eclasses = models.ManyToManyField(EntryClass, related_name="enrichers", blank=True)
 
     enricher_type = models.CharField(max_length=255, unique=True)
     settings = models.JSONField(default=dict, blank=True)
@@ -384,9 +370,7 @@ class ClassMapping(models.Model):
 
     id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    internal_class = models.ForeignKey(
-        EntryClass, related_name="%(class)ss", on_delete=models.CASCADE
-    )
+    internal_class = models.ForeignKey(EntryClass, related_name="%(class)ss", on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
@@ -399,9 +383,7 @@ class ClassMapping(models.Model):
 
         display_name = getattr(cls, "display_name", None)
         if not isinstance(display_name, str):
-            raise TypeError(
-                f"{cls.__name__} must define a class attribute 'name' as a string"
-            )
+            raise TypeError(f"{cls.__name__} must define a class attribute 'name' as a string")
 
     @classmethod
     def get_typemapping(cls):
@@ -475,17 +457,13 @@ class EnrichmentRequest(LifecycleModel):
         except PydanticValidationError as e:
             raise ValidationError({"request": str(e)})
 
-        if EntryClass.objects.filter(
-            subtype__in=classes, type=EntryType.ARTIFACT
-        ).count() != len(classes):
+        if EntryClass.objects.filter(subtype__in=classes, type=EntryType.ARTIFACT).count() != len(classes):
             invalid_classes = classes - set(
-                EntryClass.objects.filter(
-                    subtype__in=classes, type=EntryType.ARTIFACT
-                ).values_list("subtype", flat=True)
+                EntryClass.objects.filter(subtype__in=classes, type=EntryType.ARTIFACT).values_list(
+                    "subtype", flat=True
+                )
             )
-            raise ValidationError(
-                {"request": f"Invalid entry classes: {invalid_classes}"}
-            )
+            raise ValidationError({"request": f"Invalid entry classes: {invalid_classes}"})
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -496,9 +474,7 @@ class EnrichmentRequest(LifecycleModel):
         """
         Return the entry representing this enrichment request.
         """
-        entry_class, _ = EntryClass.objects.get_or_create(
-            subtype="enrichment", type=EntryType.ARTIFACT
-        )
+        entry_class, _ = EntryClass.objects.get_or_create(subtype="enrichment", type=EntryType.ARTIFACT)
         entry, _ = Entry.objects.get_or_create(
             name=f"Enrichment Request {self.title} [{self.id}]", entry_class=entry_class
         )
@@ -515,9 +491,7 @@ class EnrichmentRequest(LifecycleModel):
             subclass = BaseEnricher.get_subclass(enricher_settings.enricher_type)
 
             if subclass is None:
-                raise ValidationError(
-                    f"Unknown enricher type: {enricher_settings.enricher_type}"
-                )
+                raise ValidationError(f"Unknown enricher type: {enricher_settings.enricher_type}")
             config = subclass(settings=enricher_settings.settings, request=self)
             config.id = enricher_settings.id
             enrichers.append(config)
@@ -536,9 +510,7 @@ class EnrichmentRequest(LifecycleModel):
                     )
                 entry_class = entry_classes[req["entry_class"]]
 
-                entry, _ = Entry.objects.get_or_create(
-                    name=req["name"], entry_class=entry_class
-                )
+                entry, _ = Entry.objects.get_or_create(name=req["name"], entry_class=entry_class)
                 entries.append(entry)
 
         return entries
@@ -551,11 +523,7 @@ class EnrichmentRequest(LifecycleModel):
 
         # Trigger the enrichment process
         # This could be handled by a background task or Celery
-        all_eclasses = set(
-            self.enrichers_settings.all().values_list(
-                "for_eclasses__subtype", flat=True
-            )
-        )
+        all_eclasses = set(self.enrichers_settings.all().values_list("for_eclasses__subtype", flat=True))
         self.relations.clear()
 
         ignored = {}
@@ -584,10 +552,7 @@ class EnrichmentRequest(LifecycleModel):
         self.relations.update(access_vector=self.access_vector)
 
     def _set_enricher_status(self, enricher_type: str, status: EnrichmentStatus):
-        if (
-            self.enricher_status
-            and self.enricher_status.get(enricher_type) == status.value
-        ):
+        if self.enricher_status and self.enricher_status.get(enricher_type) == status.value:
             return
         with transaction.atomic():
             instance = EnrichmentRequest.objects.select_for_update().get(pk=self.pk)
@@ -619,15 +584,10 @@ class EnrichmentRequest(LifecycleModel):
                         instance.status = EnrichmentStatus.ERROR
                     elif err_count > 0:
                         instance.status = EnrichmentStatus.WARNING
-                    elif (
-                        instance.status != EnrichmentStatus.WARNING
-                        and instance.status != EnrichmentStatus.ERROR
-                    ):
+                    elif instance.status != EnrichmentStatus.WARNING and instance.status != EnrichmentStatus.ERROR:
                         instance.status = EnrichmentStatus.DONE
 
-                    instance.save(
-                        update_fields=["enricher_status", "completed_at", "status"]
-                    )
+                    instance.save(update_fields=["enricher_status", "completed_at", "status"])
 
                     # Send notification after all enrichers complete
                     self._send_enrichment_notification(instance)

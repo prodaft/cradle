@@ -75,9 +75,7 @@ class UserSnippetsListCreateView(APIView):
 
             # Check permissions
             if not (current_user.pk == target_user.pk or self._is_admin()):
-                raise PermissionDeniedException(
-                    detail="You are not allowed to fetch this user's snippets."
-                )
+                raise PermissionDeniedException(detail="You are not allowed to fetch this user's snippets.")
 
             snippets = Snippet.objects.filter(owner=target_user)
 
@@ -114,9 +112,7 @@ class UserSnippetsListCreateView(APIView):
         if user_id == "null":
             # Create system snippet - requires admin privileges
             if not self._is_admin():
-                raise PermissionDeniedException(
-                    detail="Only administrators can create system snippets."
-                )
+                raise PermissionDeniedException(detail="Only administrators can create system snippets.")
             target_owner = None
         elif user_id == "me":
             target_owner = current_user
@@ -128,9 +124,7 @@ class UserSnippetsListCreateView(APIView):
 
             # Check permissions - users can only create snippets for themselves unless admin
             if current_user.pk != target_owner.pk and not self._is_admin():
-                raise PermissionDeniedException(
-                    detail="You can only create snippets for yourself."
-                )
+                raise PermissionDeniedException(detail="You can only create snippets for yourself.")
 
         serializer = SnippetSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -188,12 +182,8 @@ class SnippetDetailView(APIView):
         # Check if user has permission to access this snippet
         # Users can access their own snippets and system snippets (owner=null)
         # Admins can access any snippet
-        if not (
-            snippet.owner == current_user or snippet.owner is None or self._is_admin()
-        ):
-            raise PermissionDeniedException(
-                detail="You don't have permission to access this snippet."
-            )
+        if not (snippet.owner == current_user or snippet.owner is None or self._is_admin()):
+            raise PermissionDeniedException(detail="You don't have permission to access this snippet.")
 
         return snippet
 
@@ -203,9 +193,7 @@ class SnippetDetailView(APIView):
 
         # For system snippets (owner=null), only admins can modify/delete
         if snippet.owner is None and not self._is_admin():
-            raise PermissionDeniedException(
-                detail="Only administrators can modify system snippets."
-            )
+            raise PermissionDeniedException(detail="Only administrators can modify system snippets.")
 
         # For user snippets, only the owner or admin can modify/delete
         if (
@@ -213,9 +201,7 @@ class SnippetDetailView(APIView):
             and snippet.owner != current_user
             and (snippet.owner.is_admin() or not self._is_admin())
         ):
-            raise PermissionDeniedException(
-                detail="You can only modify your own snippets."
-            )
+            raise PermissionDeniedException(detail="You can only modify your own snippets.")
 
     @extend_schema(
         summary="Retrieve a snippet",

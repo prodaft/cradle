@@ -18,9 +18,7 @@ class BaseTask(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def run(
-        self, note: Note, entries: Iterable[Entry]
-    ) -> Tuple[Optional[Celery], Iterable[Entry]]:
+    def run(self, note: Note, entries: Iterable[Entry]) -> Tuple[Optional[Celery], Iterable[Entry]]:
         """
         The method that is executed within the chain of responsibility.
         An error being thrown, or None being returned means the whole

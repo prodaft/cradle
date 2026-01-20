@@ -42,9 +42,7 @@ from ..tasks import generate_report
         request=PublishReportSerializer,
         responses={
             201: ReportListSerializer,
-            **get_error_responses(
-                PublishErrorCodes.NOTES_NOT_FOUND, PublishErrorCodes.STRATEGY_NOT_FOUND
-            ),
+            **get_error_responses(PublishErrorCodes.NOTES_NOT_FOUND, PublishErrorCodes.STRATEGY_NOT_FOUND),
             **get_validation_error_response(),
             **get_common_error_responses(),
         },
@@ -55,14 +53,8 @@ class PublishReportAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        upload_strategies = [
-            {"label": choice.label, "strategy": choice.value}
-            for choice in UploadStrategies
-        ]
-        download_strategies = [
-            {"label": choice.label, "strategy": choice.value}
-            for choice in DownloadStrategies
-        ]
+        upload_strategies = [{"label": choice.label, "strategy": choice.value} for choice in UploadStrategies]
+        download_strategies = [{"label": choice.label, "strategy": choice.value} for choice in DownloadStrategies]
         return Response({"upload": upload_strategies, "download": download_strategies})
 
     def post(self, request):
@@ -99,6 +91,4 @@ class PublishReportAPIView(APIView):
 
         generate_report.delay(report.id)
 
-        return Response(
-            ReportListSerializer(report).data, status=status.HTTP_201_CREATED
-        )
+        return Response(ReportListSerializer(report).data, status=status.HTTP_201_CREATED)

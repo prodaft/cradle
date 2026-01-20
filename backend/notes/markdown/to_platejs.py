@@ -44,9 +44,7 @@ class PlateJSRenderer(BaseRenderer):
         else:
             return func(text)
 
-    def render_tokens(
-        self, tokens: Iterable[Dict[str, Any]], state: BlockState
-    ) -> List[Dict[str, Any]]:
+    def render_tokens(self, tokens: Iterable[Dict[str, Any]], state: BlockState) -> List[Dict[str, Any]]:
         results = []
         for i in self.iter_tokens(tokens, state):
             if i is None:
@@ -86,9 +84,7 @@ class PlateJSRenderer(BaseRenderer):
             "children": text,
         }
 
-    def image(
-        self, text: List, url: str, title: Optional[str] = None
-    ) -> Dict[str, Any]:
+    def image(self, text: List, url: str, title: Optional[str] = None) -> Dict[str, Any]:
         return {"type": "img", "url": url, "title": title or "", "alt": text}
 
     def codespan(self, text: List) -> Dict[str, Any]:
@@ -148,9 +144,7 @@ class PlateJSRenderer(BaseRenderer):
     def footnote_ref(self, key: str, value: str) -> Dict[str, Any]:
         return {"type": "p", "children": [{"text": value}]}
 
-    def img_footnote_ref(
-        self, text: str, key: str, value: str, ref: Any
-    ) -> Dict[str, Any]:
+    def img_footnote_ref(self, text: str, key: str, value: str, ref: Any) -> Dict[str, Any]:
         return {
             "type": "footnote_img_ref",
             "caption": [{"text": value}],
@@ -241,9 +235,7 @@ class PlateJSRenderer(BaseRenderer):
         return None
 
 
-def resolve_footnote_imgs(
-    pjs: List, fetch_image: Callable[[str, str], Optional[BytesIO]], state: BlockState
-) -> None:
+def resolve_footnote_imgs(pjs: List, fetch_image: Callable[[str, str], Optional[BytesIO]], state: BlockState) -> None:
     ref_footnotes = state.env["ref_footnotes"]
 
     for i in pjs:
@@ -283,9 +275,7 @@ def markdown_to_pjs(
 
     renderer = PlateJSRenderer(entries)
 
-    markdown = mistune.create_markdown(
-        renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin]
-    )
+    markdown = mistune.create_markdown(renderer=renderer, plugins=[table, cradle_link_plugin, footnote_plugin])
 
     state = markdown.block.state_cls()
     state.env["ref_footnotes"] = footnotes

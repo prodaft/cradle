@@ -21,9 +21,7 @@ class NotificationDetailTest(NotificationsTestCase):
             email="alabala@gmail.com",
         )
         self.entity = Entry.objects.create(name="Entity", entry_class=self.entryclass1)
-        self.message_user = MessageNotification.objects.create(
-            user=self.user, message="Test message"
-        )
+        self.message_user = MessageNotification.objects.create(user=self.user, message="Test message")
         self.access_request_user = AccessRequestNotification.objects.create(
             user=self.user,
             requesting_user=self.user,
@@ -36,9 +34,7 @@ class NotificationDetailTest(NotificationsTestCase):
 
     def test_update_notifications_not_authenticated(self):
         response = self.client.put(
-            reverse(
-                "notification_detail", kwargs={"notification_id": self.message_user.id}
-            ),
+            reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
             {"is_marked_unread": True},
         )
 
@@ -46,9 +42,7 @@ class NotificationDetailTest(NotificationsTestCase):
 
     def test_update_notifications_bad_request(self):
         response = self.client.put(
-            reverse(
-                "notification_detail", kwargs={"notification_id": self.message_user.id}
-            ),
+            reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
             {"is_marked_unread": "blabla"},
             format="json",
             **self.headers,
@@ -67,9 +61,7 @@ class NotificationDetailTest(NotificationsTestCase):
 
     def test_update_notifications_updated_message_notification(self):
         response = self.client.put(
-            reverse(
-                "notification_detail", kwargs={"notification_id": self.message_user.id}
-            ),
+            reverse("notification_detail", kwargs={"notification_id": self.message_user.id}),
             {"is_marked_unread": True},
             format="json",
             **self.headers,
@@ -77,9 +69,7 @@ class NotificationDetailTest(NotificationsTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        updated_notification = MessageNotification.objects.get(
-            user=self.user, message="Test message"
-        )
+        updated_notification = MessageNotification.objects.get(user=self.user, message="Test message")
         self.assertTrue(updated_notification.is_marked_unread)
 
     def test_update_notifications_updated_access_notification(self):
@@ -95,7 +85,5 @@ class NotificationDetailTest(NotificationsTestCase):
 
         self.assertEqual(response.status_code, 200)
 
-        updated_notification = AccessRequestNotification.objects.get(
-            user=self.user, message="Access Request"
-        )
+        updated_notification = AccessRequestNotification.objects.get(user=self.user, message="Access Request")
         self.assertTrue(updated_notification.is_marked_unread)

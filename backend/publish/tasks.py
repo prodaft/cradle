@@ -96,8 +96,6 @@ def edit_report(report_id):
 
     except Exception as e:
         report.status = ReportStatus.ERROR
-        report.error_message = (
-            "An unknown error occurred when editing report, please contact your admin."
-        )
+        report.error_message = "An unknown error occurred when editing report, please contact your admin."
         report.save()
         raise e

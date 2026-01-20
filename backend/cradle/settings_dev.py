@@ -88,3 +88,17 @@ DEFAULT_SETTINGS = {
         "require_email_confirmation": False,
     },
 }
+
+OAUTH_PROVIDERS = {
+    "keycloak": {
+        "issuer": "http://localhost:8081/realms/cradle",
+        "label": "Keycloak",
+        "authorization_url": "http://localhost:8081/realms/cradle/protocol/openid-connect/auth?client_id=cradle-ui&response_type=code&scope=openid%20email%20profile",
+        "token_url": "http://localhost:8081/realms/cradle/protocol/openid-connect/token",
+        "userinfo_url": "http://localhost:8081/realms/cradle/protocol/openid-connect/userinfo",
+        "client_id": "cradle-ui",
+        "client_secret": "",
+    }
+}
+
+OAUTH_METHODS = build_oauth_methods(OAUTH_PROVIDERS)

@@ -49,9 +49,7 @@ class StatisticsList(APIView):
             request is not authenticated.
         """
 
-        entries_prefetch = Prefetch(
-            "entries", queryset=Entry.objects.select_related("entry_class")
-        )
+        entries_prefetch = Prefetch("entries", queryset=Entry.objects.select_related("entry_class"))
 
         accessible_notes = (
             Note.objects.non_fleeting()
@@ -73,9 +71,7 @@ class StatisticsList(APIView):
         entities_list = list(islice(entities_qs, 3))
 
         artifacts_list = list(
-            Entry.objects.filter(
-                notes__in=accessible_notes, entry_class__type="artifact"
-            )
+            Entry.objects.filter(notes__in=accessible_notes, entry_class__type="artifact")
             .exclude(entry_class__subtype__in=("note", "file"))
             .select_related("entry_class")
             .distinct()

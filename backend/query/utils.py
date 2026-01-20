@@ -129,9 +129,7 @@ def parse_query(query_str):
         name_q = Q(**{f"name__{lookup2}": pattern2}) if lookup2 else ~Q(pk__in=[])
 
         # Add entity type and description search
-        entity_description_q = Q(description__icontains=query_str.strip("*")) & Q(
-            entry_class__type="entity"
-        )
+        entity_description_q = Q(description__icontains=query_str.strip("*")) & Q(entry_class__type="entity")
 
         # Combine both conditions with OR
         q = name_q | entity_description_q
@@ -148,9 +146,7 @@ def parse_query(query_str):
         lookup2, pattern2 = process_pattern(field2, quoted2)
 
         if lookup1 and lookup2:
-            q = Q(**{f"entry_class__subtype__{lookup1}": pattern1}) & Q(
-                **{f"name__{lookup2}": pattern2}
-            )
+            q = Q(**{f"entry_class__subtype__{lookup1}": pattern1}) & Q(**{f"name__{lookup2}": pattern2})
         elif lookup1:
             q = Q(**{f"entry_class__subtype__{lookup1}": pattern1})
         elif lookup2:

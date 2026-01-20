@@ -39,9 +39,7 @@ class ReportDetailSerializer(serializers.ModelSerializer):
     def get_report_url(self, obj):
         download_url = self.context.get("download_url", False)
         if download_url:
-            response_disposition = (
-                f'attachment; filename="{obj.title}.{obj.strategy.lower()}"'
-            )
+            response_disposition = f'attachment; filename="{obj.title}.{obj.strategy.lower()}"'
         else:
             response_disposition = None
 
@@ -103,9 +101,7 @@ class PublishReportSerializer(serializers.Serializer):
     )
     title = serializers.CharField(help_text="Title for the published report.")
     strategy = serializers.CharField(help_text="Name of the strategy to use.")
-    anonymized = serializers.BooleanField(
-        help_text="Whether the report should be anonymized.", default=False
-    )
+    anonymized = serializers.BooleanField(help_text="Whether the report should be anonymized.", default=False)
 
     def validate_strategy(self, value):
         allowed = [choice[0] for choice in UploadStrategies.choices] + [
@@ -138,12 +134,8 @@ class PublishStrategySerializer(serializers.Serializer):
 class PublishStrategiesResponseSerializer(serializers.Serializer):
     """Serializer for publish strategies response."""
 
-    upload = PublishStrategySerializer(
-        many=True, help_text="Available upload strategies"
-    )
-    download = PublishStrategySerializer(
-        many=True, help_text="Available download strategies"
-    )
+    upload = PublishStrategySerializer(many=True, help_text="Available upload strategies")
+    download = PublishStrategySerializer(many=True, help_text="Available download strategies")
 
     class Meta:
         ref_name = "PublishStrategiesResponse"
