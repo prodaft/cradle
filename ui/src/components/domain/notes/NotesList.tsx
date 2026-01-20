@@ -1,6 +1,14 @@
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -12,7 +20,13 @@ import { parseMarkdownInline } from '@/utils/parser';
 import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
+import {
+    ColumnDef,
+    type RowSelectionState,
+    SortingState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
 import {
     DesignNib,
@@ -29,9 +43,9 @@ import { startCase } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
-    ActionBar,
     ActionBarButton,
     ActionBarSearch,
+    ActionBar as BaseActionBar,
 } from '../../base/ActionBar/ActionBar';
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
@@ -151,7 +165,7 @@ export default function NotesList({
             suppressNotification: true,
         },
     });
-    const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [pageSize, setPageSize] = useState((search as any)?.notes_pagesize || 10);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
@@ -443,9 +457,6 @@ export default function NotesList({
         }
     }, [notes.length, totalCount, onTotalCountChange]);
 
-    // Notes to display (same as fetched notes since filters were removed)
-    const displayedNotes = notes;
-
     const handleRetrySelected = useCallback(
         async (selectedIds: string[]) => {
             if (selectedIds.length === 0) return;
@@ -457,22 +468,13 @@ export default function NotesList({
             await Promise.all(promises);
 
             toast.success(
-                `Retrying ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}...`,
+                `Relinking ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}...`,
             );
-            setSelectedNotes([]);
+            setRowSelection({});
             queryClient.invalidateQueries({ queryKey: queryKeys.notes.lists() });
         },
         [retryNotesMutation, queryClient],
     );
-
-    // Select all visible notes
-    const handleSelectAll = () => {
-        if (selectedNotes.length === displayedNotes.length) {
-            setSelectedNotes([]);
-        } else {
-            setSelectedNotes(displayedNotes.map((n) => n.id!));
-        }
-    };
 
     const handlePageChange = (newPage: number) => {
         const searchAny = search as any;
@@ -521,16 +523,6 @@ export default function NotesList({
         },
     });
 
-    const actions = [
-        {
-            value: 'delete',
-            label: 'Delete',
-            handler: async (selectedIds: string[]) => {
-                setBulkDeleteModalOpen(true);
-            },
-        },
-    ];
-
     const executeBulkDelete = async (selectedIds: string[]) => {
         try {
             const deletePromises = selectedIds.map((id) =>
@@ -561,7 +553,7 @@ export default function NotesList({
                 });
             }
 
-            setSelectedNotes([]);
+            setRowSelection({});
         } catch (error) {
             setAlert({
                 show: true,
@@ -588,12 +580,26 @@ export default function NotesList({
             : [];
     }, [sortField, sortDirection]);
 
+    const onTableSortingChange = useCallback(
+        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+            const nextSorting =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            handleSortingChange(nextSorting);
+        },
+        [handleSortingChange, sorting],
+    );
+
+    const selectedNoteIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
+
     // Filter out filtered notes
     const filteredData = useMemo(() => {
-        return displayedNotes.filter((note) => {
+        return notes.filter((note) => {
             return !filteredNotes.some((n) => n.id === note.id);
         });
-    }, [displayedNotes, filteredNotes]);
+    }, [notes, filteredNotes]);
 
     const renderNotePreview = (note: NoteRetrieve) => {
         return <NotePreviewContent note={note} />;
@@ -604,6 +610,9 @@ export default function NotesList({
         () => [
             {
                 id: 'select',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -643,7 +652,7 @@ export default function NotesList({
                                 'invalid',
                                 'processing',
                             ]}
-                            triggerClassName='size-7'
+                            triggerClassName='size-[18px] p-0'
                         />
                         <span>Title</span>
                     </div>
@@ -730,7 +739,7 @@ export default function NotesList({
                     const filterValue = columnFilters.author as string;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Author' />
+                            <DataTableColumnHeader column={column} label='Author' />
                             {filterValue && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -750,7 +759,7 @@ export default function NotesList({
                     const filterValue = columnFilters.editor as string;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Editor' />
+                            <DataTableColumnHeader column={column} label='Editor' />
                             {filterValue && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -770,7 +779,7 @@ export default function NotesList({
                     const filterValue = columnFilters.createdAt as DateRangeFilter;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Created At' />
+                            <DataTableColumnHeader column={column} label='Created At' />
                             {filterValue?.from && filterValue?.to && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -795,7 +804,7 @@ export default function NotesList({
                     const filterValue = columnFilters.lastChanged as DateRangeFilter;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Updated At' />
+                            <DataTableColumnHeader column={column} label='Updated At' />
                             {filterValue?.from && filterValue?.to && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -826,7 +835,7 @@ export default function NotesList({
                     const handleRetry = async () => {
                         try {
                             await retryNotesMutation.mutateAsync(note.id!);
-                            toast.success('Retrying note...');
+                            toast.success('Relinking note...');
                             queryClient.invalidateQueries({
                                 queryKey: queryKeys.notes.lists(),
                             });
@@ -891,23 +900,80 @@ export default function NotesList({
         ],
         [
             columnFilters,
-            handleStatusChange,
-            handleColumnFilter,
             getStatusIcon,
-            actions,
-            handleRetrySelected,
+            router,
+            retryNotesMutation,
+            queryClient,
         ],
     );
 
-    // Handle row selection
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedNotes(selectedIds);
-    }, []);
+    const table = useReactTable({
+        data: filteredData,
+        columns,
+        state: {
+            sorting,
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? index),
+        onSortingChange: onTableSortingChange,
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        manualSorting: true,
+        pageCount: totalPages,
+    });
+
+    const handleReportSelected = useCallback(() => {
+        if (selectedNoteIds.length === 0) return;
+        const noteById = new Map(
+            notes.filter((n) => n.id).map((n) => [String(n.id!), n]),
+        );
+        const selectedNoteObjects = selectedNoteIds.map((id) => {
+            const note = noteById.get(id);
+            return {
+                id,
+                title: note?.metadata?.title || note?.title || 'Untitled',
+            };
+        });
+        setReportSelectedNotes(selectedNoteObjects);
+        setReportModalOpen(true);
+    }, [notes, selectedNoteIds]);
+
+    const handleEnrichSelected = useCallback(() => {
+        if (selectedNoteIds.length === 0) return;
+        const noteById = new Map(
+            notes.filter((n) => n.id).map((n) => [String(n.id!), n]),
+        );
+        const selectedNoteObjects = selectedNoteIds.map((id) => {
+            const note = noteById.get(id);
+            return {
+                id,
+                title: (note?.metadata?.title || note?.title || 'Untitled') as string,
+                entities: (note?.entities || []) as OptimizedEntryResponse[],
+            };
+        });
+        setEnrichmentNotesList(selectedNoteObjects);
+        setEnrichmentModalOpen(true);
+    }, [notes, selectedNoteIds]);
 
     return (
         <PreviewTipProvider delayDuration={800}>
             <div ref={containerRef} className='flex flex-col space-y-4'>
-                <ActionBar
+                <BaseActionBar
                     left={
                         <>
                             {onCreateNote && hideActionBar && (
@@ -953,110 +1019,87 @@ export default function NotesList({
                     </div>
                 )}
 
-                <DataTable
-                    columns={columns}
-                    data={filteredData}
-                    loading={loading}
-                    emptyMessage='No notes found!'
-                    enableRowSelection={true}
-                    selectedRows={selectedNotes}
-                    onRowSelectionChange={handleRowSelectionChange}
-                    sorting={sorting}
-                    onSortingChange={handleSortingChange}
-                    manualPagination={true}
-                    manualSorting={true}
-                    pageCount={totalPages}
-                    initialPageIndex={page - 1}
-                    initialPageSize={pageSize}
-                    onPaginationChange={handlePaginationChange}
-                    showPagination={true}
-                    onRowClick={(note) =>
-                        router.navigate({ to: `/notes/${note.id}` as any })
-                    }
-                    bulkActions={[
-                        {
-                            id: 'retry',
-                            label: 'Retry',
-                            icon: <RefreshCircle width={18} height={18} />,
-                            onClick: () => handleRetrySelected(selectedNotes),
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                        },
-                        {
-                            id: 'report',
-                            label: 'Report',
-                            icon: <StatsReport width={18} height={18} />,
-                            onClick: () => {
-                                if (selectedNotes.length === 0) return;
-                                const selectedNoteObjects = notes
-                                    .filter((n) => n.id && selectedNotes.includes(n.id))
-                                    .map((n) => ({
-                                        id: n.id!,
-                                        title:
-                                            n.metadata?.title || n.title || 'Untitled',
-                                    }));
-                                setReportSelectedNotes(selectedNoteObjects);
-                                setReportModalOpen(true);
-                            },
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                        },
-                        {
-                            id: 'enrich',
-                            label: 'Enrich',
-                            icon: <Sparks width={18} height={18} />,
-                            onClick: () => {
-                                if (selectedNotes.length === 0) return;
-                                const selectedNoteObjects = notes
-                                    .filter((n) => n.id && selectedNotes.includes(n.id))
-                                    .map((n) => ({
-                                        id: n.id!,
-                                        title: (n.metadata?.title ||
-                                            n.title ||
-                                            'Untitled') as string,
-                                        entities: (n.entities ||
-                                            []) as OptimizedEntryResponse[],
-                                    }));
-                                setEnrichmentNotesList(selectedNoteObjects);
-                                setEnrichmentModalOpen(true);
-                            },
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                        },
-                        {
-                            id: 'delete',
-                            label: 'Delete',
-                            icon: <Trash width={18} height={18} />,
-                            onClick: () => {
-                                if (selectedNotes.length > 0) {
-                                    setBulkDeleteModalOpen(true);
-                                }
-                            },
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                            variant: 'destructive',
-                        },
-                    ]}
-                    itemLabel='note'
-                />
+                <div className='grid grid-cols-1 gap-2'>
+                    {loading ? (
+                        <div className='flex min-h-[200px] items-center justify-center'>
+                            Loading...
+                        </div>
+                    ) : (
+                        <DataTable
+                            table={table}
+                            onRowClick={(note) =>
+                                router.navigate({ to: `/notes/${note.id}` as any })
+                            }
+                        />
+                    )}
+                </div>
             </div>
+            <ActionBar
+                open={selectedNoteIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) setRowSelection({});
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedNoteIds.length} note
+                    {selectedNoteIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={() => handleRetrySelected(selectedNoteIds)}
+                        disabled={
+                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                        }
+                    >
+                        <RefreshCircle width={18} height={18} />
+                        Relink
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={handleReportSelected}
+                        disabled={
+                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                        }
+                    >
+                        <StatsReport width={18} height={18} />
+                        Report
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={handleEnrichSelected}
+                        disabled={
+                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                        }
+                    >
+                        <Sparks width={18} height={18} />
+                        Enrich
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (selectedNoteIds.length > 0) {
+                                setBulkDeleteModalOpen(true);
+                            }
+                        }}
+                        disabled={
+                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                        }
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
+            </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
                 onOpenChange={setBulkDeleteModalOpen}
                 onConfirm={async () => {
-                    if (selectedNotes.length > 0) {
-                        await executeBulkDelete(selectedNotes);
+                    if (selectedNoteIds.length > 0) {
+                        await executeBulkDelete(selectedNoteIds);
                     }
                 }}
-                text={`Are you sure you want to delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}? This action is irreversible.`}
+                text={`Are you sure you want to delete ${selectedNoteIds.length} note${selectedNoteIds.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
             {deletingNoteId && (
                 <ConfirmDeletionModal

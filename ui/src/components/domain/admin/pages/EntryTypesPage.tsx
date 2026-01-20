@@ -1,11 +1,18 @@
-import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import { ActionBar as BaseActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
-import TableActionsButton from '@/components/base/TableActionsButton';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
     Select,
     SelectContent,
@@ -27,8 +34,13 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { ColumnDef } from '@tanstack/react-table';
-import { ClockRotateRight, Settings, Trash } from 'iconoir-react/regular';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import { ClockRotateRight, Edit, Settings, Trash } from 'iconoir-react/regular';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddEntryTypeModal from '../../../dialogs/admin/AddEntryTypeModal';
@@ -231,7 +243,7 @@ export default function EntryTypesPage() {
     const router = useRouter();
     const location = useLocation();
     const search = useSearch({ strict: false });
-    const [selectedEntryTypes, setSelectedEntryTypes] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.entry_types_page || 1);
     const [pageSize, setPageSize] = useState(
@@ -246,6 +258,15 @@ export default function EntryTypesPage() {
     );
     const [addEntryTypeModalOpen, setAddEntryTypeModalOpen] = useState(false);
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+
+    const selectedEntryTypeIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+    }, []);
 
     // Query for entry types
     const { data: entryTypesData, isPending } = useQuery({
@@ -270,14 +291,6 @@ export default function EntryTypesPage() {
         router.navigate({ to: `/manage/entry-types/${entryType.subtype}` as any });
     };
 
-    const handleActivityClick = (entryType: EntryTypeData, e: React.MouseEvent) => {
-        e.stopPropagation();
-        router.navigate({
-            to: `/manage/entry-types/${entryType.subtype}` as any,
-            search: { tab: 'activity' } as any,
-        });
-    };
-
     // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: (subtype: string) =>
@@ -288,25 +301,36 @@ export default function EntryTypesPage() {
         },
     });
 
-    const handleDelete = (entryType: EntryTypeData) => {
-        setDeleteEntryTypeSubtype(entryType.subtype);
-        setDeleteModalOpen(true);
-    };
-
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedEntryTypes(selectedIds);
-    }, []);
-
     const handleDeleteEntryTypes = async (entryTypeSubtypes: string[]) => {
         try {
             await Promise.all(
                 entryTypeSubtypes.map((subtype) => deleteMutation.mutateAsync(subtype)),
             );
-            setSelectedEntryTypes([]);
+            clearSelection();
         } catch (error) {
             // Error already handled by mutation
         }
     };
+
+    const handleDeleteSelected = useCallback(() => {
+        if (selectedEntryTypeIds.length === 0) return;
+        setBulkDeleteModalOpen(true);
+    }, [selectedEntryTypeIds]);
+
+    const handleEditSelected = useCallback(() => {
+        if (selectedEntryTypeIds.length !== 1) return;
+        const subtype = selectedEntryTypeIds[0];
+        router.navigate({ to: `/manage/entry-types/${subtype}` as any });
+    }, [selectedEntryTypeIds, router]);
+
+    const handleViewActivitySelected = useCallback(() => {
+        if (selectedEntryTypeIds.length !== 1) return;
+        const subtype = selectedEntryTypeIds[0];
+        router.navigate({
+            to: `/manage/entry-types/${subtype}` as any,
+            search: { tab: 'activity' } as any,
+        });
+    }, [selectedEntryTypeIds, router]);
 
     const filteredEntryTypes = useMemo(() => {
         if (!searchQuery.trim()) {
@@ -383,6 +407,9 @@ export default function EntryTypesPage() {
         () => [
             {
                 id: 'select',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -408,7 +435,10 @@ export default function EntryTypesPage() {
             },
             {
                 accessorKey: 'subtype',
-                header: 'Entry Type',
+                id: 'subtype',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Entry Type' />
+                ),
                 cell: ({ row }) => (
                     <div
                         className='font-medium cursor-pointer'
@@ -420,56 +450,46 @@ export default function EntryTypesPage() {
             },
             {
                 accessorKey: 'count',
+                id: 'count',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: 'Count',
                 cell: ({ row }) => (
                     <Badge variant='secondary'>{formatCount(row.original.count)}</Badge>
                 ),
-            },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const entryType = row.original;
-                    return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    {isAdmin && (
-                                        <>
-                                            <DropdownMenuItem
-                                                onClick={(e) =>
-                                                    handleActivityClick(entryType, e)
-                                                }
-                                            >
-                                                <ClockRotateRight
-                                                    width='18'
-                                                    height='18'
-                                                />
-                                                View Activity
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                onClick={() => handleDelete(entryType)}
-                                                variant='destructive'
-                                            >
-                                                <Trash width='18' height='18' />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </>
-                                    )}
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
                 enableSorting: false,
             },
         ],
-        [isAdmin, handleActivityClick, handleDelete, formatCount],
+        [handleEditClick, formatCount],
     );
+
+    const table = useReactTable({
+        data: paginatedEntryTypes,
+        columns,
+        state: {
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? index),
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        pageCount: totalPages,
+    });
 
     if (id && id !== 'add') {
         return (
@@ -514,7 +534,7 @@ export default function EntryTypesPage() {
                 />
                 <div className='px-4 flex-1 flex flex-col'>
                     <div className='pb-4'>
-                        <ActionBar
+                        <BaseActionBar
                             left={
                                 <ActionBarSearch
                                     placeholder='Search entry types...'
@@ -526,42 +546,60 @@ export default function EntryTypesPage() {
                         />
                     </div>
                     <div className='flex-1 space-y-4'>
-                        <DataTable
-                            columns={columns}
-                            data={paginatedEntryTypes}
-                            loading={isPending}
-                            emptyMessage='No entry types found.'
-                            enableRowSelection={true}
-                            selectedRows={selectedEntryTypes}
-                            onRowSelectionChange={handleRowSelectionChange}
-                            onRowClick={handleEditClick}
-                            manualPagination={true}
-                            pageCount={totalPages}
-                            initialPageIndex={page - 1}
-                            initialPageSize={pageSize}
-                            onPaginationChange={handlePaginationChange}
-                            showPagination={true}
-                            bulkActions={[
-                                {
-                                    id: 'delete',
-                                    label: 'Delete',
-                                    icon: <Trash width={18} height={18} />,
-                                    onClick: () => {
-                                        if (selectedEntryTypes.length === 0) return;
-                                        setBulkDeleteModalOpen(true);
-                                    },
-                                    disabled:
-                                        isPending ||
-                                        selectedEntryTypes.length === 0 ||
-                                        filteredEntryTypes.length === 0,
-                                    variant: 'destructive',
-                                },
-                            ]}
-                            itemLabel='entry type'
-                        />
+                        {isPending ? (
+                            <div className='flex min-h-[200px] items-center justify-center'>
+                                Loading...
+                            </div>
+                        ) : (
+                            <DataTable table={table} onRowClick={handleEditClick} />
+                        )}
                     </div>
                 </div>
             </div>
+            <ActionBar
+                open={selectedEntryTypeIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedEntryTypeIds.length} entry type
+                    {selectedEntryTypeIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={handleEditSelected}
+                        disabled={isPending || selectedEntryTypeIds.length !== 1}
+                    >
+                        <Edit width={18} height={18} />
+                        Edit
+                    </ActionBarItem>
+                    {isAdmin && (
+                        <ActionBarItem
+                            onClick={handleViewActivitySelected}
+                            disabled={isPending || selectedEntryTypeIds.length !== 1}
+                        >
+                            <ClockRotateRight width={18} height={18} />
+                            View Activity
+                        </ActionBarItem>
+                    )}
+                    {isAdmin && (
+                        <ActionBarItem
+                            onClick={handleDeleteSelected}
+                            disabled={isPending || selectedEntryTypeIds.length === 0}
+                            className='text-destructive'
+                        >
+                            <Trash width={18} height={18} />
+                            Delete
+                        </ActionBarItem>
+                    )}
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm' onClick={clearSelection}>
+                    Clear
+                </ActionBarClose>
+            </ActionBar>
             <AddEntryTypeModal
                 open={addEntryTypeModalOpen}
                 onOpenChange={setAddEntryTypeModalOpen}
@@ -586,9 +624,9 @@ export default function EntryTypesPage() {
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
                 onOpenChange={setBulkDeleteModalOpen}
-                onConfirm={() => handleDeleteEntryTypes(selectedEntryTypes)}
+                onConfirm={() => handleDeleteEntryTypes(selectedEntryTypeIds)}
                 confirmText='DELETE'
-                text={`Are you sure you want to delete ${selectedEntryTypes.length} entry type${selectedEntryTypes.length > 1 ? 's' : ''}? This action is irreversible.`}
+                text={`Are you sure you want to delete ${selectedEntryTypeIds.length} entry type${selectedEntryTypeIds.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
         </AdminPageLayout>
     );

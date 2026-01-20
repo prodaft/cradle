@@ -1,11 +1,18 @@
-import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import { ActionBar as BaseActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
-import TableActionsButton from '@/components/base/TableActionsButton';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import {
     Select,
     SelectContent,
@@ -27,8 +34,13 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { ColumnDef } from '@tanstack/react-table';
-import { ClockRotateRight, Settings, Trash } from 'iconoir-react/regular';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import { ClockRotateRight, Edit, Settings, Trash } from 'iconoir-react/regular';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddEntityModal from '../../../dialogs/admin/AddEntityModal';
@@ -227,7 +239,7 @@ export default function EntitiesPage() {
     const router = useRouter();
     const location = useLocation();
     const search = useSearch({ strict: false });
-    const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.entities_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.entities_pagesize || 10);
@@ -238,6 +250,15 @@ export default function EntitiesPage() {
     const [deleteEntityId, setDeleteEntityId] = useState<number | null>(null);
     const [addEntityModalOpen, setAddEntityModalOpen] = useState(false);
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+
+    const selectedEntityIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+    }, []);
 
     // Query for entities
     const { data: entitiesData, isPending } = useQuery({
@@ -255,14 +276,6 @@ export default function EntitiesPage() {
         router.navigate({ to: `/manage/entities/${entity.id}` as any });
     };
 
-    const handleActivityClick = (entity: EntityData, e: React.MouseEvent) => {
-        e.stopPropagation();
-        router.navigate({
-            to: `/manage/entities/${entity.id}` as any,
-            search: { tab: 'activity' } as any,
-        });
-    };
-
     // Delete mutation
     const deleteMutation = useMutation({
         mutationFn: (entityId: number) => entriesApi.entitiesDestroy({ entityId }),
@@ -277,10 +290,6 @@ export default function EntitiesPage() {
         setDeleteModalOpen(true);
     };
 
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedEntities(selectedIds);
-    }, []);
-
     const handleDeleteEntities = async (entityIds: string[]) => {
         try {
             await Promise.all(
@@ -288,11 +297,31 @@ export default function EntitiesPage() {
                     deleteMutation.mutateAsync(Number(entityId)),
                 ),
             );
-            setSelectedEntities([]);
+            clearSelection();
         } catch (error) {
             // Error already handled by mutation
         }
     };
+
+    const handleDeleteSelected = useCallback(() => {
+        if (selectedEntityIds.length === 0) return;
+        setBulkDeleteModalOpen(true);
+    }, [selectedEntityIds]);
+
+    const handleEditSelected = useCallback(() => {
+        if (selectedEntityIds.length !== 1) return;
+        const entityId = selectedEntityIds[0];
+        router.navigate({ to: `/manage/entities/${entityId}` as any });
+    }, [selectedEntityIds, router]);
+
+    const handleViewActivitySelected = useCallback(() => {
+        if (selectedEntityIds.length !== 1) return;
+        const entityId = selectedEntityIds[0];
+        router.navigate({
+            to: `/manage/entities/${entityId}` as any,
+            search: { tab: 'activity' } as any,
+        });
+    }, [selectedEntityIds, router]);
 
     const filteredEntities = useMemo(() => {
         if (!searchQuery.trim()) {
@@ -366,6 +395,9 @@ export default function EntitiesPage() {
         () => [
             {
                 id: 'select',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -391,14 +423,20 @@ export default function EntitiesPage() {
             },
             {
                 accessorKey: 'subtype',
-                header: 'Type',
+                id: 'subtype',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Type' />
+                ),
                 cell: ({ row }) => (
                     <Badge variant='outline'>{row.original.subtype || 'unknown'}</Badge>
                 ),
             },
             {
                 accessorKey: 'name',
-                header: 'Name',
+                id: 'name',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Name' />
+                ),
                 cell: ({ row }) => (
                     <div
                         className='font-medium cursor-pointer'
@@ -410,64 +448,59 @@ export default function EntitiesPage() {
             },
             {
                 accessorKey: 'description',
+                id: 'description',
                 header: 'Description',
                 cell: ({ row }) => (
                     <div className='text-muted-foreground max-w-md truncate'>
                         {row.original.description || '-'}
                     </div>
                 ),
+                enableSorting: false,
             },
             {
                 accessorKey: 'isPublic',
+                id: 'isPublic',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: 'Visibility',
                 cell: ({ row }) => (
                     <Badge variant={row.original.isPublic ? 'default' : 'secondary'}>
                         {row.original.isPublic ? 'Public' : 'Private'}
                     </Badge>
                 ),
-            },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const entity = row.original;
-                    return (
-                        <div className='w-12' onClick={(e) => e.stopPropagation()}>
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    {isAdmin && (
-                                        <>
-                                            <DropdownMenuItem
-                                                onClick={(e) =>
-                                                    handleActivityClick(entity, e)
-                                                }
-                                            >
-                                                <ClockRotateRight
-                                                    width='18'
-                                                    height='18'
-                                                />
-                                                View Activity
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                onClick={() => handleDelete(entity)}
-                                                variant='destructive'
-                                            >
-                                                <Trash width='18' height='18' />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </>
-                                    )}
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
                 enableSorting: false,
             },
         ],
-        [isAdmin, handleActivityClick, handleDelete],
+        [handleEditClick],
     );
+
+    const table = useReactTable({
+        data: paginatedEntities,
+        columns,
+        state: {
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? index),
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        pageCount: totalPages,
+    });
 
     if (id && id !== 'add') {
         return (
@@ -510,7 +543,7 @@ export default function EntitiesPage() {
                 />
                 <div className='px-4 flex-1 flex flex-col'>
                     <div className='pb-4'>
-                        <ActionBar
+                        <BaseActionBar
                             left={
                                 <ActionBarSearch
                                     placeholder='Search entities...'
@@ -522,42 +555,60 @@ export default function EntitiesPage() {
                         />
                     </div>
                     <div className='flex-1 space-y-4'>
-                        <DataTable
-                            columns={columns}
-                            data={paginatedEntities}
-                            loading={isPending}
-                            emptyMessage='No entities found.'
-                            enableRowSelection={true}
-                            selectedRows={selectedEntities}
-                            onRowSelectionChange={handleRowSelectionChange}
-                            onRowClick={handleEditClick}
-                            manualPagination={true}
-                            pageCount={totalPages}
-                            initialPageIndex={page - 1}
-                            initialPageSize={pageSize}
-                            onPaginationChange={handlePaginationChange}
-                            showPagination={true}
-                            bulkActions={[
-                                {
-                                    id: 'delete',
-                                    label: 'Delete',
-                                    icon: <Trash width={18} height={18} />,
-                                    onClick: () => {
-                                        if (selectedEntities.length === 0) return;
-                                        setBulkDeleteModalOpen(true);
-                                    },
-                                    disabled:
-                                        isPending ||
-                                        selectedEntities.length === 0 ||
-                                        filteredEntities.length === 0,
-                                    variant: 'destructive',
-                                },
-                            ]}
-                            itemLabel='entity'
-                        />
+                        {isPending ? (
+                            <div className='flex min-h-[200px] items-center justify-center'>
+                                Loading...
+                            </div>
+                        ) : (
+                            <DataTable table={table} onRowClick={handleEditClick} />
+                        )}
                     </div>
                 </div>
             </div>
+            <ActionBar
+                open={selectedEntityIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedEntityIds.length} entit
+                    {selectedEntityIds.length !== 1 ? 'ies' : 'y'} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={handleEditSelected}
+                        disabled={isPending || selectedEntityIds.length !== 1}
+                    >
+                        <Edit width={18} height={18} />
+                        Edit
+                    </ActionBarItem>
+                    {isAdmin && (
+                        <ActionBarItem
+                            onClick={handleViewActivitySelected}
+                            disabled={isPending || selectedEntityIds.length !== 1}
+                        >
+                            <ClockRotateRight width={18} height={18} />
+                            View Activity
+                        </ActionBarItem>
+                    )}
+                    {isAdmin && (
+                        <ActionBarItem
+                            onClick={handleDeleteSelected}
+                            disabled={isPending || selectedEntityIds.length === 0}
+                            className='text-destructive'
+                        >
+                            <Trash width={18} height={18} />
+                            Delete
+                        </ActionBarItem>
+                    )}
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm' onClick={clearSelection}>
+                    Clear
+                </ActionBarClose>
+            </ActionBar>
             <AddEntityModal
                 open={addEntityModalOpen}
                 onOpenChange={setAddEntityModalOpen}
@@ -588,9 +639,9 @@ export default function EntitiesPage() {
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
                 onOpenChange={setBulkDeleteModalOpen}
-                onConfirm={() => handleDeleteEntities(selectedEntities)}
+                onConfirm={() => handleDeleteEntities(selectedEntityIds)}
                 confirmText='DELETE'
-                text={`Are you sure you want to delete ${selectedEntities.length} entit${selectedEntities.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}
+                text={`Are you sure you want to delete ${selectedEntityIds.length} entit${selectedEntityIds.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}
             />
         </AdminPageLayout>
     );

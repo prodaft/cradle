@@ -1,11 +1,18 @@
-import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
+import { ActionBar as BaseActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
-import TableActionsButton from '@/components/base/TableActionsButton';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import {
     Select,
     SelectContent,
@@ -26,9 +33,15 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { ColumnDef } from '@tanstack/react-table';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import {
     ClockRotateRight,
+    Edit,
     Lock,
     Settings,
     Trash,
@@ -228,7 +241,7 @@ export default function UsersPage() {
     const search = useSearch({ strict: false });
     const [users, setUsers] = useState<UserRetrieve[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.users_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 10);
@@ -236,6 +249,15 @@ export default function UsersPage() {
     const [addUserModalOpen, setAddUserModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+
+    const selectedUserIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+    }, []);
 
     const fetchUsersMutation = useMutation({
         mutationFn: async () => {
@@ -283,12 +305,6 @@ export default function UsersPage() {
         router.navigate({ to: `/manage/users/${user.id || user.username}` as any });
     };
 
-    const handleDeleteClick = (user: UserRetrieve, e: React.MouseEvent) => {
-        e.stopPropagation();
-        setDeleteUserId(user.id || user.username || null);
-        setDeleteModalOpen(true);
-    };
-
     const getRoleBadgeVariant = (role?: string) => {
         switch (role) {
             case 'admin':
@@ -315,14 +331,10 @@ export default function UsersPage() {
         }
     };
 
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedUsers(selectedIds);
-    }, []);
-
     const handleDeleteUsers = async (userIds: string[]) => {
         deleteUsersMutation.mutate(userIds, {
             onSuccess: () => {
-                setSelectedUsers([]);
+                clearSelection();
                 displayUsers();
             },
             onError: () => {
@@ -330,6 +342,18 @@ export default function UsersPage() {
             },
         });
     };
+
+    const handleDeleteSelected = useCallback(() => {
+        if (selectedUserIds.length === 0) return;
+        setDeleteModalOpen(true);
+        setDeleteUserId(null); // Clear single delete user id to use bulk delete
+    }, [selectedUserIds]);
+
+    const handleEditSelected = useCallback(() => {
+        if (selectedUserIds.length !== 1) return;
+        const userId = selectedUserIds[0];
+        router.navigate({ to: `/manage/users/${userId}` as any });
+    }, [selectedUserIds, router]);
 
     const filteredUsers = useMemo(() => {
         if (!searchQuery.trim()) {
@@ -403,6 +427,9 @@ export default function UsersPage() {
         () => [
             {
                 id: 'select',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -428,7 +455,10 @@ export default function UsersPage() {
             },
             {
                 accessorKey: 'username',
-                header: 'Username',
+                id: 'username',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Username' />
+                ),
                 cell: ({ row }) => (
                     <div
                         className='font-medium cursor-pointer'
@@ -440,13 +470,17 @@ export default function UsersPage() {
             },
             {
                 accessorKey: 'email',
-                header: 'Email',
+                id: 'email',
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Email' />
+                ),
                 cell: ({ row }) => (
                     <div className='text-muted-foreground'>{row.original.email}</div>
                 ),
             },
             {
                 accessorKey: 'role',
+                id: 'role',
                 header: 'Role',
                 cell: ({ row }) => {
                     const role = row.original.role;
@@ -457,9 +491,14 @@ export default function UsersPage() {
                         </Badge>
                     );
                 },
+                enableSorting: false,
             },
             {
                 accessorKey: 'isActive',
+                id: 'isActive',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: 'Status',
                 cell: ({ row }) => {
                     const isActive = row.original.isActive;
@@ -469,36 +508,38 @@ export default function UsersPage() {
                         </Badge>
                     );
                 },
-            },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const user = row.original;
-                    return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    <DropdownMenuItem
-                                        onClick={(e) => handleDeleteClick(user, e)}
-                                        variant='destructive'
-                                    >
-                                        <Trash width='18' height='18' />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
                 enableSorting: false,
             },
         ],
-        [],
+        [handleUserClick, getRoleBadgeVariant],
     );
+
+    const table = useReactTable({
+        data: paginatedUsers,
+        columns,
+        state: {
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? row.username ?? index),
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        pageCount: totalPages,
+    });
 
     if (id && id !== 'add') {
         return (
@@ -528,7 +569,7 @@ export default function UsersPage() {
                 />
                 <div className='px-4 flex-1 flex flex-col'>
                     <div className='pb-4'>
-                        <ActionBar
+                        <BaseActionBar
                             left={
                                 <ActionBarSearch
                                     placeholder='Search users...'
@@ -540,42 +581,49 @@ export default function UsersPage() {
                         />
                     </div>
                     <div className='flex-1 space-y-4'>
-                        <DataTable
-                            columns={columns}
-                            data={paginatedUsers}
-                            loading={isLoading}
-                            emptyMessage='No users found.'
-                            enableRowSelection={true}
-                            selectedRows={selectedUsers}
-                            onRowSelectionChange={handleRowSelectionChange}
-                            onRowClick={handleUserClick}
-                            manualPagination={true}
-                            pageCount={totalPages}
-                            initialPageIndex={page - 1}
-                            initialPageSize={pageSize}
-                            onPaginationChange={handlePaginationChange}
-                            showPagination={true}
-                            bulkActions={[
-                                {
-                                    id: 'delete',
-                                    label: 'Delete',
-                                    icon: <Trash width={18} height={18} />,
-                                    onClick: () => {
-                                        if (selectedUsers.length === 0) return;
-                                        setDeleteModalOpen(true);
-                                    },
-                                    disabled:
-                                        isLoading ||
-                                        selectedUsers.length === 0 ||
-                                        filteredUsers.length === 0,
-                                    variant: 'destructive',
-                                },
-                            ]}
-                            itemLabel='user'
-                        />
+                        {isLoading ? (
+                            <div className='flex min-h-[200px] items-center justify-center'>
+                                Loading...
+                            </div>
+                        ) : (
+                            <DataTable table={table} onRowClick={handleUserClick} />
+                        )}
                     </div>
                 </div>
             </div>
+            <ActionBar
+                open={selectedUserIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedUserIds.length} user
+                    {selectedUserIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={handleEditSelected}
+                        disabled={isLoading || selectedUserIds.length !== 1}
+                    >
+                        <Edit width={18} height={18} />
+                        Edit
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={handleDeleteSelected}
+                        disabled={isLoading || selectedUserIds.length === 0}
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm' onClick={clearSelection}>
+                    Clear
+                </ActionBarClose>
+            </ActionBar>
             <AddUserModal
                 open={addUserModalOpen}
                 onOpenChange={setAddUserModalOpen}
@@ -591,14 +639,14 @@ export default function UsersPage() {
                     if (deleteUserId) {
                         handleDeleteUsers([deleteUserId]);
                     } else {
-                        handleDeleteUsers(selectedUsers);
+                        handleDeleteUsers(selectedUserIds);
                     }
                 }}
                 confirmText='DELETE'
                 text={
                     deleteUserId
                         ? 'Are you sure you want to delete this user? This action is irreversible.'
-                        : `Are you sure you want to delete ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''}? This action is irreversible.`
+                        : `Are you sure you want to delete ${selectedUserIds.length} user${selectedUserIds.length > 1 ? 's' : ''}? This action is irreversible.`
                 }
             />
         </AdminPageLayout>

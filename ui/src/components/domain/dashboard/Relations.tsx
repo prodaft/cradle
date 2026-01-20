@@ -1,30 +1,48 @@
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
-import { Input } from '@/components/ui/input';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import useApi from '@/hooks/api/useApi';
 import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
 import {
-    ActionBar,
-    ActionBarButton,
+    ActionBar as BaseActionBar,
     ActionBarSearch,
 } from '@components/base/ActionBar/ActionBar';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { ColumnDef } from '@tanstack/react-table';
-import { Check, Copy, WarningCircle } from 'iconoir-react';
 import {
-    ChangeEvent,
+    type ColumnDef,
+    type RowSelectionState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import { Copy, WarningCircle } from 'iconoir-react';
+import {
     MouseEvent,
     useCallback,
     useEffect,
     useMemo,
     useState,
 } from 'react';
+import { toast } from 'sonner';
 
 interface Alert {
     show: boolean;
@@ -65,11 +83,19 @@ export default function Relations({ obj }: RelationsProps) {
     });
     const [page, setPage] = useState(1);
     const [hasNextPage, setHasNextPage] = useState(false);
-    const [isCopied, setIsCopied] = useState(false);
     const [inaccessibleEntities, setInaccessibleEntities] = useState<string[]>([]);
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [pageSize, setPageSize] = useState(10); // Default page size
+
+    const selectedIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]).map(Number),
+        [rowSelection],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+    }, []);
 
     const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
 
@@ -262,9 +288,8 @@ export default function Relations({ obj }: RelationsProps) {
         setPage(page);
     }, []);
 
-    const handleDepthChange = (event: ChangeEvent<HTMLInputElement>) => {
-        const value = parseInt(event.target.value, 10);
-        const newDepth = isNaN(value) ? 0 : Math.max(0, Math.min(value, 5));
+    const handleDepthChange = (value: string) => {
+        const newDepth = parseInt(value, 10);
         setDepth(newDepth);
 
         if (page === 1) {
@@ -274,18 +299,15 @@ export default function Relations({ obj }: RelationsProps) {
         }
     };
 
-    const copyToCSV = () => {
-        if (!results || results.length === 0) return;
+    const copyToCSV = useCallback(() => {
+        if (!results || results.length === 0 || selectedIds.length === 0) return;
 
         let csvContent = '"type","name"\n';
 
-        // Filter results based on selection if any are selected
-        const itemsToCopy =
-            selectedIds.length > 0
-                ? results.filter(
-                    (r) => r.id !== undefined && selectedIds.includes(r.id),
-                )
-                : results;
+        // Filter results based on selection
+        const itemsToCopy = results.filter(
+            (r) => r.id !== undefined && selectedIds.includes(r.id),
+        );
 
         if (itemsToCopy.length > 0) {
             itemsToCopy.forEach((result) => {
@@ -298,15 +320,14 @@ export default function Relations({ obj }: RelationsProps) {
         navigator.clipboard
             .writeText(csvContent)
             .then(() => {
-                setIsCopied(true);
-                setTimeout(() => setIsCopied(false), 2000);
-                // Optional: clear selection after copy
-                // setSelectedIds([]);
+                toast.success(
+                    `Copied ${itemsToCopy.length} relation${itemsToCopy.length > 1 ? 's' : ''} to clipboard`,
+                );
             })
             .catch(() => {
-                // Silently fail - user can try again
+                toast.error('Failed to copy to clipboard');
             });
-    };
+    }, [results, selectedIds]);
 
     const handleResultClick = (link: string) => (e: MouseEvent) => {
         e.preventDefault();
@@ -329,6 +350,9 @@ export default function Relations({ obj }: RelationsProps) {
         () => [
             {
                 id: 'select',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -356,7 +380,7 @@ export default function Relations({ obj }: RelationsProps) {
                 accessorKey: 'subtype',
                 id: 'subtype',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Type' />
+                    <DataTableColumnHeader column={column} label='Type' />
                 ),
                 cell: ({ row }) => {
                     const dashboardLink = createDashboardLink(row.original);
@@ -387,7 +411,7 @@ export default function Relations({ obj }: RelationsProps) {
                 accessorKey: 'name',
                 id: 'name',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Name' />
+                    <DataTableColumnHeader column={column} label='Name' />
                 ),
                 cell: ({ row }) => {
                     const dashboardLink = createDashboardLink(row.original);
@@ -408,8 +432,11 @@ export default function Relations({ obj }: RelationsProps) {
             {
                 accessorKey: 'depth',
                 id: 'depth',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Depth' />
+                    <DataTableColumnHeader column={column} label='Depth' />
                 ),
                 cell: ({ row }) => {
                     const dashboardLink = createDashboardLink(row.original);
@@ -428,17 +455,12 @@ export default function Relations({ obj }: RelationsProps) {
                 },
             },
         ],
-        [createDashboardLink, router],
+        [router],
     );
-
-    // Handle row selection - convert string[] to number[]
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedIds(selectedIds.map((id) => Number(id)));
-    }, []);
 
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
-    // Handle pagination changes from DataTable
+    // Handle pagination changes
     const handlePaginationChange = useCallback(
         (pageIndex: number, newPageSize: number) => {
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
@@ -456,6 +478,33 @@ export default function Relations({ obj }: RelationsProps) {
         [page, pageSize],
     );
 
+    const table = useReactTable({
+        data: results || [],
+        columns,
+        state: {
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? index),
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        pageCount: calculatedTotalPages,
+    });
+
     return (
         <div className='flex flex-col space-y-4'>
             {alert.show && (
@@ -471,60 +520,45 @@ export default function Relations({ obj }: RelationsProps) {
                 </AlertComponent>
             )}
 
-            <ActionBar
+            <BaseActionBar
                 left={
-                    <ActionBarSearch
-                        placeholder='Search relations...'
-                        value={searchQuery}
-                        defaultExpanded={Boolean(searchQuery)}
-                        debounceMs={300}
-                        onDebouncedChange={(value) => {
-                            setSearchQuery(value);
-                            performSearch(depth, 1);
-                        }}
-                        onSubmit={(value) => {
-                            setSearchQuery(value ?? '');
-                            performSearch(depth, 1);
-                        }}
-                        onClear={() => performSearch(depth, 1)}
-                    />
-                }
-                right={
-                    <>
-                        <div className='flex items-center gap-2 px-3 h-10 border border-border rounded-full bg-transparent'>
-                            <span className='text-xs text-muted-foreground uppercase tracking-wide'>
-                                Depth
-                            </span>
-                            <Input
-                                id='depth-input'
-                                type='number'
-                                min='0'
-                                max='5'
-                                className='bg-transparent text-foreground h-full w-10 outline-none text-center font-mono text-sm border-0 shadow-none p-0'
-                                value={depth}
-                                onChange={handleDepthChange}
-                            />
-                        </div>
-                        <ActionBarButton
-                            tooltip='Copy to CSV'
-                            variant='circle'
-                            icon={
-                                isCopied ? (
-                                    <Check className='w-4 h-4 text-primary' />
-                                ) : (
-                                    <Copy width={18} height={18} />
-                                )
-                            }
-                            iconActive={selectedIds.length > 0 || isCopied}
-                            onClick={copyToCSV}
-                            disabled={selectedIds.length === 0}
-                            title={
-                                selectedIds.length > 0
-                                    ? `Copy ${selectedIds.length} selected to CSV`
-                                    : 'Select items to copy'
-                            }
+                    <div className='flex items-center gap-3'>
+                        <ActionBarSearch
+                            placeholder='Search relations...'
+                            value={searchQuery}
+                            defaultExpanded={Boolean(searchQuery)}
+                            debounceMs={300}
+                            onDebouncedChange={(value) => {
+                                setSearchQuery(value);
+                                performSearch(depth, 1);
+                            }}
+                            onSubmit={(value) => {
+                                setSearchQuery(value ?? '');
+                                performSearch(depth, 1);
+                            }}
+                            onClear={() => performSearch(depth, 1)}
                         />
-                    </>
+                        <div className='flex items-center gap-2'>
+                            <span className='text-sm text-muted-foreground whitespace-nowrap'>
+                                Depth:
+                            </span>
+                            <Select
+                                value={String(depth)}
+                                onValueChange={handleDepthChange}
+                            >
+                                <SelectTrigger className='w-16 h-8'>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {[1, 2, 3, 4, 5].map((d) => (
+                                        <SelectItem key={d} value={String(d)}>
+                                            {d}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
                 }
             />
 
@@ -538,23 +572,40 @@ export default function Relations({ obj }: RelationsProps) {
             />
 
             <div className='grid grid-cols-1 gap-2'>
-                <DataTable
-                    columns={columns}
-                    data={results || []}
-                    loading={isPending}
-                    emptyMessage='No relations found'
-                    enableRowSelection={true}
-                    selectedRows={selectedIds.map((id) => String(id))}
-                    onRowSelectionChange={handleRowSelectionChange}
-                    manualPagination={true}
-                    manualSorting={true}
-                    pageCount={calculatedTotalPages}
-                    initialPageIndex={page - 1}
-                    initialPageSize={pageSize}
-                    onPaginationChange={handlePaginationChange}
-                    showPagination={true}
-                />
+                {isPending ? (
+                    <div className='flex min-h-[200px] items-center justify-center'>
+                        Loading...
+                    </div>
+                ) : (
+                    <DataTable table={table} />
+                )}
             </div>
+
+            <ActionBar
+                open={selectedIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedIds.length} relation
+                    {selectedIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={copyToCSV}
+                        disabled={isPending || selectedIds.length === 0}
+                    >
+                        <Copy width={18} height={18} />
+                        Copy to CSV
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm' onClick={clearSelection}>
+                    Clear
+                </ActionBarClose>
+            </ActionBar>
         </div>
     );
 }

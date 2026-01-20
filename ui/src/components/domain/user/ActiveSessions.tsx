@@ -295,6 +295,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         () => [
             {
                 id: 'select',
+                size: 28,
+                minSize: 28,
+                maxSize: 28,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
