@@ -16,18 +16,26 @@
 
 import * as runtime from '../runtime';
 import type {
-  Notification,
+  AccessEntityList404Response,
+  PaginatedNotificationResponse,
   UnreadNotifications,
   UpdateNotificationRequest,
 } from '../models/index';
 import {
-    NotificationFromJSON,
-    NotificationToJSON,
+    AccessEntityList404ResponseFromJSON,
+    AccessEntityList404ResponseToJSON,
+    PaginatedNotificationResponseFromJSON,
+    PaginatedNotificationResponseToJSON,
     UnreadNotificationsFromJSON,
     UnreadNotificationsToJSON,
     UpdateNotificationRequestFromJSON,
     UpdateNotificationRequestToJSON,
 } from '../models/index';
+
+export interface NotificationsRetrieveRequest {
+    page?: number;
+    pageSize?: number;
+}
 
 export interface NotificationsUpdateRequest {
     notificationId: string;
@@ -40,11 +48,19 @@ export interface NotificationsUpdateRequest {
 export class NotificationsApi extends runtime.BaseAPI {
 
     /**
-     * Retrieve all notifications for the authenticated user, sorted from newest to oldest.
+     * Retrieve paginated notifications for the authenticated user, sorted from newest to oldest.
      * Fetch Notifications
      */
-    async notificationsListRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Notification>>> {
+    async notificationsRetrieveRaw(requestParameters: NotificationsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedNotificationResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -66,15 +82,15 @@ export class NotificationsApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(NotificationFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedNotificationResponseFromJSON(jsonValue));
     }
 
     /**
-     * Retrieve all notifications for the authenticated user, sorted from newest to oldest.
+     * Retrieve paginated notifications for the authenticated user, sorted from newest to oldest.
      * Fetch Notifications
      */
-    async notificationsList(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<Notification>> {
-        const response = await this.notificationsListRaw(initOverrides);
+    async notificationsRetrieve(requestParameters: NotificationsRetrieveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedNotificationResponse> {
+        const response = await this.notificationsRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

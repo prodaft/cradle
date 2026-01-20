@@ -80,6 +80,7 @@ export * from './PaginatedEntryResponseSerializerResponse';
 export * from './PaginatedEventLogList';
 export * from './PaginatedFileReferenceWithNoteSerializerResponse';
 export * from './PaginatedNoteRetrieveSerializerResponse';
+export * from './PaginatedNotificationResponse';
 export * from './PaginatedRelationSerializerResponse';
 export * from './PaginatedReportListList';
 export * from './PaginatedSubGraphSerializerResponse';

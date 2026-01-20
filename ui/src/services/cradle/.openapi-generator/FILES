@@ -95,6 +95,7 @@ models/PaginatedEntryResponseSerializerResponse.ts
 models/PaginatedEventLogList.ts
 models/PaginatedFileReferenceWithNoteSerializerResponse.ts
 models/PaginatedNoteRetrieveSerializerResponse.ts
+models/PaginatedNotificationResponse.ts
 models/PaginatedRelationSerializerResponse.ts
 models/PaginatedReportListList.ts
 models/PaginatedSubGraphSerializerResponse.ts

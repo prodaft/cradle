@@ -7,6 +7,16 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
+import {
+    FileUpload,
+    FileUploadDropzone,
+    FileUploadItem,
+    FileUploadItemDelete,
+    FileUploadItemMetadata,
+    FileUploadItemPreview,
+    FileUploadList,
+    FileUploadTrigger,
+} from '@/components/ui/file-upload';
 import { Input } from '@/components/ui/input';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
@@ -23,8 +33,8 @@ import { DigestUploadFinalizeCreateRequest } from '@/services/cradle/models/Dige
 import { uploadFile } from '@/utils/files';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Upload } from 'iconoir-react';
-import React, { useRef } from 'react';
+import { CloudUpload, Upload, Xmark } from 'iconoir-react';
+import React from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
@@ -36,11 +46,6 @@ interface SelectOption<T = string | number> {
 
 interface DataTypeOption extends SelectOption<string> {
     inferEntities: boolean;
-}
-
-interface AssociatedEntryOption extends SelectOption<number> {
-    // value: number (inherited from SelectOption<number>)
-    // label: string (inherited from SelectOption<number>)
 }
 
 export interface UploadDigestModalProps {
@@ -85,7 +90,6 @@ export default function UploadDigestModal({
     dataTypeOptions: propDataTypeOptions,
 }: UploadDigestModalProps): React.JSX.Element {
     const { queryApi, intelioApi } = useApi();
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Fetch data type options if not provided
     const { data: dataTypesResponse } = useQuery({
@@ -168,17 +172,19 @@ export default function UploadDigestModal({
     };
 
     const dataType = form.watch('dataType') as DataTypeOption | null;
+    const selectedFiles = form.watch('files') || [];
+    const hasFile = selectedFiles.length > 0;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='overflow-hidden'>
                 <DialogHeader>
                     <DialogTitle>Upload Digest</DialogTitle>
                     <DialogDescription>
                         Upload a file to create a new digest entry in the system.
                     </DialogDescription>
                 </DialogHeader>
-                <div className='w-full max-w-full'>
+                <div className='w-full max-w-full overflow-hidden'>
                     <form onSubmit={form.handleSubmit(onSubmit as any)}>
                         {/* Digest Title Field */}
                         <Controller
@@ -287,40 +293,93 @@ export default function UploadDigestModal({
                         <Controller
                             name='files'
                             control={form.control}
-                            render={({ field: { onChange }, fieldState }) => {
+                            render={({ field: { onChange, value }, fieldState }) => {
                                 const isInvalid =
                                     fieldState.invalid && fieldState.isTouched;
+                                const files = value || [];
+                                const hasSelectedFile = files.length > 0;
+
                                 return (
                                     <Field data-invalid={isInvalid} className='mb-5'>
                                         <FieldContent>
                                             <FieldLabel htmlFor='file-upload'>
                                                 Upload File *
                                             </FieldLabel>
-                                            <Input
-                                                ref={fileInputRef}
-                                                id='file-upload'
-                                                type='file'
-                                                onChange={(e) => {
-                                                    if (
-                                                        e.target.files &&
-                                                        e.target.files.length > 0
-                                                    ) {
-                                                        onChange([e.target.files[0]]);
-                                                    }
-                                                }}
-                                                className={`w-full ${
+                                            <div
+                                                className={
                                                     isInvalid
-                                                        ? 'border-destructive'
+                                                        ? 'ring-2 ring-destructive ring-opacity-50 rounded'
                                                         : ''
-                                                }`}
-                                                disabled={uploadMutation.isPending}
-                                                aria-invalid={isInvalid}
-                                                aria-describedby={
-                                                    isInvalid
-                                                        ? 'files-error'
-                                                        : undefined
                                                 }
-                                            />
+                                            >
+                                                <FileUpload
+                                                    value={files}
+                                                    onValueChange={onChange}
+                                                    maxFiles={1}
+                                                    disabled={uploadMutation.isPending}
+                                                >
+                                                    {/* Only show dropzone if no file selected */}
+                                                    {!hasSelectedFile && (
+                                                        <FileUploadDropzone className='min-h-[100px]'>
+                                                            <div className='flex flex-col items-center gap-2 text-center'>
+                                                                <CloudUpload className='h-6 w-6 text-muted-foreground' />
+                                                                <div className='text-sm text-muted-foreground'>
+                                                                    <span className='font-medium text-foreground'>
+                                                                        Drop file here
+                                                                    </span>{' '}
+                                                                    or click to browse
+                                                                </div>
+                                                                <FileUploadTrigger
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        type='button'
+                                                                        variant='outline'
+                                                                        size='sm'
+                                                                    >
+                                                                        Select File
+                                                                    </Button>
+                                                                </FileUploadTrigger>
+                                                            </div>
+                                                        </FileUploadDropzone>
+                                                    )}
+
+                                                    {/* Show selected file */}
+                                                    <FileUploadList>
+                                                        {files.map((file: File) => (
+                                                            <FileUploadItem
+                                                                key={
+                                                                    file.name +
+                                                                    file.lastModified
+                                                                }
+                                                                value={file}
+                                                                className='group'
+                                                            >
+                                                                <FileUploadItemPreview />
+                                                                <FileUploadItemMetadata size='sm' />
+                                                                <FileUploadItemDelete
+                                                                    asChild
+                                                                >
+                                                                    <Button
+                                                                        type='button'
+                                                                        variant='ghost'
+                                                                        size='icon'
+                                                                        className='h-6 w-6'
+                                                                        disabled={
+                                                                            uploadMutation.isPending
+                                                                        }
+                                                                    >
+                                                                        <Xmark className='h-4 w-4' />
+                                                                        <span className='sr-only'>
+                                                                            Remove file
+                                                                        </span>
+                                                                    </Button>
+                                                                </FileUploadItemDelete>
+                                                            </FileUploadItem>
+                                                        ))}
+                                                    </FileUploadList>
+                                                </FileUpload>
+                                            </div>
                                             {isInvalid && (
                                                 <FieldError
                                                     errors={[

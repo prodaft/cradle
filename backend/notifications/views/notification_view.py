@@ -2,17 +2,21 @@ from typing import cast
 
 from django.db.models import Q
 from drf_spectacular.utils import (
+    OpenApiParameter,
     PolymorphicProxySerializer,
     extend_schema,
     extend_schema_view,
+    inline_serializer,
 )
-from rest_framework import status
+from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from core.openapi import get_common_error_responses
+from core.pagination import TotalPagesPagination
 from user.models import CradleUser
 
 from ..models import MessageNotification
@@ -30,38 +34,87 @@ from ..serializers import (
 )
 
 
+@extend_schema_view(
+    get=extend_schema(
+        summary="Fetch Notifications",
+        description="Retrieve paginated notifications for the authenticated user, sorted from newest to oldest.",  # noqa: E501
+        parameters=[
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of notifications to return per page. Max 200.",
+                default=10,
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number for pagination",
+            ),
+        ],
+        responses={
+            200: inline_serializer(
+                name="PaginatedNotificationResponse",
+                fields={
+                    "page": serializers.IntegerField(help_text="Current page number"),
+                    "count": serializers.IntegerField(help_text="Total number of items"),
+                    "total_pages": serializers.IntegerField(help_text="Total number of pages"),
+                    "results": PolymorphicProxySerializer(
+                        component_name="Notification",
+                        serializers=[
+                            MessageNotificationSerializer,
+                            NewUserNotificationSerializer,
+                            AccessRequestNotificationSerializer,
+                            ReportRenderNotificationSerializer,
+                            ReportProcessingErrorNotificationSerializer,
+                            EnrichmentCompleteNotificationSerializer,
+                            EnrichmentErrorNotificationSerializer,
+                        ],
+                        resource_type_field_name="notification_type",
+                        many=True,
+                    ),
+                },
+            ),
+            **get_common_error_responses(),
+        },
+    ),
+)
 class NotificationList(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = TotalPagesPagination
 
-    @extend_schema(
-        summary="Fetch Notifications",
-        description="Retrieve all notifications for the authenticated user, sorted from newest to oldest.",  # noqa: E501
-        responses={
-            200: PolymorphicProxySerializer(
-                component_name="Notification",
-                serializers=[
-                    MessageNotificationSerializer,
-                    NewUserNotificationSerializer,
-                    AccessRequestNotificationSerializer,
-                    ReportRenderNotificationSerializer,
-                    ReportProcessingErrorNotificationSerializer,
-                    EnrichmentCompleteNotificationSerializer,
-                    EnrichmentErrorNotificationSerializer,
-                ],
-                resource_type_field_name="notification_type",
-                many=True,
-            ),
-            401: {"description": "Unauthorized"},
-        },
-    )
     def get(self, request: Request) -> Response:
+        try:
+            page_size = int(request.query_params.get("page_size", 10))
+        except ValueError:
+            return Response(
+                {"message": "Invalid page_size value. Must be an integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if page_size > 200:
+            return Response(
+                {"message": "page_size cannot be greater than 200."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         notifications = (
             MessageNotification.objects.filter(user=cast(CradleUser, request.user))
             .select_subclasses()  # type: ignore
             .order_by("-timestamp")
         )
-        notifications.update(is_unread=False)
+
+        # Mark notifications as read (update only unread ones)
+        MessageNotification.objects.filter(user=cast(CradleUser, request.user), is_unread=True).update(is_unread=False)
+
+        paginator = TotalPagesPagination(page_size=page_size)
+        paginated_notifications = paginator.paginate_queryset(notifications, request)
+
+        if paginated_notifications is not None:
+            serializer = NotificationSerializer(paginated_notifications, many=True)
+            return paginator.get_paginated_response(serializer.data)
 
         serializer = NotificationSerializer(notifications, many=True)
         return Response(serializer.data)

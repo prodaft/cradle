@@ -222,7 +222,7 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                                                 newEntryType.subtype !== subtype
                                             ) {
                                                 router.navigate({
-                                                    to: `/manage/entry-types/${newEntryType.subtype}` as any,
+                                                    to: `/manage/entry-types/${encodeURIComponent(newEntryType.subtype)}` as any,
                                                 });
                                             }
                                         }}
@@ -288,7 +288,7 @@ export default function EntryTypesPage() {
     }, [entryTypesData]);
 
     const handleEditClick = (entryType: EntryTypeData) => {
-        router.navigate({ to: `/manage/entry-types/${entryType.subtype}` as any });
+        router.navigate({ to: `/manage/entry-types/${encodeURIComponent(entryType.subtype)}` as any });
     };
 
     // Delete mutation
@@ -320,14 +320,14 @@ export default function EntryTypesPage() {
     const handleEditSelected = useCallback(() => {
         if (selectedEntryTypeIds.length !== 1) return;
         const subtype = selectedEntryTypeIds[0];
-        router.navigate({ to: `/manage/entry-types/${subtype}` as any });
+        router.navigate({ to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any });
     }, [selectedEntryTypeIds, router]);
 
     const handleViewActivitySelected = useCallback(() => {
         if (selectedEntryTypeIds.length !== 1) return;
         const subtype = selectedEntryTypeIds[0];
         router.navigate({
-            to: `/manage/entry-types/${subtype}` as any,
+            to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any,
             search: { tab: 'activity' } as any,
         });
     }, [selectedEntryTypeIds, router]);
@@ -507,7 +507,7 @@ export default function EntryTypesPage() {
         queryClient.invalidateQueries({ queryKey: ['entryTypes', 'list'] });
         if (newEntryType.subtype) {
             router.navigate({
-                to: `/manage/entry-types/${newEntryType.subtype}` as any,
+                to: `/manage/entry-types/${encodeURIComponent(newEntryType.subtype)}` as any,
             });
         }
     };
