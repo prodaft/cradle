@@ -23,7 +23,7 @@ import { Textarea } from '@/components/ui/textarea';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AccessUser, Entity } from '@services/cradle/models';
+import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -31,7 +31,6 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 import OfflineIndicator from '../../../feedback/OfflineIndicator';
 import { SelectOption } from '../../../forms';
-import AdminPanelPermissionCard from '../cards/AdminPanelPermissionCard';
 
 interface EntityFormProps {
     id?: number | string | null;
@@ -66,7 +65,7 @@ const entitySchema = z.object({
 type EntityFormData = z.infer<typeof entitySchema>;
 
 export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
-    const { accessApi, entriesApi, queryApi } = useApi();
+    const { entriesApi, queryApi } = useApi();
 
     const fetchAliasesMutation = useMutation({
         mutationFn: async (q: string) => {
@@ -100,8 +99,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         },
     });
 
-    const [accesses, setAccessUsers] = useState<AccessUser[]>([]);
-    const [entity, setEntity] = useState<Entity | null>(null);
     const [subtypeOptions, setSubtypeOptions] = useState<SubtypeOption[]>([]);
 
     const {
@@ -190,17 +187,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         ];
     }, [entityData?.subtype, subtypeOptions]);
 
-    // Query for access data when editing
-    const { data: accessData } = useQuery({
-        queryKey: ['entities', 'access', String(id)],
-        queryFn: () => accessApi.accessEntityList({ entityId: Number(id) }),
-        enabled: !!id,
-        meta: {
-            showErrorToast: false,
-            suppressNotification: true,
-        },
-    });
-
     // Update form when entity data loads
     useEffect(() => {
         if (entityData) {
@@ -217,7 +203,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             label: `${alias.subtype}:${alias.name}`,
                         })) ?? [],
             });
-            setEntity(entityData);
         }
     }, [entityData, reset]);
 
@@ -228,13 +213,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
             shouldDirty: false,
         });
     }, [entityData?.subtype, setValue]);
-
-    // Update access users when access data loads
-    useEffect(() => {
-        if (accessData) {
-            setAccessUsers(accessData);
-        }
-    }, [accessData]);
 
     // Handle form submission
     const onSubmit = async (data: EntityFormData) => {
@@ -349,36 +327,33 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                                     </FieldError>
                                                 )}
                                             </FieldContent>
-                                            <div className='w-72'>
-                                                <Select
-                                                    value={field.value || entityData?.subtype || ''}
-                                                    onValueChange={field.onChange}
+                                            <Select
+                                                value={field.value || entityData?.subtype || ''}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <SelectTrigger
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-describedby={
+                                                        fieldState.invalid
+                                                            ? 'subtype-error'
+                                                            : undefined
+                                                    }
                                                 >
-                                                    <SelectTrigger
-                                                        className='w-72'
-                                                        aria-invalid={fieldState.invalid}
-                                                        aria-describedby={
-                                                            fieldState.invalid
-                                                                ? 'subtype-error'
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        <SelectValue placeholder='Select subtype' />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {resolvedSubtypeOptions.map(
-                                                            (option) => (
-                                                            <SelectItem
-                                                                key={option.value}
-                                                                value={option.value}
-                                                            >
-                                                                {option.label}
-                                                            </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                        </div>
+                                                    <SelectValue placeholder='Select subtype' />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {resolvedSubtypeOptions.map(
+                                                        (option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
                                     </Field>
                                     );
                                 }}
@@ -472,81 +447,68 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
                             <Separator />
 
-                            <div className='py-2'>
-                                <Label className='text-sm text-muted-foreground block mb-0.5'>
-                                    Aliases
-                                </Label>
-                                <p className='text-sm text-muted-foreground mb-2'>
-                                    Alternate names or references for this entity
-                                </p>
-                                <Controller
-                                    name='aliases'
-                                    control={control}
-                                    render={({ field }) => (
-                                        <MultipleSelector
-                                            value={
-                                                (field.value?.map((a) => ({
-                                                    value: String(a.value),
-                                                    label: a.label,
-                                                })) || []) as Option[]
-                                            }
-                                            defaultOptions={[]}
-                                            placeholder='Select aliases...'
-                                            onSearch={async (query) => {
-                                                const results =
-                                                    await fetchAliases(query);
-                                                return results.map((a) => ({
-                                                    value: String(a.value),
-                                                    label: a.label,
-                                                })) as unknown as Option[];
-                                            }}
-                                            onChange={(options) => {
-                                                field.onChange(
-                                                    options.map((o) => ({
-                                                        value: Number(o.value),
-                                                        label: o.label,
-                                                    })),
-                                                );
-                                            }}
-                                            emptyIndicator={
-                                                <p className='text-center text-sm'>
-                                                    No aliases found
-                                                </p>
-                                            }
-                                        />
-                                    )}
-                                />
-                                {errors.aliases && (
-                                    <p className='text-sm text-destructive mt-1'>
-                                        {errors.aliases.message}
-                                    </p>
+                            <Controller
+                                name='aliases'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='py-2'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Aliases
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Alternate names or references for this entity
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div className='w-64'>
+                                            <MultipleSelector
+                                                value={
+                                                    (field.value?.map((a) => ({
+                                                        value: String(a.value),
+                                                        label: a.label,
+                                                    })) || []) as Option[]
+                                                }
+                                                defaultOptions={[]}
+                                                placeholder='Select aliases...'
+                                                onSearch={async (query) => {
+                                                    const results =
+                                                        await fetchAliases(query);
+                                                    return results.map((a) => ({
+                                                        value: String(a.value),
+                                                        label: a.label,
+                                                    })) as unknown as Option[];
+                                                }}
+                                                onChange={(options) => {
+                                                    field.onChange(
+                                                        options.map((o) => ({
+                                                            value: Number(o.value),
+                                                            label: o.label,
+                                                        })),
+                                                    );
+                                                }}
+                                                emptyIndicator={
+                                                    <p className='text-center text-sm'>
+                                                        No aliases found
+                                                    </p>
+                                                }
+                                            />
+                                        </div>
+                                    </Field>
                                 )}
-                            </div>
+                            />
                         </CardContent>
                     </Card>
                 </div>
             </section>
-
-            {/* Access Section (only with accesses) */}
-            {entity && accesses.length > 0 && (
-                <section id='access' className='border-t border-white/5 pt-5 pb-8'>
-                    <div className='space-y-2'>
-                        {accesses.map((access) => {
-                            const user = access.user;
-                            return (
-                                <AdminPanelPermissionCard
-                                    key={user.id}
-                                    userId={user.id!}
-                                    text={user.username}
-                                    entityId={entity.id!}
-                                    accessLevel={access.accessType}
-                                    searchKey={user.username}
-                                />
-                            );
-                        })}
-                    </div>
-                </section>
-            )}
 
             {/* Save Button */}
             <div className='pt-2 flex justify-end'>

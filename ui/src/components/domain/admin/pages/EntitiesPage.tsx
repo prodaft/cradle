@@ -41,21 +41,24 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { Plus } from 'lucide-react';
+import { ClockRotateRight, Edit, Settings, Trash } from 'iconoir-react/regular';
+import { Plus, Shield } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddEntityModal from '../../../dialogs/admin/AddEntityModal';
 import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';
 import EntityForm from '../forms/EntityForm';
+import EntityPermissionsForm from '../forms/EntityPermissionsForm';
 
 interface EntityData extends Entity {
     id: number;
 }
 
 const ENTITY_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: GearIcon },
-    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
+    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'permissions', label: 'Permissions', icon: Shield },
+    { id: 'activity', label: 'Activity', icon: ClockRotateRight },
 ];
 
 function EntitySettingsPage({ entityId }: { entityId: string }) {
@@ -105,18 +108,31 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
 
     const tabDescriptions: Record<string, string> = {
         settings: 'Manage entity properties and settings',
+        permissions: 'Manage user access permissions',
         activity: 'View entity activity and audit logs',
     };
     const currentDescription =
         tab && tab in tabDescriptions ? tabDescriptions[tab] : '';
 
     return (
-        <div className='w-full h-full flex flex-col'>
-            <PageHeader
-                title={`Entity: ${entityData?.name || 'Loading...'}`}
-                description={currentDescription || 'Manage entity'}
+        <main
+            data-layout='fixed'
+            className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+        >
+            <div className='space-y-0.5'>
+                <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
+                    {entityData?.name || 'Loading...'}
+                </h1>
+                <p className='text-muted-foreground'>
+                    {currentDescription || 'Manage entity'}
+                </p>
+            </div>
+            <Separator
+                data-orientation='horizontal'
+                role='none'
+                className='shrink-0 my-4 lg:my-6'
             />
-            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12 px-4'>
+            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
                 <aside className='top-0 lg:sticky lg:w-1/5'>
                     {/* Mobile dropdown */}
                     <div className='p-1 md:hidden'>
@@ -199,38 +215,46 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                             role='none'
                             className='bg-border my-4 flex-none'
                         />
-                        <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
-                            <div className='-mx-1 px-1.5'>
-                                {tab === 'activity' ? (
-                                    <ActivityList
-                                        content_type='entry'
-                                        objectId={entityId}
-                                        name={entityData?.name}
-                                    />
-                                ) : (
-                                    <EntityForm
-                                        id={Number(entityId)}
-                                        onAdd={(newEntity: Entity) => {
-                                            queryClient.invalidateQueries({
-                                                queryKey: ['entities', 'list'],
-                                            });
-                                            queryClient.invalidateQueries({
-                                                queryKey: queryKeys.entities.detail(
-                                                    String(entityId),
-                                                ),
-                                            });
-                                            if (newEntity.id) {
-                                                // Normally stay on the page
-                                            }
-                                        }}
-                                    />
-                                )}
+                        {tab === 'activity' ? (
+                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth'>
+                                <ActivityList
+                                    content_type='entry'
+                                    objectId={entityId}
+                                    name={entityData?.name}
+                                />
                             </div>
-                        </div>
+                        ) : (
+                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                                <div className='-mx-1 px-1.5'>
+                                    {tab === 'permissions' ? (
+                                        <EntityPermissionsForm
+                                            entityId={Number(entityId)}
+                                        />
+                                    ) : (
+                                        <EntityForm
+                                            id={Number(entityId)}
+                                            onAdd={(newEntity: Entity) => {
+                                                queryClient.invalidateQueries({
+                                                    queryKey: ['entities', 'list'],
+                                                });
+                                                queryClient.invalidateQueries({
+                                                    queryKey: queryKeys.entities.detail(
+                                                        String(entityId),
+                                                    ),
+                                                });
+                                                if (newEntity.id) {
+                                                    // Normally stay on the page
+                                                }
+                                            }}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     );
 }
 

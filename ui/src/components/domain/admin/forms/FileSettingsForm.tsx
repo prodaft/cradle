@@ -282,41 +282,40 @@ export default function FileSettingsForm() {
                         <div className='space-y-4'>
                             <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                 <CardContent className='px-4 py-1'>
-                                    <div className='py-2'>
-                                        <div className='flex items-center justify-between gap-4'>
-                                            <div className='flex-1'>
-                                                <Label
-                                                    htmlFor='autoprocessFiles'
-                                                    className='text-sm text-muted-foreground block mb-0.5'
-                                                >
-                                                    Autoprocess Files
-                                                </Label>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    Automatically process uploaded files
-                                                </p>
-                                                {errors.autoprocessFiles && (
-                                                    <p className='text-sm text-destructive mt-1'>
-                                                        {
-                                                            errors.autoprocessFiles
-                                                                .message
-                                                        }
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <Controller
-                                                name='autoprocessFiles'
-                                                control={control}
-                                                render={({ field }) => (
-                                                    <Switch
-                                                        id='autoprocessFiles'
-                                                        name={field.name}
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                    />
-                                                )}
-                                            />
-                                        </div>
-                                    </div>
+                                    <Controller
+                                        name='autoprocessFiles'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='horizontal'
+                                                className='py-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent className='flex-1'>
+                                                    <FieldLabel
+                                                        htmlFor='autoprocessFiles'
+                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                    >
+                                                        Autoprocess Files
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm'>
+                                                        Automatically process uploaded files
+                                                    </FieldDescription>
+                                                    {fieldState.invalid && (
+                                                        <FieldError className='text-sm mt-1'>
+                                                            {fieldState.error?.message}
+                                                        </FieldError>
+                                                    )}
+                                                </FieldContent>
+                                                <Switch
+                                                    id='autoprocessFiles'
+                                                    name={field.name}
+                                                    checked={field.value}
+                                                    onCheckedChange={field.onChange}
+                                                />
+                                            </Field>
+                                        )}
+                                    />
 
                                     <Separator />
 
@@ -343,51 +342,48 @@ export default function FileSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-72'>
-                                                    <Select
-                                                        value={field.value?.value || ''}
-                                                        onValueChange={(value) => {
-                                                            const option =
-                                                                subtypes.find(
-                                                                    (opt) =>
-                                                                        opt.value ===
-                                                                        value,
-                                                                );
-                                                            field.onChange(
-                                                                option
-                                                                    ? {
-                                                                          value: option.value,
-                                                                          label: option.label,
-                                                                      }
-                                                                    : null,
+                                                <Select
+                                                    value={field.value?.value || ''}
+                                                    onValueChange={(value) => {
+                                                        const option =
+                                                            subtypes.find(
+                                                                (opt) =>
+                                                                    opt.value ===
+                                                                    value,
                                                             );
-                                                        }}
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
+                                                                : null,
+                                                        );
+                                                    }}
+                                                >
+                                                    <SelectTrigger
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'md5Subtype-error'
+                                                                : undefined
+                                                        }
                                                     >
-                                                        <SelectTrigger
-                                                            className='w-72'
-                                                            aria-invalid={
-                                                                fieldState.invalid
-                                                            }
-                                                            aria-describedby={
-                                                                fieldState.invalid
-                                                                    ? 'md5Subtype-error'
-                                                                    : undefined
-                                                            }
-                                                        >
-                                                            <SelectValue placeholder='Select MD5 subtype' />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {subtypes.map((option) => (
-                                                                <SelectItem
-                                                                    key={option.value}
-                                                                    value={option.value}
-                                                                >
-                                                                    {option.label}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                        <SelectValue placeholder='Select MD5 subtype' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {subtypes.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </Field>
                                         )}
                                     />
@@ -417,51 +413,48 @@ export default function FileSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-72'>
-                                                    <Select
-                                                        value={field.value?.value || ''}
-                                                        onValueChange={(value) => {
-                                                            const option =
-                                                                subtypes.find(
-                                                                    (opt) =>
-                                                                        opt.value ===
-                                                                        value,
-                                                                );
-                                                            field.onChange(
-                                                                option
-                                                                    ? {
-                                                                          value: option.value,
-                                                                          label: option.label,
-                                                                      }
-                                                                    : null,
+                                                <Select
+                                                    value={field.value?.value || ''}
+                                                    onValueChange={(value) => {
+                                                        const option =
+                                                            subtypes.find(
+                                                                (opt) =>
+                                                                    opt.value ===
+                                                                    value,
                                                             );
-                                                        }}
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
+                                                                : null,
+                                                        );
+                                                    }}
+                                                >
+                                                    <SelectTrigger
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'sha1Subtype-error'
+                                                                : undefined
+                                                        }
                                                     >
-                                                        <SelectTrigger
-                                                            className='w-72'
-                                                            aria-invalid={
-                                                                fieldState.invalid
-                                                            }
-                                                            aria-describedby={
-                                                                fieldState.invalid
-                                                                    ? 'sha1Subtype-error'
-                                                                    : undefined
-                                                            }
-                                                        >
-                                                            <SelectValue placeholder='Select SHA1 subtype' />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {subtypes.map((option) => (
-                                                                <SelectItem
-                                                                    key={option.value}
-                                                                    value={option.value}
-                                                                >
-                                                                    {option.label}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                        <SelectValue placeholder='Select SHA1 subtype' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {subtypes.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </Field>
                                         )}
                                     />
@@ -491,51 +484,48 @@ export default function FileSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-72'>
-                                                    <Select
-                                                        value={field.value?.value || ''}
-                                                        onValueChange={(value) => {
-                                                            const option =
-                                                                subtypes.find(
-                                                                    (opt) =>
-                                                                        opt.value ===
-                                                                        value,
-                                                                );
-                                                            field.onChange(
-                                                                option
-                                                                    ? {
-                                                                          value: option.value,
-                                                                          label: option.label,
-                                                                      }
-                                                                    : null,
+                                                <Select
+                                                    value={field.value?.value || ''}
+                                                    onValueChange={(value) => {
+                                                        const option =
+                                                            subtypes.find(
+                                                                (opt) =>
+                                                                    opt.value ===
+                                                                    value,
                                                             );
-                                                        }}
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
+                                                                : null,
+                                                        );
+                                                    }}
+                                                >
+                                                    <SelectTrigger
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'sha256Subtype-error'
+                                                                : undefined
+                                                        }
                                                     >
-                                                        <SelectTrigger
-                                                            className='w-72'
-                                                            aria-invalid={
-                                                                fieldState.invalid
-                                                            }
-                                                            aria-describedby={
-                                                                fieldState.invalid
-                                                                    ? 'sha256Subtype-error'
-                                                                    : undefined
-                                                            }
-                                                        >
-                                                            <SelectValue placeholder='Select SHA256 subtype' />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {subtypes.map((option) => (
-                                                                <SelectItem
-                                                                    key={option.value}
-                                                                    value={option.value}
-                                                                >
-                                                                    {option.label}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                        <SelectValue placeholder='Select SHA256 subtype' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {subtypes.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </Field>
                                         )}
                                     />

@@ -80,7 +80,7 @@ export default function SearchFilterSection({
                     }`}
             >
                 <div className='px-4 py-3 bg-secondary/50 overflow-y-auto max-h-56'>
-                    <div className='flex flex-wrap gap-1.5'>
+                    <div className='flex flex-wrap gap-1.5 items-center'>
                         {[...entrySubtypes].sort((a, b) => a.localeCompare(b)).map((subtype) => {
                             const color = entryClassColors.get(subtype);
                             const isActive = entrySubtypeFilters.includes(subtype);
@@ -94,10 +94,11 @@ export default function SearchFilterSection({
                             return (
                                 <Badge
                                     key={subtype}
-                                    variant={isActive ? 'default' : 'outline'}
+                                    variant='outline'
                                     onClick={toggleFilter}
-                                    className={`cursor-pointer mr-1.5 mb-1.5 ${isActive ? '' : 'opacity-60'
-                                        }`}
+                                    className={`cursor-pointer ${
+                                        isActive ? '' : 'opacity-60'
+                                    }`}
                                     style={
                                         color && isActive
                                             ? {
@@ -109,9 +110,20 @@ export default function SearchFilterSection({
                                     }
                                 >
                                     {subtype}
+                                    {isActive && <Xmark className='w-3 h-3' />}
                                 </Badge>
                             );
                         })}
+                        {hasFilters && (
+                            <Button
+                                variant='ghost'
+                                size='sm'
+                                onClick={() => setEntrySubtypeFilters([])}
+                                className='text-xs h-auto cursor-pointer'
+                            >
+                                Clear all
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>

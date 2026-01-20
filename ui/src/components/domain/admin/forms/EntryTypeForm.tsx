@@ -8,6 +8,11 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+} from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
@@ -315,45 +320,43 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 </FieldError>
                                             )}
                                         </FieldContent>
-                                        <div className='w-72'>
-                                            <Select
-                                                value={field.value?.value || ''}
-                                                onValueChange={(value) => {
-                                                    const option = typeOptions.find(
-                                                        (opt) => opt.value === value,
-                                                    );
-                                                    field.onChange(
-                                                        option
-                                                            ? {
-                                                                value: option.value,
-                                                                label: option.label,
-                                                            }
-                                                            : null,
-                                                    );
-                                                }}
+                                        <Select
+                                            value={field.value?.value || ''}
+                                            onValueChange={(value) => {
+                                                const option = typeOptions.find(
+                                                    (opt) => opt.value === value,
+                                                );
+                                                field.onChange(
+                                                    option
+                                                        ? {
+                                                            value: option.value,
+                                                            label: option.label,
+                                                        }
+                                                        : null,
+                                                );
+                                            }}
+                                        >
+                                            <SelectTrigger
+                                                aria-invalid={fieldState.invalid}
+                                                aria-describedby={
+                                                    fieldState.invalid
+                                                        ? 'type-error'
+                                                        : undefined
+                                                }
                                             >
-                                                <SelectTrigger
-                                                    aria-invalid={fieldState.invalid}
-                                                    aria-describedby={
-                                                        fieldState.invalid
-                                                            ? 'type-error'
-                                                            : undefined
-                                                    }
-                                                >
-                                                    <SelectValue placeholder='Select type' />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {typeOptions.map((option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
+                                                <SelectValue placeholder='Select type' />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {typeOptions.map((option) => (
+                                                    <SelectItem
+                                                        key={option.value}
+                                                        value={option.value}
+                                                    >
+                                                        {option.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                     </Field>
                                 )}
                             />
@@ -449,77 +452,80 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
                             <Separator />
 
-                            <div className='py-2'>
-                                <Label className='text-sm text-muted-foreground block mb-0.5'>
-                                    Color
-                                    <span className='text-destructive ml-1'>*</span>
-                                </Label>
-                                <p className='text-sm text-muted-foreground mb-2'>
-                                    Display color for this entry type
-                                </p>
-                                <Controller
-                                    name='color'
-                                    control={control}
-                                    render={({ field }) => (
-                                        <ColorPicker
-                                            value={field.value}
-                                            onValueChange={field.onChange}
-                                        >
-                                            <div className='flex items-center space-x-2'>
-                                                <ColorPickerInput
-                                                    withoutAlpha
-                                                    className='w-full text-sm h-10 rounded-full'
-                                                />
-                                                <ColorPickerTrigger asChild>
-                                                    <Button
-                                                        type='button'
-                                                        variant='outline'
-                                                        size='icon'
-                                                        className='h-10 w-12 p-0 flex-shrink-0'
-                                                    >
-                                                        <ColorPickerSwatch className='size-6' />
-                                                    </Button>
-                                                </ColorPickerTrigger>
-                                                <Button
-                                                    type='button'
-                                                    variant='outline'
-                                                    size='default'
-                                                    className='h-10 px-3 flex-shrink-0'
-                                                    onClick={generateRandomColor}
-                                                >
-                                                    <svg
-                                                        xmlns='http://www.w3.org/2000/svg'
-                                                        className='h-4 w-4'
-                                                        fill='none'
-                                                        viewBox='0 0 24 24'
-                                                        stroke='currentColor'
-                                                    >
-                                                        <path
-                                                            strokeLinecap='round'
-                                                            strokeLinejoin='round'
-                                                            strokeWidth={2}
-                                                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-                                                        />
-                                                    </svg>
-                                                </Button>
-                                            </div>
-                                            <ColorPickerContent>
-                                                <ColorPickerArea />
-                                                <div className='flex items-center justify-between gap-2'>
-                                                    <ColorPickerEyeDropper />
-                                                    <ColorPickerFormatSelect />
-                                                </div>
-                                                <ColorPickerHueSlider />
-                                            </ColorPickerContent>
-                                        </ColorPicker>
-                                    )}
-                                />
-                                {errors.color && (
-                                    <p className='text-sm text-destructive mt-1'>
-                                        {errors.color.message}
-                                    </p>
+                            <Controller
+                                name='color'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='py-2'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Color
+                                                <span className='text-destructive ml-1'>
+                                                    *
+                                                </span>
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Display color for this entry type
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div className='w-72'>
+                                            <ColorPicker
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                            >
+                                                <InputGroup>
+                                                    <ColorPickerInput
+                                                        withoutAlpha
+                                                        className='flex-1 border-0 shadow-none focus-visible:ring-0'
+                                                    />
+                                                    <InputGroupAddon align='inline-end'>
+                                                        <ColorPickerTrigger asChild>
+                                                            <InputGroupButton size='icon-xs'>
+                                                                <ColorPickerSwatch className='size-4 rounded-sm' />
+                                                            </InputGroupButton>
+                                                        </ColorPickerTrigger>
+                                                        <InputGroupButton
+                                                            size='icon-xs'
+                                                            onClick={generateRandomColor}
+                                                        >
+                                                            <svg
+                                                                xmlns='http://www.w3.org/2000/svg'
+                                                                fill='none'
+                                                                viewBox='0 0 24 24'
+                                                                stroke='currentColor'
+                                                            >
+                                                                <path
+                                                                    strokeLinecap='round'
+                                                                    strokeLinejoin='round'
+                                                                    strokeWidth={2}
+                                                                    d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                                                                />
+                                                            </svg>
+                                                        </InputGroupButton>
+                                                    </InputGroupAddon>
+                                                </InputGroup>
+                                                <ColorPickerContent>
+                                                    <ColorPickerArea />
+                                                    <div className='flex items-center justify-between gap-2'>
+                                                        <ColorPickerEyeDropper />
+                                                        <ColorPickerFormatSelect />
+                                                    </div>
+                                                    <ColorPickerHueSlider />
+                                                </ColorPickerContent>
+                                            </ColorPicker>
+                                        </div>
+                                    </Field>
                                 )}
-                            </div>
+                            />
                         </CardContent>
                     </Card>
                 </div>
@@ -603,58 +609,56 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-72'>
-                                                    <Select
-                                                        value={
-                                                            field.value?.value || ''
-                                                        }
-                                                        onValueChange={(value) => {
-                                                            const option =
-                                                                formatOptions.find(
-                                                                    (opt) =>
-                                                                        opt.value ===
-                                                                        value,
-                                                                );
-                                                            field.onChange(
-                                                                option
-                                                                    ? {
-                                                                        value: option.value,
-                                                                        label: option.label,
-                                                                    }
-                                                                    : null,
+                                                <Select
+                                                    value={
+                                                        field.value?.value || ''
+                                                    }
+                                                    onValueChange={(value) => {
+                                                        const option =
+                                                            formatOptions.find(
+                                                                (opt) =>
+                                                                    opt.value ===
+                                                                    value,
                                                             );
-                                                        }}
+                                                        field.onChange(
+                                                            option
+                                                                ? {
+                                                                    value: option.value,
+                                                                    label: option.label,
+                                                                }
+                                                                : null,
+                                                        );
+                                                    }}
+                                                >
+                                                    <SelectTrigger
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
+                                                        aria-describedby={
+                                                            fieldState.invalid
+                                                                ? 'typeFormat-error'
+                                                                : undefined
+                                                        }
                                                     >
-                                                        <SelectTrigger
-                                                            aria-invalid={
-                                                                fieldState.invalid
-                                                            }
-                                                            aria-describedby={
-                                                                fieldState.invalid
-                                                                    ? 'typeFormat-error'
-                                                                    : undefined
-                                                            }
-                                                        >
-                                                            <SelectValue placeholder='Select format' />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            {formatOptions.map(
-                                                                (option) => (
-                                                                    <SelectItem
-                                                                        key={
-                                                                            option.value
-                                                                        }
-                                                                        value={
-                                                                            option.value
-                                                                        }
-                                                                    >
-                                                                        {option.label}
-                                                                    </SelectItem>
-                                                                ),
-                                                            )}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
+                                                        <SelectValue placeholder='Select format' />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {formatOptions.map(
+                                                            (option) => (
+                                                                <SelectItem
+                                                                    key={
+                                                                        option.value
+                                                                    }
+                                                                    value={
+                                                                        option.value
+                                                                    }
+                                                                >
+                                                                    {option.label}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
                                             </Field>
                                         )}
                                     />
@@ -775,46 +779,47 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 control={control}
                                                 render={({ field, fieldState }) => (
                                                     <Field
-                                                        orientation='vertical'
+                                                        orientation='horizontal'
                                                         className='py-2'
                                                         data-invalid={
                                                             fieldState.invalid
                                                         }
                                                     >
-                                                        <FieldContent>
+                                                        <FieldContent className='flex-1'>
                                                             <FieldLabel
                                                                 htmlFor='generativeRegex'
                                                                 className='text-sm text-muted-foreground block mb-0.5'
                                                             >
                                                                 Generative Regex
                                                             </FieldLabel>
-                                                            <FieldDescription className='text-sm mb-2'>
+                                                            <FieldDescription className='text-sm'>
                                                                 Regex used to generate
                                                                 random sample values
                                                             </FieldDescription>
+                                                            {fieldState.invalid && (
+                                                                <FieldError className='text-sm mt-1'>
+                                                                    {
+                                                                        fieldState.error
+                                                                            ?.message
+                                                                    }
+                                                                </FieldError>
+                                                            )}
                                                         </FieldContent>
-                                                        <Textarea
-                                                            {...field}
-                                                            id='generativeRegex'
-                                                            placeholder='Regex used to generate random values.'
-                                                            rows={3}
-                                                            aria-invalid={
-                                                                fieldState.invalid
-                                                            }
-                                                            aria-describedby={
-                                                                fieldState.invalid
-                                                                    ? 'generativeRegex-error'
-                                                                    : undefined
-                                                            }
-                                                        />
-                                                        {fieldState.invalid && (
-                                                            <FieldError className='text-sm mt-1'>
-                                                                {
-                                                                    fieldState.error
-                                                                        ?.message
+                                                        <div className='w-64'>
+                                                            <Input
+                                                                {...field}
+                                                                id='generativeRegex'
+                                                                placeholder='e.g. [A-Z]{3}-[0-9]{4}'
+                                                                aria-invalid={
+                                                                    fieldState.invalid
                                                                 }
-                                                            </FieldError>
-                                                        )}
+                                                                aria-describedby={
+                                                                    fieldState.invalid
+                                                                        ? 'generativeRegex-error'
+                                                                        : undefined
+                                                                }
+                                                            />
+                                                        </div>
                                                     </Field>
                                                 )}
                                             />
@@ -827,48 +832,56 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                 <Separator />
                             )}
 
-                            <div className='py-2'>
-                                <Label className='text-sm text-muted-foreground block mb-0.5'>
-                                    Children
-                                </Label>
-                                <p className='text-sm text-muted-foreground mb-2'>
-                                    Entry types that can be children of this type
-                                </p>
-                                <Controller
-                                    name='children'
-                                    control={control}
-                                    render={({ field }) => (
-                                        <MultipleSelector
-                                            value={
-                                                (field.value?.map((c) => ({
-                                                    value: c.value,
-                                                    label: c.label,
-                                                })) || []) as Option[]
-                                            }
-                                            defaultOptions={entryTypes as Option[]}
-                                            placeholder='Select child entry types...'
-                                            onChange={(options) => {
-                                                field.onChange(
-                                                    options.map((o) => ({
-                                                        value: o.value,
-                                                        label: o.label,
-                                                    })),
-                                                );
-                                            }}
-                                            emptyIndicator={
-                                                <p className='text-center text-sm'>
-                                                    No entry types found
-                                                </p>
-                                            }
-                                        />
-                                    )}
-                                />
-                                {errors.children && (
-                                    <p className='text-sm text-destructive mt-1'>
-                                        {errors.children.message}
-                                    </p>
+                            <Controller
+                                name='children'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='py-2'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                Children
+                                            </FieldLabel>
+                                            <FieldDescription className='text-sm'>
+                                                Entry types that can be children of this type
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div className='w-64'>
+                                            <MultipleSelector
+                                                value={
+                                                    (field.value?.map((c) => ({
+                                                        value: c.value,
+                                                        label: c.label,
+                                                    })) || []) as Option[]
+                                                }
+                                                defaultOptions={entryTypes as Option[]}
+                                                placeholder='Select children...'
+                                                onChange={(options) => {
+                                                    field.onChange(
+                                                        options.map((o) => ({
+                                                            value: o.value,
+                                                            label: o.label,
+                                                        })),
+                                                    );
+                                                }}
+                                                emptyIndicator={
+                                                    <p className='text-center text-sm'>
+                                                        No entry types found
+                                                    </p>
+                                                }
+                                            />
+                                        </div>
+                                    </Field>
                                 )}
-                            </div>
+                            />
                         </CardContent>
                     </Card>
                 </div>

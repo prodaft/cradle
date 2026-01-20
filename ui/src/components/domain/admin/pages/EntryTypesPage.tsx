@@ -113,12 +113,24 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
         tab && tab in tabDescriptions ? tabDescriptions[tab] : '';
 
     return (
-        <div className='w-full h-full flex flex-col'>
-            <PageHeader
-                title={entryTypeData?.subtype || subtype || 'Entry Type'}
-                description={currentDescription || 'Manage entry type'}
+        <main
+            data-layout='fixed'
+            className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+        >
+            <div className='space-y-0.5'>
+                <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
+                    {entryTypeData?.subtype || subtype || 'Entry Type'}
+                </h1>
+                <p className='text-muted-foreground'>
+                    {currentDescription || 'Manage entry type'}
+                </p>
+            </div>
+            <Separator
+                data-orientation='horizontal'
+                role='none'
+                className='shrink-0 my-4 lg:my-6'
             />
-            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12 px-4'>
+            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
                 <aside className='top-0 lg:sticky lg:w-1/5'>
                     {/* Mobile dropdown */}
                     <div className='p-1 md:hidden'>
@@ -201,15 +213,17 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                             role='none'
                             className='bg-border my-4 flex-none'
                         />
-                        <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
-                            <div className='-mx-1 px-1.5'>
-                                {tab === 'activity' ? (
-                                    <ActivityList
-                                        content_type='entryclass'
-                                        objectId={subtype}
-                                        name={entryTypeData?.subtype}
-                                    />
-                                ) : (
+                        {tab === 'activity' ? (
+                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth'>
+                                <ActivityList
+                                    content_type='entryclass'
+                                    objectId={subtype}
+                                    name={entryTypeData?.subtype}
+                                />
+                            </div>
+                        ) : (
+                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                                <div className='-mx-1 px-1.5'>
                                     <EntryTypeForm
                                         id={subtype}
                                         onAdd={(newEntryType: EntryClass) => {
@@ -226,13 +240,13 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                                             }
                                         }}
                                     />
-                                )}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     );
 }
 

@@ -471,21 +471,10 @@ export default function ActivityList({
 
     return (
         <div className='w-full h-full overflow-auto'>
-            {/* Header Section */}
-            <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
-                    <h2 className='text-2xl font-bold tracking-tight'>Event Logs</h2>
-                    <p className='text-muted-foreground'>
-                        {name ? `Activity for ${name}` : 'System Activity'}
-                    </p>
-                </div>
-            </div>
-
             {/* Content Area */}
-            <div className='p-5'>
-                <div className='w-full flex flex-col space-y-4'>
-                    {/* Filters */}
-                    <form
+            <div className='w-full flex flex-col space-y-4'>
+                {/* Filters */}
+                <form
                         onSubmit={handleSearchSubmit}
                         className='flex flex-wrap gap-4 items-end'
                     >
@@ -579,10 +568,10 @@ export default function ActivityList({
                             <MagnifyingGlassIcon className='size-4' />
                             Search
                         </Button>
-                    </form>
+                </form>
 
-                    {/* Results */}
-                    <div className='flex flex-col space-y-4'>
+                {/* Results */}
+                <div className='flex flex-col space-y-4'>
                         {isPaused && <OfflineIndicator />}
 
                         {loading ? (
@@ -642,7 +631,6 @@ export default function ActivityList({
                             </Card>
                         )}
                     </div>
-                </div>
             </div>
         </div>
     );

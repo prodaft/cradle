@@ -576,7 +576,7 @@ export default function EnrichmentSettingsForm({
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='flex-1'>
+                                                <div className='w-64'>
                                                     <MultipleSelector
                                                         value={
                                                             (field.value?.map((e) => ({

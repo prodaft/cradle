@@ -1064,11 +1064,15 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                             <div className='space-y-4'>
                                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                                     <CardContent className='px-4 py-1'>
-                                                        <div className='py-2 space-y-4'>
-                                                            <div className='space-y-2'>
-                                                                <Label className='text-sm text-muted-foreground block'>
-                                                                    Theme
-                                                                </Label>
+                                                            <Field orientation='horizontal' className='py-2'>
+                                                                <FieldContent className='flex-1'>
+                                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                                        Theme
+                                                                    </FieldLabel>
+                                                                    <FieldDescription className='text-sm'>
+                                                                        Select a color theme for the interface
+                                                                    </FieldDescription>
+                                                                </FieldContent>
                                                                 <Popover
                                                                     open={themePopoverOpen}
                                                                     onOpenChange={setThemePopoverOpen}
@@ -1141,7 +1145,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                         </Command>
                                                                     </PopoverContent>
                                                                 </Popover>
-                                                            </div>
+                                                            </Field>
 
                                                             {selectedThemeType ===
                                                                 'custom' && (
@@ -1180,7 +1184,6 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                        </div>
                                                     </CardContent>
                                                 </Card>
                                             </div>

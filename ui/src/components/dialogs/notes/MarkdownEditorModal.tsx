@@ -101,26 +101,25 @@ export default function MarkdownEditorModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    {titleEditable ? (
-                        <>
-                            <DialogTitle className='sr-only'>
-                                {noteTitle || 'Note Editor'}
-                            </DialogTitle>
-                            <Input
-                                type='text'
-                                value={noteTitle}
-                                onChange={handleTitleChange}
-                                placeholder='Enter title'
-                                className='text-lg font-semibold text-foreground tracking-wide w-full bg-transparent border-none outline-none focus:ring-0 p-0 placeholder:text-muted-foreground shadow-none h-auto'
-                            />
-                        </>
-                    ) : (
-                        <DialogTitle>{noteTitle}</DialogTitle>
-                    )}
+                    <DialogTitle>Note Editor</DialogTitle>
                     <DialogDescription className='sr-only'>
                         Edit markdown content for this note
                     </DialogDescription>
                 </DialogHeader>
+
+                {/* Title Section */}
+                {titleEditable && (
+                    <div className='grid w-full items-center gap-3'>
+                        <Label htmlFor='note-title'>Title</Label>
+                        <Input
+                            id='note-title'
+                            type='text'
+                            value={noteTitle}
+                            onChange={handleTitleChange}
+                            placeholder='Enter title'
+                        />
+                    </div>
+                )}
 
                 {/* Editor Section */}
                 <div className='grid w-full items-center gap-3 mb-6'>
