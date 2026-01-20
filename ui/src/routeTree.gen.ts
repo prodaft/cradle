@@ -34,7 +34,6 @@ import { Route as AuthenticatedManageUsersIdImport } from './routes/_authenticat
 import { Route as AuthenticatedNotesImport } from './routes/_authenticated/notes';
 import { Route as AuthenticatedNotesIdImport } from './routes/_authenticated/notes/$id';
 import { Route as AuthenticatedReportsImport } from './routes/_authenticated/reports';
-import { Route as AuthenticatedReportsReportIdImport } from './routes/_authenticated/reports/$report_id';
 import { Route as AuthenticatedSettingsImport } from './routes/_authenticated/settings';
 import { Route as ConfirmEmailImport } from './routes/confirm-email';
 import { Route as ForgotPasswordImport } from './routes/forgot-password';
@@ -119,11 +118,6 @@ const AuthenticatedKnowledgeGraphRoute = AuthenticatedKnowledgeGraphImport.updat
 
 const AuthenticatedReportsRoute = AuthenticatedReportsImport.update({
     path: '/reports',
-    getParentRoute: () => AuthenticatedRoute,
-} as any);
-
-const AuthenticatedReportsReportIdRoute = AuthenticatedReportsReportIdImport.update({
-    path: '/reports/$report_id',
     getParentRoute: () => AuthenticatedRoute,
 } as any);
 
@@ -380,13 +374,6 @@ declare module '@tanstack/react-router' {
             preLoaderRoute: typeof AuthenticatedReportsImport;
             parentRoute: typeof AuthenticatedImport;
         };
-        '/_authenticated/reports/$report_id': {
-            id: '/_authenticated/reports/$report_id';
-            path: '/reports/$report_id';
-            fullPath: '/reports/$report_id';
-            preLoaderRoute: typeof AuthenticatedReportsReportIdImport;
-            parentRoute: typeof AuthenticatedImport;
-        };
         '/_authenticated/settings': {
             id: '/_authenticated/settings';
             path: '/settings';
@@ -464,7 +451,6 @@ export const routeTree = rootRoute.addChildren({
         AuthenticatedSettingsRoute,
         AuthenticatedKnowledgeGraphRoute,
         AuthenticatedReportsRoute,
-        AuthenticatedReportsReportIdRoute,
         AuthenticatedEnrichRoute,
         AuthenticatedEnrichmentIdRoute,
         AuthenticatedDigestDataRoute,

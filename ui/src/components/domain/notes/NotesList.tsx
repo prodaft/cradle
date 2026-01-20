@@ -1,5 +1,6 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DataTableFilterMenu } from '@/components/data-table/data-table-filter-menu';
 import {
     ActionBar,
     ActionBarClose,
@@ -9,18 +10,11 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
+import { getFiltersStateParser } from '@/lib/parsers';
 import type { OptimizedEntryResponse } from '@/services/cradle';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
@@ -31,6 +25,7 @@ import {
     type ColumnDef,
     type RowSelectionState,
     type SortingState,
+    type VisibilityState,
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
@@ -47,6 +42,7 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { startCase } from 'lodash';
+import { useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -56,7 +52,6 @@ import {
 } from '../../base/ActionBar/ActionBar';
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
-import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
 import ConfirmDeletionModal from '../../dialogs/base/ConfirmDeletionModal';
 import EnrichmentRequestModal from '../../dialogs/enrichment/EnrichmentRequestModal';
 import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
@@ -170,6 +165,9 @@ export default function NotesList({
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+        status: false,
+    });
     const [pageSize, setPageSize] = useState((search as any)?.notes_pagesize || 10);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
@@ -202,6 +200,17 @@ export default function NotesList({
     const selectedNoteIds = useMemo(
         () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
         [rowSelection],
+    );
+    const filterableColumnIds = useMemo(() => ['status', 'createdAt'], []);
+    const [menuFilters] = useQueryState(
+        'filters',
+        getFiltersStateParser<NoteRetrieve>(filterableColumnIds)
+            .withDefault([])
+            .withOptions({
+                clearOnDefault: true,
+                shallow: true,
+                throttleMs: 50,
+            }),
     );
 
     // Mapping of table columns to API field names
@@ -294,34 +303,14 @@ export default function NotesList({
         [search, router, location.pathname, sortFieldMapping],
     );
 
-    const handleColumnFilter = (column: string, value: string | DateRangeFilter) => {
-        setColumnFilters((prev) => ({
-            ...prev,
-            [column]: value,
-        }));
-
-        if (onFilterChange) {
-            onFilterChange(column, value);
-        }
-    };
-
-    const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-    {
-        author: (value) => handleColumnFilter('author', value),
-        editor: (value) => handleColumnFilter('editor', value),
-        createdAt: (value) => handleColumnFilter('createdAt', value),
-        lastChanged: (value) => handleColumnFilter('lastChanged', value),
-    };
-
-    const handleStatusChange = (status: string) => {
-        setColumnFilters((prev) => ({
-            ...prev,
-            status,
-        }));
-    };
-
-    const statusOptions = useMemo(
-        () => ['all', 'healthy', 'processing', 'warning', 'invalid'],
+    const statusFilterOptions = useMemo(
+        () => [
+            { label: 'Fleeting', value: 'fleeting' },
+            { label: 'Healthy', value: 'healthy' },
+            { label: 'Processing', value: 'processing' },
+            { label: 'Warning', value: 'warning' },
+            { label: 'Invalid', value: 'invalid' },
+        ],
         [],
     );
 
@@ -361,6 +350,81 @@ export default function NotesList({
         query?.updated_date_from,
         query?.updated_date_to,
     ]);
+
+    useEffect(() => {
+        const statusFilter = menuFilters.find((filter) => filter.id === 'status');
+        const createdAtFilter = menuFilters.find(
+            (filter) => filter.id === 'createdAt',
+        );
+
+        const nextStatus =
+            statusFilter &&
+            statusFilter.operator === 'eq' &&
+            typeof statusFilter.value === 'string' &&
+            statusFilter.value
+                ? statusFilter.value
+                : 'all';
+
+        let nextCreatedAt: DateRangeFilter = { from: '', to: '' };
+        if (createdAtFilter && createdAtFilter.value) {
+            const value = createdAtFilter.value;
+            const operator = createdAtFilter.operator;
+
+            if (operator === 'isBetween' && Array.isArray(value)) {
+                const [startValue, endValue] = value;
+                const startDate = startValue
+                    ? startOfDay(new Date(Number(startValue)))
+                    : null;
+                const endDate = endValue
+                    ? endOfDay(new Date(Number(endValue)))
+                    : null;
+                nextCreatedAt = {
+                    from: startDate ? format(startDate, "yyyy-MM-dd'T'HH:mm") : '',
+                    to: endDate ? format(endDate, "yyyy-MM-dd'T'HH:mm") : '',
+                };
+            } else if (typeof value === 'string' && value) {
+                const parsedDate = new Date(Number(value));
+                if (!Number.isNaN(parsedDate.getTime())) {
+                    if (operator === 'lt' || operator === 'lte') {
+                        nextCreatedAt = {
+                            from: '',
+                            to: format(endOfDay(parsedDate), "yyyy-MM-dd'T'HH:mm"),
+                        };
+                    } else if (operator === 'gt' || operator === 'gte') {
+                        nextCreatedAt = {
+                            from: format(
+                                startOfDay(parsedDate),
+                                "yyyy-MM-dd'T'HH:mm",
+                            ),
+                            to: '',
+                        };
+                    } else if (operator === 'eq') {
+                        nextCreatedAt = {
+                            from: format(
+                                startOfDay(parsedDate),
+                                "yyyy-MM-dd'T'HH:mm",
+                            ),
+                            to: format(
+                                endOfDay(parsedDate),
+                                "yyyy-MM-dd'T'HH:mm",
+                            ),
+                        };
+                    }
+                }
+            }
+        }
+
+        setColumnFilters((prev) => ({
+            ...prev,
+            status: nextStatus,
+            createdAt: nextCreatedAt,
+        }));
+
+        if (onFilterChange) {
+            onFilterChange('status', nextStatus);
+            onFilterChange('createdAt', nextCreatedAt);
+        }
+    }, [menuFilters, onFilterChange]);
 
     // Sync URL params to page state
     useEffect(() => {
@@ -647,24 +711,7 @@ export default function NotesList({
             {
                 accessorKey: 'title',
                 id: 'title',
-                header: () => (
-                    <div className='flex items-center'>
-                        <StatusHeaderDropdown
-                            onStatusChange={handleStatusChange}
-                            status={columnFilters.status}
-                            statusOptions={[
-                                'all',
-                                'fleeting',
-                                'healthy',
-                                'warning',
-                                'invalid',
-                                'processing',
-                            ]}
-                            triggerClassName='size-7'
-                        />
-                        <span>Title</span>
-                    </div>
-                ),
+                header: () => <span>Title</span>,
                 cell: ({ row }) => (
                     <PreviewTip
                         content={renderNotePreview(row.original)}
@@ -781,6 +828,23 @@ export default function NotesList({
                 ),
             },
             {
+                accessorKey: 'status',
+                id: 'status',
+                header: () => null,
+                cell: () => null,
+                size: 0,
+                minSize: 0,
+                maxSize: 0,
+                enableSorting: false,
+                enableHiding: true,
+                enableColumnFilter: true,
+                meta: {
+                    label: 'Status',
+                    variant: 'select',
+                    options: statusFilterOptions,
+                },
+            },
+            {
                 accessorKey: 'createdAt',
                 id: 'createdAt',
                 header: ({ column }) => {
@@ -804,6 +868,11 @@ export default function NotesList({
                             : 'N/A'}
                     </div>
                 ),
+                enableColumnFilter: true,
+                meta: {
+                    label: 'Created at',
+                    variant: 'dateRange',
+                },
             },
             {
                 accessorKey: 'lastChanged',
@@ -831,12 +900,7 @@ export default function NotesList({
                 ),
             },
         ],
-        [
-            columnFilters,
-            handleStatusChange,
-            handleColumnFilter,
-            getStatusIcon,
-        ],
+        [columnFilters, getStatusIcon, renderNotePreview, router, statusFilterOptions],
     );
 
     const table = useReactTable({
@@ -845,6 +909,7 @@ export default function NotesList({
         state: {
             sorting,
             rowSelection,
+            columnVisibility,
             pagination: {
                 pageIndex: page - 1,
                 pageSize,
@@ -853,6 +918,7 @@ export default function NotesList({
         getRowId: (row, index) => String(row.id ?? index),
         onSortingChange: onTableSortingChange,
         onRowSelectionChange: setRowSelection,
+        onColumnVisibilityChange: setColumnVisibility,
         onPaginationChange: (updater) => {
             const currentPagination = {
                 pageIndex: page - 1,
@@ -867,6 +933,11 @@ export default function NotesList({
         manualPagination: true,
         manualSorting: true,
         pageCount: totalPages,
+        meta: {
+            queryKeys: {
+                filters: 'filters',
+            },
+        },
     });
 
     return (
@@ -908,56 +979,7 @@ export default function NotesList({
                                     onSubmit={(v) => contentSearch.onSubmit?.(v)}
                                 />
                             )}
-                            <DateRangePicker
-                                startDate={
-                                    columnFilters.createdAt?.from
-                                        ? new Date(columnFilters.createdAt.from)
-                                        : null
-                                }
-                                endDate={
-                                    columnFilters.createdAt?.to
-                                        ? new Date(columnFilters.createdAt.to)
-                                        : null
-                                }
-                                onChange={([start, end]) => {
-                                    const normalizedStart = start
-                                        ? startOfDay(start)
-                                        : null;
-                                    const normalizedEnd = start
-                                        ? endOfDay(end ?? start)
-                                        : null;
-                                    handleColumnFilter('createdAt', {
-                                        from: normalizedStart
-                                            ? format(
-                                                  normalizedStart,
-                                                  "yyyy-MM-dd'T'HH:mm",
-                                              )
-                                            : '',
-                                        to: normalizedEnd
-                                            ? format(
-                                                  normalizedEnd,
-                                                  "yyyy-MM-dd'T'HH:mm",
-                                              )
-                                            : '',
-                                    });
-                                }}
-                                className='h-10 min-w-[220px]'
-                            />
-                            <Select
-                                value={columnFilters.status || 'all'}
-                                onValueChange={handleStatusChange}
-                            >
-                                <SelectTrigger className='h-10 min-w-[160px]'>
-                                    <SelectValue placeholder='Status' />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {statusOptions.map((status) => (
-                                        <SelectItem key={status} value={status}>
-                                            {startCase(status)}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <DataTableFilterMenu table={table} />
                         </div>
                     }
                 />
