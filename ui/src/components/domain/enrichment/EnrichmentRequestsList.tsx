@@ -1,19 +1,28 @@
 import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import useApi from '@/hooks/api/useApi';
-import { queryKeys } from '@/hooks/query';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { ActionBar as BaseActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
-import TableActionsButton from '@components/base/TableActionsButton';
 import type { EnrichmentRequestList } from '@services/cradle/models';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    type SortingState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
 import {
     InfoCircleSolid,
@@ -23,9 +32,7 @@ import {
     WarningTriangleSolid,
 } from 'iconoir-react';
 import { capitalize } from 'lodash';
-import { ChangeEvent, FormEvent, useCallback, useMemo, useState } from 'react';
-import { toast } from 'sonner';
-
+import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { DateRangeFilter } from '@/components/base/ListView/types';
 
 // ...
@@ -80,8 +87,6 @@ function EnrichmentRequestsList({
     page,
     totalPages,
     handlePageChange,
-    setAlert,
-    onRequestDelete,
     sortField = 'created_at',
     sortDirection = 'desc',
     onSort,
@@ -99,18 +104,30 @@ function EnrichmentRequestsList({
     onCreateRequest = () => { },
 }: EnrichmentRequestsListProps) {
     const router = useRouter();
-    const { intelioApi } = useApi();
-    const queryClient = useQueryClient();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
-    const [deletingRequestId, setDeletingRequestId] = useState<number | null>(null);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-    const deleteMutation = useMutation({
-        mutationFn: (id: number) => intelioApi.enrichmentDetailDelete({ id }),
-        meta: {
-            invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
-        },
-    });
+    const selectedRequestIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
+
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+        setSelectedRequests?.([]);
+    }, [setSelectedRequests]);
+
+    useEffect(() => {
+        if (!selectedRequests || selectedRequests.length === 0) {
+            setRowSelection({});
+            return;
+        }
+        const selection: RowSelectionState = {};
+        selectedRequests.forEach((id) => {
+            selection[String(id)] = true;
+        });
+        setRowSelection(selection);
+    }, [selectedRequests]);
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -175,6 +192,15 @@ function EnrichmentRequestsList({
             }
         },
         [onSort],
+    );
+
+    const onTableSortingChange = useCallback(
+        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+            const nextSorting =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            handleSortingChange(nextSorting);
+        },
+        [handleSortingChange, sorting],
     );
 
     const errorMsg = (request: EnrichmentRequest) => {
@@ -293,6 +319,9 @@ function EnrichmentRequestsList({
         () => [
             {
                 id: 'select',
+                size: 36,
+                minSize: 36,
+                maxSize: 36,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -334,13 +363,15 @@ function EnrichmentRequestsList({
                     <div
                         className='truncate max-w-xs cursor-pointer'
                         title={row.original.title}
-                        onClick={() =>
-                            row.original.id &&
-                            router.navigate({
-                                to: '/enrichment/$id',
-                                params: { id: row.original.id.toString() },
-                            })
-                        }
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            if (row.original.id) {
+                                router.navigate({
+                                    to: '/enrichment/$id',
+                                    params: { id: row.original.id.toString() },
+                                });
+                            }
+                        }}
                     >
                         <div className='flex items-center gap-2 min-w-0'>
                             <span className='inline-flex items-center flex-shrink-0'>
@@ -363,7 +394,7 @@ function EnrichmentRequestsList({
                     const filterValue = columnFilters.user as string;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='User' />
+                            <DataTableColumnHeader column={column} label='User' />
                             {filterValue && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -380,7 +411,7 @@ function EnrichmentRequestsList({
                 accessorKey: 'createdAt',
                 id: 'createdAt',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Created At' />
+                    <DataTableColumnHeader column={column} label='Created At' />
                 ),
                 cell: ({ row }) => (
                     <div className='w-40'>
@@ -393,62 +424,56 @@ function EnrichmentRequestsList({
                     </div>
                 ),
             },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const request = row.original;
-                    const handleDelete = () => {
-                        setDeletingRequestId(request.id!);
-                        setSingleDeleteModalOpen(true);
-                    };
-
-                    return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    <DropdownMenuItem
-                                        onClick={handleDelete}
-                                        variant='destructive'
-                                    >
-                                        <Trash width='18' height='18' />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
-                enableSorting: false,
-            },
         ],
         [
             columnFilters,
             handleStatusChange,
             getStatusIcon,
             errorMsg,
-            onRequestDelete,
             router,
         ],
     );
-
-    // Handle row selection - convert number[] to string[]
-    const handleRowSelectionChange = useCallback(
-        (selectedIds: string[]) => {
-            if (setSelectedRequests) {
-                setSelectedRequests(selectedIds.map((id) => Number(id)));
-            }
+    const table = useReactTable({
+        data: enrichmentRequests,
+        columns,
+        state: {
+            sorting,
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize: pageSize || 10,
+            },
         },
-        [setSelectedRequests],
-    );
+        getRowId: (row, index) => String(row.id ?? index),
+        onSortingChange: onTableSortingChange,
+        onRowSelectionChange: (updater) => {
+            setRowSelection((prev) => {
+                const next = typeof updater === 'function' ? updater(prev) : updater;
+                const selectedIds = Object.keys(next).filter((key) => next[key]);
+                setSelectedRequests?.(selectedIds.map((id) => Number(id)));
+                return next;
+            });
+        },
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize: pageSize || 10,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        manualSorting: true,
+        pageCount: totalPages,
+    });
 
     return (
         <div className='flex flex-col space-y-4'>
             {/* Compact Control Bar - Actions and Pagination */}
-            <ActionBar
+            <BaseActionBar
                 left={
                     <>
                         <ActionBarSearch
@@ -481,86 +506,53 @@ function EnrichmentRequestsList({
             />
 
             {/* Table */}
-            <DataTable
-                columns={columns}
-                data={enrichmentRequests}
-                loading={loading}
-                emptyMessage='No enrichment requests found'
-                enableRowSelection={true}
-                selectedRows={selectedRequests.map((id) => String(id))}
-                onRowSelectionChange={handleRowSelectionChange}
-                sorting={sorting}
-                onSortingChange={handleSortingChange}
-                manualPagination={true}
-                manualSorting={true}
-                pageCount={totalPages}
-                initialPageIndex={page - 1}
-                initialPageSize={pageSize || 10}
-                onPaginationChange={handlePaginationChange}
-                showPagination={true}
-                bulkActions={[
-                    {
-                        id: 'delete',
-                        label: 'Delete requests',
-                        icon: <Trash width={18} height={18} />,
-                        onClick: () => {
-                            if (selectedRequests.length === 0) return;
+            {loading ? (
+                <div className='flex min-h-[200px] items-center justify-center'>
+                    Loading...
+                </div>
+            ) : (
+                <DataTable table={table} />
+            )}
+            <ActionBar
+                open={selectedRequestIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedRequestIds.length} request
+                    {selectedRequestIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (selectedRequestIds.length === 0) return;
                             setDeleteModalOpen(true);
-                        },
-                        disabled:
-                            loading ||
-                            enrichmentRequests.length === 0 ||
-                            selectedRequests.length === 0,
-                        variant: 'destructive',
-                    },
-                    {
-                        id: 'rerun',
-                        label: 'Rerun enrichments',
-                        icon: <RefreshCircle width={18} height={18} />,
-                        onClick: onRerunSelected,
-                        disabled:
-                            loading ||
-                            enrichmentRequests.length === 0 ||
-                            selectedRequests.length === 0,
-                    },
-                ]}
-                itemLabel='request'
-                onRowClick={(request) =>
-                    request.id &&
-                    router.navigate({
-                        to: '/enrichment/$id',
-                        params: { id: request.id.toString() },
-                    })
-                }
-            />
+                        }}
+                        disabled={loading || enrichmentRequests.length === 0 || selectedRequestIds.length === 0}
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={onRerunSelected}
+                        disabled={loading || enrichmentRequests.length === 0 || selectedRequestIds.length === 0}
+                    >
+                        <RefreshCircle width={18} height={18} />
+                        Rerun
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
+            </ActionBar>
             <ConfirmDeletionModal
                 open={deleteModalOpen}
                 onOpenChange={setDeleteModalOpen}
                 onConfirm={onDeleteSelected}
-                text={`Are you sure you want to delete ${selectedRequests.length} request${selectedRequests.length > 1 ? 's' : ''}? This action is irreversible.`}
+                text={`Are you sure you want to delete ${selectedRequestIds.length} request${selectedRequestIds.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
-            {deletingRequestId !== null && (
-                <ConfirmDeletionModal
-                    open={singleDeleteModalOpen}
-                    onOpenChange={(open) => {
-                        setSingleDeleteModalOpen(open);
-                        if (!open) setDeletingRequestId(null);
-                    }}
-                    text='Are you sure you want to delete this enrichment request? This action is irreversible.'
-                    onConfirm={async () => {
-                        if (deletingRequestId !== null) {
-                            try {
-                                await deleteMutation.mutateAsync(deletingRequestId);
-                                toast.success(
-                                    'Enrichment request deleted successfully',
-                                );
-                            } catch (error) {
-                                toast.error('Failed to delete enrichment request');
-                            }
-                        }
-                    }}
-                />
-            )}
         </div>
     );
 }

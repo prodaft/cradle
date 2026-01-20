@@ -1,26 +1,36 @@
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { ReportList } from '@/services/cradle';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { ActionBarSearch, ActionBar as BaseActionBar } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import PageHeader from '@components/base/PageHeader';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
-import TableActionsButton from '@components/base/TableActionsButton';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    type SortingState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
 import {
     Download,
-    Edit,
-    Eye,
     InfoCircleSolid,
     RefreshCircle,
     Trash,
@@ -84,8 +94,13 @@ export default function Reports() {
         (search as any)?.reports_sort_direction || 'desc',
     );
     const [pageSize, setPageSize] = useState((search as any)?.reports_pagesize || 10);
-    const [selectedReports, setSelectedReports] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
+
+    const selectedReportIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
         user: '',
@@ -297,7 +312,7 @@ export default function Reports() {
                 );
             }
 
-            setSelectedReports([]);
+            setRowSelection({});
         } catch (error) {
             toast.error('An unexpected error occurred while deleting reports');
         }
@@ -339,7 +354,7 @@ export default function Reports() {
             }
 
             // Important: do NOT refetch here; retry is async and refetching causes a full table rerender.
-            setSelectedReports([]);
+            setRowSelection({});
         } catch (error) {
             toast.error('Failed to retry report(s).');
         }
@@ -383,20 +398,20 @@ export default function Reports() {
 
         return columnId
             ? [
-                  {
-                      id: columnId,
-                      desc: sortDirection === 'desc',
-                  },
-              ]
+                {
+                    id: columnId,
+                    desc: sortDirection === 'desc',
+                },
+            ]
             : [];
     }, [sortField, sortDirection]);
 
     // Define filterable columns with their handlers
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-        {
-            user: (value) => handleColumnFilterChange('user', value),
-            createdAt: (value) => handleColumnFilterChange('createdAt', value),
-        };
+    {
+        user: (value) => handleColumnFilterChange('user', value),
+        createdAt: (value) => handleColumnFilterChange('createdAt', value),
+    };
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
@@ -481,8 +496,8 @@ export default function Reports() {
             status === 'error'
                 ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                 : status === 'warning'
-                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                  : '';
+                    ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+                    : '';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
@@ -516,6 +531,9 @@ export default function Reports() {
         () => [
             {
                 id: 'select',
+                size: 36,
+                minSize: 36,
+                maxSize: 36,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -544,38 +562,16 @@ export default function Reports() {
                 id: 'title',
                 header: () => <span>Title</span>,
                 cell: ({ row }) => (
-                    <div
-                        className='text-foreground cursor-pointer'
-                        onClick={async () => {
-                            try {
-                                const details = await fetchReportMutation.mutateAsync({
-                                    id: row.original.id!,
-                                    downloadUrl: false,
-                                });
-                                if (details.reportUrl) {
-                                    window.open(details.reportUrl, '_blank');
-                                } else {
-                                    toast.error(
-                                        'Report URL not found for report ' +
-                                            details.title,
-                                    );
-                                }
-                            } catch (error) {
-                                // Error handled by mutation
-                            }
-                        }}
-                    >
-                        <div className='flex items-center gap-2 min-w-0'>
-                            <span className='inline-flex items-center flex-shrink-0'>
-                                {getStatusIcon(
-                                    row.original.status,
-                                    row.original.errorMessage || undefined,
-                                )}
-                            </span>
-                            <span className='truncate'>
-                                {truncateText(row.original.title, 50)}
-                            </span>
-                        </div>
+                    <div className='flex items-center gap-2 min-w-0'>
+                        <span className='inline-flex items-center flex-shrink-0'>
+                            {getStatusIcon(
+                                row.original.status,
+                                row.original.errorMessage || undefined,
+                            )}
+                        </span>
+                        <span className='truncate'>
+                            {truncateText(row.original.title, 50)}
+                        </span>
                     </div>
                 ),
             },
@@ -583,7 +579,7 @@ export default function Reports() {
                 accessorKey: 'strategy',
                 id: 'strategy',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Strategy' />
+                    <DataTableColumnHeader column={column} label='Strategy' />
                 ),
                 cell: ({ row }) => (
                     <div className='text-foreground'>
@@ -595,7 +591,7 @@ export default function Reports() {
                 accessorKey: 'anonymized',
                 id: 'anonymized',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Anonymized' />
+                    <DataTableColumnHeader column={column} label='Anonymized' />
                 ),
                 cell: ({ row }) => (
                     <div className='text-foreground'>
@@ -606,121 +602,62 @@ export default function Reports() {
             {
                 accessorKey: 'createdAt',
                 id: 'createdAt',
-                header: ({ column }) => {
-                    const filterValue = columnFilters.createdAt as DateRangeFilter;
-                    return (
-                        <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Created At' />
-                            {filterValue?.from && filterValue?.to && (
-                                <span className='text-xs text-accent'>●</span>
-                            )}
-                        </div>
-                    );
-                },
+                header: ({ column }) => (
+                    <DataTableColumnHeader column={column} label='Created At' />
+                ),
                 cell: ({ row }) => (
-                    <div className='text-foreground'>
+                    <div className='w-36'>
                         {row.original.createdAt
                             ? format(
-                                  new Date(row.original.createdAt),
-                                  'dd/MM/yyyy, HH:mm',
-                              )
+                                new Date(row.original.createdAt),
+                                'dd/MM/yyyy, HH:mm',
+                            )
                             : 'N/A'}
                     </div>
                 ),
             },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const report = row.original;
-                    const handleView = async () => {
-                        try {
-                            const details = await fetchReportMutation.mutateAsync({
-                                id: report.id!,
-                                downloadUrl: false,
-                            });
-                            if (details.reportUrl) {
-                                window.open(details.reportUrl, '_blank');
-                            } else {
-                                toast.error('No report location available');
-                            }
-                        } catch (error) {
-                            // Error handled by mutation
-                        }
-                    };
-
-                    const handleEdit = () => {
-                        router.navigate({ to: `/publish?report=${report.id}` as any });
-                    };
-
-                    const handleRetry = async () => {
-                        retryMutation.mutate(report.id!, {
-                            onSuccess: () => {
-                                toast.success('Retrying to build report!');
-                            },
-                            onError: () => {
-                                toast.error('Failed to retry report');
-                            },
-                        });
-                    };
-
-                    const handleDelete = () => {
-                        setDeletingReportId(report.id!);
-                        setSingleDeleteModalOpen(true);
-                    };
-
-                    return (
-                        <div className='w-12' onClick={(e) => e.stopPropagation()}>
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    {report.status === 'done' && (
-                                        <DropdownMenuItem onClick={handleView}>
-                                            <Eye width='18' height='18' />
-                                            View Report
-                                        </DropdownMenuItem>
-                                    )}
-                                    {report.status !== 'working' && (
-                                        <DropdownMenuItem onClick={handleEdit}>
-                                            <Edit width='18' height='18' />
-                                            Edit Report
-                                        </DropdownMenuItem>
-                                    )}
-                                    {report.status === 'error' && (
-                                        <DropdownMenuItem onClick={handleRetry}>
-                                            <RefreshCircle width='18' height='18' />
-                                            Retry
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={handleDelete}
-                                        variant='destructive'
-                                    >
-                                        <Trash width='18' height='18' />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
-                enableSorting: false,
-            },
         ],
-        [
-            columnFilters,
-            getStatusIcon,
-            fetchReportMutation,
-            router,
-            deleteMutation,
-            retryMutation,
-        ],
+        [columnFilters, getStatusIcon],
     );
 
-    // Handle row selection
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedReports(selectedIds);
-    }, []);
+    const onTableSortingChange = useCallback(
+        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+            const nextSorting =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            handleSortingChange(nextSorting);
+        },
+        [handleSortingChange, sorting],
+    );
+
+    const table = useReactTable({
+        data: reports,
+        columns,
+        state: {
+            sorting,
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? index),
+        onSortingChange: onTableSortingChange,
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        manualSorting: true,
+        pageCount: totalPages,
+    });
 
     return (
         <div className='w-full h-full'>
@@ -728,7 +665,7 @@ export default function Reports() {
 
             {/* Content Area */}
             <div className='flex flex-col space-y-4 px-4 pb-4'>
-                <ActionBar
+                <BaseActionBar
                     left={
                         <>
                             <ActionBarSearch
@@ -754,59 +691,71 @@ export default function Reports() {
                     }
                 />
 
-                <DataTable
-                    columns={columns}
-                    data={reports}
-                    loading={loading}
-                    emptyMessage='No reports found.'
-                    enableRowSelection={true}
-                    selectedRows={selectedReports}
-                    onRowSelectionChange={handleRowSelectionChange}
-                    sorting={sorting}
-                    onSortingChange={handleSortingChange}
-                    manualPagination={true}
-                    bulkActions={[
-                        {
-                            id: 'download',
-                            label: 'Download',
-                            icon: <Download width={18} height={18} />,
-                            onClick: () => handleDownload(selectedReports),
-                            disabled:
-                                loading ||
-                                reports.length === 0 ||
-                                selectedReports.length === 0,
-                        },
-                        {
-                            id: 'retry',
-                            label: 'Retry',
-                            icon: <RefreshCircle width={18} height={18} />,
-                            onClick: () => handleRetry(selectedReports),
-                            disabled:
-                                loading ||
-                                reports.length === 0 ||
-                                selectedReports.length === 0,
-                        },
-                        {
-                            id: 'delete',
-                            label: 'Delete',
-                            icon: <Trash width={18} height={18} />,
-                            onClick: () => handleDelete(selectedReports),
-                            disabled:
-                                loading ||
-                                reports.length === 0 ||
-                                selectedReports.length === 0,
-                            variant: 'destructive',
-                        },
-                    ]}
-                    itemLabel='report'
-                    manualSorting={true}
-                    pageCount={totalPages}
-                    initialPageIndex={page - 1}
-                    initialPageSize={pageSize}
-                    onPaginationChange={handlePaginationChange}
-                    showPagination={true}
-                />
+                {loading ? (
+                    <div className='flex min-h-[200px] items-center justify-center'>
+                        Loading...
+                    </div>
+                ) : (
+                    <DataTable
+                        table={table}
+                        onRowClick={async (report) => {
+                            try {
+                                const details = await fetchReportMutation.mutateAsync({
+                                    id: report.id!,
+                                    downloadUrl: false,
+                                });
+                                if (details.reportUrl) {
+                                    window.open(details.reportUrl, '_blank');
+                                } else {
+                                    toast.error(
+                                        'Report URL not found for report ' + details.title,
+                                    );
+                                }
+                            } catch (error) {
+                                // Error handled by mutation
+                            }
+                        }}
+                    />
+                )}
             </div>
+            <ActionBar
+                open={selectedReportIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) setRowSelection({});
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedReportIds.length} report
+                    {selectedReportIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={() => handleDownload(selectedReportIds)}
+                        disabled={loading || reports.length === 0 || selectedReportIds.length === 0}
+                    >
+                        <Download width={18} height={18} />
+                        Download
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => handleRetry(selectedReportIds)}
+                        disabled={loading || reports.length === 0 || selectedReportIds.length === 0}
+                    >
+                        <RefreshCircle width={18} height={18} />
+                        Retry
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => handleDelete(selectedReportIds)}
+                        disabled={loading || reports.length === 0 || selectedReportIds.length === 0}
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
+            </ActionBar>
             <ConfirmDeletionModal
                 open={deleteModalOpen}
                 onOpenChange={setDeleteModalOpen}

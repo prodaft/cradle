@@ -148,9 +148,6 @@ export default function FilesList({
     const [statusFilter, setStatusFilter] = useState<'all' | 'healthy' | 'warning'>(
         'all',
     );
-    const [activeFile, setActiveFile] = useState<FileReferenceWithNote | null>(
-        null,
-    );
 
     const { setNodeRef } = useDroppable({
         id: 'files-droppable',
@@ -670,12 +667,6 @@ export default function FilesList({
         pageCount: totalPages,
     });
 
-    useEffect(() => {
-        if (selectedFileIds.length > 0) {
-            setActiveFile(null);
-        }
-    }, [selectedFileIds.length]);
-
     return (
         <>
             <div className='flex flex-col space-y-4'>
@@ -722,10 +713,7 @@ export default function FilesList({
                             Loading...
                         </div>
                     ) : (
-                        <DataTable
-                            table={table}
-                            onRowClick={(row) => setActiveFile(row)}
-                        />
+                        <DataTable table={table} />
                     )}
                 </div>
             </div>
@@ -771,55 +759,6 @@ export default function FilesList({
                 >
                     Clear
                 </ActionBarClose>
-            </ActionBar>
-            <ActionBar
-                open={!!activeFile}
-                onOpenChange={(open) => {
-                    if (!open) setActiveFile(null);
-                }}
-                align='end'
-            >
-                <ActionBarSelection>
-                    {activeFile ? truncateText(activeFile.fileName, 24) : 'File actions'}
-                </ActionBarSelection>
-                <ActionBarSeparator />
-                <ActionBarGroup>
-                    <ActionBarItem
-                        onClick={() => {
-                            if (activeFile) handleDownloadFile(activeFile);
-                        }}
-                        disabled={!activeFile?.id}
-                    >
-                        <Download width={18} height={18} />
-                        Download
-                    </ActionBarItem>
-                    <ActionBarItem
-                        onClick={() => {
-                            if (activeFile?.id) {
-                                reprocessFileMutation.mutate(activeFile.id);
-                            }
-                        }}
-                        disabled={!activeFile?.id}
-                    >
-                        <RefreshCircle width={18} height={18} />
-                        Reprocess
-                    </ActionBarItem>
-                    <ActionBarItem
-                        onClick={() => {
-                            if (activeFile?.id) {
-                                setDeletingFileId(activeFile.id);
-                                setDeleteModalOpen(true);
-                            }
-                        }}
-                        disabled={!activeFile?.id}
-                        className='text-destructive'
-                    >
-                        <Trash width={18} height={18} />
-                        Delete
-                    </ActionBarItem>
-                </ActionBarGroup>
-                <ActionBarSeparator />
-                <ActionBarClose className='px-2 text-sm'>Close</ActionBarClose>
             </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}

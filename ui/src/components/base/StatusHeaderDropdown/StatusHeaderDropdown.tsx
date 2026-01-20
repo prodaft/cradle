@@ -7,14 +7,14 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import {
     DesignNib,
     InfoCircleSolid,
     WarningCircleSolid,
-    WarningTriangleSolid,
+    WarningTriangleSolid
 } from 'iconoir-react';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 
 export type StatusOption =
     | 'all'
@@ -51,7 +51,7 @@ export default function StatusHeaderDropdown({
     const getStatusIcon = (status: string) => {
         switch (status) {
             case 'all':
-                return <div className='w-[18px] h-[18px] rounded-full bg-muted' />;
+                return <div className='w-[18px] h-[18px] rounded-full bg-primary' />;
             case 'fleeting':
                 return <DesignNib className='text-primary' width='18' height='18' />;
             case 'healthy':

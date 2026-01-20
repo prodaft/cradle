@@ -1,19 +1,30 @@
 import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
-import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import { ActionBar as BaseActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
-import TableActionsButton from '@components/base/TableActionsButton';
 import type { BaseDigest } from '@services/cradle/models';
-import { useMutation } from '@tanstack/react-query';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    type SortingState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
 import { format } from 'date-fns';
 import {
     InfoCircleSolid,
@@ -21,7 +32,7 @@ import {
     WarningCircleSolid,
     WarningTriangleSolid,
 } from 'iconoir-react';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 interface DataTypeOption {
     value: string;
@@ -78,46 +89,23 @@ function DigestList({
     dataTypeOptions = [],
     onUpload,
 }: DigestListProps) {
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [deletingDigestId, setDeletingDigestId] = useState<string | null>(null);
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
     const { intelioApi } = useApi();
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
-    const deleteDigestMutation = useMutation({
-        mutationFn: async (digestId: string) => {
-            await intelioApi.intelioDigestDestroy({ id: digestId });
-        },
-        meta: {
-            suppressNotification: true, // We handle alerts ourselves
-        },
-        onSuccess: () => {
-            setAlert({
-                show: true,
-                message: 'Digest deleted successfully',
-                color: 'green',
-            });
-            if (onDigestDelete) onDigestDelete();
-        },
-        onError: () => {
-            setAlert({
-                show: true,
-                message: 'Failed to delete digest',
-                color: 'red',
-            });
-        },
-    });
-
-    // Internal state for selection when no external state is provided
-    const [internalSelectedDigests, setInternalSelectedDigests] = useState<string[]>(
-        [],
+    const selectedDigestIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
     );
 
-    // Use external state if provided, otherwise use internal state
-    const selectedDigests = externalSelectedDigests ?? internalSelectedDigests;
-    const setSelectedDigests = useMemo(
-        () => externalSetSelectedDigests ?? setInternalSelectedDigests,
-        [externalSetSelectedDigests],
-    );
+    useEffect(() => {
+        if (!externalSelectedDigests) return;
+        const selection: RowSelectionState = {};
+        externalSelectedDigests.forEach((id) => {
+            selection[String(id)] = true;
+        });
+        setRowSelection(selection);
+    }, [externalSelectedDigests]);
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -125,10 +113,6 @@ function DigestList({
         type: 'digest_type',
         createdAt: 'created_at',
         user: 'user__username',
-    };
-
-    const handleDelete = (digestId: string) => {
-        deleteDigestMutation.mutate(digestId);
     };
 
     const handleStatusChange = (status: string) => {
@@ -183,6 +167,15 @@ function DigestList({
             }
         },
         [onSort],
+    );
+
+    const onTableSortingChange = useCallback(
+        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+            const nextSorting =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            handleSortingChange(nextSorting);
+        },
+        [handleSortingChange, sorting],
     );
 
     // Define filterable columns with their handlers
@@ -302,6 +295,9 @@ function DigestList({
         () => [
             {
                 id: 'select',
+                size: 36,
+                minSize: 36,
+                maxSize: 36,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -371,7 +367,7 @@ function DigestList({
                     const filterValue = columnFilters.user as string;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='User' />
+                            <DataTableColumnHeader column={column} label='User' />
                             {filterValue && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -450,7 +446,7 @@ function DigestList({
                     const filterValue = columnFilters.createdAt as DateRangeFilter;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Created At' />
+                            <DataTableColumnHeader column={column} label='Created At' />
                             {filterValue?.from && filterValue?.to && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -468,50 +464,52 @@ function DigestList({
                     </div>
                 ),
             },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const digest = row.original;
-                    const handleDelete = () => {
-                        setDeletingDigestId(digest.id!);
-                        setDeleteModalOpen(true);
-                    };
-
-                    return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    <DropdownMenuItem
-                                        onClick={handleDelete}
-                                        variant='destructive'
-                                    >
-                                        <Trash width='18' height='18' />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
-                enableSorting: false,
-            },
         ],
-        [columnFilters, handleStatusChange, getStatusIcon, handleDelete],
+        [columnFilters, handleStatusChange, getStatusIcon],
     );
-
-    // Handle row selection
-    const handleRowSelectionChange = useCallback(
-        (selectedIds: string[]) => {
-            setSelectedDigests(selectedIds);
+    const table = useReactTable({
+        data: digests,
+        columns,
+        state: {
+            sorting,
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
         },
-        [setSelectedDigests],
-    );
+        getRowId: (row, index) => String(row.id ?? index),
+        onSortingChange: onTableSortingChange,
+        onRowSelectionChange: (updater) => {
+            setRowSelection((prev) => {
+                const next = typeof updater === 'function' ? updater(prev) : updater;
+                const selectedIds = Object.keys(next).filter((key) => next[key]);
+                externalSetSelectedDigests?.(selectedIds);
+                return next;
+            });
+        },
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        manualSorting: true,
+        pageCount: totalPages,
+    });
 
-    const handleDeleteSelected = async (selectedIds: string[]) => {
+    const clearSelection = useCallback(() => {
+        setRowSelection({});
+        externalSetSelectedDigests?.([]);
+    }, [externalSetSelectedDigests]);
+
+    const handleDeleteSelected = async () => {
         setBulkDeleteModalOpen(true);
     };
 
@@ -548,7 +546,7 @@ function DigestList({
             }
 
             // Refresh the digests list
-            setSelectedDigests([]);
+            clearSelection();
             if (onDigestDelete) onDigestDelete();
         } catch (error) {
             setAlert({
@@ -561,7 +559,7 @@ function DigestList({
 
     return (
         <>
-            <ActionBar
+            <BaseActionBar
                 left={
                     <>
                         <ActionBarSearch
@@ -589,60 +587,44 @@ function DigestList({
                 right={null}
             />
 
-            <DataTable
-                columns={columns}
-                data={digests}
-                loading={loading}
-                emptyMessage='No digests found!'
-                enableRowSelection={true}
-                selectedRows={selectedDigests}
-                onRowSelectionChange={handleRowSelectionChange}
-                sorting={sorting}
-                onSortingChange={handleSortingChange}
-                manualPagination={true}
-                pageCount={totalPages}
-                initialPageIndex={page - 1}
-                initialPageSize={pageSize}
-                onPaginationChange={handlePaginationChange}
-                showPagination={true}
-                bulkActions={[
-                    {
-                        id: 'delete',
-                        label: 'Delete digests',
-                        icon: <Trash width={18} height={18} />,
-                        onClick: () => handleDeleteSelected(selectedDigests || []),
-                        disabled:
-                            loading ||
-                            digests.length === 0 ||
-                            selectedDigests.length === 0,
-                        variant: 'destructive',
-                    },
-                ]}
-                itemLabel='digest'
-                manualSorting={true}
-            />
-            {deletingDigestId && (
-                <ConfirmDeletionModal
-                    open={deleteModalOpen}
-                    onOpenChange={(open) => {
-                        setDeleteModalOpen(open);
-                        if (!open) setDeletingDigestId(null);
-                    }}
-                    text='Are you sure you want to delete this digest?'
-                    onConfirm={() => {
-                        if (deletingDigestId) {
-                            handleDelete(deletingDigestId);
-                        }
-                    }}
-                />
+            {loading ? (
+                <div className='flex min-h-[200px] items-center justify-center'>
+                    Loading...
+                </div>
+            ) : (
+                <DataTable table={table} />
             )}
+            <ActionBar
+                open={selectedDigestIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) clearSelection();
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedDigestIds.length} digest
+                    {selectedDigestIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={handleDeleteSelected}
+                        disabled={loading || digests.length === 0 || selectedDigestIds.length === 0}
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
+            </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
                 onOpenChange={setBulkDeleteModalOpen}
-                text={`Are you sure you want to delete ${selectedDigests?.length || 0} digest${(selectedDigests?.length || 0) > 1 ? 's' : ''}?`}
+                text={`Are you sure you want to delete ${selectedDigestIds.length} digest${selectedDigestIds.length > 1 ? 's' : ''}?`}
                 onConfirm={() => {
-                    if (selectedDigests) {
-                        executeBulkDelete(selectedDigests);
+                    if (selectedDigestIds.length > 0) {
+                        executeBulkDelete(selectedDigestIds);
                     }
                 }}
             />

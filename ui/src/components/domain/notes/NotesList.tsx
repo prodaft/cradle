@@ -1,8 +1,23 @@
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import {
+    ActionBar,
+    ActionBarClose,
+    ActionBarGroup,
+    ActionBarItem,
+    ActionBarSelection,
+    ActionBarSeparator,
+} from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/ui/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
-import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -12,8 +27,14 @@ import { parseMarkdownInline } from '@/utils/parser';
 import type { NoteRetrieve, NoteRetrieveStatusEnum } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
-import { ColumnDef, SortingState } from '@tanstack/react-table';
-import { format } from 'date-fns';
+import {
+    type ColumnDef,
+    type RowSelectionState,
+    type SortingState,
+    getCoreRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import { endOfDay, format, startOfDay } from 'date-fns';
 import {
     DesignNib,
     InfoCircleSolid,
@@ -29,14 +50,13 @@ import { startCase } from 'lodash';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
-    ActionBar,
     ActionBarButton,
     ActionBarSearch,
+    ActionBar as BaseActionBar,
 } from '../../base/ActionBar/ActionBar';
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
-import TableActionsButton from '../../base/TableActionsButton';
 import ConfirmDeletionModal from '../../dialogs/base/ConfirmDeletionModal';
 import EnrichmentRequestModal from '../../dialogs/enrichment/EnrichmentRequestModal';
 import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
@@ -126,8 +146,6 @@ export default function NotesList({
     );
     const { notesApi, managementApi } = useApi();
     const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
-    const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
-    const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
     const [reportModalOpen, setReportModalOpen] = useState(false);
     const [reportSelectedNotes, setReportSelectedNotes] = useState<
         Array<{ id: string; title: string }>
@@ -151,7 +169,7 @@ export default function NotesList({
             suppressNotification: true,
         },
     });
-    const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
+    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [pageSize, setPageSize] = useState((search as any)?.notes_pagesize || 10);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
@@ -181,6 +199,10 @@ export default function NotesList({
         },
     });
     const containerRef = useRef<HTMLDivElement>(null);
+    const selectedNoteIds = useMemo(
+        () => Object.keys(rowSelection).filter((key) => rowSelection[key]),
+        [rowSelection],
+    );
 
     // Mapping of table columns to API field names
     const sortFieldMapping: Record<string, string> = {
@@ -297,6 +319,11 @@ export default function NotesList({
             status,
         }));
     };
+
+    const statusOptions = useMemo(
+        () => ['all', 'healthy', 'processing', 'warning', 'invalid'],
+        [],
+    );
 
     useEffect(() => {
         setColumnFilters({
@@ -446,33 +473,21 @@ export default function NotesList({
     // Notes to display (same as fetched notes since filters were removed)
     const displayedNotes = notes;
 
-    const handleRetrySelected = useCallback(
-        async (selectedIds: string[]) => {
-            if (selectedIds.length === 0) return;
+    const handleRetrySelected = useCallback(async () => {
+        if (selectedNoteIds.length === 0) return;
 
-            const promises = selectedIds.map((id) =>
-                retryNotesMutation.mutateAsync(id),
-            );
+        const promises = selectedNoteIds.map((id) =>
+            retryNotesMutation.mutateAsync(id),
+        );
 
-            await Promise.all(promises);
+        await Promise.all(promises);
 
-            toast.success(
-                `Retrying ${selectedIds.length} note${selectedIds.length > 1 ? 's' : ''}...`,
-            );
-            setSelectedNotes([]);
-            queryClient.invalidateQueries({ queryKey: queryKeys.notes.lists() });
-        },
-        [retryNotesMutation, queryClient],
-    );
-
-    // Select all visible notes
-    const handleSelectAll = () => {
-        if (selectedNotes.length === displayedNotes.length) {
-            setSelectedNotes([]);
-        } else {
-            setSelectedNotes(displayedNotes.map((n) => n.id!));
-        }
-    };
+        toast.success(
+            `Retrying ${selectedNoteIds.length} note${selectedNoteIds.length > 1 ? 's' : ''}...`,
+        );
+        setRowSelection({});
+        queryClient.invalidateQueries({ queryKey: queryKeys.notes.lists() });
+    }, [retryNotesMutation, queryClient, selectedNoteIds]);
 
     const handlePageChange = (newPage: number) => {
         const searchAny = search as any;
@@ -521,16 +536,6 @@ export default function NotesList({
         },
     });
 
-    const actions = [
-        {
-            value: 'delete',
-            label: 'Delete',
-            handler: async (selectedIds: string[]) => {
-                setBulkDeleteModalOpen(true);
-            },
-        },
-    ];
-
     const executeBulkDelete = async (selectedIds: string[]) => {
         try {
             const deletePromises = selectedIds.map((id) =>
@@ -561,7 +566,7 @@ export default function NotesList({
                 });
             }
 
-            setSelectedNotes([]);
+            setRowSelection({});
         } catch (error) {
             setAlert({
                 show: true,
@@ -588,6 +593,15 @@ export default function NotesList({
             : [];
     }, [sortField, sortDirection]);
 
+    const onTableSortingChange = useCallback(
+        (updater: SortingState | ((prev: SortingState) => SortingState)) => {
+            const nextSorting =
+                typeof updater === 'function' ? updater(sorting) : updater;
+            handleSortingChange(nextSorting);
+        },
+        [handleSortingChange, sorting],
+    );
+
     // Filter out filtered notes
     const filteredData = useMemo(() => {
         return displayedNotes.filter((note) => {
@@ -604,6 +618,9 @@ export default function NotesList({
         () => [
             {
                 id: 'select',
+                size: 36,
+                minSize: 36,
+                maxSize: 36,
                 header: ({ table }) => (
                     <Checkbox
                         checked={
@@ -631,7 +648,7 @@ export default function NotesList({
                 accessorKey: 'title',
                 id: 'title',
                 header: () => (
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center'>
                         <StatusHeaderDropdown
                             onStatusChange={handleStatusChange}
                             status={columnFilters.status}
@@ -730,7 +747,7 @@ export default function NotesList({
                     const filterValue = columnFilters.author as string;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Author' />
+                            <DataTableColumnHeader column={column} label='Author' />
                             {filterValue && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -750,7 +767,7 @@ export default function NotesList({
                     const filterValue = columnFilters.editor as string;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Editor' />
+                            <DataTableColumnHeader column={column} label='Editor' />
                             {filterValue && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -770,7 +787,7 @@ export default function NotesList({
                     const filterValue = columnFilters.createdAt as DateRangeFilter;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Created At' />
+                            <DataTableColumnHeader column={column} label='Created At' />
                             {filterValue?.from && filterValue?.to && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -795,7 +812,7 @@ export default function NotesList({
                     const filterValue = columnFilters.lastChanged as DateRangeFilter;
                     return (
                         <div className='flex items-center gap-2'>
-                            <DataTableColumnHeader column={column} title='Updated At' />
+                            <DataTableColumnHeader column={column} label='Updated At' />
                             {filterValue?.from && filterValue?.to && (
                                 <span className='text-xs text-accent'>●</span>
                             )}
@@ -813,103 +830,51 @@ export default function NotesList({
                     </div>
                 ),
             },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => {
-                    const note = row.original;
-                    const handleDelete = () => {
-                        setDeletingNoteId(note.id!);
-                        setSingleDeleteModalOpen(true);
-                    };
-
-                    const handleRetry = async () => {
-                        try {
-                            await retryNotesMutation.mutateAsync(note.id!);
-                            toast.success('Retrying note...');
-                            queryClient.invalidateQueries({
-                                queryKey: queryKeys.notes.lists(),
-                            });
-                        } catch (error) {
-                            toast.error('Failed to retry note');
-                        }
-                    };
-
-                    const handleReport = () => {
-                        const noteObject = {
-                            id: note.id!,
-                            title: note.metadata?.title || note.title || 'Untitled',
-                        };
-                        setReportSelectedNotes([noteObject]);
-                        setReportModalOpen(true);
-                    };
-
-                    const handleEnrich = () => {
-                        const noteObject = {
-                            id: note.id!,
-                            title: note.metadata?.title || note.title || 'Untitled',
-                            entities: note.entities || [],
-                        };
-                        setEnrichmentNotesList([noteObject]);
-                        setEnrichmentModalOpen(true);
-                    };
-
-                    return (
-                        <div
-                            className='w-12 text-right'
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className='flex justify-end'>
-                                <TableActionsButton>
-                                    <DropdownMenuItem onClick={handleRetry}>
-                                        <RefreshCircle width='18' height='18' />
-                                        Retry
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleReport}>
-                                        <StatsReport width='18' height='18' />
-                                        Generate Report
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={handleEnrich}>
-                                        <Sparks width='18' height='18' />
-                                        Enrich
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={handleDelete}
-                                        variant='destructive'
-                                    >
-                                        <Trash width='18' height='18' />
-                                        Delete
-                                    </DropdownMenuItem>
-                                </TableActionsButton>
-                            </div>
-                        </div>
-                    );
-                },
-                enableSorting: false,
-            },
         ],
         [
             columnFilters,
             handleStatusChange,
             handleColumnFilter,
             getStatusIcon,
-            actions,
-            handleRetrySelected,
         ],
     );
 
-    // Handle row selection
-    const handleRowSelectionChange = useCallback((selectedIds: string[]) => {
-        setSelectedNotes(selectedIds);
-    }, []);
+    const table = useReactTable({
+        data: filteredData,
+        columns,
+        state: {
+            sorting,
+            rowSelection,
+            pagination: {
+                pageIndex: page - 1,
+                pageSize,
+            },
+        },
+        getRowId: (row, index) => String(row.id ?? index),
+        onSortingChange: onTableSortingChange,
+        onRowSelectionChange: setRowSelection,
+        onPaginationChange: (updater) => {
+            const currentPagination = {
+                pageIndex: page - 1,
+                pageSize,
+            };
+            const nextPagination =
+                typeof updater === 'function' ? updater(currentPagination) : updater;
+            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
+        },
+        getCoreRowModel: getCoreRowModel(),
+        enableRowSelection: true,
+        manualPagination: true,
+        manualSorting: true,
+        pageCount: totalPages,
+    });
 
     return (
         <PreviewTipProvider delayDuration={800}>
             <div ref={containerRef} className='flex flex-col space-y-4'>
-                <ActionBar
+                <BaseActionBar
                     left={
-                        <>
+                        <div className='flex items-center gap-2 flex-nowrap'>
                             {onCreateNote && hideActionBar && (
                                 <ActionBarButton
                                     tooltip={
@@ -943,7 +908,57 @@ export default function NotesList({
                                     onSubmit={(v) => contentSearch.onSubmit?.(v)}
                                 />
                             )}
-                        </>
+                            <DateRangePicker
+                                startDate={
+                                    columnFilters.createdAt?.from
+                                        ? new Date(columnFilters.createdAt.from)
+                                        : null
+                                }
+                                endDate={
+                                    columnFilters.createdAt?.to
+                                        ? new Date(columnFilters.createdAt.to)
+                                        : null
+                                }
+                                onChange={([start, end]) => {
+                                    const normalizedStart = start
+                                        ? startOfDay(start)
+                                        : null;
+                                    const normalizedEnd = start
+                                        ? endOfDay(end ?? start)
+                                        : null;
+                                    handleColumnFilter('createdAt', {
+                                        from: normalizedStart
+                                            ? format(
+                                                  normalizedStart,
+                                                  "yyyy-MM-dd'T'HH:mm",
+                                              )
+                                            : '',
+                                        to: normalizedEnd
+                                            ? format(
+                                                  normalizedEnd,
+                                                  "yyyy-MM-dd'T'HH:mm",
+                                              )
+                                            : '',
+                                    });
+                                }}
+                                className='h-10 min-w-[220px]'
+                            />
+                            <Select
+                                value={columnFilters.status || 'all'}
+                                onValueChange={handleStatusChange}
+                            >
+                                <SelectTrigger className='h-10 min-w-[160px]'>
+                                    <SelectValue placeholder='Status' />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {statusOptions.map((status) => (
+                                        <SelectItem key={status} value={status}>
+                                            {startCase(status)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     }
                 />
 
@@ -953,139 +968,101 @@ export default function NotesList({
                     </div>
                 )}
 
-                <DataTable
-                    columns={columns}
-                    data={filteredData}
-                    loading={loading}
-                    emptyMessage='No notes found!'
-                    enableRowSelection={true}
-                    selectedRows={selectedNotes}
-                    onRowSelectionChange={handleRowSelectionChange}
-                    sorting={sorting}
-                    onSortingChange={handleSortingChange}
-                    manualPagination={true}
-                    manualSorting={true}
-                    pageCount={totalPages}
-                    initialPageIndex={page - 1}
-                    initialPageSize={pageSize}
-                    onPaginationChange={handlePaginationChange}
-                    showPagination={true}
-                    onRowClick={(note) =>
-                        router.navigate({ to: `/notes/${note.id}` as any })
-                    }
-                    bulkActions={[
-                        {
-                            id: 'retry',
-                            label: 'Retry',
-                            icon: <RefreshCircle width={18} height={18} />,
-                            onClick: () => handleRetrySelected(selectedNotes),
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                        },
-                        {
-                            id: 'report',
-                            label: 'Report',
-                            icon: <StatsReport width={18} height={18} />,
-                            onClick: () => {
-                                if (selectedNotes.length === 0) return;
-                                const selectedNoteObjects = notes
-                                    .filter((n) => n.id && selectedNotes.includes(n.id))
-                                    .map((n) => ({
-                                        id: n.id!,
-                                        title:
-                                            n.metadata?.title || n.title || 'Untitled',
-                                    }));
-                                setReportSelectedNotes(selectedNoteObjects);
-                                setReportModalOpen(true);
-                            },
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                        },
-                        {
-                            id: 'enrich',
-                            label: 'Enrich',
-                            icon: <Sparks width={18} height={18} />,
-                            onClick: () => {
-                                if (selectedNotes.length === 0) return;
-                                const selectedNoteObjects = notes
-                                    .filter((n) => n.id && selectedNotes.includes(n.id))
-                                    .map((n) => ({
-                                        id: n.id!,
-                                        title: (n.metadata?.title ||
-                                            n.title ||
-                                            'Untitled') as string,
-                                        entities: (n.entities ||
-                                            []) as OptimizedEntryResponse[],
-                                    }));
-                                setEnrichmentNotesList(selectedNoteObjects);
-                                setEnrichmentModalOpen(true);
-                            },
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                        },
-                        {
-                            id: 'delete',
-                            label: 'Delete',
-                            icon: <Trash width={18} height={18} />,
-                            onClick: () => {
-                                if (selectedNotes.length > 0) {
-                                    setBulkDeleteModalOpen(true);
-                                }
-                            },
-                            disabled:
-                                loading ||
-                                selectedNotes.length === 0 ||
-                                notes.length === 0,
-                            variant: 'destructive',
-                        },
-                    ]}
-                    itemLabel='note'
-                />
+                {loading ? (
+                    <div className='flex min-h-[200px] items-center justify-center'>
+                        Loading...
+                    </div>
+                ) : (
+                    <DataTable
+                        table={table}
+                        onRowClick={(note) =>
+                            router.navigate({ to: `/notes/${note.id}` as any })
+                        }
+                    />
+                )}
             </div>
+            <ActionBar
+                open={selectedNoteIds.length > 0}
+                onOpenChange={(open) => {
+                    if (!open) setRowSelection({});
+                }}
+            >
+                <ActionBarSelection>
+                    {selectedNoteIds.length} note
+                    {selectedNoteIds.length !== 1 ? 's' : ''} selected
+                </ActionBarSelection>
+                <ActionBarSeparator />
+                <ActionBarGroup>
+                    <ActionBarItem
+                        onClick={handleRetrySelected}
+                        disabled={loading || selectedNoteIds.length === 0 || notes.length === 0}
+                    >
+                        <RefreshCircle width={18} height={18} />
+                        Retry
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (selectedNoteIds.length === 0) return;
+                            const selectedNoteObjects = notes
+                                .filter((n) => n.id && selectedNoteIds.includes(String(n.id)))
+                                .map((n) => ({
+                                    id: n.id!,
+                                    title: n.metadata?.title || n.title || 'Untitled',
+                                }));
+                            setReportSelectedNotes(selectedNoteObjects);
+                            setReportModalOpen(true);
+                        }}
+                        disabled={loading || selectedNoteIds.length === 0 || notes.length === 0}
+                    >
+                        <StatsReport width={18} height={18} />
+                        Report
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (selectedNoteIds.length === 0) return;
+                            const selectedNoteObjects = notes
+                                .filter((n) => n.id && selectedNoteIds.includes(String(n.id)))
+                                .map((n) => ({
+                                    id: n.id!,
+                                    title: (n.metadata?.title ||
+                                        n.title ||
+                                        'Untitled') as string,
+                                    entities: (n.entities || []) as OptimizedEntryResponse[],
+                                }));
+                            setEnrichmentNotesList(selectedNoteObjects);
+                            setEnrichmentModalOpen(true);
+                        }}
+                        disabled={loading || selectedNoteIds.length === 0 || notes.length === 0}
+                    >
+                        <Sparks width={18} height={18} />
+                        Enrich
+                    </ActionBarItem>
+                    <ActionBarItem
+                        onClick={() => {
+                            if (selectedNoteIds.length > 0) {
+                                setBulkDeleteModalOpen(true);
+                            }
+                        }}
+                        disabled={loading || selectedNoteIds.length === 0 || notes.length === 0}
+                        className='text-destructive'
+                    >
+                        <Trash width={18} height={18} />
+                        Delete
+                    </ActionBarItem>
+                </ActionBarGroup>
+                <ActionBarSeparator />
+                <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
+            </ActionBar>
             <ConfirmDeletionModal
                 open={bulkDeleteModalOpen}
                 onOpenChange={setBulkDeleteModalOpen}
                 onConfirm={async () => {
-                    if (selectedNotes.length > 0) {
-                        await executeBulkDelete(selectedNotes);
+                    if (selectedNoteIds.length > 0) {
+                        await executeBulkDelete(selectedNoteIds);
                     }
                 }}
-                text={`Are you sure you want to delete ${selectedNotes.length} note${selectedNotes.length > 1 ? 's' : ''}? This action is irreversible.`}
+                text={`Are you sure you want to delete ${selectedNoteIds.length} note${selectedNoteIds.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
-            {deletingNoteId && (
-                <ConfirmDeletionModal
-                    open={singleDeleteModalOpen}
-                    onOpenChange={(open) => {
-                        setSingleDeleteModalOpen(open);
-                        if (!open) setDeletingNoteId(null);
-                    }}
-                    text='Are you sure you want to delete this note? This action is irreversible.'
-                    onConfirm={async () => {
-                        if (deletingNoteId) {
-                            try {
-                                await deleteMutation.mutateAsync(deletingNoteId);
-                                setAlert({
-                                    show: true,
-                                    color: 'green',
-                                    message: 'Note deleted successfully',
-                                });
-                            } catch (error) {
-                                setAlert({
-                                    show: true,
-                                    color: 'red',
-                                    message: 'Failed to delete note',
-                                });
-                            }
-                        }
-                    }}
-                />
-            )}
             <ReportGenerationModal
                 open={reportModalOpen}
                 onOpenChange={setReportModalOpen}

@@ -38,7 +38,7 @@ export function DataTable<TData>({
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
+                <TableRow key={headerGroup.id} className="h-12">
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
@@ -64,7 +64,7 @@ export function DataTable<TData>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className={onRowClick ? "cursor-pointer" : undefined}
+                  className={cn("h-12", onRowClick ? "cursor-pointer" : undefined)}
                   onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 >
                   {row.getVisibleCells().map((cell) => (

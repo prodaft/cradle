@@ -17,7 +17,7 @@ import { useApi } from '@hooks';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { createDashboardLink } from '@utils/dashboard';
-import { Search, WarningCircle, Xmark } from 'iconoir-react';
+import { Search, WarningCircle } from 'iconoir-react';
 import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';
@@ -215,8 +215,6 @@ export default function SearchDialog({
 
     if (!isOpen || !dialogRoot) return null;
 
-    const hasActiveFilters = entrySubtypeFilters.length > 0;
-
     return createPortal(
         <div
             className='fixed inset-0 bg-black/70 flex items-start justify-center z-50 pt-[10vh]'
@@ -264,50 +262,6 @@ export default function SearchDialog({
                         setEntrySubtypeFilters={setEntrySubtypeFilters}
                         entryClassColors={entryClassColors}
                     />
-
-                    {/* Active Filters Display */}
-                    {hasActiveFilters && (
-                        <div className='px-4 py-2 border-b flex items-center gap-2 flex-wrap'>
-                            <span className='text-xs text-muted-foreground uppercase tracking-wider'>
-                                Active:
-                            </span>
-                            {entrySubtypeFilters.map((filter) => {
-                                const color = entryClassColors.get(filter);
-                                return (
-                                    <Badge
-                                        key={filter}
-                                        variant='outline'
-                                        onClick={() =>
-                                            setEntrySubtypeFilters((prev) =>
-                                                prev.filter((f) => f !== filter),
-                                            )
-                                        }
-                                        className='cursor-pointer'
-                                        style={
-                                            color
-                                                ? {
-                                                    backgroundColor: color,
-                                                    borderColor: color,
-                                                    color: '#fff',
-                                                }
-                                                : undefined
-                                        }
-                                    >
-                                        {filter}
-                                        <Xmark className='w-3 h-3' />
-                                    </Badge>
-                                );
-                            })}
-                            <Button
-                                variant='ghost'
-                                size='sm'
-                                onClick={() => setEntrySubtypeFilters([])}
-                                className='text-xs h-auto cursor-pointer'
-                            >
-                                Clear all
-                            </Button>
-                        </div>
-                    )}
 
                     {alert.show && (
                         <AlertComponent

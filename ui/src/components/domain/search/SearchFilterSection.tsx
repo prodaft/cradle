@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FilterList, NavArrowDown, NavArrowUp } from 'iconoir-react';
+import { FilterList, NavArrowDown, NavArrowUp, Xmark } from 'iconoir-react';
 import React, { Dispatch, SetStateAction } from 'react';
 
 /**
@@ -56,7 +56,7 @@ export default function SearchFilterSection({
             <Button
                 variant='ghost'
                 onClick={toggleFilters}
-                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary group h-auto'
+                className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary group h-auto rounded-none'
             >
                 <div className='flex items-center gap-2'>
                     <FilterList className='w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors' />
@@ -76,9 +76,8 @@ export default function SearchFilterSection({
 
             {/* Collapsible Filter Content */}
             <div
-                className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                    showFilters ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
-                }`}
+                className={`overflow-hidden transition-all duration-200 ease-in-out ${showFilters ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+                    }`}
             >
                 <div className='px-4 py-3 bg-secondary/50 overflow-y-auto max-h-56'>
                     <div className='flex flex-wrap gap-1.5'>
@@ -97,16 +96,15 @@ export default function SearchFilterSection({
                                     key={subtype}
                                     variant={isActive ? 'default' : 'outline'}
                                     onClick={toggleFilter}
-                                    className={`cursor-pointer mr-1.5 mb-1.5 ${
-                                        isActive ? '' : 'opacity-60'
-                                    }`}
+                                    className={`cursor-pointer mr-1.5 mb-1.5 ${isActive ? '' : 'opacity-60'
+                                        }`}
                                     style={
                                         color && isActive
                                             ? {
-                                                  backgroundColor: color,
-                                                  borderColor: color,
-                                                  color: '#fff',
-                                              }
+                                                backgroundColor: color,
+                                                borderColor: color,
+                                                color: '#fff',
+                                            }
                                             : undefined
                                     }
                                 >
@@ -117,6 +115,50 @@ export default function SearchFilterSection({
                     </div>
                 </div>
             </div>
+
+            {/* Active Filters Display */}
+            {hasFilters && (
+                <div className='px-4 py-2 border-b flex items-center gap-2 flex-wrap'>
+                    <span className='text-xs text-muted-foreground uppercase tracking-wider'>
+                        Active:
+                    </span>
+                    {entrySubtypeFilters.map((filter) => {
+                        const color = entryClassColors.get(filter);
+                        return (
+                            <Badge
+                                key={filter}
+                                variant='outline'
+                                onClick={() =>
+                                    setEntrySubtypeFilters((prev) =>
+                                        prev.filter((f) => f !== filter),
+                                    )
+                                }
+                                className='cursor-pointer'
+                                style={
+                                    color
+                                        ? {
+                                            backgroundColor: color,
+                                            borderColor: color,
+                                            color: '#fff',
+                                        }
+                                        : undefined
+                                }
+                            >
+                                {filter}
+                                <Xmark className='w-3 h-3' />
+                            </Badge>
+                        );
+                    })}
+                    <Button
+                        variant='ghost'
+                        size='sm'
+                        onClick={() => setEntrySubtypeFilters([])}
+                        className='text-xs h-auto cursor-pointer'
+                    >
+                        Clear all
+                    </Button>
+                </div>
+            )}
         </div>
     );
 }
