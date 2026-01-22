@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
@@ -107,8 +108,8 @@ export default function EntityPermissionsForm({
 
     if (isPending) {
         return (
-            <div className='flex items-center justify-center min-h-[200px] animate-pulse text-foreground'>
-                Loading...
+            <div className='flex items-center justify-center min-h-[200px] text-foreground'>
+                <Spinner />
             </div>
         );
     }

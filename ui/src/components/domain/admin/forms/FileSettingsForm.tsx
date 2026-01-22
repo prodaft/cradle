@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -261,7 +262,7 @@ export default function FileSettingsForm() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse text-foreground'>Loading...</div>
+                <div className='text-foreground'><Spinner /></div>
             </div>
         );
     }

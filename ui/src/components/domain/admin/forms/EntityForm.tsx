@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -229,8 +230,8 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     if (isPending && !isPaused) {
         return (
-            <div className='flex items-center justify-center min-h-screen animate-pulse text-foreground'>
-                Loading...
+            <div className='flex items-center justify-center min-h-screen text-foreground'>
+                <Spinner />
             </div>
         );
     }

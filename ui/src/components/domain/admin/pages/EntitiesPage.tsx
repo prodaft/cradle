@@ -1,5 +1,6 @@
 import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
+import { Spinner } from '@/components/ui/spinner';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -119,8 +120,8 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
             className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
         >
             <div className='space-y-0.5'>
-                <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-                    {entityData?.name || 'Loading...'}
+                <h1 className='text-2xl font-bold tracking-tight md:text-3xl flex items-center gap-2'>
+                    {entityData?.name || <><Spinner className="size-6" /> Loading...</>}
                 </h1>
                 <p className='text-muted-foreground'>
                     {currentDescription || 'Manage entity'}
@@ -582,7 +583,7 @@ export default function EntitiesPage() {
                     <div className='flex-1 space-y-4'>
                         {isPending ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
-                                Loading...
+                                <Spinner />
                             </div>
                         ) : (
                             <DataTable table={table} onRowClick={handleEditClick} />

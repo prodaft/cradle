@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { ConfirmDeletionModal } from '@/components/dialogs';
 import {
     ActionBar,
@@ -747,7 +748,7 @@ export default function FilesList({
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
                     {loading ? (
                         <div className='flex min-h-[200px] items-center justify-center'>
-                            Loading...
+                            <Spinner />
                         </div>
                     ) : (
                         <DataTable table={table} />

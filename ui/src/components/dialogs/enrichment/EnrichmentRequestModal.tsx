@@ -9,6 +9,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -633,7 +634,7 @@ export default function EnrichmentRequestModal({
                             {createMutation.isPending
                                 ? 'Creating...'
                                 : initialDataLoading
-                                  ? 'Loading...'
+                                  ? <><Spinner className="mr-2" /> Loading...</>
                                   : 'Create Request'}
                         </Button>
                     </div>

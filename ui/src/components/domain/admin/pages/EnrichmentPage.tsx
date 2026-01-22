@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
 import {
     Sidebar,
@@ -107,8 +108,8 @@ export default function EnrichmentPage() {
                         <SidebarGroup>
                             <SidebarMenu>
                                 {isPending ? (
-                                    <div className='px-4 py-2 text-sm text-muted-foreground'>
-                                        Loading...
+                                    <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
+                                        <Spinner className='size-3' /> Loading...
                                     </div>
                                 ) : filteredEnrichmentTypes.length === 0 ? (
                                     <div className='px-4 py-2 text-sm text-muted-foreground'>

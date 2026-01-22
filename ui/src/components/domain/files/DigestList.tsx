@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
 import {
     ActionBar,
@@ -543,7 +544,7 @@ function DigestList({
 
             {loading ? (
                 <div className='flex min-h-[200px] items-center justify-center'>
-                    Loading...
+                    <Spinner />
                 </div>
             ) : (
                 <DataTable table={table} />

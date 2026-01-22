@@ -1,5 +1,6 @@
 import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
+import { Spinner } from '@/components/ui/spinner';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -565,7 +566,7 @@ export default function EntryTypesPage() {
                     <div className='flex-1 space-y-4'>
                         {isPending ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
-                                Loading...
+                                <Spinner />
                             </div>
                         ) : (
                             <DataTable table={table} onRowClick={handleEditClick} />

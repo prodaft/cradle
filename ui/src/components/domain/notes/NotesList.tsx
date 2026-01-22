@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -906,7 +907,7 @@ export default function NotesList({
                 <div className='grid grid-cols-1 gap-2'>
                     {loading ? (
                         <div className='flex min-h-[200px] items-center justify-center'>
-                            Loading...
+                            <Spinner />
                         </div>
                     ) : (
                         <DataTable

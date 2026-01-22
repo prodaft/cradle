@@ -7,6 +7,7 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
+import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -574,7 +575,7 @@ export default function Relations({ obj }: RelationsProps) {
             <div className='grid grid-cols-1 gap-2'>
                 {isPending ? (
                     <div className='flex min-h-[200px] items-center justify-center'>
-                        Loading...
+                        <Spinner />
                     </div>
                 ) : (
                     <DataTable table={table} />

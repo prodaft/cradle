@@ -11,6 +11,7 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
 import { ActionBarSearch, ActionBar as BaseActionBar } from '@components/base/ActionBar/ActionBar';
@@ -454,7 +455,7 @@ function EnrichmentRequestsList({
             {/* Table */}
             {loading ? (
                 <div className='flex min-h-[200px] items-center justify-center'>
-                    Loading...
+                    <Spinner />
                 </div>
             ) : (
                 <DataTable table={table} />

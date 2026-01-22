@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/ui/spinner';
 import ApiKeyGenerateModal from '@/components/dialogs/auth/ApiKeyGenerateModal';
 import ChangePasswordModal from '@/components/dialogs/auth/ChangePasswordModal';
 import TwoFactorSetupModal from '@/components/dialogs/auth/TwoFactorSetupModal';
@@ -1255,22 +1256,21 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                     new notes you create
                                                                 </FieldDescription>
                                                             </FieldContent>
-                                                            <Button
-                                                                type='button'
-                                                                variant='outline'
-                                                                size='sm'
-                                                                onClick={
-                                                                    openNoteTemplateModal
-                                                                }
-                                                                disabled={
-                                                                    noteTemplateLoading
-                                                                }
-                                                            >
-                                                                {noteTemplateLoading
-                                                                    ? 'Loading...'
-                                                                    : 'Edit'}
-                                                            </Button>
-                                                        </Field>
+                                                                                                                            <Button
+                                                                                                                                type='button'
+                                                                                                                                variant='outline'
+                                                                                                                                size='sm'
+                                                                                                                                onClick={
+                                                                                                                                    openNoteTemplateModal
+                                                                                                                                }
+                                                                                                                                disabled={
+                                                                                                                                    noteTemplateLoading
+                                                                                                                                }
+                                                                                                                            >
+                                                                                                                                {noteTemplateLoading
+                                                                                                                                    ? <><Spinner className="size-3 mr-1" /> Loading...</>
+                                                                                                                                    : 'Edit'}
+                                                                                                                            </Button>                                                        </Field>
 
                                                         <Separator />
 

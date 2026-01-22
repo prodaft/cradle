@@ -10,6 +10,7 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -638,7 +639,7 @@ export default function Reports() {
 
                 {loading ? (
                     <div className='flex min-h-[200px] items-center justify-center'>
-                        Loading...
+                        <Spinner />
                     </div>
                 ) : (
                     <DataTable
