@@ -66,7 +66,8 @@ interface RelationDisplay {
 interface EnricherArtifact {
     id?: number | string;
     name?: string;
-    entry_class?: string | { subtype?: string; color?: string };
+    subtype?: string;
+    color?: string;
     count?: number;
 }
 
@@ -74,34 +75,6 @@ const normalizeId = (value?: number | string | null) => {
     if (value == null) return null;
     const parsed = typeof value === 'number' ? value : Number(value);
     return Number.isNaN(parsed) ? null : parsed;
-};
-
-const buildEntryFromArtifact = (
-    artifact: EnricherArtifact,
-): EntrySerializerMinimal | undefined => {
-    if (!artifact.name) return undefined;
-
-    const entryClass =
-        typeof artifact.entry_class === 'object'
-            ? {
-                  type: 'artifact',
-                  subtype: artifact.entry_class.subtype || 'artifact',
-                  color: artifact.entry_class.color,
-              }
-            : undefined;
-    const subtype =
-        typeof artifact.entry_class === 'string'
-            ? artifact.entry_class
-            : entryClass?.subtype;
-
-    return {
-        id: normalizeId(artifact.id) ?? undefined,
-        name: artifact.name,
-        type: 'artifact',
-        subtype: subtype || 'artifact',
-        entryClass,
-        color: entryClass?.color,
-    };
 };
 
 const getEntryLabel = (entry?: EntrySerializerMinimal | null) => {
@@ -140,6 +113,20 @@ const mapRelationsForEntry = (
     });
 };
 
+// Render entry badge if subtype is not "enrichment"
+const renderEntryBadge = (entry: EnricherArtifact) => {
+    console.log(entry);
+    return (
+        <Badge
+            className={`rounded-full flex-shrink-0 ${(!entry.color || entry.subtype === 'enrichment') ? 'bg-muted' : ''}`}
+            style={entry.color && entry.subtype !== 'enrichment' ? { backgroundColor: entry.color } : undefined}
+        >
+            {entry.subtype}
+        </Badge>
+    );
+};
+
+
 // Individual relation item component (collapsible)
 interface RelationItemProps {
     relation: {
@@ -165,12 +152,7 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
             >
                 {relation.target ? (
                     <>
-                        <Badge
-                            className={`rounded-full flex-shrink-0 ${!relation.target.color ? 'bg-muted' : ''}`}
-                            style={relation.target.color ? { backgroundColor: relation.target.color } : undefined}
-                        >
-                            {relation.target.subtype}
-                        </Badge>
+                        {renderEntryBadge(relation.target)}
                         <span className='text-foreground text-sm'>{relation.target.name}</span>
                     </>
                 ) : (
@@ -205,15 +187,19 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
 // Grouped row component
 interface ArtifactRowProps {
     artifact: EnricherArtifact;
+    artifactId: number | null;
+    artifactBadge?: ReactNode;
     enricherName: string;
     isOpen: boolean;
-    onToggle: (open: boolean) => void;
+    onToggle: (artifactId: number | null, open: boolean) => void;
     relations: RelationDisplay[];
     isLoading: boolean;
 }
 
 function ArtifactRow({
     artifact,
+    artifactId,
+    artifactBadge,
     enricherName,
     isOpen,
     onToggle,
@@ -221,7 +207,7 @@ function ArtifactRow({
     isLoading,
 }: ArtifactRowProps) {
     const relationCount = artifact.count ?? relations.length;
-    const artifactClassLabel = getArtifactClassLabel(artifact.entry_class);
+    const artifactName = artifact.name || 'Untitled';
 
     const rowContent = (
         <TableRow className='cursor-pointer hover:bg-muted/50'>
@@ -230,17 +216,8 @@ function ArtifactRow({
             </TableCell>
             <TableCell>
                 <div className='flex items-center gap-2'>
-                    {artifactClassLabel && (
-                        <Badge
-                            className='rounded-full flex-shrink-0'
-                            variant='secondary'
-                        >
-                            {artifactClassLabel}
-                        </Badge>
-                    )}
-                    <span className='text-foreground truncate'>
-                        {artifact.name || 'Untitled'}
-                    </span>
+                    {artifactBadge}
+                    <span className='text-foreground truncate'>{artifactName}</span>
                     {relationCount !== undefined && (
                         <span className='text-muted-foreground text-xs ml-auto'>
                             {relationCount} result{relationCount !== 1 ? 's' : ''}
@@ -255,7 +232,11 @@ function ArtifactRow({
     );
 
     return (
-        <Collapsible open={isOpen} onOpenChange={onToggle} asChild>
+        <Collapsible
+            open={isOpen}
+            onOpenChange={(open) => onToggle(artifactId, open)}
+            asChild
+        >
             <>
                 <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
                 <CollapsibleContent asChild>
@@ -483,18 +464,6 @@ export default function EnrichmentResults() {
         }
     };
 
-    // Render entry badge if subtype is not "enrichment"
-    const renderEntryBadge = (entry: EntrySerializerMinimal | undefined) => {
-        return (
-            <Badge
-                className={`rounded-full ${!entry?.color || entry?.subtype === 'enrichment' ? 'bg-muted' : ''}`}
-                style={entry?.color ? { backgroundColor: entry.color } : undefined}
-            >
-                {entry?.subtype}: {entry?.name}
-            </Badge>
-        );
-    };
-
     // Download results as JSON
     const handleDownloadResults = () => {
         if (!results || results.length === 0) return;
@@ -555,12 +524,19 @@ export default function EnrichmentResults() {
         // Query will automatically handle null when enabled is false
     };
 
-    const handleArtifactToggle = (artifactId?: number, open?: boolean) => {
-        if (artifactId == null) return;
+    const handleArtifactToggle = (artifactId: number | null, open: boolean) => {
         if (open) {
+            if (artifactId == null) {
+                return;
+            }
             setPage(1);
+            setSelectedArtifactId(artifactId);
+            return;
         }
-        setSelectedArtifactId(open ? artifactId : null);
+
+        if (selectedArtifactId === artifactId) {
+            setSelectedArtifactId(null);
+        }
     };
 
     const errorMsg = () => {
@@ -777,9 +753,9 @@ export default function EnrichmentResults() {
                                                 <TableRow key={index}>
                                                     <TableCell>
                                                         <div className='flex items-center gap-2'>
-                                                            {artifact.entry_class && (
+                                                            {artifact.subtype && (
                                                                 <Badge variant='secondary' className='flex-shrink-0'>
-                                                                    {artifact.entry_class}
+                                                                    {artifact.subtype}
                                                                 </Badge>
                                                             )}
                                                             <span className='text-foreground truncate'>
@@ -821,26 +797,30 @@ export default function EnrichmentResults() {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {artifacts.map((artifact, index) => (
-                                                        <ArtifactRow
-                                                            key={artifact.id ?? index}
-                                                            artifact={artifact}
-                                                            enricherName={selectedEnricherName || ''}
-                                                            isOpen={artifact.id === selectedArtifactId}
-                                                            onToggle={(open) =>
-                                                                handleArtifactToggle(artifact.id, open)
-                                                            }
-                                                            relations={
-                                                                artifact.id === selectedArtifactId
-                                                                    ? relations
-                                                                    : []
-                                                            }
-                                                            isLoading={
-                                                                artifact.id === selectedArtifactId &&
-                                                                isPendingResults
-                                                            }
-                                                        />
-                                                    ))}
+                                                    {artifacts.map((artifact, index) => {
+                                                        const artifactId = normalizeId(artifact.id);
+                                                        const artifactBadge = renderEntryBadge(artifact);
+
+                                                        const isSelected =
+                                                            artifactId !== null &&
+                                                            artifactId === selectedArtifactId;
+
+                                                        return (
+                                                            <ArtifactRow
+                                                                key={artifact.id ?? index}
+                                                                artifact={artifact}
+                                                                artifactId={artifactId}
+                                                                artifactBadge={artifactBadge}
+                                                                enricherName={selectedEnricherName || ''}
+                                                                isOpen={isSelected}
+                                                                onToggle={(open) =>
+                                                                    handleArtifactToggle(artifactId, open)
+                                                                }
+                                                                relations={isSelected ? relations : []}
+                                                                isLoading={isSelected && isPendingResults}
+                                                            />
+                                                        );
+                                                    })}
                                                 </TableBody>
                                             </Table>
                                         </CardContent>

@@ -319,18 +319,20 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
             if req["entry_class"] in enabled_eclasses:
                 artifacts_full.add((req["entry_class"], req["name"]))
                 q = q | (Q(name=req["name"]) & Q(entry_class__subtype=req["entry_class"]))
-                class_colors[req["entry_class"]] = req["color"]
+                if req["entry_class"] not in class_colors:
+                    class_colors[req["entry_class"]] = EntryClass.objects.get(subtype=req["entry_class"]).color
 
         entries = Entry.objects.filter(q)
+        print(class_colors)
 
         artifacts = []
         for entry in entries:
             artifacts.append(
                 {
-                    "entry_class": entry.entry_class.subtype,
+                    "subtype": entry.entry_class.subtype,
                     "name": entry.name,
                     "id": entry.id,
-                    "color": entry.color,
+                    "color": class_colors.get(entry.entry_class.subtype, "#e66100"),
                     "count": request.relations.filter(Q(e1=entry) | Q(e2=entry)).values("id")[:101].count(),
                 }
             )
@@ -339,7 +341,7 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
         for entry_class, name in artifacts_full:
             artifacts.append(
                 {
-                    "entry_class": entry_class,
+                    "subtype": entry_class,
                     "name": name,
                     "id": 0,
                     "count": 0,
