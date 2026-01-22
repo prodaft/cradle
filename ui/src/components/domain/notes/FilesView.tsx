@@ -5,11 +5,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { truncateText } from '@/utils/dashboard';
+import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { DownloadSimpleIcon } from '@phosphor-icons/react';
 import { useMemo } from 'react';
 
 interface Alert {
@@ -89,8 +89,8 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                 style={
                                     entity.color
                                         ? {
-                                              backgroundColor: entity.color,
-                                          }
+                                            backgroundColor: entity.color,
+                                        }
                                         : undefined
                                 }
                             >
@@ -181,8 +181,8 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
 
     return (
         <ScrollArea className='w-full h-full'>
-            <div className='flex items-start justify-center w-full min-h-full p-6'>
-                <div className='w-[95%] flex flex-col'>
+            <div className='flex items-start justify-center w-full min-h-full py-4 px-4'>
+                <div className='w-full flex flex-col'>
                     <DataTable
                         columns={columns}
                         data={files}

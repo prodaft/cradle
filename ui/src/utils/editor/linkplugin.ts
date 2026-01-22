@@ -449,7 +449,7 @@ function parseCradleLink(
         return null;
     }
 
-    if (!type && !name) {
+    if (!type || !name) {
         return null;
     }
 

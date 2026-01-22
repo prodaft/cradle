@@ -126,49 +126,49 @@ export function AppSidebar({
                     items={[
                         ...(isEntryManager
                             ? [
-                                  {
-                                      title: 'Manage',
-                                      url: '/manage',
-                                      icon: Crown,
-                                      isActive: isManageActive,
-                                      items: [
-                                          {
-                                              title: 'Entities',
-                                              url: '/manage/entities',
-                                              icon: Building2,
-                                          },
-                                          {
-                                              title: 'Entry Types',
-                                              url: '/manage/entry-types',
-                                              icon: Layers,
-                                          },
-                                          {
-                                              title: 'Type Mappings',
-                                              url: '/manage/type-mappings',
-                                              icon: Link2,
-                                          },
-                                          ...(isAdmin
-                                              ? [
-                                                    {
-                                                        title: 'Users',
-                                                        url: '/manage/users',
-                                                        icon: Users,
-                                                    },
-                                                    {
-                                                        title: 'Enrichment',
-                                                        url: '/manage/enrichment',
-                                                        icon: Sparkles,
-                                                    },
-                                                    {
-                                                        title: 'Settings',
-                                                        url: '/manage/settings',
-                                                        icon: Wrench,
-                                                    },
-                                                ]
-                                              : []),
-                                      ],
-                                  },
-                              ]
+                                {
+                                    title: 'Manage',
+                                    url: '/manage',
+                                    icon: Crown,
+                                    isActive: isManageActive,
+                                    items: [
+                                        {
+                                            title: 'Entities',
+                                            url: '/manage/entities',
+                                            icon: Building2,
+                                        },
+                                        {
+                                            title: 'Entry Types',
+                                            url: '/manage/entry-types',
+                                            icon: Layers,
+                                        },
+                                        {
+                                            title: 'Type Mappings',
+                                            url: '/manage/type-mappings',
+                                            icon: Link2,
+                                        },
+                                        ...(isAdmin
+                                            ? [
+                                                {
+                                                    title: 'Users',
+                                                    url: '/manage/users',
+                                                    icon: Users,
+                                                },
+                                                {
+                                                    title: 'Enrichment',
+                                                    url: '/manage/enrichment',
+                                                    icon: Sparkles,
+                                                },
+                                                {
+                                                    title: 'Settings',
+                                                    url: '/manage/settings',
+                                                    icon: Wrench,
+                                                },
+                                            ]
+                                            : []),
+                                    ],
+                                },
+                            ]
                             : []),
                         {
                             title: 'Documentation',
@@ -207,7 +207,7 @@ export function AppSidebar({
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <NavUser />
-                {!isCollapsed && (
+                {!isCollapsed && false && (
                     <div className='mt-2 flex flex-col text-[10px] text-muted-foreground leading-tight'>
                         <span>Copyright © 2025 PRODAFT</span>
                         <span>v2.10.2-beta.a070af1b</span>

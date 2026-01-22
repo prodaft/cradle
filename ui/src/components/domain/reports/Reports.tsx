@@ -614,7 +614,7 @@ export default function Reports() {
     });
 
     return (
-        <div className='w-full h-full'>
+        <div className='w-full h-full space-y-4'>
             <PageHeader title='Reports' description='Manage & View Your Reports' />
 
             {/* Content Area */}

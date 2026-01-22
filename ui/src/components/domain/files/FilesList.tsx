@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/action-bar';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
@@ -604,8 +605,38 @@ export default function FilesList({
                     </div>
                 ),
             },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    const file = row.original;
+                    return (
+                        <div
+                            className='text-right flex justify-end'
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {file.id && (
+                                <Button
+                                    variant='ghost'
+                                    size='icon-sm'
+                                    onClick={() => handleDownloadFile(file)}
+                                    className='text-primary hover:text-primary/80'
+                                    title='Download'
+                                >
+                                    <DownloadSimpleIcon
+                                        className='w-4 h-4'
+                                        weight='bold'
+                                        aria-hidden='true'
+                                    />
+                                </Button>
+                            )}
+                        </div>
+                    );
+                },
+                enableSorting: false,
+            },
         ],
-        [copyToClipboard, router],
+        [copyToClipboard, router, handleDownloadFile],
     );
 
     // Convert sortField and sortDirection to TanStack Table sorting state

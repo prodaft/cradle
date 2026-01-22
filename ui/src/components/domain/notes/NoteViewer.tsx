@@ -28,6 +28,7 @@ import extractHeaderHierarchy, { HeaderNode } from '@/utils/editor/outline';
 import { logger } from '@/utils/logger';
 import { Prec } from '@codemirror/state';
 import { keymap } from '@codemirror/view';
+import { BookOpenIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import type {
     FileReferenceWithNote,
     FileUploadFinalizeResponse,
@@ -40,7 +41,6 @@ import {
     useRouterState,
     useSearch,
 } from '@tanstack/react-router';
-import { BookOpenIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { debounce } from 'lodash';
 import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
@@ -897,7 +897,7 @@ export default function NoteViewer() {
                     )}
 
                     {isAdmin && activeView === ViewMode.HISTORY && noteId && (
-                        <div className='pt-2'>
+                        <div className='py-4 px-4'>
                             <ActivityList content_type='note' objectId={noteId} />
                         </div>
                     )}
