@@ -2,6 +2,7 @@ import Pagination from '@/components/base/Pagination/Pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Collapsible,
     CollapsibleContent,
@@ -195,6 +196,8 @@ interface ArtifactRowProps {
     onToggle: (artifactId: number | null, open: boolean) => void;
     relations: RelationDisplay[];
     isLoading: boolean;
+    isChecked: boolean;
+    onCheckChange: (checked: boolean) => void;
 }
 
 function ArtifactRow({
@@ -206,13 +209,22 @@ function ArtifactRow({
     onToggle,
     relations,
     isLoading,
+    isChecked,
+    onCheckChange,
 }: ArtifactRowProps) {
     const relationCount = artifact.count ?? relations.length;
     const artifactName = artifact.name || 'Untitled';
 
     const rowContent = (
-        <TableRow className='cursor-pointer hover:bg-muted/50'>
-            <TableCell className='text-muted-foreground capitalize'>
+        <TableRow>
+            <TableCell onClick={(e) => e.stopPropagation()}>
+                <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => onCheckChange(checked === true)}
+                    aria-label={`Select ${artifactName}`}
+                />
+            </TableCell>
+            <TableCell>
                 {enricherName}
             </TableCell>
             <TableCell>
@@ -242,7 +254,7 @@ function ArtifactRow({
                 <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
                 <CollapsibleContent asChild>
                     <tr>
-                        <td colSpan={2} className='p-0'>
+                        <td colSpan={3} className='p-0'>
                             <div className='bg-muted/30 border-t'>
                                 {isLoading ? (
                                     <div className='flex items-center justify-center py-6'>
@@ -295,6 +307,7 @@ export default function EnrichmentResults() {
     const [pageSize, setPageSize] = useState(20);
     const [searchParams, setSearchParams] = useState({ query: '', details: '' });
     const [searchInput, setSearchInput] = useState({ query: '', details: '' });
+    const [selectedArtifacts, setSelectedArtifacts] = useState<Set<number>>(new Set());
 
     // Query for enrichment details
     const { data: enrichmentDetails, isPending: isPendingDetails } = useQuery({
@@ -735,7 +748,7 @@ export default function EnrichmentResults() {
                             <Card className='border-border bg-muted/5 flex-1 overflow-hidden'>
                                 <CardContent className='p-0 h-full overflow-auto'>
                                     <Table>
-                                        <TableHeader className='sticky top-0 bg-card z-10'>
+                                        <TableHeader>
                                             <TableRow>
                                                 <TableHead>Artifact</TableHead>
                                             </TableRow>
@@ -779,12 +792,34 @@ export default function EnrichmentResults() {
                                 </Card>
                             ) : (
                                 <>
-                                    <Card className='border-border bg-muted/5 flex-1 overflow-hidden flex flex-col'>
-                                        <CardContent className='p-0 flex-1 overflow-auto'>
+                                    <div className='overflow-hidden rounded-md border flex-1 flex flex-col'>
+                                        <div className='flex-1 overflow-auto'>
                                             <Table>
-                                                <TableHeader className='sticky top-0 bg-card z-10'>
+                                                <TableHeader>
                                                     <TableRow>
-                                                        <TableHead className='w-[120px]'>Enricher</TableHead>
+                                                        <TableHead className='w-10'>
+                                                            <Checkbox
+                                                                checked={
+                                                                    artifacts.length > 0 &&
+                                                                    artifacts.every((a) => {
+                                                                        const id = normalizeId(a.id);
+                                                                        return id !== null && selectedArtifacts.has(id);
+                                                                    })
+                                                                }
+                                                                onCheckedChange={(checked) => {
+                                                                    if (checked) {
+                                                                        const allIds = artifacts
+                                                                            .map((a) => normalizeId(a.id))
+                                                                            .filter((id): id is number => id !== null);
+                                                                        setSelectedArtifacts(new Set(allIds));
+                                                                    } else {
+                                                                        setSelectedArtifacts(new Set());
+                                                                    }
+                                                                }}
+                                                                aria-label='Select all'
+                                                            />
+                                                        </TableHead>
+                                                        <TableHead>Enricher</TableHead>
                                                         <TableHead>Artifact</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
@@ -805,18 +840,31 @@ export default function EnrichmentResults() {
                                                                 artifactBadge={artifactBadge}
                                                                 enricherName={selectedEnricherName || ''}
                                                                 isOpen={isSelected}
-                                                                onToggle={(open) =>
+                                                                onToggle={(_, open) =>
                                                                     handleArtifactToggle(artifactId, open)
                                                                 }
                                                                 relations={isSelected ? relations : []}
                                                                 isLoading={isSelected && isPendingResults}
+                                                                isChecked={artifactId !== null && selectedArtifacts.has(artifactId)}
+                                                                onCheckChange={(checked) => {
+                                                                    if (artifactId === null) return;
+                                                                    setSelectedArtifacts((prev) => {
+                                                                        const next = new Set(prev);
+                                                                        if (checked) {
+                                                                            next.add(artifactId);
+                                                                        } else {
+                                                                            next.delete(artifactId);
+                                                                        }
+                                                                        return next;
+                                                                    });
+                                                                }}
                                                             />
                                                         );
                                                     })}
                                                 </TableBody>
                                             </Table>
-                                        </CardContent>
-                                    </Card>
+                                        </div>
+                                    </div>
                                     {/* Pagination */}
                                     {selectedArtifactId && (
                                         <div className='pt-3'>
