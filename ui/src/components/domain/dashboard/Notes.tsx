@@ -18,10 +18,11 @@ interface NotesProps {
 
 export default function Notes({ obj }: NotesProps) {
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+        linked_to: obj?.id,
         content: '',
     });
     const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
-        null,
+        { linked_to: obj?.id, content: '' },
     );
     const searchFiltersRef = useRef(searchFilters);
     useEffect(() => {
@@ -42,6 +43,7 @@ export default function Notes({ obj }: NotesProps) {
     }, [obj?.id]);
 
     const handleSearchSubmit = (value?: string) => {
+        console.log(searchFiltersRef.current);
         const next = {
             ...searchFiltersRef.current,
             content: value ?? searchFiltersRef.current.content,

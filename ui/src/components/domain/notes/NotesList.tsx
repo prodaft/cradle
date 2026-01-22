@@ -16,6 +16,13 @@ import { queryKeys } from '@/hooks/query';
 import type { OptimizedEntryResponse } from '@/services/cradle';
 import { truncateText } from '@/utils/dashboard';
 import { parseMarkdownInline } from '@/utils/parser';
+import {
+    ArrowClockwiseIcon,
+    ChartBarIcon,
+    PlusCircleIcon,
+    SparkleIcon,
+    TrashIcon
+} from '@phosphor-icons/react';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -28,13 +35,6 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { startCase } from 'lodash';
-import { 
-    PlusCircleIcon, 
-    ArrowClockwiseIcon, 
-    ChartBarIcon, 
-    SparkleIcon, 
-    TrashIcon 
-} from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import {
@@ -319,6 +319,7 @@ export default function NotesList({
             page,
             pageSize: pageSize,
             orderBy: orderBy,
+            linkedTo: query.linked_to,
             status:
                 columnFilters.status === 'all'
                     ? hideFleetingNotes
