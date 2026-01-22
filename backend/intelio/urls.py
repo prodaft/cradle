@@ -74,22 +74,22 @@ urlpatterns = [
         name="enrichment-requests",
     ),
     path(
-        "enrich/<int:pk>/",
+        "enrich/<uuid:pk>/",
         EnrichmentDetailAPIView.as_view(),
         name="enrichment-detail",
     ),
     path(
-        "enrich/<int:pk>/restart/",
+        "enrich/<uuid:pk>/restart/",
         EnrichmentRestartAPIView.as_view(),
         name="enrichment-restart",
     ),
     path(
-        "enrich/<int:pk>/<str:enricher_type>/",
+        "enrich/<uuid:pk>/<str:enricher_type>/",
         EnrichmentRequestEnricherAPIView.as_view(),
         name="enrichment-enricher",
     ),
     path(
-        "enrich/<int:pk>/<str:enricher_type>/relations/",
+        "enrich/<uuid:pk>/<str:enricher_type>/relations/",
         EnrichmentRelationsAPIView.as_view(),
         name="enrichment-relations",
     ),

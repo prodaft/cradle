@@ -405,6 +405,8 @@ class EnrichmentRequestSchema(BaseModel):
 
 
 class EnrichmentRequest(LifecycleModel):
+    id: models.UUIDField = models.UUIDField(primary_key=True, default=uuid.uuid4)
+
     enrichers_settings = models.ManyToManyField(
         EnricherSettings,
     )
@@ -440,7 +442,9 @@ class EnrichmentRequest(LifecycleModel):
     objects = EnrichmentRequestManager()
 
     def clean(self):
-        if self.pk:
+        # Only validate M2M relationships if the instance already exists in the database
+        # (not during initial creation when M2M fields haven't been set yet)
+        if not self._state.adding:
             if not self.enrichers_settings.count():
                 raise ValidationError("At least one enricher must be selected")
 

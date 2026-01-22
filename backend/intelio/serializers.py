@@ -323,7 +323,6 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
                     class_colors[req["entry_class"]] = EntryClass.objects.get(subtype=req["entry_class"]).color
 
         entries = Entry.objects.filter(q)
-        print(class_colors)
 
         artifacts = []
         for entry in entries:
@@ -581,21 +580,15 @@ class EnrichmentRequestSerializer(serializers.ModelSerializer):
 
         data["entities"] = list(entities)
         data["request"] = data.get("request", []) + additional_request
+        data["enrichers_settings"] = data.pop("enricher_names", [])
         data.pop("notes", None)
+
         return data
 
     def create(self, validated_data):
-        enrichers = validated_data.pop("enricher_names", [])
-        entities = validated_data.pop("entities", [])
         validated_data["user"] = self.context["request"].user
 
         instance = super().create(validated_data)
-
-        for enricher in enrichers:
-            instance.enrichers_settings.add(enricher)
-
-        for value in entities:
-            instance.entities.add(value)
 
         ## on_commit start_enrichment
         transaction.on_commit(lambda: instance.start_enrichment())

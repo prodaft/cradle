@@ -32,7 +32,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cradleJsonTheme } from '@/config/json-view';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
-import JsonView from '@uiw/react-json-view';
 import {
     CalendarIcon,
     CaretDownIcon,
@@ -52,6 +51,7 @@ import {
 } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { useParams } from '@tanstack/react-router';
+import JsonView from '@uiw/react-json-view';
 import { format } from 'date-fns';
 import { ReactNode, useEffect, useMemo, useState } from 'react';
 
@@ -284,16 +284,7 @@ function ArtifactRow({
 export default function EnrichmentResults() {
     const { intelioApi } = useApi();
     const params = useParams({ strict: false });
-    const idParam = (params as any).id;
-    const id = Number(idParam);
-
-    if (isNaN(id)) {
-        return (
-            <div className='flex items-center justify-center h-full'>
-                <p className='text-muted-foreground'>Invalid enrichment ID</p>
-            </div>
-        );
-    }
+    const id = (params as any).id;
 
     const [selectedEnricher, setSelectedEnricher] = useState<string | null>(null);
     const [selectedArtifactId, setSelectedArtifactId] = useState<number | null>(
