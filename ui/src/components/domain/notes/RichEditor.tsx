@@ -198,7 +198,21 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     const { entriesApi, fileTransferApi } = useApi();
     const router = useRouter();
     const navigate = (url: string) => {
-        router.navigate({ to: url as any });
+        // Parse dashboard URLs to extract params
+        const dashboardMatch = url.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
+        if (dashboardMatch) {
+            const [, subtype, name] = dashboardMatch;
+            router.navigate({
+                to: '/dashboards/$subtype/$name',
+                params: {
+                    subtype: decodeURIComponent(subtype),
+                    name: decodeURIComponent(name)
+                }
+            });
+        } else {
+            // For other URLs, use the old method
+            router.navigate({ to: url as any });
+        }
     };
     const editorRef = useRef<HTMLDivElement>(null);
     const editorViewRef = useRef<EditorView | null>(null);
