@@ -1,5 +1,6 @@
 import { EntriesApi, FileTransferApi } from '@services/cradle/apis';
 import MarkdownIt from 'markdown-it';
+import markdownItAnchor from 'markdown-it-anchor';
 import Prism from 'prismjs';
 import { parseWithExtensions, parseWithExtensionsInline } from './extensions';
 

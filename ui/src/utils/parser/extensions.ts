@@ -113,19 +113,73 @@ export function renderCradleLink(
 }
 
 // Match ![....][....] or [....][....]
-const FOOTNOTE_REF_REGEX = /^\!?\[(.*)\]\[(.*)\]/;
+const REFERENCE_LINK_REGEX = /^\!?\[(.*?)\]\[(.*?)\]/;
 
-export function footnoteRefRule(state: any, silent: boolean): boolean {
-    const match = FOOTNOTE_REF_REGEX.exec(state.src.slice(state.pos));
+export function referenceLinkRule(
+    state: any,
+    silent: boolean,
+    fileData?: FileReferenceWithNote[],
+): boolean {
+    const match = REFERENCE_LINK_REGEX.exec(state.src.slice(state.pos));
     if (!match) return false;
+
+    const isImage = state.src[state.pos] === '!';
+    const text = match[1];
+    const label = match[2];
+
+    // Check if this is a reference link (label matches a file)
+    const key = label || text;
+    const file = fileData?.find(
+        (f) =>
+            `${f.id}-${f.fileName}` === key ||
+            `${f.id}-${f.fileName}` === key.toLowerCase(),
+    );
+
+    if (file) {
+        if (silent) return false;
+
+        const token = state.push('reference_link', '', 0);
+        token.content = text;
+        token.reference_key = key;
+        token.is_image = isImage;
+        token.file = file;
+
+        state.pos += match[0].length;
+        return true;
+    }
+
+    // Otherwise, treat as footnote
     if (silent) return false;
 
     const token = state.push('footnote_ref', '', 0);
-    token.content = match[1];
-    token.footnote_ref = match[2];
+    token.content = text;
+    token.footnote_ref = label;
 
     state.pos += match[0].length;
     return true;
+}
+
+/**
+ * Render a reference link as HTML
+ * Formats reference link syntax [text][label] into a download link or image
+ */
+export function renderReferenceLink(token: Token): string {
+    const content = token.content || '';
+    const file = (token as any).file;
+    const isImage = (token as any).is_image;
+
+    if (file) {
+        const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
+        const fileUrl = `${baseURL}/file-transfer/download/?fileId=${file.id}`;
+
+        if (isImage) {
+            return `<img src="${fileUrl}" alt="${content}" style="max-width: 40%; cursor: default;" />`;
+        } else {
+            return `<a href="${fileUrl}" style="cursor: pointer; text-decoration: underline; color: var(--cradle-link-color, var(--primary));" target="_blank" rel="noopener noreferrer">${content}</a>`;
+        }
+    }
+
+    return content;
 }
 
 /**
@@ -233,9 +287,15 @@ export async function parseWithExtensions(
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
 
-    md.inline.ruler.before('cradle_link', 'footnote_ref', footnoteRefRule);
+    // Add reference link rule with fileData
+    md.inline.ruler.before('cradle_link', 'reference_link', (state, silent) =>
+        referenceLinkRule(state, silent, fileData),
+    );
+    md.renderer.rules.reference_link = (tokens: Token[], idx: number) =>
+        renderReferenceLink(tokens[idx]);
+
     md.renderer.rules.footnote_ref = (tokens: Token[], idx: number) =>
-        renderFootnoteRef(tokens[idx]); // TODO: Implement this
+        renderFootnoteRef(tokens[idx]);
 
     let metadata = {};
     try {
@@ -273,7 +333,14 @@ export function parseWithExtensionsInline(md: MarkdownIt, mdContent: string): st
 
     // Add the cradle link rule
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
-    md.inline.ruler.before('cradle_link', 'footnote_ref', footnoteRefRule);
+    md.inline.ruler.before('cradle_link', 'reference_link', (state, silent) =>
+        referenceLinkRule(state, silent, undefined),
+    );
+
+    md.renderer.rules.reference_link = (tokens: Token[], idx: number) =>
+        renderReferenceLink(tokens[idx]);
+    md.renderer.rules.footnote_ref = (tokens: Token[], idx: number) =>
+        renderFootnoteRef(tokens[idx]);
 
     const originalRules: { [key: string]: any } = {};
 
@@ -411,6 +478,9 @@ function extractInlineText(tokens: Token[]): string {
                 break;
             case 'cradle_link':
                 text += renderCradleLink(new Map(), token, true);
+                break;
+            case 'reference_link':
+                text += token.content;
                 break;
             case 'footnote_ref':
                 text += token.content;

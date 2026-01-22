@@ -151,8 +151,10 @@ export default function StaticRender({
 
                 .static-render ul,
                 .static-render ol {
-                    list-style: revert !important;
-                    padding-left: 2em !important;
+                    list-style-position: outside !important;
+                    padding-left: 1.5em !important;
+                    margin-left: 0 !important;
+                    color: var(--foreground) !important;
                 }
 
                 .static-render ul {
@@ -165,6 +167,12 @@ export default function StaticRender({
 
                 .static-render li {
                     display: list-item !important;
+                    color: var(--foreground) !important;
+                }
+
+                .static-render ul > li::marker,
+                .static-render ol > li::marker {
+                    color: var(--foreground) !important;
                 }
             `}</style>
         </div>

@@ -117,8 +117,12 @@ class TableWidget extends WidgetType {
         const wrapper = document.createElement('div');
         wrapper.style.display = 'block';
         wrapper.style.width = '100%';
+        wrapper.style.margin = '0';
+        wrapper.style.padding = '0';
 
         const table = document.createElement('table');
+        table.style.margin = '0';
+        table.style.borderCollapse = 'collapse';
 
         // Create markdown-it instance with cradle links plugin
         const md = new MarkdownIt({ html: false, linkify: true }) as MarkdownItWithHandlers;
