@@ -79,6 +79,10 @@ interface RelationsProps {
     };
 }
 
+const truncate = (str: string, n: number) => {
+    return str.length > n ? str.slice(0, n - 1) + '...' : str;
+};
+
 interface RelationRowProps {
     srcId: number;
     result: Result;
@@ -95,6 +99,8 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
 
     const isSameEntry = result.id !== undefined && result.id === srcId;
     const canExpand = !isSameEntry && result.id !== undefined;
+
+    const [activeStepId, setActiveStepId] = useState<string | null>(null);
 
     const { data: pathData, isPending: isPathPending } = useQuery({
         queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
@@ -128,15 +134,82 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
         processEntries(pathData.entries.entities);
         processEntries(pathData.entries.artifacts);
 
-        return Array.from(nodes.values()).map(node => ({
-            id: String(node.id),
-            title: node.name,
-            description: node.subtype,
-            entryId: node.id,
-            color: node.color,
-            subtype: node.subtype
-        }));
-    }, [pathData]);
+        // Path reconstruction logic
+        const adj = new Map<number, number[]>();
+        // Add edges in both directions to ensure connectivity for the path finding
+        // since the graph is effectively undirected for "connection" purposes here
+        pathData.relations.forEach((rel: any) => {
+            if (!adj.has(rel.src)) adj.set(rel.src, []);
+            if (!adj.has(rel.dst)) adj.set(rel.dst, []);
+            adj.get(rel.src)!.push(rel.dst);
+            adj.get(rel.dst)!.push(rel.src);
+        });
+
+        // BFS
+        const queue: number[][] = [[srcId]];
+        const visited = new Set<number>([srcId]);
+        let foundPath: number[] = [];
+
+        if (srcId === result.id) {
+             foundPath = [srcId];
+        } else {
+             while (queue.length > 0) {
+                const path = queue.shift()!;
+                const curr = path[path.length - 1];
+
+                if (curr === result.id) {
+                    foundPath = path;
+                    break;
+                }
+
+                const neighbors = adj.get(curr) || [];
+                for (const next of neighbors) {
+                    if (!visited.has(next)) {
+                        visited.add(next);
+                        queue.push([...path, next]);
+                    }
+                }
+            }
+        }
+
+        if (foundPath.length === 0) {
+            // Fallback: just show all nodes if no path found (disconnected subgraph?)
+            // Or maybe just the start and end?
+            // Let's fallback to just showing all nodes as before if path finding fails
+             return Array.from(nodes.values()).map(node => ({
+                id: String(node.id),
+                title: node.name,
+                description: node.subtype,
+                entryId: node.id,
+                color: node.color,
+                subtype: node.subtype
+            }));
+        }
+
+        return foundPath.map(id => {
+            const node = nodes.get(id);
+            if (!node) return null;
+             return {
+                id: String(node.id),
+                title: node.name,
+                description: node.subtype,
+                entryId: node.id,
+                color: node.color,
+                subtype: node.subtype
+            };
+        }).filter(Boolean) as any[];
+
+    }, [pathData, srcId, result.id]);
+
+    useEffect(() => {
+        if (pathSteps.length > 0 && !activeStepId) {
+            setActiveStepId(pathSteps[0].id);
+        }
+    }, [pathSteps, activeStepId]);
+
+    const activeStep = useMemo(() => 
+        pathSteps.find(s => s.id === activeStepId) || (pathSteps.length > 0 ? pathSteps[0] : null)
+    , [pathSteps, activeStepId]);
 
     const handleNavigate = (e: MouseEvent) => {
         e.stopPropagation();
@@ -147,7 +220,7 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
         <Collapsible open={isOpen} onOpenChange={onToggleOpen} asChild disabled={!canExpand}>
             <>
                 <CollapsibleTrigger asChild>
-                    <TableRow className={`cursor-pointer hover:bg-muted/50 ${!canExpand ? 'opacity-70' : ''}`}> 
+                    <TableRow className={`cursor-pointer hover:bg-muted/50 ${!canExpand ? 'opacity-70' : ''}`}>
                         <TableCell onClick={(e) => e.stopPropagation()} className="w-[50px]">
                              <Checkbox
                                 checked={isSelected}
@@ -170,18 +243,21 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
                             </Badge>
                         </TableCell>
                         <TableCell onClick={handleNavigate}>
-                             <span className='truncate block max-w-[300px]'>
-                                {result.name}
-                            </span>
-                        </TableCell>
-                        <TableCell>
                              <div className='flex items-center gap-2'>
+                                <span className='truncate block max-w-[300px]'>
+                                    {result.name}
+                                </span>
+                                <span className='text-muted-foreground text-xs ml-auto whitespace-nowrap'>
+                                    {result.depth} step{result.depth !== 1 ? 's' : ''}
+                                </span>
+                             </div>
+                        </TableCell>
+                        <TableCell className="w-[50px]">
+                             <div className='flex items-center justify-end'>
                                 {canExpand && (
-                                     <>
-                                        <CaretDownIcon
-                                            className={`size-4 text-muted-foreground transition-transform ml-auto ${isOpen ? 'rotate-180' : ''}`}
-                                        />
-                                    </>
+                                     <CaretDownIcon
+                                        className={`size-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                                    />
                                 )}
                             </div>
                         </TableCell>
@@ -191,13 +267,33 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
                      <TableRow>
                         <TableCell colSpan={4} className="p-0 border-b-0">
                             <div className="bg-muted/30 border-t">
-                                <div className="p-4">
+                                <div className="p-4 flex flex-col gap-6">
                                      {isPathPending ? (
                                         <div className="flex justify-center p-4">
                                             <Spinner />
                                         </div>
                                     ) : pathSteps.length > 0 ? (
-                                        <PathStepper steps={pathSteps} router={router} />
+                                        <>
+                                            <PathStepper 
+                                                steps={pathSteps} 
+                                                activeStepId={activeStepId || pathSteps[0].id}
+                                                onStepClick={setActiveStepId}
+                                            />
+                                            {activeStep && (
+                                                <div className="pt-4 border-t flex flex-col gap-2">
+                                                     <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-semibold">{activeStep.title}</span>
+                                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                                                            {activeStep.subtype}
+                                                        </Badge>
+                                                     </div>
+                                                     <div className="text-xs text-muted-foreground">
+                                                         {/* Placeholder for future details */}
+                                                         ID: {activeStep.entryId}
+                                                     </div>
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
                                         <div className="text-sm text-muted-foreground text-center p-4">
                                             No path found or error loading path.
@@ -213,23 +309,30 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
     );
 }
 
-function PathStepper({ steps, router }: { steps: any[], router: any }) {
+function PathStepper({ steps, activeStepId, onStepClick }: { steps: any[], activeStepId: string, onStepClick: (id: string) => void }) {
     const { Stepper } = useMemo(() => defineStepper(...(steps as any)), [steps]);
 
     return (
-        <Stepper.Provider>
+        <Stepper.Provider 
+            variant="horizontal" 
+            labelOrientation="vertical"
+            initialStep={activeStepId}
+            key={activeStepId}
+        >
             <Stepper.Navigation>
                 {steps.map(step => (
                     <Stepper.Step 
                         key={step.id} 
                         of={step.id} 
-                        onClick={() => {
-                            const link = createDashboardLink({ id: step.entryId, subtype: step.subtype });
-                            router.navigate({ to: link as any });
-                        }}
+                        onClick={() => onStepClick(step.id)}
+                        className="p-0"
                     >
-                        <Stepper.Title>{step.title}</Stepper.Title>
-                        <Stepper.Description>{step.description}</Stepper.Description>
+                        <Stepper.Title className="max-w-[120px] truncate" title={step.title} >
+                            {truncate(step.title, 128)}
+                        </Stepper.Title>
+                        <Stepper.Description className="max-w-[120px] truncate" title={step.description}>
+                            {step.description}
+                        </Stepper.Description>
                     </Stepper.Step>
                 ))}
             </Stepper.Navigation>
@@ -567,7 +670,7 @@ export default function Relations({ obj }: RelationsProps) {
                         />
                         <div className='flex items-center gap-2'>
                             <span className='text-sm text-muted-foreground whitespace-nowrap'>
-                                Depth:
+                                Max. Steps:
                             </span>
                             <Select
                                 value={String(depth)}

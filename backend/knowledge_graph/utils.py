@@ -1,11 +1,10 @@
 from typing import List
+
 from django.db import connection
-from django.db.models import Q
+from django.db.models import IntegerField, Q, Value
 
 from core.fields import BitStringField
 from entries.models import Edge, Entry
-from django.db.models import Value, IntegerField
-
 
 fieldtype = BitStringField(max_length=2048, null=False, default=1, varying=False)
 
@@ -167,8 +166,8 @@ def get_edges_for_paths(start_id, targets, user, start_time, end_time) -> List[E
         SELECT seq, path_seq, node, edge, cost, agg_cost
         FROM pgr_dijkstra(
             $$ {inner_sql} $$,
-            %s,
-            {target_array},
+            %s::BIGINT,
+            {target_array}::BIGINT[],
             directed := true
         );
     """

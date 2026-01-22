@@ -115,6 +115,7 @@ class GraphPathFindView(APIView):
             if i.entry_class_id not in colors:
                 colors[i.entry_class_id] = i.entry_class.color
 
+        print(edges, entries, colors)
         serializer = SubGraphSerializer({"relations": edges, "entries": entries, "colors": colors})
 
         return Response(serializer.data)

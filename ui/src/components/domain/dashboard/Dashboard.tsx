@@ -9,17 +9,17 @@ import {
 import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
+import { SparkleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { useLoaderData, useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { FileText, FolderOpen, History, Share2 } from 'lucide-react';
-import { SparkleIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import ActivityList from '../activity/ActivityList';
+import DashboardEnrichmentRequests from './DashboardEnrichmentRequests';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './Relations';
-import DashboardEnrichmentRequests from './DashboardEnrichmentRequests';
 
 /**
  * Dashboard component
@@ -205,8 +205,8 @@ export default function Dashboard() {
                                                         handleTabChange(tab.id);
                                                     }}
                                                     className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 hover:bg-accent justify-start ${isActive
-                                                            ? 'bg-muted hover:bg-accent active'
-                                                            : ''
+                                                        ? 'bg-muted hover:bg-accent active'
+                                                        : ''
                                                         }`}
                                                     data-status={
                                                         isActive
@@ -253,7 +253,7 @@ export default function Dashboard() {
                                         )}
                                         {activeTab === 'relations' && (
                                             <Card>
-                                                <CardContent className='pt-4'>
+                                                <CardContent className='pt-4 pb-4'>
                                                     <Relations
                                                         obj={contentObject}
                                                     />

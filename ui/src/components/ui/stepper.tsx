@@ -145,6 +145,7 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
                 "data-[variant=vertical]:flex-row",
                 "data-[label-orientation=vertical]:w-full",
                 "data-[label-orientation=vertical]:flex-col",
+                "data-[label-orientation=vertical]:items-center",
                 "data-[label-orientation=vertical]:justify-center",
               ])}
               data-variant={variant}
@@ -158,9 +159,8 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
                 type="button"
                 role="tab"
                 tabIndex={dataState !== "inactive" ? 0 : -1}
-                className="rounded-full"
+                className={cn("rounded-full shrink-0 size-4 p-0 border-none outline-none focus:ring-0", isActive && "bg-primary text-primary-foreground")}
                 variant={dataState !== "inactive" ? "default" : "secondary"}
-                size="icon"
                 aria-controls={`step-panel-${props.of}`}
                 aria-current={isActive ? "step" : undefined}
                 aria-posinset={stepIndex + 1}
@@ -175,7 +175,6 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
                 }
                 {...props}
               >
-                {icon ?? stepIndex + 1}
               </Button>
               {variant === "horizontal" && labelOrientation === "vertical" && (
                 <StepperSeparator
@@ -188,7 +187,10 @@ const defineStepper = <const Steps extends Stepperize.Step[]>(
               )}
               <div
                 date-component="stepper-step-content"
-                className="flex flex-col items-start"
+                className={cn(
+                  "flex flex-col",
+                  labelOrientation === "vertical" ? "items-center text-center" : "items-start"
+                )}
               >
                 {title}
                 {description}
@@ -265,7 +267,7 @@ const Title = ({
   return (
     <Comp
       date-component="stepper-step-title"
-      className={cn("text-base font-medium", className)}
+      className={cn("text-sm font-medium", className)}
       {...props}
     >
       {children}
@@ -284,7 +286,7 @@ const Description = ({
   return (
     <Comp
       date-component="stepper-step-description"
-      className={cn("text-sm text-muted-foreground", className)}
+      className={cn("text-xs text-muted-foreground", className)}
       {...props}
     >
       {children}
@@ -395,7 +397,7 @@ const classForSeparator = cva(
       },
       labelOrientation: {
         vertical:
-          "absolute left-[calc(50%+30px)] right-[calc(-50%+20px)] top-5 block shrink-0",
+          "absolute left-[calc(50%+20px)] right-[calc(-50%+10px)] top-[calc(0.5rem-1px)] block shrink-0",
       },
     },
   }

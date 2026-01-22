@@ -173,7 +173,9 @@ class EntryListCompressedTreeSerializer(serializers.BaseSerializer):
 
         return {
             field: (
-                getattr(entry, field)
+                None
+                if not hasattr(entry, field)
+                else getattr(entry, field)
                 if field != "location"
                 else [entry.location.x, entry.location.y]
                 if entry.location
@@ -738,6 +740,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
     def get_presigned_url(self, obj):
         """Generate presigned URL for attachment download."""
         from datetime import timedelta
+
         from file_transfer.s3_utils import presign_get
         from file_transfer.storage import RelationStorage
 
