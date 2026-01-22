@@ -33,13 +33,6 @@ import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import ReactJson from '@microlink/react-json-view';
 import {
-    EnrichmentRequestDetailStatusEnum,
-    EntrySerializerMinimal,
-} from '@services/cradle/models';
-import { useQuery } from '@tanstack/react-query';
-import { useParams } from '@tanstack/react-router';
-import { format } from 'date-fns';
-import {
     CalendarIcon,
     CaretDownIcon,
     CheckCircleIcon,
@@ -52,63 +45,100 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
-import { useEffect, useMemo, useState } from 'react';
+import {
+    EnrichmentRequestDetailStatusEnum,
+    EntrySerializerMinimal,
+} from '@services/cradle/models';
+import { useQuery } from '@tanstack/react-query';
+import { useParams } from '@tanstack/react-router';
+import { format } from 'date-fns';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 
-// Interface for grouped results
-interface GroupedResult {
-    artifact: {
+interface RelationDisplay {
+    target: {
         subtype: string;
         name: string;
         color?: string;
-    };
-    relations: Array<{
-        target: {
-            subtype: string;
-            name: string;
-            color?: string;
-        } | null;
-        details: any;
-    }>;
+    } | null;
+    details: any;
 }
 
-// Group results by source artifact
-function groupResultsByArtifact(results: any[]): GroupedResult[] {
-    const groups = new Map<string, GroupedResult>();
-    
-    for (const result of results) {
-        // Get source and target entries (filter out "enrichment" type)
-        const source = result.e1?.subtype !== 'enrichment' ? result.e1 : result.e2;
-        const target = result.e1?.subtype !== 'enrichment' && result.e2?.subtype !== 'enrichment' 
-            ? result.e2 
-            : (result.e1?.subtype === 'enrichment' ? null : null);
-        
-        if (!source) continue;
-        
-        const key = `${source.subtype}:${source.name}`;
-        
-        if (!groups.has(key)) {
-            groups.set(key, {
-                artifact: {
-                    subtype: source.subtype,
-                    name: source.name,
-                    color: source.color,
-                },
-                relations: [],
-            });
-        }
-        
-        groups.get(key)!.relations.push({
-            target: target ? {
-                subtype: target.subtype,
-                name: target.name,
-                color: target.color,
-            } : null,
-            details: result.details,
-        });
-    }
-    
-    return Array.from(groups.values());
+interface EnricherArtifact {
+    id?: number | string;
+    name?: string;
+    entry_class?: string | { subtype?: string; color?: string };
+    count?: number;
 }
+
+const normalizeId = (value?: number | string | null) => {
+    if (value == null) return null;
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isNaN(parsed) ? null : parsed;
+};
+
+const buildEntryFromArtifact = (
+    artifact: EnricherArtifact,
+): EntrySerializerMinimal | undefined => {
+    if (!artifact.name) return undefined;
+
+    const entryClass =
+        typeof artifact.entry_class === 'object'
+            ? {
+                  type: 'artifact',
+                  subtype: artifact.entry_class.subtype || 'artifact',
+                  color: artifact.entry_class.color,
+              }
+            : undefined;
+    const subtype =
+        typeof artifact.entry_class === 'string'
+            ? artifact.entry_class
+            : entryClass?.subtype;
+
+    return {
+        id: normalizeId(artifact.id) ?? undefined,
+        name: artifact.name,
+        type: 'artifact',
+        subtype: subtype || 'artifact',
+        entryClass,
+        color: entryClass?.color,
+    };
+};
+
+const getEntryLabel = (entry?: EntrySerializerMinimal | null) => {
+    if (!entry) return null;
+    const subtype =
+        entry.subtype || entry.entryClass?.subtype || entry.type || 'entry';
+    const color = entry.color || entry.entryClass?.color;
+    return {
+        subtype,
+        name: entry.name,
+        color,
+    };
+};
+
+const mapRelationsForEntry = (
+    results: any[],
+    selectedEntryId: number | null,
+): RelationDisplay[] => {
+    if (!selectedEntryId) return [];
+
+    return results.map((result) => {
+        const entries = [result.e1, result.e2].filter(
+            (entry) => entry,
+        );
+        const targetEntry =
+            entries.find(
+                (entry) =>
+                    normalizeId(entry?.id) != null &&
+                    normalizeId(entry?.id) !== selectedEntryId,
+            ) || null;
+
+        return {
+            target: getEntryLabel(targetEntry),
+            details: result.details,
+        };
+    });
+};
 
 // Individual relation item component (collapsible)
 interface RelationItemProps {
@@ -126,7 +156,7 @@ interface RelationItemProps {
 function RelationItem({ relation, isLast }: RelationItemProps) {
     const [open, setOpen] = useState(false);
     const hasDetails = relation.details && Object.keys(relation.details).length > 0;
-    
+
     return (
         <div className={`${!isLast ? 'border-b border-border/50' : ''}`}>
             <div
@@ -173,38 +203,51 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
 }
 
 // Grouped row component
-interface GroupedRowProps {
-    group: GroupedResult;
+interface ArtifactRowProps {
+    artifact: EnricherArtifact;
     enricherName: string;
+    isOpen: boolean;
+    onToggle: (open: boolean) => void;
+    relations: RelationDisplay[];
+    isLoading: boolean;
 }
 
-function GroupedRow({ group, enricherName }: GroupedRowProps) {
-    const [open, setOpen] = useState(false);
-    
-    const relationCount = group.relations.length;
-    
+function ArtifactRow({
+    artifact,
+    enricherName,
+    isOpen,
+    onToggle,
+    relations,
+    isLoading,
+}: ArtifactRowProps) {
+    const relationCount = artifact.count ?? relations.length;
+    const artifactClassLabel = getArtifactClassLabel(artifact.entry_class);
+
     const rowContent = (
-        <TableRow
-            className='cursor-pointer hover:bg-muted/50'
-            onClick={() => setOpen(!open)}
-        >
+        <TableRow className='cursor-pointer hover:bg-muted/50'>
             <TableCell className='text-muted-foreground capitalize'>
                 {enricherName}
             </TableCell>
             <TableCell>
                 <div className='flex items-center gap-2'>
-                    <Badge
-                        className={`rounded-full flex-shrink-0 ${!group.artifact.color ? 'bg-muted' : ''}`}
-                        style={group.artifact.color ? { backgroundColor: group.artifact.color } : undefined}
-                    >
-                        {group.artifact.subtype}
-                    </Badge>
-                    <span className='text-foreground truncate'>{group.artifact.name}</span>
-                    <span className='text-muted-foreground text-xs ml-auto'>
-                        {relationCount} result{relationCount !== 1 ? 's' : ''}
+                    {artifactClassLabel && (
+                        <Badge
+                            className='rounded-full flex-shrink-0'
+                            variant='secondary'
+                        >
+                            {artifactClassLabel}
+                        </Badge>
+                    )}
+                    <span className='text-foreground truncate'>
+                        {artifact.name || 'Untitled'}
                     </span>
+                    {relationCount !== undefined && (
+                        <span className='text-muted-foreground text-xs ml-auto'>
+                            {relationCount} result{relationCount !== 1 ? 's' : ''}
+                        </span>
+                    )}
                     <CaretDownIcon
-                        className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+                        className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
                     />
                 </div>
             </TableCell>
@@ -212,20 +255,30 @@ function GroupedRow({ group, enricherName }: GroupedRowProps) {
     );
 
     return (
-        <Collapsible open={open} onOpenChange={setOpen} asChild>
+        <Collapsible open={isOpen} onOpenChange={onToggle} asChild>
             <>
                 <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
                 <CollapsibleContent asChild>
                     <tr>
                         <td colSpan={2} className='p-0'>
                             <div className='bg-muted/30 border-t'>
-                                {group.relations.map((relation, idx) => (
-                                    <RelationItem
-                                        key={idx}
-                                        relation={relation}
-                                        isLast={idx === group.relations.length - 1}
-                                    />
-                                ))}
+                                {isLoading ? (
+                                    <div className='flex items-center justify-center py-6'>
+                                        <Spinner className='size-6' />
+                                    </div>
+                                ) : relations.length === 0 ? (
+                                    <div className='px-4 py-3 text-sm text-muted-foreground'>
+                                        No relations found.
+                                    </div>
+                                ) : (
+                                    relations.map((relation, idx) => (
+                                        <RelationItem
+                                            key={idx}
+                                            relation={relation}
+                                            isLast={idx === relations.length - 1}
+                                        />
+                                    ))
+                                )}
                             </div>
                         </td>
                     </tr>
@@ -261,6 +314,9 @@ export default function EnrichmentResults() {
     }
 
     const [selectedEnricher, setSelectedEnricher] = useState<string | null>(null);
+    const [selectedArtifactId, setSelectedArtifactId] = useState<number | null>(
+        null,
+    );
     const [showIgnored, setShowIgnored] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
@@ -308,6 +364,7 @@ export default function EnrichmentResults() {
         queryKey: queryKeys.enrichment.results.relations({
             id: String(id),
             enricherType: selectedEnricher!,
+            entryId: selectedArtifactId ?? undefined,
             page,
             pageSize,
             query: searchParams.query || undefined,
@@ -317,12 +374,13 @@ export default function EnrichmentResults() {
             intelioApi.enrichmentRelationsRetrieve({
                 id,
                 enricherType: selectedEnricher!,
+                entryId: selectedArtifactId!,
                 page,
                 pageSize,
                 query: searchParams.query || undefined,
                 details: searchParams.details || undefined,
             }),
-        enabled: !!selectedEnricher && !showIgnored,
+        enabled: !!selectedEnricher && !showIgnored && !!selectedArtifactId,
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to fetch enrichment results',
@@ -331,9 +389,14 @@ export default function EnrichmentResults() {
 
     const results = resultsData?.results || [];
     const totalPages = resultsData?.totalPages || 1;
-    
-    // Group results by artifact
-    const groupedResults = useMemo(() => groupResultsByArtifact(results), [results]);
+    const artifacts = useMemo(
+        () => (enricherDetails?.artifacts || []) as EnricherArtifact[],
+        [enricherDetails?.artifacts],
+    );
+    const relations = useMemo(
+        () => mapRelationsForEntry(results, selectedArtifactId),
+        [results, selectedArtifactId],
+    );
 
     // Reset to page 1 when search query changes
     const handleSearch = () => {
@@ -422,16 +485,12 @@ export default function EnrichmentResults() {
 
     // Render entry badge if subtype is not "enrichment"
     const renderEntryBadge = (entry: EntrySerializerMinimal | undefined) => {
-        if (!entry || entry.subtype === 'enrichment') {
-            return null;
-        }
-
         return (
             <Badge
-                className={`rounded-full ${!entry.color ? 'bg-muted' : ''}`}
-                style={entry.color ? { backgroundColor: entry.color } : undefined}
+                className={`rounded-full ${!entry?.color || entry?.subtype === 'enrichment' ? 'bg-muted' : ''}`}
+                style={entry?.color ? { backgroundColor: entry.color } : undefined}
             >
-                {entry.subtype}: {entry.name}
+                {entry?.subtype}: {entry?.name}
             </Badge>
         );
     };
@@ -445,14 +504,14 @@ export default function EnrichmentResults() {
             // Build entries array from e1 and e2
             const entries: Array<{ type: string; name: string }> = [];
 
-            if (result.e1 && result.e1.subtype !== 'enrichment') {
+            if (result.e1) {
                 entries.push({
                     type: result.e1.subtype || 'unknown',
                     name: result.e1.name || '',
                 });
             }
 
-            if (result.e2 && result.e2.subtype !== 'enrichment') {
+            if (result.e2) {
                 entries.push({
                     type: result.e2.subtype || 'unknown',
                     name: result.e2.name || '',
@@ -481,6 +540,7 @@ export default function EnrichmentResults() {
     // Handle enricher selection
     const handleEnricherSelect = (enricherType: string) => {
         setSelectedEnricher(enricherType);
+        setSelectedArtifactId(null);
         setShowIgnored(false);
         setPage(1);
         setSearchParams({ query: '', details: '' });
@@ -490,8 +550,17 @@ export default function EnrichmentResults() {
     // Handle ignored artifacts selection
     const handleIgnoredSelect = () => {
         setSelectedEnricher(null);
+        setSelectedArtifactId(null);
         setShowIgnored(true);
         // Query will automatically handle null when enabled is false
+    };
+
+    const handleArtifactToggle = (artifactId?: number, open?: boolean) => {
+        if (artifactId == null) return;
+        if (open) {
+            setPage(1);
+        }
+        setSelectedArtifactId(open ? artifactId : null);
     };
 
     const errorMsg = () => {
@@ -526,6 +595,10 @@ export default function EnrichmentResults() {
 
     // Get ignored artifacts from enrichmentDetails (assuming it comes from 'ignored' field)
     const ignoredArtifacts = (enrichmentDetails as any)?.ignored || [];
+    const selectedEnricherName =
+        enrichmentDetails?.enrichers?.find(
+            (enricher) => enricher.enricherType === selectedEnricher,
+        )?.displayName || selectedEnricher;
 
     return (
         <div className='w-full h-full flex flex-col overflow-hidden'>
@@ -676,7 +749,12 @@ export default function EnrichmentResults() {
                                 variant='outline'
                                 size='icon'
                                 onClick={handleDownloadResults}
-                                disabled={showIgnored || !results || results.length === 0}
+                                disabled={
+                                    showIgnored ||
+                                    !selectedArtifactId ||
+                                    !results ||
+                                    results.length === 0
+                                }
                                 title='Download results as JSON'
                             >
                                 <DownloadSimpleIcon size={18} weight="bold" />
@@ -719,15 +797,15 @@ export default function EnrichmentResults() {
                             </Card>
                         ) : selectedEnricher ? (
                             /* Relations View */
-                            isPendingResults ? (
+                            isPendingEnricher ? (
                                 <div className='flex items-center justify-center min-h-[200px]'>
                                     <Spinner className='size-10' />
                                 </div>
-                            ) : groupedResults.length === 0 ? (
+                            ) : artifacts.length === 0 ? (
                                 <Card className='border-border bg-muted/5'>
                                     <CardContent className='py-8'>
                                         <p className='text-center text-sm text-muted-foreground'>
-                                            No results found.
+                                            No artifacts found.
                                         </p>
                                     </CardContent>
                                 </Card>
@@ -743,14 +821,23 @@ export default function EnrichmentResults() {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {groupedResults.map((group, index) => (
-                                                        <GroupedRow
-                                                            key={`${group.artifact.subtype}:${group.artifact.name}`}
-                                                            group={group}
-                                                            enricherName={
-                                                                enrichmentDetails?.enrichers?.find(
-                                                                    (e) => e.enricherType === selectedEnricher
-                                                                )?.displayName || selectedEnricher
+                                                    {artifacts.map((artifact, index) => (
+                                                        <ArtifactRow
+                                                            key={artifact.id ?? index}
+                                                            artifact={artifact}
+                                                            enricherName={selectedEnricherName || ''}
+                                                            isOpen={artifact.id === selectedArtifactId}
+                                                            onToggle={(open) =>
+                                                                handleArtifactToggle(artifact.id, open)
+                                                            }
+                                                            relations={
+                                                                artifact.id === selectedArtifactId
+                                                                    ? relations
+                                                                    : []
+                                                            }
+                                                            isLoading={
+                                                                artifact.id === selectedArtifactId &&
+                                                                isPendingResults
                                                             }
                                                         />
                                                     ))}
@@ -759,18 +846,22 @@ export default function EnrichmentResults() {
                                         </CardContent>
                                     </Card>
                                     {/* Pagination */}
-                                    <div className='pt-3'>
-                                        <Pagination
-                                            currentPage={page}
-                                            totalPages={totalPages}
-                                            onPageChange={(newPage) => setPage(newPage)}
-                                            pageSize={pageSize}
-                                            onPageSizeChange={(newSize) => {
-                                                setPageSize(newSize);
-                                                setPage(1);
-                                            }}
-                                        />
-                                    </div>
+                                    {selectedArtifactId && (
+                                        <div className='pt-3'>
+                                            <Pagination
+                                                currentPage={page}
+                                                totalPages={totalPages}
+                                                onPageChange={(newPage) =>
+                                                    setPage(newPage)
+                                                }
+                                                pageSize={pageSize}
+                                                onPageSizeChange={(newSize) => {
+                                                    setPageSize(newSize);
+                                                    setPage(1);
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </>
                             )
                         ) : (

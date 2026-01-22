@@ -66,6 +66,7 @@ export const queryKeys = {
             relations: (params: {
                 id: string;
                 enricherType: string;
+                entryId?: number;
                 page?: number;
                 pageSize?: number;
                 query?: string;

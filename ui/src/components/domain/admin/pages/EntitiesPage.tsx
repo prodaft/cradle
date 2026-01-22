@@ -41,7 +41,6 @@ import {
     getCoreRowModel,
     useReactTable,
 } from '@tanstack/react-table';
-import { ClockRotateRight, Edit, Settings, Trash } from 'iconoir-react/regular';
 import { Plus, Shield } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import AddEntityModal from '../../../dialogs/admin/AddEntityModal';
@@ -56,9 +55,9 @@ interface EntityData extends Entity {
 }
 
 const ENTITY_SETTINGS_ITEMS = [
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'settings', label: 'Settings', icon: GearIcon },
     { id: 'permissions', label: 'Permissions', icon: Shield },
-    { id: 'activity', label: 'Activity', icon: ClockRotateRight },
+    { id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon },
 ];
 
 function EntitySettingsPage({ entityId }: { entityId: string }) {

@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Q
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import SerializerMethodField
@@ -311,9 +312,40 @@ class EnrichmentRequestEnricherSerializer(serializers.Serializer):
         artifacts = []
         enabled_eclasses = set(enricher_settings.for_eclasses.values_list("subtype", flat=True))
 
+        q = Q()
+        artifacts_full = set()
+        class_colors = {}
         for req in request.request:
             if req["entry_class"] in enabled_eclasses:
-                artifacts.append(req)
+                artifacts_full.add((req["entry_class"], req["name"]))
+                q = q | (Q(name=req["name"]) & Q(entry_class__subtype=req["entry_class"]))
+                class_colors[req["entry_class"]] = req["color"]
+
+        entries = Entry.objects.filter(q)
+
+        artifacts = []
+        for entry in entries:
+            artifacts.append(
+                {
+                    "entry_class": entry.entry_class.subtype,
+                    "name": entry.name,
+                    "id": entry.id,
+                    "color": entry.color,
+                    "count": request.relations.filter(Q(e1=entry) | Q(e2=entry)).values("id")[:101].count(),
+                }
+            )
+            artifacts_full.remove((entry.entry_class.subtype, entry.name))
+
+        for entry_class, name in artifacts_full:
+            artifacts.append(
+                {
+                    "entry_class": entry_class,
+                    "name": name,
+                    "id": 0,
+                    "count": 0,
+                    "color": class_colors.get(entry_class, "#e66100"),
+                }
+            )
 
         return cls(
             {
