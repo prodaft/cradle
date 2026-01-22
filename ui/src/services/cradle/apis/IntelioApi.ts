@@ -80,6 +80,7 @@ export interface EnrichmentRelationsRetrieveRequest {
     enricherType: string;
     id: number;
     details?: string;
+    entryId?: number;
     page?: number;
     pageSize?: number;
     query?: string;
@@ -288,6 +289,10 @@ export class IntelioApi extends runtime.BaseAPI {
 
         if (requestParameters['details'] != null) {
             queryParameters['details'] = requestParameters['details'];
+        }
+
+        if (requestParameters['entryId'] != null) {
+            queryParameters['entry_id'] = requestParameters['entryId'];
         }
 
         if (requestParameters['page'] != null) {

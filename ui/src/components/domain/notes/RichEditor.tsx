@@ -12,6 +12,7 @@ import {
     referenceLinksPlugin,
     referenceLinkSyntax,
 } from '@/utils/editor/referenceLinks';
+import { tablePlugin } from '@/utils/editor/tableplugin';
 import { createCradleTheme } from '@/utils/editor/theme';
 import { logger } from '@/utils/logger';
 import {
@@ -353,6 +354,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             cradleLinkColorPlugin(entryColors, source),
             headingLineClassPlugin(source),
             referenceLinksPlugin(referenceMappings, navigate, fileDownloadFn, source),
+            tablePlugin(entryColors, navigate, source),
             yamlFrontmatter({
                 content: markdown({
                     codeLanguages: languages,

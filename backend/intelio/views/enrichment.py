@@ -516,6 +516,13 @@ class EnrichmentRequestEnricherAPIView(APIView):
                 description="Page number for pagination",
             ),
             OpenApiParameter(
+                name="entry_id",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Filter by entry ID",
+                required=False,
+            ),
+            OpenApiParameter(
                 name="query",
                 type=str,
                 location=OpenApiParameter.QUERY,
@@ -586,6 +593,10 @@ class EnrichmentRelationsAPIView(APIView):
 
         # Get relations associated with this enrichment request and enricher type
         relations = enrichment_request.relations.filter(reason_context=enricher_type)
+
+        entry_id = request.query_params.get("entry_id")
+        if entry_id:
+            relations = relations.filter(Q(e1__id=entry_id) | Q(e2__id=entry_id))
 
         # Handle page_size parameter
         try:

@@ -48,7 +48,7 @@ export interface NotificationsUpdateRequest {
 export class NotificationsApi extends runtime.BaseAPI {
 
     /**
-     * Retrieve paginated notifications for the authenticated user, sorted from newest to oldest.
+     * Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.
      * Fetch Notifications
      */
     async notificationsRetrieveRaw(requestParameters: NotificationsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedNotificationResponse>> {
@@ -86,7 +86,7 @@ export class NotificationsApi extends runtime.BaseAPI {
     }
 
     /**
-     * Retrieve paginated notifications for the authenticated user, sorted from newest to oldest.
+     * Retrieve paginated notifications for the authenticated user, sorted with unread notifications first, then by newest to oldest.
      * Fetch Notifications
      */
     async notificationsRetrieve(requestParameters: NotificationsRetrieveRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedNotificationResponse> {
