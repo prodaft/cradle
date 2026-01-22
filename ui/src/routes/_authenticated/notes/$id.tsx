@@ -6,7 +6,10 @@ const NoteViewer = lazy(() => import('src/components/domain/notes/NoteViewer'));
 
 export const Route = createFileRoute('/_authenticated/notes/$id')({
     staticData: {
-        breadcrumb: (match: any) => `Note ${match.params.id.slice(0, 8)}...`,
+        breadcrumb: (match: any) => {
+            const id = match?.params?.id;
+            return id ? `Note ${id.slice(0, 8)}...` : 'Note';
+        },
     },
     validateSearch: z.object({
         heading: z.string().optional(),

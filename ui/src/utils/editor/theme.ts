@@ -135,6 +135,92 @@ export function createCradleTheme(isDarkMode: boolean) {
                 backgroundColor: 'color-mix(in oklch, var(--ring) 20%, transparent)',
                 outline: '2px solid var(--ring)',
             },
+            // Tooltip styling for autocomplete and lint overlays
+            '.cm-tooltip': {
+                backgroundColor: 'var(--popover)',
+                color: 'var(--popover-foreground)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius)',
+                boxShadow: 'var(--shadow-lg)',
+                fontFamily: 'var(--font-sans)',
+                fontSize: '13px',
+                padding: '4px',
+                zIndex: 50,
+            },
+            '.cm-tooltip-autocomplete': {
+                minWidth: '220px',
+            },
+            '.cm-tooltip-autocomplete ul': {
+                listStyle: 'none',
+                margin: 0,
+                padding: '4px',
+                maxHeight: '260px',
+            },
+            '.cm-tooltip-autocomplete li': {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 8px',
+                borderRadius: '6px',
+                color: 'var(--popover-foreground)',
+                cursor: 'pointer',
+            },
+            '.cm-tooltip-autocomplete li[aria-selected]': {
+                backgroundColor: 'var(--accent)',
+                color: 'var(--accent-foreground)',
+            },
+            '.cm-tooltip-autocomplete .cm-completionDetail': {
+                marginLeft: 'auto',
+                fontSize: '12px',
+                color: 'var(--muted-foreground)',
+            },
+            '.cm-tooltip-autocomplete li[aria-selected] .cm-completionDetail': {
+                color: 'var(--accent-foreground)',
+                opacity: 0.8,
+            },
+            '.cm-tooltip-autocomplete .cm-completionMatchedText': {
+                fontWeight: '600',
+                color: 'var(--primary)',
+            },
+            '.cm-tooltip-autocomplete li[aria-selected] .cm-completionMatchedText': {
+                color: 'var(--accent-foreground)',
+            },
+            '.cm-tooltip-lint': {
+                padding: '6px',
+            },
+            '.cm-tooltip-lint ul': {
+                listStyle: 'none',
+                margin: 0,
+                padding: 0,
+            },
+            '.cm-tooltip-lint li': {
+                padding: '2px 6px',
+                color: 'var(--popover-foreground)',
+            },
+            '.cm-diagnostic-error': {
+                borderLeft: '3px solid var(--destructive)',
+                paddingLeft: '8px',
+            },
+            '.cm-diagnostic-warning': {
+                borderLeft: '3px solid var(--chart-4)',
+                paddingLeft: '16px',
+                display: 'flex',
+                alignItems: 'center',
+            },
+            '.cm-diagnostic-info': {
+                borderLeft: '3px solid var(--chart-2)',
+                paddingLeft: '8px',
+            },
+            '.cm-diagnosticAction': {
+                marginTop: '6px',
+                backgroundColor: 'var(--secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                fontSize: '12px',
+                color: 'var(--foreground)',
+                cursor: 'pointer',
+            },
         },
         { dark: isDarkMode },
     );
