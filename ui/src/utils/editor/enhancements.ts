@@ -835,6 +835,7 @@ export class CradleEditor {
         start: number,
         end: number,
         onlyTimestamps: boolean,
+        timestampDate: Date,
     ): Promise<[number, string]> {
         await this.ready();
         if (!this.entryClasses) return [0, editor.state.doc.toString()];
@@ -873,7 +874,7 @@ export class CradleEditor {
                 start,
                 end,
                 (suggestion, absoluteStart, absoluteEnd) => {
-                    const timestamp = dayjs().format('DD-MM-YYYY');
+                    const timestamp = dayjs(timestampDate).format('DD-MM-YYYY');
                     const replacement = `[[${suggestion.type}:${suggestion.match}]](${timestamp})`;
                     changes.push({
                         from: absoluteStart,

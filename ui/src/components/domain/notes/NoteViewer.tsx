@@ -61,6 +61,7 @@ import FindReplace from './FindReplace';
 import NoteMetadata from './NoteMetadata';
 import NoteOutline from './NoteOutline';
 import RichEditor from './RichEditor';
+import StaticRender from './StaticRender';
 import StatusIndicators from './StatusIndicators';
 
 interface LocationState {
@@ -210,9 +211,7 @@ export default function NoteViewer() {
             setActiveView(s.view as ViewMode);
         }
         if (s.edit !== undefined && s.edit !== enableEditing) {
-            if (!isFleeting) {
-                setEnableEditing(s.edit);
-            }
+            setEnableEditing(s.edit);
         }
         if (s.source !== undefined) {
             const urlRichEditor = !s.source;
@@ -254,9 +253,6 @@ export default function NoteViewer() {
     }, [showOutline]);
 
     const toggleEditing = useCallback(() => {
-        if (isFleeting) {
-            return;
-        }
         const newValue = !enableEditing;
         setEnableEditing(newValue);
         router.navigate({
@@ -264,7 +260,7 @@ export default function NoteViewer() {
             search: { ...(search as any), edit: newValue },
             replace: true,
         });
-    }, [isFleeting, enableEditing, router, location.pathname, search]);
+    }, [enableEditing, router, location.pathname, search]);
 
     const handleEnableEditingWithConfirmation = useCallback(() => {
         // If we're already in editing mode, there's nothing to do
@@ -306,6 +302,7 @@ export default function NoteViewer() {
                 from,
                 to,
                 onlyTimestamps,
+                note?.editTimestamp || note?.timestamp || new Date(),
             );
 
             view.dispatch({
@@ -800,38 +797,49 @@ export default function NoteViewer() {
                                                         initialReplace={findReplaceMode}
                                                     />
                                                 )}
-                                                {/* Embedded Rich Editor */}
+                                                {/* Embedded Rich Editor or Static Render */}
                                                 <div className='flex-1 min-h-0'>
-                                                    <RichEditor
-                                                        editorUtils={editorUtils}
-                                                        additionalExtensions={
-                                                            customKeymap
-                                                        }
-                                                        key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
-                                                        ref={editorRef}
-                                                        noteid={noteId || ''}
-                                                        markdownContent={
-                                                            markdownContent
-                                                        }
-                                                        setMarkdownContent={
-                                                            setMarkdownContent
-                                                        }
-                                                        fileData={fileData}
-                                                        setFileData={handleFilesChange}
-                                                        source={!richEditor}
-                                                        saveNote={handleSaveNote}
-                                                        enableEditing={enableEditing}
-                                                        setLineNumber={setLineNumber}
-                                                    />
+                                                    {enableEditing || !richEditor ? (
+                                                        <>
+                                                            <RichEditor
+                                                                editorUtils={editorUtils}
+                                                                additionalExtensions={
+                                                                    customKeymap
+                                                                }
+                                                                key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
+                                                                ref={editorRef}
+                                                                noteid={noteId || ''}
+                                                                markdownContent={
+                                                                    markdownContent
+                                                                }
+                                                                setMarkdownContent={
+                                                                    setMarkdownContent
+                                                                }
+                                                                fileData={fileData}
+                                                                setFileData={handleFilesChange}
+                                                                source={!richEditor}
+                                                                saveNote={handleSaveNote}
+                                                                enableEditing={enableEditing}
+                                                                setLineNumber={setLineNumber}
+                                                            />
+                                                            {/* Reference Tree below the editor */}
+                                                            {note && (
+                                                                <ReferenceTree
+                                                                    note={note}
+                                                                    className='mt-4'
+                                                                />
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        note && (
+                                                            <StaticRender
+                                                                note={note}
+                                                                markdownContent={markdownContent}
+                                                                fileData={fileData}
+                                                            />
+                                                        )
+                                                    )}
                                                 </div>
-
-                                                {/* Reference Tree below the editor */}
-                                                {note && (
-                                                    <ReferenceTree
-                                                        note={note}
-                                                        className='mt-4'
-                                                    />
-                                                )}
                                             </div>
                                         </ResizablePanel>
                                     </ResizablePanelGroup>
@@ -852,32 +860,43 @@ export default function NoteViewer() {
                                                 initialReplace={findReplaceMode}
                                             />
                                         )}
-                                        {/* Embedded Rich Editor */}
+                                        {/* Embedded Rich Editor or Static Render */}
                                         <div className='flex-1 min-h-0'>
-                                            <RichEditor
-                                                additionalExtensions={customKeymap}
-                                                key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
-                                                ref={editorRef}
-                                                noteid={noteId || ''}
-                                                markdownContent={markdownContent}
-                                                setMarkdownContent={setMarkdownContent}
-                                                fileData={fileData}
-                                                setFileData={handleFilesChange}
-                                                source={!richEditor}
-                                                saveNote={handleSaveNote}
-                                                enableEditing={enableEditing}
-                                                editorUtils={editorUtils}
-                                                setLineNumber={setLineNumber}
-                                            />
+                                            {enableEditing || !richEditor ? (
+                                                <>
+                                                    <RichEditor
+                                                        additionalExtensions={customKeymap}
+                                                        key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
+                                                        ref={editorRef}
+                                                        noteid={noteId || ''}
+                                                        markdownContent={markdownContent}
+                                                        setMarkdownContent={setMarkdownContent}
+                                                        fileData={fileData}
+                                                        setFileData={handleFilesChange}
+                                                        source={!richEditor}
+                                                        saveNote={handleSaveNote}
+                                                        enableEditing={enableEditing}
+                                                        editorUtils={editorUtils}
+                                                        setLineNumber={setLineNumber}
+                                                    />
+                                                    {/* Reference Tree below the editor */}
+                                                    {note && (
+                                                        <ReferenceTree
+                                                            note={note}
+                                                            className='mt-4'
+                                                        />
+                                                    )}
+                                                </>
+                                            ) : (
+                                                note && (
+                                                    <StaticRender
+                                                        note={note}
+                                                        markdownContent={markdownContent}
+                                                        fileData={fileData}
+                                                    />
+                                                )
+                                            )}
                                         </div>
-
-                                        {/* Reference Tree below the editor */}
-                                        {note && (
-                                            <ReferenceTree
-                                                note={note}
-                                                className='mt-4'
-                                            />
-                                        )}
                                     </div>
                                 )}
                             </div>
