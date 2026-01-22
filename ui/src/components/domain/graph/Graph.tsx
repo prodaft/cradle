@@ -4,7 +4,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTheme } from '@/contexts/ui';
 import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
-import { FunnelIcon, PauseIcon, PlayIcon, MagnifyingGlassIcon, GearIcon } from '@phosphor-icons/react';
+import { FunnelIcon, GearIcon, MagnifyingGlassIcon, PauseIcon, PlayIcon } from '@phosphor-icons/react';
 import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
@@ -295,21 +295,21 @@ export default function GraphViewer({
         return () => clearTimeout(fitTimer);
     }, [pointsData.length]);
 
-    // Cleanup on unmount
-    useEffect(() => {
-        return () => {
-            try {
-                if (
-                    cosmographRef.current &&
-                    typeof cosmographRef.current.destroy === 'function'
-                ) {
-                    cosmographRef.current.destroy();
-                }
-            } catch (e) {
-                logger.warn('[Graph] Error during cleanup:', { error: e });
-            }
-        };
-    }, []);
+    // Cleanup on unmount (Doing this results in errors when we navigate away from the page, so I've commented it out)
+    // useEffect(() => {
+    //     return () => {
+    //         try {
+    //             if (
+    //                 cosmographRef.current &&
+    //                 typeof cosmographRef.current.destroy === 'function'
+    //             ) {
+    //                 cosmographRef.current.destroy();
+    //             }
+    //         } catch (e) {
+    //             logger.warn('[Graph] Error during cleanup:', { error: e });
+    //         }
+    //     };
+    // }, []);
 
     // Only render Cosmograph when we have valid data
     const hasValidData = pointsData.length > 0;
