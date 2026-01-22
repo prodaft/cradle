@@ -17,8 +17,20 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import Pagination from '@/components/base/Pagination/Pagination';
 import useApi from '@/hooks/api/useApi';
 import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
@@ -29,13 +41,7 @@ import {
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import {
-    type ColumnDef,
-    type RowSelectionState,
-    getCoreRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
-import { CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import { CopyIcon, WarningCircleIcon, CaretDownIcon } from '@phosphor-icons/react';
 import {
     MouseEvent,
     useCallback,
@@ -44,6 +50,8 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
+import { defineStepper } from '@/components/ui/stepper';
+import { Button } from '@/components/ui/button';
 
 interface Alert {
     show: boolean;
@@ -71,6 +79,164 @@ interface RelationsProps {
     };
 }
 
+interface RelationRowProps {
+    srcId: number;
+    result: Result;
+    isSelected: boolean;
+    onToggleSelection: (checked: boolean) => void;
+    isOpen: boolean;
+    onToggleOpen: (open: boolean) => void;
+    router: any;
+}
+
+function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onToggleOpen, router }: RelationRowProps) {
+    const dashboardLink = createDashboardLink(result);
+    const { knowledgeGraphApi } = useApi();
+
+    const isSameEntry = result.id !== undefined && result.id === srcId;
+    const canExpand = !isSameEntry && result.id !== undefined;
+
+    const { data: pathData, isPending: isPathPending } = useQuery({
+        queryKey: ['graph', 'paths', { src: String(srcId), dst: result.id }],
+        queryFn: () => knowledgeGraphApi.knowledgeGraphPathsRetrieve({
+            src: String(srcId),
+            dsts: [result.id!],
+        }),
+        enabled: isOpen && canExpand,
+    });
+
+    const pathSteps = useMemo(() => {
+        if (!pathData) return [];
+        
+        const nodes = new Map<number, { id: number; name: string; subtype: string; color?: string }>();
+        
+        const processEntries = (entryMap: any) => {
+            Object.entries(entryMap).forEach(([subtype, entries]: [string, any]) => {
+                entries.forEach((entry: any) => {
+                    if (typeof entry === 'object' && entry !== null) {
+                        nodes.set(entry.id, {
+                            id: entry.id,
+                            name: entry.name,
+                            subtype: subtype,
+                            color: entry.color,
+                        });
+                    }
+                });
+            });
+        };
+
+        processEntries(pathData.entries.entities);
+        processEntries(pathData.entries.artifacts);
+
+        return Array.from(nodes.values()).map(node => ({
+            id: String(node.id),
+            title: node.name,
+            description: node.subtype,
+            entryId: node.id,
+            color: node.color,
+            subtype: node.subtype
+        }));
+    }, [pathData]);
+
+    const handleNavigate = (e: MouseEvent) => {
+        e.stopPropagation();
+        router.navigate({ to: dashboardLink as any });
+    };
+
+    return (
+        <Collapsible open={isOpen} onOpenChange={onToggleOpen} asChild disabled={!canExpand}>
+            <>
+                <CollapsibleTrigger asChild>
+                    <TableRow className={`cursor-pointer hover:bg-muted/50 ${!canExpand ? 'opacity-70' : ''}`}> 
+                        <TableCell onClick={(e) => e.stopPropagation()} className="w-[50px]">
+                             <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={(checked) => onToggleSelection(!!checked)}
+                                aria-label="Select row"
+                            />
+                        </TableCell>
+                        <TableCell onClick={handleNavigate}>
+                             <Badge
+                                className={`rounded-full ${!result.color ? 'bg-muted' : ''}`}
+                                style={
+                                    result.color
+                                        ? {
+                                              backgroundColor: result.color,
+                                          }
+                                        : undefined
+                                }
+                            >
+                                {result.subtype}
+                            </Badge>
+                        </TableCell>
+                        <TableCell onClick={handleNavigate}>
+                             <span className='truncate block max-w-[300px]'>
+                                {result.name}
+                            </span>
+                        </TableCell>
+                        <TableCell>
+                             <div className='flex items-center gap-2'>
+                                {canExpand && (
+                                     <>
+                                        <CaretDownIcon
+                                            className={`size-4 text-muted-foreground transition-transform ml-auto ${isOpen ? 'rotate-180' : ''}`}
+                                        />
+                                    </>
+                                )}
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                </CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                     <TableRow>
+                        <TableCell colSpan={4} className="p-0 border-b-0">
+                            <div className="bg-muted/30 border-t">
+                                <div className="p-4">
+                                     {isPathPending ? (
+                                        <div className="flex justify-center p-4">
+                                            <Spinner />
+                                        </div>
+                                    ) : pathSteps.length > 0 ? (
+                                        <PathStepper steps={pathSteps} router={router} />
+                                    ) : (
+                                        <div className="text-sm text-muted-foreground text-center p-4">
+                                            No path found or error loading path.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                </CollapsibleContent>
+            </>
+        </Collapsible>
+    );
+}
+
+function PathStepper({ steps, router }: { steps: any[], router: any }) {
+    const { Stepper } = useMemo(() => defineStepper(...(steps as any)), [steps]);
+
+    return (
+        <Stepper.Provider>
+            <Stepper.Navigation>
+                {steps.map(step => (
+                    <Stepper.Step 
+                        key={step.id} 
+                        of={step.id} 
+                        onClick={() => {
+                            const link = createDashboardLink({ id: step.entryId, subtype: step.subtype });
+                            router.navigate({ to: link as any });
+                        }}
+                    >
+                        <Stepper.Title>{step.title}</Stepper.Title>
+                        <Stepper.Description>{step.description}</Stepper.Description>
+                    </Stepper.Step>
+                ))}
+            </Stepper.Navigation>
+        </Stepper.Provider>
+    );
+}
+
 export default function Relations({ obj }: RelationsProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [depth, setDepth] = useState(2);
@@ -86,18 +252,15 @@ export default function Relations({ obj }: RelationsProps) {
     const [hasNextPage, setHasNextPage] = useState(false);
     const [inaccessibleEntities, setInaccessibleEntities] = useState<string[]>([]);
     const [isRequestingAccess, setIsRequestingAccess] = useState(false);
-    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [pageSize, setPageSize] = useState(10); // Default page size
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
-    const selectedIds = useMemo(
-        () => Object.keys(rowSelection).filter((key) => rowSelection[key]).map(Number),
-        [rowSelection],
-    );
+    const [pageSize, setPageSize] = useState(10); 
 
     const clearSelection = useCallback(() => {
-        setRowSelection({});
+        setSelectedIds(new Set());
     }, []);
-
+    
     const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
 
     const requestAccessMutation = useMutation({
@@ -117,16 +280,11 @@ export default function Relations({ obj }: RelationsProps) {
             successMessage: 'Access request submitted successfully',
         },
         onSuccess: () => {
-            setInaccessibleEntities([]); // Clear inaccessible entities after request
+            setInaccessibleEntities([]); 
         },
     });
 
-    const dialogRoot = document.getElementById('portal-root');
     const router = useRouter();
-    const handleError = async (err: any) => {
-        const parsed = await parseAPIError(err);
-        handleAPIError(parsed);
-    };
 
     // Query for entry subtypes
     const { data: entrySubtypesData } = useQuery({
@@ -150,7 +308,6 @@ export default function Relations({ obj }: RelationsProps) {
         return colors;
     }, [entrySubtypesData]);
 
-    // Query parameters for relations search
     const relationsQueryParams = useMemo(() => {
         if (!obj.id) return null;
         return {
@@ -163,7 +320,6 @@ export default function Relations({ obj }: RelationsProps) {
         };
     }, [obj.id, depth, page, pageSize, searchQuery]);
 
-    // Query for relations
     const { data: relationsData, isPending } = useQuery({
         queryKey: [
             'graph',
@@ -208,14 +364,12 @@ export default function Relations({ obj }: RelationsProps) {
     useEffect(() => {
         if (relationsData) {
             setHasNextPage(relationsData.hasNext);
-            // Cast results to include depth field (missing from generated types but present in API response)
             const resultsWithDepth = relationsData.results as unknown as Result[];
             if (entrySubtypeFilters.length === 0) {
                 resultsWithDepth.sort((a, b) => a.depth - b.depth);
                 setResults(resultsWithDepth);
             } else {
-                // Filter results client-side if needed
-                const filteredResults =
+                 const filteredResults =
                     entrySubtypeFilters.length > 0
                         ? resultsWithDepth.filter((r) =>
                             entrySubtypeFilters.includes(r.subtype),
@@ -229,7 +383,7 @@ export default function Relations({ obj }: RelationsProps) {
     }, [relationsData, entrySubtypeFilters]);
 
     // Query for inaccessible entities
-    const { data: inaccessibleData } = useQuery({
+     const { data: inaccessibleData } = useQuery({
         queryKey: [
             'graph',
             'inaccessible',
@@ -245,7 +399,7 @@ export default function Relations({ obj }: RelationsProps) {
             }),
         enabled: !!obj.id && depth > 0,
         meta: {
-            suppressNotification: true, // Don't show error for this optional check
+            suppressNotification: true, 
             errorMessage: 'Failed to check inaccessible entities',
         },
     });
@@ -262,15 +416,12 @@ export default function Relations({ obj }: RelationsProps) {
         [requestAccessMutation],
     );
 
-    // Process inaccessible entities data
     useEffect(() => {
         if (
             inaccessibleData?.inaccessible &&
             inaccessibleData.inaccessible.length > 0
         ) {
             setInaccessibleEntities(inaccessibleData.inaccessible);
-
-            // Use Alert to show inaccessible entities warning
             setAlert({
                 show: true,
                 message: `${inaccessibleData.inaccessible.length} related ${inaccessibleData.inaccessible.length === 1 ? 'entity is' : 'entities are'} not accessible`,
@@ -301,18 +452,16 @@ export default function Relations({ obj }: RelationsProps) {
     };
 
     const copyToCSV = useCallback(() => {
-        if (!results || results.length === 0 || selectedIds.length === 0) return;
+        if (!results || results.length === 0 || selectedIds.size === 0) return;
 
         let csvContent = '"type","name"\n';
 
-        // Filter results based on selection
         const itemsToCopy = results.filter(
-            (r) => r.id !== undefined && selectedIds.includes(r.id),
+            (r) => r.id !== undefined && selectedIds.has(r.id),
         );
 
         if (itemsToCopy.length > 0) {
             itemsToCopy.forEach((result) => {
-                // Escape double quotes if necessary
                 const type = String(result.subtype).replace(/"/g, '""');
                 const name = String(result.name).replace(/"/g, '""');
                 csvContent += `"${type}","${name}"\n`;
@@ -330,13 +479,7 @@ export default function Relations({ obj }: RelationsProps) {
             });
     }, [results, selectedIds]);
 
-    const handleResultClick = (link: string) => (e: MouseEvent) => {
-        e.preventDefault();
-        setAlert((prev) => ({ ...prev, show: false }));
-        router.navigate({ to: link as any });
-    };
-
-    // Trigger search when page changes
+     // Trigger search when page changes
     useEffect(() => {
         performSearch(depth, page);
     }, [page, depth, pageSize, performSearch]);
@@ -346,165 +489,38 @@ export default function Relations({ obj }: RelationsProps) {
         setPage(1);
     }, [pageSize]);
 
-    // Memoize columns to prevent recreation on every render
-    const columns = useMemo<ColumnDef<Result>[]>(
-        () => [
-            {
-                id: 'select',
-                size: 28,
-                minSize: 28,
-                maxSize: 28,
-                header: ({ table }) => (
-                    <Checkbox
-                        checked={
-                            table.getIsAllPageRowsSelected() ||
-                            (table.getIsSomePageRowsSelected() && 'indeterminate')
-                        }
-                        onCheckedChange={(value) =>
-                            table.toggleAllPageRowsSelected(!!value)
-                        }
-                        aria-label='Select all'
-                    />
-                ),
-                cell: ({ row }) => (
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label='Select row'
-                        onClick={(e) => e.stopPropagation()}
-                    />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-            },
-            {
-                accessorKey: 'subtype',
-                id: 'subtype',
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} label='Type' />
-                ),
-                cell: ({ row }) => {
-                    const dashboardLink = createDashboardLink(row.original);
-                    return (
-                        <div
-                            className='truncate w-32 cursor-pointer'
-                            onClick={() =>
-                                router.navigate({ to: dashboardLink as any })
-                            }
-                        >
-                            <Badge
-                                className={`rounded-full ${!row.original.color ? 'bg-muted' : ''}`}
-                                style={
-                                    row.original.color
-                                        ? {
-                                              backgroundColor: row.original.color,
-                                          }
-                                        : undefined
-                                }
-                            >
-                                {row.original.subtype}
-                            </Badge>
-                        </div>
-                    );
-                },
-            },
-            {
-                accessorKey: 'name',
-                id: 'name',
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} label='Name' />
-                ),
-                cell: ({ row }) => {
-                    const dashboardLink = createDashboardLink(row.original);
-                    return (
-                        <div
-                            className='truncate w-48 cursor-pointer'
-                            onClick={() =>
-                                router.navigate({ to: dashboardLink as any })
-                            }
-                        >
-                            <span className='truncate'>
-                                {row.original.name}
-                            </span>
-                        </div>
-                    );
-                },
-            },
-            {
-                accessorKey: 'depth',
-                id: 'depth',
-                size: 28,
-                minSize: 28,
-                maxSize: 28,
-                header: ({ column }) => (
-                    <DataTableColumnHeader column={column} label='Depth' />
-                ),
-                cell: ({ row }) => {
-                    const dashboardLink = createDashboardLink(row.original);
-                    return (
-                        <div
-                            className='w-20 cursor-pointer'
-                            onClick={() =>
-                                router.navigate({ to: dashboardLink as any })
-                            }
-                        >
-                            <span className='inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-secondary text-foreground border border-border'>
-                                {row.original.depth}
-                            </span>
-                        </div>
-                    );
-                },
-            },
-        ],
-        [router],
-    );
-
     const calculatedTotalPages = hasNextPage ? page + 1 : page;
 
-    // Handle pagination changes
-    const handlePaginationChange = useCallback(
-        (pageIndex: number, newPageSize: number) => {
-            const newPage = pageIndex + 1; // Convert 0-based to 1-based
+    // Handlers for table
+    const toggleAllSelection = (checked: boolean) => {
+        if (checked && results) {
+            const allIds = results.map(r => r.id).filter((id): id is number => id !== undefined);
+            setSelectedIds(new Set(allIds));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
 
-            // Handle page size change
-            if (newPageSize !== pageSize) {
-                setPageSize(newPageSize);
-                setPage(1);
-            }
-            // Handle page change
-            else if (newPage !== page) {
-                setPage(newPage);
-            }
-        },
-        [page, pageSize],
-    );
+    const toggleRowSelection = (id: number, checked: boolean) => {
+        const newSelected = new Set(selectedIds);
+        if (checked) {
+            newSelected.add(id);
+        } else {
+            newSelected.delete(id);
+        }
+        setSelectedIds(newSelected);
+    };
 
-    const table = useReactTable({
-        data: results || [],
-        columns,
-        state: {
-            rowSelection,
-            pagination: {
-                pageIndex: page - 1,
-                pageSize,
-            },
-        },
-        getRowId: (row, index) => String(row.id ?? index),
-        onRowSelectionChange: setRowSelection,
-        onPaginationChange: (updater) => {
-            const currentPagination = {
-                pageIndex: page - 1,
-                pageSize,
-            };
-            const nextPagination =
-                typeof updater === 'function' ? updater(currentPagination) : updater;
-            handlePaginationChange(nextPagination.pageIndex, nextPagination.pageSize);
-        },
-        getCoreRowModel: getCoreRowModel(),
-        enableRowSelection: true,
-        manualPagination: true,
-        pageCount: calculatedTotalPages,
-    });
+    const toggleRowExpansion = (id: number, open: boolean) => {
+        const newExpanded = new Set(expandedRows);
+        if (open) {
+            newExpanded.add(id);
+        } else {
+            newExpanded.delete(id);
+        }
+        setExpandedRows(newExpanded);
+    };
+
 
     return (
         <div className='flex flex-col space-y-4'>
@@ -518,6 +534,16 @@ export default function Relations({ obj }: RelationsProps) {
                 >
                     <WarningCircleIcon size={18} weight="bold" />
                     <AlertDescription>{alert.message}</AlertDescription>
+                    {alert.button && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-auto"
+                            onClick={alert.button.onClick}
+                        >
+                            {alert.button.text}
+                        </Button>
+                    )}
                 </AlertComponent>
             )}
 
@@ -572,31 +598,90 @@ export default function Relations({ obj }: RelationsProps) {
                 entryClassColors={entryClassColors}
             />
 
-            <div className='grid grid-cols-1 gap-2'>
+            <div className='grid grid-cols-1 gap-2 border rounded-md'>
                 {isPending ? (
                     <div className='flex min-h-[200px] items-center justify-center'>
                         <Spinner />
                     </div>
                 ) : (
-                    <DataTable table={table} />
+                   <div className="flex flex-col">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-[50px]">
+                                        <Checkbox
+                                            checked={
+                                                results && results.length > 0 && selectedIds.size === results.length
+                                                    ? true
+                                                    : selectedIds.size > 0
+                                                    ? 'indeterminate'
+                                                    : false
+                                            }
+                                            onCheckedChange={(checked) => toggleAllSelection(!!checked)}
+                                            aria-label="Select all"
+                                        />
+                                    </TableHead>
+                                    <TableHead>Type</TableHead>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead className="w-[50px]"></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {results && results.length > 0 ? (
+                                    results.map((result, index) => (
+                                        <RelationRow
+                                            key={result.id || index}
+                                            srcId={obj.id!}
+                                            result={result}
+                                            isSelected={result.id !== undefined && selectedIds.has(result.id)}
+                                            onToggleSelection={(checked) => result.id !== undefined && toggleRowSelection(result.id, checked)}
+                                            isOpen={result.id !== undefined && expandedRows.has(result.id)}
+                                            onToggleOpen={(open) => result.id !== undefined && toggleRowExpansion(result.id, open)}
+                                            router={router}
+                                        />
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="h-24 text-center">
+                                            No relations found.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                         <div className="py-2 border-t">
+                            <Pagination
+                                currentPage={page}
+                                totalPages={calculatedTotalPages}
+                                onPageChange={(newPage) => setPage(newPage)}
+                                pageSize={pageSize}
+                                onPageSizeChange={(newSize) => {
+                                    setPageSize(newSize);
+                                    setPage(1);
+                                }}
+                                selectedCount={selectedIds.size}
+                                totalRows={results ? results.length : 0} 
+                            />
+                        </div>
+                   </div>
                 )}
             </div>
 
             <ActionBar
-                open={selectedIds.length > 0}
+                open={selectedIds.size > 0}
                 onOpenChange={(open) => {
                     if (!open) clearSelection();
                 }}
             >
                 <ActionBarSelection>
-                    {selectedIds.length} relation
-                    {selectedIds.length !== 1 ? 's' : ''} selected
+                    {selectedIds.size} relation
+                    {selectedIds.size !== 1 ? 's' : ''} selected
                 </ActionBarSelection>
                 <ActionBarSeparator />
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={copyToCSV}
-                        disabled={isPending || selectedIds.length === 0}
+                        disabled={isPending || selectedIds.size === 0}
                     >
                         <CopyIcon size={18} weight="bold" />
                         Copy to CSV

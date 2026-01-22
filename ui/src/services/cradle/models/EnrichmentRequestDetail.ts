@@ -37,10 +37,10 @@ import {
 export interface EnrichmentRequestDetail {
     /**
      * 
-     * @type {number}
+     * @type {string}
      * @memberof EnrichmentRequestDetail
      */
-    readonly id?: number;
+    readonly id?: string;
     /**
      * 
      * @type {string}

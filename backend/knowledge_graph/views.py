@@ -1,3 +1,5 @@
+import datetime
+
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -11,7 +13,7 @@ from access.models import Access
 from core.pagination import LazyPaginator, TotalPagesPagination
 from entries.enums import EntryType
 from entries.models import Entry, Relation
-from knowledge_graph.utils import get_neighbors, get_neighbors_paginated
+from knowledge_graph.utils import filter_valid_edges, get_edges_for_paths, get_neighbors, get_neighbors_paginated
 from query.filters import EntryFilter
 from query.utils import parse_query
 
@@ -21,6 +23,101 @@ from .serializers import (
     GraphInaccessibleResponseSerializer,
     SubGraphSerializer,
 )
+
+
+@extend_schema(
+    summary="Find paths in knowledge graph",
+    description="Find paths between source and destination entries in the knowledge graph.",
+    parameters=[
+        OpenApiParameter(
+            name="src",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Source entry ID",
+            required=True,
+        ),
+        OpenApiParameter(
+            name="dsts",
+            type=int,
+            location=OpenApiParameter.QUERY,
+            description="Destination entry IDs",
+            required=True,
+            many=True,
+        ),
+        OpenApiParameter(
+            name="min_date",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Minimum date",
+            required=False,
+        ),
+        OpenApiParameter(
+            name="max_date",
+            type=str,
+            location=OpenApiParameter.QUERY,
+            description="Maximum date",
+            required=False,
+        ),
+    ],
+    responses={
+        200: SubGraphSerializer,
+        400: {"description": "Invalid request data"},
+        401: {"description": "User is not authenticated"},
+    },
+)
+class GraphPathFindView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = SubGraphSerializer
+
+    def get(self, request: Request) -> Response:
+        start = request.query_params.get("src")
+
+        if not start:
+            return Response({"error": "Missing src parameter."}, status=400)
+
+        if not start.isdigit():
+            return Response({"error": "src must be an integer."}, status=400)
+
+        ends = request.query_params.getlist("dsts")
+        if not ends:
+            return Response({"error": "Missing dsts parameter."}, status=400)
+        for end in ends:
+            if not end.isdigit():
+                return Response({"error": "dsts must be integers."}, status=400)
+
+        ends = [int(end) for end in ends]
+
+        min_date = request.query_params.get("min_date") or datetime.datetime.fromtimestamp(0)
+        max_date = request.query_params.get("max_date") or datetime.datetime.now()
+
+        edges = filter_valid_edges(
+            get_edges_for_paths(
+                start,
+                ends,
+                request.user,
+                min_date,
+                max_date,
+            )
+        )
+
+        entry_ids = set()
+
+        for i in edges:
+            entry_ids.add(i.src)
+            entry_ids.add(i.dst)
+
+        entries = Entry.objects.filter(id__in=entry_ids)
+
+        colors = {}
+
+        for i in entries.all():
+            if i.entry_class_id not in colors:
+                colors[i.entry_class_id] = i.entry_class.color
+
+        serializer = SubGraphSerializer({"relations": edges, "entries": entries, "colors": colors})
+
+        return Response(serializer.data)
 
 
 @extend_schema(

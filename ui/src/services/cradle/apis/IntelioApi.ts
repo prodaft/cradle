@@ -69,16 +69,16 @@ import {
 } from '../models/index';
 
 export interface EnrichmentDetailDeleteRequest {
-    id: number;
+    id: string;
 }
 
 export interface EnrichmentDetailRetrieveRequest {
-    id: number;
+    id: string;
 }
 
 export interface EnrichmentRelationsRetrieveRequest {
     enricherType: string;
-    id: number;
+    id: string;
     details?: string;
     entryId?: number;
     page?: number;
@@ -92,7 +92,7 @@ export interface EnrichmentRequestCreateRequest {
 
 export interface EnrichmentRequestEnricherRetrieveRequest {
     enricherType: string;
-    id: number;
+    id: string;
 }
 
 export interface EnrichmentRequestListRequest {
@@ -107,7 +107,7 @@ export interface EnrichmentRequestListRequest {
 }
 
 export interface EnrichmentRestartRequest {
-    id: number;
+    id: string;
 }
 
 export interface EnrichmentSettingsRetrieveRequest {

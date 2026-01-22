@@ -19,6 +19,7 @@ import type {
   GraphInaccessibleResponse,
   LazyPaginatedEntryWithDepthSerializerViewResponse,
   PaginatedSubGraphSerializerResponse,
+  SubGraph,
 } from '../models/index';
 import {
     GraphInaccessibleResponseFromJSON,
@@ -27,6 +28,8 @@ import {
     LazyPaginatedEntryWithDepthSerializerViewResponseToJSON,
     PaginatedSubGraphSerializerResponseFromJSON,
     PaginatedSubGraphSerializerResponseToJSON,
+    SubGraphFromJSON,
+    SubGraphToJSON,
 } from '../models/index';
 
 export interface KnowledgeGraphInaccessibleRetrieveRequest {
@@ -41,6 +44,13 @@ export interface KnowledgeGraphNeighborsRetrieveRequest {
     pageSize?: number;
     query?: string;
     wildcard?: boolean;
+}
+
+export interface KnowledgeGraphPathsRetrieveRequest {
+    dsts: Array<number>;
+    src: string;
+    maxDate?: string;
+    minDate?: string;
 }
 
 export interface KnowledgeGraphRetrieveRequest {
@@ -174,6 +184,75 @@ export class KnowledgeGraphApi extends runtime.BaseAPI {
      */
     async knowledgeGraphNeighborsRetrieve(requestParameters: KnowledgeGraphNeighborsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<LazyPaginatedEntryWithDepthSerializerViewResponse> {
         const response = await this.knowledgeGraphNeighborsRetrieveRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Find paths between source and destination entries in the knowledge graph.
+     * Find paths in knowledge graph
+     */
+    async knowledgeGraphPathsRetrieveRaw(requestParameters: KnowledgeGraphPathsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubGraph>> {
+        if (requestParameters['dsts'] == null) {
+            throw new runtime.RequiredError(
+                'dsts',
+                'Required parameter "dsts" was null or undefined when calling knowledgeGraphPathsRetrieve().'
+            );
+        }
+
+        if (requestParameters['src'] == null) {
+            throw new runtime.RequiredError(
+                'src',
+                'Required parameter "src" was null or undefined when calling knowledgeGraphPathsRetrieve().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['dsts'] != null) {
+            queryParameters['dsts'] = requestParameters['dsts'];
+        }
+
+        if (requestParameters['maxDate'] != null) {
+            queryParameters['max_date'] = requestParameters['maxDate'];
+        }
+
+        if (requestParameters['minDate'] != null) {
+            queryParameters['min_date'] = requestParameters['minDate'];
+        }
+
+        if (requestParameters['src'] != null) {
+            queryParameters['src'] = requestParameters['src'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("jwtAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+
+        let urlPath = `/knowledge-graph/paths/`;
+
+        const response = await this.request({
+            path: urlPath,
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => SubGraphFromJSON(jsonValue));
+    }
+
+    /**
+     * Find paths between source and destination entries in the knowledge graph.
+     * Find paths in knowledge graph
+     */
+    async knowledgeGraphPathsRetrieve(requestParameters: KnowledgeGraphPathsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<SubGraph> {
+        const response = await this.knowledgeGraphPathsRetrieveRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
