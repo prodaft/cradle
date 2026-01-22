@@ -367,17 +367,18 @@ export default function GraphViewer({
                 pointsTable = `cosmograph_points_${timestamp}`;
                 linksTable = `cosmograph_links_${timestamp}`;
 
-                // Clean up any existing tables with similar names (safety measure)
-                // But don't drop the tables we're about to create
+                // Drop existing tables if they exist (cleanup from previous runs)
                 try {
-                    // This is just a safety measure - we use timestamps so conflicts are unlikely
+                    await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
+                    await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
                 } catch (e) {
-                    // Ignore errors
+                    // Ignore errors if tables don't exist
                 }
 
                 // Create points table with required columns
+                // Using IF NOT EXISTS to avoid errors if table somehow already exists
                 await connection.query(`
-                    CREATE TABLE ${pointsTable} (
+                    CREATE TABLE IF NOT EXISTS ${pointsTable} (
                         id VARCHAR NOT NULL,
                         idx INTEGER NOT NULL,
                         color VARCHAR,
@@ -418,7 +419,7 @@ export default function GraphViewer({
                 // Create links table with required columns
                 if (linksData.length > 0 && !isCancelled) {
                     await connection.query(`
-                        CREATE TABLE ${linksTable} (
+                        CREATE TABLE IF NOT EXISTS ${linksTable} (
                             source VARCHAR NOT NULL,
                             sourceidx INTEGER NOT NULL,
                             target VARCHAR NOT NULL,
@@ -463,11 +464,24 @@ export default function GraphViewer({
                 // Only set state if not cancelled - this triggers Cosmograph to render
                 // The tables must be fully created and populated before this point
                 if (!isCancelled) {
+                    // Ensure catalog is updated by doing a simple query
+                    // This helps prevent "missing catalog" errors
+                    try {
+                        await connection.query(`SELECT 1 FROM ${pointsTable} LIMIT 1`);
+                        if (linksData.length > 0 && linksTable) {
+                            await connection.query(`SELECT 1 FROM ${linksTable} LIMIT 1`);
+                        }
+                    } catch (catalogError) {
+                        logger.warn('[Graph] Catalog verification query failed, but continuing:', { error: catalogError });
+                        // Continue anyway - the tables should still be accessible
+                    }
+
                     // Store table names in ref for cleanup
                     tablesRef.current = { points: pointsTable, links: linksData.length > 0 ? linksTable : null };
 
                     // Store connection and table names - this must happen after all tables are created
                     // The connection will be kept alive for Cosmograph to use
+                    // Important: We pass the same connection instance that created the tables
                     setDuckDBConnection({ duckdb: duckDB, connection });
                     setPointsTableName(pointsTable);
                     setLinksTableName(linksData.length > 0 ? linksTable : null);
