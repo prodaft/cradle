@@ -29,9 +29,10 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cradleJsonTheme } from '@/config/json-view';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
-import ReactJson from '@microlink/react-json-view';
+import JsonView from '@uiw/react-json-view';
 import {
     CalendarIcon,
     CaretDownIcon,
@@ -166,9 +167,8 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
             </div>
             {hasDetails && open && (
                 <div className='px-4 pb-3 ml-6'>
-                    <ReactJson
-                        src={relation.details}
-                        theme='monokai'
+                    <JsonView
+                        value={relation.details}
                         collapsed={1}
                         displayDataTypes={false}
                         displayObjectSize={false}
@@ -176,6 +176,7 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
                         style={{
                             backgroundColor: 'transparent',
                             fontSize: '12px',
+                            ...cradleJsonTheme,
                         }}
                     />
                 </div>

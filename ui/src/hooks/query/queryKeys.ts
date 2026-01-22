@@ -54,7 +54,7 @@ export const queryKeys = {
         requests: {
             all: ['enrichment', 'requests'] as const,
             lists: () => ['enrichment', 'requests', 'list'] as const,
-            list: (filters?: { page?: number; pageSize?: number }) =>
+            list: (filters?: { page?: number; pageSize?: number; entryId?: string }) =>
                 ['enrichment', 'requests', 'list', filters] as const,
             details: () => ['enrichment', 'requests', 'detail'] as const,
             detail: (id: string) => ['enrichment', 'requests', 'detail', id] as const,

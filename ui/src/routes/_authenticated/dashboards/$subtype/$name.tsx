@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
     },
     validateSearch: z.object({
         heading: z.string().optional(),
-        tab: z.enum(['notes', 'relations', 'files', 'eventlog']).optional(),
+        tab: z.enum(['notes', 'relations', 'files', 'enrichment', 'eventlog']).optional(),
     }),
     // Add cache configuration to prevent unnecessary refetches
     gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes

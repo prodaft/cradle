@@ -22,6 +22,7 @@ export interface ThemeConfig {
 
 export interface ThemeContextValue {
     isDarkMode: boolean;
+    activeTheme: ThemeConfig;
     setTheme: (theme: ThemeConfig) => void;
     toggleTheme: () => void;
 }

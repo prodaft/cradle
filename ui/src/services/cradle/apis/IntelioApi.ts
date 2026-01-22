@@ -96,6 +96,8 @@ export interface EnrichmentRequestEnricherRetrieveRequest {
 }
 
 export interface EnrichmentRequestListRequest {
+    anyValue?: string;
+    entryId?: string;
     orderBy?: string;
     page?: number;
     pageSize?: number;
@@ -451,6 +453,14 @@ export class IntelioApi extends runtime.BaseAPI {
      */
     async enrichmentRequestListRaw(requestParameters: EnrichmentRequestListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedEnrichmentRequestListSerializerResponse>> {
         const queryParameters: any = {};
+
+        if (requestParameters['anyValue'] != null) {
+            queryParameters['any_value'] = requestParameters['anyValue'];
+        }
+
+        if (requestParameters['entryId'] != null) {
+            queryParameters['entry_id'] = requestParameters['entryId'];
+        }
 
         if (requestParameters['orderBy'] != null) {
             queryParameters['order_by'] = requestParameters['orderBy'];

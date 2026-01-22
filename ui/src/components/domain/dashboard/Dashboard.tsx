@@ -12,12 +12,14 @@ import { useAuthState } from '@/hooks/auth/useAuth';
 import { useMutation } from '@tanstack/react-query';
 import { useLoaderData, useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { FileText, FolderOpen, History, Share2 } from 'lucide-react';
+import { SparkleIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import ActivityList from '../activity/ActivityList';
 import Files from './Files';
 import Notes from './Notes';
 import Relations from './Relations';
+import DashboardEnrichmentRequests from './DashboardEnrichmentRequests';
 
 /**
  * Dashboard component
@@ -66,6 +68,7 @@ export default function Dashboard() {
             { id: 'notes', label: 'Notes', icon: FileText },
             { id: 'relations', label: 'Relations', icon: Share2 },
             { id: 'files', label: 'Files', icon: FolderOpen },
+            { id: 'enrichment', label: 'Enrichment', icon: SparkleIcon },
             ...(isAdmin ? [{ id: 'eventlog', label: 'Event Log', icon: History }] : []),
         ],
         [isAdmin],
@@ -262,6 +265,15 @@ export default function Dashboard() {
                                                 <CardContent className='pt-4'>
                                                     <Files
                                                         obj={contentObject}
+                                                    />
+                                                </CardContent>
+                                            </Card>
+                                        )}
+                                        {activeTab === 'enrichment' && (
+                                            <Card>
+                                                <CardContent className='pt-4'>
+                                                    <DashboardEnrichmentRequests
+                                                        entryId={contentObject.id}
                                                     />
                                                 </CardContent>
                                             </Card>

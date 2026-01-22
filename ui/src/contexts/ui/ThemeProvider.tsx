@@ -179,8 +179,8 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
     }, [isDarkMode, setTheme]);
 
     const value = useMemo<ThemeContextValue>(
-        () => ({ isDarkMode, setTheme, toggleTheme }),
-        [isDarkMode, setTheme, toggleTheme],
+        () => ({ isDarkMode, activeTheme, setTheme, toggleTheme }),
+        [isDarkMode, activeTheme, setTheme, toggleTheme],
     );
 
     return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

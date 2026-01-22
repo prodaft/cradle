@@ -269,7 +269,8 @@ class EnrichmentAPIView(APIView):
             if not entry.exists():
                 queryset = queryset.filter(id__in=[])
             else:
-                queryset = queryset.filter(entities__in=entry)
+                entry = entry.first()
+                queryset = queryset.filter(Q(relations__e1=entry) | Q(relations__e2=entry))
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")
