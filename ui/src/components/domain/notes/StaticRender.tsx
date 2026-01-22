@@ -119,7 +119,7 @@ export default function StaticRender({
             <div className='flex-1 min-h-0 relative'>
                 <ScrollArea className='h-full w-full'>
                     <div
-                        className='rich-editor markdown-body'
+                        className='rich-editor markdown-body static-render'
                         style={{
                             padding: '1rem',
                             backgroundColor: 'transparent',
@@ -129,6 +129,44 @@ export default function StaticRender({
                     ></div>
                 </ScrollArea>
             </div>
+            <style>{`
+                .static-render h1:first-child,
+                .static-render h2:first-child,
+                .static-render h3:first-child,
+                .static-render h4:first-child,
+                .static-render h5:first-child,
+                .static-render h6:first-child {
+                    margin-top: 0 !important;
+                }
+
+                .static-render h1,
+                .static-render h2,
+                .static-render h3,
+                .static-render h4,
+                .static-render h5,
+                .static-render h6 {
+                    border-bottom: none !important;
+                    padding-bottom: 0 !important;
+                }
+
+                .static-render ul,
+                .static-render ol {
+                    list-style: revert !important;
+                    padding-left: 2em !important;
+                }
+
+                .static-render ul {
+                    list-style-type: disc !important;
+                }
+
+                .static-render ol {
+                    list-style-type: decimal !important;
+                }
+
+                .static-render li {
+                    display: list-item !important;
+                }
+            `}</style>
         </div>
     );
 }

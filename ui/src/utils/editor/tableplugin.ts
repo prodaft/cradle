@@ -117,12 +117,8 @@ class TableWidget extends WidgetType {
         const wrapper = document.createElement('div');
         wrapper.style.display = 'block';
         wrapper.style.width = '100%';
-        wrapper.style.margin = '1em 0';
 
         const table = document.createElement('table');
-        table.className = 'markdown-table';
-        table.style.borderCollapse = 'collapse';
-        table.style.width = '100%';
 
         // Create markdown-it instance with cradle links plugin
         const md = new MarkdownIt({ html: false, linkify: true }) as MarkdownItWithHandlers;
@@ -139,10 +135,6 @@ class TableWidget extends WidgetType {
                 const rendered = md.renderInline(header.trim());
                 const sanitized = DOMPurify.sanitize(rendered);
                 th.innerHTML = sanitized;
-                th.style.border = '1px solid var(--border)';
-                th.style.padding = '0.5rem';
-                th.style.backgroundColor = 'var(--muted)';
-                th.style.fontWeight = '600';
 
                 if (this.alignments[idx]) {
                     th.style.textAlign = this.alignments[idx];
@@ -167,8 +159,6 @@ class TableWidget extends WidgetType {
                     const rendered = md.renderInline(cell.trim());
                     const sanitized = DOMPurify.sanitize(rendered);
                     td.innerHTML = sanitized;
-                    td.style.border = '1px solid var(--border)';
-                    td.style.padding = '0.5rem';
 
                     if (this.alignments[idx]) {
                         td.style.textAlign = this.alignments[idx];

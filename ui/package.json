@@ -108,6 +108,7 @@
         "lodash": "^4.17.21",
         "lucide-react": "^0.562.0",
         "markdown-it": "^14.1.0",
+        "markdown-it-anchor": "valeriangalliat/markdown-it-anchor",
         "next-themes": "^0.4.6",
         "nuqs": "^2.8.6",
         "prismjs": "^1.30.0",
