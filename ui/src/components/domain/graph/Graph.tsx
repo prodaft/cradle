@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ui';
 import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
 import { FunnelIcon, GearIcon, MagnifyingGlassIcon, PauseIcon, PlayIcon } from '@phosphor-icons/react';
+import { useDuckDb } from "duckdb-wasm-kit";
 import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
@@ -121,7 +122,11 @@ export default function GraphViewer({
     const internalCosmographRef = useRef<any>(null);
     const cosmographRef = externalCosmographRef || internalCosmographRef;
     const [enableSimulation, setEnableSimulation] = useState(true);
-
+    const { db: duckDB, loading: duckDBLoading, error: duckDBError } = useDuckDb();
+    const [duckDBConnection, setDuckDBConnection] = useState<{ duckdb: any; connection: any } | null>(null);
+    const [pointsTableName, setPointsTableName] = useState<string | null>(null);
+    const [linksTableName, setLinksTableName] = useState<string | null>(null);
+    const tablesRef = useRef<{ points: string | null; links: string | null }>({ points: null, links: null });
     const backgroundColor = useMemo(() => {
         const bgVar = activeTheme?.['--background'];
         return bgVar ? cssToHex(bgVar) : (isDarkMode ? '#000000' : '#ffffff');
@@ -321,29 +326,230 @@ export default function GraphViewer({
         return () => clearTimeout(fitTimer);
     }, [pointsData.length]);
 
-    // Cleanup on unmount (Doing this results in errors when we navigate away from the page, so I've commented it out)
-    // useEffect(() => {
-    //     return () => {
-    //         try {
-    //             if (
-    //                 cosmographRef.current &&
-    //                 typeof cosmographRef.current.destroy === 'function'
-    //             ) {
-    //                 cosmographRef.current.destroy();
-    //             }
-    //         } catch (e) {
-    //             logger.warn('[Graph] Error during cleanup:', { error: e });
-    //         }
-    //     };
-    // }, []);
+    if (duckDBError) {
+        return <div className='flex items-center justify-center h-full text-muted-foreground'>
+            <div className='text-center'>
+                <p className='text-lg mb-2'>Error loading DuckDB</p>
+            </div>
+        </div>
+    }
 
-    // Only render Cosmograph when we have valid data
-    const hasValidData = pointsData.length > 0;
+    // Only render Cosmograph when we have valid data and DuckDB tables are ready
+    const hasValidData = pointsData.length > 0 && !duckDBLoading && duckDBConnection !== null && pointsTableName !== null;
 
     const spaceSize = useMemo(() => {
         const nodeCount = pointsData.length;
         return Math.max(2048, Math.sqrt(nodeCount) * 150);
     }, [pointsData.length]);
+
+    // Initialize DuckDB tables with points and links data
+    useEffect(() => {
+        let pointsTable: string | null = null;
+        let linksTable: string | null = null;
+        let connection: any = null;
+        let isCancelled = false;
+
+        async function initCosmographTables() {
+            if (!duckDB || pointsData.length === 0) {
+                // Reset state if no data
+                setDuckDBConnection(null);
+                setPointsTableName(null);
+                setLinksTableName(null);
+                return;
+            }
+
+            try {
+                // Create a persistent connection that will be used by Cosmograph
+                connection = await duckDB.connect();
+
+                // Generate unique table names to avoid conflicts
+                const timestamp = Date.now();
+                pointsTable = `cosmograph_points_${timestamp}`;
+                linksTable = `cosmograph_links_${timestamp}`;
+
+                // Clean up any existing tables with similar names (safety measure)
+                // But don't drop the tables we're about to create
+                try {
+                    // This is just a safety measure - we use timestamps so conflicts are unlikely
+                } catch (e) {
+                    // Ignore errors
+                }
+
+                // Create points table with required columns
+                await connection.query(`
+                    CREATE TABLE ${pointsTable} (
+                        id VARCHAR NOT NULL,
+                        idx INTEGER NOT NULL,
+                        color VARCHAR,
+                        size DOUBLE,
+                        label VARCHAR,
+                        degree INTEGER
+                    )
+                `);
+
+                // Insert points data in batches to avoid query size limits
+                const batchSize = 1000;
+                for (let i = 0; i < pointsData.length; i += batchSize) {
+                    if (isCancelled) {
+                        // Clean up if cancelled during insertion
+                        if (connection && pointsTable) {
+                            try {
+                                await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
+                            } catch (e) {
+                                // Ignore
+                            }
+                        }
+                        return;
+                    }
+                    const batch = pointsData.slice(i, i + batchSize);
+                    const values = batch.map((point) => {
+                        const id = String(point.id).replace(/'/g, "''");
+                        const color = String(point._color || '').replace(/'/g, "''");
+                        const label = String(point._label || '').replace(/'/g, "''");
+                        return `('${id}', ${point._index}, '${color}', ${point._size || 0}, '${label}', ${point.degree || 0})`;
+                    }).join(', ');
+
+                    await connection.query(`
+                        INSERT INTO ${pointsTable} (id, idx, color, size, label, degree)
+                        VALUES ${values}
+                    `);
+                }
+
+                // Create links table with required columns
+                if (linksData.length > 0 && !isCancelled) {
+                    await connection.query(`
+                        CREATE TABLE ${linksTable} (
+                            source VARCHAR NOT NULL,
+                            sourceidx INTEGER NOT NULL,
+                            target VARCHAR NOT NULL,
+                            targetidx INTEGER NOT NULL
+                        )
+                    `);
+
+                    // Insert links data in batches
+                    for (let i = 0; i < linksData.length; i += batchSize) {
+                        if (isCancelled) {
+                            // Clean up if cancelled during insertion
+                            if (connection && linksTable) {
+                                try {
+                                    await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
+                                } catch (e) {
+                                    // Ignore
+                                }
+                            }
+                            if (connection && pointsTable) {
+                                try {
+                                    await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
+                                } catch (e) {
+                                    // Ignore
+                                }
+                            }
+                            return;
+                        }
+                        const batch = linksData.slice(i, i + batchSize);
+                        const values = batch.map((link) => {
+                            const source = String(link.source).replace(/'/g, "''");
+                            const target = String(link.target).replace(/'/g, "''");
+                            return `('${source}', ${link._sourceIndex}, '${target}', ${link._targetIndex})`;
+                        }).join(', ');
+
+                        await connection.query(`
+                            INSERT INTO ${linksTable} (source, sourceidx, target, targetidx)
+                            VALUES ${values}
+                        `);
+                    }
+                }
+
+                // Only set state if not cancelled - this triggers Cosmograph to render
+                // The tables must be fully created and populated before this point
+                if (!isCancelled) {
+                    // Store table names in ref for cleanup
+                    tablesRef.current = { points: pointsTable, links: linksData.length > 0 ? linksTable : null };
+
+                    // Store connection and table names - this must happen after all tables are created
+                    // The connection will be kept alive for Cosmograph to use
+                    setDuckDBConnection({ duckdb: duckDB, connection });
+                    setPointsTableName(pointsTable);
+                    setLinksTableName(linksData.length > 0 ? linksTable : null);
+
+                    logger.info('[Graph] DuckDB tables initialized and ready', {
+                        pointsTable,
+                        linksTable,
+                        pointsCount: pointsData.length,
+                        linksCount: linksData.length,
+                    });
+                } else {
+                    // Clean up if we were cancelled
+                    if (connection && pointsTable) {
+                        try {
+                            await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
+                        } catch (e) {
+                            // Ignore
+                        }
+                    }
+                    if (connection && linksTable) {
+                        try {
+                            await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
+                        } catch (e) {
+                            // Ignore
+                        }
+                    }
+                }
+            } catch (error) {
+                logger.error('[Graph] Error initializing DuckDB tables:', error);
+                // Clean up on error
+                if (connection && pointsTable) {
+                    try {
+                        await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
+                }
+                if (connection && linksTable) {
+                    try {
+                        await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
+                    } catch (e) {
+                        // Ignore cleanup errors
+                    }
+                }
+                // Reset state on error
+                if (!isCancelled) {
+                    setDuckDBConnection(null);
+                    setPointsTableName(null);
+                    setLinksTableName(null);
+                }
+            }
+        }
+
+        initCosmographTables();
+
+        // Cleanup function - only runs when component unmounts or dependencies change
+        // This ensures tables persist for the entire Cosmograph lifecycle
+        return () => {
+            isCancelled = true;
+            async function cleanup() {
+                try {
+                    // Clean up using ref (most recent) or local variables (fallback)
+                    const tablesToDrop = tablesRef.current;
+                    const pointsToDrop = tablesToDrop.points || pointsTable;
+                    const linksToDrop = tablesToDrop.links || linksTable;
+
+                    if (duckDB && (pointsToDrop || linksToDrop)) {
+                        const cleanupConnection = await duckDB.connect();
+                        if (pointsToDrop) {
+                            await cleanupConnection.query(`DROP TABLE IF EXISTS ${pointsToDrop}`);
+                        }
+                        if (linksToDrop) {
+                            await cleanupConnection.query(`DROP TABLE IF EXISTS ${linksToDrop}`);
+                        }
+                    }
+                } catch (error) {
+                    logger.warn('[Graph] Error cleaning up DuckDB tables:', { error });
+                }
+            }
+            cleanup();
+        };
+    }, [duckDB, pointsData, linksData]);
 
     return (
         <div className='w-full h-full bg-background relative overflow-hidden'>
@@ -617,18 +823,19 @@ export default function GraphViewer({
                     </div>
                     <Cosmograph
                         ref={cosmographRef}
-                        points={pointsData}
-                        links={config.showLinks !== false ? linksData : []}
+                        points={pointsTableName!}
+                        links={config.showLinks !== false && linksTableName ? linksTableName : undefined}
                         pointIdBy='id'
-                        pointIndexBy='_index'
-                        pointColorBy='_color'
-                        pointLabelBy='_label'
-                        pointSizeBy='_size'
+                        pointIndexBy='idx'
+                        pointColorBy='color'
+                        pointLabelBy='label'
+                        pointSizeBy='size'
                         linkSourceBy='source'
                         linkTargetBy='target'
-                        linkSourceIndexBy='_sourceIndex'
-                        linkTargetIndexBy='_targetIndex'
+                        linkSourceIndexBy='sourceidx'
+                        linkTargetIndexBy='targetidx'
                         backgroundColor={backgroundColor}
+                        duckDBConnection={duckDBConnection!}
                         pointGreyoutOpacity={0}
                         pointSizeRange={[
                             15 * (config.nodeRadiusCoefficient ?? 1),
