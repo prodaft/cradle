@@ -337,6 +337,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             }}
                                         >
                                             <SelectTrigger
+                                                className='self-center'
                                                 aria-invalid={fieldState.invalid}
                                                 aria-describedby={
                                                     fieldState.invalid
@@ -391,7 +392,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 </FieldError>
                                             )}
                                         </FieldContent>
-                                        <div>
+                                        <div className='self-center'>
                                             <Input
                                                 {...field}
                                                 id='subtype'
@@ -564,7 +565,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div>
+                                                <div className='self-center'>
                                                     <Input
                                                         {...field}
                                                         id='prefix'
@@ -631,6 +632,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     }}
                                                 >
                                                     <SelectTrigger
+                                                        className='self-center'
                                                         aria-invalid={
                                                             fieldState.invalid
                                                         }
@@ -854,7 +856,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 </FieldError>
                                             )}
                                         </FieldContent>
-                                        <div className='w-64'>
+                                        <div className='w-64 self-center'>
                                             <MultipleSelector
                                                 value={
                                                     (field.value?.map((c) => ({

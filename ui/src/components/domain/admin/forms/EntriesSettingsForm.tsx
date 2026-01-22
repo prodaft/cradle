@@ -88,6 +88,7 @@ export default function EntriesManagement() {
                                         type='button'
                                         variant='outline'
                                         size='sm'
+                                        className='self-center'
                                         onClick={handlePropagateAccessVectors}
                                     >
                                         <HardDrivesIcon className='w-3.5 h-3.5' weight="bold" />
@@ -111,6 +112,7 @@ export default function EntriesManagement() {
                                         type='button'
                                         variant='destructive'
                                         size='sm'
+                                        className='self-center'
                                         onClick={handleDeleteHangingArtifacts}
                                     >
                                         <TrashIcon className='w-3.5 h-3.5' weight="bold" />

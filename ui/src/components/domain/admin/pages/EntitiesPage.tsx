@@ -215,7 +215,7 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                             className='bg-border my-4 flex-none'
                         />
                         {tab === 'activity' ? (
-                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth'>
+                            <div className='h-full w-full overflow-y-auto'>
                                 <ActivityList
                                     content_type='entry'
                                     objectId={entityId}
@@ -223,7 +223,7 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                                 />
                             </div>
                         ) : (
-                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                            <div className='h-full w-full overflow-y-auto'>
                                 <div className='-mx-1 px-1.5'>
                                     {tab === 'permissions' ? (
                                         <EntityPermissionsForm

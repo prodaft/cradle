@@ -312,6 +312,7 @@ export default function FileSettingsForm() {
                                                     name={field.name}
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
+                                                    className='self-center'
                                                 />
                                             </Field>
                                         )}
@@ -362,6 +363,7 @@ export default function FileSettingsForm() {
                                                     }}
                                                 >
                                                     <SelectTrigger
+                                                        className='self-center'
                                                         aria-invalid={
                                                             fieldState.invalid
                                                         }
@@ -433,6 +435,7 @@ export default function FileSettingsForm() {
                                                     }}
                                                 >
                                                     <SelectTrigger
+                                                        className='self-center'
                                                         aria-invalid={
                                                             fieldState.invalid
                                                         }
@@ -504,6 +507,7 @@ export default function FileSettingsForm() {
                                                     }}
                                                 >
                                                     <SelectTrigger
+                                                        className='self-center'
                                                         aria-invalid={
                                                             fieldState.invalid
                                                         }
@@ -557,7 +561,7 @@ export default function FileSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='maxFileSizeForHashing'
@@ -604,7 +608,7 @@ export default function FileSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='uploadLimit'
@@ -652,6 +656,7 @@ export default function FileSettingsForm() {
                                             type='button'
                                             variant='outline'
                                             size='sm'
+                                            className='self-center'
                                             onClick={handleReProcessAllFiles}
                                         >
                                             <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
