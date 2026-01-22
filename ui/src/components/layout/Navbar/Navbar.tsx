@@ -62,9 +62,9 @@ export default function Navbar(): React.JSX.Element {
     return (
         <div className='relative flex h-14 items-center gap-3 p-4 sm:gap-4 border-b border-border shrink-0 md:rounded-tl-xl md:rounded-tr-xl'>
             <SidebarTrigger className='-ml-1' />
-            <Separator orientation='vertical' className='mr-2 h-4' />
+            <Separator orientation='vertical' className='mr-2 h-4 hidden lg:block' />
             {breadcrumbs.length > 0 && (
-                <Breadcrumb>
+                <Breadcrumb className='hidden lg:block'>
                     <BreadcrumbList>
                         {breadcrumbs.map((crumb, index) => {
                             const isLast = index === breadcrumbs.length - 1;
@@ -88,12 +88,12 @@ export default function Navbar(): React.JSX.Element {
                     </BreadcrumbList>
                 </Breadcrumb>
             )}
-            <div className='flex-1 flex justify-center'>
+            <div className='absolute left-1/2 -translate-x-1/2'>
                 <Button
                     variant='outline'
                     size='sm'
                     onClick={() => setIsDialogOpen(true)}
-                    className='rounded-full max-w-xs w-full justify-between text-muted-foreground'
+                    className='rounded-full w-64 justify-between text-muted-foreground'
                 >
                     <div className='flex items-center gap-2'>
                         <MagnifyingGlassIcon className='h-4 w-4' weight="bold" />

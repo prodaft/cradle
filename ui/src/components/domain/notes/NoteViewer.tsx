@@ -635,7 +635,7 @@ export default function NoteViewer() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center h-full w-full py-8'>
-                <Spinner className='size-16' />
+                <Spinner className='size-10' />
             </div>
         );
     }
