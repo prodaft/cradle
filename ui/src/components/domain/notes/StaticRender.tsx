@@ -36,7 +36,20 @@ export default function StaticRender({
     // Create a NavigateHandler adapter for handleLinkClick
     const navigateHandler: NavigateHandler = useCallback(
         (path: string) => {
-            router.navigate({ to: path as any });
+            // Parse dashboard URLs to extract params
+            const dashboardMatch = path.match(/^\/dashboards\/([^/]+)\/([^/]+)\/?$/);
+            if (dashboardMatch) {
+                const [, subtype, name] = dashboardMatch;
+                router.navigate({
+                    to: '/dashboards/$subtype/$name',
+                    params: {
+                        subtype: decodeURIComponent(subtype),
+                        name: decodeURIComponent(name),
+                    },
+                });
+            } else {
+                router.navigate({ to: path as any });
+            }
         },
         [router],
     );

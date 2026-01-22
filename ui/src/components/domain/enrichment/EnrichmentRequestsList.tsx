@@ -70,8 +70,8 @@ interface EnrichmentRequestsListProps {
     searchFilters?: SearchFilters;
     onSearchChange?: (e: ChangeEvent<HTMLInputElement>) => void;
     onSearchSubmit?: (e: FormEvent) => void;
-    selectedRequests?: number[];
-    setSelectedRequests?: (ids: number[]) => void;
+    selectedRequests?: string[];
+    setSelectedRequests?: (ids: string[]) => void;
     onDeleteSelected?: () => void;
     onRerunSelected?: () => void;
     onCreateRequest?: () => void;
@@ -221,7 +221,7 @@ function EnrichmentRequestsList({
         }
 
         return msgs.join(', ');
-    };
+        };
 
     const getStatusIcon = (status?: string, errorMessage?: string) => {
         if (!status) return null;
@@ -397,7 +397,7 @@ function EnrichmentRequestsList({
             setRowSelection((prev) => {
                 const next = typeof updater === 'function' ? updater(prev) : updater;
                 const selectedIds = Object.keys(next).filter((key) => next[key]);
-                setSelectedRequests?.(selectedIds.map((id) => Number(id)));
+                setSelectedRequests?.(selectedIds);
                 return next;
             });
         },

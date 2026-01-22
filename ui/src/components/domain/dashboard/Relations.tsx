@@ -1,4 +1,4 @@
-import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
+import Pagination from '@/components/base/Pagination/Pagination';
 import {
     ActionBar,
     ActionBarClose,
@@ -7,9 +7,15 @@ import {
     ActionBarSelection,
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
-import { Spinner } from '@/components/ui/spinner';
+import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
     Select,
     SelectContent,
@@ -17,6 +23,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
+import { defineStepper } from '@/components/ui/stepper';
 import {
     Table,
     TableBody,
@@ -25,23 +33,16 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
-import Pagination from '@/components/base/Pagination/Pagination';
 import useApi from '@/hooks/api/useApi';
-import { handleAPIError, parseAPIError } from '@/utils/api';
 import { createDashboardLink } from '@/utils/dashboard';
 import {
-    ActionBar as BaseActionBar,
     ActionBarSearch,
+    ActionBar as BaseActionBar,
 } from '@components/base/ActionBar/ActionBar';
 import SearchFilterSection from '@components/domain/search/SearchFilterSection';
+import { CaretDownIcon, CopyIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { CopyIcon, WarningCircleIcon, CaretDownIcon } from '@phosphor-icons/react';
 import {
     MouseEvent,
     useCallback,
@@ -50,8 +51,6 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
-import { defineStepper } from '@/components/ui/stepper';
-import { Button } from '@/components/ui/button';
 
 interface Alert {
     show: boolean;
@@ -113,9 +112,9 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
 
     const pathSteps = useMemo(() => {
         if (!pathData) return [];
-        
+
         const nodes = new Map<number, { id: number; name: string; subtype: string; color?: string }>();
-        
+
         const processEntries = (entryMap: any) => {
             Object.entries(entryMap).forEach(([subtype, entries]: [string, any]) => {
                 entries.forEach((entry: any) => {
@@ -124,7 +123,7 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
                             id: entry.id,
                             name: entry.name,
                             subtype: subtype,
-                            color: entry.color,
+                            color: pathData.colors[subtype],
                         });
                     }
                 });
@@ -151,9 +150,9 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
         let foundPath: number[] = [];
 
         if (srcId === result.id) {
-             foundPath = [srcId];
+            foundPath = [srcId];
         } else {
-             while (queue.length > 0) {
+            while (queue.length > 0) {
                 const path = queue.shift()!;
                 const curr = path[path.length - 1];
 
@@ -176,7 +175,7 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
             // Fallback: just show all nodes if no path found (disconnected subgraph?)
             // Or maybe just the start and end?
             // Let's fallback to just showing all nodes as before if path finding fails
-             return Array.from(nodes.values()).map(node => ({
+            return Array.from(nodes.values()).map(node => ({
                 id: String(node.id),
                 title: node.name,
                 description: node.subtype,
@@ -189,7 +188,7 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
         return foundPath.map(id => {
             const node = nodes.get(id);
             if (!node) return null;
-             return {
+            return {
                 id: String(node.id),
                 title: node.name,
                 description: node.subtype,
@@ -207,9 +206,9 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
         }
     }, [pathSteps, activeStepId]);
 
-    const activeStep = useMemo(() => 
+    const activeStep = useMemo(() =>
         pathSteps.find(s => s.id === activeStepId) || (pathSteps.length > 0 ? pathSteps[0] : null)
-    , [pathSteps, activeStepId]);
+        , [pathSteps, activeStepId]);
 
     const handleNavigate = (e: MouseEvent) => {
         e.stopPropagation();
@@ -222,20 +221,20 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
                 <CollapsibleTrigger asChild>
                     <TableRow className={`cursor-pointer hover:bg-muted/50 ${!canExpand ? 'opacity-70' : ''}`}>
                         <TableCell onClick={(e) => e.stopPropagation()} className="w-[50px]">
-                             <Checkbox
+                            <Checkbox
                                 checked={isSelected}
                                 onCheckedChange={(checked) => onToggleSelection(!!checked)}
                                 aria-label="Select row"
                             />
                         </TableCell>
                         <TableCell onClick={handleNavigate}>
-                             <Badge
+                            <Badge
                                 className={`rounded-full ${!result.color ? 'bg-muted' : ''}`}
                                 style={
                                     result.color
                                         ? {
-                                              backgroundColor: result.color,
-                                          }
+                                            backgroundColor: result.color,
+                                        }
                                         : undefined
                                 }
                             >
@@ -243,19 +242,19 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
                             </Badge>
                         </TableCell>
                         <TableCell onClick={handleNavigate}>
-                             <div className='flex items-center gap-2'>
+                            <div className='flex items-center gap-2'>
                                 <span className='truncate block max-w-[300px]'>
                                     {result.name}
                                 </span>
                                 <span className='text-muted-foreground text-xs ml-auto whitespace-nowrap'>
                                     {result.depth} step{result.depth !== 1 ? 's' : ''}
                                 </span>
-                             </div>
+                            </div>
                         </TableCell>
                         <TableCell className="w-[50px]">
-                             <div className='flex items-center justify-end'>
+                            <div className='flex items-center justify-end'>
                                 {canExpand && (
-                                     <CaretDownIcon
+                                    <CaretDownIcon
                                         className={`size-4 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
                                     />
                                 )}
@@ -264,33 +263,35 @@ function RelationRow({ srcId, result, isSelected, onToggleSelection, isOpen, onT
                     </TableRow>
                 </CollapsibleTrigger>
                 <CollapsibleContent asChild>
-                     <TableRow>
+                    <TableRow>
                         <TableCell colSpan={4} className="p-0 border-b-0">
                             <div className="bg-muted/30 border-t">
                                 <div className="p-4 flex flex-col gap-6">
-                                     {isPathPending ? (
+                                    {isPathPending ? (
                                         <div className="flex justify-center p-4">
                                             <Spinner />
                                         </div>
                                     ) : pathSteps.length > 0 ? (
                                         <>
-                                            <PathStepper 
-                                                steps={pathSteps} 
+                                            <PathStepper
+                                                steps={pathSteps}
                                                 activeStepId={activeStepId || pathSteps[0].id}
                                                 onStepClick={setActiveStepId}
                                             />
                                             {activeStep && (
                                                 <div className="pt-4 border-t flex flex-col gap-2">
-                                                     <div className="flex items-center gap-2">
-                                                        <span className="text-sm font-semibold">{activeStep.title}</span>
-                                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4" style={{
+                                                            backgroundColor: activeStep.color ? activeStep.color : undefined
+                                                        }}>
                                                             {activeStep.subtype}
                                                         </Badge>
-                                                     </div>
-                                                     <div className="text-xs text-muted-foreground">
-                                                         {/* Placeholder for future details */}
-                                                         ID: {activeStep.entryId}
-                                                     </div>
+                                                        <span className="text-sm font-semibold">{activeStep.title}</span>
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {/* Placeholder for future details */}
+                                                        ID: {activeStep.entryId}
+                                                    </div>
                                                 </div>
                                             )}
                                         </>
@@ -313,17 +314,17 @@ function PathStepper({ steps, activeStepId, onStepClick }: { steps: any[], activ
     const { Stepper } = useMemo(() => defineStepper(...(steps as any)), [steps]);
 
     return (
-        <Stepper.Provider 
-            variant="horizontal" 
+        <Stepper.Provider
+            variant="horizontal"
             labelOrientation="vertical"
             initialStep={activeStepId}
             key={activeStepId}
         >
             <Stepper.Navigation>
                 {steps.map(step => (
-                    <Stepper.Step 
-                        key={step.id} 
-                        of={step.id} 
+                    <Stepper.Step
+                        key={step.id}
+                        of={step.id}
                         onClick={() => onStepClick(step.id)}
                         className="p-0"
                     >
@@ -358,12 +359,12 @@ export default function Relations({ obj }: RelationsProps) {
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
 
-    const [pageSize, setPageSize] = useState(10); 
+    const [pageSize, setPageSize] = useState(10);
 
     const clearSelection = useCallback(() => {
         setSelectedIds(new Set());
     }, []);
-    
+
     const { entriesApi, knowledgeGraphApi, accessApi } = useApi();
 
     const requestAccessMutation = useMutation({
@@ -383,7 +384,7 @@ export default function Relations({ obj }: RelationsProps) {
             successMessage: 'Access request submitted successfully',
         },
         onSuccess: () => {
-            setInaccessibleEntities([]); 
+            setInaccessibleEntities([]);
         },
     });
 
@@ -472,7 +473,7 @@ export default function Relations({ obj }: RelationsProps) {
                 resultsWithDepth.sort((a, b) => a.depth - b.depth);
                 setResults(resultsWithDepth);
             } else {
-                 const filteredResults =
+                const filteredResults =
                     entrySubtypeFilters.length > 0
                         ? resultsWithDepth.filter((r) =>
                             entrySubtypeFilters.includes(r.subtype),
@@ -486,7 +487,7 @@ export default function Relations({ obj }: RelationsProps) {
     }, [relationsData, entrySubtypeFilters]);
 
     // Query for inaccessible entities
-     const { data: inaccessibleData } = useQuery({
+    const { data: inaccessibleData } = useQuery({
         queryKey: [
             'graph',
             'inaccessible',
@@ -502,7 +503,7 @@ export default function Relations({ obj }: RelationsProps) {
             }),
         enabled: !!obj.id && depth > 0,
         meta: {
-            suppressNotification: true, 
+            suppressNotification: true,
             errorMessage: 'Failed to check inaccessible entities',
         },
     });
@@ -582,7 +583,7 @@ export default function Relations({ obj }: RelationsProps) {
             });
     }, [results, selectedIds]);
 
-     // Trigger search when page changes
+    // Trigger search when page changes
     useEffect(() => {
         performSearch(depth, page);
     }, [page, depth, pageSize, performSearch]);
@@ -707,7 +708,7 @@ export default function Relations({ obj }: RelationsProps) {
                         <Spinner />
                     </div>
                 ) : (
-                   <div className="flex flex-col">
+                    <div className="flex flex-col">
                         <Table>
                             <TableHeader>
                                 <TableRow>
@@ -717,8 +718,8 @@ export default function Relations({ obj }: RelationsProps) {
                                                 results && results.length > 0 && selectedIds.size === results.length
                                                     ? true
                                                     : selectedIds.size > 0
-                                                    ? 'indeterminate'
-                                                    : false
+                                                        ? 'indeterminate'
+                                                        : false
                                             }
                                             onCheckedChange={(checked) => toggleAllSelection(!!checked)}
                                             aria-label="Select all"
@@ -752,7 +753,7 @@ export default function Relations({ obj }: RelationsProps) {
                                 )}
                             </TableBody>
                         </Table>
-                         <div className="py-2 border-t">
+                        <div className="py-2 border-t">
                             <Pagination
                                 currentPage={page}
                                 totalPages={calculatedTotalPages}
@@ -763,10 +764,10 @@ export default function Relations({ obj }: RelationsProps) {
                                     setPage(1);
                                 }}
                                 selectedCount={selectedIds.size}
-                                totalRows={results ? results.length : 0} 
+                                totalRows={results ? results.length : 0}
                             />
                         </div>
-                   </div>
+                    </div>
                 )}
             </div>
 
