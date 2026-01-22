@@ -8,23 +8,23 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-    Graph,
-    TreeView,
-    CubeIcon,
+    ArrowClockwiseIcon,
+    ArrowsLeftRightIcon,
+    ChartBarIcon,
     CheckIcon,
     ClockCounterClockwiseIcon,
     CloudArrowUpIcon,
     CodeIcon,
-    ArrowsLeftRightIcon,
+    CubeIcon,
     DotsThreeVerticalIcon,
     FileTextIcon,
-    ArrowClockwiseIcon,
+    FloppyDiskIcon,
+    Graph,
+    LightbulbIcon,
     MagnifyingGlassIcon,
     SparkleIcon,
-    ChartBarIcon,
-    FloppyDiskIcon,
-    LightbulbIcon,
     TrashIcon,
+    TreeView,
 } from '@phosphor-icons/react';
 import { ViewMode } from './constants';
 
@@ -100,8 +100,8 @@ export default function ActionsDropdown({
                 {/* View / editor mode options */}
                 <DropdownMenuItem
                     onClick={() => {
-                        setActiveView(ViewMode.CONTENT);
                         setRichEditor(true);
+                        if (activeView !== ViewMode.CONTENT) setActiveView(ViewMode.CONTENT);
                     }}
                     data-testid='rich-editor-menu-item'
                 >
@@ -113,8 +113,8 @@ export default function ActionsDropdown({
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => {
-                        setActiveView(ViewMode.CONTENT);
                         setRichEditor(false);
+                        if (activeView !== ViewMode.CONTENT) setActiveView(ViewMode.CONTENT);
                     }}
                     data-testid='markdown-editor-menu-item'
                 >

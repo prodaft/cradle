@@ -1,8 +1,8 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
-import { parseMarkdown } from '@/utils/parser/parse';
 import { handleLinkClick, NavigateHandler } from '@/utils/editor/textEditor';
+import { parseMarkdown } from '@/utils/parser/parse';
 import type { FileReferenceWithNote, NoteRetrieve } from '@services/cradle/models';
 import { useRouter } from '@tanstack/react-router';
 import DOMPurify from 'dompurify';
@@ -114,21 +114,19 @@ export default function StaticRender({
     }
 
     return (
-        <div className='h-full w-full flex flex-col overflow-hidden'>
+        <div className='h-full w-full flex flex-col'>
             {/* Rendered markdown content with proper styling */}
-            <div className='flex-1 min-h-0 relative'>
-                <ScrollArea className='h-full w-full'>
-                    <div
-                        className='rich-editor markdown-body static-render'
-                        style={{
-                            padding: '1rem',
-                            backgroundColor: 'transparent',
-                        }}
-                        ref={previewRef}
-                        onClick={handleContentClick}
-                    ></div>
-                </ScrollArea>
-            </div>
+            <ScrollArea className='h-full w-full'>
+                <div
+                    className='rich-editor markdown-body static-render'
+                    style={{
+                        padding: '1rem',
+                        backgroundColor: 'transparent',
+                    }}
+                    ref={previewRef}
+                    onClick={handleContentClick}
+                ></div>
+            </ScrollArea>
             <style>{`
                 .static-render h1:first-child,
                 .static-render h2:first-child,

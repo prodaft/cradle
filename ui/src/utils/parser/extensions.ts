@@ -208,6 +208,84 @@ export async function parseWithExtensions(
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
 
+    // Override image renderer to add max-width constraint (matching RichEditor behavior)
+    const originalImageRule = md.renderer.rules.image;
+    md.renderer.rules.image = (tokens: Token[], idx: number, options: any, env: any, self: any) => {
+        const token = tokens[idx];
+        const src = token.attrGet('src') || '';
+        const alt = token.attrGet('alt') || '';
+        const title = token.attrGet('title') || '';
+
+        // Escape HTML attributes for text content (alt, title)
+        // src is typically a URL and should already be properly encoded
+        const escapeAttr = (str: string) => {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+
+        // Build attributes string
+        let attrs = `src="${src}" alt="${escapeAttr(alt)}"`;
+        if (title) {
+            attrs += ` title="${escapeAttr(title)}"`;
+        }
+
+        // Add max-width styling to match RichEditor (40% max-width)
+        attrs += ' style="max-width: 40%; cursor: default;"';
+
+        return `<img ${attrs}>`;
+    };
+
+    // Override paragraph_close to preserve empty lines
+    const originalParagraphClose = md.renderer.rules.paragraph_close;
+    md.renderer.rules.paragraph_close = (tokens: Token[], idx: number, options: any, env: any, self: any) => {
+        // Find the corresponding paragraph_open token
+        let openIdx = idx;
+        while (openIdx >= 0 && tokens[openIdx].type !== 'paragraph_open') {
+            openIdx--;
+        }
+
+        if (openIdx >= 0) {
+            // Check if paragraph has any real content between open and close
+            let hasContent = false;
+            for (let i = openIdx + 1; i < idx; i++) {
+                const token = tokens[i];
+                if (token.type === 'inline' && token.children && token.children.length > 0) {
+                    // Check if inline content has any non-whitespace (excluding zero-width space)
+                    for (const child of token.children) {
+                        if (child.type === 'text') {
+                            // Remove zero-width spaces and whitespace, then check if anything remains
+                            const trimmed = child.content.replace(/\u200B/g, '').trim();
+                            if (trimmed) {
+                                hasContent = true;
+                                break;
+                            }
+                        } else if (child.type !== 'text' && child.type !== 'softbreak' && child.type !== 'hardbreak') {
+                            hasContent = true;
+                            break;
+                        }
+                    }
+                    if (hasContent) break;
+                } else if (token.type !== 'softbreak' && token.type !== 'hardbreak') {
+                    hasContent = true;
+                    break;
+                }
+            }
+
+            // If paragraph is empty (or only contains zero-width space), add a <br> to preserve the empty line
+            if (!hasContent) {
+                return '<br></p>';
+            }
+        }
+
+        // Use original renderer if it exists, otherwise default
+        if (originalParagraphClose) {
+            return originalParagraphClose(tokens, idx, options, env, self);
+        }
+        return '</p>';
+    };
+
     let metadata = {};
     try {
         let note = matter(mdContent, {
@@ -231,10 +309,30 @@ export async function parseWithExtensions(
         metadata = {};
     }
 
-    const content = fileData ? prependLinks(mdContent, fileData, baseURL) : mdContent;
+    // Preprocess to preserve multiple consecutive empty lines
+    // Replace patterns of 3+ consecutive newlines (representing 2+ empty lines)
+    // with a pattern that markdown-it will preserve as separate paragraphs
+    // We use a zero-width space (\u200B) which is invisible but counts as content
+    const preprocessedContent = mdContent.replace(/\n\n\n+/g, (match) => {
+        // Count how many empty lines we have (number of newlines - 2)
+        // e.g., \n\n\n = 3 newlines = 1 empty line, \n\n\n\n = 4 newlines = 2 empty lines
+        const emptyLineCount = match.length - 2;
+        // Replace with that many empty line markers, each as a separate paragraph
+        // Each empty line becomes: \n\n\u200B\n\n (paragraph with zero-width space)
+        // We need to preserve the initial \n\n and then add \u200B\n\n for each empty line
+        return '\n\n' + '\u200B\n\n'.repeat(emptyLineCount);
+    });
+
+    const content = fileData ? prependLinks(preprocessedContent, fileData, baseURL) : preprocessedContent;
     const tokens = md.parse(content, {});
     await processTokens(tokens, fileTransferApi, baseURL);
-    const html = md.renderer.render(tokens, md.options, metadata);
+    let html = md.renderer.render(tokens, md.options, metadata);
+
+    // Post-process HTML to convert zero-width space paragraphs to <br> tags
+    // This handles paragraphs that only contain zero-width spaces (our empty line markers)
+    html = html.replace(/<p>\u200B<\/p>/g, '<p><br></p>');
+    // Also handle cases where zero-width space might be in a paragraph with other whitespace
+    html = html.replace(/<p>\s*\u200B\s*<\/p>/g, '<p><br></p>');
 
     return { html, metadata };
 }

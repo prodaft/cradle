@@ -795,7 +795,10 @@ export default function NoteViewer() {
                                         {/* Editor Panel - conditionally renders Rich or Normal editor */}
                                         <ResizablePanel defaultSize={85} minSize={50}>
                                             <div
-                                                className='h-full flex flex-col border-l border-border relative'
+                                                className={cn(
+                                                    'h-full flex flex-col border-l border-border relative',
+                                                    !enableEditing && richEditor && 'overflow-hidden'
+                                                )}
                                                 onDoubleClick={
                                                     handleEnableEditingWithConfirmation
                                                 }
@@ -813,7 +816,7 @@ export default function NoteViewer() {
                                                     />
                                                 )}
                                                 {/* Embedded Rich Editor or Static Render */}
-                                                <div className='flex-1 min-h-0'>
+                                                <div className={cn('flex-1 min-h-0', !enableEditing && richEditor && 'overflow-hidden')}>
                                                     {enableEditing || !richEditor ? (
                                                         <>
                                                             <RichEditor
@@ -847,11 +850,13 @@ export default function NoteViewer() {
                                                         </>
                                                     ) : (
                                                         note && (
-                                                            <StaticRender
-                                                                note={note}
-                                                                markdownContent={markdownContent}
-                                                                fileData={fileData}
-                                                            />
+                                                            <div className='h-[55%] rich-editor markdown-body static-render'>
+                                                                <StaticRender
+                                                                    note={note}
+                                                                    markdownContent={markdownContent}
+                                                                    fileData={fileData}
+                                                                />
+                                                            </div>
                                                         )
                                                     )}
                                                 </div>
@@ -860,7 +865,10 @@ export default function NoteViewer() {
                                     </ResizablePanelGroup>
                                 ) : (
                                     <div
-                                        className='h-full flex flex-col border-l border-border relative'
+                                        className={cn(
+                                            'h-full flex flex-col border-l border-border relative',
+                                            !enableEditing && richEditor && 'overflow-hidden'
+                                        )}
                                         onDoubleClick={
                                             handleEnableEditingWithConfirmation
                                         }
@@ -876,7 +884,7 @@ export default function NoteViewer() {
                                             />
                                         )}
                                         {/* Embedded Rich Editor or Static Render */}
-                                        <div className='flex-1 min-h-0'>
+                                        <div className={cn('flex-1 min-h-0', !enableEditing && richEditor && 'overflow-hidden')}>
                                             {enableEditing || !richEditor ? (
                                                 <>
                                                     <RichEditor
