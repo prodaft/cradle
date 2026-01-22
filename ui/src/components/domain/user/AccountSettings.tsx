@@ -1292,6 +1292,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 type='button'
                                                                 variant='outline'
                                                                 size='sm'
+                                                                className='self-center'
                                                                 onClick={() => {
                                                                     snippetListRef.current?.handleAddSnippet();
                                                                 }}

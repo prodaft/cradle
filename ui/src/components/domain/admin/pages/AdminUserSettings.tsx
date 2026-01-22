@@ -379,7 +379,7 @@ export default function AdminUserSettings({
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='username'
@@ -425,7 +425,7 @@ export default function AdminUserSettings({
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='email'
@@ -459,7 +459,7 @@ export default function AdminUserSettings({
                                                 Unique identifier for API integrations
                                             </FieldDescription>
                                         </FieldContent>
-                                        <div className='w-auto'>
+                                        <div className='w-auto self-center'>
                                             <Input
                                                 id='userId'
                                                 type='text'
@@ -631,7 +631,7 @@ export default function AdminUserSettings({
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='fileUploadLimitOverride'
@@ -722,6 +722,7 @@ export default function AdminUserSettings({
                                             type='button'
                                             variant='outline'
                                             size='sm'
+                                            className='self-center'
                                             onClick={simulateSession}
                                         >
                                             Simulate
@@ -743,6 +744,7 @@ export default function AdminUserSettings({
                                             type='button'
                                             variant='outline'
                                             size='sm'
+                                            className='self-center'
                                             onClick={sendEmailConfirmation}
                                         >
                                             Send Email
@@ -764,6 +766,7 @@ export default function AdminUserSettings({
                                             type='button'
                                             variant='outline'
                                             size='sm'
+                                            className='self-center'
                                             onClick={sendPasswordResetEmail}
                                         >
                                             Send Reset
@@ -786,6 +789,7 @@ export default function AdminUserSettings({
                                             type='button'
                                             variant='destructive'
                                             size='sm'
+                                            className='self-center'
                                             onClick={openDeleteUserModal}
                                         >
                                             Delete

@@ -155,6 +155,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                                     name={field.name}
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
+                                                    className='self-center'
                                                 />
                                             </Field>
                                         )}
@@ -193,6 +194,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                                     name={field.name}
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
+                                                    className='self-center'
                                                 />
                                             </Field>
                                         )}
@@ -231,6 +233,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                                     name={field.name}
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
+                                                    className='self-center'
                                                 />
                                             </Field>
                                         )}

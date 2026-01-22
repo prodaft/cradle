@@ -180,7 +180,7 @@ export default function NoteSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='minEntries'
@@ -227,7 +227,7 @@ export default function NoteSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='minEntities'
@@ -274,7 +274,7 @@ export default function NoteSettingsForm() {
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Input
                                                         {...field}
                                                         id='maxCliqueSize'
@@ -326,6 +326,7 @@ export default function NoteSettingsForm() {
                                                     name={field.name}
                                                     checked={field.value}
                                                     onCheckedChange={field.onChange}
+                                                    className='self-center'
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -370,6 +371,7 @@ export default function NoteSettingsForm() {
                                             type='button'
                                             variant='outline'
                                             size='sm'
+                                            className='self-center'
                                             onClick={() => {
                                                 snippetListRef.current?.handleAddSnippet();
                                             }}
@@ -414,6 +416,7 @@ export default function NoteSettingsForm() {
                                             type='button'
                                             variant='outline'
                                             size='sm'
+                                            className='self-center'
                                             onClick={handleReLinkNotes}
                                         >
                                             <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />

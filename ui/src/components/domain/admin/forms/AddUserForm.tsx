@@ -255,6 +255,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                                 name={field.name}
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
+                                className='self-center'
                             />
                         )}
                     />

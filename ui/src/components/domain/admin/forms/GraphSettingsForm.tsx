@@ -87,6 +87,7 @@ export default function GraphSettingsForm() {
                                         type='button'
                                         variant='outline'
                                         size='sm'
+                                        className='self-center'
                                         onClick={handleRefreshMaterializedGraph}
                                     >
                                         <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
@@ -109,6 +110,7 @@ export default function GraphSettingsForm() {
                                         type='button'
                                         variant='outline'
                                         size='sm'
+                                        className='self-center'
                                         onClick={handleRecalculateNodePositions}
                                     >
                                         <HardDrivesIcon className='w-3.5 h-3.5' weight="bold" />

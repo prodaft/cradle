@@ -272,6 +272,7 @@ export default function EnrichmentSettingsForm({
                                         name={controllerField.name}
                                         checked={controllerField.value ?? false}
                                         onCheckedChange={controllerField.onChange}
+                                        className='self-center'
                                         aria-invalid={fieldState.invalid}
                                         aria-describedby={
                                             fieldState.invalid
@@ -319,6 +320,7 @@ export default function EnrichmentSettingsForm({
                                                 onValueChange={controllerField.onChange}
                                             >
                                                 <SelectTrigger
+                                                    className='self-center'
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -435,7 +437,7 @@ export default function EnrichmentSettingsForm({
                                         {...controllerField}
                                         id={`settings.${key}`}
                                         type={field.type === 'number' ? 'number' : 'text'}
-                                        className='w-64'
+                                        className='w-64 self-center'
                                         value={(controllerField.value as string | number) ?? ''}
                                         onChange={(e) =>
                                             controllerField.onChange(e.target.value)
@@ -522,6 +524,7 @@ export default function EnrichmentSettingsForm({
                                                 name={field.name}
                                                 checked={field.value ?? false}
                                                 onCheckedChange={field.onChange}
+                                                className='self-center'
                                                 aria-invalid={fieldState.invalid}
                                                 aria-describedby={
                                                     fieldState.invalid
@@ -557,7 +560,7 @@ export default function EnrichmentSettingsForm({
                                                     </FieldError>
                                                 )}
                                             </FieldContent>
-                                            <div className='w-64'>
+                                            <div className='w-64 self-center'>
                                                 <MultipleSelector
                                                     value={
                                                         (field.value?.map((e) => ({

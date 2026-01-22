@@ -279,7 +279,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                             {...field}
                                             id='name'
                                             disabled={true}
-                                            className='w-auto'
+                                            className='w-auto self-center'
                                             aria-invalid={fieldState.invalid}
                                             aria-describedby={
                                                 fieldState.invalid
@@ -326,6 +326,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                                 onValueChange={field.onChange}
                                             >
                                                 <SelectTrigger
+                                                    className='self-center'
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -385,6 +386,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                             name={field.name}
                                             checked={field.value}
                                             onCheckedChange={field.onChange}
+                                            className='self-center'
                                             aria-invalid={fieldState.invalid}
                                             aria-describedby={
                                                 fieldState.invalid
@@ -463,7 +465,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                                 </FieldError>
                                             )}
                                         </FieldContent>
-                                        <div className='w-64'>
+                                        <div className='w-64 self-center'>
                                             <MultipleSelector
                                                 value={
                                                     (field.value?.map((a) => ({

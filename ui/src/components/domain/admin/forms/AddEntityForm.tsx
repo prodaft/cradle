@@ -301,6 +301,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                 name={field.name}
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
+                                className='self-center'
                             />
                         )}
                     />
