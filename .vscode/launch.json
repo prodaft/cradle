@@ -24,10 +24,13 @@
         "-A",
         "cradle",
         "worker",
+        "--beat",
         "-Q",
-        "email,notes,publish,import",
-        "-l",
-        "INFO"
+        "email,notes,graph,publish,import,access,enrich,digest,files",
+        "--loglevel",
+        "info",
+        "--concurrency",
+        "4"
       ],
       "cwd": "${workspaceFolder}/backend",
       "console": "integratedTerminal",
