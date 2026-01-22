@@ -29,6 +29,9 @@ export async function parseMarkdown(
                 }
                 return '';
             },
+        }).use(markdownItAnchor, {
+            permalink: markdownItAnchor.permalink.linkInsideHeader({ placement: 'before' }),
+            slugify: (s: string) => encodeURIComponent(String(s).trim().toLowerCase().replace(/\s+/g, '-')),
         });
 
         return await parseWithExtensions(

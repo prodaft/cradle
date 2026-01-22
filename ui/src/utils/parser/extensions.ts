@@ -112,76 +112,6 @@ export function renderCradleLink(
         } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
-// Match ![....][....] or [....][....]
-const REFERENCE_LINK_REGEX = /^\!?\[(.*?)\]\[(.*?)\]/;
-
-export function referenceLinkRule(
-    state: any,
-    silent: boolean,
-    fileData?: FileReferenceWithNote[],
-): boolean {
-    const match = REFERENCE_LINK_REGEX.exec(state.src.slice(state.pos));
-    if (!match) return false;
-
-    const isImage = state.src[state.pos] === '!';
-    const text = match[1];
-    const label = match[2];
-
-    // Check if this is a reference link (label matches a file)
-    const key = label || text;
-    const file = fileData?.find(
-        (f) =>
-            `${f.id}-${f.fileName}` === key ||
-            `${f.id}-${f.fileName}` === key.toLowerCase(),
-    );
-
-    if (file) {
-        if (silent) return false;
-
-        const token = state.push('reference_link', '', 0);
-        token.content = text;
-        token.reference_key = key;
-        token.is_image = isImage;
-        token.file = file;
-
-        state.pos += match[0].length;
-        return true;
-    }
-
-    // Otherwise, treat as footnote
-    if (silent) return false;
-
-    const token = state.push('footnote_ref', '', 0);
-    token.content = text;
-    token.footnote_ref = label;
-
-    state.pos += match[0].length;
-    return true;
-}
-
-/**
- * Render a reference link as HTML
- * Formats reference link syntax [text][label] into a download link or image
- */
-export function renderReferenceLink(token: Token): string {
-    const content = token.content || '';
-    const file = (token as any).file;
-    const isImage = (token as any).is_image;
-
-    if (file) {
-        const baseURL = import.meta.env.VITE_CRADLE_API_ENDPOINT || '';
-        const fileUrl = `${baseURL}/file-transfer/download/?fileId=${file.id}`;
-
-        if (isImage) {
-            return `<img src="${fileUrl}" alt="${content}" style="max-width: 40%; cursor: default;" />`;
-        } else {
-            return `<a href="${fileUrl}" style="cursor: pointer; text-decoration: underline; color: var(--cradle-link-color, var(--primary));" target="_blank" rel="noopener noreferrer">${content}</a>`;
-        }
-    }
-
-    return content;
-}
-
 /**
  * Render a footnote reference as HTML
  * Formats markdown footnote syntax [text][ref] into a link
@@ -225,39 +155,30 @@ export async function resolveMinioLinks(
     baseURL: string,
 ): Promise<void> {
     if (token.type === 'link_open' || token.type === 'image') {
+        console.log(token);
         let hrefIndex = token.attrIndex('href');
         hrefIndex = hrefIndex < 0 ? token.attrIndex('src') : hrefIndex;
         if (hrefIndex < 0) return;
         const href = token.attrs![hrefIndex][1];
-        try {
-            new URL(href);
-        } catch {
-            return;
-        }
-        const url = new URL(href);
-        if (!baseURL) return;
-        const apiBaseUrl = new URL(baseURL);
-        const apiBasePath = apiBaseUrl.pathname.replace(/\/$/, '');
+        if (!href.startsWith('/file-transfer/download/')) return;
 
-        if (
-            url.origin === apiBaseUrl.origin &&
-            url.pathname === `${apiBasePath}/file-transfer/download/`
-        ) {
-            const params = new URLSearchParams(url.search);
-            const fileId = params.get('fileId');
-            if (!fileId) return;
+        const url = new URL("https://localhost:8000" + href);
+        console.log(url)
 
-            let cached = MinioCache[fileId];
-            let presigned: string | undefined = cached?.presignedUrl;
-            let expiry: number | undefined = cached?.expiresIn;
-            if (!presigned || Date.now() > (expiry || 0)) {
-                const result = await fetchMinioDownloadLink(fileTransferApi, fileId);
-                presigned = result.presignedUrl;
-                expiry = result.expiresIn;
-                MinioCache[fileId] = result;
-            }
-            token.attrs![hrefIndex][1] = presigned;
+        const params = new URLSearchParams(url.search);
+        const fileId = params.get('fileId');
+        if (!fileId) return;
+
+        let cached = MinioCache[fileId];
+        let presigned: string | undefined = cached?.presignedUrl;
+        let expiry: number | undefined = cached?.expiresIn;
+        if (!presigned || Date.now() > (expiry || 0)) {
+            const result = await fetchMinioDownloadLink(fileTransferApi, fileId);
+            presigned = result.presignedUrl;
+            expiry = result.expiresIn;
+            MinioCache[fileId] = result;
         }
+        token.attrs![hrefIndex][1] = presigned;
     }
 }
 
@@ -286,16 +207,6 @@ export async function parseWithExtensions(
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
     md.renderer.rules.cradle_link = (tokens: Token[], idx: number) =>
         renderCradleLink(entryColors, tokens[idx]);
-
-    // Add reference link rule with fileData
-    md.inline.ruler.before('cradle_link', 'reference_link', (state, silent) =>
-        referenceLinkRule(state, silent, fileData),
-    );
-    md.renderer.rules.reference_link = (tokens: Token[], idx: number) =>
-        renderReferenceLink(tokens[idx]);
-
-    md.renderer.rules.footnote_ref = (tokens: Token[], idx: number) =>
-        renderFootnoteRef(tokens[idx]);
 
     let metadata = {};
     try {
@@ -333,14 +244,6 @@ export function parseWithExtensionsInline(md: MarkdownIt, mdContent: string): st
 
     // Add the cradle link rule
     md.inline.ruler.before('link', 'cradle_link', cradleLinkRule);
-    md.inline.ruler.before('cradle_link', 'reference_link', (state, silent) =>
-        referenceLinkRule(state, silent, undefined),
-    );
-
-    md.renderer.rules.reference_link = (tokens: Token[], idx: number) =>
-        renderReferenceLink(tokens[idx]);
-    md.renderer.rules.footnote_ref = (tokens: Token[], idx: number) =>
-        renderFootnoteRef(tokens[idx]);
 
     const originalRules: { [key: string]: any } = {};
 

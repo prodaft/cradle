@@ -22,7 +22,8 @@ export interface HeaderNode {
  */
 export default function extractHeaderHierarchy(
     content: string,
-    onClick: (lineNumber: number) => void,
+    onClickLine: ((lineNumber: number) => void) | undefined,
+    onClickHeaderName: ((headerName: string) => void) | undefined,
 ): HeaderNode[] {
     const lines = content.split('\n');
     const result: HeaderNode[] = [];
@@ -62,7 +63,8 @@ export default function extractHeaderHierarchy(
             const node: HeaderNode = {
                 nodeName: text,
                 onNodeClick: (nodeName, children, level) => {
-                    onClick(i + 1);
+                    onClickLine?.(i + 1);
+                    onClickHeaderName?.(text);
                 },
                 children: [],
                 startLine: i + 1, // line numbers start from 1

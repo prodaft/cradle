@@ -598,33 +598,48 @@ export default function NoteViewer() {
     useEffect(() => {
         const content = markdownContent || '';
         setNoteOutline(
-            extractHeaderHierarchy(content, (lineNumber: number) => {
-                if (!editorRef.current?.view || typeof lineNumber !== 'number') return;
+            extractHeaderHierarchy(
+                content,
+                (lineNumber: number) => {
+                    // For editing mode: scroll to line in editor
+                    if (!editorRef.current?.view || typeof lineNumber !== 'number') return;
 
-                const view = editorRef.current.view;
-                if (view) {
-                    const state = view.state;
-                    if (lineNumber == 1) {
-                        view.dispatch({
-                            selection: { anchor: 0, head: 0 },
-                            scrollIntoView: true,
-                        });
-                    } else {
-                        const targetLinePos = state.doc.line(
-                            Math.max(1, lineNumber + 2),
-                        ).from;
-                        const selection = {
-                            anchor: targetLinePos,
-                            head: targetLinePos,
-                        };
+                    const view = editorRef.current.view;
+                    if (view) {
+                        const state = view.state;
+                        if (lineNumber == 1) {
+                            view.dispatch({
+                                selection: { anchor: 0, head: 0 },
+                                scrollIntoView: true,
+                            });
+                        } else {
+                            const targetLinePos = state.doc.line(
+                                Math.max(1, lineNumber + 2),
+                            ).from;
+                            const selection = {
+                                anchor: targetLinePos,
+                                head: targetLinePos,
+                            };
 
-                        view.dispatch({
-                            selection,
-                            scrollIntoView: true,
-                        });
+                            view.dispatch({
+                                selection,
+                                scrollIntoView: true,
+                            });
+                        }
                     }
-                }
-            }),
+                },
+                (headerText: string) => {
+                    // For static render mode: scroll to anchor by header text
+                    // Create slug same way as markdown-it-anchor
+                    const slug = encodeURIComponent(
+                        headerText.trim().toLowerCase().replace(/\s+/g, '-'),
+                    );
+                    const element = document.getElementById(slug);
+                    if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                },
+            ),
         );
     }, [markdownContent, editorRef]);
 
