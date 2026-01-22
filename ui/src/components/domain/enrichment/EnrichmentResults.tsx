@@ -52,65 +52,164 @@ import {
     WarningCircleIcon,
     WarningIcon,
 } from '@phosphor-icons/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-// Result row component for table display
-interface ResultRowProps {
-    result: any;
+// Interface for grouped results
+interface GroupedResult {
+    artifact: {
+        subtype: string;
+        name: string;
+        color?: string;
+    };
+    relations: Array<{
+        target: {
+            subtype: string;
+            name: string;
+            color?: string;
+        } | null;
+        details: any;
+    }>;
+}
+
+// Group results by source artifact
+function groupResultsByArtifact(results: any[]): GroupedResult[] {
+    const groups = new Map<string, GroupedResult>();
+    
+    for (const result of results) {
+        // Get source and target entries (filter out "enrichment" type)
+        const source = result.e1?.subtype !== 'enrichment' ? result.e1 : result.e2;
+        const target = result.e1?.subtype !== 'enrichment' && result.e2?.subtype !== 'enrichment' 
+            ? result.e2 
+            : (result.e1?.subtype === 'enrichment' ? null : null);
+        
+        if (!source) continue;
+        
+        const key = `${source.subtype}:${source.name}`;
+        
+        if (!groups.has(key)) {
+            groups.set(key, {
+                artifact: {
+                    subtype: source.subtype,
+                    name: source.name,
+                    color: source.color,
+                },
+                relations: [],
+            });
+        }
+        
+        groups.get(key)!.relations.push({
+            target: target ? {
+                subtype: target.subtype,
+                name: target.name,
+                color: target.color,
+            } : null,
+            details: result.details,
+        });
+    }
+    
+    return Array.from(groups.values());
+}
+
+// Individual relation item component (collapsible)
+interface RelationItemProps {
+    relation: {
+        target: {
+            subtype: string;
+            name: string;
+            color?: string;
+        } | null;
+        details: any;
+    };
+    isLast: boolean;
+}
+
+function RelationItem({ relation, isLast }: RelationItemProps) {
+    const [open, setOpen] = useState(false);
+    const hasDetails = relation.details && Object.keys(relation.details).length > 0;
+    
+    return (
+        <div className={`${!isLast ? 'border-b border-border/50' : ''}`}>
+            <div
+                className={`px-4 py-2 flex items-center gap-2 ${hasDetails ? 'cursor-pointer hover:bg-muted/50' : ''}`}
+                onClick={() => hasDetails && setOpen(!open)}
+            >
+                {relation.target ? (
+                    <>
+                        <Badge
+                            className={`rounded-full flex-shrink-0 ${!relation.target.color ? 'bg-muted' : ''}`}
+                            style={relation.target.color ? { backgroundColor: relation.target.color } : undefined}
+                        >
+                            {relation.target.subtype}
+                        </Badge>
+                        <span className='text-foreground text-sm'>{relation.target.name}</span>
+                    </>
+                ) : (
+                    <span className='text-muted-foreground text-sm'>No target</span>
+                )}
+                {hasDetails && (
+                    <CaretDownIcon
+                        className={`size-3 text-muted-foreground transition-transform flex-shrink-0 ml-auto ${open ? 'rotate-180' : ''}`}
+                    />
+                )}
+            </div>
+            {hasDetails && open && (
+                <div className='px-4 pb-3 ml-6'>
+                    <ReactJson
+                        src={relation.details}
+                        theme='monokai'
+                        collapsed={1}
+                        displayDataTypes={false}
+                        displayObjectSize={false}
+                        enableClipboard={true}
+                        style={{
+                            backgroundColor: 'transparent',
+                            fontSize: '12px',
+                        }}
+                    />
+                </div>
+            )}
+        </div>
+    );
+}
+
+// Grouped row component
+interface GroupedRowProps {
+    group: GroupedResult;
     enricherName: string;
 }
 
-function ResultRow({ result, enricherName }: ResultRowProps) {
+function GroupedRow({ group, enricherName }: GroupedRowProps) {
     const [open, setOpen] = useState(false);
     
-    const hasDetails = result.details && Object.keys(result.details).length > 0;
-    
-    // Get entries for display in the table
-    const primaryEntry = result.e1?.subtype !== 'enrichment' ? result.e1 : result.e2;
-    const secondaryEntry = result.e1?.subtype !== 'enrichment' && result.e2?.subtype !== 'enrichment' ? result.e2 : null;
-    
-    const renderEntryCell = (entry: any) => {
-        if (!entry) return <span className='text-muted-foreground'>-</span>;
-        return (
-            <div className='flex items-center gap-2'>
-                <Badge
-                    className={`rounded-full flex-shrink-0 ${!entry.color ? 'bg-muted' : ''}`}
-                    style={entry.color ? { backgroundColor: entry.color } : undefined}
-                >
-                    {entry.subtype}
-                </Badge>
-                <span className='text-foreground truncate'>{entry.name}</span>
-            </div>
-        );
-    };
+    const relationCount = group.relations.length;
     
     const rowContent = (
         <TableRow
-            className={hasDetails ? 'cursor-pointer hover:bg-muted/50' : ''}
-            onClick={() => hasDetails && setOpen(!open)}
+            className='cursor-pointer hover:bg-muted/50'
+            onClick={() => setOpen(!open)}
         >
             <TableCell className='text-muted-foreground capitalize'>
                 {enricherName}
             </TableCell>
             <TableCell>
-                {renderEntryCell(primaryEntry)}
-            </TableCell>
-            <TableCell>
                 <div className='flex items-center gap-2'>
-                    {renderEntryCell(secondaryEntry)}
-                    {hasDetails && (
-                        <CaretDownIcon
-                            className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ml-auto ${open ? 'rotate-180' : ''}`}
-                        />
-                    )}
+                    <Badge
+                        className={`rounded-full flex-shrink-0 ${!group.artifact.color ? 'bg-muted' : ''}`}
+                        style={group.artifact.color ? { backgroundColor: group.artifact.color } : undefined}
+                    >
+                        {group.artifact.subtype}
+                    </Badge>
+                    <span className='text-foreground truncate'>{group.artifact.name}</span>
+                    <span className='text-muted-foreground text-xs ml-auto'>
+                        {relationCount} result{relationCount !== 1 ? 's' : ''}
+                    </span>
+                    <CaretDownIcon
+                        className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ${open ? 'rotate-180' : ''}`}
+                    />
                 </div>
             </TableCell>
         </TableRow>
     );
-
-    if (!hasDetails) {
-        return rowContent;
-    }
 
     return (
         <Collapsible open={open} onOpenChange={setOpen} asChild>
@@ -118,20 +217,15 @@ function ResultRow({ result, enricherName }: ResultRowProps) {
                 <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
                 <CollapsibleContent asChild>
                     <tr>
-                        <td colSpan={3} className='p-0'>
-                            <div className='px-4 py-3 bg-muted/30 border-t'>
-                                <ReactJson
-                                    src={result.details}
-                                    theme='monokai'
-                                    collapsed={1}
-                                    displayDataTypes={false}
-                                    displayObjectSize={false}
-                                    enableClipboard={true}
-                                    style={{
-                                        backgroundColor: 'transparent',
-                                        fontSize: '12px',
-                                    }}
-                                />
+                        <td colSpan={2} className='p-0'>
+                            <div className='bg-muted/30 border-t'>
+                                {group.relations.map((relation, idx) => (
+                                    <RelationItem
+                                        key={idx}
+                                        relation={relation}
+                                        isLast={idx === group.relations.length - 1}
+                                    />
+                                ))}
                             </div>
                         </td>
                     </tr>
@@ -237,6 +331,9 @@ export default function EnrichmentResults() {
 
     const results = resultsData?.results || [];
     const totalPages = resultsData?.totalPages || 1;
+    
+    // Group results by artifact
+    const groupedResults = useMemo(() => groupResultsByArtifact(results), [results]);
 
     // Reset to page 1 when search query changes
     const handleSearch = () => {
@@ -626,7 +723,7 @@ export default function EnrichmentResults() {
                                 <div className='flex items-center justify-center min-h-[200px]'>
                                     <Spinner className='size-10' />
                                 </div>
-                            ) : results.length === 0 ? (
+                            ) : groupedResults.length === 0 ? (
                                 <Card className='border-border bg-muted/5'>
                                     <CardContent className='py-8'>
                                         <p className='text-center text-sm text-muted-foreground'>
@@ -642,15 +739,14 @@ export default function EnrichmentResults() {
                                                 <TableHeader className='sticky top-0 bg-card z-10'>
                                                     <TableRow>
                                                         <TableHead className='w-[120px]'>Enricher</TableHead>
-                                                        <TableHead>Source</TableHead>
-                                                        <TableHead>Target</TableHead>
+                                                        <TableHead>Artifact</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {results.map((result, index) => (
-                                                        <ResultRow
-                                                            key={result.id || index}
-                                                            result={result}
+                                                    {groupedResults.map((group, index) => (
+                                                        <GroupedRow
+                                                            key={`${group.artifact.subtype}:${group.artifact.name}`}
+                                                            group={group}
                                                             enricherName={
                                                                 enrichmentDetails?.enrichers?.find(
                                                                     (e) => e.enricherType === selectedEnricher
@@ -687,45 +783,7 @@ export default function EnrichmentResults() {
                             </Card>
                         )}
 
-                        {/* Artifacts Section - shown below the table when an enricher is selected */}
-                        {selectedEnricher && !showIgnored && enricherDetails?.artifacts && enricherDetails.artifacts.length > 0 && (
-                            <div className='mt-4'>
-                                <h3 className='text-sm font-semibold mb-2'>Artifacts</h3>
-                                <Card className='border-border bg-muted/5'>
-                                    <CardContent className='p-0'>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Artifact</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {enricherDetails.artifacts.map((artifact: any, index: number) => (
-                                                    <TableRow key={index}>
-                                                        <TableCell>
-                                                            <div className='flex items-center gap-2'>
-                                                                {artifact.entry_class && (
-                                                                    <Badge variant='secondary' className='flex-shrink-0'>
-                                                                        {artifact.entry_class}
-                                                                    </Badge>
-                                                                )}
-                                                                <span className='text-foreground truncate'>
-                                                                    {typeof artifact === 'string'
-                                                                        ? artifact
-                                                                        : artifact.name || JSON.stringify(artifact)}
-                                                                </span>
-                                                            </div>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
-
-                        {/* Warnings Section - shown below artifacts when an enricher is selected */}
+                        {/* Warnings Section - shown below table when an enricher is selected */}
                         {hasWarnings && (
                             <div className='mt-4'>
                                 <h3 className='text-sm font-semibold mb-2'>Warnings</h3>
