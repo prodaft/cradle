@@ -7,6 +7,9 @@ const AccountSettings = lazy(
 );
 
 export const Route = createFileRoute('/_authenticated/settings')({
+    staticData: {
+        breadcrumb: 'Settings',
+    },
     validateSearch: z.object({
         tab: z.string().optional(),
         sessions_page: z.coerce.number().optional(),

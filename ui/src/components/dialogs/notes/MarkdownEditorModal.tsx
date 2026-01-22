@@ -101,30 +101,29 @@ export default function MarkdownEditorModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Note Editor</DialogTitle>
+                    <DialogTitle>New snippet</DialogTitle>
                     <DialogDescription className='sr-only'>
                         Edit markdown content for this note
                     </DialogDescription>
                 </DialogHeader>
 
                 {/* Title Section */}
-                {titleEditable && (
-                    <div className='grid w-full items-center gap-3'>
-                        <Label htmlFor='note-title'>Title</Label>
-                        <Input
-                            id='note-title'
-                            type='text'
-                            value={noteTitle}
-                            onChange={handleTitleChange}
-                            placeholder='Enter title'
-                        />
-                    </div>
-                )}
+                <div className='grid w-full items-center gap-3'>
+                    <Label htmlFor='note-title'>Title</Label>
+                    <Input
+                        id='note-title'
+                        type='text'
+                        value={noteTitle}
+                        onChange={handleTitleChange}
+                        placeholder='Enter title'
+                        disabled={!titleEditable}
+                    />
+                </div>
 
                 {/* Editor Section */}
-                <div className='grid w-full items-center gap-3 mb-6'>
+                <div className='grid w-full items-center gap-3'>
                     <Label htmlFor='markdown-content'>Content</Label>
-                    <div className='border border-border rounded-lg overflow-hidden w-full'>
+                    <div className='border border-border rounded-lg overflow-hidden'>
                         <CodeMirror
                             value={userInput}
                             onChange={handleContentChange}
@@ -132,7 +131,7 @@ export default function MarkdownEditorModal({
                             height='400px'
                             extensions={extensions}
                             placeholder='Write your markdown content here...'
-                            className='w-full text-base'
+                            className='text-base'
                             width='100%'
                         />
                     </div>
@@ -140,18 +139,18 @@ export default function MarkdownEditorModal({
 
                 {/* Help Text Section */}
                 {helpText && (
-                    <div className='mb-6 p-4 border border-border bg-secondary/30 rounded-lg'>
+                    <div className='p-4 border border-border bg-secondary/30 rounded-lg'>
                         <div className='flex items-start gap-3'>
-                            <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0'></div>
-                            <div className='text-xs text-muted-foreground leading-relaxed'>
+                            <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0' />
+                            <span className='text-xs text-muted-foreground leading-relaxed'>
                                 {helpText}
-                            </div>
+                            </span>
                         </div>
                     </div>
                 )}
 
                 {/* Actions */}
-                <div className='flex justify-end gap-2 mt-4'>
+                <div className='flex justify-end gap-2 pt-4'>
                     <Button
                         type='button'
                         variant='outline'

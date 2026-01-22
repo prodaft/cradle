@@ -105,27 +105,24 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
 
     if (isPending) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse text-foreground'>Loading...</div>
+            <div className='flex items-center justify-center min-h-screen animate-pulse text-foreground'>
+                Loading...
             </div>
         );
     }
 
     return (
-        <div className='w-full h-full'>
-            <div className='w-full'>
-                <form onSubmit={handleSubmit(onSubmit as any)}>
-                    {/* Registration Section */}
-                    <section id='registration'>
-                        <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                            Registration
-                        </h2>
-                        <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                            Control how new users can join the system
-                        </p>
+        <form onSubmit={handleSubmit(onSubmit as any)} className='w-full h-full'>
+            {/* Registration Section */}
+            <section id='registration'>
+                <h2 className='text-lg font-semibold text-foreground tracking-tight'>
+                    Registration
+                </h2>
+                <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
+                    Control how new users can join the system
+                </p>
 
-                        <div className='space-y-4'>
-                            <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+                <Card className='border-border bg-muted/5 space-y-0'>
                                 <CardContent className='px-4 py-1'>
                                     <Controller
                                         name='allowRegistration'
@@ -238,19 +235,16 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                             </Field>
                                         )}
                                     />
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </section>
+                            </CardContent>
+                </Card>
+            </section>
 
-                    {/* Save Button */}
-                    <div className='pt-2 flex justify-end'>
-                        <Button type='submit' variant='default' disabled={isSubmitting}>
-                            {isSubmitting ? 'Saving...' : 'Save Settings'}
-                        </Button>
-                    </div>
-                </form>
+            {/* Save Button */}
+            <div className='pt-2 flex justify-end'>
+                <Button type='submit' variant='default' disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Save Settings'}
+                </Button>
             </div>
-        </div>
+        </form>
     );
 }

@@ -5,6 +5,9 @@ import { z } from 'zod';
 const DigestData = lazy(() => import('src/components/domain/activity/DigestData'));
 
 export const Route = createFileRoute('/_authenticated/digest-data')({
+    staticData: {
+        breadcrumb: 'Digest Data',
+    },
     validateSearch: z.object({
         digests_sort_field: z.string().optional(),
         digests_sort_direction: z.enum(['asc', 'desc']).optional(),

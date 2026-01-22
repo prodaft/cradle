@@ -6,5 +6,8 @@ const EnrichmentResults = lazy(
 );
 
 export const Route = createFileRoute('/_authenticated/enrichment/$id')({
+    staticData: {
+        breadcrumb: 'Enrichment Results',
+    },
     component: EnrichmentResults,
 });

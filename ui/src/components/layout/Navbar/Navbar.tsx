@@ -1,16 +1,41 @@
+import {
+    Breadcrumb,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbList,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import SearchDialog from '@components/domain/search/SearchDialog';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
-import React, { useState } from 'react';
+import { Link, useMatches } from '@tanstack/react-router';
+import React, { useMemo, useState } from 'react';
 import { useHotkeys } from 'react-hotkeys-hook';
 
 /**
- * Navbar component - simplified navbar with sidebar trigger and search
+ * Navbar component - simplified navbar with sidebar trigger, breadcrumbs, and search
  */
 export default function Navbar(): React.JSX.Element {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const matches = useMatches();
+
+    // Build breadcrumbs from route staticData
+    const breadcrumbs = useMemo(() => {
+        return matches
+            .filter((match) => match.staticData && (match.staticData as any).breadcrumb)
+            .map((match) => {
+                const breadcrumb = (match.staticData as any).breadcrumb;
+                const label = typeof breadcrumb === 'function' ? breadcrumb(match) : breadcrumb;
+                return {
+                    label: label as string,
+                    path: match.pathname,
+                };
+            });
+    }, [matches]);
 
     useHotkeys(
         '/',
@@ -36,7 +61,33 @@ export default function Navbar(): React.JSX.Element {
 
     return (
         <div className='relative flex h-14 items-center gap-3 p-4 sm:gap-4 border-b border-border shrink-0 md:rounded-tl-xl md:rounded-tr-xl'>
-            <SidebarTrigger />
+            <SidebarTrigger className='-ml-1' />
+            <Separator orientation='vertical' className='mr-2 h-4' />
+            {breadcrumbs.length > 0 && (
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        {breadcrumbs.map((crumb, index) => {
+                            const isLast = index === breadcrumbs.length - 1;
+                            return (
+                                <React.Fragment key={crumb.path}>
+                                    <BreadcrumbItem className={index < breadcrumbs.length - 1 ? 'hidden md:block' : ''}>
+                                        {isLast ? (
+                                            <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                                        ) : (
+                                            <BreadcrumbLink asChild>
+                                                <Link to={crumb.path}>{crumb.label}</Link>
+                                            </BreadcrumbLink>
+                                        )}
+                                    </BreadcrumbItem>
+                                    {!isLast && (
+                                        <BreadcrumbSeparator className='hidden md:block' />
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
+                    </BreadcrumbList>
+                </Breadcrumb>
+            )}
             <div className='flex-1 flex justify-center'>
                 <Button
                     variant='outline'

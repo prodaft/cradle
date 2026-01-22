@@ -7,6 +7,9 @@ import { z } from 'zod';
 const Dashboard = lazy(() => import('src/components/domain/dashboard/Dashboard'));
 
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({
+    staticData: {
+        breadcrumb: (match: any) => match.params.name || 'Dashboard',
+    },
     validateSearch: z.object({
         heading: z.string().optional(),
         tab: z.enum(['notes', 'relations', 'files', 'eventlog']).optional(),

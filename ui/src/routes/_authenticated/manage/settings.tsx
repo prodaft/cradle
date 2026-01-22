@@ -7,6 +7,9 @@ const ManagementPage = lazy(
 );
 
 export const Route = createFileRoute('/_authenticated/manage/(admin)/settings' as any)({
+    staticData: {
+        breadcrumb: 'Settings',
+    },
     validateSearch: z.object({
         tab: z.string().optional(),
     }),

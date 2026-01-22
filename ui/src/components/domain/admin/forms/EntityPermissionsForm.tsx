@@ -107,127 +107,93 @@ export default function EntityPermissionsForm({
 
     if (isPending) {
         return (
-            <div className='flex items-center justify-center min-h-[200px]'>
-                <div className='animate-pulse text-foreground'>Loading...</div>
+            <div className='flex items-center justify-center min-h-[200px] animate-pulse text-foreground'>
+                Loading...
             </div>
         );
     }
 
     return (
-        <div className='w-full h-full flex flex-col'>
-            <form>
-                <section id='permissions'>
-                    <div className='space-y-4'>
-                        <div className='space-y-4'>
-                            <div className='relative'>
-                                <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
-                                <Input
-                                    placeholder='Search users...'
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className='pl-9'
-                                />
-                            </div>
+        <form className='w-full h-full flex flex-col space-y-4'>
+            <div className='relative'>
+                <Search className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
+                <Input
+                    placeholder='Search users...'
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className='pl-9'
+                />
+            </div>
 
-                            <Card className='rounded-lg border-border bg-muted/5'>
-                                <CardContent className='p-0'>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead className='w-[60px]'>
-                                                    ID
-                                                </TableHead>
-                                                <TableHead className='w-[200px]'>
-                                                    User
-                                                </TableHead>
-                                                <TableHead>Description</TableHead>
-                                                <TableHead className='w-[160px]'>
-                                                    Access
-                                                </TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {filteredAccesses.length === 0 ? (
-                                                <TableRow>
-                                                    <TableCell
-                                                        colSpan={4}
-                                                        className='text-center text-muted-foreground py-8'
-                                                    >
-                                                        No users found
-                                                    </TableCell>
-                                                </TableRow>
-                                            ) : (
-                                                filteredAccesses.map(
-                                                    (access: AccessUser) => {
-                                                        const user = access.user;
-                                                        const userId = user.id!;
-                                                        const currentAccess =
-                                                            accessStates[userId] ||
-                                                            access.accessType;
+            <Card className='border-border bg-muted/5'>
+                <CardContent className='p-0'>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className='w-[60px]'>ID</TableHead>
+                                <TableHead className='w-[200px]'>User</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className='w-[160px]'>Access</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredAccesses.length === 0 ? (
+                                <TableRow>
+                                    <TableCell
+                                        colSpan={4}
+                                        className='text-center text-muted-foreground py-8'
+                                    >
+                                        No users found
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                filteredAccesses.map((access: AccessUser) => {
+                                    const user = access.user;
+                                    const userId = user.id!;
+                                    const currentAccess =
+                                        accessStates[userId] || access.accessType;
 
-                                                        return (
-                                                            <TableRow key={userId}>
-                                                                <TableCell className='text-muted-foreground'>
-                                                                    {userId.slice(0, 8)}
-                                                                </TableCell>
-                                                                <TableCell className='font-medium'>
-                                                                    {user.username}
-                                                                </TableCell>
-                                                                <TableCell className='text-muted-foreground text-sm'>
-                                                                    -
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Select
-                                                                        value={
-                                                                            currentAccess
-                                                                        }
-                                                                        onValueChange={(
-                                                                            value,
-                                                                        ) =>
-                                                                            handleAccessChange(
-                                                                                userId,
-                                                                                value,
-                                                                            )
-                                                                        }
-                                                                    >
-                                                                        <SelectTrigger className='w-[140px]'>
-                                                                            <SelectValue />
-                                                                        </SelectTrigger>
-                                                                        <SelectContent>
-                                                                            {ACCESS_OPTIONS.map(
-                                                                                (
-                                                                                    option,
-                                                                                ) => (
-                                                                                    <SelectItem
-                                                                                        key={
-                                                                                            option.value
-                                                                                        }
-                                                                                        value={
-                                                                                            option.value
-                                                                                        }
-                                                                                    >
-                                                                                        {
-                                                                                            option.label
-                                                                                        }
-                                                                                    </SelectItem>
-                                                                                ),
-                                                                            )}
-                                                                        </SelectContent>
-                                                                    </Select>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        );
-                                                    },
-                                                )
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                </section>
-            </form>
-        </div>
+                                    return (
+                                        <TableRow key={userId}>
+                                            <TableCell className='text-muted-foreground'>
+                                                {userId.slice(0, 8)}
+                                            </TableCell>
+                                            <TableCell className='font-medium'>
+                                                {user.username}
+                                            </TableCell>
+                                            <TableCell className='text-muted-foreground text-sm'>
+                                                -
+                                            </TableCell>
+                                            <TableCell>
+                                                <Select
+                                                    value={currentAccess}
+                                                    onValueChange={(value) =>
+                                                        handleAccessChange(userId, value)
+                                                    }
+                                                >
+                                                    <SelectTrigger className='w-[140px]'>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {ACCESS_OPTIONS.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </form>
     );
 }

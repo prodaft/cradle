@@ -229,28 +229,23 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     if (isPending && !isPaused) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='animate-pulse text-foreground'>Loading...</div>
+            <div className='flex items-center justify-center min-h-screen animate-pulse text-foreground'>
+                Loading...
             </div>
         );
     }
 
     if (isPaused) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='w-full max-w-md p-4'>
-                    <OfflineIndicator />
-                </div>
+            <div className='flex items-center justify-center min-h-screen w-full max-w-md p-4'>
+                <OfflineIndicator />
             </div>
         );
     }
 
     return (
         <form onSubmit={handleFormSubmit(onSubmit as any)}>
-            {/* Basic Section */}
-            <section id='basic'>
-                <div className='space-y-4'>
-                    <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
+            <Card className='border-border bg-muted/5 space-y-0'>
                         <CardContent className='px-4 py-1'>
                             <Controller
                                 name='name'
@@ -280,19 +275,18 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                                 </FieldError>
                                             )}
                                         </FieldContent>
-                                        <div className='w-auto'>
-                                            <Input
-                                                {...field}
-                                                id='name'
-                                                disabled={true}
-                                                aria-invalid={fieldState.invalid}
-                                                aria-describedby={
-                                                    fieldState.invalid
-                                                        ? 'name-error'
-                                                        : undefined
-                                                }
-                                            />
-                                        </div>
+                                        <Input
+                                            {...field}
+                                            id='name'
+                                            disabled={true}
+                                            className='w-auto'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'name-error'
+                                                    : undefined
+                                            }
+                                        />
                                     </Field>
                                 )}
                             />
@@ -506,9 +500,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                 )}
                             />
                         </CardContent>
-                    </Card>
-                </div>
-            </section>
+            </Card>
 
             {/* Save Button */}
             <div className='pt-2 flex justify-end'>

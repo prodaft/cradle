@@ -181,7 +181,7 @@ export default function EnrichmentResults() {
         switch (status) {
             case 'done':
                 return (
-                    <CheckCircle
+                    <CheckCircleIcon
                         className='text-primary flex-shrink-0'
                         width='16'
                         height='16'
@@ -190,7 +190,7 @@ export default function EnrichmentResults() {
             case 'working':
             case 'waiting':
                 return (
-                    <InfoCircle
+                    <InfoIcon
                         className='text-primary flex-shrink-0'
                         width='16'
                         height='16'
@@ -198,7 +198,7 @@ export default function EnrichmentResults() {
                 );
             case 'warning':
                 return (
-                    <WarningTriangle
+                    <WarningIcon
                         className='text-muted-foreground flex-shrink-0'
                         width='16'
                         height='16'
@@ -206,7 +206,7 @@ export default function EnrichmentResults() {
                 );
             case 'error':
                 return (
-                    <WarningCircle
+                    <WarningCircleIcon
                         className='text-destructive flex-shrink-0'
                         width='16'
                         height='16'
@@ -409,7 +409,7 @@ export default function EnrichmentResults() {
                                                 }`}
                                                 onClick={handleIgnoredSelect}
                                             >
-                                                <EyeClosed
+                                                <EyeSlashIcon
                                                     className='text-muted-foreground flex-shrink-0'
                                                     width='16'
                                                     height='16'
@@ -513,89 +513,32 @@ export default function EnrichmentResults() {
                                             {/* Search Bars */}
                                             <div className='flex gap-2 items-center pb-3'>
                                                 {/* Search Entries */}
-                                                <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='icon-sm'
-                                                        className='p-1 flex-shrink-0'
-                                                        title='Search'
-                                                        onClick={handleSearch}
-                                                    >
-                                                        <MagnifyingGlassIcon className='w-4 h-4' weight="bold" />
-                                                    </Button>
-                                                    <Input
-                                                        type='text'
-                                                        className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
-                                                        placeholder='Search entries...'
-                                                        value={searchInput.query}
-                                                        onChange={(e) =>
-                                                            setSearchInput({
-                                                                ...searchInput,
-                                                                query: e.target.value,
-                                                            })
-                                                        }
-                                                        onKeyDown={handleSearchKeyPress}
-                                                    />
-                                                    {searchInput.query && (
-                                                        <Button
-                                                            variant='ghost'
-                                                            size='icon-sm'
-                                                            onClick={() => {
-                                                                setSearchInput({
-                                                                    ...searchInput,
-                                                                    query: '',
-                                                                });
-                                                            }}
-                                                            className='p-1 flex-shrink-0'
-                                                            title='Clear'
-                                                        >
-                                                            <XIcon className='w-4 h-4' weight="bold" />
-                                                        </Button>
-                                                    )}
-                                                </div>
+                                                <Input
+                                                    type='text'
+                                                    placeholder='Search entries...'
+                                                    value={searchInput.query}
+                                                    onChange={(e) =>
+                                                        setSearchInput({
+                                                            ...searchInput,
+                                                            query: e.target.value,
+                                                        })
+                                                    }
+                                                    onKeyDown={handleSearchKeyPress}
+                                                />
 
                                                 {/* Search Details */}
-                                                <div className='flex items-center gap-2 flex-grow bg-card border border-border h-10 px-2 rounded-full focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all'>
-                                                    <Button
-                                                        variant='ghost'
-                                                        size='icon-sm'
-                                                        className='p-1 flex-shrink-0'
-                                                        title='Search Details'
-                                                        onClick={handleSearch}
-                                                    >
-                                                        <MagnifyingGlassIcon className='w-4 h-4' weight="bold" />
-                                                    </Button>
-                                                    <Input
-                                                        type='text'
-                                                        className='flex-grow bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground rounded-none font-mono border-0 shadow-none'
-                                                        placeholder='Search details...'
-                                                        value={searchInput.details}
-                                                        onChange={(e) =>
-                                                            setSearchInput({
-                                                                ...searchInput,
-                                                                details: e.target.value,
-                                                            })
-                                                        }
-                                                        onKeyDown={handleSearchKeyPress}
-                                                    />
-                                                    {searchInput.details && (
-                                                        <Button
-                                                            variant='ghost'
-                                                            size='icon-sm'
-                                                            onClick={() => {
-                                                                setSearchInput({
-                                                                    ...searchInput,
-                                                                    details: '',
-                                                                });
-                                                            }}
-                                                            className='p-1 flex-shrink-0'
-                                                            title='Clear'
-                                                        >
-                                                            <XIcon className='w-4 h-4' weight="bold" />
-                                                        </Button>
-                                                    )}
-                                                </div>
-
+                                                <Input
+                                                    type='text'
+                                                    placeholder='Search details...'
+                                                    value={searchInput.details}
+                                                    onChange={(e) =>
+                                                        setSearchInput({
+                                                            ...searchInput,
+                                                            details: e.target.value,
+                                                        })
+                                                    }
+                                                    onKeyDown={handleSearchKeyPress}
+                                                />
                                                 <Button
                                                     variant='outline'
                                                     size='default'
@@ -614,20 +557,6 @@ export default function EnrichmentResults() {
                                                 >
                                                     <DownloadSimpleIcon size={18} weight="bold" />
                                                 </Button>
-
-                                                {/* Pagination */}
-                                                <Pagination
-                                                    currentPage={page}
-                                                    totalPages={totalPages}
-                                                    onPageChange={(newPage) =>
-                                                        setPage(newPage)
-                                                    }
-                                                    pageSize={pageSize}
-                                                    onPageSizeChange={(newSize) => {
-                                                        setPageSize(newSize);
-                                                        setPage(1);
-                                                    }}
-                                                />
                                             </div>
 
                                             {/* Results */}
@@ -709,6 +638,22 @@ export default function EnrichmentResults() {
                                                     </>
                                                 )}
                                             </ScrollArea>
+
+                                            {/* Pagination */}
+                                            <div className='pt-3 border-t'>
+                                                <Pagination
+                                                    currentPage={page}
+                                                    totalPages={totalPages}
+                                                    onPageChange={(newPage) =>
+                                                        setPage(newPage)
+                                                    }
+                                                    pageSize={pageSize}
+                                                    onPageSizeChange={(newSize) => {
+                                                        setPageSize(newSize);
+                                                        setPage(1);
+                                                    }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -780,7 +725,7 @@ export default function EnrichmentResults() {
                                                                 key={index}
                                                                 className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
                                                             >
-                                                                <WarningTriangle
+                                                                <WarningIcon
                                                                     className='text-muted-foreground flex-shrink-0'
                                                                     width='16'
                                                                     height='16'
@@ -815,7 +760,7 @@ export default function EnrichmentResults() {
                                                                 key={index}
                                                                 className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
                                                             >
-                                                                <WarningCircle
+                                                                <WarningCircleIcon
                                                                     className='text-destructive flex-shrink-0'
                                                                     width='16'
                                                                     height='16'

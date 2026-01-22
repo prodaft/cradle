@@ -9,6 +9,9 @@ const EntryTypesPage = lazy(
 export const Route = createFileRoute(
     '/_authenticated/manage/(entry-manager)/entry-types/$id' as any,
 )({
+    staticData: {
+        breadcrumb: 'Entry Type Details',
+    },
     validateSearch: z.object({
         tab: z.string().optional(),
     }),

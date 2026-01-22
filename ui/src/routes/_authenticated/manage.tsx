@@ -7,5 +7,8 @@ import { createFileRoute, Outlet } from '@tanstack/react-router';
  * - _admin.tsx - for admin-only routes
  */
 export const Route = createFileRoute('/_authenticated/manage')({
+    staticData: {
+        breadcrumb: 'Manage',
+    },
     component: () => <Outlet />,
 });

@@ -9,6 +9,9 @@ const EntitiesPage = lazy(
 export const Route = createFileRoute(
     '/_authenticated/manage/(entry-manager)/entities/$id' as any,
 )({
+    staticData: {
+        breadcrumb: 'Entity Details',
+    },
     validateSearch: z.object({
         tab: z.string().optional(),
     }),

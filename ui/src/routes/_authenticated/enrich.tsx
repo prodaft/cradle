@@ -7,6 +7,9 @@ const EnrichmentRequests = lazy(
 );
 
 export const Route = createFileRoute('/_authenticated/enrich')({
+    staticData: {
+        breadcrumb: 'Enrichment',
+    },
     validateSearch: z.object({
         sort_field: z.string().optional(),
         sort_direction: z.enum(['asc', 'desc']).optional(),

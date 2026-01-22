@@ -6,6 +6,9 @@ const UsersPage = lazy(() => import('src/components/domain/admin/pages/UsersPage
 
 export const Route = createFileRoute('/_authenticated/manage/(admin)/users/$id' as any)(
     {
+        staticData: {
+            breadcrumb: 'User Details',
+        },
         validateSearch: z.object({
             tab: z.string().optional(),
         }),

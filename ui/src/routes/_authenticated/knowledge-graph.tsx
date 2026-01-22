@@ -7,5 +7,8 @@ const KnowledgeGraphSearch = lazy(
 );
 
 export const Route = createFileRoute('/_authenticated/knowledge-graph')({
+    staticData: {
+        breadcrumb: 'Graph Explorer',
+    },
     component: () => <GraphExplorer GraphSearchComponent={KnowledgeGraphSearch} />,
 });

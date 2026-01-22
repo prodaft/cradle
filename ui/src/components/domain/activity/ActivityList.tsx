@@ -284,7 +284,7 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
 
                                 {/* Source log section */}
                                 {hasSrcLog && srcLogFormatted && (
-                                    <div className='relative'>
+                                    <div>
                                         <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
                                             <GitForkIcon className='size-3.5' />
                                             <span>Triggered by</span>
@@ -470,168 +470,147 @@ export default function ActivityList({
     };
 
     return (
-        <div className='w-full h-full overflow-auto'>
-            {/* Content Area */}
-            <div className='w-full flex flex-col space-y-4'>
-                {/* Filters */}
-                <form
-                        onSubmit={handleSearchSubmit}
-                        className='flex flex-wrap gap-4 items-end'
+        <div className='w-full h-full overflow-auto flex flex-col space-y-4'>
+            {/* Filters */}
+            <form
+                onSubmit={handleSearchSubmit}
+                className='flex flex-wrap gap-4 items-end'
+            >
+                {/* Username input */}
+                <div className='relative flex-1 min-w-[200px]'>
+                    <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
+                    <Input
+                        type='text'
+                        name='username'
+                        value={searchFilters.username}
+                        onChange={(e) =>
+                            setSearchFilters((prev) => ({
+                                ...prev,
+                                username: e.target.value,
+                            }))
+                        }
+                        placeholder='Search by username...'
+                        className='pl-9'
+                    />
+                </div>
+
+                {/* Date range picker */}
+                <div className='flex-1 min-w-[320px]'>
+                    <DateRangePicker
+                        startDate={
+                            searchFilters.start_date
+                                ? new Date(searchFilters.start_date)
+                                : null
+                        }
+                        endDate={
+                            searchFilters.end_date
+                                ? new Date(searchFilters.end_date)
+                                : null
+                        }
+                        onChange={([start, end]) => {
+                            const normalizedStart = start
+                                ? dayjs(start).startOf('day').toDate()
+                                : null;
+                            const normalizedEnd = start
+                                ? dayjs(end ?? start).endOf('day').toDate()
+                                : null;
+                            setSearchFilters((prev) => ({
+                                ...prev,
+                                start_date: normalizedStart
+                                    ? format(normalizedStart, "yyyy-MM-dd'T'HH:mm")
+                                    : '',
+                                end_date: normalizedEnd
+                                    ? format(normalizedEnd, "yyyy-MM-dd'T'HH:mm")
+                                    : '',
+                            }));
+                        }}
+                        className='h-9 w-full max-w-full font-mono'
+                    />
+                </div>
+
+                {/* Type selector */}
+                <div className='min-w-[140px]'>
+                    <Select
+                        value={searchFilters.type || 'any'}
+                        onValueChange={(value) => {
+                            setSearchFilters((prev) => ({
+                                ...prev,
+                                type: value === 'any' ? '' : value,
+                            }));
+                        }}
                     >
-                        {/* Username input */}
-                        <div className='flex-1 min-w-[200px]'>
-                            <div className='relative'>
-                                <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' />
-                                <Input
-                                    type='text'
-                                    name='username'
-                                    value={searchFilters.username}
-                                    onChange={(e) =>
-                                        setSearchFilters((prev) => ({
-                                            ...prev,
-                                            username: e.target.value,
-                                        }))
-                                    }
-                                    placeholder='Search by username...'
-                                    className='pl-9'
-                                />
-                            </div>
-                        </div>
+                        <SelectTrigger className='w-full'>
+                            <SelectValue placeholder='Any Type' />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value='any'>Any Type</SelectItem>
+                            <SelectItem value='create'>Create</SelectItem>
+                            <SelectItem value='edit'>Edit</SelectItem>
+                            <SelectItem value='delete'>Delete</SelectItem>
+                            <SelectItem value='fetch'>Fetch</SelectItem>
+                            <SelectItem value='login'>Login</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                        {/* Date range picker */}
-                        <div className='flex-1 min-w-[320px]'>
-                            <DateRangePicker
-                                startDate={
-                                    searchFilters.start_date
-                                        ? new Date(searchFilters.start_date)
-                                        : null
-                                }
-                                endDate={
-                                    searchFilters.end_date
-                                        ? new Date(searchFilters.end_date)
-                                        : null
-                                }
-                                onChange={([start, end]) => {
-                                    const normalizedStart = start
-                                        ? dayjs(start).startOf('day').toDate()
-                                        : null;
-                                    const normalizedEnd = start
-                                        ? dayjs(end ?? start).endOf('day').toDate()
-                                        : null;
-                                    setSearchFilters((prev) => ({
-                                        ...prev,
-                                        start_date: normalizedStart
-                                            ? format(
-                                                normalizedStart,
-                                                "yyyy-MM-dd'T'HH:mm",
-                                            )
-                                            : '',
-                                        end_date: normalizedEnd
-                                            ? format(
-                                                normalizedEnd,
-                                                "yyyy-MM-dd'T'HH:mm",
-                                            )
-                                            : '',
-                                    }));
-                                }}
-                                className='h-9 w-full max-w-full font-mono'
-                            />
-                        </div>
+                {/* Search button */}
+                <Button type='submit' variant='outline'>
+                    <MagnifyingGlassIcon className='size-4' />
+                    Search
+                </Button>
+            </form>
 
-                        {/* Type selector */}
-                        <div className='min-w-[140px]'>
-                            <Select
-                                value={searchFilters.type || 'any'}
-                                onValueChange={(value) => {
-                                    setSearchFilters((prev) => ({
-                                        ...prev,
-                                        type: value === 'any' ? '' : value,
-                                    }));
-                                }}
-                            >
-                                <SelectTrigger className='w-full'>
-                                    <SelectValue placeholder='Any Type' />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value='any'>Any Type</SelectItem>
-                                    <SelectItem value='create'>Create</SelectItem>
-                                    <SelectItem value='edit'>Edit</SelectItem>
-                                    <SelectItem value='delete'>Delete</SelectItem>
-                                    <SelectItem value='fetch'>Fetch</SelectItem>
-                                    <SelectItem value='login'>Login</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+            {/* Results */}
+            {isPaused && <OfflineIndicator />}
 
-                        {/* Search button */}
-                        <Button type='submit' variant='outline'>
-                            <MagnifyingGlassIcon className='size-4' />
-                            Search
-                        </Button>
-                </form>
-
-                {/* Results */}
-                <div className='flex flex-col space-y-4'>
-                        {isPaused && <OfflineIndicator />}
-
-                        {loading ? (
-                            <div className='flex items-center justify-center min-h-[200px]'>
-                                <Spinner className='size-10' />
-                            </div>
-                        ) : events.length > 0 ? (
-                            <>
-                                <Card className='rounded-lg border-border bg-muted/5'>
-                                    <CardContent className='p-0'>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead className='w-[80px]'>
-                                                        Action
-                                                    </TableHead>
-                                                    {showUser && (
-                                                        <TableHead className='w-[120px]'>
-                                                            User
-                                                        </TableHead>
-                                                    )}
-                                                    <TableHead className='w-[100px]'>
-                                                        Type
-                                                    </TableHead>
-                                                    <TableHead>Object</TableHead>
-                                                    <TableHead className='w-[140px] text-right'>
-                                                        Date
-                                                    </TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {events.map((event) => (
-                                                    <ActivityRow
-                                                        key={event.id}
-                                                        event={event}
-                                                        showUser={showUser}
-                                                    />
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                                <Pagination
-                                    currentPage={page}
-                                    totalPages={totalPages}
-                                    onPageChange={handlePageChange}
-                                    totalRows={totalCount}
-                                />
-                            </>
-                        ) : (
-                            <Card className='rounded-lg border-border bg-muted/5'>
-                                <CardContent className='py-8'>
-                                    <p className='text-center text-sm text-muted-foreground'>
-                                        No event logs found.
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        )}
-                    </div>
-            </div>
+            {loading ? (
+                <div className='flex items-center justify-center min-h-[200px]'>
+                    <Spinner className='size-10' />
+                </div>
+            ) : events.length > 0 ? (
+                <>
+                    <Card className='border-border bg-muted/5'>
+                        <CardContent className='p-0'>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className='w-[80px]'>Action</TableHead>
+                                        {showUser && (
+                                            <TableHead className='w-[120px]'>User</TableHead>
+                                        )}
+                                        <TableHead className='w-[100px]'>Type</TableHead>
+                                        <TableHead>Object</TableHead>
+                                        <TableHead className='w-[140px] text-right'>Date</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {events.map((event) => (
+                                        <ActivityRow
+                                            key={event.id}
+                                            event={event}
+                                            showUser={showUser}
+                                        />
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                    <Pagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        totalRows={totalCount}
+                    />
+                </>
+            ) : (
+                <Card className='border-border bg-muted/5'>
+                    <CardContent className='py-8'>
+                        <p className='text-center text-sm text-muted-foreground'>
+                            No event logs found.
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
         </div>
     );
 }

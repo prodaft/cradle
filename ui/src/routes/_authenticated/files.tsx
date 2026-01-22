@@ -5,6 +5,9 @@ import { z } from 'zod';
 const Files = lazy(() => import('src/components/domain/files/Files'));
 
 export const Route = createFileRoute('/_authenticated/files')({
+    staticData: {
+        breadcrumb: 'Files',
+    },
     validateSearch: z.object({
         files_page: z.coerce.number().optional(),
         files_sort_field: z.string().optional(),

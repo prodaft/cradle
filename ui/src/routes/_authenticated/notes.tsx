@@ -5,6 +5,9 @@ import { z } from 'zod';
 const Documents = lazy(() => import('src/components/domain/files/Documents'));
 
 export const Route = createFileRoute('/_authenticated/notes')({
+    staticData: {
+        breadcrumb: 'Notes',
+    },
     validateSearch: z.object({
         notes_page: z.coerce.number().optional(),
         notes_sort_field: z.string().optional(),
