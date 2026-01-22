@@ -82,6 +82,27 @@ function normalize(x: number, inputMin: number, inputMax: number): number {
     return outputMin + normalized * (outputMax - outputMin);
 }
 
+function cssToHex(color: string): string {
+    if (!color) return '#000000';
+    if (color.startsWith('#')) return color;
+
+    try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1;
+        canvas.height = 1;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return '#000000';
+
+        ctx.fillStyle = color;
+        ctx.fillRect(0, 0, 1, 1);
+        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+
+        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    } catch (e) {
+        return '#000000';
+    }
+}
+
 export default function GraphViewer({
     selectedNodes,
     setSelectedNodes,
@@ -96,10 +117,15 @@ export default function GraphViewer({
     fetchProgress = null,
     fetchControls = null,
 }: GraphViewerProps) {
-    const { isDarkMode } = useTheme();
+    const { isDarkMode, activeTheme } = useTheme();
     const internalCosmographRef = useRef<any>(null);
     const cosmographRef = externalCosmographRef || internalCosmographRef;
     const [enableSimulation, setEnableSimulation] = useState(true);
+
+    const backgroundColor = useMemo(() => {
+        const bgVar = activeTheme?.['--background'];
+        return bgVar ? cssToHex(bgVar) : (isDarkMode ? '#000000' : '#ffffff');
+    }, [activeTheme, isDarkMode]);
 
     // Filter out invalid nodes first
     const validNodes = useMemo(() => {
@@ -602,7 +628,7 @@ export default function GraphViewer({
                         linkTargetBy='target'
                         linkSourceIndexBy='_sourceIndex'
                         linkTargetIndexBy='_targetIndex'
-                        backgroundColor='var(--background)'
+                        backgroundColor={backgroundColor}
                         pointGreyoutOpacity={0}
                         pointSizeRange={[
                             15 * (config.nodeRadiusCoefficient ?? 1),
