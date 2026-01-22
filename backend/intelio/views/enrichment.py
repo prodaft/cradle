@@ -154,6 +154,13 @@ class EnrichmentSettingsAPIView(GenericAPIView):
                 required=False,
             ),
             OpenApiParameter(
+                name="any_value",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by title and username (case-insensitive partial match)",
+                required=False,
+            ),
+            OpenApiParameter(
                 name="page_size",
                 type=int,
                 location=OpenApiParameter.QUERY,
@@ -173,6 +180,13 @@ class EnrichmentSettingsAPIView(GenericAPIView):
                 type=int,
                 location=OpenApiParameter.QUERY,
                 description="Page number for pagination",
+            ),
+            OpenApiParameter(
+                name="entry_id",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                description="Filter by entries that have results for this entry",
+                required=False,
             ),
             OpenApiParameter(
                 name="order_by",
@@ -243,6 +257,19 @@ class EnrichmentAPIView(APIView):
         title = request.query_params.get("title")
         if title:
             queryset = queryset.filter(title__icontains=title)
+
+        if request.query_params.get("any_value"):
+            queryset = queryset.filter(
+                Q(title__icontains=request.query_params.get("any_value"))
+                | Q(user__username__icontains=request.query_params.get("any_value"))
+            )
+
+        if request.query_params.get("entry_id"):
+            entry = Entry.objects.filter(id=request.query_params.get("entry_id"))
+            if not entry.exists():
+                queryset = queryset.filter(id__in=[])
+            else:
+                queryset = queryset.filter(entities__in=entry)
 
         # Handle ordering
         order_by = request.query_params.get("order_by", "-created_at")

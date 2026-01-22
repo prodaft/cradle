@@ -42,7 +42,7 @@ export default function Dashboard() {
     const loaderData = useLoaderData({
         from: '/_authenticated/dashboards/$subtype/$name',
     }) as { entry: EntryResponse };
-    const contentObject = loaderData?.entry || undefined;
+    const contentObject = loaderData?.entry;
     const { entriesApi } = useApi();
     const { isAdmin } = useAuthState();
     const router = useRouter();
@@ -117,6 +117,11 @@ export default function Dashboard() {
             deleteEntityMutation.mutate(contentObject.id);
         }
     };
+
+    // Early return if no content object is available
+    if (!contentObject) {
+        return null;
+    }
 
     return (
         <>

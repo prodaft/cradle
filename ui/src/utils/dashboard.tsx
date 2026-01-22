@@ -187,7 +187,7 @@ export const createDashboardLink = (entry: DashboardEntry | null): string => {
         return '/not-found';
     }
 
-    return `/dashboards/${encodeURIComponent(subtype)}/${encodeURIComponent(name)}/`;
+    return `/dashboards/${encodeURIComponent(subtype)}/${encodeURIComponent(name)}`;
 };
 
 /**

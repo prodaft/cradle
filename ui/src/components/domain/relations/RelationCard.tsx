@@ -9,7 +9,6 @@ import {
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { Relation } from '@/services/cradle';
-import { createDashboardLink } from '@/utils/dashboard';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
@@ -63,8 +62,10 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
 
     const handleEntryClick =
         (name: string, subtype: string) => (e: React.MouseEvent) => {
-            const link = createDashboardLink({ name, subtype });
-            router.navigate({ to: link as any });
+            router.navigate({
+                to: '/dashboards/$subtype/$name',
+                params: { subtype, name }
+            });
         };
 
     const cardDetails = {

@@ -511,7 +511,11 @@ export default function FilesList({
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     router.navigate({
-                                        to: `/dashboards/${entity.subtype || 'unknown'}/${encodeURIComponent(entity.name)}` as any,
+                                        to: '/dashboards/$subtype/$name',
+                                        params: {
+                                            subtype: entity.subtype || 'unknown',
+                                            name: entity.name
+                                        }
                                     });
                                 }}
                                 title={`View ${entity.subtype || 'entity'}: ${entity.name}`}

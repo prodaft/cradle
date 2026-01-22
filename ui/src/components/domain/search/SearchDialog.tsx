@@ -16,7 +16,6 @@ import type { Alert } from '@/types';
 import { useApi } from '@hooks';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { createDashboardLink } from '@utils/dashboard';
 import { MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
 import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -160,10 +159,16 @@ export default function SearchDialog({
         }
     };
 
-    const handleResultClick = (link: string) => (e: React.MouseEvent) => {
+    const handleResultClick = (result: SearchResultData) => (e: React.MouseEvent) => {
         setAlert({ ...alert, show: false });
         onClose();
-        router.navigate({ to: link as any });
+        router.navigate({
+            to: '/dashboards/$subtype/$name',
+            params: {
+                subtype: result.subtype,
+                name: result.name
+            }
+        });
     };
 
     const performSearch = async () => {
@@ -285,12 +290,11 @@ export default function SearchDialog({
                         ) : results && results.length > 0 ? (
                             <CommandGroup>
                                 {results.map((result) => {
-                                    const dashboardLink = createDashboardLink(result);
                                     return (
                                         <CommandItem
                                             key={result.id}
                                             onSelect={() => {
-                                                handleResultClick(dashboardLink)(
+                                                handleResultClick(result)(
                                                     {} as React.MouseEvent,
                                                 );
                                             }}
