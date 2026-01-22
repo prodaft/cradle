@@ -1,14 +1,33 @@
 import Pagination from '@/components/base/Pagination/Pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import {
-    ResizableHandle,
-    ResizablePanel,
-    ResizablePanelGroup,
-} from '@/components/ui/resizable';
-import { ScrollArea } from '@/components/ui/scroll-area';
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupInput,
+} from '@/components/ui/input-group';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Spinner } from '@/components/ui/spinner';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -22,6 +41,7 @@ import { useParams } from '@tanstack/react-router';
 import { format } from 'date-fns';
 import {
     CalendarIcon,
+    CaretDownIcon,
     CheckCircleIcon,
     ClockIcon,
     DownloadSimpleIcon,
@@ -31,9 +51,95 @@ import {
     UserIcon,
     WarningCircleIcon,
     WarningIcon,
-    XIcon,
 } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
+
+// Result row component for table display
+interface ResultRowProps {
+    result: any;
+    enricherName: string;
+}
+
+function ResultRow({ result, enricherName }: ResultRowProps) {
+    const [open, setOpen] = useState(false);
+    
+    const hasDetails = result.details && Object.keys(result.details).length > 0;
+    
+    // Get entries for display in the table
+    const primaryEntry = result.e1?.subtype !== 'enrichment' ? result.e1 : result.e2;
+    const secondaryEntry = result.e1?.subtype !== 'enrichment' && result.e2?.subtype !== 'enrichment' ? result.e2 : null;
+    
+    const renderEntryCell = (entry: any) => {
+        if (!entry) return <span className='text-muted-foreground'>-</span>;
+        return (
+            <div className='flex items-center gap-2'>
+                <Badge
+                    className={`rounded-full flex-shrink-0 ${!entry.color ? 'bg-muted' : ''}`}
+                    style={entry.color ? { backgroundColor: entry.color } : undefined}
+                >
+                    {entry.subtype}
+                </Badge>
+                <span className='text-foreground truncate'>{entry.name}</span>
+            </div>
+        );
+    };
+    
+    const rowContent = (
+        <TableRow
+            className={hasDetails ? 'cursor-pointer hover:bg-muted/50' : ''}
+            onClick={() => hasDetails && setOpen(!open)}
+        >
+            <TableCell className='text-muted-foreground capitalize'>
+                {enricherName}
+            </TableCell>
+            <TableCell>
+                {renderEntryCell(primaryEntry)}
+            </TableCell>
+            <TableCell>
+                <div className='flex items-center gap-2'>
+                    {renderEntryCell(secondaryEntry)}
+                    {hasDetails && (
+                        <CaretDownIcon
+                            className={`size-4 text-muted-foreground transition-transform flex-shrink-0 ml-auto ${open ? 'rotate-180' : ''}`}
+                        />
+                    )}
+                </div>
+            </TableCell>
+        </TableRow>
+    );
+
+    if (!hasDetails) {
+        return rowContent;
+    }
+
+    return (
+        <Collapsible open={open} onOpenChange={setOpen} asChild>
+            <>
+                <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                    <tr>
+                        <td colSpan={3} className='p-0'>
+                            <div className='px-4 py-3 bg-muted/30 border-t'>
+                                <ReactJson
+                                    src={result.details}
+                                    theme='monokai'
+                                    collapsed={1}
+                                    displayDataTypes={false}
+                                    displayObjectSize={false}
+                                    enableClipboard={true}
+                                    style={{
+                                        backgroundColor: 'transparent',
+                                        fontSize: '12px',
+                                    }}
+                                />
+                            </div>
+                        </td>
+                    </tr>
+                </CollapsibleContent>
+            </>
+        </Collapsible>
+    );
+}
 
 /**
  * EnrichmentResults component - displays enrichment results in a split-pane view
@@ -380,417 +486,306 @@ export default function EnrichmentResults() {
             )}
 
             {/* Main Content */}
-            <div className='flex-1 overflow-hidden'>
-                <ResizablePanelGroup direction='horizontal' className='h-full'>
-                    {/* Left Panel - Enrichment Techniques */}
-                    <ResizablePanel defaultSize={25} minSize={15} maxSize={40}>
-                        <ScrollArea className='h-full px-3 pt-3'>
-                            {isPendingDetails ? (
+            <div className='flex-1 overflow-hidden flex flex-col p-4'>
+                {isPendingDetails ? (
+                    <div className='flex items-center justify-center min-h-[200px]'>
+                        <Spinner className='size-10' />
+                    </div>
+                ) : (
+                    <>
+                        {/* Filters */}
+                        <div className='flex gap-2 items-center pb-4'>
+                            {/* Enricher selector */}
+                            <div className='min-w-[180px]'>
+                                <Select
+                                    value={showIgnored ? 'ignored' : (selectedEnricher || '')}
+                                    onValueChange={(value) => {
+                                        if (value === 'ignored') {
+                                            handleIgnoredSelect();
+                                        } else {
+                                            handleEnricherSelect(value);
+                                        }
+                                    }}
+                                >
+                                    <SelectTrigger className='w-full'>
+                                        <SelectValue placeholder='Select enricher' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {enrichmentDetails?.enrichers?.map((enricher) => (
+                                            <SelectItem
+                                                key={enricher.enricherType}
+                                                value={enricher.enricherType!}
+                                            >
+                                                <div className='flex items-center gap-2'>
+                                                    {getEnricherStatusIcon(enricher.status!)}
+                                                    <span>{enricher.displayName}</span>
+                                                </div>
+                                            </SelectItem>
+                                        ))}
+                                        {ignoredArtifacts.length > 0 && (
+                                            <SelectItem value='ignored'>
+                                                <div className='flex items-center gap-2'>
+                                                    <EyeSlashIcon
+                                                        className='text-muted-foreground flex-shrink-0'
+                                                        width='16'
+                                                        height='16'
+                                                    />
+                                                    <span>Ignored ({ignoredArtifacts.length})</span>
+                                                </div>
+                                            </SelectItem>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Search Entries */}
+                            <InputGroup className='flex-1 min-w-[200px]'>
+                                <InputGroupInput
+                                    placeholder='Search entries...'
+                                    value={searchInput.query}
+                                    onChange={(e) =>
+                                        setSearchInput({
+                                            ...searchInput,
+                                            query: e.target.value,
+                                        })
+                                    }
+                                    onKeyDown={handleSearchKeyPress}
+                                    disabled={showIgnored}
+                                />
+                                <InputGroupAddon align='inline-start'>
+                                    <MagnifyingGlassIcon />
+                                </InputGroupAddon>
+                            </InputGroup>
+
+                            {/* Search Details */}
+                            <InputGroup className='flex-1 min-w-[200px]'>
+                                <InputGroupInput
+                                    placeholder='Search details...'
+                                    value={searchInput.details}
+                                    onChange={(e) =>
+                                        setSearchInput({
+                                            ...searchInput,
+                                            details: e.target.value,
+                                        })
+                                    }
+                                    onKeyDown={handleSearchKeyPress}
+                                    disabled={showIgnored}
+                                />
+                                <InputGroupAddon align='inline-start'>
+                                    <MagnifyingGlassIcon />
+                                </InputGroupAddon>
+                            </InputGroup>
+                            <Button
+                                variant='outline'
+                                size='icon'
+                                onClick={handleDownloadResults}
+                                disabled={showIgnored || !results || results.length === 0}
+                                title='Download results as JSON'
+                            >
+                                <DownloadSimpleIcon size={18} weight="bold" />
+                            </Button>
+                        </div>
+
+                        {/* Content */}
+                        {showIgnored ? (
+                            /* Ignored Artifacts View */
+                            <Card className='border-border bg-muted/5 flex-1 overflow-hidden'>
+                                <CardContent className='p-0 h-full overflow-auto'>
+                                    <Table>
+                                        <TableHeader className='sticky top-0 bg-card z-10'>
+                                            <TableRow>
+                                                <TableHead>Artifact</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {ignoredArtifacts.map((artifact: any, index: number) => (
+                                                <TableRow key={index}>
+                                                    <TableCell>
+                                                        <div className='flex items-center gap-2'>
+                                                            {artifact.entry_class && (
+                                                                <Badge variant='secondary' className='flex-shrink-0'>
+                                                                    {artifact.entry_class}
+                                                                </Badge>
+                                                            )}
+                                                            <span className='text-foreground truncate'>
+                                                                {typeof artifact === 'string'
+                                                                    ? artifact
+                                                                    : artifact.name || JSON.stringify(artifact)}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </CardContent>
+                            </Card>
+                        ) : selectedEnricher ? (
+                            /* Relations View */
+                            isPendingResults ? (
                                 <div className='flex items-center justify-center min-h-[200px]'>
                                     <Spinner className='size-10' />
                                 </div>
+                            ) : results.length === 0 ? (
+                                <Card className='border-border bg-muted/5'>
+                                    <CardContent className='py-8'>
+                                        <p className='text-center text-sm text-muted-foreground'>
+                                            No results found.
+                                        </p>
+                                    </CardContent>
+                                </Card>
                             ) : (
-                                <div className='space-y-1 pr-2'>
-                                    {/* Ignored Artifacts - only show if there are any */}
-                                    {ignoredArtifacts.length > 0 && (
-                                        <>
-                                            {/* Separator */}
-                                            {enrichmentDetails?.enrichers &&
-                                                enrichmentDetails.enrichers.length >
-                                                    0 && (
-                                                    <div className='h-px bg-card my-2' />
-                                                )}
-
-                                            <div
-                                                className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
-                                                    showIgnored
-                                                        ? 'bg-secondary border-primary shadow-sm'
-                                                        : 'bg-card border-transparent hover:bg-secondary hover:border-border'
-                                                }`}
-                                                onClick={handleIgnoredSelect}
-                                            >
-                                                <EyeSlashIcon
-                                                    className='text-muted-foreground flex-shrink-0'
-                                                    width='16'
-                                                    height='16'
-                                                />
-                                                <span className='text-sm font-medium truncate text-foreground'>
-                                                    Ignored Artifacts
-                                                </span>
-                                                <span className='ml-auto text-xs text-muted-foreground'>
-                                                    ({ignoredArtifacts.length})
-                                                </span>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* Enricher list */}
-                                    {enrichmentDetails?.enrichers?.map((enricher) => (
-                                        <div
-                                            key={enricher.enricherType}
-                                            className={`px-3 py-2 flex items-center gap-2 cursor-pointer transition-all rounded-md border ${
-                                                selectedEnricher ===
-                                                    enricher.enricherType &&
-                                                !showIgnored
-                                                    ? 'bg-secondary border-primary shadow-sm'
-                                                    : 'bg-card border-transparent hover:bg-secondary hover:border-border'
-                                            }`}
-                                            onClick={() =>
-                                                handleEnricherSelect(
-                                                    enricher.enricherType!,
-                                                )
-                                            }
-                                        >
-                                            {getEnricherStatusIcon(enricher.status!)}
-                                            <span className='text-sm font-medium truncate text-foreground'>
-                                                {enricher.displayName!}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </ScrollArea>
-                    </ResizablePanel>
-
-                    <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
-
-                    {/* Right Panel - Tabs */}
-                    <ResizablePanel defaultSize={75} minSize={60}>
-                        {showIgnored ? (
-                            /* Ignored Artifacts View */
-                            <div className='h-full flex flex-col overflow-hidden'>
-                                <div className='p-4 border-b border-border'>
-                                    <h2 className='text-lg font-medium text-foreground'>
-                                        Ignored Artifacts
-                                    </h2>
-                                    <p className='text-xs text-muted-foreground mt-1'>
-                                        These artifacts were ignored because they could
-                                        not be matched with any enrichment technique.
-                                    </p>
-                                </div>
-                                <ScrollArea className='flex-1 min-h-0'>
-                                    <div className='divide-y divide-border'>
-                                        {ignoredArtifacts.map(
-                                            (artifact: any, index: number) => (
-                                                <div
-                                                    key={index}
-                                                    className='px-4 py-3 flex items-center gap-3'
-                                                >
-                                                    {/* Entry class indicator */}
-                                                    {artifact.entry_class && (
-                                                        <Badge variant='secondary'>
-                                                            {artifact.entry_class}
-                                                        </Badge>
-                                                    )}
-
-                                                    {/* Name */}
-                                                    <span className='flex-1 text-sm text-foreground truncate'>
-                                                        {typeof artifact === 'string'
-                                                            ? artifact
-                                                            : artifact.name ||
-                                                              JSON.stringify(artifact)}
-                                                    </span>
-                                                </div>
-                                            ),
-                                        )}
+                                <>
+                                    <Card className='border-border bg-muted/5 flex-1 overflow-hidden flex flex-col'>
+                                        <CardContent className='p-0 flex-1 overflow-auto'>
+                                            <Table>
+                                                <TableHeader className='sticky top-0 bg-card z-10'>
+                                                    <TableRow>
+                                                        <TableHead className='w-[120px]'>Enricher</TableHead>
+                                                        <TableHead>Source</TableHead>
+                                                        <TableHead>Target</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {results.map((result, index) => (
+                                                        <ResultRow
+                                                            key={result.id || index}
+                                                            result={result}
+                                                            enricherName={
+                                                                enrichmentDetails?.enrichers?.find(
+                                                                    (e) => e.enricherType === selectedEnricher
+                                                                )?.displayName || selectedEnricher
+                                                            }
+                                                        />
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
+                                    {/* Pagination */}
+                                    <div className='pt-3'>
+                                        <Pagination
+                                            currentPage={page}
+                                            totalPages={totalPages}
+                                            onPageChange={(newPage) => setPage(newPage)}
+                                            pageSize={pageSize}
+                                            onPageSizeChange={(newSize) => {
+                                                setPageSize(newSize);
+                                                setPage(1);
+                                            }}
+                                        />
                                     </div>
-                                </ScrollArea>
-                            </div>
-                        ) : selectedEnricher ? (
-                            /* Enricher Tabs View */
-                            isPendingEnricher ? (
-                                <div className='flex items-center justify-center h-full'>
-                                    <Spinner className='size-10' />
-                                </div>
-                            ) : (
-                                <div className='flex flex-col h-full'>
-                                    {/* Relations Section */}
-                                    <div className='flex-1 overflow-hidden flex flex-col'>
-                                        <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                            Relations
-                                        </h3>
-                                        <div className='px-3 pb-3 flex-1 flex flex-col overflow-hidden'>
-                                            {/* Search Bars */}
-                                            <div className='flex gap-2 items-center pb-3'>
-                                                {/* Search Entries */}
-                                                <Input
-                                                    type='text'
-                                                    placeholder='Search entries...'
-                                                    value={searchInput.query}
-                                                    onChange={(e) =>
-                                                        setSearchInput({
-                                                            ...searchInput,
-                                                            query: e.target.value,
-                                                        })
-                                                    }
-                                                    onKeyDown={handleSearchKeyPress}
-                                                />
-
-                                                {/* Search Details */}
-                                                <Input
-                                                    type='text'
-                                                    placeholder='Search details...'
-                                                    value={searchInput.details}
-                                                    onChange={(e) =>
-                                                        setSearchInput({
-                                                            ...searchInput,
-                                                            details: e.target.value,
-                                                        })
-                                                    }
-                                                    onKeyDown={handleSearchKeyPress}
-                                                />
-                                                <Button
-                                                    variant='outline'
-                                                    size='default'
-                                                    onClick={handleSearch}
-                                                >
-                                                    Search
-                                                </Button>
-                                                <Button
-                                                    variant='outline'
-                                                    size='icon'
-                                                    onClick={handleDownloadResults}
-                                                    disabled={
-                                                        !results || results.length === 0
-                                                    }
-                                                    title='Download results as JSON'
-                                                >
-                                                    <DownloadSimpleIcon size={18} weight="bold" />
-                                                </Button>
-                                            </div>
-
-                                            {/* Results */}
-                                            <ScrollArea className='flex-grow'>
-                                                {isPendingResults ? (
-                                                    <div className='flex items-center justify-center min-h-[200px]'>
-                                                        <Spinner className='size-10' />
-                                                    </div>
-                                                ) : results.length === 0 ? (
-                                                    <div className='flex flex-col items-center justify-center min-h-[200px]'>
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            No results found.
-                                                        </p>
-                                                    </div>
-                                                ) : (
-                                                    <>
-                                                        <div className='space-y-4 mb-4'>
-                                                            {results.map(
-                                                                (result, index) => (
-                                                                    <div
-                                                                        key={
-                                                                            result.id ||
-                                                                            index
-                                                                        }
-                                                                        className='p-4 bg-card border border-border'
-                                                                    >
-                                                                        {/* Entry badges */}
-                                                                        {(result.e1 ||
-                                                                            result.e2) && (
-                                                                            <div className='flex flex-wrap gap-2 mb-3'>
-                                                                                {renderEntryBadge(
-                                                                                    result.e1,
-                                                                                )}
-                                                                                {renderEntryBadge(
-                                                                                    result.e2,
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-
-                                                                        {/* Details JSON viewer */}
-                                                                        {result.details && (
-                                                                            <ReactJson
-                                                                                src={
-                                                                                    result.details
-                                                                                }
-                                                                                theme='monokai'
-                                                                                collapsed={
-                                                                                    1
-                                                                                }
-                                                                                displayDataTypes={
-                                                                                    false
-                                                                                }
-                                                                                displayObjectSize={
-                                                                                    false
-                                                                                }
-                                                                                enableClipboard={
-                                                                                    true
-                                                                                }
-                                                                                style={{
-                                                                                    backgroundColor:
-                                                                                        'transparent',
-                                                                                    fontSize:
-                                                                                        '12px',
-                                                                                }}
-                                                                            />
-                                                                        )}
-
-                                                                        {!result.details && (
-                                                                            <p className='text-xs text-muted-foreground italic'>
-                                                                                No
-                                                                                details
-                                                                                available
-                                                                            </p>
-                                                                        )}
-                                                                    </div>
-                                                                ),
-                                                            )}
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </ScrollArea>
-
-                                            {/* Pagination */}
-                                            <div className='pt-3 border-t'>
-                                                <Pagination
-                                                    currentPage={page}
-                                                    totalPages={totalPages}
-                                                    onPageChange={(newPage) =>
-                                                        setPage(newPage)
-                                                    }
-                                                    pageSize={pageSize}
-                                                    onPageSizeChange={(newSize) => {
-                                                        setPageSize(newSize);
-                                                        setPage(1);
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Artifacts Section */}
-                                    <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                        <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                            Artifacts
-                                        </h3>
-                                        {!enricherDetails?.artifacts ||
-                                        enricherDetails.artifacts.length === 0 ? (
-                                            <div className='flex flex-col items-center justify-center flex-1'>
-                                                <p className='text-sm text-muted-foreground'>
-                                                    No artifacts found.
-                                                </p>
-                                            </div>
-                                        ) : (
-                                            <ScrollArea className='flex-1 min-h-0 px-3 pb-3'>
-                                                <div className='divide-y divide-border'>
-                                                    {enricherDetails.artifacts.map(
-                                                        (
-                                                            artifact: any,
-                                                            index: number,
-                                                        ) => (
-                                                            <div
-                                                                key={index}
-                                                                className='px-4 py-3 flex items-center gap-3'
-                                                            >
-                                                                {/* Entry class indicator */}
-                                                                {artifact.entry_class && (
-                                                                    <Badge variant='secondary'>
-                                                                        {
-                                                                            artifact.entry_class
-                                                                        }
-                                                                    </Badge>
-                                                                )}
-
-                                                                {/* Name */}
-                                                                <span className='flex-1 text-sm text-foreground truncate'>
-                                                                    {typeof artifact ===
-                                                                    'string'
-                                                                        ? artifact
-                                                                        : artifact.name ||
-                                                                          JSON.stringify(
-                                                                              artifact,
-                                                                          )}
-                                                                </span>
-                                                            </div>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </ScrollArea>
-                                        )}
-                                    </div>
-
-                                    {/* Warnings Section - Conditional */}
-                                    {hasWarnings && (
-                                        <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                                Warnings
-                                            </h3>
-                                            <ScrollArea className='flex-1 px-3 pb-3'>
-                                                <div className='divide-y divide-border'>
-                                                    {enricherDetails!.warnings!.map(
-                                                        (
-                                                            warning: any,
-                                                            index: number,
-                                                        ) => (
-                                                            <div
-                                                                key={index}
-                                                                className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
-                                                            >
-                                                                <WarningIcon
-                                                                    className='text-muted-foreground flex-shrink-0'
-                                                                    width='16'
-                                                                    height='16'
-                                                                />
-                                                                <span className='flex-1 text-sm text-foreground'>
-                                                                    {typeof warning ===
-                                                                    'string'
-                                                                        ? warning
-                                                                        : JSON.stringify(
-                                                                              warning,
-                                                                          )}
-                                                                </span>
-                                                            </div>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </ScrollArea>
-                                        </div>
-                                    )}
-
-                                    {/* Errors Section - Conditional */}
-                                    {hasErrors && (
-                                        <div className='flex-1 overflow-hidden flex flex-col border-t'>
-                                            <h3 className='text-sm font-semibold mb-2 px-3 pt-3'>
-                                                Errors
-                                            </h3>
-                                            <ScrollArea className='flex-1 px-3 pb-3'>
-                                                <div className='divide-y divide-border'>
-                                                    {enricherDetails!.errors!.map(
-                                                        (error: any, index: number) => (
-                                                            <div
-                                                                key={index}
-                                                                className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
-                                                            >
-                                                                <WarningCircleIcon
-                                                                    className='text-destructive flex-shrink-0'
-                                                                    width='16'
-                                                                    height='16'
-                                                                />
-                                                                <span className='flex-1 text-sm text-foreground'>
-                                                                    {typeof error ===
-                                                                    'string'
-                                                                        ? error
-                                                                        : JSON.stringify(
-                                                                              error,
-                                                                          )}
-                                                                </span>
-                                                            </div>
-                                                        ),
-                                                    )}
-                                                </div>
-                                            </ScrollArea>
-                                        </div>
-                                    )}
-                                </div>
+                                </>
                             )
                         ) : (
-                            <div className='flex items-center justify-center h-full'>
-                                <p className='text-sm text-muted-foreground'>
-                                    Select an enrichment technique to view results
-                                </p>
+                            <Card className='border-border bg-muted/5'>
+                                <CardContent className='py-8'>
+                                    <p className='text-center text-sm text-muted-foreground'>
+                                        Select an enrichment technique to view results
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Artifacts Section - shown below the table when an enricher is selected */}
+                        {selectedEnricher && !showIgnored && enricherDetails?.artifacts && enricherDetails.artifacts.length > 0 && (
+                            <div className='mt-4'>
+                                <h3 className='text-sm font-semibold mb-2'>Artifacts</h3>
+                                <Card className='border-border bg-muted/5'>
+                                    <CardContent className='p-0'>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Artifact</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {enricherDetails.artifacts.map((artifact: any, index: number) => (
+                                                    <TableRow key={index}>
+                                                        <TableCell>
+                                                            <div className='flex items-center gap-2'>
+                                                                {artifact.entry_class && (
+                                                                    <Badge variant='secondary' className='flex-shrink-0'>
+                                                                        {artifact.entry_class}
+                                                                    </Badge>
+                                                                )}
+                                                                <span className='text-foreground truncate'>
+                                                                    {typeof artifact === 'string'
+                                                                        ? artifact
+                                                                        : artifact.name || JSON.stringify(artifact)}
+                                                                </span>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
                             </div>
                         )}
-                    </ResizablePanel>
-                </ResizablePanelGroup>
+
+                        {/* Warnings Section - shown below artifacts when an enricher is selected */}
+                        {hasWarnings && (
+                            <div className='mt-4'>
+                                <h3 className='text-sm font-semibold mb-2'>Warnings</h3>
+                                <Card className='border-border bg-muted/5'>
+                                    <CardContent className='p-0'>
+                                        <div className='divide-y divide-border'>
+                                            {enricherDetails!.warnings!.map((warning: any, index: number) => (
+                                                <div
+                                                    key={index}
+                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
+                                                >
+                                                    <WarningIcon
+                                                        className='text-muted-foreground flex-shrink-0'
+                                                        width='16'
+                                                        height='16'
+                                                    />
+                                                    <span className='flex-1 text-sm text-foreground'>
+                                                        {typeof warning === 'string'
+                                                            ? warning
+                                                            : JSON.stringify(warning)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+
+                        {/* Errors Section - shown below warnings when an enricher is selected */}
+                        {hasErrors && (
+                            <div className='mt-4'>
+                                <h3 className='text-sm font-semibold mb-2'>Errors</h3>
+                                <Card className='border-border bg-muted/5'>
+                                    <CardContent className='p-0'>
+                                        <div className='divide-y divide-border'>
+                                            {enricherDetails!.errors!.map((error: any, index: number) => (
+                                                <div
+                                                    key={index}
+                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
+                                                >
+                                                    <WarningCircleIcon
+                                                        className='text-destructive flex-shrink-0'
+                                                        width='16'
+                                                        height='16'
+                                                    />
+                                                    <span className='flex-1 text-sm text-foreground'>
+                                                        {typeof error === 'string'
+                                                            ? error
+                                                            : JSON.stringify(error)}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
         </div>
     );
