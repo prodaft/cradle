@@ -302,6 +302,13 @@ h6:hover .header-anchor-icon {
     line-height: inherit;
 }
 
+.cradle-link-lint-warning {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    color: var(--pm-syntax-invalid);
+}
+
 /* ============================================
    CODE BLOCKS
    ============================================ */

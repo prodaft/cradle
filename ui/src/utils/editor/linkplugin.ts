@@ -3,7 +3,10 @@ import { Diagnostic, forEachDiagnostic } from '@codemirror/lint';
 import { EditorState, Range } from '@codemirror/state';
 import { Decoration, EditorView, ViewPlugin, WidgetType } from '@codemirror/view';
 import { SyntaxNode } from '@lezer/common';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { NavigateOptions } from '@tanstack/react-router';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 /**
  * Widget to render Cradle links as clickable elements in the editor
@@ -17,6 +20,7 @@ export class CradleLinkWidget extends WidgetType {
     fullText: string;
     timestamp: string;
     hasPrefix: boolean;
+    lintIssues: Diagnostic[];
 
     constructor(
         type: string,
@@ -27,6 +31,7 @@ export class CradleLinkWidget extends WidgetType {
         fullText: string,
         timestamp: string,
         hasPrefix: boolean,
+        lintIssues: Diagnostic[],
     ) {
         super();
         this.type = type;
@@ -37,6 +42,7 @@ export class CradleLinkWidget extends WidgetType {
         this.fullText = fullText;
         this.timestamp = timestamp;
         this.hasPrefix = hasPrefix;
+        this.lintIssues = lintIssues;
     }
 
     eq(other: CradleLinkWidget): boolean {
@@ -46,7 +52,8 @@ export class CradleLinkWidget extends WidgetType {
             other.alias === this.alias &&
             other.color === this.color &&
             other.timestamp === this.timestamp &&
-            other.hasPrefix === this.hasPrefix
+            other.hasPrefix === this.hasPrefix &&
+            other.lintIssues.length === this.lintIssues.length
         );
     }
 
@@ -61,6 +68,11 @@ export class CradleLinkWidget extends WidgetType {
         if (this.timestamp) {
             const timestampSpan = this.createTimestampElement();
             container.appendChild(timestampSpan);
+        }
+
+        if (this.lintIssues.length) {
+            const warningSpan = this.createLintWarningElement();
+            container.appendChild(warningSpan);
         }
 
         return container;
@@ -126,6 +138,16 @@ export class CradleLinkWidget extends WidgetType {
             timestampSpan.style.opacity = '1';
         });
         return timestampSpan;
+    }
+
+    createLintWarningElement(): HTMLSpanElement {
+        const warningSpan = document.createElement('span');
+        warningSpan.className = 'cradle-link-lint-warning';
+        warningSpan.setAttribute('aria-label', 'Lint issues in link');
+        warningSpan.innerHTML = renderToStaticMarkup(
+            createElement(WarningCircleIcon, { size: 12, weight: 'fill' }),
+        );
+        return warningSpan;
     }
 
     ignoreEvent(e: Event): boolean {
@@ -431,13 +453,9 @@ function parseCradleLink(
         return null;
     }
 
-    const hasLintIssues = diagnostics.some(
+    const lintIssues = diagnostics.filter(
         (diagnostic) => diagnostic.from < widgetEnd && diagnostic.to > from,
     );
-
-    if (hasLintIssues) {
-        return null;
-    }
 
     const color = entryColors.get(type) || '#FF8C00';
 
@@ -451,6 +469,7 @@ function parseCradleLink(
             linkText,
             timestamp,
             hasPrefix,
+            lintIssues,
         ),
         inclusive: false,
         block: false,
