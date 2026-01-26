@@ -1,34 +1,48 @@
 # vi: ft=dockerfile
 
+FROM python:3.13-slim AS builder
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    libgdal-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+WORKDIR /app
+
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_SYSTEM_PYTHON=1
+
+COPY ./backend/pyproject.toml ./backend/uv.lock ./
+RUN uv pip install --system -r pyproject.toml
+
 FROM python:3.13-slim
 
 WORKDIR /app
 
-ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    UV_SYSTEM_PYTHON=1
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        gdal-bin \
-        libgdal-dev \
-        gcc \
-        python3-dev \
-        libmagic-dev && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin \
+    libmagic-dev \
+    curl \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN pip install uv
-
-COPY ./backend/pyproject.toml .
-COPY ./backend/uv.lock .
-
-RUN uv sync --frozen
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 COPY ./backend/ .
-
 COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
 
-COPY ./docker/entrypoint_backend.sh .
-COPY ./docker/entrypoint_celery.sh .
-
+COPY ./docker/entrypoint_backend.sh ./docker/entrypoint_celery.sh ./
 RUN chmod +x ./entrypoint_backend.sh ./entrypoint_celery.sh
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:8000/docs || exit 1
 
 CMD ["./entrypoint_backend.sh"]
