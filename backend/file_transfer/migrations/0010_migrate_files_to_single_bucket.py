@@ -22,7 +22,8 @@ def migrate_files_to_single_bucket(apps, schema_editor):
     for file_ref in files_to_migrate:
         try:
             with transaction.atomic():
-                new_id = file_ref.minio_file_name
+                old_id = file_ref.id
+                new_id = "-".join(file_ref.minio_file_name.split("-")[:5])
                 
                 if not new_id or FileReference.objects.filter(id=new_id).exists():
                     print(f"Skipping {file_ref.id}: New ID '{new_id}' is invalid or already exists.")
@@ -34,7 +35,7 @@ def migrate_files_to_single_bucket(apps, schema_editor):
                 except CradleUser.DoesNotExist:
                     pass
 
-                new_file_path = f"{file_ref.id}-{file_ref.file_name}"
+                new_file_path = f"{new_id}-{file_ref.file_name}"
                 if file_ref.minio_file_name and minio_client.file_exists_at_path(file_ref.bucket_name, file_ref.minio_file_name):
                     from minio.commonconfig import CopySource
                     copy_source = CopySource(file_ref.bucket_name, file_ref.minio_file_name)
@@ -54,7 +55,7 @@ def migrate_files_to_single_bucket(apps, schema_editor):
                 file_ref.delete()
                 FileReference.objects.create(**file_data)
 
-                print(f"Success: Migrated {new_id}")
+                print(f"Success: Migrated {old_id} -> {new_id}")
 
         except Exception as e:
             print(f"Error migrating file {file_ref.id}: {str(e)}")
