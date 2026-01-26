@@ -17,8 +17,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import useApi from '@/hooks/api/useApi';
+import {
+    CodeIcon,
+    DownloadSimpleIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    FileTextIcon,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { CodeIcon, DownloadSimpleIcon, EyeIcon, EyeSlashIcon, FileTextIcon } from '@phosphor-icons/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -242,15 +248,15 @@ export default function ReportGenerationModal({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value='html'>
-                                <FileTextIcon className='size-4' weight="bold" />
+                                <FileTextIcon className='size-4' weight='bold' />
                                 <span>HTML</span>
                             </SelectItem>
                             <SelectItem value='json'>
-                                <CodeIcon className='size-4' weight="bold" />
+                                <CodeIcon className='size-4' weight='bold' />
                                 <span>JSON</span>
                             </SelectItem>
                             <SelectItem value='plain'>
-                                <DownloadSimpleIcon className='size-4' weight="bold" />
+                                <DownloadSimpleIcon className='size-4' weight='bold' />
                                 <span>Plain Text</span>
                             </SelectItem>
                         </SelectContent>
@@ -270,11 +276,11 @@ export default function ReportGenerationModal({
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value='anonymized'>
-                                <EyeSlashIcon className='size-4' weight="bold" />
+                                <EyeSlashIcon className='size-4' weight='bold' />
                                 <span>Anonymized</span>
                             </SelectItem>
                             <SelectItem value='transparent'>
-                                <EyeIcon className='size-4' weight="bold" />
+                                <EyeIcon className='size-4' weight='bold' />
                                 <span>Transparent</span>
                             </SelectItem>
                         </SelectContent>

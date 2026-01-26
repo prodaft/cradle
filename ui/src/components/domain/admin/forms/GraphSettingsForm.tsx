@@ -90,7 +90,10 @@ export default function GraphSettingsForm() {
                                         className='self-center'
                                         onClick={handleRefreshMaterializedGraph}
                                     >
-                                        <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
+                                        <ArrowClockwiseIcon
+                                            className='w-3.5 h-3.5'
+                                            weight='bold'
+                                        />
                                         Refresh
                                     </Button>
                                 </Field>
@@ -113,7 +116,10 @@ export default function GraphSettingsForm() {
                                         className='self-center'
                                         onClick={handleRecalculateNodePositions}
                                     >
-                                        <HardDrivesIcon className='w-3.5 h-3.5' weight="bold" />
+                                        <HardDrivesIcon
+                                            className='w-3.5 h-3.5'
+                                            weight='bold'
+                                        />
                                         Recalculate
                                     </Button>
                                 </Field>

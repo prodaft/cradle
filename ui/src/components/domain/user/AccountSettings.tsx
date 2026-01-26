@@ -1,4 +1,3 @@
-import { Spinner } from '@/components/ui/spinner';
 import ApiKeyGenerateModal from '@/components/dialogs/auth/ApiKeyGenerateModal';
 import ChangePasswordModal from '@/components/dialogs/auth/ChangePasswordModal';
 import TwoFactorSetupModal from '@/components/dialogs/auth/TwoFactorSetupModal';
@@ -7,22 +6,6 @@ import MarkdownEditorModal from '@/components/dialogs/notes/MarkdownEditorModal'
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-    Field,
-    FieldContent,
-    FieldDescription,
-    FieldLabel,
-} from '@/components/ui/field';
-import { Label } from '@/components/ui/label';
-import { useTheme } from '@/contexts/ui/ThemeContext';
-import { PRESET_THEMES } from '@/utils/themes';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {
     Command,
     CommandEmpty,
     CommandGroup,
@@ -30,21 +13,37 @@ import {
     CommandItem,
     CommandList,
 } from '@/components/ui/command';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldLabel,
+} from '@/components/ui/field';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useTheme } from '@/contexts/ui/ThemeContext';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
+import { cn } from '@/lib/utils';
 import { UserConfig, UserRetrieve } from '@/services/cradle/models';
+import { PRESET_THEMES } from '@/utils/themes';
 import SnippetList, { SnippetListRef } from '@components/base/SnippetList/SnippetList';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ClockCounterClockwiseIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import bytes from 'bytes';
-import { ClockCounterClockwiseIcon, PencilSimpleIcon } from '@phosphor-icons/react';
 import { Check, ChevronsUpDown, Link, Lock, Palette } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -640,7 +639,11 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     const handleApplyCustomTheme = () => {
         try {
             const parsed = JSON.parse(customThemeJSON);
-            if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            if (
+                typeof parsed !== 'object' ||
+                parsed === null ||
+                Array.isArray(parsed)
+            ) {
                 toast.error('Theme must be a JSON object.');
                 return;
             }
@@ -690,7 +693,11 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     ];
 
     if (isAdmin) {
-        settingsTabs.push({ id: 'activity', label: 'Activity', icon: ClockCounterClockwiseIcon });
+        settingsTabs.push({
+            id: 'activity',
+            label: 'Activity',
+            icon: ClockCounterClockwiseIcon,
+        });
     }
 
     const tabDescriptions: Record<string, string> = {
@@ -805,7 +812,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                             role='none'
                             className='bg-border my-4 flex-none'
                         />
-                        <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                        <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pe-4 pb-12'>
                             <div className='-mx-1 px-1.5'>
                                 <form
                                     className='space-y-8'
@@ -835,6 +842,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 type='button'
                                                                 variant='outline'
                                                                 size='sm'
+                                                                className='self-center'
                                                                 onClick={
                                                                     openChangePasswordModal
                                                                 }
@@ -863,6 +871,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 type='button'
                                                                 variant='outline'
                                                                 size='sm'
+                                                                className='self-center'
                                                                 onClick={
                                                                     openApiKeyModal
                                                                 }
@@ -946,7 +955,9 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {/* Activity Section */}
                                     {activeTab === 'activity' && isAdmin && (
                                         <section id='activity'>
-                                            <UserActivityList username={user.username} />
+                                            <UserActivityList
+                                                username={user.username}
+                                            />
                                         </section>
                                     )}
 
@@ -1065,126 +1076,166 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                             <div className='space-y-4'>
                                                 <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
                                                     <CardContent className='px-4 py-1'>
-                                                            <Field orientation='horizontal' className='py-2'>
-                                                                <FieldContent className='flex-1'>
-                                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                                        Theme
-                                                                    </FieldLabel>
-                                                                    <FieldDescription className='text-sm'>
-                                                                        Select a color theme for the interface
-                                                                    </FieldDescription>
-                                                                </FieldContent>
-                                                                <Popover
-                                                                    open={themePopoverOpen}
-                                                                    onOpenChange={setThemePopoverOpen}
-                                                                >
-                                                                    <PopoverTrigger asChild>
-                                                                        <Button
-                                                                            variant='outline'
-                                                                            role='combobox'
-                                                                            aria-expanded={themePopoverOpen}
-                                                                            className='w-full sm:w-64 justify-between'
-                                                                        >
-                                                                            <span className='truncate'>
-                                                                                {selectedThemeType === 'custom'
-                                                                                    ? 'Custom'
-                                                                                    : PRESET_THEMES.find(
-                                                                                          (p) => p.id === selectedThemeType,
-                                                                                      )?.label || 'Select theme...'}
-                                                                            </span>
-                                                                            <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
-                                                                        </Button>
-                                                                    </PopoverTrigger>
-                                                                    <PopoverContent
-                                                                        className='w-[var(--radix-popover-trigger-width)] p-0'
-                                                                        align='start'
+                                                        <Field
+                                                            orientation='horizontal'
+                                                            className='py-2'
+                                                        >
+                                                            <FieldContent className='flex-1'>
+                                                                <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                                                    Theme
+                                                                </FieldLabel>
+                                                                <FieldDescription className='text-sm'>
+                                                                    Select a color theme
+                                                                    for the interface
+                                                                </FieldDescription>
+                                                            </FieldContent>
+                                                            <Popover
+                                                                open={themePopoverOpen}
+                                                                onOpenChange={
+                                                                    setThemePopoverOpen
+                                                                }
+                                                            >
+                                                                <PopoverTrigger asChild>
+                                                                    <Button
+                                                                        variant='outline'
+                                                                        role='combobox'
+                                                                        aria-expanded={
+                                                                            themePopoverOpen
+                                                                        }
+                                                                        className='w-full sm:w-64 justify-between self-center'
                                                                     >
-                                                                        <Command>
-                                                                            <CommandInput placeholder='Search themes...' />
-                                                                            <CommandList>
-                                                                                <CommandEmpty>No themes found.</CommandEmpty>
-                                                                                <CommandGroup>
-                                                                                    {PRESET_THEMES.map((preset) => (
+                                                                        <span className='truncate'>
+                                                                            {selectedThemeType ===
+                                                                            'custom'
+                                                                                ? 'Custom'
+                                                                                : PRESET_THEMES.find(
+                                                                                      (
+                                                                                          p,
+                                                                                      ) =>
+                                                                                          p.id ===
+                                                                                          selectedThemeType,
+                                                                                  )
+                                                                                      ?.label ||
+                                                                                  'Select theme...'}
+                                                                        </span>
+                                                                        <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+                                                                    </Button>
+                                                                </PopoverTrigger>
+                                                                <PopoverContent
+                                                                    className='w-[var(--radix-popover-trigger-width)] p-0'
+                                                                    align='start'
+                                                                >
+                                                                    <Command>
+                                                                        <CommandInput placeholder='Search themes...' />
+                                                                        <CommandList>
+                                                                            <CommandEmpty>
+                                                                                No
+                                                                                themes
+                                                                                found.
+                                                                            </CommandEmpty>
+                                                                            <CommandGroup>
+                                                                                {PRESET_THEMES.map(
+                                                                                    (
+                                                                                        preset,
+                                                                                    ) => (
                                                                                         <CommandItem
-                                                                                            key={preset.id}
-                                                                                            value={preset.label}
+                                                                                            key={
+                                                                                                preset.id
+                                                                                            }
+                                                                                            value={
+                                                                                                preset.label
+                                                                                            }
                                                                                             onSelect={() => {
-                                                                                                handleThemeTypeChange(preset.id);
-                                                                                                setThemePopoverOpen(false);
+                                                                                                handleThemeTypeChange(
+                                                                                                    preset.id,
+                                                                                                );
+                                                                                                setThemePopoverOpen(
+                                                                                                    false,
+                                                                                                );
                                                                                             }}
                                                                                         >
                                                                                             <Check
                                                                                                 className={cn(
                                                                                                     'mr-2 size-4',
-                                                                                                    selectedThemeType === preset.id
+                                                                                                    selectedThemeType ===
+                                                                                                        preset.id
                                                                                                         ? 'opacity-100'
                                                                                                         : 'opacity-0',
                                                                                                 )}
                                                                                             />
-                                                                                            {preset.label}
+                                                                                            {
+                                                                                                preset.label
+                                                                                            }
                                                                                         </CommandItem>
-                                                                                    ))}
-                                                                                    <CommandItem
-                                                                                        value='Custom'
-                                                                                        onSelect={() => {
-                                                                                            handleThemeTypeChange('custom');
-                                                                                            setThemePopoverOpen(false);
-                                                                                        }}
-                                                                                    >
-                                                                                        <Check
-                                                                                            className={cn(
-                                                                                                'mr-2 size-4',
-                                                                                                selectedThemeType === 'custom'
-                                                                                                    ? 'opacity-100'
-                                                                                                    : 'opacity-0',
-                                                                                            )}
-                                                                                        />
-                                                                                        Custom
-                                                                                    </CommandItem>
-                                                                                </CommandGroup>
-                                                                            </CommandList>
-                                                                        </Command>
-                                                                    </PopoverContent>
-                                                                </Popover>
-                                                            </Field>
+                                                                                    ),
+                                                                                )}
+                                                                                <CommandItem
+                                                                                    value='Custom'
+                                                                                    onSelect={() => {
+                                                                                        handleThemeTypeChange(
+                                                                                            'custom',
+                                                                                        );
+                                                                                        setThemePopoverOpen(
+                                                                                            false,
+                                                                                        );
+                                                                                    }}
+                                                                                >
+                                                                                    <Check
+                                                                                        className={cn(
+                                                                                            'mr-2 size-4',
+                                                                                            selectedThemeType ===
+                                                                                                'custom'
+                                                                                                ? 'opacity-100'
+                                                                                                : 'opacity-0',
+                                                                                        )}
+                                                                                    />
+                                                                                    Custom
+                                                                                </CommandItem>
+                                                                            </CommandGroup>
+                                                                        </CommandList>
+                                                                    </Command>
+                                                                </PopoverContent>
+                                                            </Popover>
+                                                        </Field>
 
-                                                            {selectedThemeType ===
-                                                                'custom' && (
-                                                                <div className='space-y-2'>
-                                                                    <Label className='text-sm text-muted-foreground block'>
-                                                                        Custom Theme JSON
-                                                                    </Label>
-                                                                    <p className='text-sm text-muted-foreground'>
-                                                                        Provide a JSON object
-                                                                        with CSS variable
-                                                                        values.
-                                                                    </p>
-                                                                    <Textarea
-                                                                        rows={10}
-                                                                        className='font-mono text-xs'
-                                                                        placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
-                                                                        value={
-                                                                            customThemeJSON
+                                                        {selectedThemeType ===
+                                                            'custom' && (
+                                                            <div className='space-y-2'>
+                                                                <Label className='text-sm text-muted-foreground block'>
+                                                                    Custom Theme JSON
+                                                                </Label>
+                                                                <p className='text-sm text-muted-foreground'>
+                                                                    Provide a JSON
+                                                                    object with CSS
+                                                                    variable values.
+                                                                </p>
+                                                                <Textarea
+                                                                    rows={10}
+                                                                    className='font-mono text-xs'
+                                                                    placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
+                                                                    value={
+                                                                        customThemeJSON
+                                                                    }
+                                                                    onChange={(e) =>
+                                                                        setCustomThemeJSON(
+                                                                            e.target
+                                                                                .value,
+                                                                        )
+                                                                    }
+                                                                />
+                                                                <div className='flex justify-end'>
+                                                                    <Button
+                                                                        type='button'
+                                                                        onClick={
+                                                                            handleApplyCustomTheme
                                                                         }
-                                                                        onChange={(e) =>
-                                                                            setCustomThemeJSON(
-                                                                                e.target.value,
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                    <div className='flex justify-end'>
-                                                                        <Button
-                                                                            type='button'
-                                                                            onClick={
-                                                                                handleApplyCustomTheme
-                                                                            }
-                                                                        >
-                                                                            Apply Custom
-                                                                            Theme
-                                                                        </Button>
-                                                                    </div>
+                                                                    >
+                                                                        Apply Custom
+                                                                        Theme
+                                                                    </Button>
                                                                 </div>
-                                                            )}
+                                                            </div>
+                                                        )}
                                                     </CardContent>
                                                 </Card>
                                             </div>
@@ -1256,21 +1307,23 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                     new notes you create
                                                                 </FieldDescription>
                                                             </FieldContent>
-                                                                                                                            <Button
-                                                                                                                                type='button'
-                                                                                                                                variant='outline'
-                                                                                                                                size='sm'
-                                                                                                                                onClick={
-                                                                                                                                    openNoteTemplateModal
-                                                                                                                                }
-                                                                                                                                disabled={
-                                                                                                                                    noteTemplateLoading
-                                                                                                                                }
-                                                                                                                            >
-                                                                                                                                {noteTemplateLoading
-                                                                                                                                    ? <><Spinner className="size-3 mr-1" /> Loading...</>
-                                                                                                                                    : 'Edit'}
-                                                                                                                            </Button>                                                        </Field>
+                                                            <Button
+                                                                type='button'
+                                                                variant='outline'
+                                                                size='sm'
+                                                                className='self-center'
+                                                                onClick={
+                                                                    openNoteTemplateModal
+                                                                }
+                                                                disabled={
+                                                                    noteTemplateLoading
+                                                                }
+                                                            >
+                                                                {noteTemplateLoading
+                                                                    ? 'Loading...'
+                                                                    : 'Edit'}
+                                                            </Button>
+                                                        </Field>
 
                                                         <Separator />
 

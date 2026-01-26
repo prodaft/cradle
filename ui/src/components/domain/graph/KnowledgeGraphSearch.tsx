@@ -8,9 +8,9 @@ import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { LinkTreeFlattener } from '@/utils/dashboard';
 import { logger } from '@/utils/logger';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { EdgeRelation } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { Node } from './graphFilterUtils';
 
 interface Alert {
@@ -31,7 +31,10 @@ interface KnowledgeGraphSearchProps {
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
     onLoadingChange?: (isLoading: boolean) => void;
     onFetchProgressChange?: (progress: FetchProgress | null) => void;
-    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
+    onFetchControlsReady?: (controls: {
+        pause: () => void;
+        resume: () => void;
+    }) => void;
 }
 
 export default function KnowledgeGraphSearch({
@@ -191,7 +194,7 @@ export default function KnowledgeGraphSearch({
         const fetchRemainingPages = async () => {
             try {
                 const totalPages = firstPageData.totalPages;
-                
+
                 for (let page = 2; page <= totalPages; page++) {
                     // Check if paused, wait for resume
                     if (isPausedRef.current) {
@@ -269,7 +272,7 @@ export default function KnowledgeGraphSearch({
                             : 'default'
                     }
                 >
-                    <WarningCircleIcon weight="fill" />
+                    <WarningCircleIcon weight='fill' />
                     <AlertDescription>{alert.message}</AlertDescription>
                 </AlertComponent>
             )}

@@ -7,9 +7,9 @@ import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { LinkTreeFlattener } from '@/utils/dashboard';
 import { logger } from '@/utils/logger';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import type { EdgeRelation, SubGraph } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { Node } from './graphFilterUtils';
 
 interface Alert {
@@ -145,7 +145,7 @@ export default function NoteGraphSearch(
                                 : 'default'
                         }
                     >
-                        <WarningCircleIcon weight="fill" />
+                        <WarningCircleIcon weight='fill' />
                         <AlertDescription>{alert.message}</AlertDescription>
                     </AlertComponent>
                 )}

@@ -97,17 +97,17 @@ export default function ActionBar({
                             onClick={() => handleActionSelect(action.value)}
                         >
                             {action.value === 'download' && (
-                                <DownloadSimpleIcon size={16} weight="bold" />
+                                <DownloadSimpleIcon size={16} weight='bold' />
                             )}
                             {action.value === 'delete' && (
-                                <TrashIcon size={16} weight="bold" />
+                                <TrashIcon size={16} weight='bold' />
                             )}
                             {action.label}
                         </DropdownMenuItem>
                     ))}
                 </DropdownMenuContent>
             </DropdownMenu>
-            {loadingAction && <Spinner className='size-3' />}
+            {loadingAction && <Spinner className='size-4' />}
         </div>
     );
 }

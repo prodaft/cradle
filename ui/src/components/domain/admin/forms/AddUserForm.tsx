@@ -102,7 +102,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
             }
 
             return await usersApi.usersCreate({
-                userCreateSerializerAdminRequest: payload
+                userCreateSerializerAdminRequest: payload,
             });
         },
         meta: {

@@ -631,11 +631,15 @@ export default function EnrichmentRequestModal({
                             size='sm'
                             disabled={createMutation.isPending || initialDataLoading}
                         >
-                            {createMutation.isPending
-                                ? 'Creating...'
-                                : initialDataLoading
-                                  ? <><Spinner className="mr-2" /> Loading...</>
-                                  : 'Create Request'}
+                            {createMutation.isPending ? (
+                                'Creating...'
+                            ) : initialDataLoading ? (
+                                <>
+                                    <Spinner className='mr-2' /> Loading...
+                                </>
+                            ) : (
+                                'Create Request'
+                            )}
                         </Button>
                     </div>
                 </form>

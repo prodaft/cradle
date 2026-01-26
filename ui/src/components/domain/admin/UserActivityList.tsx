@@ -1,6 +1,5 @@
 import Pagination from '@/components/base/Pagination/Pagination';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Collapsible,
     CollapsibleContent,
@@ -15,17 +14,13 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
+import { CaretDownIcon } from '@phosphor-icons/react';
 import type { EventLog } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { diff_match_patch } from 'diff-match-patch';
-import { CaretDownIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 
 interface UserActivityListProps {
@@ -158,10 +153,11 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
     const effectiveDetails = event.details || event.srcLog?.details;
     const hasDetails = !!effectiveDetails;
 
-    const { text: objectText, fullId, isDeleted } = formatObjectRepr(
-        event.objectRepr,
-        event.objectId,
-    );
+    const {
+        text: objectText,
+        fullId,
+        isDeleted,
+    } = formatObjectRepr(event.objectRepr, event.objectId);
 
     const srcLogFormatted = event.srcLog
         ? formatObjectRepr(event.srcLog.object_repr, event.srcLog.object_id)
@@ -173,10 +169,7 @@ function ActivityRow({ event }: { event: ActivityEvent }) {
             onClick={() => hasDetails && setOpen(!open)}
         >
             <TableCell>
-                <Badge
-                    variant={getTypeBadgeVariant(event.type)}
-                    className='capitalize'
-                >
+                <Badge variant={getTypeBadgeVariant(event.type)} className='capitalize'>
                     {event.type}
                 </Badge>
             </TableCell>
@@ -334,46 +327,40 @@ export default function UserActivityList({ username }: UserActivityListProps) {
     if (isPending) {
         return (
             <div className='flex items-center justify-center min-h-[200px]'>
-                <Spinner className='size-8' />
+                <Spinner className='size-10' />
             </div>
         );
     }
 
     if (events.length === 0) {
         return (
-            <Card className='rounded-lg border-border bg-muted/5'>
-                <CardContent className='py-8'>
-                    <p className='text-center text-sm text-muted-foreground'>
-                        No activity found for this user.
-                    </p>
-                </CardContent>
-            </Card>
+            <div className='text-center py-8'>
+                <p className='text-sm text-muted-foreground'>
+                    No activity found for this user.
+                </p>
+            </div>
         );
     }
 
     return (
         <div className='flex flex-col space-y-4'>
-            <Card className='rounded-lg border-border bg-muted/5'>
-                <CardContent className='p-0'>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className='w-[80px]'>Action</TableHead>
-                                <TableHead className='w-[100px]'>Type</TableHead>
-                                <TableHead>Object</TableHead>
-                                <TableHead className='w-[140px] text-right'>
-                                    Date
-                                </TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {events.map((event) => (
-                                <ActivityRow key={event.id} event={event} />
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+            <div className='overflow-hidden rounded-md border'>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className='w-[80px]'>Action</TableHead>
+                            <TableHead className='w-[100px]'>Type</TableHead>
+                            <TableHead>Object</TableHead>
+                            <TableHead className='w-[140px] text-right'>Date</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {events.map((event) => (
+                            <ActivityRow key={event.id} event={event} />
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
             <Pagination
                 currentPage={page}
                 totalPages={totalPages}

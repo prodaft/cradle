@@ -63,7 +63,7 @@ export default function Logo({
         <img
             src={logo}
             alt='CRADLE'
-            onClick={onClick || (() => { })}
+            onClick={onClick || (() => {})}
             style={{
                 width: width,
                 height: height,

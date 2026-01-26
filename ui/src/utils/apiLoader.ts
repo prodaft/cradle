@@ -32,9 +32,9 @@ function createLoaderConfiguration(): Configuration {
         basePath: apiBasePath,
         accessToken: accessToken
             ? async () => {
-                // Return token from localStorage
-                return accessToken;
-            }
+                  // Return token from localStorage
+                  return accessToken;
+              }
             : undefined,
     });
 }

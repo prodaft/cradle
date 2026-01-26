@@ -91,7 +91,10 @@ export default function EntriesManagement() {
                                         className='self-center'
                                         onClick={handlePropagateAccessVectors}
                                     >
-                                        <HardDrivesIcon className='w-3.5 h-3.5' weight="bold" />
+                                        <HardDrivesIcon
+                                            className='w-3.5 h-3.5'
+                                            weight='bold'
+                                        />
                                         Propagate
                                     </Button>
                                 </Field>
@@ -115,7 +118,10 @@ export default function EntriesManagement() {
                                         className='self-center'
                                         onClick={handleDeleteHangingArtifacts}
                                     >
-                                        <TrashIcon className='w-3.5 h-3.5' weight="bold" />
+                                        <TrashIcon
+                                            className='w-3.5 h-3.5'
+                                            weight='bold'
+                                        />
                                         Delete
                                     </Button>
                                 </Field>

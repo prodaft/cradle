@@ -1,6 +1,8 @@
-import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
+import {
+    ActionBarSearch,
+    ActionBar as BaseActionBar,
+} from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
-import { Spinner } from '@/components/ui/spinner';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -22,11 +24,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
-import { ClockCounterClockwiseIcon, GearIcon, PencilIcon, TrashIcon } from '@phosphor-icons/react';
+import {
+    ClockCounterClockwiseIcon,
+    GearIcon,
+    PencilIcon,
+    TrashIcon,
+} from '@phosphor-icons/react';
 import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -121,7 +129,11 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
         >
             <div className='space-y-0.5'>
                 <h1 className='text-2xl font-bold tracking-tight md:text-3xl flex items-center gap-2'>
-                    {entityData?.name || <><Spinner className="size-6" /> Loading...</>}
+                    {entityData?.name || (
+                        <>
+                            <Spinner className='size-5' /> Loading...
+                        </>
+                    )}
                 </h1>
                 <p className='text-muted-foreground'>
                     {currentDescription || 'Manage entity'}
@@ -183,10 +195,11 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                                             e.preventDefault();
                                             handleTabClick(item.id);
                                         }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${isActive
-                                            ? 'bg-muted hover:bg-accent active'
-                                            : ''
-                                            }`}
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
+                                            isActive
+                                                ? 'bg-muted hover:bg-accent active'
+                                                : ''
+                                        }`}
                                         data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
@@ -216,7 +229,7 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                             className='bg-border my-4 flex-none'
                         />
                         {tab === 'activity' ? (
-                            <div className='h-full w-full overflow-y-auto'>
+                            <div className='h-full w-full overflow-y-auto overflow-x-hidden'>
                                 <ActivityList
                                     content_type='entry'
                                     objectId={entityId}
@@ -224,7 +237,7 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                                 />
                             </div>
                         ) : (
-                            <div className='h-full w-full overflow-y-auto'>
+                            <div className='h-full w-full overflow-y-auto overflow-x-hidden'>
                                 <div className='-mx-1 px-1.5'>
                                     {tab === 'permissions' ? (
                                         <EntityPermissionsForm
@@ -583,7 +596,7 @@ export default function EntitiesPage() {
                     <div className='flex-1 space-y-4'>
                         {isPending ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
-                                <Spinner />
+                                <Spinner className='size-10' />
                             </div>
                         ) : (
                             <DataTable table={table} onRowClick={handleEditClick} />
@@ -607,7 +620,7 @@ export default function EntitiesPage() {
                         onClick={handleEditSelected}
                         disabled={isPending || selectedEntityIds.length !== 1}
                     >
-                        <PencilIcon size={18} weight="bold" />
+                        <PencilIcon size={18} weight='bold' />
                         Edit
                     </ActionBarItem>
                     {isAdmin && (
@@ -615,7 +628,7 @@ export default function EntitiesPage() {
                             onClick={handleViewActivitySelected}
                             disabled={isPending || selectedEntityIds.length !== 1}
                         >
-                            <ClockCounterClockwiseIcon size={18} weight="bold" />
+                            <ClockCounterClockwiseIcon size={18} weight='bold' />
                             View Activity
                         </ActionBarItem>
                     )}
@@ -625,7 +638,7 @@ export default function EntitiesPage() {
                             disabled={isPending || selectedEntityIds.length === 0}
                             className='text-destructive'
                         >
-                            <TrashIcon size={18} weight="bold" />
+                            <TrashIcon size={18} weight='bold' />
                             Delete
                         </ActionBarItem>
                     )}
@@ -677,13 +690,13 @@ export default function EntitiesPage() {
                 confirmText={
                     bulkDeleteEntityIds.length === 1
                         ? (() => {
-                            const entity = entities.find(
-                                (e) => String(e.id) === bulkDeleteEntityIds[0],
-                            );
-                            return entity
-                                ? `${entity.subtype}:${entity.name}`
-                                : 'DELETE';
-                        })()
+                              const entity = entities.find(
+                                  (e) => String(e.id) === bulkDeleteEntityIds[0],
+                              );
+                              return entity
+                                  ? `${entity.subtype}:${entity.name}`
+                                  : 'DELETE';
+                          })()
                         : `DELETE ${bulkDeleteEntityIds.length}`
                 }
                 text={`Are you sure you want to delete ${bulkDeleteEntityIds.length} entit${bulkDeleteEntityIds.length > 1 ? 'ies' : 'y'}? This will keep their related notes but remove the links to them.`}

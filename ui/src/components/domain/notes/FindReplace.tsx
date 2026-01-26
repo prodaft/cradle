@@ -302,7 +302,7 @@ export default function FindReplace({
                                         className='w-8 h-8 text-muted-foreground hover:bg-secondary hover:text-foreground'
                                         aria-label='Close'
                                     >
-                                        <XIcon size={18} weight="bold" />
+                                        <XIcon size={18} weight='bold' />
                                     </Button>
                                 </div>
                             </div>

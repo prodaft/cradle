@@ -4,7 +4,7 @@
  */
 
 import type { ThemeContextValue } from '@/types/index';
-import React, { createContext, useContext } from 'react';
+import { createContext, useContext } from 'react';
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 

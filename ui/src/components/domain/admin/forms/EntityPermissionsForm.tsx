@@ -1,5 +1,3 @@
-import { Spinner } from '@/components/ui/spinner';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -8,6 +6,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import {
     Table,
     TableBody,
@@ -109,7 +108,7 @@ export default function EntityPermissionsForm({
     if (isPending) {
         return (
             <div className='flex items-center justify-center min-h-[200px] text-foreground'>
-                <Spinner />
+                <Spinner className='size-10' />
             </div>
         );
     }
@@ -126,75 +125,73 @@ export default function EntityPermissionsForm({
                 />
             </div>
 
-            <Card className='border-border bg-muted/5'>
-                <CardContent className='p-0'>
-                    <Table>
-                        <TableHeader>
+            <div className='overflow-hidden rounded-md border'>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className='w-[60px]'>ID</TableHead>
+                            <TableHead className='w-[200px]'>User</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead className='w-[160px]'>Access</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredAccesses.length === 0 ? (
                             <TableRow>
-                                <TableHead className='w-[60px]'>ID</TableHead>
-                                <TableHead className='w-[200px]'>User</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead className='w-[160px]'>Access</TableHead>
+                                <TableCell
+                                    colSpan={4}
+                                    className='text-center text-muted-foreground py-8'
+                                >
+                                    No users found
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredAccesses.length === 0 ? (
-                                <TableRow>
-                                    <TableCell
-                                        colSpan={4}
-                                        className='text-center text-muted-foreground py-8'
-                                    >
-                                        No users found
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                filteredAccesses.map((access: AccessUser) => {
-                                    const user = access.user;
-                                    const userId = user.id!;
-                                    const currentAccess =
-                                        accessStates[userId] || access.accessType;
+                        ) : (
+                            filteredAccesses.map((access: AccessUser) => {
+                                const user = access.user;
+                                const userId = user.id!;
+                                const currentAccess =
+                                    accessStates[userId] || access.accessType;
 
-                                    return (
-                                        <TableRow key={userId}>
-                                            <TableCell className='text-muted-foreground'>
-                                                {userId.slice(0, 8)}
-                                            </TableCell>
-                                            <TableCell className='font-medium'>
-                                                {user.username}
-                                            </TableCell>
-                                            <TableCell className='text-muted-foreground text-sm'>
-                                                -
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select
-                                                    value={currentAccess}
-                                                    onValueChange={(value) =>
-                                                        handleAccessChange(userId, value)
-                                                    }
-                                                >
-                                                    <SelectTrigger className='w-[140px]'>
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {ACCESS_OPTIONS.map((option) => (
-                                                            <SelectItem
-                                                                key={option.value}
-                                                                value={option.value}
-                                                            >
-                                                                {option.label}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </TableCell>
-                                        </TableRow>
-                                    );
-                                })
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                return (
+                                    <TableRow key={userId}>
+                                        <TableCell className='text-muted-foreground'>
+                                            {userId.slice(0, 8)}
+                                        </TableCell>
+                                        <TableCell className='font-medium'>
+                                            {user.username}
+                                        </TableCell>
+                                        <TableCell className='text-muted-foreground text-sm'>
+                                            -
+                                        </TableCell>
+                                        <TableCell>
+                                            <Select
+                                                value={currentAccess}
+                                                onValueChange={(value) =>
+                                                    handleAccessChange(userId, value)
+                                                }
+                                            >
+                                                <SelectTrigger className='w-[140px]'>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {ACCESS_OPTIONS.map((option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })
+                        )}
+                    </TableBody>
+                </Table>
+            </div>
         </form>
     );
 }

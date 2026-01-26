@@ -47,6 +47,7 @@ import {
 } from '@codemirror/view';
 import { tags } from '@lezer/highlight';
 import { GFM } from '@lezer/markdown';
+import { CaretDownIcon } from '@phosphor-icons/react';
 import {
     additionalMarkdownSyntaxTags,
     baseSyntaxHighlights,
@@ -63,7 +64,6 @@ import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { Prec } from '@uiw/react-codemirror';
-import { CaretDownIcon } from '@phosphor-icons/react';
 import {
     forwardRef,
     memo,
@@ -206,8 +206,8 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 to: '/dashboards/$subtype/$name',
                 params: {
                     subtype: decodeURIComponent(subtype),
-                    name: decodeURIComponent(name)
-                }
+                    name: decodeURIComponent(name),
+                },
             });
         } else {
             // For other URLs, use the old method
@@ -394,16 +394,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             }),
             ...(!source
                 ? [
-                    prosemarkBasicSetup(),
-                    prosemarkBaseThemeSetup(),
-                    htmlBlockExtension,
-                    codeBlockCopyExtension,
-                    clickLinkHandler.of((url: string) => {
-                        window.open(url, '_blank', 'noopener,noreferrer');
-                    }),
-                    // Syntax highlighting for both modes
-                    baseSyntaxHighlights,
-                ]
+                      prosemarkBasicSetup(),
+                      prosemarkBaseThemeSetup(),
+                      htmlBlockExtension,
+                      codeBlockCopyExtension,
+                      clickLinkHandler.of((url: string) => {
+                          window.open(url, '_blank', 'noopener,noreferrer');
+                      }),
+                      // Syntax highlighting for both modes
+                      baseSyntaxHighlights,
+                  ]
                 : [sourceModeSyntaxHighlighting]),
             pasteHandler,
             Prec.high(cradleTheme),
@@ -656,7 +656,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     >
                         <CaretDownIcon
                             className={`size-4 text-muted-foreground transition-transform duration-200 ${showFileList ? '' : '-rotate-90'}`}
-                            weight="bold"
+                            weight='bold'
                         />
                         <span>Attached Files</span>
                         <span className='text-xs text-muted-foreground ml-1'>

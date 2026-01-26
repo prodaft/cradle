@@ -140,7 +140,7 @@ export default function OAuthCallback() {
                     sessionStorage.getItem('oauth_login_redirect') || '/';
                 const normalizedRedirect =
                     redirectPath === '/oauth/callback' ||
-                        redirectPath === '#/oauth/callback'
+                    redirectPath === '#/oauth/callback'
                         ? '/'
                         : redirectPath;
                 sessionStorage.removeItem('oauth_login_redirect');

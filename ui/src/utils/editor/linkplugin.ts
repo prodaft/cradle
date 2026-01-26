@@ -253,7 +253,11 @@ export function headingLineClassPlugin(sourceMode: boolean) {
                 this.decorations = this.buildDecorations(view);
             }
 
-            update(update: { docChanged: boolean; viewportChanged: boolean; view: EditorView }) {
+            update(update: {
+                docChanged: boolean;
+                viewportChanged: boolean;
+                view: EditorView;
+            }) {
                 if (update.docChanged || update.viewportChanged) {
                     this.decorations = this.buildDecorations(update.view);
                 }

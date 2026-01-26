@@ -72,7 +72,7 @@ export default function MainLayout(): React.JSX.Element {
 
                 {/* Content Area */}
                 <div className='flex-1 overflow-hidden relative md:rounded-b-xl'>
-                    <div className='absolute inset-0 overflow-y-auto'>
+                    <div className='absolute inset-0 overflow-y-auto overflow-x-hidden'>
                         <Suspense
                             fallback={
                                 <div className='flex items-center justify-center h-full'>

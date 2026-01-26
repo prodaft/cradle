@@ -8,9 +8,9 @@ import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { Entry, NoteRetrieve } from '@/types';
 import { createDashboardLink, SubtypeHierarchy, truncateText } from '@/utils/dashboard';
+import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useRouter } from '@tanstack/react-router';
-import { CaretDownIcon, CaretRightIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 interface ReferenceTreeProps {
@@ -137,8 +137,14 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                 size='sm'
                                 className='group hover:text-border-primary'
                             >
-                                <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
-                                <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
+                                <CaretRightIcon
+                                    className='w-4 h-4 group-data-[state=open]:hidden'
+                                    weight='bold'
+                                />
+                                <CaretDownIcon
+                                    className='w-4 h-4 hidden group-data-[state=open]:block'
+                                    weight='bold'
+                                />
                                 <span>References</span>
                             </Button>
                         </CollapsibleTrigger>
@@ -158,8 +164,14 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                         size='sm'
                                                         className='group hover:text-border-primary'
                                                     >
-                                                        <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
-                                                        <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
+                                                        <CaretRightIcon
+                                                            className='w-4 h-4 group-data-[state=open]:hidden'
+                                                            weight='bold'
+                                                        />
+                                                        <CaretDownIcon
+                                                            className='w-4 h-4 hidden group-data-[state=open]:block'
+                                                            weight='bold'
+                                                        />
                                                         <span>{value}</span>
                                                     </Button>
                                                 </CollapsibleTrigger>
@@ -195,8 +207,14 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                             size='sm'
                                                             className='group hover:text-border-primary'
                                                         >
-                                                            <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
-                                                            <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
+                                                            <CaretRightIcon
+                                                                className='w-4 h-4 group-data-[state=open]:hidden'
+                                                                weight='bold'
+                                                            />
+                                                            <CaretDownIcon
+                                                                className='w-4 h-4 hidden group-data-[state=open]:block'
+                                                                weight='bold'
+                                                            />
                                                             <span>{value}</span>
                                                         </Button>
                                                     </CollapsibleTrigger>
@@ -225,7 +243,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                                 {nextPageStatus[
                                                                     fullPath
                                                                 ] === 'loading' ? (
-                                                                    <Spinner className='size-3' />
+                                                                    <Spinner className='size-10' />
                                                                 ) : nextPageStatus[
                                                                       fullPath
                                                                   ] !== 'end' ? (

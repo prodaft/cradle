@@ -57,7 +57,7 @@ export default function NavbarButton({
     return (
         <>
             {isLoading ? (
-                <Spinner className='size-3' />
+                <Spinner className='size-4' />
             ) : (
                 <Tooltip>
                     <TooltipTrigger asChild>

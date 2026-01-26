@@ -3,11 +3,11 @@ import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { createDashboardLink } from '@/utils/dashboard';
+import { DownloadIcon } from '@phosphor-icons/react';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { DownloadIcon, DownloadSimpleIcon } from '@phosphor-icons/react';
 import { forwardRef, useState } from 'react';
 import { toast } from 'sonner';
 

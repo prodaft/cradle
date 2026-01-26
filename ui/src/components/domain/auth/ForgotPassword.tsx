@@ -123,7 +123,7 @@ export default function ForgotPassword() {
                         data-testid='back-button'
                         title='Back to Login'
                     >
-                        <ArrowUUpLeftIcon size={18} weight="bold" />
+                        <ArrowUUpLeftIcon size={18} weight='bold' />
                     </Button>
                 </div>
 
@@ -175,12 +175,12 @@ export default function ForgotPassword() {
                                     <Alert
                                         variant={
                                             alert.color === 'red' ||
-                                                alert.color === 'error'
+                                            alert.color === 'error'
                                                 ? 'destructive'
                                                 : 'default'
                                         }
                                     >
-                                        <WarningCircleIcon size={18} weight="bold" />
+                                        <WarningCircleIcon size={18} weight='bold' />
                                         <AlertDescription>
                                             {alert.message}
                                         </AlertDescription>

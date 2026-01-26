@@ -1,5 +1,5 @@
-import { useRouterState } from '@tanstack/react-router';
 import { CaretDownIcon, CaretUpIcon } from '@phosphor-icons/react';
+import { useRouterState } from '@tanstack/react-router';
 import { ReactNode, useEffect, useState } from 'react';
 
 interface DashboardHorizontalSectionProps {
@@ -48,10 +48,7 @@ export default function DashboardHorizontalSection({
                 {expanded ? (
                     <CaretUpIcon className='text-inherit' size={24} />
                 ) : (
-                    <CaretDownIcon
-                        className='text-inherit'
-                        size={24}
-                    />
+                    <CaretDownIcon className='text-inherit' size={24} />
                 )}
             </div>
             <div className={`overflow-y-auto ${expanded ? 'max-h-screen' : 'max-h-0'}`}>

@@ -1,7 +1,6 @@
 import Pagination from '@/components/base/Pagination/Pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Collapsible,
     CollapsibleContent,
@@ -25,11 +24,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { CaretDownIcon, GitForkIcon, MagnifyingGlassIcon } from '@phosphor-icons/react';
 import type { EventLog } from '@services/cradle/models';
@@ -181,10 +176,11 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
     const hasSrcLog = !!event.srcLog;
     const isExpandable = hasDetails || hasSrcLog;
 
-    const { text: objectText, fullId, isDeleted } = formatObjectRepr(
-        event.objectRepr,
-        event.objectId,
-    );
+    const {
+        text: objectText,
+        fullId,
+        isDeleted,
+    } = formatObjectRepr(event.objectRepr, event.objectId);
 
     const srcLogFormatted = event.srcLog
         ? formatObjectRepr(event.srcLog.object_repr, event.srcLog.object_id)
@@ -211,7 +207,9 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
                                 </span>
                             </TooltipTrigger>
                             <TooltipContent>
-                                <span className='text-xs'>Triggered by another event</span>
+                                <span className='text-xs'>
+                                    Triggered by another event
+                                </span>
                             </TooltipContent>
                         </Tooltip>
                     )}
@@ -294,7 +292,9 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
                                                 {/* Source log header */}
                                                 <div className='flex flex-wrap items-baseline gap-2 mb-2'>
                                                     <Badge
-                                                        variant={getTypeBadgeVariant(event.srcLog!.type)}
+                                                        variant={getTypeBadgeVariant(
+                                                            event.srcLog!.type,
+                                                        )}
                                                         className='capitalize text-xs'
                                                     >
                                                         {event.srcLog!.type}
@@ -323,7 +323,10 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
                                                         </div>
                                                         <div
                                                             dangerouslySetInnerHTML={{
-                                                                __html: formatDiff(event.srcLog!.details),
+                                                                __html: formatDiff(
+                                                                    event.srcLog!
+                                                                        .details,
+                                                                ),
                                                             }}
                                                         />
                                                     </div>
@@ -429,8 +432,8 @@ export default function ActivityList({
                         typeof log.timestamp === 'string'
                             ? log.timestamp
                             : log.timestamp instanceof Date
-                                ? log.timestamp.toISOString()
-                                : new Date().toISOString(),
+                              ? log.timestamp.toISOString()
+                              : new Date().toISOString(),
                     type: log.type,
                     username: log.user?.username || 'unknown',
                     contentType:
@@ -442,13 +445,13 @@ export default function ActivityList({
                     details: log.details || undefined,
                     srcLog: log.srcLog
                         ? {
-                            id: log.srcLog.id,
-                            type: log.srcLog.type,
-                            details: log.srcLog.details,
-                            content_type: log.srcLog.content_type,
-                            object_id: log.srcLog.object_id,
-                            object_repr: log.srcLog.object_repr,
-                        }
+                              id: log.srcLog.id,
+                              type: log.srcLog.type,
+                              details: log.srcLog.details,
+                              content_type: log.srcLog.content_type,
+                              object_id: log.srcLog.object_id,
+                              object_repr: log.srcLog.object_repr,
+                          }
                         : undefined,
                 }),
             );
@@ -512,7 +515,9 @@ export default function ActivityList({
                                 ? dayjs(start).startOf('day').toDate()
                                 : null;
                             const normalizedEnd = start
-                                ? dayjs(end ?? start).endOf('day').toDate()
+                                ? dayjs(end ?? start)
+                                      .endOf('day')
+                                      .toDate()
                                 : null;
                             setSearchFilters((prev) => ({
                                 ...prev,
@@ -569,32 +574,34 @@ export default function ActivityList({
                 </div>
             ) : events.length > 0 ? (
                 <>
-                    <Card className='border-border bg-muted/5'>
-                        <CardContent className='p-0'>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className='w-[80px]'>Action</TableHead>
-                                        {showUser && (
-                                            <TableHead className='w-[120px]'>User</TableHead>
-                                        )}
-                                        <TableHead className='w-[100px]'>Type</TableHead>
-                                        <TableHead>Object</TableHead>
-                                        <TableHead className='w-[140px] text-right'>Date</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {events.map((event) => (
-                                        <ActivityRow
-                                            key={event.id}
-                                            event={event}
-                                            showUser={showUser}
-                                        />
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
+                    <div className='overflow-hidden rounded-md border'>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead className='w-[80px]'>Action</TableHead>
+                                    {showUser && (
+                                        <TableHead className='w-[120px]'>
+                                            User
+                                        </TableHead>
+                                    )}
+                                    <TableHead className='w-[100px]'>Type</TableHead>
+                                    <TableHead>Object</TableHead>
+                                    <TableHead className='w-[140px] text-right'>
+                                        Date
+                                    </TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {events.map((event) => (
+                                    <ActivityRow
+                                        key={event.id}
+                                        event={event}
+                                        showUser={showUser}
+                                    />
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                     <Pagination
                         currentPage={page}
                         totalPages={totalPages}
@@ -603,13 +610,11 @@ export default function ActivityList({
                     />
                 </>
             ) : (
-                <Card className='border-border bg-muted/5'>
-                    <CardContent className='py-8'>
-                        <p className='text-center text-sm text-muted-foreground'>
-                            No event logs found.
-                        </p>
-                    </CardContent>
-                </Card>
+                <div className='text-center py-8'>
+                    <p className='text-sm text-muted-foreground'>
+                        No event logs found.
+                    </p>
+                </div>
             )}
         </div>
     );

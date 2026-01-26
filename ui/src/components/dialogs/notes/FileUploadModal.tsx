@@ -18,12 +18,12 @@ import {
     FileUploadTrigger,
 } from '@/components/ui/file-upload';
 import { useApi } from '@hooks';
+import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
 import type {
     FileReferenceWithNote,
     FileUploadFinalizeRequest,
 } from '@services/cradle/models';
 import { uploadFile } from '@utils/files';
-import { CloudArrowUpIcon, UploadSimpleIcon, XIcon } from '@phosphor-icons/react';
 import React, { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -116,11 +116,12 @@ export default function FileUploadModal({
                 updateFileStatus(file, 'uploading', 10);
 
                 // Step 1: Request presigned URL from backend
-                const uploadResponse =
-                    await fileTransferApi.fileTransferUploadRetrieve({
+                const uploadResponse = await fileTransferApi.fileTransferUploadRetrieve(
+                    {
                         fileName: file.name,
                         fileSize: file.size,
-                    });
+                    },
+                );
 
                 updateFileStatus(file, 'uploading', 30);
 
@@ -179,14 +180,7 @@ export default function FileUploadModal({
         }
 
         setIsUploading(false);
-    }, [
-        pendingFiles,
-        fileTransferApi,
-        noteId,
-        files,
-        onFilesChange,
-        filesWithStatus,
-    ]);
+    }, [pendingFiles, fileTransferApi, noteId, files, onFilesChange, filesWithStatus]);
 
     const getFileStatus = (file: File): FileWithStatus | undefined => {
         return filesWithStatus.find((f) => f.file === file);
@@ -198,8 +192,8 @@ export default function FileUploadModal({
                 <DialogHeader>
                     <DialogTitle>Upload Files</DialogTitle>
                     <DialogDescription>
-                        Upload files to attach to this note. Files will be
-                        uploaded using secure presigned URLs.
+                        Upload files to attach to this note. Files will be uploaded
+                        using secure presigned URLs.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -213,7 +207,10 @@ export default function FileUploadModal({
                     >
                         <FileUploadDropzone className='min-h-[120px]'>
                             <div className='flex flex-col items-center gap-2 text-center'>
-                                <CloudArrowUpIcon className='h-8 w-8 text-muted-foreground' weight="bold" />
+                                <CloudArrowUpIcon
+                                    className='h-8 w-8 text-muted-foreground'
+                                    weight='bold'
+                                />
                                 <div className='text-sm text-muted-foreground'>
                                     <span className='font-medium text-foreground'>
                                         Drop files here
@@ -292,7 +289,10 @@ export default function FileUploadModal({
                                                     size='icon'
                                                     className='h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity'
                                                 >
-                                                    <XIcon className='h-4 w-4' weight="bold" />
+                                                    <XIcon
+                                                        className='h-4 w-4'
+                                                        weight='bold'
+                                                    />
                                                     <span className='sr-only'>
                                                         Remove file
                                                     </span>
@@ -339,7 +339,10 @@ export default function FileUploadModal({
                                 </>
                             ) : (
                                 <>
-                                    <UploadSimpleIcon className='h-4 w-4' weight="bold" />
+                                    <UploadSimpleIcon
+                                        className='h-4 w-4'
+                                        weight='bold'
+                                    />
                                     Upload{' '}
                                     {pendingFiles.length > 1
                                         ? `(${pendingFiles.length})`

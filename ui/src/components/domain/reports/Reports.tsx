@@ -16,7 +16,10 @@ import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import { ReportList } from '@/services/cradle';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch, ActionBar as BaseActionBar } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBarSearch,
+    ActionBar as BaseActionBar,
+} from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import PageHeader from '@components/base/PageHeader';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
@@ -393,20 +396,20 @@ export default function Reports() {
 
         return columnId
             ? [
-                {
-                    id: columnId,
-                    desc: sortDirection === 'desc',
-                },
-            ]
+                  {
+                      id: columnId,
+                      desc: sortDirection === 'desc',
+                  },
+              ]
             : [];
     }, [sortField, sortDirection]);
 
     // Define filterable columns with their handlers
     const filterableColumns: Record<string, (value: string | DateRangeFilter) => void> =
-    {
-        user: (value) => handleColumnFilterChange('user', value),
-        createdAt: (value) => handleColumnFilterChange('createdAt', value),
-    };
+        {
+            user: (value) => handleColumnFilterChange('user', value),
+            createdAt: (value) => handleColumnFilterChange('createdAt', value),
+        };
 
     const handleDownload = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
@@ -441,8 +444,8 @@ export default function Reports() {
             status === 'error'
                 ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                 : status === 'warning'
-                    ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                    : '';
+                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+                  : '';
 
         if ((status === 'error' || status === 'warning') && errorMessage) {
             return (
@@ -564,9 +567,9 @@ export default function Reports() {
                     <div className='w-36'>
                         {row.original.createdAt
                             ? format(
-                                new Date(row.original.createdAt),
-                                'dd/MM/yyyy, HH:mm',
-                            )
+                                  new Date(row.original.createdAt),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : 'N/A'}
                     </div>
                 ),
@@ -639,7 +642,7 @@ export default function Reports() {
 
                 {loading ? (
                     <div className='flex min-h-[200px] items-center justify-center'>
-                        <Spinner />
+                        <Spinner className='size-10' />
                     </div>
                 ) : (
                     <DataTable
@@ -654,7 +657,8 @@ export default function Reports() {
                                     window.open(details.reportUrl, '_blank');
                                 } else {
                                     toast.error(
-                                        'Report URL not found for report ' + details.title,
+                                        'Report URL not found for report ' +
+                                            details.title,
                                     );
                                 }
                             } catch (error) {
@@ -678,24 +682,36 @@ export default function Reports() {
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={() => handleDownload(selectedReportIds)}
-                        disabled={loading || reports.length === 0 || selectedReportIds.length === 0}
+                        disabled={
+                            loading ||
+                            reports.length === 0 ||
+                            selectedReportIds.length === 0
+                        }
                     >
-                        <DownloadIcon size={18} weight="bold" />
+                        <DownloadIcon size={18} weight='bold' />
                         Download
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={() => handleRetry(selectedReportIds)}
-                        disabled={loading || reports.length === 0 || selectedReportIds.length === 0}
+                        disabled={
+                            loading ||
+                            reports.length === 0 ||
+                            selectedReportIds.length === 0
+                        }
                     >
-                        <ArrowsClockwiseIcon size={18} weight="bold" />
+                        <ArrowsClockwiseIcon size={18} weight='bold' />
                         Retry
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={() => handleDelete(selectedReportIds)}
-                        disabled={loading || reports.length === 0 || selectedReportIds.length === 0}
+                        disabled={
+                            loading ||
+                            reports.length === 0 ||
+                            selectedReportIds.length === 0
+                        }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight="bold" />
+                        <TrashIcon size={18} weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>

@@ -113,11 +113,11 @@ export function AppSidebar({
             <SidebarHeader
                 className={`flex ${isCollapsed ? 'flex-row items-center justify-center gap-2 pt-4 px-2 pb-2' : 'flex-col items-center gap-2 pt-4 px-4 pb-0'}`}
             >
-                <Link to='/notes' className={isCollapsed ? 'shrink-0' : 'flex w-full justify-center'}>
-                    <Logo
-                        text={!isCollapsed}
-                        height={isCollapsed ? '24px' : '36px'}
-                    />
+                <Link
+                    to='/notes'
+                    className={isCollapsed ? 'shrink-0' : 'flex w-full justify-center'}
+                >
+                    <Logo text={!isCollapsed} height={isCollapsed ? '24px' : '36px'} />
                 </Link>
             </SidebarHeader>
             <SidebarContent>
@@ -126,49 +126,49 @@ export function AppSidebar({
                     items={[
                         ...(isEntryManager
                             ? [
-                                {
-                                    title: 'Manage',
-                                    url: '/manage',
-                                    icon: Crown,
-                                    isActive: isManageActive,
-                                    items: [
-                                        {
-                                            title: 'Entities',
-                                            url: '/manage/entities',
-                                            icon: Building2,
-                                        },
-                                        {
-                                            title: 'Entry Types',
-                                            url: '/manage/entry-types',
-                                            icon: Layers,
-                                        },
-                                        {
-                                            title: 'Type Mappings',
-                                            url: '/manage/type-mappings',
-                                            icon: Link2,
-                                        },
-                                        ...(isAdmin
-                                            ? [
-                                                {
-                                                    title: 'Users',
-                                                    url: '/manage/users',
-                                                    icon: Users,
-                                                },
-                                                {
-                                                    title: 'Enrichment',
-                                                    url: '/manage/enrichment',
-                                                    icon: Sparkles,
-                                                },
-                                                {
-                                                    title: 'Settings',
-                                                    url: '/manage/settings',
-                                                    icon: Wrench,
-                                                },
-                                            ]
-                                            : []),
-                                    ],
-                                },
-                            ]
+                                  {
+                                      title: 'Manage',
+                                      url: '/manage',
+                                      icon: Crown,
+                                      isActive: isManageActive,
+                                      items: [
+                                          {
+                                              title: 'Entities',
+                                              url: '/manage/entities',
+                                              icon: Building2,
+                                          },
+                                          {
+                                              title: 'Entry Types',
+                                              url: '/manage/entry-types',
+                                              icon: Layers,
+                                          },
+                                          {
+                                              title: 'Type Mappings',
+                                              url: '/manage/type-mappings',
+                                              icon: Link2,
+                                          },
+                                          ...(isAdmin
+                                              ? [
+                                                    {
+                                                        title: 'Users',
+                                                        url: '/manage/users',
+                                                        icon: Users,
+                                                    },
+                                                    {
+                                                        title: 'Enrichment',
+                                                        url: '/manage/enrichment',
+                                                        icon: Sparkles,
+                                                    },
+                                                    {
+                                                        title: 'Settings',
+                                                        url: '/manage/settings',
+                                                        icon: Wrench,
+                                                    },
+                                                ]
+                                              : []),
+                                      ],
+                                  },
+                              ]
                             : []),
                         {
                             title: 'Documentation',

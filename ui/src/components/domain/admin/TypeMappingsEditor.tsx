@@ -20,8 +20,8 @@ import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { cn } from '@/lib/utils';
 import { useMutation } from '@tanstack/react-query';
-import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import { startCase } from 'lodash';
+import { CheckIcon, ChevronsUpDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -697,7 +697,8 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
                                         if (colType === 'options') {
                                             const options = colDef?.options || [];
-                                            const selectedValue = row[column]?.value ?? '';
+                                            const selectedValue =
+                                                row[column]?.value ?? '';
                                             const isInternalClass =
                                                 column === 'internal_class';
                                             return (
@@ -731,14 +732,10 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                                                                     ? selectedValue
                                                                     : undefined
                                                             }
-                                                            onValueChange={(
-                                                                value,
-                                                            ) => {
+                                                            onValueChange={(value) => {
                                                                 const selectedOption =
                                                                     options.find(
-                                                                        (
-                                                                            option,
-                                                                        ) =>
+                                                                        (option) =>
                                                                             option.value ===
                                                                             value,
                                                                     );

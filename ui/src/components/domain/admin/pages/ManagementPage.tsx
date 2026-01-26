@@ -181,7 +181,7 @@ export default function ManagementPage() {
                                 role='none'
                                 className='bg-border my-4 flex-none'
                             />
-                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                            <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pe-4 pb-12'>
                                 <div className='-mx-1 px-1.5'>
                                     {SettingComponent ? (
                                         <SettingComponent />

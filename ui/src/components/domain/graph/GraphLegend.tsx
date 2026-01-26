@@ -71,8 +71,14 @@ const GraphLegend = ({
                             size='sm'
                             className='group hover:text-border-primary'
                         >
-                            <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
-                            <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
+                            <CaretRightIcon
+                                className='w-4 h-4 group-data-[state=open]:hidden'
+                                weight='bold'
+                            />
+                            <CaretDownIcon
+                                className='w-4 h-4 hidden group-data-[state=open]:block'
+                                weight='bold'
+                            />
                             Legend
                         </Button>
                     </CollapsibleTrigger>
@@ -128,8 +134,14 @@ const GraphLegend = ({
                                                             size='sm'
                                                             className='group hover:text-border-primary'
                                                         >
-                                                            <CaretRightIcon className='w-4 h-4 group-data-[state=open]:hidden' weight="bold" />
-                                                            <CaretDownIcon className='w-4 h-4 hidden group-data-[state=open]:block' weight="bold" />
+                                                            <CaretRightIcon
+                                                                className='w-4 h-4 group-data-[state=open]:hidden'
+                                                                weight='bold'
+                                                            />
+                                                            <CaretDownIcon
+                                                                className='w-4 h-4 hidden group-data-[state=open]:block'
+                                                                weight='bold'
+                                                            />
                                                             <span>{value}</span>
                                                         </Button>
                                                     </CollapsibleTrigger>

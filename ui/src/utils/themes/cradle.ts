@@ -9,33 +9,33 @@ import { lightTheme } from './light';
 export const cradleLight = {
     ...lightTheme,
     name: 'cradle-light',
-    
+
     // Backgrounds from docs/assets/css/custom.css
     '--background': '#ffffff', // --cradle-bg-primary
     '--foreground': '#000000', // --cradle-text-primary
-    
+
     '--card': '#ffffff', // --cradle-bg-elevated
     '--card-foreground': '#2b2b2b', // --cradle-text-secondary
-    
+
     '--popover': '#ffffff',
     '--popover-foreground': '#2b2b2b',
-    
+
     // Signature Accent from docs: #c7772a
     '--primary': '#c7772a',
     '--primary-foreground': '#ffffff',
-    
+
     '--secondary': '#f5f5f5', // --cradle-bg-secondary
     '--secondary-foreground': '#2b2b2b',
-    
+
     '--muted': '#eeeeee', // --cradle-bg-tertiary
     '--muted-foreground': '#666666', // --cradle-text-tertiary
-    
+
     '--accent': '#f5f5f5',
     '--accent-foreground': '#000000',
-    
+
     '--destructive': '#b85d30', // --cradle-accent-error
     '--destructive-foreground': '#ffffff',
-    
+
     '--border': '#e0e0e0', // --cradle-border-primary
     '--input': '#e0e0e0',
     '--ring': '#c7772a',
@@ -63,33 +63,33 @@ export const cradleLight = {
 export const cradleDark = {
     ...darkTheme,
     name: 'cradle-dark',
-    
+
     // Backgrounds from docs/assets/css/custom.css (Dark)
     '--background': '#1a1a1a', // --cradle-bg-primary
     '--foreground': '#ffffff', // --cradle-text-primary
-    
+
     '--card': '#1f1f1f', // --cradle-bg-elevated
     '--card-foreground': '#bfbfbf', // --cradle-text-secondary
-    
+
     '--popover': '#1f1f1f',
     '--popover-foreground': '#bfbfbf',
-    
+
     // Signature Accent from docs: #c7772a
     '--primary': '#c7772a',
     '--primary-foreground': '#ffffff',
-    
+
     '--secondary': '#2a2a2a', // --cradle-bg-secondary
     '--secondary-foreground': '#bfbfbf',
-    
+
     '--muted': '#2a2a2a', // --cradle-bg-secondary (custom.css uses same for both usually in dark)
     '--muted-foreground': '#999999', // --cradle-text-tertiary
-    
+
     '--accent': '#2a2a2a',
     '--accent-foreground': '#ffffff',
-    
+
     '--destructive': '#b85d30', // --cradle-accent-error
     '--destructive-foreground': '#ffffff',
-    
+
     '--border': '#2a2a2a', // --cradle-border-primary
     '--input': '#2a2a2a',
     '--ring': '#c7772a',

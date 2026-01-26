@@ -1,8 +1,8 @@
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import useApi from '@/hooks/api/useApi';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { Link, useSearch } from '@tanstack/react-router';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 interface Alert {
@@ -23,7 +23,7 @@ export default function ConfirmEmail() {
         color: 'red',
     });
     const search = useSearch({ from: '/confirm-email' });
-    const token = 'token' in search ? search.token as string : undefined;
+    const token = 'token' in search ? (search.token as string) : undefined;
     const { authApi } = useApi();
 
     const confirmMutation = useMutation({
@@ -82,7 +82,7 @@ export default function ConfirmEmail() {
                                     : 'default'
                             }
                         >
-                            <WarningCircleIcon size={18} weight="bold" />
+                            <WarningCircleIcon size={18} weight='bold' />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>
                     )}

@@ -1,6 +1,8 @@
-import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
+import {
+    ActionBarSearch,
+    ActionBar as BaseActionBar,
+} from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
-import { Spinner } from '@/components/ui/spinner';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -22,6 +24,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -33,7 +36,7 @@ import {
     PencilIcon,
     TrashIcon,
     UserIcon,
-    UserPlusIcon
+    UserPlusIcon,
 } from '@phosphor-icons/react';
 import { UserRetrieve } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -190,10 +193,11 @@ function UserSettingsPage({ userId }: { userId: string }) {
                                             e.preventDefault();
                                             handleTabClick(item.id);
                                         }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${isActive
-                                            ? 'bg-muted hover:bg-accent active'
-                                            : ''
-                                            }`}
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
+                                            isActive
+                                                ? 'bg-muted hover:bg-accent active'
+                                                : ''
+                                        }`}
                                         data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
@@ -222,7 +226,7 @@ function UserSettingsPage({ userId }: { userId: string }) {
                             role='none'
                             className='bg-border my-4 flex-none'
                         />
-                        <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                        <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pe-4 pb-12'>
                             <div className='-mx-1 px-1.5'>
                                 <AdminUserSettings userId={userId} activeTab={tab} />
                             </div>
@@ -562,7 +566,7 @@ export default function UsersPage() {
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button onClick={handleAddUser}>
-                                    <UserPlusIcon size={18} weight="bold" />
+                                    <UserPlusIcon size={18} weight='bold' />
                                     Add User
                                 </Button>
                             </TooltipTrigger>
@@ -586,7 +590,7 @@ export default function UsersPage() {
                     <div className='flex-1 space-y-4'>
                         {isLoading ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
-                                <Spinner />
+                                <Spinner className='size-10' />
                             </div>
                         ) : (
                             <DataTable table={table} onRowClick={handleUserClick} />
@@ -610,7 +614,7 @@ export default function UsersPage() {
                         onClick={handleEditSelected}
                         disabled={isLoading || selectedUserIds.length !== 1}
                     >
-                        <PencilIcon size={18} weight="bold" />
+                        <PencilIcon size={18} weight='bold' />
                         Edit
                     </ActionBarItem>
                     <ActionBarItem
@@ -618,7 +622,7 @@ export default function UsersPage() {
                         disabled={isLoading || selectedUserIds.length === 0}
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight="bold" />
+                        <TrashIcon size={18} weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>
@@ -653,13 +657,11 @@ export default function UsersPage() {
                 confirmText={
                     deleteUserId
                         ? users.find((u) => (u.id || u.username) === deleteUserId)
-                            ?.username || 'DELETE'
+                              ?.username || 'DELETE'
                         : deleteUserIds.length === 1
-                            ? users.find(
-                                (u) =>
-                                    (u.id || u.username) === deleteUserIds[0],
-                            )?.username || 'DELETE'
-                            : `DELETE ${deleteUserIds.length}`
+                          ? users.find((u) => (u.id || u.username) === deleteUserIds[0])
+                                ?.username || 'DELETE'
+                          : `DELETE ${deleteUserIds.length}`
                 }
                 text={
                     deleteUserId

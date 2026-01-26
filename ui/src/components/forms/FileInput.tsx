@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useApi } from '@hooks';
+import { CheckIcon, CloudArrowUpIcon, XIcon } from '@phosphor-icons/react';
 import type {
     FileUploadFinalizeRequest,
     FileUploadFinalizeResponse,
@@ -8,7 +9,6 @@ import type {
 import { useMutation } from '@tanstack/react-query';
 import { handleAPIError, parseAPIError } from '@utils/api';
 import { uploadFile } from '@utils/files';
-import { CheckIcon, CloudArrowUpIcon, XIcon } from '@phosphor-icons/react';
 import {
     ChangeEvent,
     ClipboardEvent,
@@ -259,9 +259,9 @@ export default function FileInput({
                     <div className='w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin' />
                 );
             case 'success':
-                return <CheckIcon className='w-4 h-4 text-primary' weight="bold" />;
+                return <CheckIcon className='w-4 h-4 text-primary' weight='bold' />;
             case 'error':
-                return <XIcon className='w-4 h-4 text-destructive' weight="bold" />;
+                return <XIcon className='w-4 h-4 text-destructive' weight='bold' />;
             default:
                 return <div className='w-4 h-4' />; // Empty placeholder for pending
         }
@@ -289,7 +289,7 @@ export default function FileInput({
                     {isUploading && (
                         <div className='w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin' />
                     )}
-                    <CloudArrowUpIcon className='w-5 h-5' weight="bold" />
+                    <CloudArrowUpIcon className='w-5 h-5' weight='bold' />
                 </Button>
             </div>
 

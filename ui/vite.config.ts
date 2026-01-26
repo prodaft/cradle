@@ -9,7 +9,7 @@ import { nodePolyfills } from 'vite-plugin-node-polyfills';
 dns.setDefaultResultOrder('verbatim');
 
 export default defineConfig(({ mode }) => {
-    const isDev = mode === "development";
+    const isDev = mode === 'development';
 
     return {
         base: '/',
@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
         plugins: [tailwindcss(), react(), visualizer(), nodePolyfills()],
         build: {
             sourcemap: isDev,
-            minify: "esbuild",
+            minify: 'esbuild',
         },
         server: { port: 5173 },
         resolve: {
@@ -32,5 +32,5 @@ export default defineConfig(({ mode }) => {
                 src: path.resolve(__dirname, './src'),
             },
         },
-    }
+    };
 });

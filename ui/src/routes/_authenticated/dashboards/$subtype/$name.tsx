@@ -1,8 +1,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
+import Dashboard from 'src/components/domain/dashboard/Dashboard';
 import type { EntryResponse } from 'src/services/cradle/models';
 import { createLoaderApis } from 'src/utils/apiLoader';
 import { z } from 'zod';
-import Dashboard from 'src/components/domain/dashboard/Dashboard';
 
 export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name')({
     staticData: {
@@ -10,7 +10,9 @@ export const Route = createFileRoute('/_authenticated/dashboards/$subtype/$name'
     },
     validateSearch: z.object({
         heading: z.string().optional(),
-        tab: z.enum(['notes', 'relations', 'files', 'enrichment', 'eventlog']).optional(),
+        tab: z
+            .enum(['notes', 'relations', 'files', 'enrichment', 'eventlog'])
+            .optional(),
     }),
     // Add cache configuration to prevent unnecessary refetches
     gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes

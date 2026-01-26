@@ -14,7 +14,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBarSearch, ActionBar as BaseActionBar } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBarSearch,
+    ActionBar as BaseActionBar,
+} from '@components/base/ActionBar/ActionBar';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
 import { ArrowsClockwiseIcon, TrashIcon } from '@phosphor-icons/react';
 import type { EnrichmentRequestList } from '@services/cradle/models';
@@ -28,7 +31,14 @@ import {
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { capitalize } from 'lodash';
-import { ChangeEvent, FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    ChangeEvent,
+    FormEvent,
+    useCallback,
+    useEffect,
+    useMemo,
+    useState,
+} from 'react';
 import { StatusIcon, type StatusType } from '../notes/StatusIcon';
 
 // ...
@@ -87,17 +97,17 @@ function EnrichmentRequestsList({
     sortDirection = 'desc',
     onSort,
     pageSize = 10,
-    setPageSize = () => { },
+    setPageSize = () => {},
     onColumnFilterChange = null,
     columnFilters = { status: 'all', user: '' },
     searchFilters = {},
-    onSearchChange = () => { },
-    onSearchSubmit = () => { },
+    onSearchChange = () => {},
+    onSearchSubmit = () => {},
     selectedRequests = [],
-    setSelectedRequests = () => { },
-    onDeleteSelected = () => { },
-    onRerunSelected = () => { },
-    onCreateRequest = () => { },
+    setSelectedRequests = () => {},
+    onDeleteSelected = () => {},
+    onRerunSelected = () => {},
+    onCreateRequest = () => {},
 }: EnrichmentRequestsListProps) {
     const router = useRouter();
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -168,11 +178,11 @@ function EnrichmentRequestsList({
 
         return columnId
             ? [
-                {
-                    id: columnId,
-                    desc: sortDirection === 'desc',
-                },
-            ]
+                  {
+                      id: columnId,
+                      desc: sortDirection === 'desc',
+                  },
+              ]
             : [];
     }, [sortField, sortDirection]);
 
@@ -221,7 +231,7 @@ function EnrichmentRequestsList({
         }
 
         return msgs.join(', ');
-        };
+    };
 
     const getStatusIcon = (status?: string, errorMessage?: string) => {
         if (!status) return null;
@@ -231,8 +241,8 @@ function EnrichmentRequestsList({
             status === 'error'
                 ? '[--tooltip-bg:var(--destructive)] [--tooltip-fg:var(--destructive-foreground)] whitespace-pre-line'
                 : status === 'waiting'
-                    ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
-                    : '';
+                  ? '[--tooltip-bg:var(--chart-4)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
+                  : '';
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
@@ -364,21 +374,15 @@ function EnrichmentRequestsList({
                     <div className='w-40'>
                         {row.original.createdAt
                             ? format(
-                                new Date(row.original.createdAt),
-                                'dd/MM/yyyy, HH:mm',
-                            )
+                                  new Date(row.original.createdAt),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : 'N/A'}
                     </div>
                 ),
             },
         ],
-        [
-            columnFilters,
-            handleStatusChange,
-            getStatusIcon,
-            errorMsg,
-            router,
-        ],
+        [columnFilters, handleStatusChange, getStatusIcon, errorMsg, router],
     );
     const table = useReactTable({
         data: enrichmentRequests,
@@ -430,7 +434,7 @@ function EnrichmentRequestsList({
                             debounceMs={300}
                             onDebouncedChange={(value) => {
                                 const event = {
-                                    preventDefault: () => { },
+                                    preventDefault: () => {},
                                     target: { name: 'title', value },
                                 } as ChangeEvent<HTMLInputElement>;
                                 onSearchChange(event);
@@ -439,7 +443,7 @@ function EnrichmentRequestsList({
                             }}
                             onSubmit={(value) => {
                                 const event = {
-                                    preventDefault: () => { },
+                                    preventDefault: () => {},
                                     target: { name: 'title', value },
                                 } as any;
                                 onSearchSubmit(event);
@@ -447,15 +451,13 @@ function EnrichmentRequestsList({
                         />
                     </>
                 }
-                right={
-                    null
-                }
+                right={null}
             />
 
             {/* Table */}
             {loading ? (
                 <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner />
+                    <Spinner className='size-10' />
                 </div>
             ) : (
                 <DataTable table={table} />
@@ -478,17 +480,25 @@ function EnrichmentRequestsList({
                             setDeleteRequestIds(selectedRequestIds);
                             setDeleteModalOpen(true);
                         }}
-                        disabled={loading || enrichmentRequests.length === 0 || selectedRequestIds.length === 0}
+                        disabled={
+                            loading ||
+                            enrichmentRequests.length === 0 ||
+                            selectedRequestIds.length === 0
+                        }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight="bold" />
+                        <TrashIcon size={18} weight='bold' />
                         Delete
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={onRerunSelected}
-                        disabled={loading || enrichmentRequests.length === 0 || selectedRequestIds.length === 0}
+                        disabled={
+                            loading ||
+                            enrichmentRequests.length === 0 ||
+                            selectedRequestIds.length === 0
+                        }
                     >
-                        <ArrowsClockwiseIcon size={18} weight="bold" />
+                        <ArrowsClockwiseIcon size={18} weight='bold' />
                         Rerun
                     </ActionBarItem>
                 </ActionBarGroup>

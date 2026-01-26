@@ -15,7 +15,12 @@ import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
-import { ArrowUUpLeftIcon, MoonIcon, SunIcon, WarningCircleIcon } from '@phosphor-icons/react';
+import {
+    ArrowUUpLeftIcon,
+    MoonIcon,
+    SunIcon,
+    WarningCircleIcon,
+} from '@phosphor-icons/react';
 import { UserConfig } from '@services/cradle/models';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouter, useRouterState } from '@tanstack/react-router';
@@ -258,7 +263,7 @@ export default function Login() {
                             data-testid='back-button'
                             title='Back to Login'
                         >
-                            <ArrowUUpLeftIcon size={18} weight="bold" />
+                            <ArrowUUpLeftIcon size={18} weight='bold' />
                         </Button>
                     ) : (
                         <Button
@@ -270,9 +275,9 @@ export default function Login() {
                             title='Toggle Theme'
                         >
                             {isDarkMode ? (
-                                <SunIcon size={18} weight="bold" />
+                                <SunIcon size={18} weight='bold' />
                             ) : (
-                                <MoonIcon size={18} weight="bold" />
+                                <MoonIcon size={18} weight='bold' />
                             )}
                         </Button>
                     )}
@@ -354,12 +359,15 @@ export default function Login() {
                                             <Alert
                                                 variant={
                                                     alert.color === 'red' ||
-                                                        alert.color === 'error'
+                                                    alert.color === 'error'
                                                         ? 'destructive'
                                                         : 'default'
                                                 }
                                             >
-                                                <WarningCircleIcon size={18} weight="bold" />
+                                                <WarningCircleIcon
+                                                    size={18}
+                                                    weight='bold'
+                                                />
                                                 <AlertDescription>
                                                     {alert.message}
                                                 </AlertDescription>
@@ -431,12 +439,15 @@ export default function Login() {
                                             <Alert
                                                 variant={
                                                     alert.color === 'red' ||
-                                                        alert.color === 'error'
+                                                    alert.color === 'error'
                                                         ? 'destructive'
                                                         : 'default'
                                                 }
                                             >
-                                                <WarningCircleIcon size={18} weight="bold" />
+                                                <WarningCircleIcon
+                                                    size={18}
+                                                    weight='bold'
+                                                />
                                                 <AlertDescription>
                                                     {alert.message}
                                                 </AlertDescription>
@@ -476,18 +487,18 @@ export default function Login() {
                                                             onClick={() => {
                                                                 const redirectPath =
                                                                     typeof from ===
-                                                                        'string'
+                                                                    'string'
                                                                         ? from.includes(
-                                                                            '#',
-                                                                        )
+                                                                              '#',
+                                                                          )
                                                                             ? from.slice(
-                                                                                from.indexOf(
-                                                                                    '#',
-                                                                                ) + 1,
-                                                                            ) || '/'
+                                                                                  from.indexOf(
+                                                                                      '#',
+                                                                                  ) + 1,
+                                                                              ) || '/'
                                                                             : from
                                                                         : from?.pathname ||
-                                                                        '/';
+                                                                          '/';
                                                                 sessionStorage.setItem(
                                                                     'oauth_login_redirect',
                                                                     redirectPath,

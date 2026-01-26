@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FunnelIcon, CaretDownIcon, CaretUpIcon, XIcon } from '@phosphor-icons/react';
+import { CaretDownIcon, CaretUpIcon, FunnelIcon, XIcon } from '@phosphor-icons/react';
 import React, { Dispatch, SetStateAction } from 'react';
 
 /**
@@ -59,7 +59,10 @@ export default function SearchFilterSection({
                 className='w-full px-4 py-2.5 flex items-center justify-between hover:bg-secondary group h-auto rounded-none'
             >
                 <div className='flex items-center gap-2'>
-                    <FunnelIcon className='size-4 text-muted-foreground group-hover:text-primary transition-colors' weight="bold" />
+                    <FunnelIcon
+                        className='size-4 text-muted-foreground group-hover:text-primary transition-colors'
+                        weight='bold'
+                    />
                     <span className='text-sm text-foreground font-medium'>
                         Filter by type
                     </span>
@@ -68,9 +71,15 @@ export default function SearchFilterSection({
                     )}
                 </div>
                 {showFilters ? (
-                    <CaretUpIcon className='size-4 text-muted-foreground' weight="bold" />
+                    <CaretUpIcon
+                        className='size-4 text-muted-foreground'
+                        weight='bold'
+                    />
                 ) : (
-                    <CaretDownIcon className='size-4 text-muted-foreground' weight="bold" />
+                    <CaretDownIcon
+                        className='size-4 text-muted-foreground'
+                        weight='bold'
+                    />
                 )}
             </Button>
 
@@ -81,37 +90,39 @@ export default function SearchFilterSection({
                 }`}
             >
                 <div className='px-4 py-3 bg-secondary/50 overflow-y-auto max-h-56 flex flex-wrap gap-1.5 items-center'>
-                    {[...entrySubtypes].sort((a, b) => a.localeCompare(b)).map((subtype) => {
-                        const color = entryClassColors.get(subtype);
-                        const isActive = entrySubtypeFilters.includes(subtype);
-                        const toggleFilter = () => {
-                            setEntrySubtypeFilters((prevFilters) =>
-                                isActive
-                                    ? prevFilters.filter((item) => item !== subtype)
-                                    : [...prevFilters, subtype],
+                    {[...entrySubtypes]
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((subtype) => {
+                            const color = entryClassColors.get(subtype);
+                            const isActive = entrySubtypeFilters.includes(subtype);
+                            const toggleFilter = () => {
+                                setEntrySubtypeFilters((prevFilters) =>
+                                    isActive
+                                        ? prevFilters.filter((item) => item !== subtype)
+                                        : [...prevFilters, subtype],
+                                );
+                            };
+                            return (
+                                <Badge
+                                    key={subtype}
+                                    variant='outline'
+                                    onClick={toggleFilter}
+                                    className={`cursor-pointer ${isActive ? '' : 'opacity-60'}`}
+                                    style={
+                                        color && isActive
+                                            ? {
+                                                  backgroundColor: color,
+                                                  borderColor: color,
+                                                  color: '#fff',
+                                              }
+                                            : undefined
+                                    }
+                                >
+                                    {subtype}
+                                    {isActive && <XIcon className='size-3' />}
+                                </Badge>
                             );
-                        };
-                        return (
-                            <Badge
-                                key={subtype}
-                                variant='outline'
-                                onClick={toggleFilter}
-                                className={`cursor-pointer ${isActive ? '' : 'opacity-60'}`}
-                                style={
-                                    color && isActive
-                                        ? {
-                                            backgroundColor: color,
-                                            borderColor: color,
-                                            color: '#fff',
-                                        }
-                                        : undefined
-                                }
-                            >
-                                {subtype}
-                                {isActive && <XIcon className='size-3' />}
-                            </Badge>
-                        );
-                    })}
+                        })}
                 </div>
             </div>
 
@@ -136,10 +147,10 @@ export default function SearchFilterSection({
                                 style={
                                     color
                                         ? {
-                                            backgroundColor: color,
-                                            borderColor: color,
-                                            color: '#fff',
-                                        }
+                                              backgroundColor: color,
+                                              borderColor: color,
+                                              color: '#fff',
+                                          }
                                         : undefined
                                 }
                             >

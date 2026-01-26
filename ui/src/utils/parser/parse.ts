@@ -25,13 +25,16 @@ export async function parseMarkdown(
                 if (lang && Prism.languages[lang]) {
                     try {
                         return Prism.highlight(code, Prism.languages[lang], lang);
-                    } catch { }
+                    } catch {}
                 }
                 return '';
             },
         }).use(markdownItAnchor, {
-            permalink: markdownItAnchor.permalink.linkInsideHeader({ placement: 'before' }),
-            slugify: (s: string) => encodeURIComponent(String(s).trim().toLowerCase().replace(/\s+/g, '-')),
+            permalink: markdownItAnchor.permalink.linkInsideHeader({
+                placement: 'before',
+            }),
+            slugify: (s: string) =>
+                encodeURIComponent(String(s).trim().toLowerCase().replace(/\s+/g, '-')),
         });
 
         return await parseWithExtensions(

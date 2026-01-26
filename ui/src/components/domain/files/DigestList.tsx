@@ -1,4 +1,5 @@
-import { Spinner } from '@/components/ui/spinner';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
 import {
     ActionBar,
@@ -9,15 +10,18 @@ import {
     ActionBarSeparator,
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBar as BaseActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBarSearch,
+    ActionBar as BaseActionBar,
+} from '@components/base/ActionBar/ActionBar';
 import { DateRangeFilter } from '@components/base/ListView/types';
 import StatusHeaderDropdown from '@components/base/StatusHeaderDropdown/StatusHeaderDropdown';
+import { TrashIcon } from '@phosphor-icons/react';
 import type { BaseDigest } from '@services/cradle/models';
 import {
     type ColumnDef,
@@ -27,7 +31,6 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { TrashIcon } from '@phosphor-icons/react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StatusIcon, type StatusType } from '../notes/StatusIcon';
 
@@ -211,9 +214,15 @@ function DigestList({
                   ? '[--tooltip-bg:var(--chart-4)] dark:[--tooltip-bg:var(--chart-3)] [--tooltip-fg:var(--foreground)] whitespace-pre-line'
                   : '';
 
-        const iconElement = status === 'waiting' 
-            ? <StatusIcon status={status as StatusType} className='text-[var(--chart-4)] dark:text-[var(--chart-3)]' />
-            : <StatusIcon status={status as StatusType} />;
+        const iconElement =
+            status === 'waiting' ? (
+                <StatusIcon
+                    status={status as StatusType}
+                    className='text-[var(--chart-4)] dark:text-[var(--chart-3)]'
+                />
+            ) : (
+                <StatusIcon status={status as StatusType} />
+            );
 
         if ((status === 'error' || status === 'waiting') && errorMessage) {
             return (
@@ -544,7 +553,7 @@ function DigestList({
 
             {loading ? (
                 <div className='flex min-h-[200px] items-center justify-center'>
-                    <Spinner />
+                    <Spinner className='size-10' />
                 </div>
             ) : (
                 <DataTable table={table} />
@@ -563,10 +572,14 @@ function DigestList({
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={handleDeleteSelected}
-                        disabled={loading || digests.length === 0 || selectedDigestIds.length === 0}
+                        disabled={
+                            loading ||
+                            digests.length === 0 ||
+                            selectedDigestIds.length === 0
+                        }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight="bold" />
+                        <TrashIcon size={18} weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>

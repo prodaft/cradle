@@ -259,12 +259,12 @@ export function referenceLinkSyntax(
                                 cx.elt('ExternalReferenceText', textStart, textEnd),
                                 ...(labelStart !== -1
                                     ? [
-                                        cx.elt(
-                                            'ExternalReferenceLabel',
-                                            labelStart,
-                                            labelEnd,
-                                        ),
-                                    ]
+                                          cx.elt(
+                                              'ExternalReferenceLabel',
+                                              labelStart,
+                                              labelEnd,
+                                          ),
+                                      ]
                                     : []),
                             ]),
                         );
@@ -384,12 +384,12 @@ export function referenceLinkSyntax(
                                 cx.elt('ExternalReferenceText', textStart, textEnd),
                                 ...(labelStart !== -1
                                     ? [
-                                        cx.elt(
-                                            'ExternalReferenceLabel',
-                                            labelStart,
-                                            labelEnd,
-                                        ),
-                                    ]
+                                          cx.elt(
+                                              'ExternalReferenceLabel',
+                                              labelStart,
+                                              labelEnd,
+                                          ),
+                                      ]
                                     : []),
                             ]),
                         );

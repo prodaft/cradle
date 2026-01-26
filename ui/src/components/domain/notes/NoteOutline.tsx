@@ -55,13 +55,13 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                             <CaretRightIcon
                                 className='text-primary'
                                 size={14}
-                                weight="bold"
+                                weight='bold'
                             />
                         ) : (
                             <CaretDownIcon
                                 className='text-primary'
                                 size={14}
-                                weight="bold"
+                                weight='bold'
                             />
                         )}
                     </Button>

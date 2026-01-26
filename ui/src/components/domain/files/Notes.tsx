@@ -60,22 +60,33 @@ export default function Notes() {
     });
 
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-        any_field: ('any_field' in search ? search.any_field as string : undefined) || '',
-        content: ('content' in search ? search.content as string : undefined) || '',
+        any_field:
+            ('any_field' in search ? (search.any_field as string) : undefined) || '',
+        content: ('content' in search ? (search.content as string) : undefined) || '',
         author__username:
-            ('author__username' in search ? search.author__username as string : undefined) || '',
+            ('author__username' in search
+                ? (search.author__username as string)
+                : undefined) || '',
         editor__username:
-            ('editor__username' in search ? search.editor__username as string : undefined) || '',
+            ('editor__username' in search
+                ? (search.editor__username as string)
+                : undefined) || '',
         created_date_from:
-            ('created_date_from' in search ? search.created_date_from as string : undefined) ||
-            '',
+            ('created_date_from' in search
+                ? (search.created_date_from as string)
+                : undefined) || '',
         created_date_to:
-            ('created_date_to' in search ? search.created_date_to as string : undefined) || '',
+            ('created_date_to' in search
+                ? (search.created_date_to as string)
+                : undefined) || '',
         updated_date_from:
-            ('updated_date_from' in search ? search.updated_date_from as string : undefined) ||
-            '',
+            ('updated_date_from' in search
+                ? (search.updated_date_from as string)
+                : undefined) || '',
         updated_date_to:
-            ('updated_date_to' in search ? search.updated_date_to as string : undefined) || '',
+            ('updated_date_to' in search
+                ? (search.updated_date_to as string)
+                : undefined) || '',
     });
     const searchFiltersRef = useRef(searchFilters);
     useEffect(() => {
@@ -174,28 +185,35 @@ export default function Notes() {
 
     useEffect(() => {
         const initialFilters: SearchFilters = {
-            any_field: ('any_field' in search ? search.any_field as string : undefined) || '',
-            content: ('content' in search ? search.content as string : undefined) || '',
+            any_field:
+                ('any_field' in search ? (search.any_field as string) : undefined) ||
+                '',
+            content:
+                ('content' in search ? (search.content as string) : undefined) || '',
             author__username:
-                ('author__username' in search ? search.author__username as string : undefined) ||
-                '',
+                ('author__username' in search
+                    ? (search.author__username as string)
+                    : undefined) || '',
             editor__username:
-                ('editor__username' in search ? search.editor__username as string : undefined) ||
-                '',
+                ('editor__username' in search
+                    ? (search.editor__username as string)
+                    : undefined) || '',
             created_date_from:
                 ('created_date_from' in search
-                    ? search.created_date_from as string
+                    ? (search.created_date_from as string)
                     : undefined) || '',
             created_date_to:
-                ('created_date_to' in search ? search.created_date_to as string : undefined) ||
-                '',
+                ('created_date_to' in search
+                    ? (search.created_date_to as string)
+                    : undefined) || '',
             updated_date_from:
                 ('updated_date_from' in search
-                    ? search.updated_date_from as string
+                    ? (search.updated_date_from as string)
                     : undefined) || '',
             updated_date_to:
-                ('updated_date_to' in search ? search.updated_date_to as string : undefined) ||
-                '',
+                ('updated_date_to' in search
+                    ? (search.updated_date_to as string)
+                    : undefined) || '',
         };
 
         setSearchFilters(initialFilters);
@@ -260,7 +278,8 @@ export default function Notes() {
                             onSubmit: (value?: string) => {
                                 const next = {
                                     ...searchFiltersRef.current,
-                                    any_field: value ?? searchFiltersRef.current.any_field,
+                                    any_field:
+                                        value ?? searchFiltersRef.current.any_field,
                                 };
                                 updateSearchParams(next);
                             },

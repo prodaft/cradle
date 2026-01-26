@@ -21,9 +21,10 @@ export default function Notes({ obj }: NotesProps) {
         linked_to: obj?.id,
         content: '',
     });
-    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>(
-        { linked_to: obj?.id, content: '' },
-    );
+    const [submittedFilters, setSubmittedFilters] = useState<SearchFilters | null>({
+        linked_to: obj?.id,
+        content: '',
+    });
     const searchFiltersRef = useRef(searchFilters);
     useEffect(() => {
         searchFiltersRef.current = searchFilters;

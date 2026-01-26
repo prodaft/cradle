@@ -1,4 +1,5 @@
-import { Spinner } from '@/components/ui/spinner';
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import { ConfirmDeletionModal } from '@/components/dialogs';
 import {
     ActionBar,
@@ -12,15 +13,23 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { DataTable } from '@/components/data-table/data-table';
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
 import type { Alert, StateSetter } from '@/types';
 import { truncateText } from '@/utils/dashboard';
-import { ActionBar as BaseActionBar, ActionBarSearch } from '@components/base/ActionBar/ActionBar';
+import {
+    ActionBarSearch,
+    ActionBar as BaseActionBar,
+} from '@components/base/ActionBar/ActionBar';
 import { useDroppable } from '@dnd-kit/core';
+import {
+    ArrowClockwiseIcon,
+    DownloadSimpleIcon,
+    TrashIcon,
+    WarningCircleIcon,
+} from '@phosphor-icons/react';
 import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
@@ -33,7 +42,6 @@ import {
 } from '@tanstack/react-table';
 import bytes from 'bytes';
 import { format } from 'date-fns';
-import { DownloadSimpleIcon, ArrowClockwiseIcon, TrashIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
@@ -515,8 +523,8 @@ export default function FilesList({
                                         to: '/dashboards/$subtype/$name',
                                         params: {
                                             subtype: entity.subtype || 'unknown',
-                                            name: entity.name
-                                        }
+                                            name: entity.name,
+                                        },
                                     });
                                 }}
                                 title={`View ${entity.subtype || 'entity'}: ${entity.name}`}
@@ -748,7 +756,7 @@ export default function FilesList({
                 <div ref={setNodeRef} className='grid grid-cols-1 gap-2'>
                     {loading ? (
                         <div className='flex min-h-[200px] items-center justify-center'>
-                            <Spinner />
+                            <Spinner className='size-10' />
                         </div>
                     ) : (
                         <DataTable table={table} />
@@ -769,32 +777,41 @@ export default function FilesList({
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={handleDownloadSelected}
-                        disabled={loading || files.length === 0 || selectedFileIds.length === 0}
+                        disabled={
+                            loading ||
+                            files.length === 0 ||
+                            selectedFileIds.length === 0
+                        }
                     >
-                        <DownloadSimpleIcon size={18} weight="bold" />
+                        <DownloadSimpleIcon size={18} weight='bold' />
                         Download
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={handleReprocessSelected}
-                        disabled={loading || files.length === 0 || selectedFileIds.length === 0}
+                        disabled={
+                            loading ||
+                            files.length === 0 ||
+                            selectedFileIds.length === 0
+                        }
                     >
-                        <ArrowClockwiseIcon size={18} weight="bold" />
+                        <ArrowClockwiseIcon size={18} weight='bold' />
                         Reprocess
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={handleDeleteSelected}
-                        disabled={loading || files.length === 0 || selectedFileIds.length === 0}
+                        disabled={
+                            loading ||
+                            files.length === 0 ||
+                            selectedFileIds.length === 0
+                        }
                         className='text-destructive'
                     >
-                        <TrashIcon size={18} weight="bold" />
+                        <TrashIcon size={18} weight='bold' />
                         Delete
                     </ActionBarItem>
                 </ActionBarGroup>
                 <ActionBarSeparator />
-                <ActionBarClose
-                    className='px-2 text-sm'
-                    onClick={clearSelection}
-                >
+                <ActionBarClose className='px-2 text-sm' onClick={clearSelection}>
                     Clear
                 </ActionBarClose>
             </ActionBar>

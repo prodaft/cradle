@@ -1,4 +1,3 @@
-import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -9,7 +8,6 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import {
     Select,
@@ -19,6 +17,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import useApi from '@/hooks/api/useApi';
@@ -231,7 +230,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     if (isPending && !isPaused) {
         return (
             <div className='flex items-center justify-center min-h-screen text-foreground'>
-                <Spinner />
+                <Spinner className='size-10' />
             </div>
         );
     }
@@ -247,262 +246,255 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     return (
         <form onSubmit={handleFormSubmit(onSubmit as any)}>
             <Card className='border-border bg-muted/5 space-y-0'>
-                        <CardContent className='px-4 py-1'>
-                            <Controller
-                                name='name'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='horizontal'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
+                <CardContent className='px-4 py-1'>
+                    <Controller
+                        name='name'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='horizontal'
+                                className='py-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel
+                                        htmlFor='name'
+                                        className='text-sm text-muted-foreground block mb-0.5'
                                     >
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel
-                                                htmlFor='name'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Name
-                                                <span className='text-destructive ml-1'>
-                                                    *
-                                                </span>
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Unique identifier for this entity
-                                            </FieldDescription>
-                                            {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
-                                                    {fieldState.error?.message}
-                                                </FieldError>
-                                            )}
-                                        </FieldContent>
-                                        <Input
-                                            {...field}
-                                            id='name'
-                                            disabled={true}
-                                            className='w-auto self-center'
-                                            aria-invalid={fieldState.invalid}
-                                            aria-describedby={
-                                                fieldState.invalid
-                                                    ? 'name-error'
-                                                    : undefined
-                                            }
-                                        />
-                                    </Field>
-                                )}
-                            />
+                                        Name
+                                        <span className='text-destructive ml-1'>*</span>
+                                    </FieldLabel>
+                                    <FieldDescription className='text-sm'>
+                                        Unique identifier for this entity
+                                    </FieldDescription>
+                                    {fieldState.invalid && (
+                                        <FieldError className='text-sm mt-1'>
+                                            {fieldState.error?.message}
+                                        </FieldError>
+                                    )}
+                                </FieldContent>
+                                <Input
+                                    {...field}
+                                    id='name'
+                                    disabled={true}
+                                    className='w-auto self-center'
+                                    aria-invalid={fieldState.invalid}
+                                    aria-describedby={
+                                        fieldState.invalid ? 'name-error' : undefined
+                                    }
+                                />
+                            </Field>
+                        )}
+                    />
 
-                            <Separator />
+                    <Separator />
 
-                            <Controller
-                                name='subtype'
-                                control={control}
-                                render={({ field, fieldState }) => {
-                                    console.log('subtype field', field);
-                                    console.log('subtype fieldState', fieldState);
-                                    return (
-                                        <Field
-                                            orientation='horizontal'
-                                            className='py-2'
-                                            data-invalid={fieldState.invalid}
-                                        >
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                Subtype
-                                                <span className='text-destructive ml-1'>
-                                                    *
-                                                    </span>
-                                                </FieldLabel>
-                                                <FieldDescription className='text-sm'>
-                                                    Entity class type
-                                                </FieldDescription>
-                                                {fieldState.invalid && (
-                                                    <FieldError className='text-sm mt-1'>
-                                                        {fieldState.error?.message}
-                                                    </FieldError>
-                                                )}
-                                            </FieldContent>
-                                            <Select
-                                                value={field.value || entityData?.subtype || ''}
-                                                onValueChange={field.onChange}
-                                            >
-                                                <SelectTrigger
-                                                    className='self-center'
-                                                    aria-invalid={fieldState.invalid}
-                                                    aria-describedby={
-                                                        fieldState.invalid
-                                                            ? 'subtype-error'
-                                                            : undefined
-                                                    }
-                                                >
-                                                    <SelectValue placeholder='Select subtype' />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {resolvedSubtypeOptions.map(
-                                                        (option) => (
-                                                        <SelectItem
-                                                            key={option.value}
-                                                            value={option.value}
-                                                        >
-                                                            {option.label}
-                                                        </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-                                    </Field>
-                                    );
-                                }}
-                            />
-
-                            <Separator />
-
-                            <Controller
-                                name='isPublic'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='horizontal'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel
-                                                htmlFor='isPublic'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Publicly Available
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Allow public access to this entity
-                                            </FieldDescription>
-                                            {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
-                                                    {fieldState.error?.message}
-                                                </FieldError>
-                                            )}
-                                        </FieldContent>
-                                        <Switch
-                                            id='isPublic'
-                                            name={field.name}
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                            className='self-center'
-                                            aria-invalid={fieldState.invalid}
-                                            aria-describedby={
-                                                fieldState.invalid
-                                                    ? 'isPublic-error'
-                                                    : undefined
-                                            }
-                                        />
-                                    </Field>
-                                )}
-                            />
-
-                            <Separator />
-
-                            <Controller
-                                name='description'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='vertical'
-                                        className='py-2 w-full'
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent>
-                                            <FieldLabel
-                                                htmlFor='description'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Description
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm mb-2'>
-                                                Brief explanation of this entity
-                                            </FieldDescription>
-                                        </FieldContent>
-                                        <Textarea
-                                            {...field}
-                                            id='description'
-                                            placeholder='Description'
-                                            rows={4}
-                                            aria-invalid={fieldState.invalid}
-                                            aria-describedby={
-                                                fieldState.invalid
-                                                    ? 'description-error'
-                                                    : undefined
-                                            }
-                                        />
+                    <Controller
+                        name='subtype'
+                        control={control}
+                        render={({ field, fieldState }) => {
+                            console.log('subtype field', field);
+                            console.log('subtype fieldState', fieldState);
+                            return (
+                                <Field
+                                    orientation='horizontal'
+                                    className='py-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            Subtype
+                                            <span className='text-destructive ml-1'>
+                                                *
+                                            </span>
+                                        </FieldLabel>
+                                        <FieldDescription className='text-sm'>
+                                            Entity class type
+                                        </FieldDescription>
                                         {fieldState.invalid && (
                                             <FieldError className='text-sm mt-1'>
                                                 {fieldState.error?.message}
                                             </FieldError>
                                         )}
-                                    </Field>
-                                )}
-                            />
-
-                            <Separator />
-
-                            <Controller
-                                name='aliases'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='horizontal'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
+                                    </FieldContent>
+                                    <Select
+                                        value={field.value || entityData?.subtype || ''}
+                                        onValueChange={field.onChange}
                                     >
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                Aliases
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Alternate names or references for this entity
-                                            </FieldDescription>
-                                            {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
-                                                    {fieldState.error?.message}
-                                                </FieldError>
-                                            )}
-                                        </FieldContent>
-                                        <div className='w-64 self-center'>
-                                            <MultipleSelector
-                                                value={
-                                                    (field.value?.map((a) => ({
-                                                        value: String(a.value),
-                                                        label: a.label,
-                                                    })) || []) as Option[]
-                                                }
-                                                defaultOptions={[]}
-                                                placeholder='Select aliases...'
-                                                onSearch={async (query) => {
-                                                    const results =
-                                                        await fetchAliases(query);
-                                                    return results.map((a) => ({
-                                                        value: String(a.value),
-                                                        label: a.label,
-                                                    })) as unknown as Option[];
-                                                }}
-                                                onChange={(options) => {
-                                                    field.onChange(
-                                                        options.map((o) => ({
-                                                            value: Number(o.value),
-                                                            label: o.label,
-                                                        })),
-                                                    );
-                                                }}
-                                                emptyIndicator={
-                                                    <p className='text-center text-sm'>
-                                                        No aliases found
-                                                    </p>
-                                                }
-                                            />
-                                        </div>
-                                    </Field>
+                                        <SelectTrigger
+                                            className='self-center'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'subtype-error'
+                                                    : undefined
+                                            }
+                                        >
+                                            <SelectValue placeholder='Select subtype' />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {resolvedSubtypeOptions.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                            );
+                        }}
+                    />
+
+                    <Separator />
+
+                    <Controller
+                        name='isPublic'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='horizontal'
+                                className='py-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel
+                                        htmlFor='isPublic'
+                                        className='text-sm text-muted-foreground block mb-0.5'
+                                    >
+                                        Publicly Available
+                                    </FieldLabel>
+                                    <FieldDescription className='text-sm'>
+                                        Allow public access to this entity
+                                    </FieldDescription>
+                                    {fieldState.invalid && (
+                                        <FieldError className='text-sm mt-1'>
+                                            {fieldState.error?.message}
+                                        </FieldError>
+                                    )}
+                                </FieldContent>
+                                <Switch
+                                    id='isPublic'
+                                    name={field.name}
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    className='self-center'
+                                    aria-invalid={fieldState.invalid}
+                                    aria-describedby={
+                                        fieldState.invalid
+                                            ? 'isPublic-error'
+                                            : undefined
+                                    }
+                                />
+                            </Field>
+                        )}
+                    />
+
+                    <Separator />
+
+                    <Controller
+                        name='description'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='vertical'
+                                className='py-2 w-full'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent>
+                                    <FieldLabel
+                                        htmlFor='description'
+                                        className='text-sm text-muted-foreground block mb-0.5'
+                                    >
+                                        Description
+                                    </FieldLabel>
+                                    <FieldDescription className='text-sm mb-2'>
+                                        Brief explanation of this entity
+                                    </FieldDescription>
+                                </FieldContent>
+                                <Textarea
+                                    {...field}
+                                    id='description'
+                                    placeholder='Description'
+                                    rows={4}
+                                    aria-invalid={fieldState.invalid}
+                                    aria-describedby={
+                                        fieldState.invalid
+                                            ? 'description-error'
+                                            : undefined
+                                    }
+                                />
+                                {fieldState.invalid && (
+                                    <FieldError className='text-sm mt-1'>
+                                        {fieldState.error?.message}
+                                    </FieldError>
                                 )}
-                            />
-                        </CardContent>
+                            </Field>
+                        )}
+                    />
+
+                    <Separator />
+
+                    <Controller
+                        name='aliases'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='horizontal'
+                                className='py-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                        Aliases
+                                    </FieldLabel>
+                                    <FieldDescription className='text-sm'>
+                                        Alternate names or references for this entity
+                                    </FieldDescription>
+                                    {fieldState.invalid && (
+                                        <FieldError className='text-sm mt-1'>
+                                            {fieldState.error?.message}
+                                        </FieldError>
+                                    )}
+                                </FieldContent>
+                                <div className='w-64 self-center'>
+                                    <MultipleSelector
+                                        value={
+                                            (field.value?.map((a) => ({
+                                                value: String(a.value),
+                                                label: a.label,
+                                            })) || []) as Option[]
+                                        }
+                                        defaultOptions={[]}
+                                        placeholder='Select aliases...'
+                                        onSearch={async (query) => {
+                                            const results = await fetchAliases(query);
+                                            return results.map((a) => ({
+                                                value: String(a.value),
+                                                label: a.label,
+                                            })) as unknown as Option[];
+                                        }}
+                                        onChange={(options) => {
+                                            field.onChange(
+                                                options.map((o) => ({
+                                                    value: Number(o.value),
+                                                    label: o.label,
+                                                })),
+                                            );
+                                        }}
+                                        emptyIndicator={
+                                            <p className='text-center text-sm'>
+                                                No aliases found
+                                            </p>
+                                        }
+                                    />
+                                </div>
+                            </Field>
+                        )}
+                    />
+                </CardContent>
             </Card>
 
             {/* Save Button */}

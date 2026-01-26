@@ -5,8 +5,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
 import { logger } from '@/utils/logger';
 import useApi from '@hooks/api/useApi';
-import { useMutation, useQuery } from '@tanstack/react-query';
 import { PencilIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { forwardRef, MouseEvent, useImperativeHandle, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -159,7 +159,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                             size='sm'
                             className='flex items-center gap-2'
                         >
-                            <PlusIcon className='w-4 h-4' weight="bold" />
+                            <PlusIcon className='w-4 h-4' weight='bold' />
                             New Snippet
                         </Button>
                     </div>
@@ -169,7 +169,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 <ScrollArea className='max-h-40 border border-border'>
                     {loading ? (
                         <div className='p-3 text-center'>
-                            <Spinner className='size-3' />
+                            <Spinner className='size-10' />
                             <p className='text-sm text-muted-foreground mt-2'>
                                 Loading...
                             </p>
@@ -198,7 +198,10 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                             className='p-1 hover:bg-muted'
                                             title='Edit snippet'
                                         >
-                                            <PencilIcon className='w-4 h-4 text-primary' weight="bold" />
+                                            <PencilIcon
+                                                className='w-4 h-4 text-primary'
+                                                weight='bold'
+                                            />
                                         </Button>
                                         <Button
                                             onClick={(e) =>
@@ -209,7 +212,10 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                                             className='p-1 hover:bg-destructive/10'
                                             title='Delete snippet'
                                         >
-                                            <TrashIcon className='w-4 h-4 text-destructive' weight="bold" />
+                                            <TrashIcon
+                                                className='w-4 h-4 text-destructive'
+                                                weight='bold'
+                                            />
                                         </Button>
                                     </div>
                                 </div>

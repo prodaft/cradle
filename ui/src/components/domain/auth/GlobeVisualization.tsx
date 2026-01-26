@@ -37,7 +37,14 @@ interface SatelliteData {
 const noise3D = createNoise3D();
 
 // Fractal Brownian Motion using simplex noise
-const fbm = (x: number, y: number, z: number, octaves: number = 4, lacunarity: number = 2.0, gain: number = 0.5) => {
+const fbm = (
+    x: number,
+    y: number,
+    z: number,
+    octaves: number = 4,
+    lacunarity: number = 2.0,
+    gain: number = 0.5,
+) => {
     let amplitude = 1.0;
     let frequency = 1.0;
     let result = 0.0;
@@ -199,14 +206,15 @@ export default function GlobeVisualization({
     // Fetch and parse TLE data
     useEffect(() => {
         fetch('/datasets/sat_data.txt')
-            .then(r => {
+            .then((r) => {
                 return r.text();
             })
-            .then(rawData => {
-                const tleData = rawData.replace(/\r/g, '')
+            .then((rawData) => {
+                const tleData = rawData
+                    .replace(/\r/g, '')
                     .split(/\n(?=[^12])/)
-                    .filter(d => d)
-                    .map(tle => tle.split('\n'));
+                    .filter((d) => d)
+                    .map((tle) => tle.split('\n'));
 
                 const parsedSatData = tleData
                     .map(([name, ...tle]) => ({
@@ -214,13 +222,12 @@ export default function GlobeVisualization({
                         name: name.trim().replace(/^0 /, ''),
                     }))
                     .filter(
-                        (d) =>
-                            !!satellite.propagate(d.satrec, new Date())?.position,
+                        (d) => !!satellite.propagate(d.satrec, new Date())?.position,
                     );
 
                 setSatData(parsedSatData);
             })
-            .catch(error => {
+            .catch((error) => {
                 console.error('[GlobeVisualization] Failed to fetch TLE data:', error);
             });
     }, []);
@@ -228,8 +235,8 @@ export default function GlobeVisualization({
     // Fetch countries GeoJSON data
     useEffect(() => {
         fetch('/datasets/ne_110m_admin_0_countries.geojson')
-            .then(res => res.json())
-            .then(data => {
+            .then((res) => res.json())
+            .then((data) => {
                 const features = (data?.features ?? []).map((feature: any) => {
                     const centroid = computeGeometryCentroid(feature.geometry);
                     if (!centroid) return feature;
@@ -243,8 +250,11 @@ export default function GlobeVisualization({
                 });
                 setCountries({ ...data, features });
             })
-            .catch(error => {
-                console.error('[GlobeVisualization] Failed to fetch countries data:', error);
+            .catch((error) => {
+                console.error(
+                    '[GlobeVisualization] Failed to fetch countries data:',
+                    error,
+                );
             });
     }, []);
 
@@ -254,7 +264,7 @@ export default function GlobeVisualization({
         if (satData.length === 0) return;
 
         const intervalId = window.setInterval(() => {
-            setTime(prevTime => new Date(prevTime.getTime() + TIME_STEP));
+            setTime((prevTime) => new Date(prevTime.getTime() + TIME_STEP));
         }, TICK_MS);
 
         return () => {
@@ -266,8 +276,10 @@ export default function GlobeVisualization({
         if (!showHexPolygons) return;
 
         const intervalId = window.setInterval(() => {
-            polygonTimeRef.current = new Date(polygonTimeRef.current.getTime() + POLYGON_TIME_STEP);
-            setPolygonTick(tick => (tick + 1) % 1000000);
+            polygonTimeRef.current = new Date(
+                polygonTimeRef.current.getTime() + POLYGON_TIME_STEP,
+            );
+            setPolygonTick((tick) => (tick + 1) % 1000000);
         }, POLYGON_TICK_MS);
 
         return () => {
@@ -281,18 +293,20 @@ export default function GlobeVisualization({
 
         // Update satellite positions
         const gmst = satellite.gstime(time);
-        const updatedSats = satData.map(d => {
-            const eci = satellite.propagate(d.satrec, time);
-            if (eci?.position && typeof eci.position !== 'boolean') {
-                const gdPos = satellite.eciToGeodetic(eci.position, gmst);
-                const lat = satellite.radiansToDegrees(gdPos.latitude);
-                const lng = satellite.radiansToDegrees(gdPos.longitude);
-                const alt = gdPos.height / EARTH_RADIUS_KM;
-                return { ...d, lat, lng, alt };
-            } else {
-                return { ...d, lat: NaN, lng: NaN, alt: NaN };
-            }
-        }).filter(d => !isNaN(d.lat!) && !isNaN(d.lng!) && !isNaN(d.alt!));
+        const updatedSats = satData
+            .map((d) => {
+                const eci = satellite.propagate(d.satrec, time);
+                if (eci?.position && typeof eci.position !== 'boolean') {
+                    const gdPos = satellite.eciToGeodetic(eci.position, gmst);
+                    const lat = satellite.radiansToDegrees(gdPos.latitude);
+                    const lng = satellite.radiansToDegrees(gdPos.longitude);
+                    const alt = gdPos.height / EARTH_RADIUS_KM;
+                    return { ...d, lat, lng, alt };
+                } else {
+                    return { ...d, lat: NaN, lng: NaN, alt: NaN };
+                }
+            })
+            .filter((d) => !isNaN(d.lat!) && !isNaN(d.lng!) && !isNaN(d.alt!));
 
         return updatedSats;
     }, [satData, time, showSatellites]);
@@ -308,11 +322,11 @@ export default function GlobeVisualization({
             endLng: (Math.random() - 0.5) * 360,
             color: isDarkMode
                 ? ['#ffffff', '#cccccc', '#999999', '#666666'][
-                    Math.floor(Math.random() * 4)
-                ]
+                      Math.floor(Math.random() * 4)
+                  ]
                 : ['#111111', '#333333', '#555555', '#777777'][
-                    Math.floor(Math.random() * 4)
-                ],
+                      Math.floor(Math.random() * 4)
+                  ],
             dashLength: Math.random(),
             dashGap: Math.random(),
             animateTime: Math.random() * 4000 + 500,
@@ -332,74 +346,77 @@ export default function GlobeVisualization({
     }, [showHexPolygons, countries.features]);
 
     // Breathing effect color function - dramatic localized breathing patches
-    const hexPolygonColor = useCallback((feature: any) => {
-        if (!showHexPolygons) return 'rgba(0,0,0,0)';
+    const hexPolygonColor = useCallback(
+        (feature: any) => {
+            if (!showHexPolygons) return 'rgba(0,0,0,0)';
 
-        const centroidLng = feature.properties?.__centroid?.lng
-            ?? feature.properties?.LABEL_X
-            ?? 0;
-        const centroidLat = feature.properties?.__centroid?.lat
-            ?? feature.properties?.LABEL_Y
-            ?? 0;
+            const centroidLng =
+                feature.properties?.__centroid?.lng ?? feature.properties?.LABEL_X ?? 0;
+            const centroidLat =
+                feature.properties?.__centroid?.lat ?? feature.properties?.LABEL_Y ?? 0;
 
-        // Convert lat/lng to 3D sphere coordinates (unit sphere)
-        const latRad = (centroidLat * Math.PI) / 180;
-        const lngRad = (centroidLng * Math.PI) / 180;
-        const px = Math.cos(latRad) * Math.cos(lngRad);
-        const py = Math.sin(latRad);
-        const pz = Math.cos(latRad) * Math.sin(lngRad);
+            // Convert lat/lng to 3D sphere coordinates (unit sphere)
+            const latRad = (centroidLat * Math.PI) / 180;
+            const lngRad = (centroidLng * Math.PI) / 180;
+            const px = Math.cos(latRad) * Math.cos(lngRad);
+            const py = Math.sin(latRad);
+            const pz = Math.cos(latRad) * Math.sin(lngRad);
 
-        // Time evolution - tuned for visible but smooth animation
-        const t = polygonTimeRef.current.getTime() / 8000;
+            // Time evolution - tuned for visible but smooth animation
+            const t = polygonTimeRef.current.getTime() / 8000;
 
-        // Base spatial frequency - larger patches
-        const scale = 1.8;
+            // Base spatial frequency - larger patches
+            const scale = 1.8;
 
-        // Primary noise layer - regional breathing patches
-        const noise1 = fbm(
-            (px + t * 0.12) * scale,
-            (py + t * 0.09) * scale,
-            (pz + t * 0.07) * scale,
-            4, // octaves
-            2.0, // lacunarity
-            0.5 // gain
-        );
+            // Primary noise layer - regional breathing patches
+            const noise1 = fbm(
+                (px + t * 0.12) * scale,
+                (py + t * 0.09) * scale,
+                (pz + t * 0.07) * scale,
+                4, // octaves
+                2.0, // lacunarity
+                0.5, // gain
+            );
 
-        // Secondary detail layer - adds texture
-        const noise2 = fbm(
-            (px - t * 0.08) * scale * 2.3,
-            (py - t * 0.06) * scale * 2.3,
-            (pz - t * 0.05) * scale * 2.3,
-            3, // fewer octaves for smoother detail
-            2.0,
-            0.6
-        );
+            // Secondary detail layer - adds texture
+            const noise2 = fbm(
+                (px - t * 0.08) * scale * 2.3,
+                (py - t * 0.06) * scale * 2.3,
+                (pz - t * 0.05) * scale * 2.3,
+                3, // fewer octaves for smoother detail
+                2.0,
+                0.6,
+            );
 
-        // Combine: dominant regional + subtle detail
-        const combined = noise1 * 0.75 + noise2 * 0.25;
+            // Combine: dominant regional + subtle detail
+            const combined = noise1 * 0.75 + noise2 * 0.25;
 
-        // Map noise from [-1, 1] to [0, 1]
-        const normalized = (combined + 1) * 0.5;
+            // Map noise from [-1, 1] to [0, 1]
+            const normalized = (combined + 1) * 0.5;
 
-        // Apply strong smoothstep for distinct bright/dark regions
-        const shaped = smoothstep(0.2, 0.6, normalized);
+            // Apply strong smoothstep for distinct bright/dark regions
+            const shaped = smoothstep(0.2, 0.6, normalized);
 
-        // Wide brightness range for dramatic effect
-        const brightness = 0.2 + shaped * 0.95;
+            // Wide brightness range for dramatic effect
+            const brightness = 0.2 + shaped * 0.95;
 
-        // Cyan/blue color with high contrast
-        const r = Math.floor(brightness * 25);
-        const g = Math.floor(brightness * 170);
-        const b = Math.floor(brightness * 255);
+            // Cyan/blue color with high contrast
+            const r = Math.floor(brightness * 25);
+            const g = Math.floor(brightness * 170);
+            const b = Math.floor(brightness * 255);
 
-        return `rgba(${r}, ${g}, ${b}, 0.85)`;
-    }, [showHexPolygons, polygonTick]);
+            return `rgba(${r}, ${g}, ${b}, 0.85)`;
+        },
+        [showHexPolygons, polygonTick],
+    );
 
     return (
         <div
             ref={containerRef}
             className='absolute inset-0 flex h-full w-full items-center justify-center overflow-hidden bg-transparent grayscale opacity-50 dark:opacity-100'
-            style={viewOffsetX ? { transform: `translateX(${viewOffsetX}px)` } : undefined}
+            style={
+                viewOffsetX ? { transform: `translateX(${viewOffsetX}px)` } : undefined
+            }
         >
             {dimensions.width > 0 && (
                 <Globe
@@ -411,10 +428,16 @@ export default function GlobeVisualization({
                     backgroundColor={backgroundCol}
                     arcsData={arcsData}
                     arcColor='color'
-                    arcDashLength="dashLength"
-                    arcDashGap="dashGap"
-                    arcDashAnimateTime="animateTime"
-                    atmosphereColor={showAtmosphere ? (isDarkMode ? '#ffffff' : '#333333') : undefined}
+                    arcDashLength='dashLength'
+                    arcDashGap='dashGap'
+                    arcDashAnimateTime='animateTime'
+                    atmosphereColor={
+                        showAtmosphere
+                            ? isDarkMode
+                                ? '#ffffff'
+                                : '#333333'
+                            : undefined
+                    }
                     atmosphereAltitude={showAtmosphere ? 0.15 : 0}
                     // Particles configuration matching React example
                     particlesData={particlesData}

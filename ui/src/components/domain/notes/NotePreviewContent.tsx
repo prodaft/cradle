@@ -37,7 +37,7 @@ export const NotePreviewContent = ({ note }: NotePreviewContentProps) => {
         <div className='w-[450px] max-h-[450px] overflow-hidden'>
             {loading ? (
                 <div className='flex items-center justify-center h-32'>
-                    <Spinner className='size-6' />
+                    <Spinner className='size-10' />
                 </div>
             ) : (
                 <ScrollArea className='max-h-[450px]'>

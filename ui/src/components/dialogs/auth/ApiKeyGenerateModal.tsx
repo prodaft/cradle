@@ -9,8 +9,13 @@ import {
 } from '@/components/ui/dialog';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
+import {
+    CopyIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    WarningCircleIcon,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { CopyIcon, EyeIcon, EyeSlashIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 
 /**
@@ -180,9 +185,15 @@ export default function ApiKeyGenerateModal({
                                             }
                                         >
                                             {showApiKey ? (
-                                                <EyeIcon className='w-4 h-4' weight="bold" />
+                                                <EyeIcon
+                                                    className='w-4 h-4'
+                                                    weight='bold'
+                                                />
                                             ) : (
-                                                <EyeSlashIcon className='w-4 h-4' weight="bold" />
+                                                <EyeSlashIcon
+                                                    className='w-4 h-4'
+                                                    weight='bold'
+                                                />
                                             )}
                                         </Button>
                                         <Button
@@ -192,7 +203,10 @@ export default function ApiKeyGenerateModal({
                                             onClick={handleCopy}
                                             title={copied ? 'Copied!' : 'Copy API key'}
                                         >
-                                            <CopyIcon className='w-4 h-4' weight="bold" />
+                                            <CopyIcon
+                                                className='w-4 h-4'
+                                                weight='bold'
+                                            />
                                         </Button>
                                     </div>
                                     {copied && (

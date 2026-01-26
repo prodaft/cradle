@@ -113,9 +113,9 @@ export function DataTable<TData, TValue>({
 
     const effectivePagination = isPaginationControlled
         ? {
-            pageIndex: initialPageIndex ?? 0,
-            pageSize: initialPageSize ?? 10,
-        }
+              pageIndex: initialPageIndex ?? 0,
+              pageSize: initialPageSize ?? 10,
+          }
         : internalPagination;
 
     const effectiveSorting = sorting ?? internalSorting;
@@ -227,7 +227,7 @@ export function DataTable<TData, TValue>({
     if (loading) {
         return (
             <div className='flex items-center justify-center min-h-[200px]'>
-                <Spinner className='size-6' />
+                <Spinner className='size-10' />
             </div>
         );
     }
@@ -250,9 +250,9 @@ export function DataTable<TData, TValue>({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext(),
-                                                )}
+                                                      header.column.columnDef.header,
+                                                      header.getContext(),
+                                                  )}
                                         </TableHead>
                                     );
                                 })}

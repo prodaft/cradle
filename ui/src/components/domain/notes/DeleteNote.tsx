@@ -1,8 +1,8 @@
 import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
 import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
-import { useMutation } from '@tanstack/react-query';
 import { TrashIcon } from '@phosphor-icons/react';
+import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 interface Note {
@@ -59,7 +59,7 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
                         setDeleteModalOpen(true);
                     }}
                 >
-                    <TrashIcon className={classNames} weight="bold" />
+                    <TrashIcon className={classNames} weight='bold' />
                 </Button>
             </span>
             <ConfirmDeletionModal

@@ -43,9 +43,7 @@ function focusFirst(
 }
 
 function wrapArray<T>(array: T[], startIndex: number) {
-    return array.map<T>(
-        (_, index) => array[(startIndex + index) % array.length] as T,
-    );
+    return array.map<T>((_, index) => array[(startIndex + index) % array.length] as T);
 }
 
 function getDirectionAwareKey(key: string, dir?: Direction) {
@@ -413,8 +411,10 @@ function ActionBarGroup(props: DivProps) {
     );
 }
 
-interface ActionBarItemProps
-    extends Omit<React.ComponentProps<typeof Button>, 'onSelect'> {
+interface ActionBarItemProps extends Omit<
+    React.ComponentProps<typeof Button>,
+    'onSelect'
+> {
     onSelect?: (event: Event) => void;
 }
 
@@ -525,7 +525,8 @@ function ActionBarItem(props: ActionBarItemProps) {
             }
 
             if (focusIntent !== undefined) {
-                if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+                if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey)
+                    return;
                 event.preventDefault();
 
                 const items = focusContext.getItems().filter((item) => !item.disabled);
@@ -624,8 +625,12 @@ interface ActionBarSeparatorProps extends DivProps {
 }
 
 function ActionBarSeparator(props: ActionBarSeparatorProps) {
-    const { orientation: orientationProp, asChild, className, ...separatorProps } =
-        props;
+    const {
+        orientation: orientationProp,
+        asChild,
+        className,
+        ...separatorProps
+    } = props;
 
     const context = useActionBarContext(SEPARATOR_NAME);
     const orientation = orientationProp ?? context.orientation;
@@ -650,10 +655,10 @@ function ActionBarSeparator(props: ActionBarSeparatorProps) {
 
 export {
     ActionBar,
-    ActionBarSelection,
+    ActionBarClose,
     ActionBarGroup,
     ActionBarItem,
-    ActionBarClose,
+    ActionBarSelection,
     ActionBarSeparator,
     type ActionBarProps,
 };

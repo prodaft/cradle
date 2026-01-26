@@ -76,7 +76,10 @@ interface LocationState {
  * NoteViewer component - displays note content with editing capabilities
  */
 export default function NoteViewer() {
-    const params = useParams({ from: '/_authenticated/notes/$id' as any, strict: false });
+    const params = useParams({
+        from: '/_authenticated/notes/$id' as any,
+        strict: false,
+    });
     const router = useRouter();
     const queryClient = useQueryClient();
     const location = useRouterState({
@@ -131,7 +134,9 @@ export default function NoteViewer() {
     >([]);
     const [initialMarkdown, setInitialMarkdown] = useState('');
     const [isLoading, setIsLoading] = useState(true);
-    const [activeView, setActiveView] = useState<ViewMode>((search as any).view as ViewMode || ViewMode.CONTENT);
+    const [activeView, setActiveView] = useState<ViewMode>(
+        ((search as any).view as ViewMode) || ViewMode.CONTENT,
+    );
     const [isFleeting, setIsFleeting] = useState(false);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -602,7 +607,8 @@ export default function NoteViewer() {
                 content,
                 (lineNumber: number) => {
                     // For editing mode: scroll to line in editor
-                    if (!editorRef.current?.view || typeof lineNumber !== 'number') return;
+                    if (!editorRef.current?.view || typeof lineNumber !== 'number')
+                        return;
 
                     const view = editorRef.current.view;
                     if (view) {
@@ -711,9 +717,9 @@ export default function NoteViewer() {
                                     data-testid='actions-dropdown-btn'
                                 >
                                     {enableEditing ? (
-                                        <PencilSimpleIcon size={20} weight="bold" />
+                                        <PencilSimpleIcon size={20} weight='bold' />
                                     ) : (
-                                        <BookOpenIcon size={20} weight="bold" />
+                                        <BookOpenIcon size={20} weight='bold' />
                                     )}
                                 </Button>
                             </TooltipTrigger>
@@ -797,7 +803,9 @@ export default function NoteViewer() {
                                             <div
                                                 className={cn(
                                                     'h-full flex flex-col border-l border-border relative',
-                                                    !enableEditing && richEditor && 'overflow-hidden'
+                                                    !enableEditing &&
+                                                        richEditor &&
+                                                        'overflow-hidden',
                                                 )}
                                                 onDoubleClick={
                                                     handleEnableEditingWithConfirmation
@@ -816,11 +824,20 @@ export default function NoteViewer() {
                                                     />
                                                 )}
                                                 {/* Embedded Rich Editor or Static Render */}
-                                                <div className={cn('flex-1 min-h-0', !enableEditing && richEditor && 'overflow-hidden')}>
+                                                <div
+                                                    className={cn(
+                                                        'flex-1 min-h-0',
+                                                        !enableEditing &&
+                                                            richEditor &&
+                                                            'overflow-hidden',
+                                                    )}
+                                                >
                                                     {enableEditing || !richEditor ? (
                                                         <>
                                                             <RichEditor
-                                                                editorUtils={editorUtils}
+                                                                editorUtils={
+                                                                    editorUtils
+                                                                }
                                                                 additionalExtensions={
                                                                     customKeymap
                                                                 }
@@ -834,11 +851,19 @@ export default function NoteViewer() {
                                                                     setMarkdownContent
                                                                 }
                                                                 fileData={fileData}
-                                                                setFileData={handleFilesChange}
+                                                                setFileData={
+                                                                    handleFilesChange
+                                                                }
                                                                 source={!richEditor}
-                                                                saveNote={handleSaveNote}
-                                                                enableEditing={enableEditing}
-                                                                setLineNumber={setLineNumber}
+                                                                saveNote={
+                                                                    handleSaveNote
+                                                                }
+                                                                enableEditing={
+                                                                    enableEditing
+                                                                }
+                                                                setLineNumber={
+                                                                    setLineNumber
+                                                                }
                                                             />
                                                             {/* Reference Tree below the editor */}
                                                             {note && (
@@ -853,7 +878,9 @@ export default function NoteViewer() {
                                                             <div className='h-[55%] rich-editor markdown-body static-render'>
                                                                 <StaticRender
                                                                     note={note}
-                                                                    markdownContent={markdownContent}
+                                                                    markdownContent={
+                                                                        markdownContent
+                                                                    }
                                                                     fileData={fileData}
                                                                 />
                                                             </div>
@@ -867,7 +894,9 @@ export default function NoteViewer() {
                                     <div
                                         className={cn(
                                             'h-full flex flex-col border-l border-border relative',
-                                            !enableEditing && richEditor && 'overflow-hidden'
+                                            !enableEditing &&
+                                                richEditor &&
+                                                'overflow-hidden',
                                         )}
                                         onDoubleClick={
                                             handleEnableEditingWithConfirmation
@@ -884,16 +913,29 @@ export default function NoteViewer() {
                                             />
                                         )}
                                         {/* Embedded Rich Editor or Static Render */}
-                                        <div className={cn('flex-1 min-h-0', !enableEditing && richEditor && 'overflow-hidden')}>
+                                        <div
+                                            className={cn(
+                                                'flex-1 min-h-0',
+                                                !enableEditing &&
+                                                    richEditor &&
+                                                    'overflow-hidden',
+                                            )}
+                                        >
                                             {enableEditing || !richEditor ? (
                                                 <>
                                                     <RichEditor
-                                                        additionalExtensions={customKeymap}
+                                                        additionalExtensions={
+                                                            customKeymap
+                                                        }
                                                         key={`${noteId}-${richEditor ? 'rich' : 'source'}`}
                                                         ref={editorRef}
                                                         noteid={noteId || ''}
-                                                        markdownContent={markdownContent}
-                                                        setMarkdownContent={setMarkdownContent}
+                                                        markdownContent={
+                                                            markdownContent
+                                                        }
+                                                        setMarkdownContent={
+                                                            setMarkdownContent
+                                                        }
                                                         fileData={fileData}
                                                         setFileData={handleFilesChange}
                                                         source={!richEditor}
@@ -914,7 +956,9 @@ export default function NoteViewer() {
                                                 note && (
                                                     <StaticRender
                                                         note={note}
-                                                        markdownContent={markdownContent}
+                                                        markdownContent={
+                                                            markdownContent
+                                                        }
                                                         fileData={fileData}
                                                     />
                                                 )

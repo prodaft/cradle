@@ -1,5 +1,5 @@
-import { queryKeys } from '@/hooks/query';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { ChangeEvent, FormEvent, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -66,7 +66,15 @@ export default function DashboardEnrichmentRequests({
             columnFilters.status == 'all' ? undefined : columnFilters.status;
 
         return searchQueryParams;
-    }, [page, pageSize, entryId, searchFilters, columnFilters, sortField, sortDirection]);
+    }, [
+        page,
+        pageSize,
+        entryId,
+        searchFilters,
+        columnFilters,
+        sortField,
+        sortDirection,
+    ]);
 
     // Query for enrichment requests
     const { data: requestsData, isPending } = useQuery({

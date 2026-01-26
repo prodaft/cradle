@@ -9,10 +9,10 @@ import {
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { Relation } from '@/services/cradle';
+import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { TrashIcon } from '@phosphor-icons/react';
 import { startCase } from 'lodash';
 import { useEffect, useState } from 'react';
 
@@ -64,7 +64,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
         (name: string, subtype: string) => (e: React.MouseEvent) => {
             router.navigate({
                 to: '/dashboards/$subtype/$name',
-                params: { subtype, name }
+                params: { subtype, name },
             });
         };
 
@@ -93,7 +93,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                             onClick={handleDelete}
                             title='Delete Relation'
                         >
-                            <TrashIcon className='w-5 h-5' weight="bold" />
+                            <TrashIcon className='w-5 h-5' weight='bold' />
                         </Button>
                     </CardAction>
                 )}

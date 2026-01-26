@@ -1,5 +1,8 @@
 'use client';
 
+import { useAsRef } from '@/hooks/use-as-ref';
+import { useLazyRef } from '@/hooks/use-lazy-ref';
+import { cn } from '@/lib/utils';
 import { useDirection } from '@radix-ui/react-direction';
 import { Slot } from '@radix-ui/react-slot';
 import {
@@ -12,9 +15,6 @@ import {
     FileVideoIcon,
 } from 'lucide-react';
 import * as React from 'react';
-import { cn } from '@/lib/utils';
-import { useAsRef } from '@/hooks/use-as-ref';
-import { useLazyRef } from '@/hooks/use-lazy-ref';
 
 const ROOT_NAME = 'FileUpload';
 const DROPZONE_NAME = 'FileUploadDropzone';
@@ -131,9 +131,7 @@ function useStoreContext(consumerName: string) {
 function useStore<T>(selector: (state: StoreState) => T): T {
     const store = useStoreContext('useStore');
 
-    const lastValueRef = useLazyRef<{ value: T; state: StoreState } | null>(
-        () => null,
-    );
+    const lastValueRef = useLazyRef<{ value: T; state: StoreState } | null>(() => null);
 
     const getSnapshot = React.useCallback(() => {
         const state = store.getState();
@@ -172,8 +170,10 @@ function useFileUploadContext(consumerName: string) {
     return context;
 }
 
-interface FileUploadProps
-    extends Omit<React.ComponentProps<'div'>, 'defaultValue' | 'onChange'> {
+interface FileUploadProps extends Omit<
+    React.ComponentProps<'div'>,
+    'defaultValue' | 'onChange'
+> {
     value?: File[];
     defaultValue?: File[];
     onValueChange?: (files: File[]) => void;
@@ -539,9 +539,7 @@ function FileUpload(props: FileUploadProps) {
                                 type === fileType ||
                                 type === fileExtension ||
                                 (type.includes('/*') &&
-                                    fileType.startsWith(
-                                        type.replace('/*', '/'),
-                                    )),
+                                    fileType.startsWith(type.replace('/*', '/'))),
                         )
                     ) {
                         rejectionMessage = 'File type not accepted';
@@ -574,9 +572,9 @@ function FileUpload(props: FileUploadProps) {
                 store.dispatch({ type: 'ADD_FILES', files: acceptedFiles });
 
                 if (isControlled && propsRef.current.onValueChange) {
-                    const currentFiles = Array.from(store.getState().files.values()).map(
-                        (f) => f.file,
-                    );
+                    const currentFiles = Array.from(
+                        store.getState().files.values(),
+                    ).map((f) => f.file);
                     propsRef.current.onValueChange([...currentFiles]);
                 }
 
@@ -831,7 +829,10 @@ function FileUploadDropzone(props: FileUploadDropzoneProps) {
         (event: React.KeyboardEvent<HTMLDivElement>) => {
             propsRef.current.onKeyDown?.(event);
 
-            if (!event.defaultPrevented && (event.key === 'Enter' || event.key === ' ')) {
+            if (
+                !event.defaultPrevented &&
+                (event.key === 'Enter' || event.key === ' ')
+            ) {
                 event.preventDefault();
                 context.inputRef.current?.click();
             }
@@ -960,8 +961,9 @@ interface FileUploadItemContextValue {
     messageId: string;
 }
 
-const FileUploadItemContext =
-    React.createContext<FileUploadItemContextValue | null>(null);
+const FileUploadItemContext = React.createContext<FileUploadItemContextValue | null>(
+    null,
+);
 
 function useFileUploadItemContext(consumerName: string) {
     const context = React.useContext(FileUploadItemContext);
@@ -1113,8 +1115,7 @@ interface FileUploadItemMetadataProps extends React.ComponentProps<'div'> {
 }
 
 function FileUploadItemMetadata(props: FileUploadItemMetadataProps) {
-    const { asChild, size = 'default', children, className, ...metadataProps } =
-        props;
+    const { asChild, size = 'default', children, className, ...metadataProps } = props;
 
     const context = useFileUploadContext(ITEM_METADATA_NAME);
     const itemContext = useFileUploadItemContext(ITEM_METADATA_NAME);
@@ -1151,7 +1152,10 @@ function FileUploadItemMetadata(props: FileUploadItemMetadataProps) {
                         {formatBytes(itemContext.fileState.file.size)}
                     </span>
                     {itemContext.fileState.error && (
-                        <span id={itemContext.messageId} className='text-destructive text-xs'>
+                        <span
+                            id={itemContext.messageId}
+                            className='text-destructive text-xs'
+                        >
                             {itemContext.fileState.error}
                         </span>
                     )}
@@ -1339,8 +1343,13 @@ interface FileUploadClearProps extends React.ComponentProps<'button'> {
 }
 
 function FileUploadClear(props: FileUploadClearProps) {
-    const { asChild, forceMount, disabled, onClick: onClickProp, ...clearProps } =
-        props;
+    const {
+        asChild,
+        forceMount,
+        disabled,
+        onClick: onClickProp,
+        ...clearProps
+    } = props;
 
     const context = useFileUploadContext(CLEAR_NAME);
     const store = useStoreContext(CLEAR_NAME);
@@ -1380,15 +1389,15 @@ function FileUploadClear(props: FileUploadClearProps) {
 
 export {
     FileUpload,
-    FileUploadDropzone,
-    FileUploadTrigger,
-    FileUploadList,
-    FileUploadItem,
-    FileUploadItemPreview,
-    FileUploadItemMetadata,
-    FileUploadItemProgress,
-    FileUploadItemDelete,
     FileUploadClear,
+    FileUploadDropzone,
+    FileUploadItem,
+    FileUploadItemDelete,
+    FileUploadItemMetadata,
+    FileUploadItemPreview,
+    FileUploadItemProgress,
+    FileUploadList,
+    FileUploadTrigger,
     useStore as useFileUpload,
     type FileUploadProps,
 };

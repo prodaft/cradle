@@ -1,6 +1,11 @@
 import type { ThemeConfig } from '@/types/index';
 import { ayuDark, ayuLight, ayuMirage } from './ayu';
-import { catppuccinFrappe, catppuccinLatte, catppuccinMacchiato, catppuccinMocha } from './catppuccin';
+import {
+    catppuccinFrappe,
+    catppuccinLatte,
+    catppuccinMacchiato,
+    catppuccinMocha,
+} from './catppuccin';
 import { celestial } from './celestial';
 import { cradleDark, cradleLight } from './cradle';
 import { darkTheme } from './dark';
@@ -144,12 +149,12 @@ export {
     dracula,
     // Gruvbox
     gruvboxDark,
-    gruvboxLight, lightTheme,
+    gruvboxLight,
+    lightTheme,
     // Solarized
     solarizedDark,
     solarizedLight,
     // VS Code themes
     vscodeDark,
-    vscodeLight
+    vscodeLight,
 };
-

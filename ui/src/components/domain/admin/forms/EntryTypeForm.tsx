@@ -1,6 +1,16 @@
-import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+    ColorPicker,
+    ColorPickerArea,
+    ColorPickerContent,
+    ColorPickerEyeDropper,
+    ColorPickerFormatSelect,
+    ColorPickerHueSlider,
+    ColorPickerInput,
+    ColorPickerSwatch,
+    ColorPickerTrigger,
+} from '@/components/ui/color-picker';
 import {
     Field,
     FieldContent,
@@ -14,19 +24,7 @@ import {
     InputGroupAddon,
     InputGroupButton,
 } from '@/components/ui/input-group';
-import { Label } from '@/components/ui/label';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
-import {
-    ColorPicker,
-    ColorPickerArea,
-    ColorPickerContent,
-    ColorPickerEyeDropper,
-    ColorPickerFormatSelect,
-    ColorPickerHueSlider,
-    ColorPickerInput,
-    ColorPickerSwatch,
-    ColorPickerTrigger,
-} from '@/components/ui/color-picker';
 import {
     Select,
     SelectContent,
@@ -35,6 +33,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -255,7 +254,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     if (isPending && !isPaused) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='text-foreground'><Spinner /></div>
+                <div className='text-foreground'>
+                    <Spinner className='size-10' />
+                </div>
             </div>
         );
     }
@@ -284,7 +285,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='text-foreground'><Spinner /></div>
+                <div className='text-foreground'>
+                    <Spinner className='size-10' />
+                </div>
             </div>
         );
     }
@@ -330,9 +333,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 field.onChange(
                                                     option
                                                         ? {
-                                                            value: option.value,
-                                                            label: option.label,
-                                                        }
+                                                              value: option.value,
+                                                              label: option.label,
+                                                          }
                                                         : null,
                                                 );
                                             }}
@@ -479,7 +482,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 </FieldError>
                                             )}
                                         </FieldContent>
-                                        <div className='w-72'>
+                                        <div className='w-72 self-center'>
                                             <ColorPicker
                                                 value={field.value}
                                                 onValueChange={field.onChange}
@@ -497,7 +500,9 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                         </ColorPickerTrigger>
                                                         <InputGroupButton
                                                             size='icon-xs'
-                                                            onClick={generateRandomColor}
+                                                            onClick={
+                                                                generateRandomColor
+                                                            }
                                                         >
                                                             <svg
                                                                 xmlns='http://www.w3.org/2000/svg'
@@ -612,22 +617,19 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     )}
                                                 </FieldContent>
                                                 <Select
-                                                    value={
-                                                        field.value?.value || ''
-                                                    }
+                                                    value={field.value?.value || ''}
                                                     onValueChange={(value) => {
                                                         const option =
                                                             formatOptions.find(
                                                                 (opt) =>
-                                                                    opt.value ===
-                                                                    value,
+                                                                    opt.value === value,
                                                             );
                                                         field.onChange(
                                                             option
                                                                 ? {
-                                                                    value: option.value,
-                                                                    label: option.label,
-                                                                }
+                                                                      value: option.value,
+                                                                      label: option.label,
+                                                                  }
                                                                 : null,
                                                         );
                                                     }}
@@ -646,20 +648,14 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                         <SelectValue placeholder='Select format' />
                                                     </SelectTrigger>
                                                     <SelectContent>
-                                                        {formatOptions.map(
-                                                            (option) => (
-                                                                <SelectItem
-                                                                    key={
-                                                                        option.value
-                                                                    }
-                                                                    value={
-                                                                        option.value
-                                                                    }
-                                                                >
-                                                                    {option.label}
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
+                                                        {formatOptions.map((option) => (
+                                                            <SelectItem
+                                                                key={option.value}
+                                                                value={option.value}
+                                                            >
+                                                                {option.label}
+                                                            </SelectItem>
+                                                        ))}
                                                     </SelectContent>
                                                 </Select>
                                             </Field>
@@ -808,7 +804,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                                 </FieldError>
                                                             )}
                                                         </FieldContent>
-                                                        <div className='w-64'>
+                                                        <div className='w-64 self-center'>
                                                             <Input
                                                                 {...field}
                                                                 id='generativeRegex'
@@ -849,7 +845,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 Children
                                             </FieldLabel>
                                             <FieldDescription className='text-sm'>
-                                                Entry types that can be children of this type
+                                                Entry types that can be children of this
+                                                type
                                             </FieldDescription>
                                             {fieldState.invalid && (
                                                 <FieldError className='text-sm mt-1'>

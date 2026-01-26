@@ -4,8 +4,13 @@ import { Spinner } from '@/components/ui/spinner';
 import { useTheme } from '@/contexts/ui';
 import { logger } from '@/utils/logger';
 import { Cosmograph } from '@cosmograph/react';
-import { FunnelIcon, GearIcon, MagnifyingGlassIcon, PauseIcon, PlayIcon } from '@phosphor-icons/react';
-import { useDuckDb } from "duckdb-wasm-kit";
+import {
+    FunnelIcon,
+    GearIcon,
+    MagnifyingGlassIcon,
+    PauseIcon,
+    PlayIcon,
+} from '@phosphor-icons/react';
 import { MinusIcon, PlusIcon } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Edge, Node } from './graphFilterUtils';
@@ -83,27 +88,6 @@ function normalize(x: number, inputMin: number, inputMax: number): number {
     return outputMin + normalized * (outputMax - outputMin);
 }
 
-function cssToHex(color: string): string {
-    if (!color) return '#000000';
-    if (color.startsWith('#')) return color;
-
-    try {
-        const canvas = document.createElement('canvas');
-        canvas.width = 1;
-        canvas.height = 1;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return '#000000';
-
-        ctx.fillStyle = color;
-        ctx.fillRect(0, 0, 1, 1);
-        const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-
-        return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
-    } catch (e) {
-        return '#000000';
-    }
-}
-
 export default function GraphViewer({
     selectedNodes,
     setSelectedNodes,
@@ -118,19 +102,10 @@ export default function GraphViewer({
     fetchProgress = null,
     fetchControls = null,
 }: GraphViewerProps) {
-    const { isDarkMode, activeTheme } = useTheme();
+    const { isDarkMode } = useTheme();
     const internalCosmographRef = useRef<any>(null);
     const cosmographRef = externalCosmographRef || internalCosmographRef;
     const [enableSimulation, setEnableSimulation] = useState(true);
-    const { db: duckDB, loading: duckDBLoading, error: duckDBError } = useDuckDb();
-    const [duckDBConnection, setDuckDBConnection] = useState<{ duckdb: any; connection: any } | null>(null);
-    const [pointsTableName, setPointsTableName] = useState<string | null>(null);
-    const [linksTableName, setLinksTableName] = useState<string | null>(null);
-    const tablesRef = useRef<{ points: string | null; links: string | null }>({ points: null, links: null });
-    const backgroundColor = useMemo(() => {
-        const bgVar = activeTheme?.['--background'];
-        return bgVar ? cssToHex(bgVar) : (isDarkMode ? '#000000' : '#ffffff');
-    }, [activeTheme, isDarkMode]);
 
     // Filter out invalid nodes first
     const validNodes = useMemo(() => {
@@ -233,7 +208,9 @@ export default function GraphViewer({
                             clickedNodes.unshift(node);
                         }
                     } catch (e) {
-                        logger.warn('[Graph] Error getting connected points:', { error: e });
+                        logger.warn('[Graph] Error getting connected points:', {
+                            error: e,
+                        });
                     }
                 }
 
@@ -326,244 +303,29 @@ export default function GraphViewer({
         return () => clearTimeout(fitTimer);
     }, [pointsData.length]);
 
-    if (duckDBError) {
-        return <div className='flex items-center justify-center h-full text-muted-foreground'>
-            <div className='text-center'>
-                <p className='text-lg mb-2'>Error loading DuckDB</p>
-            </div>
-        </div>
-    }
+    // Cleanup on unmount (Doing this results in errors when we navigate away from the page, so I've commented it out)
+    // useEffect(() => {
+    //     return () => {
+    //         try {
+    //             if (
+    //                 cosmographRef.current &&
+    //                 typeof cosmographRef.current.destroy === 'function'
+    //             ) {
+    //                 cosmographRef.current.destroy();
+    //             }
+    //         } catch (e) {
+    //             logger.warn('[Graph] Error during cleanup:', { error: e });
+    //         }
+    //     };
+    // }, []);
 
-    // Only render Cosmograph when we have valid data and DuckDB tables are ready
-    const hasValidData = pointsData.length > 0 && !duckDBLoading && duckDBConnection !== null && pointsTableName !== null;
+    // Only render Cosmograph when we have valid data
+    const hasValidData = pointsData.length > 0;
 
     const spaceSize = useMemo(() => {
         const nodeCount = pointsData.length;
         return Math.max(2048, Math.sqrt(nodeCount) * 150);
     }, [pointsData.length]);
-
-    // Initialize DuckDB tables with points and links data
-    useEffect(() => {
-        let pointsTable: string | null = null;
-        let linksTable: string | null = null;
-        let connection: any = null;
-        let isCancelled = false;
-
-        async function initCosmographTables() {
-            if (!duckDB || pointsData.length === 0) {
-                // Reset state if no data
-                setDuckDBConnection(null);
-                setPointsTableName(null);
-                setLinksTableName(null);
-                return;
-            }
-
-            try {
-                // Create a persistent connection that will be used by Cosmograph
-                connection = await duckDB.connect();
-
-                // Generate unique table names to avoid conflicts
-                const timestamp = Date.now();
-                pointsTable = `cosmograph_points_${timestamp}`;
-                linksTable = `cosmograph_links_${timestamp}`;
-
-                // Drop existing tables if they exist (cleanup from previous runs)
-                try {
-                    await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
-                    await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
-                } catch (e) {
-                    // Ignore errors if tables don't exist
-                }
-
-                // Create points table with required columns
-                // Using IF NOT EXISTS to avoid errors if table somehow already exists
-                await connection.query(`
-                    CREATE TABLE IF NOT EXISTS ${pointsTable} (
-                        id VARCHAR NOT NULL,
-                        idx INTEGER NOT NULL,
-                        color VARCHAR,
-                        size DOUBLE,
-                        label VARCHAR,
-                        degree INTEGER
-                    )
-                `);
-
-                // Insert points data in batches to avoid query size limits
-                const batchSize = 1000;
-                for (let i = 0; i < pointsData.length; i += batchSize) {
-                    if (isCancelled) {
-                        // Clean up if cancelled during insertion
-                        if (connection && pointsTable) {
-                            try {
-                                await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
-                            } catch (e) {
-                                // Ignore
-                            }
-                        }
-                        return;
-                    }
-                    const batch = pointsData.slice(i, i + batchSize);
-                    const values = batch.map((point) => {
-                        const id = String(point.id).replace(/'/g, "''");
-                        const color = String(point._color || '').replace(/'/g, "''");
-                        const label = String(point._label || '').replace(/'/g, "''");
-                        return `('${id}', ${point._index}, '${color}', ${point._size || 0}, '${label}', ${point.degree || 0})`;
-                    }).join(', ');
-
-                    await connection.query(`
-                        INSERT INTO ${pointsTable} (id, idx, color, size, label, degree)
-                        VALUES ${values}
-                    `);
-                }
-
-                // Create links table with required columns
-                if (linksData.length > 0 && !isCancelled) {
-                    await connection.query(`
-                        CREATE TABLE IF NOT EXISTS ${linksTable} (
-                            source VARCHAR NOT NULL,
-                            sourceidx INTEGER NOT NULL,
-                            target VARCHAR NOT NULL,
-                            targetidx INTEGER NOT NULL
-                        )
-                    `);
-
-                    // Insert links data in batches
-                    for (let i = 0; i < linksData.length; i += batchSize) {
-                        if (isCancelled) {
-                            // Clean up if cancelled during insertion
-                            if (connection && linksTable) {
-                                try {
-                                    await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
-                                } catch (e) {
-                                    // Ignore
-                                }
-                            }
-                            if (connection && pointsTable) {
-                                try {
-                                    await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
-                                } catch (e) {
-                                    // Ignore
-                                }
-                            }
-                            return;
-                        }
-                        const batch = linksData.slice(i, i + batchSize);
-                        const values = batch.map((link) => {
-                            const source = String(link.source).replace(/'/g, "''");
-                            const target = String(link.target).replace(/'/g, "''");
-                            return `('${source}', ${link._sourceIndex}, '${target}', ${link._targetIndex})`;
-                        }).join(', ');
-
-                        await connection.query(`
-                            INSERT INTO ${linksTable} (source, sourceidx, target, targetidx)
-                            VALUES ${values}
-                        `);
-                    }
-                }
-
-                // Only set state if not cancelled - this triggers Cosmograph to render
-                // The tables must be fully created and populated before this point
-                if (!isCancelled) {
-                    // Ensure catalog is updated by doing a simple query
-                    // This helps prevent "missing catalog" errors
-                    try {
-                        await connection.query(`SELECT 1 FROM ${pointsTable} LIMIT 1`);
-                        if (linksData.length > 0 && linksTable) {
-                            await connection.query(`SELECT 1 FROM ${linksTable} LIMIT 1`);
-                        }
-                    } catch (catalogError) {
-                        logger.warn('[Graph] Catalog verification query failed, but continuing:', { error: catalogError });
-                        // Continue anyway - the tables should still be accessible
-                    }
-
-                    // Store table names in ref for cleanup
-                    tablesRef.current = { points: pointsTable, links: linksData.length > 0 ? linksTable : null };
-
-                    // Store connection and table names - this must happen after all tables are created
-                    // The connection will be kept alive for Cosmograph to use
-                    // Important: We pass the same connection instance that created the tables
-                    setDuckDBConnection({ duckdb: duckDB, connection });
-                    setPointsTableName(pointsTable);
-                    setLinksTableName(linksData.length > 0 ? linksTable : null);
-
-                    logger.info('[Graph] DuckDB tables initialized and ready', {
-                        pointsTable,
-                        linksTable,
-                        pointsCount: pointsData.length,
-                        linksCount: linksData.length,
-                    });
-                } else {
-                    // Clean up if we were cancelled
-                    if (connection && pointsTable) {
-                        try {
-                            await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
-                        } catch (e) {
-                            // Ignore
-                        }
-                    }
-                    if (connection && linksTable) {
-                        try {
-                            await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
-                        } catch (e) {
-                            // Ignore
-                        }
-                    }
-                }
-            } catch (error) {
-                logger.error('[Graph] Error initializing DuckDB tables:', error);
-                // Clean up on error
-                if (connection && pointsTable) {
-                    try {
-                        await connection.query(`DROP TABLE IF EXISTS ${pointsTable}`);
-                    } catch (e) {
-                        // Ignore cleanup errors
-                    }
-                }
-                if (connection && linksTable) {
-                    try {
-                        await connection.query(`DROP TABLE IF EXISTS ${linksTable}`);
-                    } catch (e) {
-                        // Ignore cleanup errors
-                    }
-                }
-                // Reset state on error
-                if (!isCancelled) {
-                    setDuckDBConnection(null);
-                    setPointsTableName(null);
-                    setLinksTableName(null);
-                }
-            }
-        }
-
-        initCosmographTables();
-
-        // Cleanup function - only runs when component unmounts or dependencies change
-        // This ensures tables persist for the entire Cosmograph lifecycle
-        return () => {
-            isCancelled = true;
-            async function cleanup() {
-                try {
-                    // Clean up using ref (most recent) or local variables (fallback)
-                    const tablesToDrop = tablesRef.current;
-                    const pointsToDrop = tablesToDrop.points || pointsTable;
-                    const linksToDrop = tablesToDrop.links || linksTable;
-
-                    if (duckDB && (pointsToDrop || linksToDrop)) {
-                        const cleanupConnection = await duckDB.connect();
-                        if (pointsToDrop) {
-                            await cleanupConnection.query(`DROP TABLE IF EXISTS ${pointsToDrop}`);
-                        }
-                        if (linksToDrop) {
-                            await cleanupConnection.query(`DROP TABLE IF EXISTS ${linksToDrop}`);
-                        }
-                    }
-                } catch (error) {
-                    logger.warn('[Graph] Error cleaning up DuckDB tables:', { error });
-                }
-            }
-            cleanup();
-        };
-    }, [duckDB, pointsData, linksData]);
 
     return (
         <div className='w-full h-full bg-background relative overflow-hidden'>
@@ -572,17 +334,24 @@ export default function GraphViewer({
                     {/* Bottom status bar with stats and loading indicator */}
                     <div className='absolute bottom-2 left-2 z-10 bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 flex items-center gap-3 shadow-md text-xs'>
                         <span className='text-muted-foreground'>
-                            <span className='font-medium text-foreground'>{pointsData.length}</span> nodes
+                            <span className='font-medium text-foreground'>
+                                {pointsData.length}
+                            </span>{' '}
+                            nodes
                         </span>
                         <span className='text-muted-foreground'>
-                            <span className='font-medium text-foreground'>{linksData.length}</span> edges
+                            <span className='font-medium text-foreground'>
+                                {linksData.length}
+                            </span>{' '}
+                            edges
                         </span>
                         {fetchProgress && (
                             <>
                                 <span className='text-border'>|</span>
-                                <Spinner className='size-3' />
+                                <Spinner className='size-10' />
                                 <span className='text-muted-foreground'>
-                                    {fetchProgress.currentPage}/{fetchProgress.totalPages}
+                                    {fetchProgress.currentPage}/
+                                    {fetchProgress.totalPages}
                                     {fetchProgress.isPaused && ' (paused)'}
                                 </span>
                                 {fetchControls && (
@@ -597,12 +366,22 @@ export default function GraphViewer({
                                                 fetchControls.pause();
                                             }
                                         }}
-                                        title={fetchProgress.isPaused ? 'Resume loading' : 'Pause loading'}
+                                        title={
+                                            fetchProgress.isPaused
+                                                ? 'Resume loading'
+                                                : 'Pause loading'
+                                        }
                                     >
                                         {fetchProgress.isPaused ? (
-                                            <PlayIcon className='size-3' weight="fill" />
+                                            <PlayIcon
+                                                className='size-3'
+                                                weight='fill'
+                                            />
                                         ) : (
-                                            <PauseIcon className='size-3' weight="fill" />
+                                            <PauseIcon
+                                                className='size-3'
+                                                weight='fill'
+                                            />
                                         )}
                                     </Button>
                                 )}
@@ -619,12 +398,13 @@ export default function GraphViewer({
                                     activePanel === 'explorer' ? 'outline' : 'outline'
                                 }
                                 size='icon'
-                                className={`p-1.5 w-8 h-8 ${activePanel === 'explorer' ? 'border-primary' : ''
-                                    }`}
+                                className={`p-1.5 w-8 h-8 ${
+                                    activePanel === 'explorer' ? 'border-primary' : ''
+                                }`}
                                 title='Toggle explorer panel'
                                 onClick={() => onTogglePanel('explorer')}
                             >
-                                <MagnifyingGlassIcon size={16} weight="bold" />
+                                <MagnifyingGlassIcon size={16} weight='bold' />
                             </Button>
                         )}
 
@@ -636,12 +416,13 @@ export default function GraphViewer({
                                     activePanel === 'display' ? 'outline' : 'outline'
                                 }
                                 size='icon'
-                                className={`p-1.5 w-8 h-8 ${activePanel === 'display' ? 'border-primary' : ''
-                                    }`}
+                                className={`p-1.5 w-8 h-8 ${
+                                    activePanel === 'display' ? 'border-primary' : ''
+                                }`}
                                 title='Toggle display panel'
                                 onClick={() => onTogglePanel('display')}
                             >
-                                <GearIcon size={16} weight="bold" />
+                                <GearIcon size={16} weight='bold' />
                             </Button>
                         )}
 
@@ -653,12 +434,13 @@ export default function GraphViewer({
                                     activePanel === 'filters' ? 'outline' : 'outline'
                                 }
                                 size='icon'
-                                className={`p-1.5 w-8 h-8 ${activePanel === 'filters' ? 'border-primary' : ''
-                                    }`}
+                                className={`p-1.5 w-8 h-8 ${
+                                    activePanel === 'filters' ? 'border-primary' : ''
+                                }`}
                                 title='Toggle filters panel'
                                 onClick={() => onTogglePanel('filters')}
                             >
-                                <FunnelIcon size={16} weight="bold" />
+                                <FunnelIcon size={16} weight='bold' />
                             </Button>
                         )}
 
@@ -678,9 +460,9 @@ export default function GraphViewer({
                             }}
                         >
                             {enableSimulation ? (
-                                <PauseIcon size={16} weight="fill" />
+                                <PauseIcon size={16} weight='fill' />
                             ) : (
-                                <PlayIcon size={16} weight="fill" />
+                                <PlayIcon size={16} weight='fill' />
                             )}
                         </Button>
                     </div>
@@ -837,19 +619,18 @@ export default function GraphViewer({
                     </div>
                     <Cosmograph
                         ref={cosmographRef}
-                        points={pointsTableName!}
-                        links={config.showLinks !== false && linksTableName ? linksTableName : undefined}
+                        points={pointsData}
+                        links={config.showLinks !== false ? linksData : []}
                         pointIdBy='id'
-                        pointIndexBy='idx'
-                        pointColorBy='color'
-                        pointLabelBy='label'
-                        pointSizeBy='size'
+                        pointIndexBy='_index'
+                        pointColorBy='_color'
+                        pointLabelBy='_label'
+                        pointSizeBy='_size'
                         linkSourceBy='source'
                         linkTargetBy='target'
-                        linkSourceIndexBy='sourceidx'
-                        linkTargetIndexBy='targetidx'
-                        backgroundColor={backgroundColor}
-                        duckDBConnection={duckDBConnection!}
+                        linkSourceIndexBy='_sourceIndex'
+                        linkTargetIndexBy='_targetIndex'
+                        backgroundColor='var(--background)'
                         pointGreyoutOpacity={0}
                         pointSizeRange={[
                             15 * (config.nodeRadiusCoefficient ?? 1),
@@ -887,11 +668,12 @@ export default function GraphViewer({
                     <div className='text-center'>
                         {isLoading ? (
                             <>
-                                <Spinner className='size-8 mx-auto mb-3' />
+                                <Spinner className='size-10 mx-auto mb-3' />
                                 <p className='text-lg'>Loading graph data...</p>
                                 {fetchProgress && (
                                     <p className='text-sm mt-1'>
-                                        Page {fetchProgress.currentPage} of {fetchProgress.totalPages}
+                                        Page {fetchProgress.currentPage} of{' '}
+                                        {fetchProgress.totalPages}
                                         {fetchProgress.isPaused && ' (paused)'}
                                     </p>
                                 )}
@@ -910,12 +692,18 @@ export default function GraphViewer({
                                     >
                                         {fetchProgress.isPaused ? (
                                             <>
-                                                <PlayIcon className='size-4 mr-1' weight="fill" />
+                                                <PlayIcon
+                                                    className='size-4 mr-1'
+                                                    weight='fill'
+                                                />
                                                 Resume
                                             </>
                                         ) : (
                                             <>
-                                                <PauseIcon className='size-4 mr-1' weight="fill" />
+                                                <PauseIcon
+                                                    className='size-4 mr-1'
+                                                    weight='fill'
+                                                />
                                                 Pause
                                             </>
                                         )}
@@ -925,7 +713,9 @@ export default function GraphViewer({
                         ) : (
                             <>
                                 <p className='text-lg mb-2'>No graph data available</p>
-                                <p className='text-sm'>Add nodes to visualize the graph</p>
+                                <p className='text-sm'>
+                                    Add nodes to visualize the graph
+                                </p>
                             </>
                         )}
                     </div>

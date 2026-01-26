@@ -1,6 +1,8 @@
-import { ActionBarSearch, ActionBar as BaseActionBar } from '@/components/base/ActionBar/ActionBar';
+import {
+    ActionBarSearch,
+    ActionBar as BaseActionBar,
+} from '@/components/base/ActionBar/ActionBar';
 import PageHeader from '@/components/base/PageHeader';
-import { Spinner } from '@/components/ui/spinner';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -22,11 +24,17 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
-import { ClockCounterClockwiseIcon, GearIcon, PencilIcon, TrashIcon } from '@phosphor-icons/react';
+import {
+    ClockCounterClockwiseIcon,
+    GearIcon,
+    PencilIcon,
+    TrashIcon,
+} from '@phosphor-icons/react';
 import { EntryClass } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -182,10 +190,11 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                                             e.preventDefault();
                                             handleTabClick(item.id);
                                         }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${isActive
+                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
+                                            isActive
                                                 ? 'bg-muted hover:bg-accent active'
                                                 : ''
-                                            }`}
+                                        }`}
                                         data-status={isActive ? 'active' : undefined}
                                         aria-current={isActive ? 'page' : undefined}
                                     >
@@ -215,7 +224,7 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                             className='bg-border my-4 flex-none'
                         />
                         {tab === 'activity' ? (
-                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth'>
+                            <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth'>
                                 <ActivityList
                                     content_type='entryclass'
                                     objectId={subtype}
@@ -223,7 +232,7 @@ function EntryTypeSettingsPage({ subtype }: { subtype: string }) {
                                 />
                             </div>
                         ) : (
-                            <div className='faded-bottom h-full w-full overflow-y-auto scroll-smooth pe-4 pb-12'>
+                            <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pe-4 pb-12'>
                                 <div className='-mx-1 px-1.5'>
                                     <EntryTypeForm
                                         id={subtype}
@@ -305,7 +314,9 @@ export default function EntryTypesPage() {
     }, [entryTypesData]);
 
     const handleEditClick = (entryType: EntryTypeData) => {
-        router.navigate({ to: `/manage/entry-types/${encodeURIComponent(entryType.subtype)}` as any });
+        router.navigate({
+            to: `/manage/entry-types/${encodeURIComponent(entryType.subtype)}` as any,
+        });
     };
 
     // Delete mutation
@@ -338,7 +349,9 @@ export default function EntryTypesPage() {
     const handleEditSelected = useCallback(() => {
         if (selectedEntryTypeIds.length !== 1) return;
         const subtype = selectedEntryTypeIds[0];
-        router.navigate({ to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any });
+        router.navigate({
+            to: `/manage/entry-types/${encodeURIComponent(subtype)}` as any,
+        });
     }, [selectedEntryTypeIds, router]);
 
     const handleViewActivitySelected = useCallback(() => {
@@ -566,7 +579,7 @@ export default function EntryTypesPage() {
                     <div className='flex-1 space-y-4'>
                         {isPending ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
-                                <Spinner />
+                                <Spinner className='size-10' />
                             </div>
                         ) : (
                             <DataTable table={table} onRowClick={handleEditClick} />
@@ -590,7 +603,7 @@ export default function EntryTypesPage() {
                         onClick={handleEditSelected}
                         disabled={isPending || selectedEntryTypeIds.length !== 1}
                     >
-                        <PencilIcon size={18} weight="bold" />
+                        <PencilIcon size={18} weight='bold' />
                         Edit
                     </ActionBarItem>
                     {isAdmin && (
@@ -598,7 +611,7 @@ export default function EntryTypesPage() {
                             onClick={handleViewActivitySelected}
                             disabled={isPending || selectedEntryTypeIds.length !== 1}
                         >
-                            <ClockCounterClockwiseIcon size={18} weight="bold" />
+                            <ClockCounterClockwiseIcon size={18} weight='bold' />
                             View Activity
                         </ActionBarItem>
                     )}
@@ -608,7 +621,7 @@ export default function EntryTypesPage() {
                             disabled={isPending || selectedEntryTypeIds.length === 0}
                             className='text-destructive'
                         >
-                            <TrashIcon size={18} weight="bold" />
+                            <TrashIcon size={18} weight='bold' />
                             Delete
                         </ActionBarItem>
                     )}

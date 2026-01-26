@@ -2,8 +2,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardAction, CardHeader, CardTitle } from '@/components/ui/card';
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
+import {
+    ClockCounterClockwiseIcon,
+    PencilSimpleIcon,
+    TrashIcon,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { ClockCounterClockwiseIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { ReactNode, useState } from 'react';
 import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
 import ActivityList from '../../activity/ActivityList';
@@ -80,7 +84,7 @@ export default function AdminPanelCardEntity({
                             }}
                             title='View Activity'
                         >
-                            <ClockCounterClockwiseIcon size={16} weight="bold" />
+                            <ClockCounterClockwiseIcon size={16} weight='bold' />
                         </Button>
                     )}
                     <Button
@@ -92,7 +96,7 @@ export default function AdminPanelCardEntity({
                         }}
                         title='Edit'
                     >
-                        <PencilSimpleIcon size={16} weight="bold" />
+                        <PencilSimpleIcon size={16} weight='bold' />
                     </Button>
                     {isAdmin && (
                         <>

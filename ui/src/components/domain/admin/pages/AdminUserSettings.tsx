@@ -26,10 +26,10 @@ import { useAuthActions } from '@/hooks/auth/useAuth';
 import { queryKeys } from '@/hooks/query';
 import { UserRetrieve } from '@/services/cradle/models';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import bytes from 'bytes';
-import { WarningCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -342,7 +342,7 @@ export default function AdminUserSettings({
                                                 : 'default'
                                         }
                                     >
-                                        <WarningCircleIcon size={18} weight="bold" />
+                                        <WarningCircleIcon size={18} weight='bold' />
                                         <AlertDescription>
                                             {alert.message}
                                         </AlertDescription>
@@ -495,7 +495,7 @@ export default function AdminUserSettings({
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='w-auto'>
+                                                <div className='w-auto self-center'>
                                                     <Select
                                                         value={field.value}
                                                         onValueChange={field.onChange}

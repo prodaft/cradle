@@ -1,4 +1,3 @@
-import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -9,7 +8,6 @@ import {
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -18,14 +16,15 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClassTypeEnum } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import bytes from 'bytes';
-import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -262,7 +261,9 @@ export default function FileSettingsForm() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='text-foreground'><Spinner /></div>
+                <div className='text-foreground'>
+                    <Spinner className='size-10' />
+                </div>
             </div>
         );
     }
@@ -300,7 +301,8 @@ export default function FileSettingsForm() {
                                                         Autoprocess Files
                                                     </FieldLabel>
                                                     <FieldDescription className='text-sm'>
-                                                        Automatically process uploaded files
+                                                        Automatically process uploaded
+                                                        files
                                                     </FieldDescription>
                                                     {fieldState.invalid && (
                                                         <FieldError className='text-sm mt-1'>
@@ -347,12 +349,10 @@ export default function FileSettingsForm() {
                                                 <Select
                                                     value={field.value?.value || ''}
                                                     onValueChange={(value) => {
-                                                        const option =
-                                                            subtypes.find(
-                                                                (opt) =>
-                                                                    opt.value ===
-                                                                    value,
-                                                            );
+                                                        const option = subtypes.find(
+                                                            (opt) =>
+                                                                opt.value === value,
+                                                        );
                                                         field.onChange(
                                                             option
                                                                 ? {
@@ -419,12 +419,10 @@ export default function FileSettingsForm() {
                                                 <Select
                                                     value={field.value?.value || ''}
                                                     onValueChange={(value) => {
-                                                        const option =
-                                                            subtypes.find(
-                                                                (opt) =>
-                                                                    opt.value ===
-                                                                    value,
-                                                            );
+                                                        const option = subtypes.find(
+                                                            (opt) =>
+                                                                opt.value === value,
+                                                        );
                                                         field.onChange(
                                                             option
                                                                 ? {
@@ -491,12 +489,10 @@ export default function FileSettingsForm() {
                                                 <Select
                                                     value={field.value?.value || ''}
                                                     onValueChange={(value) => {
-                                                        const option =
-                                                            subtypes.find(
-                                                                (opt) =>
-                                                                    opt.value ===
-                                                                    value,
-                                                            );
+                                                        const option = subtypes.find(
+                                                            (opt) =>
+                                                                opt.value === value,
+                                                        );
                                                         field.onChange(
                                                             option
                                                                 ? {
@@ -660,7 +656,10 @@ export default function FileSettingsForm() {
                                             className='self-center'
                                             onClick={handleReProcessAllFiles}
                                         >
-                                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
+                                            <ArrowClockwiseIcon
+                                                className='w-3.5 h-3.5'
+                                                weight='bold'
+                                            />
                                             Process
                                         </Button>
                                     </Field>

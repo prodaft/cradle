@@ -89,8 +89,8 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                 style={
                                     entity.color
                                         ? {
-                                            backgroundColor: entity.color,
-                                        }
+                                              backgroundColor: entity.color,
+                                          }
                                         : undefined
                                 }
                             >
@@ -167,7 +167,11 @@ export default function FilesView({ files, copyToClipboard }: FilesViewProps) {
                                     className='text-primary hover:text-primary/80'
                                     title='Download'
                                 >
-                                    <DownloadSimpleIcon className='w-4 h-4' weight="bold" aria-hidden='true' />
+                                    <DownloadSimpleIcon
+                                        className='w-4 h-4'
+                                        weight='bold'
+                                        aria-hidden='true'
+                                    />
                                 </Button>
                             )}
                         </div>

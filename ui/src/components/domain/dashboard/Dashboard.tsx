@@ -1,4 +1,3 @@
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Select,
     SelectContent,
@@ -11,7 +10,12 @@ import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
 import { SparkleIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { useLoaderData, useRouter, useRouterState, useSearch } from '@tanstack/react-router';
+import {
+    useLoaderData,
+    useRouter,
+    useRouterState,
+    useSearch,
+} from '@tanstack/react-router';
 import { FileText, FolderOpen, History, Share2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -180,9 +184,7 @@ export default function Dashboard() {
                                                     >
                                                         <div className='flex gap-x-2 items-center'>
                                                             <Icon className='w-[18px] h-[18px]' />
-                                                            <span>
-                                                                {tab.label}
-                                                            </span>
+                                                            <span>{tab.label}</span>
                                                         </div>
                                                     </SelectItem>
                                                 );
@@ -194,8 +196,7 @@ export default function Dashboard() {
                                     <nav className='flex space-x-2 py-1 lg:flex-col lg:space-y-1 lg:space-x-0'>
                                         {tabs.map((tab) => {
                                             const Icon = tab.icon;
-                                            const isActive =
-                                                activeTab === tab.id;
+                                            const isActive = activeTab === tab.id;
                                             return (
                                                 <a
                                                     key={tab.id}
@@ -204,19 +205,16 @@ export default function Dashboard() {
                                                         e.preventDefault();
                                                         handleTabChange(tab.id);
                                                     }}
-                                                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 hover:bg-accent justify-start ${isActive
-                                                        ? 'bg-muted hover:bg-accent active'
-                                                        : ''
-                                                        }`}
-                                                    data-status={
+                                                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 hover:bg-accent justify-start ${
                                                         isActive
-                                                            ? 'active'
-                                                            : undefined
+                                                            ? 'bg-muted hover:bg-accent active'
+                                                            : ''
+                                                    }`}
+                                                    data-status={
+                                                        isActive ? 'active' : undefined
                                                     }
                                                     aria-current={
-                                                        isActive
-                                                            ? 'page'
-                                                            : undefined
+                                                        isActive ? 'page' : undefined
                                                     }
                                                 >
                                                     <span className='me-2'>
@@ -243,50 +241,24 @@ export default function Dashboard() {
                                     />
                                     <div className='faded-bottom h-full w-full overflow-x-auto overflow-y-auto scroll-smooth pe-4 pb-12'>
                                         {activeTab === 'notes' && (
-                                            <Card>
-                                                <CardContent className='pt-4'>
-                                                    <Notes
-                                                        obj={contentObject}
-                                                    />
-                                                </CardContent>
-                                            </Card>
+                                            <Notes obj={contentObject} />
                                         )}
                                         {activeTab === 'relations' && (
-                                            <Card>
-                                                <CardContent className='pt-4 pb-4'>
-                                                    <Relations
-                                                        obj={contentObject}
-                                                    />
-                                                </CardContent>
-                                            </Card>
+                                            <Relations obj={contentObject} />
                                         )}
                                         {activeTab === 'files' && (
-                                            <Card>
-                                                <CardContent className='pt-4'>
-                                                    <Files
-                                                        obj={contentObject}
-                                                    />
-                                                </CardContent>
-                                            </Card>
+                                            <Files obj={contentObject} />
                                         )}
                                         {activeTab === 'enrichment' && (
-                                            <Card>
-                                                <CardContent className='pt-4'>
-                                                    <DashboardEnrichmentRequests
-                                                        entryId={contentObject.id}
-                                                    />
-                                                </CardContent>
-                                            </Card>
+                                            <DashboardEnrichmentRequests
+                                                entryId={contentObject.id}
+                                            />
                                         )}
                                         {activeTab === 'eventlog' && isAdmin && (
-                                            <Card>
-                                                <CardContent className='pt-4'>
-                                                    <ActivityList
-                                                        name={contentObject.name}
-                                                        objectId={contentObject.id?.toString()}
-                                                    />
-                                                </CardContent>
-                                            </Card>
+                                            <ActivityList
+                                                name={contentObject.name}
+                                                objectId={contentObject.id?.toString()}
+                                            />
                                         )}
                                     </div>
                                 </div>

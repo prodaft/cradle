@@ -1,4 +1,12 @@
-import { CheckCircleIcon, CircleIcon, FeatherIcon, InfoIcon, TimerIcon, WarningCircleIcon, WarningIcon } from '@phosphor-icons/react';
+import {
+    CheckCircleIcon,
+    CircleIcon,
+    FeatherIcon,
+    InfoIcon,
+    TimerIcon,
+    WarningCircleIcon,
+    WarningIcon,
+} from '@phosphor-icons/react';
 
 export type StatusType =
     | 'healthy'
@@ -29,7 +37,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
             return (
                 <CheckCircleIcon
                     size={size}
-                    weight="fill"
+                    weight='fill'
                     className={className || 'text-primary'}
                 />
             );
@@ -38,7 +46,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
             return (
                 <TimerIcon
                     size={size}
-                    weight="fill"
+                    weight='fill'
                     className={className || 'text-primary'}
                 />
             );
@@ -46,7 +54,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
             return (
                 <InfoIcon
                     size={size}
-                    weight="fill"
+                    weight='fill'
                     className={className || 'text-primary'}
                 />
             );
@@ -55,7 +63,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
             return (
                 <WarningIcon
                     size={size}
-                    weight="fill"
+                    weight='fill'
                     className={className || 'text-muted-foreground'}
                 />
             );
@@ -64,7 +72,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
             return (
                 <WarningCircleIcon
                     size={size}
-                    weight="fill"
+                    weight='fill'
                     className={className || 'text-destructive'}
                 />
             );
@@ -72,7 +80,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
             return (
                 <FeatherIcon
                     size={size}
-                    weight="fill"
+                    weight='fill'
                     className={className || 'text-primary'}
                 />
             );
@@ -80,7 +88,7 @@ export function StatusIcon({ status, size = 18, className }: StatusIconProps) {
             return (
                 <CircleIcon
                     size={size}
-                    weight="fill"
+                    weight='fill'
                     className={className || 'text-primary'}
                 />
             );

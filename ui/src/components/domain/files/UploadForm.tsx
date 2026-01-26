@@ -433,12 +433,15 @@ function UploadForm({ dataTypeOptions, onUpload }: UploadFormProps) {
                         >
                             {form.formState.isSubmitting ? (
                                 <>
-                                    <Spinner className='size-4 text-white' />
+                                    <Spinner className='text-white' />
                                     <span className='ml-2'>Uploading...</span>
                                 </>
                             ) : (
                                 <>
-                                    <UploadSimpleIcon className='mr-2 text-primary' weight="bold" />
+                                    <UploadSimpleIcon
+                                        className='mr-2 text-primary'
+                                        weight='bold'
+                                    />
                                     Upload
                                 </>
                             )}

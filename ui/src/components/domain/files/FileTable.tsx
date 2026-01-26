@@ -5,9 +5,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useApi } from '@/hooks';
 import type { FileReference } from '@/types';
 import { createDownloadPath } from '@/utils/links';
+import {
+    ClipboardTextIcon,
+    DownloadSimpleIcon,
+    TextboxIcon,
+    TrashIcon,
+} from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { ColumnDef } from '@tanstack/react-table';
-import { DownloadSimpleIcon, TextboxIcon, ClipboardTextIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 
 /**
@@ -89,7 +94,10 @@ export default function FileTable({
                     const data = row.original;
                     return (
                         <div className='text-foreground flex items-center'>
-                            <span className='truncate max-w-[200px]' title={data.fileName ?? undefined}>
+                            <span
+                                className='truncate max-w-[200px]'
+                                title={data.fileName ?? undefined}
+                            >
                                 {data.fileName}
                             </span>
                         </div>
@@ -108,7 +116,10 @@ export default function FileTable({
                             ? `${data.id}-${data.fileName}`
                             : data.id || '';
                     return (
-                        <code className='text-xs text-muted-foreground font-mono truncate max-w-[480px] block' title={tag}>
+                        <code
+                            className='text-xs text-muted-foreground font-mono truncate max-w-[480px] block'
+                            title={tag}
+                        >
                             {tag}
                         </code>
                     );
@@ -141,7 +152,7 @@ export default function FileTable({
                                             );
                                         }}
                                     >
-                                        <TextboxIcon className='size-4' weight="bold" />
+                                        <TextboxIcon className='size-4' weight='bold' />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Insert into editor</TooltipContent>
@@ -161,7 +172,10 @@ export default function FileTable({
                                             );
                                         }}
                                     >
-                                        <ClipboardTextIcon className='size-4' weight="bold" />
+                                        <ClipboardTextIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Copy reference</TooltipContent>
@@ -179,7 +193,10 @@ export default function FileTable({
                                             await handleDownload(data);
                                         }}
                                     >
-                                        <DownloadSimpleIcon className='size-4' weight="bold" />
+                                        <DownloadSimpleIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Download</TooltipContent>
@@ -198,7 +215,7 @@ export default function FileTable({
                                             setDeleteModalOpen(true);
                                         }}
                                     >
-                                        <TrashIcon className='size-4' weight="bold" />
+                                        <TrashIcon className='size-4' weight='bold' />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Remove</TooltipContent>

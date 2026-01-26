@@ -81,8 +81,7 @@ const normalizeId = (value?: number | string | null) => {
 
 const getEntryLabel = (entry?: EntrySerializerMinimal | null) => {
     if (!entry) return null;
-    const subtype =
-        entry.subtype || entry.entryClass?.subtype || entry.type || 'entry';
+    const subtype = entry.subtype || entry.entryClass?.subtype || entry.type || 'entry';
     const color = entry.color || entry.entryClass?.color;
     return {
         subtype,
@@ -98,9 +97,7 @@ const mapRelationsForEntry = (
     if (!selectedEntryId) return [];
 
     return results.map((result) => {
-        const entries = [result.e1, result.e2].filter(
-            (entry) => entry,
-        );
+        const entries = [result.e1, result.e2].filter((entry) => entry);
         const targetEntry =
             entries.find(
                 (entry) =>
@@ -120,14 +117,17 @@ const renderEntryBadge = (entry: EnricherArtifact) => {
     console.log(entry);
     return (
         <Badge
-            className={`rounded-full flex-shrink-0 ${(!entry.color || entry.subtype === 'enrichment') ? 'bg-muted' : ''}`}
-            style={entry.color && entry.subtype !== 'enrichment' ? { backgroundColor: entry.color } : undefined}
+            className={`rounded-full flex-shrink-0 ${!entry.color || entry.subtype === 'enrichment' ? 'bg-muted' : ''}`}
+            style={
+                entry.color && entry.subtype !== 'enrichment'
+                    ? { backgroundColor: entry.color }
+                    : undefined
+            }
         >
             {entry.subtype}
         </Badge>
     );
 };
-
 
 // Individual relation item component (collapsible)
 interface RelationItemProps {
@@ -155,7 +155,9 @@ function RelationItem({ relation, isLast }: RelationItemProps) {
                 {relation.target ? (
                     <>
                         {renderEntryBadge(relation.target)}
-                        <span className='text-foreground text-sm'>{relation.target.name}</span>
+                        <span className='text-foreground text-sm'>
+                            {relation.target.name}
+                        </span>
                     </>
                 ) : (
                     <span className='text-muted-foreground text-sm'>No target</span>
@@ -224,9 +226,7 @@ function ArtifactRow({
                     aria-label={`Select ${artifactName}`}
                 />
             </TableCell>
-            <TableCell>
-                {enricherName}
-            </TableCell>
+            <TableCell>{enricherName}</TableCell>
             <TableCell>
                 <div className='flex items-center gap-2'>
                     {artifactBadge}
@@ -258,7 +258,7 @@ function ArtifactRow({
                             <div className='bg-muted/30 border-t'>
                                 {isLoading ? (
                                     <div className='flex items-center justify-center py-6'>
-                                        <Spinner className='size-6' />
+                                        <Spinner className='size-10' />
                                     </div>
                                 ) : relations.length === 0 ? (
                                     <div className='px-4 py-3 text-sm text-muted-foreground'>
@@ -299,9 +299,7 @@ export default function EnrichmentResults() {
     const id = (params as any).id;
 
     const [selectedEnricher, setSelectedEnricher] = useState<string | null>(null);
-    const [selectedArtifactId, setSelectedArtifactId] = useState<number | null>(
-        null,
-    );
+    const [selectedArtifactId, setSelectedArtifactId] = useState<number | null>(null);
     const [showIgnored, setShowIgnored] = useState(false);
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
@@ -403,16 +401,18 @@ export default function EnrichmentResults() {
 
         switch (status) {
             case 'done':
-                return <CheckCircleIcon className='text-primary' size={18} weight="fill" />;
+                return (
+                    <CheckCircleIcon className='text-primary' size={18} weight='fill' />
+                );
             case 'working':
             case 'waiting':
-                return <InfoIcon className='text-primary' size={18} weight="fill" />;
+                return <InfoIcon className='text-primary' size={18} weight='fill' />;
             case 'warning':
                 return (
                     <WarningIcon
                         className='text-muted-foreground'
                         size={18}
-                        weight="fill"
+                        weight='fill'
                     />
                 );
             case 'error':
@@ -420,7 +420,7 @@ export default function EnrichmentResults() {
                     <WarningCircleIcon
                         className='text-destructive'
                         size={18}
-                        weight="fill"
+                        weight='fill'
                     />
                 );
             default:
@@ -606,7 +606,7 @@ export default function EnrichmentResults() {
                         )}
                         {enrichmentDetails.createdAt && (
                             <div className='flex items-center gap-1.5'>
-                                <CalendarIcon size={14} weight="bold" />
+                                <CalendarIcon size={14} weight='bold' />
                                 <span>
                                     {format(
                                         new Date(enrichmentDetails.createdAt),
@@ -617,7 +617,7 @@ export default function EnrichmentResults() {
                         )}
                         {enrichmentDetails.completedAt && (
                             <div className='flex items-center gap-1.5'>
-                                <ClockIcon size={14} weight="bold" />
+                                <ClockIcon size={14} weight='bold' />
                                 <span>
                                     {format(
                                         new Date(enrichmentDetails.completedAt),
@@ -628,7 +628,7 @@ export default function EnrichmentResults() {
                         )}
                         {enrichmentDetails.userDetail && (
                             <div className='flex items-center gap-1.5'>
-                                <UserIcon size={14} weight="bold" />
+                                <UserIcon size={14} weight='bold' />
                                 <span>{enrichmentDetails.userDetail.username}</span>
                             </div>
                         )}
@@ -649,7 +649,9 @@ export default function EnrichmentResults() {
                             {/* Enricher selector */}
                             <div className='min-w-[180px]'>
                                 <Select
-                                    value={showIgnored ? 'ignored' : (selectedEnricher || '')}
+                                    value={
+                                        showIgnored ? 'ignored' : selectedEnricher || ''
+                                    }
                                     onValueChange={(value) => {
                                         if (value === 'ignored') {
                                             handleIgnoredSelect();
@@ -662,17 +664,23 @@ export default function EnrichmentResults() {
                                         <SelectValue placeholder='Select enricher' />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {enrichmentDetails?.enrichers?.map((enricher) => (
-                                            <SelectItem
-                                                key={enricher.enricherType}
-                                                value={enricher.enricherType!}
-                                            >
-                                                <div className='flex items-center gap-2'>
-                                                    {getEnricherStatusIcon(enricher.status!)}
-                                                    <span>{enricher.displayName}</span>
-                                                </div>
-                                            </SelectItem>
-                                        ))}
+                                        {enrichmentDetails?.enrichers?.map(
+                                            (enricher) => (
+                                                <SelectItem
+                                                    key={enricher.enricherType}
+                                                    value={enricher.enricherType!}
+                                                >
+                                                    <div className='flex items-center gap-2'>
+                                                        {getEnricherStatusIcon(
+                                                            enricher.status!,
+                                                        )}
+                                                        <span>
+                                                            {enricher.displayName}
+                                                        </span>
+                                                    </div>
+                                                </SelectItem>
+                                            ),
+                                        )}
                                         {ignoredArtifacts.length > 0 && (
                                             <SelectItem value='ignored'>
                                                 <div className='flex items-center gap-2'>
@@ -681,7 +689,10 @@ export default function EnrichmentResults() {
                                                         width='16'
                                                         height='16'
                                                     />
-                                                    <span>Ignored ({ignoredArtifacts.length})</span>
+                                                    <span>
+                                                        Ignored (
+                                                        {ignoredArtifacts.length})
+                                                    </span>
                                                 </div>
                                             </SelectItem>
                                         )}
@@ -738,44 +749,51 @@ export default function EnrichmentResults() {
                                 }
                                 title='Download results as JSON'
                             >
-                                <DownloadSimpleIcon size={18} weight="bold" />
+                                <DownloadSimpleIcon size={18} weight='bold' />
                             </Button>
                         </div>
 
                         {/* Content */}
                         {showIgnored ? (
                             /* Ignored Artifacts View */
-                            <Card className='border-border bg-muted/5 flex-1 overflow-hidden'>
-                                <CardContent className='p-0 h-full overflow-auto'>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Artifact</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {ignoredArtifacts.map((artifact: any, index: number) => (
+                            <div className='overflow-hidden rounded-md border flex-1 overflow-auto'>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Artifact</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {ignoredArtifacts.map(
+                                            (artifact: any, index: number) => (
                                                 <TableRow key={index}>
                                                     <TableCell>
                                                         <div className='flex items-center gap-2'>
                                                             {artifact.subtype && (
-                                                                <Badge variant='secondary' className='flex-shrink-0'>
+                                                                <Badge
+                                                                    variant='secondary'
+                                                                    className='flex-shrink-0'
+                                                                >
                                                                     {artifact.subtype}
                                                                 </Badge>
                                                             )}
                                                             <span className='text-foreground truncate'>
-                                                                {typeof artifact === 'string'
+                                                                {typeof artifact ===
+                                                                'string'
                                                                     ? artifact
-                                                                    : artifact.name || JSON.stringify(artifact)}
+                                                                    : artifact.name ||
+                                                                      JSON.stringify(
+                                                                          artifact,
+                                                                      )}
                                                             </span>
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </CardContent>
-                            </Card>
+                                            ),
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         ) : selectedEnricher ? (
                             /* Relations View */
                             isPendingEnricher ? (
@@ -783,13 +801,11 @@ export default function EnrichmentResults() {
                                     <Spinner className='size-10' />
                                 </div>
                             ) : artifacts.length === 0 ? (
-                                <Card className='border-border bg-muted/5'>
-                                    <CardContent className='py-8'>
-                                        <p className='text-center text-sm text-muted-foreground'>
-                                            No artifacts found.
-                                        </p>
-                                    </CardContent>
-                                </Card>
+                                <div className='text-center py-8'>
+                                    <p className='text-sm text-muted-foreground'>
+                                        No artifacts found.
+                                    </p>
+                                </div>
                             ) : (
                                 <>
                                     <div className='overflow-hidden rounded-md border flex-1 flex flex-col'>
@@ -800,20 +816,54 @@ export default function EnrichmentResults() {
                                                         <TableHead className='w-10'>
                                                             <Checkbox
                                                                 checked={
-                                                                    artifacts.length > 0 &&
-                                                                    artifacts.every((a) => {
-                                                                        const id = normalizeId(a.id);
-                                                                        return id !== null && selectedArtifacts.has(id);
-                                                                    })
+                                                                    artifacts.length >
+                                                                        0 &&
+                                                                    artifacts.every(
+                                                                        (a) => {
+                                                                            const id =
+                                                                                normalizeId(
+                                                                                    a.id,
+                                                                                );
+                                                                            return (
+                                                                                id !==
+                                                                                    null &&
+                                                                                selectedArtifacts.has(
+                                                                                    id,
+                                                                                )
+                                                                            );
+                                                                        },
+                                                                    )
                                                                 }
-                                                                onCheckedChange={(checked) => {
+                                                                onCheckedChange={(
+                                                                    checked,
+                                                                ) => {
                                                                     if (checked) {
-                                                                        const allIds = artifacts
-                                                                            .map((a) => normalizeId(a.id))
-                                                                            .filter((id): id is number => id !== null);
-                                                                        setSelectedArtifacts(new Set(allIds));
+                                                                        const allIds =
+                                                                            artifacts
+                                                                                .map(
+                                                                                    (
+                                                                                        a,
+                                                                                    ) =>
+                                                                                        normalizeId(
+                                                                                            a.id,
+                                                                                        ),
+                                                                                )
+                                                                                .filter(
+                                                                                    (
+                                                                                        id,
+                                                                                    ): id is number =>
+                                                                                        id !==
+                                                                                        null,
+                                                                                );
+                                                                        setSelectedArtifacts(
+                                                                            new Set(
+                                                                                allIds,
+                                                                            ),
+                                                                        );
                                                                     } else {
-                                                                        setSelectedArtifacts(new Set());
+                                                                        setSelectedArtifacts(
+                                                                            new Set(),
+                                                                        );
                                                                     }
                                                                 }}
                                                                 aria-label='Select all'
@@ -824,43 +874,98 @@ export default function EnrichmentResults() {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {artifacts.map((artifact, index) => {
-                                                        const artifactId = normalizeId(artifact.id);
-                                                        const artifactBadge = renderEntryBadge(artifact);
+                                                    {artifacts.map(
+                                                        (artifact, index) => {
+                                                            const artifactId =
+                                                                normalizeId(
+                                                                    artifact.id,
+                                                                );
+                                                            const artifactBadge =
+                                                                renderEntryBadge(
+                                                                    artifact,
+                                                                );
 
-                                                        const isSelected =
-                                                            artifactId !== null &&
-                                                            artifactId === selectedArtifactId;
+                                                            const isSelected =
+                                                                artifactId !== null &&
+                                                                artifactId ===
+                                                                    selectedArtifactId;
 
-                                                        return (
-                                                            <ArtifactRow
-                                                                key={artifact.id ?? index}
-                                                                artifact={artifact}
-                                                                artifactId={artifactId}
-                                                                artifactBadge={artifactBadge}
-                                                                enricherName={selectedEnricherName || ''}
-                                                                isOpen={isSelected}
-                                                                onToggle={(_, open) =>
-                                                                    handleArtifactToggle(artifactId, open)
-                                                                }
-                                                                relations={isSelected ? relations : []}
-                                                                isLoading={isSelected && isPendingResults}
-                                                                isChecked={artifactId !== null && selectedArtifacts.has(artifactId)}
-                                                                onCheckChange={(checked) => {
-                                                                    if (artifactId === null) return;
-                                                                    setSelectedArtifacts((prev) => {
-                                                                        const next = new Set(prev);
-                                                                        if (checked) {
-                                                                            next.add(artifactId);
-                                                                        } else {
-                                                                            next.delete(artifactId);
-                                                                        }
-                                                                        return next;
-                                                                    });
-                                                                }}
-                                                            />
-                                                        );
-                                                    })}
+                                                            return (
+                                                                <ArtifactRow
+                                                                    key={
+                                                                        artifact.id ??
+                                                                        index
+                                                                    }
+                                                                    artifact={artifact}
+                                                                    artifactId={
+                                                                        artifactId
+                                                                    }
+                                                                    artifactBadge={
+                                                                        artifactBadge
+                                                                    }
+                                                                    enricherName={
+                                                                        selectedEnricherName ||
+                                                                        ''
+                                                                    }
+                                                                    isOpen={isSelected}
+                                                                    onToggle={(
+                                                                        _,
+                                                                        open,
+                                                                    ) =>
+                                                                        handleArtifactToggle(
+                                                                            artifactId,
+                                                                            open,
+                                                                        )
+                                                                    }
+                                                                    relations={
+                                                                        isSelected
+                                                                            ? relations
+                                                                            : []
+                                                                    }
+                                                                    isLoading={
+                                                                        isSelected &&
+                                                                        isPendingResults
+                                                                    }
+                                                                    isChecked={
+                                                                        artifactId !==
+                                                                            null &&
+                                                                        selectedArtifacts.has(
+                                                                            artifactId,
+                                                                        )
+                                                                    }
+                                                                    onCheckChange={(
+                                                                        checked,
+                                                                    ) => {
+                                                                        if (
+                                                                            artifactId ===
+                                                                            null
+                                                                        )
+                                                                            return;
+                                                                        setSelectedArtifacts(
+                                                                            (prev) => {
+                                                                                const next =
+                                                                                    new Set(
+                                                                                        prev,
+                                                                                    );
+                                                                                if (
+                                                                                    checked
+                                                                                ) {
+                                                                                    next.add(
+                                                                                        artifactId,
+                                                                                    );
+                                                                                } else {
+                                                                                    next.delete(
+                                                                                        artifactId,
+                                                                                    );
+                                                                                }
+                                                                                return next;
+                                                                            },
+                                                                        );
+                                                                    }}
+                                                                />
+                                                            );
+                                                        },
+                                                    )}
                                                 </TableBody>
                                             </Table>
                                         </div>
@@ -901,23 +1006,27 @@ export default function EnrichmentResults() {
                                 <Card className='border-border bg-muted/5'>
                                     <CardContent className='p-0'>
                                         <div className='divide-y divide-border'>
-                                            {enricherDetails!.warnings!.map((warning: any, index: number) => (
-                                                <div
-                                                    key={index}
-                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
-                                                >
-                                                    <WarningIcon
-                                                        className='text-muted-foreground flex-shrink-0'
-                                                        width='16'
-                                                        height='16'
-                                                    />
-                                                    <span className='flex-1 text-sm text-foreground'>
-                                                        {typeof warning === 'string'
-                                                            ? warning
-                                                            : JSON.stringify(warning)}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                            {enricherDetails!.warnings!.map(
+                                                (warning: any, index: number) => (
+                                                    <div
+                                                        key={index}
+                                                        className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-muted-foreground'
+                                                    >
+                                                        <WarningIcon
+                                                            className='text-muted-foreground flex-shrink-0'
+                                                            width='16'
+                                                            height='16'
+                                                        />
+                                                        <span className='flex-1 text-sm text-foreground'>
+                                                            {typeof warning === 'string'
+                                                                ? warning
+                                                                : JSON.stringify(
+                                                                      warning,
+                                                                  )}
+                                                        </span>
+                                                    </div>
+                                                ),
+                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -931,23 +1040,25 @@ export default function EnrichmentResults() {
                                 <Card className='border-border bg-muted/5'>
                                     <CardContent className='p-0'>
                                         <div className='divide-y divide-border'>
-                                            {enricherDetails!.errors!.map((error: any, index: number) => (
-                                                <div
-                                                    key={index}
-                                                    className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
-                                                >
-                                                    <WarningCircleIcon
-                                                        className='text-destructive flex-shrink-0'
-                                                        width='16'
-                                                        height='16'
-                                                    />
-                                                    <span className='flex-1 text-sm text-foreground'>
-                                                        {typeof error === 'string'
-                                                            ? error
-                                                            : JSON.stringify(error)}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                            {enricherDetails!.errors!.map(
+                                                (error: any, index: number) => (
+                                                    <div
+                                                        key={index}
+                                                        className='px-4 py-3 flex items-center gap-3 border-l-2 border-l-red-500'
+                                                    >
+                                                        <WarningCircleIcon
+                                                            className='text-destructive flex-shrink-0'
+                                                            width='16'
+                                                            height='16'
+                                                        />
+                                                        <span className='flex-1 text-sm text-foreground'>
+                                                            {typeof error === 'string'
+                                                                ? error
+                                                                : JSON.stringify(error)}
+                                                        </span>
+                                                    </div>
+                                                ),
+                                            )}
                                         </div>
                                     </CardContent>
                                 </Card>

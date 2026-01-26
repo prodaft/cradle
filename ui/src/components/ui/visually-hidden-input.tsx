@@ -2,20 +2,17 @@ import * as React from 'react';
 
 type InputValue = string[] | string;
 
-interface VisuallyHiddenInputProps<T = InputValue>
-    extends Omit<
-        React.InputHTMLAttributes<HTMLInputElement>,
-        'value' | 'checked' | 'onReset'
-    > {
+interface VisuallyHiddenInputProps<T = InputValue> extends Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    'value' | 'checked' | 'onReset'
+> {
     value?: T;
     checked?: boolean;
     control: HTMLElement | null;
     bubbles?: boolean;
 }
 
-function VisuallyHiddenInput<T = InputValue>(
-    props: VisuallyHiddenInputProps<T>,
-) {
+function VisuallyHiddenInput<T = InputValue>(props: VisuallyHiddenInputProps<T>) {
     const {
         control,
         value,

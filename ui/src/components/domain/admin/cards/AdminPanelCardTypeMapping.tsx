@@ -37,7 +37,7 @@ export default function AdminPanelCardTypeMapping({
                         }}
                         title='Edit'
                     >
-                        <PencilSimpleIcon size={16} weight="bold" />
+                        <PencilSimpleIcon size={16} weight='bold' />
                     </Button>
                 </CardAction>
             </CardHeader>

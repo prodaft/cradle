@@ -230,22 +230,38 @@ export default function GraphSettings({
 
                             <div className='space-y-2.5'>
                                 {simulationSettings.map(
-                                    ({ label, description, value, min, max, step, key }) => (
+                                    ({
+                                        label,
+                                        description,
+                                        value,
+                                        min,
+                                        max,
+                                        step,
+                                        key,
+                                    }) => (
                                         <div key={key}>
                                             <div className='flex items-center justify-between w-full mb-1'>
                                                 <div className='flex items-center gap-1'>
-                                                    <Label className='text-xs'>{label}</Label>
+                                                    <Label className='text-xs'>
+                                                        {label}
+                                                    </Label>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <InfoIcon className='size-3 text-muted-foreground cursor-help' weight="bold" />
+                                                            <InfoIcon
+                                                                className='size-3 text-muted-foreground cursor-help'
+                                                                weight='bold'
+                                                            />
                                                         </TooltipTrigger>
                                                         <TooltipContent side='right'>
-                                                            <p className='text-xs'>{description}</p>
+                                                            <p className='text-xs'>
+                                                                {description}
+                                                            </p>
                                                         </TooltipContent>
                                                     </Tooltip>
                                                 </div>
                                                 <span className='text-xs text-muted-foreground tabular-nums w-12 text-right'>
-                                                    {typeof value === 'number' && value >= 100
+                                                    {typeof value === 'number' &&
+                                                    value >= 100
                                                         ? value.toFixed(0)
                                                         : value.toFixed(2)}
                                                 </span>
@@ -279,10 +295,15 @@ export default function GraphSettings({
                                     <Label className='text-xs'>Random Seed</Label>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <InfoIcon className='size-3 text-muted-foreground cursor-help' weight="bold" />
+                                            <InfoIcon
+                                                className='size-3 text-muted-foreground cursor-help'
+                                                weight='bold'
+                                            />
                                         </TooltipTrigger>
                                         <TooltipContent side='right'>
-                                            <p className='text-xs'>Set a seed for consistent layouts</p>
+                                            <p className='text-xs'>
+                                                Set a seed for consistent layouts
+                                            </p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </div>
@@ -309,13 +330,20 @@ export default function GraphSettings({
                             <div>
                                 <div className='flex items-center justify-between w-full mb-1'>
                                     <div className='flex items-center gap-1'>
-                                        <Label className='text-xs'>Cluster Separation</Label>
+                                        <Label className='text-xs'>
+                                            Cluster Separation
+                                        </Label>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <InfoIcon className='size-3 text-muted-foreground cursor-help' weight="bold" />
+                                                <InfoIcon
+                                                    className='size-3 text-muted-foreground cursor-help'
+                                                    weight='bold'
+                                                />
                                             </TooltipTrigger>
                                             <TooltipContent side='right'>
-                                                <p className='text-xs'>Force separating node clusters</p>
+                                                <p className='text-xs'>
+                                                    Force separating node clusters
+                                                </p>
                                             </TooltipContent>
                                         </Tooltip>
                                     </div>
@@ -349,7 +377,10 @@ export default function GraphSettings({
                                             }))
                                         }
                                     />
-                                    <Label htmlFor='scaleLinksOnZoom' className='text-xs'>
+                                    <Label
+                                        htmlFor='scaleLinksOnZoom'
+                                        className='text-xs'
+                                    >
                                         Scale links on zoom
                                     </Label>
                                 </div>

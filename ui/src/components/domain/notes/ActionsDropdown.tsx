@@ -90,7 +90,7 @@ export default function ActionsDropdown({
                             className='p-2 w-8 h-8 flex items-center justify-center text-muted-foreground hover:bg-secondary hover:text-foreground border-border'
                             data-testid='actions-dropdown-btn'
                         >
-                            <DotsThreeVerticalIcon size={20} weight="bold" />
+                            <DotsThreeVerticalIcon size={20} weight='bold' />
                         </Button>
                     </DropdownMenuTrigger>
                 </TooltipTrigger>
@@ -101,27 +101,29 @@ export default function ActionsDropdown({
                 <DropdownMenuItem
                     onClick={() => {
                         setRichEditor(true);
-                        if (activeView !== ViewMode.CONTENT) setActiveView(ViewMode.CONTENT);
+                        if (activeView !== ViewMode.CONTENT)
+                            setActiveView(ViewMode.CONTENT);
                     }}
                     data-testid='rich-editor-menu-item'
                 >
-                    <FileTextIcon size={16} weight="bold" />
+                    <FileTextIcon size={16} weight='bold' />
                     <span className='flex-1'>Rich Editor</span>
                     {activeView === ViewMode.CONTENT && richEditor && (
-                        <CheckIcon size={16} weight="bold" />
+                        <CheckIcon size={16} weight='bold' />
                     )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => {
                         setRichEditor(false);
-                        if (activeView !== ViewMode.CONTENT) setActiveView(ViewMode.CONTENT);
+                        if (activeView !== ViewMode.CONTENT)
+                            setActiveView(ViewMode.CONTENT);
                     }}
                     data-testid='markdown-editor-menu-item'
                 >
-                    <CodeIcon size={16} weight="bold" />
+                    <CodeIcon size={16} weight='bold' />
                     <span className='flex-1'>Source Editor</span>
                     {activeView === ViewMode.CONTENT && !richEditor && (
-                        <CheckIcon size={16} weight="bold" />
+                        <CheckIcon size={16} weight='bold' />
                     )}
                 </DropdownMenuItem>
                 {!isFleeting && (
@@ -133,7 +135,7 @@ export default function ActionsDropdown({
                             <Graph width='16' height='16' />
                             <span className='flex-1'>Graph</span>
                             {activeView === ViewMode.GRAPH && (
-                                <CheckIcon size={16} weight="bold" />
+                                <CheckIcon size={16} weight='bold' />
                             )}
                         </DropdownMenuItem>
                         {isAdmin && (
@@ -141,10 +143,10 @@ export default function ActionsDropdown({
                                 onClick={() => setActiveView(ViewMode.HISTORY)}
                                 data-testid='history-view-menu-item'
                             >
-                                <ClockCounterClockwiseIcon size={16} weight="bold" />
+                                <ClockCounterClockwiseIcon size={16} weight='bold' />
                                 <span className='flex-1'>History</span>
                                 {activeView === ViewMode.HISTORY && (
-                                    <CheckIcon size={16} weight="bold" />
+                                    <CheckIcon size={16} weight='bold' />
                                 )}
                             </DropdownMenuItem>
                         )}
@@ -155,10 +157,10 @@ export default function ActionsDropdown({
                         onClick={() => setActiveView(ViewMode.FILES)}
                         data-testid='files-view-menu-item'
                     >
-                        <CubeIcon size={16} weight="bold" />
+                        <CubeIcon size={16} weight='bold' />
                         <span className='flex-1'>Files</span>
                         {activeView === ViewMode.FILES && (
-                            <CheckIcon size={16} weight="bold" />
+                            <CheckIcon size={16} weight='bold' />
                         )}
                     </DropdownMenuItem>
                 )}
@@ -171,14 +173,14 @@ export default function ActionsDropdown({
                             onClick={handleFind}
                             data-testid='find-menu-item'
                         >
-                            <MagnifyingGlassIcon size={16} weight="bold" />
+                            <MagnifyingGlassIcon size={16} weight='bold' />
                             <span className='flex-1'>Find</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={handleReplace}
                             data-testid='replace-menu-item'
                         >
-                            <ArrowsLeftRightIcon size={16} weight="bold" />
+                            <ArrowsLeftRightIcon size={16} weight='bold' />
                             <span className='flex-1'>Replace...</span>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -191,7 +193,7 @@ export default function ActionsDropdown({
                     >
                         <TreeView width='16' height='16' />
                         <span className='flex-1'>Toggle Outline</span>
-                        {showOutline && <CheckIcon size={16} weight="bold" />}
+                        {showOutline && <CheckIcon size={16} weight='bold' />}
                     </DropdownMenuItem>
                 )}
                 {lspLoaded && enableEditing && activeView === ViewMode.CONTENT && (
@@ -199,7 +201,7 @@ export default function ActionsDropdown({
                         onClick={() => smartLink(false)}
                         data-testid='auto-link-menu-item'
                     >
-                        <LightbulbIcon size={16} weight="bold" />
+                        <LightbulbIcon size={16} weight='bold' />
                         <span className='flex-1'>Auto Link</span>
                     </DropdownMenuItem>
                 )}
@@ -208,7 +210,7 @@ export default function ActionsDropdown({
                         onClick={() => smartLink(true)}
                         data-testid='add-timestamps-menu-item'
                     >
-                        <LightbulbIcon size={16} weight="bold" />
+                        <LightbulbIcon size={16} weight='bold' />
                         <span className='flex-1'>Add Timestamps</span>
                     </DropdownMenuItem>
                 )}
@@ -219,7 +221,7 @@ export default function ActionsDropdown({
                             onClick={handleRelinkNote}
                             data-testid='relink-note-menu-item'
                         >
-                            <ArrowClockwiseIcon size={16} weight="bold" />
+                            <ArrowClockwiseIcon size={16} weight='bold' />
                             <span className='flex-1'>Relink Note</span>
                         </DropdownMenuItem>
                     </>
@@ -231,7 +233,7 @@ export default function ActionsDropdown({
                             onClick={handleUploadFiles}
                             data-testid='manage-files-menu-item'
                         >
-                            <CloudArrowUpIcon size={16} weight="bold" />
+                            <CloudArrowUpIcon size={16} weight='bold' />
                             <span className='flex-1'>Upload Files</span>
                         </DropdownMenuItem>
                     </>
@@ -241,7 +243,7 @@ export default function ActionsDropdown({
                         onClick={handleSaveAsFinal}
                         data-testid='save-as-final-menu-item'
                     >
-                        <FloppyDiskIcon size={16} weight="bold" />
+                        <FloppyDiskIcon size={16} weight='bold' />
                         <span className='flex-1'>Save As Final</span>
                         {saving && (
                             <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-foreground' />
@@ -254,14 +256,14 @@ export default function ActionsDropdown({
                             onClick={enrichData}
                             data-testid='enrich-data-menu-item'
                         >
-                            <SparkleIcon size={16} weight="bold" />
+                            <SparkleIcon size={16} weight='bold' />
                             <span className='flex-1'>Enrich Artifacts</span>
                         </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={handlePublish}
                             data-testid='publish-menu-item'
                         >
-                            <ChartBarIcon size={16} weight="bold" />
+                            <ChartBarIcon size={16} weight='bold' />
                             <span className='flex-1'>Publish</span>
                         </DropdownMenuItem>
                     </>
@@ -272,7 +274,7 @@ export default function ActionsDropdown({
                     variant='destructive'
                     data-testid='delete-note-menu-item'
                 >
-                    <TrashIcon size={16} weight="bold" />
+                    <TrashIcon size={16} weight='bold' />
                     <span className='flex-1'>Delete</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>

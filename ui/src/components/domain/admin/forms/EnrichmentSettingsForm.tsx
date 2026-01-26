@@ -436,9 +436,15 @@ export default function EnrichmentSettingsForm({
                                     <Input
                                         {...controllerField}
                                         id={`settings.${key}`}
-                                        type={field.type === 'number' ? 'number' : 'text'}
+                                        type={
+                                            field.type === 'number' ? 'number' : 'text'
+                                        }
                                         className='w-64 self-center'
-                                        value={(controllerField.value as string | number) ?? ''}
+                                        value={
+                                            (controllerField.value as
+                                                | string
+                                                | number) ?? ''
+                                        }
                                         onChange={(e) =>
                                             controllerField.onChange(e.target.value)
                                         }
@@ -511,7 +517,8 @@ export default function EnrichmentSettingsForm({
                                                     Enabled
                                                 </FieldLabel>
                                                 <FieldDescription className='text-sm'>
-                                                    Enable or disable this enrichment source
+                                                    Enable or disable this enrichment
+                                                    source
                                                 </FieldDescription>
                                                 {fieldState.invalid && (
                                                     <FieldError className='text-sm mt-1'>
@@ -552,7 +559,8 @@ export default function EnrichmentSettingsForm({
                                                     Entry Classes
                                                 </FieldLabel>
                                                 <FieldDescription className='text-sm'>
-                                                    Entry classes to apply this enrichment to
+                                                    Entry classes to apply this
+                                                    enrichment to
                                                 </FieldDescription>
                                                 {fieldState.invalid && (
                                                     <FieldError className='text-sm mt-1'>
@@ -572,7 +580,10 @@ export default function EnrichmentSettingsForm({
                                                     placeholder='Select entry classes...'
                                                     triggerSearchOnFocus
                                                     onSearch={async (query) => {
-                                                        const results = await fetchEntryClasses(query);
+                                                        const results =
+                                                            await fetchEntryClasses(
+                                                                query,
+                                                            );
                                                         return results.map((e) => ({
                                                             value: e.value,
                                                             label: e.label,

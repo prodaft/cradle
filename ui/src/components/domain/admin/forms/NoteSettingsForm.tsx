@@ -1,4 +1,3 @@
-import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -10,11 +9,12 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { ArrowClockwiseIcon, PlusIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { PlusIcon, ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -134,7 +134,9 @@ export default function NoteSettingsForm() {
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-screen'>
-                <div className='text-foreground'><Spinner /></div>
+                <div className='text-foreground'>
+                    <Spinner className='size-10' />
+                </div>
             </div>
         );
     }
@@ -377,7 +379,10 @@ export default function NoteSettingsForm() {
                                                 snippetListRef.current?.handleAddSnippet();
                                             }}
                                         >
-                                            <PlusIcon className='w-3.5 h-3.5' weight="bold" />
+                                            <PlusIcon
+                                                className='w-3.5 h-3.5'
+                                                weight='bold'
+                                            />
                                             New Snippet
                                         </Button>
                                     </Field>
@@ -420,7 +425,10 @@ export default function NoteSettingsForm() {
                                             className='self-center'
                                             onClick={handleReLinkNotes}
                                         >
-                                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight="bold" />
+                                            <ArrowClockwiseIcon
+                                                className='w-3.5 h-3.5'
+                                                weight='bold'
+                                            />
                                             Re-Link
                                         </Button>
                                     </Field>

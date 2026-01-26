@@ -9,11 +9,11 @@ import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
 import { UserSession } from '@/services/cradle/models';
+import { TrashIcon } from '@phosphor-icons/react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { ColumnDef, SortingState } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { TrashIcon } from '@phosphor-icons/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -411,7 +411,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                         }}
                                         variant='destructive'
                                     >
-                                        <TrashIcon size={18} weight="bold" />
+                                        <TrashIcon size={18} weight='bold' />
                                         Revoke
                                     </DropdownMenuItem>
                                 </TableActionsButton>
@@ -429,7 +429,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         {
             id: 'revoke',
             label: 'Revoke',
-            icon: <TrashIcon size={18} weight="bold" />,
+            icon: <TrashIcon size={18} weight='bold' />,
             onClick: () => {
                 if (selectedSessions.length > 0) {
                     setBulkRevokeModalOpen(true);

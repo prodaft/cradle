@@ -1,4 +1,3 @@
-import * as React from 'react';
 import type { DateRange } from 'react-day-picker';
 
 import { Button } from '@/components/ui/button';
@@ -72,4 +71,3 @@ export function DateRangePicker({
         </Popover>
     );
 }
-

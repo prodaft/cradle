@@ -14,9 +14,9 @@ import { Kbd } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner';
 import type { Alert } from '@/types';
 import { useApi } from '@hooks';
+import { MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
-import { MagnifyingGlassIcon, WarningCircleIcon, XIcon } from '@phosphor-icons/react';
 import React, { KeyboardEvent, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import SearchFilterSection from './SearchFilterSection';
@@ -166,8 +166,8 @@ export default function SearchDialog({
             to: '/dashboards/$subtype/$name',
             params: {
                 subtype: result.subtype,
-                name: result.name
-            }
+                name: result.name,
+            },
         });
     };
 
@@ -253,7 +253,7 @@ export default function SearchDialog({
                                 className='absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 p-0'
                                 title='Clear search'
                             >
-                                <XIcon className='h-3 w-3' weight="bold" />
+                                <XIcon className='h-3 w-3' weight='bold' />
                             </Button>
                         )}
                     </div>
@@ -276,7 +276,7 @@ export default function SearchDialog({
                                     : 'default'
                             }
                         >
-                            <WarningCircleIcon weight="fill" />
+                            <WarningCircleIcon weight='fill' />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>
                     )}
@@ -306,11 +306,19 @@ export default function SearchDialog({
                                                     variant='outline'
                                                     className='mr-3'
                                                     style={
-                                                        entryClassColors.get(result.subtype)
+                                                        entryClassColors.get(
+                                                            result.subtype,
+                                                        )
                                                             ? {
-                                                                backgroundColor: entryClassColors.get(result.subtype),
-                                                                borderColor: entryClassColors.get(result.subtype),
-                                                            }
+                                                                  backgroundColor:
+                                                                      entryClassColors.get(
+                                                                          result.subtype,
+                                                                      ),
+                                                                  borderColor:
+                                                                      entryClassColors.get(
+                                                                          result.subtype,
+                                                                      ),
+                                                              }
                                                             : undefined
                                                     }
                                                 >
@@ -327,7 +335,10 @@ export default function SearchDialog({
                         ) : (
                             <CommandEmpty>
                                 <div className='flex flex-col items-center justify-center py-12 text-muted-foreground'>
-                                    <MagnifyingGlassIcon className='w-10 h-10 mb-3 opacity-30' weight="bold" />
+                                    <MagnifyingGlassIcon
+                                        className='w-10 h-10 mb-3 opacity-30'
+                                        weight='bold'
+                                    />
                                     <span className='text-sm'>No results found</span>
                                     {searchQuery && (
                                         <span className='text-xs mt-1 opacity-70'>

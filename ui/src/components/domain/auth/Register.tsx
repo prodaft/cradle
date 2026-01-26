@@ -251,7 +251,7 @@ export default function Register() {
                         data-testid='back-button'
                         title='Back to Login'
                     >
-                        <ArrowUUpLeftIcon size={18} weight="bold" />
+                        <ArrowUUpLeftIcon size={18} weight='bold' />
                     </Button>
                 </div>
 
@@ -273,7 +273,7 @@ export default function Register() {
                                 </div>
                                 {signup === false && (
                                     <Alert>
-                                        <WarningCircleIcon size={18} weight="bold" />
+                                        <WarningCircleIcon size={18} weight='bold' />
                                         <AlertDescription>
                                             Registration is disabled. Use single sign-on
                                             or contact an administrator.
@@ -403,8 +403,8 @@ export default function Register() {
                                         {signup === false
                                             ? 'Registration Disabled'
                                             : form.formState.isSubmitting
-                                                ? 'Creating...'
-                                                : 'Create Account'}
+                                              ? 'Creating...'
+                                              : 'Create Account'}
                                     </Button>
                                 </Field>
                                 {oauthOptions.length > 0 && (
@@ -428,7 +428,7 @@ export default function Register() {
                                                         let redirectPath = '/';
                                                         if (
                                                             typeof location.state ===
-                                                            'object' &&
+                                                                'object' &&
                                                             location.state !== null &&
                                                             'from' in location.state
                                                         ) {
@@ -440,15 +440,15 @@ export default function Register() {
                                                                 redirectPath =
                                                                     from.includes('#')
                                                                         ? from.slice(
-                                                                            from.indexOf(
-                                                                                '#',
-                                                                            ) + 1,
-                                                                        ) || '/'
+                                                                              from.indexOf(
+                                                                                  '#',
+                                                                              ) + 1,
+                                                                          ) || '/'
                                                                         : from;
                                                             } else if (
                                                                 from &&
                                                                 typeof from ===
-                                                                'object' &&
+                                                                    'object' &&
                                                                 'pathname' in from
                                                             ) {
                                                                 redirectPath =

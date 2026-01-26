@@ -1,4 +1,3 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -18,9 +17,9 @@ import {
 } from '@/components/ui/table';
 import useApi from '@/hooks/api/useApi';
 import { naturalSort } from '@/utils/dashboard';
+import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
-import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 
 interface AdminPanelUserPermissionsProps {
@@ -121,7 +120,8 @@ export default function AdminPanelUserPermissions({
                         id: c.id,
                         name: c.name,
                         description: (c as { description?: string }).description,
-                        accessType: (c.accessType ?? 'none') as PermissionEntity['accessType'],
+                        accessType: (c.accessType ??
+                            'none') as PermissionEntity['accessType'],
                     })),
                 );
             } catch (error) {
@@ -148,7 +148,7 @@ export default function AdminPanelUserPermissions({
     if (isLoading) {
         return (
             <div className='flex items-center justify-center min-h-[200px]'>
-                <Spinner className='size-8' />
+                <Spinner className='size-10' />
             </div>
         );
     }
@@ -157,7 +157,10 @@ export default function AdminPanelUserPermissions({
         <div className='space-y-4'>
             {/* Search */}
             <div className='relative'>
-                <MagnifyingGlassIcon className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground' weight="bold" />
+                <MagnifyingGlassIcon
+                    className='absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground'
+                    weight='bold'
+                />
                 <Input
                     type='text'
                     placeholder='Search entities...'
@@ -168,39 +171,37 @@ export default function AdminPanelUserPermissions({
             </div>
 
             {/* Permissions Table */}
-            <Card className='rounded-lg border-border bg-muted/5'>
-                <CardContent className='p-0'>
-                    {filteredEntities.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className='w-[60px]'>ID</TableHead>
-                                    <TableHead className='w-[200px]'>Entity</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead className='w-[160px]'>Access</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredEntities.map((entity) => (
-                                    <PermissionRow
-                                        key={entity.id}
-                                        entity={entity}
-                                        userId={id}
-                                    />
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className='text-center py-8'>
-                            <p className='text-sm text-muted-foreground'>
-                                {searchVal
-                                    ? 'No entities found matching your search'
-                                    : 'No entities available'}
-                            </p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            <div className='overflow-hidden rounded-md border'>
+                {filteredEntities.length > 0 ? (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className='w-[60px]'>ID</TableHead>
+                                <TableHead className='w-[200px]'>Entity</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead className='w-[160px]'>Access</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {filteredEntities.map((entity) => (
+                                <PermissionRow
+                                    key={entity.id}
+                                    entity={entity}
+                                    userId={id}
+                                />
+                            ))}
+                        </TableBody>
+                    </Table>
+                ) : (
+                    <div className='text-center py-8'>
+                        <p className='text-sm text-muted-foreground'>
+                            {searchVal
+                                ? 'No entities found matching your search'
+                                : 'No entities available'}
+                        </p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

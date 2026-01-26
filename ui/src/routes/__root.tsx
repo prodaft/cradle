@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@/contexts/ui';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
 import { Suspense } from 'react';
@@ -7,7 +8,6 @@ import { Toaster } from 'src/components/ui/sonner';
 import { TooltipProvider } from 'src/components/ui/tooltip';
 import { ApiProvider } from 'src/contexts/api/ApiProvider';
 import { QueryProvider } from 'src/contexts/query/QueryProvider';
-import { ThemeProvider } from '@/contexts/ui';
 
 export const Route = createRootRoute({
     component: () => {

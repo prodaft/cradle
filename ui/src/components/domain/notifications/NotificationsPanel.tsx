@@ -117,10 +117,20 @@ export default function NotificationsPanel({
         if (!lastItem) return;
 
         // If the last visible item is the loader row (beyond actual data), fetch more
-        if (lastItem.index >= notifications.length - 1 && hasNextPage && !isFetchingNextPage) {
+        if (
+            lastItem.index >= notifications.length - 1 &&
+            hasNextPage &&
+            !isFetchingNextPage
+        ) {
             handleLoadMore();
         }
-    }, [virtualItems, notifications.length, hasNextPage, isFetchingNextPage, handleLoadMore]);
+    }, [
+        virtualItems,
+        notifications.length,
+        hasNextPage,
+        isFetchingNextPage,
+        handleLoadMore,
+    ]);
 
     const isEmpty = !loading && notifications.length === 0;
 
@@ -151,7 +161,8 @@ export default function NotificationsPanel({
                         }}
                     >
                         {virtualItems.map((virtualItem) => {
-                            const isLoaderRow = virtualItem.index >= notifications.length;
+                            const isLoaderRow =
+                                virtualItem.index >= notifications.length;
                             const notification = notifications[virtualItem.index];
 
                             return (

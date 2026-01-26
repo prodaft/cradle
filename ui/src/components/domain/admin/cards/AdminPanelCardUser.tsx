@@ -38,9 +38,7 @@ export default function AdminPanelCardUser({
     };
 
     const handlePermissionsClick = () => {
-        setRightPane(
-            <AdminPanelUserPermissions id={String(id)} key={String(id)} />,
-        );
+        setRightPane(<AdminPanelUserPermissions id={String(id)} key={String(id)} />);
     };
 
     return (
@@ -60,7 +58,7 @@ export default function AdminPanelCardUser({
                         }}
                         title='View Activity'
                     >
-                        <ClockCounterClockwiseIcon size={16} weight="bold" />
+                        <ClockCounterClockwiseIcon size={16} weight='bold' />
                     </Button>
                     <Button
                         variant='ghost'
@@ -71,7 +69,7 @@ export default function AdminPanelCardUser({
                         }}
                         title='Edit'
                     >
-                        <LockKeyIcon size={20} weight="bold" />
+                        <LockKeyIcon size={20} weight='bold' />
                     </Button>
                 </CardAction>
             </CardHeader>

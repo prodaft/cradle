@@ -2,8 +2,8 @@ import { syntaxTree } from '@codemirror/language';
 import { EditorState, Range, StateField } from '@codemirror/state';
 import { Decoration, DecorationSet, EditorView, WidgetType } from '@codemirror/view';
 import type { NavigateOptions } from '@tanstack/react-router';
-import MarkdownIt from 'markdown-it';
 import DOMPurify from 'dompurify';
+import MarkdownIt from 'markdown-it';
 
 // Extend MarkdownIt type to include custom properties
 interface MarkdownItWithHandlers extends MarkdownIt {
@@ -21,19 +21,24 @@ interface MarkdownItWithHandlers extends MarkdownIt {
 function cradleLinksPlugin(
     md: MarkdownItWithHandlers,
     entryColors: Map<string, string>,
-    navigate: (url: string, options?: NavigateOptions) => void
+    navigate: (url: string, options?: NavigateOptions) => void,
 ) {
     // Inline rule for cradle links
     md.inline.ruler.before('link', 'cradle_link', (state, silent) => {
         const start = state.pos;
 
         // Check if we start with [[
-        if (state.src.charCodeAt(start) !== 0x5B || state.src.charCodeAt(start + 1) !== 0x5B) {
+        if (
+            state.src.charCodeAt(start) !== 0x5b ||
+            state.src.charCodeAt(start + 1) !== 0x5b
+        ) {
             return false;
         }
 
         // Try to match the full pattern: [[type:value|alias]]@timestamp
-        const match = state.src.substring(start).match(/^\[\[([^:\]]+):([^\]|]+)(?:\|([^\]]+))?\]\](?:@(\S+))?/);
+        const match = state.src
+            .substring(start)
+            .match(/^\[\[([^:\]]+):([^\]|]+)(?:\|([^\]]+))?\]\](?:@(\S+))?/);
 
         if (!match) {
             return false;
@@ -95,7 +100,7 @@ class TableWidget extends WidgetType {
         headers: string[],
         alignments: ('left' | 'center' | 'right')[],
         entryColors: Map<string, string>,
-        navigate: (url: string, options?: NavigateOptions) => void
+        navigate: (url: string, options?: NavigateOptions) => void,
     ) {
         super();
         this.rows = rows;
@@ -125,7 +130,10 @@ class TableWidget extends WidgetType {
         table.style.borderCollapse = 'collapse';
 
         // Create markdown-it instance with cradle links plugin
-        const md = new MarkdownIt({ html: false, linkify: true }) as MarkdownItWithHandlers;
+        const md = new MarkdownIt({
+            html: false,
+            linkify: true,
+        }) as MarkdownItWithHandlers;
         md.cradleLinkHandlers = [];
         cradleLinksPlugin(md, this.entryColors, this.navigate);
 
@@ -207,8 +215,8 @@ class TableWidget extends WidgetType {
  * Parse alignment from delimiter row (e.g., "|:---|:---:|---:|")
  */
 function parseAlignment(delimiter: string): ('left' | 'center' | 'right')[] {
-    const cells = delimiter.split('|').filter(c => c.trim());
-    return cells.map(cell => {
+    const cells = delimiter.split('|').filter((c) => c.trim());
+    return cells.map((cell) => {
         const trimmed = cell.trim();
         const hasLeft = trimmed.startsWith(':');
         const hasRight = trimmed.endsWith(':');
@@ -222,14 +230,23 @@ function parseAlignment(delimiter: string): ('left' | 'center' | 'right')[] {
 /**
  * Parse a table from markdown text
  */
-function parseTable(text: string): { headers: string[]; rows: string[][]; alignments: ('left' | 'center' | 'right')[] } | null {
-    const lines = text.split('\n').filter(line => line.trim());
+function parseTable(
+    text: string,
+): {
+    headers: string[];
+    rows: string[][];
+    alignments: ('left' | 'center' | 'right')[];
+} | null {
+    const lines = text.split('\n').filter((line) => line.trim());
 
     if (lines.length < 2) return null;
 
     // Parse header
     const headerLine = lines[0];
-    const headers = headerLine.split('|').filter(h => h.trim()).map(h => h.trim());
+    const headers = headerLine
+        .split('|')
+        .filter((h) => h.trim())
+        .map((h) => h.trim());
 
     // Parse alignment from delimiter row
     const delimiterLine = lines[1];
@@ -238,7 +255,10 @@ function parseTable(text: string): { headers: string[]; rows: string[][]; alignm
     // Parse body rows
     const rows: string[][] = [];
     for (let i = 2; i < lines.length; i++) {
-        const cells = lines[i].split('|').filter(c => c.trim()).map(c => c.trim());
+        const cells = lines[i]
+            .split('|')
+            .filter((c) => c.trim())
+            .map((c) => c.trim());
         if (cells.length > 0) {
             rows.push(cells);
         }
@@ -254,7 +274,7 @@ function buildTableDecorations(
     state: EditorState,
     sourceMode: boolean,
     entryColors: Map<string, string>,
-    navigate: (url: string, options?: NavigateOptions) => void
+    navigate: (url: string, options?: NavigateOptions) => void,
 ): DecorationSet {
     // Don't render widgets in source mode
     if (sourceMode) {
@@ -290,9 +310,9 @@ function buildTableDecorations(
                                 parsed.headers,
                                 parsed.alignments,
                                 entryColors,
-                                navigate
+                                navigate,
                             ),
-                        }).range(from, to)
+                        }).range(from, to),
                     );
                 }
             }
@@ -308,7 +328,7 @@ function buildTableDecorations(
 export function tablePlugin(
     entryColors: Map<string, string>,
     navigate: (url: string, options?: NavigateOptions) => void,
-    sourceMode: boolean
+    sourceMode: boolean,
 ) {
     return StateField.define<DecorationSet>({
         create(state) {
@@ -316,7 +336,12 @@ export function tablePlugin(
         },
         update(decorations, tr) {
             if (tr.docChanged || tr.selection) {
-                return buildTableDecorations(tr.state, sourceMode, entryColors, navigate);
+                return buildTableDecorations(
+                    tr.state,
+                    sourceMode,
+                    entryColors,
+                    navigate,
+                );
             }
             return decorations.map(tr.changes);
         },

@@ -1,4 +1,3 @@
-import { Spinner } from '@/components/ui/spinner';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
 import {
@@ -11,6 +10,7 @@ import {
 } from '@/components/ui/action-bar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -22,7 +22,7 @@ import {
     ChartBarIcon,
     PlusCircleIcon,
     SparkleIcon,
-    TrashIcon
+    TrashIcon,
 } from '@phosphor-icons/react';
 import type { NoteRetrieve } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -196,15 +196,17 @@ export default function NotesList({
     const containerRef = useRef<HTMLDivElement>(null);
 
     // Mapping of table columns to API field names
-    const sortFieldMapping = useMemo<Record<string, string>>(() => ({
-        title: 'title',
-        description: 'timestamp',
-        author: 'author__username',
-        editor: 'editor__username',
-        createdAt: 'timestamp',
-        lastChanged: 'edit_timestamp',
-    }), []);
-
+    const sortFieldMapping = useMemo<Record<string, string>>(
+        () => ({
+            title: 'title',
+            description: 'timestamp',
+            author: 'author__username',
+            editor: 'editor__username',
+            createdAt: 'timestamp',
+            lastChanged: 'edit_timestamp',
+        }),
+        [],
+    );
 
     const handleSortingChange = useCallback(
         (sorting: SortingState) => {
@@ -238,23 +240,31 @@ export default function NotesList({
         [search, router, location.pathname, sortFieldMapping],
     );
 
-    const handleColumnFilter = useCallback((column: string, value: string | DateRangeFilter) => {
-        setColumnFilters((prev) => ({
-            ...prev,
-            [column]: value,
-        }));
+    const handleColumnFilter = useCallback(
+        (column: string, value: string | DateRangeFilter) => {
+            setColumnFilters((prev) => ({
+                ...prev,
+                [column]: value,
+            }));
 
-        if (onFilterChange) {
-            onFilterChange(column, value);
-        }
-    }, [onFilterChange]);
+            if (onFilterChange) {
+                onFilterChange(column, value);
+            }
+        },
+        [onFilterChange],
+    );
 
-    const filterableColumns = useMemo<Record<string, (value: string | DateRangeFilter) => void>>(() => ({
-        author: (value) => handleColumnFilter('author', value),
-        editor: (value) => handleColumnFilter('editor', value),
-        createdAt: (value) => handleColumnFilter('createdAt', value),
-        lastChanged: (value) => handleColumnFilter('lastChanged', value),
-    }), [handleColumnFilter]);
+    const filterableColumns = useMemo<
+        Record<string, (value: string | DateRangeFilter) => void>
+    >(
+        () => ({
+            author: (value) => handleColumnFilter('author', value),
+            editor: (value) => handleColumnFilter('editor', value),
+            createdAt: (value) => handleColumnFilter('createdAt', value),
+            lastChanged: (value) => handleColumnFilter('lastChanged', value),
+        }),
+        [handleColumnFilter],
+    );
 
     const handleStatusChange = useCallback((status: string) => {
         setColumnFilters((prev) => ({
@@ -409,14 +419,11 @@ export default function NotesList({
         }
     }, [notes.length, totalCount, onTotalCountChange]);
 
-    const handleRetrySelected = useCallback(
-        (selectedIds: string[]) => {
-            if (selectedIds.length === 0) return;
-            setRelinkNoteIds(selectedIds);
-            setRelinkModalOpen(true);
-        },
-        [],
-    );
+    const handleRetrySelected = useCallback((selectedIds: string[]) => {
+        if (selectedIds.length === 0) return;
+        setRelinkNoteIds(selectedIds);
+        setRelinkModalOpen(true);
+    }, []);
 
     const executeRelink = useCallback(
         async (selectedIds: string[]) => {
@@ -533,11 +540,11 @@ export default function NotesList({
 
         return columnId
             ? [
-                {
-                    id: columnId,
-                    desc: sortDirection === 'desc',
-                },
-            ]
+                  {
+                      id: columnId,
+                      desc: sortDirection === 'desc',
+                  },
+              ]
             : [];
     }, [sortField, sortDirection]);
 
@@ -558,7 +565,7 @@ export default function NotesList({
     // Filter out filtered notes - optimized with Set for O(n) instead of O(n*m)
     const filteredData = useMemo(() => {
         if (filteredNotes.length === 0) return notes;
-        const filteredNoteIds = new Set(filteredNotes.map(n => n.id));
+        const filteredNoteIds = new Set(filteredNotes.map((n) => n.id));
         return notes.filter((note) => !filteredNoteIds.has(note.id));
     }, [notes, filteredNotes]);
 
@@ -652,7 +659,9 @@ export default function NotesList({
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <span className='inline-flex items-center align-middle flex-shrink-0'>
-                                                    <StatusIcon status={row.original.status} />
+                                                    <StatusIcon
+                                                        status={row.original.status}
+                                                    />
                                                 </span>
                                             </TooltipTrigger>
                                             <TooltipContent>
@@ -747,9 +756,9 @@ export default function NotesList({
                     <div className='w-36'>
                         {row.original.timestamp
                             ? format(
-                                new Date(row.original.timestamp),
-                                'dd/MM/yyyy, HH:mm',
-                            )
+                                  new Date(row.original.timestamp),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : 'N/A'}
                     </div>
                 ),
@@ -772,19 +781,15 @@ export default function NotesList({
                     <div className='w-36'>
                         {row.original.editTimestamp
                             ? format(
-                                new Date(row.original.editTimestamp),
-                                'dd/MM/yyyy, HH:mm',
-                            )
+                                  new Date(row.original.editTimestamp),
+                                  'dd/MM/yyyy, HH:mm',
+                              )
                             : '-'}
                     </div>
                 ),
             },
         ],
-        [
-            columnFilters,
-            router,
-            handleStatusChange,
-        ],
+        [columnFilters, router, handleStatusChange],
     );
 
     const table = useReactTable({
@@ -907,7 +912,7 @@ export default function NotesList({
                 <div className='grid grid-cols-1 gap-2'>
                     {loading ? (
                         <div className='flex min-h-[200px] items-center justify-center'>
-                            <Spinner />
+                            <Spinner className='size-10' />
                         </div>
                     ) : (
                         <DataTable
@@ -934,7 +939,9 @@ export default function NotesList({
                     <ActionBarItem
                         onClick={() => handleRetrySelected(selectedNoteIds)}
                         disabled={
-                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                            loading ||
+                            notes.length === 0 ||
+                            selectedNoteIds.length === 0
                         }
                     >
                         <ArrowClockwiseIcon width={18} height={18} />
@@ -943,7 +950,9 @@ export default function NotesList({
                     <ActionBarItem
                         onClick={handleReportSelected}
                         disabled={
-                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                            loading ||
+                            notes.length === 0 ||
+                            selectedNoteIds.length === 0
                         }
                     >
                         <ChartBarIcon width={18} height={18} />
@@ -952,7 +961,9 @@ export default function NotesList({
                     <ActionBarItem
                         onClick={handleEnrichSelected}
                         disabled={
-                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                            loading ||
+                            notes.length === 0 ||
+                            selectedNoteIds.length === 0
                         }
                     >
                         <SparkleIcon width={18} height={18} />
@@ -966,7 +977,9 @@ export default function NotesList({
                             }
                         }}
                         disabled={
-                            loading || notes.length === 0 || selectedNoteIds.length === 0
+                            loading ||
+                            notes.length === 0 ||
+                            selectedNoteIds.length === 0
                         }
                         className='text-destructive'
                     >

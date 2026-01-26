@@ -25,7 +25,10 @@ interface SearchComponentProps {
     addNodes: (nodes: Node[]) => void;
     onLoadingChange?: (isLoading: boolean) => void;
     onFetchProgressChange?: (progress: FetchProgress | null) => void;
-    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
+    onFetchControlsReady?: (controls: {
+        pause: () => void;
+        resume: () => void;
+    }) => void;
 }
 
 interface GraphQueryProps {
@@ -49,7 +52,10 @@ interface GraphQueryProps {
     cosmographRef: React.MutableRefObject<any>;
     onLoadingChange?: (isLoading: boolean) => void;
     onFetchProgressChange?: (progress: FetchProgress | null) => void;
-    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
+    onFetchControlsReady?: (controls: {
+        pause: () => void;
+        resume: () => void;
+    }) => void;
 }
 
 export default function GraphQuery({

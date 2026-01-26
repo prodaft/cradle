@@ -1,4 +1,3 @@
-import { Spinner } from '@/components/ui/spinner';
 import { Input } from '@/components/ui/input';
 import {
     Sidebar,
@@ -9,6 +8,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { Spinner } from '@/components/ui/spinner';
 import useApi from '@/hooks/api/useApi';
 import { MappingSubclass } from '@services/cradle/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -109,7 +109,7 @@ export default function TypeMappingsPage() {
                             <SidebarMenu>
                                 {isPending ? (
                                     <div className='px-4 py-2 text-sm text-muted-foreground flex items-center gap-2'>
-                                        <Spinner className='size-3' /> Loading...
+                                        <Spinner className='size-4' /> Loading...
                                     </div>
                                 ) : filteredMappingTypes.length === 0 ? (
                                     <div className='px-4 py-2 text-sm text-muted-foreground'>

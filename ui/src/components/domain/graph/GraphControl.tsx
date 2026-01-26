@@ -27,7 +27,10 @@ interface SearchComponentProps {
     addBoth?: (nodes: Node[], edges: EdgeRelation[]) => void;
     onLoadingChange?: (isLoading: boolean) => void;
     onFetchProgressChange?: (progress: FetchProgress | null) => void;
-    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
+    onFetchControlsReady?: (controls: {
+        pause: () => void;
+        resume: () => void;
+    }) => void;
 }
 
 interface GraphControlProps {
@@ -49,7 +52,10 @@ interface GraphControlProps {
     setSelectedEntries: (entries: Set<Entry>) => void;
     onLoadingChange?: (isLoading: boolean) => void;
     onFetchProgressChange?: (progress: FetchProgress | null) => void;
-    onFetchControlsReady?: (controls: { pause: () => void; resume: () => void }) => void;
+    onFetchControlsReady?: (controls: {
+        pause: () => void;
+        resume: () => void;
+    }) => void;
 }
 
 export default function GraphControl({
@@ -107,10 +113,7 @@ export default function GraphControl({
                         <CosmographSearch
                             accessor='label'
                             onSelect={(suggestion: any) => {
-                                if (
-                                    suggestion == null ||
-                                    cosmographRef.current == null
-                                )
+                                if (suggestion == null || cosmographRef.current == null)
                                     return;
                                 const index = suggestion._index;
                                 if (index !== undefined) {

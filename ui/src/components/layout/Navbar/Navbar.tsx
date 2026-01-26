@@ -29,7 +29,8 @@ export default function Navbar(): React.JSX.Element {
             .filter((match) => match.staticData && (match.staticData as any).breadcrumb)
             .map((match) => {
                 const breadcrumb = (match.staticData as any).breadcrumb;
-                const label = typeof breadcrumb === 'function' ? breadcrumb(match) : breadcrumb;
+                const label =
+                    typeof breadcrumb === 'function' ? breadcrumb(match) : breadcrumb;
                 return {
                     label: label as string,
                     path: match.pathname,
@@ -70,12 +71,22 @@ export default function Navbar(): React.JSX.Element {
                             const isLast = index === breadcrumbs.length - 1;
                             return (
                                 <React.Fragment key={crumb.path}>
-                                    <BreadcrumbItem className={index < breadcrumbs.length - 1 ? 'hidden md:block' : ''}>
+                                    <BreadcrumbItem
+                                        className={
+                                            index < breadcrumbs.length - 1
+                                                ? 'hidden md:block'
+                                                : ''
+                                        }
+                                    >
                                         {isLast ? (
-                                            <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                                            <BreadcrumbPage>
+                                                {crumb.label}
+                                            </BreadcrumbPage>
                                         ) : (
                                             <BreadcrumbLink asChild>
-                                                <Link to={crumb.path}>{crumb.label}</Link>
+                                                <Link to={crumb.path}>
+                                                    {crumb.label}
+                                                </Link>
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>
@@ -96,7 +107,7 @@ export default function Navbar(): React.JSX.Element {
                     className='rounded-full w-64 justify-between text-muted-foreground'
                 >
                     <div className='flex items-center gap-2'>
-                        <MagnifyingGlassIcon className='h-4 w-4' weight="bold" />
+                        <MagnifyingGlassIcon className='h-4 w-4' weight='bold' />
                         <span className='text-sm'>Search...</span>
                     </div>
                     <KbdGroup className='hidden sm:flex'>

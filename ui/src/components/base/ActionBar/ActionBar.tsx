@@ -157,7 +157,7 @@ export const ActionBarSearch = memo(function ActionBarSearch({
                 }}
             />
             <InputGroupAddon>
-                <MagnifyingGlassIcon size={16} weight="bold" />
+                <MagnifyingGlassIcon size={16} weight='bold' />
             </InputGroupAddon>
             {currentValue && (
                 <InputGroupAddon
@@ -165,7 +165,7 @@ export const ActionBarSearch = memo(function ActionBarSearch({
                     onClick={handleClear}
                     className='cursor-pointer'
                 >
-                    <XIcon size={16} weight="bold" />
+                    <XIcon size={16} weight='bold' />
                 </InputGroupAddon>
             )}
         </InputGroup>
@@ -339,7 +339,7 @@ export const CollapsibleActionGroup = memo(function CollapsibleActionGroup({
                     >
                         <DotsThreeIcon
                             size={20}
-                            weight="bold"
+                            weight='bold'
                             className={`${selectedCount > 0 ? 'text-primary' : 'text-muted-foreground'}`}
                         />
                         {selectedCount > 0 && (

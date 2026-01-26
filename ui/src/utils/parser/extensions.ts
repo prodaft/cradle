@@ -108,8 +108,9 @@ export function renderCradleLink(
         displayText += ` (${time ? time + ' ' : ''}${date})`;
     }
 
-    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${date ? `data-timestamp="${date}"` : ''
-        } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
+    return `<a style="color: ${colorClass};" href="${url}" data-custom-href="${url}" ${
+        date ? `data-timestamp="${date}"` : ''
+    } ${time ? `data-time="${time}"` : ''}>${displayText}</a>`;
 }
 
 /**
@@ -162,8 +163,8 @@ export async function resolveMinioLinks(
         const href = token.attrs![hrefIndex][1];
         if (!href.startsWith('/file-transfer/download/')) return;
 
-        const url = new URL("https://localhost:8000" + href);
-        console.log(url)
+        const url = new URL('https://localhost:8000' + href);
+        console.log(url);
 
         const params = new URLSearchParams(url.search);
         const fileId = params.get('fileId');
@@ -210,7 +211,13 @@ export async function parseWithExtensions(
 
     // Override image renderer to add max-width constraint (matching RichEditor behavior)
     const originalImageRule = md.renderer.rules.image;
-    md.renderer.rules.image = (tokens: Token[], idx: number, options: any, env: any, self: any) => {
+    md.renderer.rules.image = (
+        tokens: Token[],
+        idx: number,
+        options: any,
+        env: any,
+        self: any,
+    ) => {
         const token = tokens[idx];
         const src = token.attrGet('src') || '';
         const alt = token.attrGet('alt') || '';
@@ -239,7 +246,13 @@ export async function parseWithExtensions(
 
     // Override paragraph_close to preserve empty lines
     const originalParagraphClose = md.renderer.rules.paragraph_close;
-    md.renderer.rules.paragraph_close = (tokens: Token[], idx: number, options: any, env: any, self: any) => {
+    md.renderer.rules.paragraph_close = (
+        tokens: Token[],
+        idx: number,
+        options: any,
+        env: any,
+        self: any,
+    ) => {
         // Find the corresponding paragraph_open token
         let openIdx = idx;
         while (openIdx >= 0 && tokens[openIdx].type !== 'paragraph_open') {
@@ -251,7 +264,11 @@ export async function parseWithExtensions(
             let hasContent = false;
             for (let i = openIdx + 1; i < idx; i++) {
                 const token = tokens[i];
-                if (token.type === 'inline' && token.children && token.children.length > 0) {
+                if (
+                    token.type === 'inline' &&
+                    token.children &&
+                    token.children.length > 0
+                ) {
                     // Check if inline content has any non-whitespace (excluding zero-width space)
                     for (const child of token.children) {
                         if (child.type === 'text') {
@@ -261,7 +278,11 @@ export async function parseWithExtensions(
                                 hasContent = true;
                                 break;
                             }
-                        } else if (child.type !== 'text' && child.type !== 'softbreak' && child.type !== 'hardbreak') {
+                        } else if (
+                            child.type !== 'text' &&
+                            child.type !== 'softbreak' &&
+                            child.type !== 'hardbreak'
+                        ) {
                             hasContent = true;
                             break;
                         }
@@ -323,7 +344,9 @@ export async function parseWithExtensions(
         return '\n\n' + '\u200B\n\n'.repeat(emptyLineCount);
     });
 
-    const content = fileData ? prependLinks(preprocessedContent, fileData, baseURL) : preprocessedContent;
+    const content = fileData
+        ? prependLinks(preprocessedContent, fileData, baseURL)
+        : preprocessedContent;
     const tokens = md.parse(content, {});
     await processTokens(tokens, fileTransferApi, baseURL);
     let html = md.renderer.render(tokens, md.options, metadata);
