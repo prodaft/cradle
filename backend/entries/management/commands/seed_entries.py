@@ -5,7 +5,8 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
-from entries.models import EntryClass, EnricherSettings
+from entries.models import EntryClass
+from intelio.models.base import EnricherSettings
 from intelio.models.mappings.catalyst import CatalystMapping
 from intelio.models.mappings.dns import DNSMapping
 from intelio.models.mappings.falcon import FalconMapping

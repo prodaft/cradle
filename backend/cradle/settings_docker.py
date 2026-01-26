@@ -69,7 +69,7 @@ AWS_ACCESS_KEY_ID = env.str("MINIO_ROOT_USER", "admin")
 AWS_SECRET_ACCESS_KEY = env.str("MINIO_ROOT_PASSWORD", "admin")
 AWS_S3_ENDPOINT_URL = env.str(
     "AWS_S3_ENDPOINT_URL",
-    f"{'https' if env.bool('MINIO_SECURE', True) else 'http'}://{env.str('MINIO_ENDPOINT', 'localhost')}",
+    MINIO_BACKEND_URL if MINIO_BACKEND_URL else f"{'https' if env.bool('MINIO_SECURE', True) else 'http'}://{env.str('MINIO_ENDPOINT', 'localhost')}",
 )
 AWS_S3_USE_SSL = env.bool("MINIO_SECURE", True)
 AWS_S3_VERIFY = env.bool("AWS_S3_VERIFY", True)

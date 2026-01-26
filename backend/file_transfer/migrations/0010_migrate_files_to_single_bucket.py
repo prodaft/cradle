@@ -4,15 +4,6 @@ from django.db import migrations, transaction
 
 
 def migrate_files_to_single_bucket(apps, schema_editor):
-    """
-    Migrate files from per-user buckets to a single bucket.
-
-    This migration:
-    1. Looks up the user from bucket_name (user's UUID)
-    2. Sets the user FK on the FileReference
-    3. Copies the file from old bucket to new single bucket
-    4. Updates the file field to point to the new location
-    """
     FileReference = apps.get_model('file_transfer', 'FileReference')
     CradleUser = apps.get_model('user', 'CradleUser')
 
@@ -22,43 +13,51 @@ def migrate_files_to_single_bucket(apps, schema_editor):
     minio_client = MinioClient()
     target_bucket = FileTransferStorage.bucket_name
 
-    try:
-        if not minio_client.client.bucket_exists(target_bucket):
-            minio_client.client.make_bucket(target_bucket)
-    except Exception as e:
-        print(f"Warning: Could not create bucket {target_bucket}: {e}")
+    if not minio_client.client.bucket_exists(target_bucket):
+        minio_client.client.make_bucket(target_bucket)
 
-    for file_ref in FileReference.objects.filter(bucket_name__isnull=False).exclude(bucket_name=''):
+    # Cast to list immediately to avoid cursor issues during deletion
+    files_to_migrate = list(FileReference.objects.filter(bucket_name__isnull=False).exclude(bucket_name=''))
+
+    for file_ref in files_to_migrate:
         try:
             with transaction.atomic():
+                new_id = file_ref.minio_file_name
+                
+                if not new_id or FileReference.objects.filter(id=new_id).exists():
+                    print(f"Skipping {file_ref.id}: New ID '{new_id}' is invalid or already exists.")
+                    continue
+
+                user = None
                 try:
                     user = CradleUser.objects.get(id=file_ref.bucket_name)
-                    file_ref.user = user
                 except CradleUser.DoesNotExist:
-                    print(f"Warning: User with ID {file_ref.bucket_name} not found for file {file_ref.id}")
+                    pass
 
                 new_file_path = f"{file_ref.id}-{file_ref.file_name}"
-
                 if file_ref.minio_file_name and minio_client.file_exists_at_path(file_ref.bucket_name, file_ref.minio_file_name):
                     from minio.commonconfig import CopySource
-
                     copy_source = CopySource(file_ref.bucket_name, file_ref.minio_file_name)
-                    minio_client.client.copy_object(
-                        target_bucket,
-                        new_file_path,
-                        copy_source,
-                    )
-
-                    file_ref.file = new_file_path
-                    print(f"Migrated file {file_ref.id}: {file_ref.bucket_name}/{file_ref.minio_file_name} -> {target_bucket}/{new_file_path}")
+                    minio_client.client.copy_object(target_bucket, new_file_path, copy_source)
                 else:
-                    print(f"Warning: File not found in MinIO for {file_ref.id}: {file_ref.bucket_name}/{file_ref.minio_file_name}")
+                    print(f"File missing in MinIO for {file_ref.id}, skipping DB record swap.")
+                    continue
 
-                file_ref.save()
+                file_data = {
+                    "id": new_id,
+                    "user": user,
+                    "file": new_file_path,
+                    "file_name": file_ref.file_name,
+                    "bucket_name": "", 
+                }
+
+                file_ref.delete()
+                FileReference.objects.create(**file_data)
+
+                print(f"Success: Migrated {new_id}")
 
         except Exception as e:
-            print(f"Error migrating file {file_ref.id}: {e}")
-
+            print(f"Error migrating file {file_ref.id}: {str(e)}")
 
 def reverse_migration(apps, schema_editor):
     """

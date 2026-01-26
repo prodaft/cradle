@@ -121,9 +121,9 @@ The monorepo is organized into three main components:
    ```
 2. Start the Docker containers
    ```sh
-   docker compose -f docker/docker-compose.demo.yml up -d
+   docker compose -f docker/docker-compose.demo.yml up -d --wait
    ```
-3. Access the application at `http://localhost:3000`
+3. Access the application at `http://localhost:8000`
 
 For advanced setup instructions, see the component-specific READMEs:
 - [Backend Setup](backend/README.md)

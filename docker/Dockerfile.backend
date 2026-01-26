@@ -42,7 +42,4 @@ COPY ./backend/cradle/settings_docker.py ./cradle/settings.py
 COPY ./docker/entrypoint_backend.sh ./docker/entrypoint_celery.sh ./
 RUN chmod +x ./entrypoint_backend.sh ./entrypoint_celery.sh
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -f http://localhost:8000/docs || exit 1
-
 CMD ["./entrypoint_backend.sh"]
