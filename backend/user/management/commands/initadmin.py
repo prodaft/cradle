@@ -3,7 +3,7 @@ import random
 import string
 
 from django.core.management.base import BaseCommand
-from user.models import CradleUser
+from user.models import CradleUser, DEFAULT_THEME
 
 
 class Command(BaseCommand):
@@ -45,6 +45,7 @@ class Command(BaseCommand):
             )
             admin.is_active = True
             admin.is_admin = True
+            admin.theme = DEFAULT_THEME
             admin.save()
         else:
             print("Admin accounts can only be initialized if no Accounts exist")

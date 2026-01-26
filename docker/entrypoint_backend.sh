@@ -9,7 +9,7 @@ if [ "$AUTO_POPULATE" = "false" ]; then
     echo "Skipping population..."
 else    
     echo "Seeding entries..."
-    # python manage.py seed_entries
+    python manage.py seed_entries --populate-existing
 
     echo "Initializing admin account..."
     python manage.py initadmin

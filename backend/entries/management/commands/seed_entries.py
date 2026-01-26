@@ -93,6 +93,7 @@ class Command(BaseCommand):
             fields.pop("subtype", None)
             children = fields.pop("children", [])
             fields.pop("type_mappings", None)
+            fields.pop("enrichment_techniques", None)
             timestamp = fields.pop("timestamp", None)
 
             if overwrite:
@@ -263,7 +264,7 @@ class Command(BaseCommand):
                 if overwrite:
                     entry_class.enrichers.add(enricher)
                 else:
-                    if not entry_class.enrichers.filter(id=enricher.id).exists():
+                    if not entry_class.enrichers.filter(id=enricher.id).exists() or populate_existing:
                         entry_class.enrichers.add(enricher)
 
         self.stdout.write("Enrichment techniques seed complete.")
