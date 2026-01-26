@@ -16,14 +16,12 @@ def migrate_files_to_single_bucket(apps, schema_editor):
     FileReference = apps.get_model('file_transfer', 'FileReference')
     CradleUser = apps.get_model('user', 'CradleUser')
 
-    # Import MinioClient and storage here to avoid issues during migration
     from file_transfer.utils import MinioClient
     from file_transfer.storage import FileTransferStorage
 
     minio_client = MinioClient()
     target_bucket = FileTransferStorage.bucket_name
 
-    # Ensure target bucket exists
     try:
         if not minio_client.client.bucket_exists(target_bucket):
             minio_client.client.make_bucket(target_bucket)
@@ -32,20 +30,15 @@ def migrate_files_to_single_bucket(apps, schema_editor):
 
     for file_ref in FileReference.objects.filter(bucket_name__isnull=False).exclude(bucket_name=''):
         try:
-            # Wrap each file migration in its own atomic block
-            # This ensures that failures in one file don't affect others
             with transaction.atomic():
-                # Look up the user from the bucket_name (which is the user's UUID)
                 try:
                     user = CradleUser.objects.get(id=file_ref.bucket_name)
                     file_ref.user = user
                 except CradleUser.DoesNotExist:
                     print(f"Warning: User with ID {file_ref.bucket_name} not found for file {file_ref.id}")
 
-                # Generate new file path
                 new_file_path = f"{file_ref.id}-{file_ref.file_name}"
 
-                # Copy file from old bucket to new bucket
                 if file_ref.minio_file_name and minio_client.file_exists_at_path(file_ref.bucket_name, file_ref.minio_file_name):
                     from minio.commonconfig import CopySource
 
@@ -56,7 +49,6 @@ def migrate_files_to_single_bucket(apps, schema_editor):
                         copy_source,
                     )
 
-                    # Update the file field to point to the new location
                     file_ref.file = new_file_path
                     print(f"Migrated file {file_ref.id}: {file_ref.bucket_name}/{file_ref.minio_file_name} -> {target_bucket}/{new_file_path}")
                 else:

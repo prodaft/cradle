@@ -54,7 +54,7 @@ export default function EnrichmentRequests() {
         (search as any)?.sort_direction || 'desc',
     );
     const [pageSize, setPageSize] = useState((search as any)?.pagesize || 10);
-    const [selectedRequests, setSelectedRequests] = useState<number[]>([]);
+    const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
     // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -225,7 +225,7 @@ export default function EnrichmentRequests() {
 
     // Delete mutation
     const deleteMutation = useMutation({
-        mutationFn: (id: number) => intelioApi.enrichmentDetailDelete({ id }),
+        mutationFn: (id: string) => intelioApi.enrichmentDetailDelete({ id }),
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
         },
@@ -233,7 +233,7 @@ export default function EnrichmentRequests() {
 
     // Rerun mutation
     const rerunMutation = useMutation({
-        mutationFn: (id: number) => intelioApi.enrichmentRestart({ id }),
+        mutationFn: (id: string) => intelioApi.enrichmentRestart({ id }),
         meta: {
             invalidateQueries: [{ queryKey: queryKeys.enrichment.requests.lists() }],
         },

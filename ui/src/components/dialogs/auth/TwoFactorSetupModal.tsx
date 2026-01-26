@@ -204,7 +204,7 @@ export default function TwoFactorSetupModal({
                                     : 'default'
                             }
                         >
-                            <WarningCircle />
+                            <WarningCircleIcon />
                             <AlertDescription>{alert.message}</AlertDescription>
                         </AlertComponent>
                     )}

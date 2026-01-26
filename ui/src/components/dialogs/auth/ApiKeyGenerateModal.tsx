@@ -120,7 +120,7 @@ export default function ApiKeyGenerateModal({
                                         : 'default'
                                 }
                             >
-                                <WarningCircle />
+                                <WarningCircleIcon />
                                 <AlertDescription>{alert.message}</AlertDescription>
                             </AlertComponent>
                         )}

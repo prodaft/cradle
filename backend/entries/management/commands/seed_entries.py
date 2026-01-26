@@ -5,7 +5,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
-from entries.models import EntryClass
+from entries.models import EntryClass, EnricherSettings
 from intelio.models.mappings.catalyst import CatalystMapping
 from intelio.models.mappings.dns import DNSMapping
 from intelio.models.mappings.falcon import FalconMapping
@@ -59,6 +59,7 @@ class Command(BaseCommand):
         with transaction.atomic():
             self._seed_entry_classes(entry_classes, populate_existing, overwrite)
             self._seed_type_mappings(entry_classes, populate_existing, overwrite)
+            self._seed_enrichment_techniques(entry_classes, populate_existing, overwrite)
 
     def _load_seed_data(self, data_file):
         data_path = Path(data_file)
@@ -227,3 +228,41 @@ class Command(BaseCommand):
             )
 
         return item_fields
+
+    def _seed_enrichment_techniques(self, entry_classes, populate_existing, overwrite):
+        """
+        Seeds EnricherSettings and associates them with EntryClasses.
+        """
+        self.stdout.write("Seeding enrichment techniques...")
+
+        for entry_data in entry_classes:
+            subtype = entry_data.get("subtype")
+            techniques = entry_data.get("enrichment_techniques", [])
+
+            if not techniques:
+                continue
+
+            entry_class = EntryClass.objects.filter(subtype=subtype).first()
+            if not entry_class:
+                self.stdout.write(f"Skipping enrichment for {subtype}: EntryClass not found.")
+                continue
+
+            for tech_slug in techniques:
+                if populate_existing or overwrite:
+                    enricher, _ = EnricherSettings.objects.get_or_create(
+                        enricher_type=tech_slug,
+                        defaults={"enabled": False}
+                    )
+                else:
+                    enricher = EnricherSettings.objects.filter(enricher_type=tech_slug).first()
+                    
+                    if not enricher:
+                        continue
+
+                if overwrite:
+                    entry_class.enrichers.add(enricher)
+                else:
+                    if not entry_class.enrichers.filter(id=enricher.id).exists():
+                        entry_class.enrichers.add(enricher)
+
+        self.stdout.write("Enrichment techniques seed complete.")

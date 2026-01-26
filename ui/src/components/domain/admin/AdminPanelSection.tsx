@@ -93,7 +93,7 @@ export default function AdminPanelSection({
                         value={searchVal}
                     />
                     <InputGroupAddon>
-                        <Search />
+                        <MagnifyingGlassIcon />
                     </InputGroupAddon>
                     {searchVal && (
                         <InputGroupAddon

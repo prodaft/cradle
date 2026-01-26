@@ -54,6 +54,7 @@
       "color": "#79d298",
       "prefix": "",
       "children": [],
+      "enrichment_techniques": ["misp", "opencti", "urlscan"],
       "type_mappings": {
         "misp": [
           {
@@ -210,6 +211,7 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
+      "enrichment_techniques": ["dns", "misp", "opencti", "urlscan"],
       "type_mappings": {
         "dns": [
           {
@@ -268,6 +270,7 @@
       "children": [
         "domain"
       ],
+      "enrichment_techniques": ["misp", "opencti"],
       "type_mappings": {
         "misp": [
           {
@@ -313,50 +316,7 @@
       "color": "#7f8389",
       "prefix": "",
       "children": [],
-      "type_mappings": {
-        "misp": [
-          {
-            "attribute_type": "filename"
-          },
-          {
-            "attribute_type": "filename|md5"
-          },
-          {
-            "attribute_type": "filename|sha1"
-          },
-          {
-            "attribute_type": "filename|sha256"
-          },
-          {
-            "attribute_type": "email-attachment"
-          },
-          {
-            "attribute_type": "malware-sample"
-          }
-        ],
-        "mwdb": [
-          {
-            "artifact_type": "file"
-          },
-          {
-            "artifact_type": "config"
-          },
-          {
-            "artifact_type": "blob"
-          },
-          {
-            "artifact_type": "text_blob"
-          }
-        ],
-        "opencti": [
-          {
-            "observable_type": "File"
-          },
-          {
-            "observable_type": "Artifact"
-          }
-        ]
-      }
+      "type_mappings": {}
     },
     {
       "subtype": "hash/md5",
@@ -370,6 +330,7 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
+      "enrichment_techniques": [ "misp", "opencti", "mwdb"],
       "type_mappings": {
         "misp": [
           {
@@ -400,6 +361,7 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
+      "enrichment_techniques": [ "misp", "opencti", "mwdb"],
       "type_mappings": {
         "misp": [
           {
@@ -430,6 +392,7 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
+      "enrichment_techniques": [ "misp", "opencti", "mwdb"],
       "type_mappings": {
         "misp": [
           {
@@ -815,6 +778,7 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
+      "enrichment_techniques": [ "misp", "opencti"],
       "type_mappings": {
         "dns": [
           {
@@ -859,6 +823,7 @@
       "color": "#e66100",
       "prefix": "",
       "children": [],
+      "enrichment_techniques": [ "misp", "opencti"],
       "type_mappings": {
         "dns": [
           {
@@ -1187,6 +1152,7 @@
         "domain",
         "ip"
       ],
+      "enrichment_techniques": [ "misp", "opencti", "urlscan"],
       "type_mappings": {
         "misp": [
           {

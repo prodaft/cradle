@@ -2,14 +2,21 @@
 
 : "${NUM_WORKERS:=12}"
 
-uv run python manage.py migrate django_celery_beat
+echo "Running migrations..."
 uv run python manage.py migrate
 
-if $INSTALL_FIXTURES; then
-  uv run python manage.py loaddata entries
+if [ "$AUTO_POPULATE" = "false" ]; then
+    echo "Skipping population..."
+else    
+    echo "Seeding entries..."
+    uv run python manage.py seed_entries
+
+    echo "Initializing admin account..."
+    uv run python manage.py initadmin
 fi
 
-uv run python manage.py initadmin
+echo "Deleting hanging entries..."
 uv run python manage.py delete_hanging_entries
 
-uv run gunicorn --workers $NUM_WORKERS -b 0.0.0.0:8000 cradle.wsgi:application
+# Start the application
+exec uv run gunicorn --workers $NUM_WORKERS -b 0.0.0.0:8000 cradle.wsgi:application

@@ -103,7 +103,7 @@ export default function AdminPanelCardEntryType({
                                 }}
                                 title='Delete'
                             >
-                                <Trash />
+                                <TrashIcon />
                             </Button>
                             <ConfirmDeletionModal
                                 open={deleteModalOpen}

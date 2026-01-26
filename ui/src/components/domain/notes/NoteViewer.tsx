@@ -76,7 +76,7 @@ interface LocationState {
  * NoteViewer component - displays note content with editing capabilities
  */
 export default function NoteViewer() {
-    const params = useParams({ from: '/_authenticated/notes/$id', strict: false });
+    const params = useParams({ from: '/_authenticated/notes/$id' as any, strict: false });
     const router = useRouter();
     const queryClient = useQueryClient();
     const location = useRouterState({

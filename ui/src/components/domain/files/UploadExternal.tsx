@@ -336,7 +336,7 @@ export default function UploadExternal() {
                         className='!max-w-full w-full'
                     />
                     <Button type='submit' variant='default' size='default'>
-                        <Search /> Search
+                        <MagnifyingGlassIcon /> Search
                     </Button>
                 </form>
             </div>

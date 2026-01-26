@@ -7,7 +7,7 @@ import type { FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from '@tanstack/react-router';
 import { format } from 'date-fns';
-import { DownloadSimpleIcon } from '@phosphor-icons/react';
+import { DownloadIcon, DownloadSimpleIcon } from '@phosphor-icons/react';
 import { forwardRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -153,7 +153,7 @@ const FileItem = forwardRef<HTMLDivElement, FileItemProps>(function FileItem(
                     className='text-foreground hover:bg-accent p-2 rounded-full ml-4'
                     title='Download file'
                 >
-                    <Download />
+                    <DownloadIcon />
                 </Button>
             </div>
         </div>

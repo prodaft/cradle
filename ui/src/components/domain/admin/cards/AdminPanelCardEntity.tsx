@@ -105,7 +105,7 @@ export default function AdminPanelCardEntity({
                                 }}
                                 title='Delete'
                             >
-                                <Trash />
+                                <TrashIcon />
                             </Button>
                             <ConfirmDeletionModal
                                 open={deleteModalOpen}
