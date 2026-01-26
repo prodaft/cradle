@@ -19,7 +19,7 @@ def migrate_files_to_single_bucket(apps, schema_editor):
 
     # Cast to list immediately to avoid cursor issues during deletion
     files_to_migrate = list(FileReference.objects.filter(bucket_name__isnull=False).exclude(bucket_name=''))
-
+    failures = []
     for file_ref in files_to_migrate:
         try:
             with transaction.atomic():
@@ -45,14 +45,15 @@ def migrate_files_to_single_bucket(apps, schema_editor):
                     print(f"File missing in MinIO for {file_ref.id}, skipping DB record swap.")
                     continue
 
-                data = model_to_dict(file_ref, exclude=['id', 'file'])
-        
-                data.update({
-                    "id": new_id,
-                    "user": user,
-                    "file": new_file_path,
-                    "bucket_name": "", 
-                })
+                data = model_to_dict(file_ref, exclude=['id', 'file', 'user', 'note', 'digest'])
+                
+                data['user_id'] = user.id if user else file_ref.user_id
+                data['note_id'] = file_ref.note_id
+                data['digest_id'] = file_ref.digest_id
+                
+                data['id'] = new_id
+                data['file'] = new_file_path
+                data['bucket_name'] = ""
 
                 file_ref.delete()
                 FileReference.objects.bulk_create([FileReference(**data)])
@@ -60,7 +61,12 @@ def migrate_files_to_single_bucket(apps, schema_editor):
                 print(f"Success: Migrated {old_id} -> {new_id}")
 
         except Exception as e:
-            print(f"Error migrating file {file_ref.id}: {str(e)}")
+            msg = f"Error migrating file {file_ref.id}: {str(e)}"
+            print(msg)
+            failures.append(msg)
+
+    if failures:
+        raise Exception("There were issues with the file migration")
 
 def reverse_migration(apps, schema_editor):
     """
