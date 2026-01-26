@@ -1,4 +1,4 @@
-import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import { Button } from '@/components/ui/button';
 import useApi from '@/hooks/api/useApi';
 import { TrashIcon } from '@phosphor-icons/react';
@@ -31,7 +31,7 @@ interface DeleteNoteProps {
  * @param {boolean} props.hideDefaultControls - Whether to hide the default controls
  */
 export default function DeleteNote({ note, setHidden, classNames }: DeleteNoteProps) {
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const { notesApi } = useApi();
 
     const deleteMutation = useMutation({
@@ -56,15 +56,15 @@ export default function DeleteNote({ note, setHidden, classNames }: DeleteNotePr
                     onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        setDeleteModalOpen(true);
+                        setDeleteDialogOpen(true);
                     }}
                 >
                     <TrashIcon className={classNames} weight='bold' />
                 </Button>
             </span>
-            <ConfirmDeletionModal
-                open={deleteModalOpen}
-                onOpenChange={setDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
                 onConfirm={handleDelete}
                 text='Are you sure you want to delete this note? This action is irreversible.'
             />

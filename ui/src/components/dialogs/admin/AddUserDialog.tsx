@@ -8,13 +8,17 @@ import {
 import { UserRetrieve } from '@services/cradle/models';
 import AddUserForm from '../../domain/admin/forms/AddUserForm';
 
-interface AddUserModalProps {
+interface AddUserDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onAdd?: (result: UserRetrieve) => void;
 }
 
-export default function AddUserModal({ open, onOpenChange, onAdd }: AddUserModalProps) {
+export default function AddUserDialog({
+    open,
+    onOpenChange,
+    onAdd,
+}: AddUserDialogProps) {
     const handleAdd = (newUser: UserRetrieve) => {
         if (onAdd) {
             onAdd(newUser);

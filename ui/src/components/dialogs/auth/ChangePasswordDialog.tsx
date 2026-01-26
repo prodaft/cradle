@@ -30,9 +30,9 @@ const changePasswordSchema = z
 type FormData = z.infer<typeof changePasswordSchema>;
 
 /**
- * ChangePasswordModal component props
+ * ChangePasswordDialog component props
  */
-export interface ChangePasswordModalProps {
+export interface ChangePasswordDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -40,19 +40,19 @@ export interface ChangePasswordModalProps {
 }
 
 /**
- * ChangePasswordModal component - allows an authenticated user to change their password
- * by providing their old password and a new password in a modal dialog.
+ * ChangePasswordDialog component - allows an authenticated user to change their password
+ * by providing their old password and a new password in a dialog.
  *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <ChangePasswordModal open={open} onOpenChange={setOpen} />
+ * <ChangePasswordDialog open={open} onOpenChange={setOpen} />
  * ```
  */
-export default function ChangePasswordModal({
+export default function ChangePasswordDialog({
     open,
     onOpenChange,
-}: ChangePasswordModalProps) {
+}: ChangePasswordDialogProps) {
     const { authApi } = useApi();
 
     const changePasswordMutation = useMutation({

@@ -1,5 +1,5 @@
-import AdminSetPasswordModal from '@/components/dialogs/admin/AdminSetPasswordModal';
-import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import AdminSetPasswordDialog from '@/components/dialogs/admin/AdminSetPasswordDialog';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -84,8 +84,8 @@ export default function AdminUserSettings({
     const router = useRouter();
     const { usersApi } = useApi();
     const { setTokensDirectly } = useAuthActions();
-    const [deleteUserModalOpen, setDeleteUserModalOpen] = useState(false);
-    const [setPasswordModalOpen, setSetPasswordModalOpen] = useState(false);
+    const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+    const [setPasswordDialogOpen, setSetPasswordDialogOpen] = useState(false);
 
     const saveMutation = useMutation({
         mutationFn: async ({ userId, payload }: { userId: string; payload: any }) => {
@@ -307,14 +307,14 @@ export default function AdminUserSettings({
         deleteUserMutation.mutate();
     };
 
-    const openDeleteUserModal = () => {
-        setDeleteUserModalOpen(true);
+    const openDeleteUserDialog = () => {
+        setDeleteUserDialogOpen(true);
     };
 
-    const openAdminSetPasswordModal = () => {
+    const openAdminSetPasswordDialog = () => {
         const id = getValues('id');
         if (!id) return;
-        setSetPasswordModalOpen(true);
+        setSetPasswordDialogOpen(true);
     };
 
     if (!user) return <div></div>;
@@ -665,7 +665,7 @@ export default function AdminUserSettings({
                                             type='button'
                                             variant='outline'
                                             size='sm'
-                                            onClick={openAdminSetPasswordModal}
+                                            onClick={openAdminSetPasswordDialog}
                                         >
                                             Set Password
                                         </Button>
@@ -790,7 +790,7 @@ export default function AdminUserSettings({
                                             variant='destructive'
                                             size='sm'
                                             className='self-center'
-                                            onClick={openDeleteUserModal}
+                                            onClick={openDeleteUserDialog}
                                         >
                                             Delete
                                         </Button>
@@ -814,17 +814,17 @@ export default function AdminUserSettings({
                     </div>
                 )}
             </form>
-            <ConfirmDeletionModal
-                open={deleteUserModalOpen}
-                onOpenChange={setDeleteUserModalOpen}
+            <ConfirmDeletionDialog
+                open={deleteUserDialogOpen}
+                onOpenChange={setDeleteUserDialogOpen}
                 onConfirm={handleDeleteUser}
                 confirmText={getValues('username') || 'DELETE'}
                 text='Deleting this user will permanently remove all their data, including notes, entries, and settings. This action cannot be undone.'
             />
             {getValues('id') && (
-                <AdminSetPasswordModal
-                    open={setPasswordModalOpen}
-                    onOpenChange={setSetPasswordModalOpen}
+                <AdminSetPasswordDialog
+                    open={setPasswordDialogOpen}
+                    onOpenChange={setSetPasswordDialogOpen}
                     userId={getValues('id')!}
                     onSuccess={() => {
                         queryClient.invalidateQueries({

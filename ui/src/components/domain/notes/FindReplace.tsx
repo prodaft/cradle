@@ -3,9 +3,9 @@ import { Input } from '@/components/ui/input';
 import {
     InputGroup,
     InputGroupAddon,
-    InputGroupButton,
     InputGroupInput,
 } from '@/components/ui/input-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
     getSearchQuery,
     replaceAll,
@@ -224,47 +224,43 @@ export default function FindReplace({
                                         autoFocus
                                     />
                                     <InputGroupAddon align='inline-end'>
-                                        <InputGroupButton
-                                            variant='ghost'
-                                            size='icon-xs'
-                                            onClick={() =>
-                                                setCaseSensitive(!caseSensitive)
-                                            }
-                                            className={`${
-                                                caseSensitive
-                                                    ? 'bg-background text-foreground'
-                                                    : 'text-muted-foreground hover:bg-background hover:text-foreground'
-                                            }`}
-                                            title='Match Case'
+                                        <ToggleGroup
+                                            type='multiple'
+                                            value={[
+                                                ...(caseSensitive ? ['case'] : []),
+                                                ...(wholeWord ? ['word'] : []),
+                                                ...(useRegex ? ['regex'] : []),
+                                            ]}
+                                            onValueChange={(values) => {
+                                                setCaseSensitive(values.includes('case'));
+                                                setWholeWord(values.includes('word'));
+                                                setUseRegex(values.includes('regex'));
+                                            }}
+                                            size='sm'
+                                            className='h-auto p-0'
                                         >
-                                            <VscTextSize className='text-xs' />
-                                        </InputGroupButton>
-                                        <InputGroupButton
-                                            variant='ghost'
-                                            size='icon-xs'
-                                            onClick={() => setWholeWord(!wholeWord)}
-                                            className={`${
-                                                wholeWord
-                                                    ? 'bg-background text-foreground'
-                                                    : 'text-muted-foreground hover:bg-background hover:text-foreground'
-                                            }`}
-                                            title='Match Whole Word'
-                                        >
-                                            <VscWholeWord className='text-xs' />
-                                        </InputGroupButton>
-                                        <InputGroupButton
-                                            variant='ghost'
-                                            size='icon-xs'
-                                            onClick={() => setUseRegex(!useRegex)}
-                                            className={`${
-                                                useRegex
-                                                    ? 'bg-background text-foreground'
-                                                    : 'text-muted-foreground hover:bg-background hover:text-foreground'
-                                            }`}
-                                            title='Use Regular Expression'
-                                        >
-                                            <VscRegex className='text-xs' />
-                                        </InputGroupButton>
+                                            <ToggleGroupItem
+                                                value='case'
+                                                title='Match Case'
+                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground'
+                                            >
+                                                <VscTextSize className='text-xs' />
+                                            </ToggleGroupItem>
+                                            <ToggleGroupItem
+                                                value='word'
+                                                title='Match Whole Word'
+                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground'
+                                            >
+                                                <VscWholeWord className='text-xs' />
+                                            </ToggleGroupItem>
+                                            <ToggleGroupItem
+                                                value='regex'
+                                                title='Use Regular Expression'
+                                                className='size-6 rounded-[calc(var(--radius)-5px)] p-0 text-muted-foreground hover:bg-background hover:text-foreground data-[state=on]:bg-background data-[state=on]:text-foreground'
+                                            >
+                                                <VscRegex className='text-xs' />
+                                            </ToggleGroupItem>
+                                        </ToggleGroup>
                                     </InputGroupAddon>
                                 </InputGroup>
                                 <div className='flex gap-0.5 flex-shrink-0'>

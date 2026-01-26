@@ -75,7 +75,7 @@ import {
     useState,
 } from 'react';
 import { toast } from 'sonner';
-import FileUploadModal from '../../dialogs/notes/FileUploadModal';
+import FileUploadDialog from '../../dialogs/notes/FileUploadDialog';
 import FileTable from '../files/FileTable';
 
 // Type alias for compatibility with referenceLinks
@@ -184,7 +184,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
     ref,
 ) {
     const [showFileList, setShowFileList] = useState(false);
-    const [showFileUploadModal, setShowFileUploadModal] = useState(false);
+    const [showFileUploadDialog, setShowFileUploadDialog] = useState(false);
     const [clipboardFiles, setClipboardFiles] = useState<File[]>([]);
     const { usersApi } = useApi();
     const { isLoggedIn } = useAuthActions();
@@ -341,7 +341,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     if (files.length > 0) {
                         event.preventDefault();
                         setClipboardFiles(files);
-                        setShowFileUploadModal(true);
+                        setShowFileUploadDialog(true);
                         return true;
                     }
 
@@ -675,11 +675,11 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                 </div>
             )}
 
-            {/* File Upload Modal */}
-            <FileUploadModal
-                open={showFileUploadModal}
+            {/* File Upload Dialog */}
+            <FileUploadDialog
+                open={showFileUploadDialog}
                 onOpenChange={(open) => {
-                    setShowFileUploadModal(open);
+                    setShowFileUploadDialog(open);
                     if (!open) setClipboardFiles([]);
                 }}
                 files={fileData as FileReferenceWithNote[]}

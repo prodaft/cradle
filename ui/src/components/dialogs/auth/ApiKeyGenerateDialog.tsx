@@ -19,9 +19,9 @@ import { useMutation } from '@tanstack/react-query';
 import { useState } from 'react';
 
 /**
- * ApiKeyGenerateModal component props
+ * ApiKeyGenerateDialog component props
  */
-export interface ApiKeyGenerateModalProps {
+export interface ApiKeyGenerateDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -31,23 +31,23 @@ export interface ApiKeyGenerateModalProps {
 }
 
 /**
- * ApiKeyGenerateModal component - handles API key generation with copy and visibility toggle
+ * ApiKeyGenerateDialog component - handles API key generation with copy and visibility toggle
  *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <ApiKeyGenerateModal
+ * <ApiKeyGenerateDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   userId="user-123"
  * />
  * ```
  */
-export default function ApiKeyGenerateModal({
+export default function ApiKeyGenerateDialog({
     open,
     onOpenChange,
     userId,
-}: ApiKeyGenerateModalProps) {
+}: ApiKeyGenerateDialogProps) {
     const { usersApi } = useApi();
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [showApiKey, setShowApiKey] = useState(false);

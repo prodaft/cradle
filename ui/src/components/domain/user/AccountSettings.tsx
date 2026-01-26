@@ -1,8 +1,8 @@
-import ApiKeyGenerateModal from '@/components/dialogs/auth/ApiKeyGenerateModal';
-import ChangePasswordModal from '@/components/dialogs/auth/ChangePasswordModal';
-import TwoFactorSetupModal from '@/components/dialogs/auth/TwoFactorSetupModal';
-import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
-import MarkdownEditorModal from '@/components/dialogs/notes/MarkdownEditorModal';
+import ApiKeyGenerateDialog from '@/components/dialogs/auth/ApiKeyGenerateDialog';
+import ChangePasswordDialog from '@/components/dialogs/auth/ChangePasswordDialog';
+import TwoFactorSetupDialog from '@/components/dialogs/auth/TwoFactorSetupDialog';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
+import MarkdownEditorDialog from '@/components/dialogs/notes/MarkdownEditorDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -160,12 +160,12 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     });
     const search = useSearch({ from: '/_authenticated/settings' });
     const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
-    const [changePasswordModalOpen, setChangePasswordModalOpen] = useState(false);
-    const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
-    const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
+    const [changePasswordDialogOpen, setChangePasswordDialogOpen] = useState(false);
+    const [apiKeyDialogOpen, setApiKeyDialogOpen] = useState(false);
+    const [twoFactorDialogOpen, setTwoFactorDialogOpen] = useState(false);
     const [twoFactorDisabling, setTwoFactorDisabling] = useState(false);
-    const [deleteAccountModalOpen, setDeleteAccountModalOpen] = useState(false);
-    const [noteTemplateModalOpen, setNoteTemplateModalOpen] = useState(false);
+    const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
+    const [noteTemplateDialogOpen, setNoteTemplateDialogOpen] = useState(false);
     const [noteTemplateContent, setNoteTemplateContent] = useState('');
 
     // Get active tab from URL search params, default to 'security'
@@ -586,33 +586,33 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
         deleteAccountMutation.mutate(userId);
     };
 
-    const openChangePasswordModal = () => {
-        setChangePasswordModalOpen(true);
+    const openChangePasswordDialog = () => {
+        setChangePasswordDialogOpen(true);
     };
 
-    const openApiKeyModal = () => {
+    const openApiKeyDialog = () => {
         const id = getValues('id');
         if (!id) return;
-        setApiKeyModalOpen(true);
+        setApiKeyDialogOpen(true);
     };
 
-    const openTwoFactorModal = () => {
+    const openTwoFactorDialog = () => {
         setTwoFactorDisabling(twoFactorEnabled);
-        setTwoFactorModalOpen(true);
+        setTwoFactorDialogOpen(true);
     };
 
-    const openDeleteAccountModal = () => {
-        setDeleteAccountModalOpen(true);
+    const openDeleteAccountDialog = () => {
+        setDeleteAccountDialogOpen(true);
     };
 
-    const openNoteTemplateModal = async () => {
+    const openNoteTemplateDialog = async () => {
         setNoteTemplateLoading(true);
         try {
             const defaultNoteResponse =
                 await fetchNoteTemplateMutation.mutateAsync(target);
             const initialTemplate = defaultNoteResponse.template || '';
             setNoteTemplateContent(initialTemplate);
-            setNoteTemplateModalOpen(true);
+            setNoteTemplateDialogOpen(true);
         } finally {
             setNoteTemplateLoading(false);
         }
@@ -844,7 +844,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 size='sm'
                                                                 className='self-center'
                                                                 onClick={
-                                                                    openChangePasswordModal
+                                                                    openChangePasswordDialog
                                                                 }
                                                                 title='Change Password'
                                                             >
@@ -873,7 +873,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 size='sm'
                                                                 className='self-center'
                                                                 onClick={
-                                                                    openApiKeyModal
+                                                                    openApiKeyDialog
                                                                 }
                                                                 title='Generate API Key'
                                                             >
@@ -904,7 +904,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 }
                                                                 size='sm'
                                                                 onClick={
-                                                                    openTwoFactorModal
+                                                                    openTwoFactorDialog
                                                                 }
                                                             >
                                                                 {twoFactorEnabled
@@ -933,7 +933,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 variant='destructive'
                                                                 size='sm'
                                                                 onClick={
-                                                                    openDeleteAccountModal
+                                                                    openDeleteAccountDialog
                                                                 }
                                                             >
                                                                 Delete
@@ -1313,7 +1313,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 size='sm'
                                                                 className='self-center'
                                                                 onClick={
-                                                                    openNoteTemplateModal
+                                                                    openNoteTemplateDialog
                                                                 }
                                                                 disabled={
                                                                     noteTemplateLoading
@@ -1383,20 +1383,20 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                     </div>
                 </div>
             </div>
-            <ChangePasswordModal
-                open={changePasswordModalOpen}
-                onOpenChange={setChangePasswordModalOpen}
+            <ChangePasswordDialog
+                open={changePasswordDialogOpen}
+                onOpenChange={setChangePasswordDialogOpen}
             />
             {getValues('id') && (
-                <ApiKeyGenerateModal
-                    open={apiKeyModalOpen}
-                    onOpenChange={setApiKeyModalOpen}
+                <ApiKeyGenerateDialog
+                    open={apiKeyDialogOpen}
+                    onOpenChange={setApiKeyDialogOpen}
                     userId={getValues('id')!}
                 />
             )}
-            <TwoFactorSetupModal
-                open={twoFactorModalOpen}
-                onOpenChange={setTwoFactorModalOpen}
+            <TwoFactorSetupDialog
+                open={twoFactorDialogOpen}
+                onOpenChange={setTwoFactorDialogOpen}
                 isDisabling={twoFactorDisabling}
                 onSuccess={() => {
                     setTwoFactorEnabled((prev) => !prev);
@@ -1407,16 +1407,16 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                     );
                 }}
             />
-            <ConfirmDeletionModal
-                open={deleteAccountModalOpen}
-                onOpenChange={setDeleteAccountModalOpen}
+            <ConfirmDeletionDialog
+                open={deleteAccountDialogOpen}
+                onOpenChange={setDeleteAccountDialogOpen}
                 onConfirm={handleDelete}
                 confirmText='DELETE'
                 text='Deleting your account will permanently remove all your data, including notes, entries, and settings. This action cannot be undone.'
             />
-            <MarkdownEditorModal
-                open={noteTemplateModalOpen}
-                onOpenChange={setNoteTemplateModalOpen}
+            <MarkdownEditorDialog
+                open={noteTemplateDialogOpen}
+                onOpenChange={setNoteTemplateDialogOpen}
                 title='Default Note Template'
                 titleEditable={false}
                 initialContent={noteTemplateContent}

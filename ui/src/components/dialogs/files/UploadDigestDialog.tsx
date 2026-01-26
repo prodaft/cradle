@@ -48,7 +48,7 @@ interface DataTypeOption extends SelectOption<string> {
     inferEntities: boolean;
 }
 
-export interface UploadDigestModalProps {
+export interface UploadDigestDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     dataTypeOptions?: DataTypeOption[]; // Optional - modal fetches types internally
@@ -83,12 +83,12 @@ const UploadSchema = z.object({
 
 type FormValues = z.infer<typeof UploadSchema>;
 
-export default function UploadDigestModal({
+export default function UploadDigestDialog({
     open,
     onOpenChange,
     onUpload,
     dataTypeOptions: propDataTypeOptions,
-}: UploadDigestModalProps): React.JSX.Element {
+}: UploadDigestDialogProps): React.JSX.Element {
     const { queryApi, intelioApi } = useApi();
 
     // Fetch data type options if not provided

@@ -17,9 +17,9 @@ import CodeMirror from '@uiw/react-codemirror';
 import { useState } from 'react';
 
 /**
- * MarkdownEditorModal component props
+ * MarkdownEditorDialog component props
  */
-export interface MarkdownEditorModalProps {
+export interface MarkdownEditorDialogProps {
     /** Callback function when content is confirmed, receives content and title */
     onConfirm: (content: string, title: string) => Promise<void>;
     /** Title for the modal/note */
@@ -37,14 +37,14 @@ export interface MarkdownEditorModalProps {
 }
 
 /**
- * MarkdownEditorModal component - provides a markdown editor with syntax highlighting
+ * MarkdownEditorDialog component - provides a markdown editor with syntax highlighting
  *
  * Uses CodeMirror for markdown editing with support for code blocks in multiple languages.
  *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <MarkdownEditorModal
+ * <MarkdownEditorDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   title="My Note"
@@ -55,7 +55,7 @@ export interface MarkdownEditorModalProps {
  * />
  *
  * // With custom HTML
- * <MarkdownEditorModal
+ * <MarkdownEditorDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   title="My Note"
@@ -66,7 +66,7 @@ export interface MarkdownEditorModalProps {
  * />
  * ```
  */
-export default function MarkdownEditorModal({
+export default function MarkdownEditorDialog({
     onConfirm,
     title,
     titleEditable = false,
@@ -74,7 +74,7 @@ export default function MarkdownEditorModal({
     onOpenChange,
     initialContent = '',
     helpText,
-}: MarkdownEditorModalProps): React.ReactElement {
+}: MarkdownEditorDialogProps): React.ReactElement {
     const [userInput, setUserInput] = useState(initialContent);
     const [noteTitle, setNoteTitle] = useState(title || '');
     const { isDarkMode } = useTheme();

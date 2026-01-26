@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -89,7 +89,7 @@ function DigestList({
     dataTypeOptions = [],
     onUpload,
 }: DigestListProps) {
-    const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteDigestIds, setBulkDeleteDigestIds] = useState<string[]>([]);
     const { intelioApi } = useApi();
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -473,7 +473,7 @@ function DigestList({
     const handleDeleteSelected = async () => {
         if (selectedDigestIds.length > 0) {
             setBulkDeleteDigestIds(selectedDigestIds);
-            setBulkDeleteModalOpen(true);
+            setBulkDeleteDialogOpen(true);
         }
     };
 
@@ -586,10 +586,10 @@ function DigestList({
                 <ActionBarSeparator />
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionModal
-                open={bulkDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteModalOpen(open);
+                    setBulkDeleteDialogOpen(open);
                     if (!open) {
                         setBulkDeleteDigestIds([]);
                     }

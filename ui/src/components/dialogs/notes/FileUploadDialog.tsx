@@ -37,9 +37,9 @@ interface FileWithStatus {
 }
 
 /**
- * FileManagementModal component props
+ * FileUploadDialog component props
  */
-export interface FileUploadModalProps {
+export interface FileUploadDialogProps {
     /** Array of files currently attached to the note */
     files: FileReferenceWithNote[];
     /** Callback to update the files list */
@@ -55,7 +55,7 @@ export interface FileUploadModalProps {
 }
 
 /**
- * FileManagementModal component - upload files to attach to a note
+ * FileUploadDialog component - upload files to attach to a note
  *
  * Provides file upload functionality for attaching files to notes.
  * Files are uploaded using the presigned URL flow:
@@ -63,14 +63,14 @@ export interface FileUploadModalProps {
  * 2. Upload file directly to storage
  * 3. Finalize upload with note_id to link the file
  */
-export default function FileUploadModal({
+export default function FileUploadDialog({
     files,
     onFilesChange,
     open,
     onOpenChange,
     initialFiles = [],
     noteId,
-}: FileUploadModalProps): React.JSX.Element {
+}: FileUploadDialogProps): React.JSX.Element {
     const { fileTransferApi } = useApi();
     const [pendingFiles, setPendingFiles] = useState<File[]>(initialFiles);
     const [filesWithStatus, setFilesWithStatus] = useState<FileWithStatus[]>([]);

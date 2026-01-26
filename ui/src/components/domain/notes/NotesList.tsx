@@ -46,9 +46,10 @@ import {
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
-import ConfirmDeletionModal from '../../dialogs/base/ConfirmDeletionModal';
-import EnrichmentRequestModal from '../../dialogs/enrichment/EnrichmentRequestModal';
-import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
+import ActionConfirmationDialog from '../../dialogs/base/ActionConfirmationDialog';
+import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
+import EnrichmentRequestDialog from '../../dialogs/enrichment/EnrichmentRequestDialog';
+import ReportGenerationDialog from '../../dialogs/reports/ReportGenerationDialog';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
 import { NotePreviewContent } from './NotePreviewContent';
 import { StatusIcon } from './StatusIcon';
@@ -135,19 +136,19 @@ export default function NotesList({
         (search as any)?.notes_sort_direction || 'desc',
     );
     const { notesApi, managementApi } = useApi();
-    const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteNoteIds, setBulkDeleteNoteIds] = useState<string[]>([]);
-    const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
+    const [singleDeleteDialogOpen, setSingleDeleteDialogOpen] = useState(false);
     const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
-    const [reportModalOpen, setReportModalOpen] = useState(false);
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
     const [reportSelectedNotes, setReportSelectedNotes] = useState<
         Array<{ id: string; title: string }>
     >([]);
-    const [enrichmentModalOpen, setEnrichmentModalOpen] = useState(false);
+    const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
     const [enrichmentNotesList, setEnrichmentNotesList] = useState<
         Array<{ id: string; title: string; entities: OptimizedEntryResponse[] }>
     >([]);
-    const [relinkModalOpen, setRelinkModalOpen] = useState(false);
+    const [relinkDialogOpen, setRelinkDialogOpen] = useState(false);
     const [relinkNoteIds, setRelinkNoteIds] = useState<string[]>([]);
     const queryClient = useQueryClient();
 
@@ -422,7 +423,7 @@ export default function NotesList({
     const handleRetrySelected = useCallback((selectedIds: string[]) => {
         if (selectedIds.length === 0) return;
         setRelinkNoteIds(selectedIds);
-        setRelinkModalOpen(true);
+        setRelinkDialogOpen(true);
     }, []);
 
     const executeRelink = useCallback(
@@ -843,7 +844,7 @@ export default function NotesList({
             };
         });
         setReportSelectedNotes(selectedNoteObjects);
-        setReportModalOpen(true);
+        setReportDialogOpen(true);
     }, [noteById, selectedNoteIds]);
 
     const handleEnrichSelected = useCallback(() => {
@@ -857,7 +858,7 @@ export default function NotesList({
             };
         });
         setEnrichmentNotesList(selectedNoteObjects);
-        setEnrichmentModalOpen(true);
+        setEnrichmentDialogOpen(true);
     }, [noteById, selectedNoteIds]);
 
     return (
@@ -973,7 +974,7 @@ export default function NotesList({
                         onClick={() => {
                             if (selectedNoteIds.length > 0) {
                                 setBulkDeleteNoteIds(selectedNoteIds);
-                                setBulkDeleteModalOpen(true);
+                                setBulkDeleteDialogOpen(true);
                             }
                         }}
                         disabled={
@@ -990,10 +991,10 @@ export default function NotesList({
                 <ActionBarSeparator />
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionModal
-                open={bulkDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteModalOpen(open);
+                    setBulkDeleteDialogOpen(open);
                     if (!open) {
                         setBulkDeleteNoteIds([]);
                     }
@@ -1007,10 +1008,10 @@ export default function NotesList({
                 text={`Are you sure you want to delete ${bulkDeleteNoteIds.length} note${bulkDeleteNoteIds.length > 1 ? 's' : ''}? This action is irreversible.`}
             />
             {deletingNoteId && (
-                <ConfirmDeletionModal
-                    open={singleDeleteModalOpen}
+                <ConfirmDeletionDialog
+                    open={singleDeleteDialogOpen}
                     onOpenChange={(open) => {
-                        setSingleDeleteModalOpen(open);
+                        setSingleDeleteDialogOpen(open);
                         if (!open) setDeletingNoteId(null);
                     }}
                     text='Are you sure you want to delete this note? This action is irreversible.'
@@ -1034,23 +1035,25 @@ export default function NotesList({
                     }}
                 />
             )}
-            <ReportGenerationModal
-                open={reportModalOpen}
-                onOpenChange={setReportModalOpen}
+            <ReportGenerationDialog
+                open={reportDialogOpen}
+                onOpenChange={setReportDialogOpen}
                 selectedNotes={reportSelectedNotes}
             />
-            <EnrichmentRequestModal
-                open={enrichmentModalOpen}
-                onOpenChange={setEnrichmentModalOpen}
+            <EnrichmentRequestDialog
+                open={enrichmentDialogOpen}
+                onOpenChange={setEnrichmentDialogOpen}
                 notesList={enrichmentNotesList}
             />
-            <ConfirmDeletionModal
-                open={relinkModalOpen}
+            <ActionConfirmationDialog
+                open={relinkDialogOpen}
                 onOpenChange={(open) => {
-                    setRelinkModalOpen(open);
+                    setRelinkDialogOpen(open);
                     if (!open) setRelinkNoteIds([]);
                 }}
+                title='Confirm Relinking'
                 text={`Are you sure you want to relink ${relinkNoteIds.length} ${relinkNoteIds.length > 1 ? 'notes' : 'note'}? This will reprocess the relationships between notes and entities.`}
+                confirmButtonText='Relink'
                 onConfirm={async () => {
                     if (relinkNoteIds.length > 0) {
                         await executeRelink(relinkNoteIds);

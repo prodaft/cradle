@@ -7,7 +7,7 @@
 // Notifications System
 export * from './domain/notifications';
 
-// Modal Dialogs
+// Dialogs
 export * from './dialogs';
 
 // Form Components

@@ -8,17 +8,17 @@ import {
 import { Entity } from '@services/cradle/models';
 import AddEntityForm from '../../domain/admin/forms/AddEntityForm';
 
-interface AddEntityModalProps {
+interface AddEntityDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onAdd?: (result: Entity) => void;
 }
 
-export default function AddEntityModal({
+export default function AddEntityDialog({
     open,
     onOpenChange,
     onAdd,
-}: AddEntityModalProps) {
+}: AddEntityDialogProps) {
     const handleAdd = (newEntity: Entity) => {
         if (onAdd) {
             onAdd(newEntity);

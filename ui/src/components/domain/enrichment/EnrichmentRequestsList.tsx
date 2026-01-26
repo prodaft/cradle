@@ -1,7 +1,7 @@
 import { DateRangeFilter } from '@/components/base/ListView/types';
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -110,7 +110,7 @@ function EnrichmentRequestsList({
     onCreateRequest = () => {},
 }: EnrichmentRequestsListProps) {
     const router = useRouter();
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteRequestIds, setDeleteRequestIds] = useState<string[]>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
 
@@ -478,7 +478,7 @@ function EnrichmentRequestsList({
                         onClick={() => {
                             if (selectedRequestIds.length === 0) return;
                             setDeleteRequestIds(selectedRequestIds);
-                            setDeleteModalOpen(true);
+                            setDeleteDialogOpen(true);
                         }}
                         disabled={
                             loading ||
@@ -505,10 +505,10 @@ function EnrichmentRequestsList({
                 <ActionBarSeparator />
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionModal
-                open={deleteModalOpen}
+            <ConfirmDeletionDialog
+                open={deleteDialogOpen}
                 onOpenChange={(open) => {
-                    setDeleteModalOpen(open);
+                    setDeleteDialogOpen(open);
                     if (!open) {
                         setDeleteRequestIds([]);
                     }

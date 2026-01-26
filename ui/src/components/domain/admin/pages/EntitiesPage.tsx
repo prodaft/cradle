@@ -52,8 +52,8 @@ import {
 } from '@tanstack/react-table';
 import { Plus, Shield } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AddEntityModal from '../../../dialogs/admin/AddEntityModal';
-import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
+import AddEntityDialog from '../../../dialogs/admin/AddEntityDialog';
+import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';
 import EntityForm from '../forms/EntityForm';
@@ -283,10 +283,10 @@ export default function EntitiesPage() {
     const { isAdmin } = useAuthState();
     const { queryApi, entriesApi } = useApi();
     const queryClient = useQueryClient();
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteEntityId, setDeleteEntityId] = useState<number | null>(null);
-    const [addEntityModalOpen, setAddEntityModalOpen] = useState(false);
-    const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [addEntityDialogOpen, setAddEntityDialogOpen] = useState(false);
+    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteEntityIds, setBulkDeleteEntityIds] = useState<string[]>([]);
 
     const selectedEntityIds = useMemo(
@@ -325,7 +325,7 @@ export default function EntitiesPage() {
 
     const handleDelete = (entity: EntityData) => {
         setDeleteEntityId(entity.id);
-        setDeleteModalOpen(true);
+        setDeleteDialogOpen(true);
     };
 
     const handleDeleteEntities = async (entityIds: string[]) => {
@@ -344,7 +344,7 @@ export default function EntitiesPage() {
     const handleDeleteSelected = useCallback(() => {
         if (selectedEntityIds.length === 0) return;
         setBulkDeleteEntityIds(selectedEntityIds);
-        setBulkDeleteModalOpen(true);
+        setBulkDeleteDialogOpen(true);
     }, [selectedEntityIds]);
 
     const handleEditSelected = useCallback(() => {
@@ -550,7 +550,7 @@ export default function EntitiesPage() {
     }
 
     const handleAddEntity = () => {
-        setAddEntityModalOpen(true);
+        setAddEntityDialogOpen(true);
     };
 
     const handleEntityAdded = (newEntity: Entity) => {
@@ -648,19 +648,19 @@ export default function EntitiesPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <AddEntityModal
-                open={addEntityModalOpen}
-                onOpenChange={setAddEntityModalOpen}
+            <AddEntityDialog
+                open={addEntityDialogOpen}
+                onOpenChange={setAddEntityDialogOpen}
                 onAdd={handleEntityAdded}
             />
             {deleteEntityId !== null &&
                 (() => {
                     const entity = entities.find((e) => e.id === deleteEntityId);
                     return (
-                        <ConfirmDeletionModal
-                            open={deleteModalOpen}
+                        <ConfirmDeletionDialog
+                            open={deleteDialogOpen}
                             onOpenChange={(open) => {
-                                setDeleteModalOpen(open);
+                                setDeleteDialogOpen(open);
                                 if (!open) setDeleteEntityId(null);
                             }}
                             onConfirm={() => {
@@ -675,10 +675,10 @@ export default function EntitiesPage() {
                         />
                     );
                 })()}
-            <ConfirmDeletionModal
-                open={bulkDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteModalOpen(open);
+                    setBulkDeleteDialogOpen(open);
                     if (!open) {
                         setBulkDeleteEntityIds([]);
                     }

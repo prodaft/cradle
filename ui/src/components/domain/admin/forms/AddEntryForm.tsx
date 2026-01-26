@@ -144,7 +144,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
 
     useEffect(() => {
         fetchEntryTypes();
-    }, [entriesApi, fetchEntryTypesMutation]);
+    }, []);
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');

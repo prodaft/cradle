@@ -1,16 +1,16 @@
-export { default as ActionConfirmationModal } from './base/ActionConfirmationModal';
-export { default as ConfirmDeletionModal } from './base/ConfirmDeletionModal';
+export { default as ActionConfirmationDialog } from './base/ActionConfirmationDialog';
+export { default as ConfirmDeletionDialog } from './base/ConfirmDeletionDialog';
 
-export { default as ChangePasswordModal } from './auth/ChangePasswordModal';
-export { default as TwoFactorSetupModal } from './auth/TwoFactorSetupModal';
+export { default as ChangePasswordDialog } from './auth/ChangePasswordDialog';
+export { default as TwoFactorSetupDialog } from './auth/TwoFactorSetupDialog';
 
-export { default as MarkdownEditorModal } from './notes/MarkdownEditorModal';
+export { default as MarkdownEditorDialog } from './notes/MarkdownEditorDialog';
 
-export { default as ReportGenerationModal } from './reports/ReportGenerationModal';
+export { default as ReportGenerationDialog } from './reports/ReportGenerationDialog';
 
-export { default as EnrichmentRequestModal } from './enrichment/EnrichmentRequestModal';
+export { default as EnrichmentRequestDialog } from './enrichment/EnrichmentRequestDialog';
 
-export { default as AddEntityModal } from './admin/AddEntityModal';
-export { default as AddEntryTypeModal } from './admin/AddEntryTypeModal';
-export { default as AddUserModal } from './admin/AddUserModal';
-export { default as AdminSetPasswordModal } from './admin/AdminSetPasswordModal';
+export { default as AddEntityDialog } from './admin/AddEntityDialog';
+export { default as AddEntryTypeDialog } from './admin/AddEntryTypeDialog';
+export { default as AddUserDialog } from './admin/AddUserDialog';
+export { default as AdminSetPasswordDialog } from './admin/AdminSetPasswordDialog';

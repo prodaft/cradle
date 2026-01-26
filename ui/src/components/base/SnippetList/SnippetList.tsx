@@ -1,5 +1,5 @@
-import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
-import MarkdownEditorModal from '@/components/dialogs/notes/MarkdownEditorModal';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
+import MarkdownEditorDialog from '@/components/dialogs/notes/MarkdownEditorDialog';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Spinner } from '@/components/ui/spinner';
@@ -29,10 +29,10 @@ export interface SnippetListRef {
 const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
     ({ userId = null, showTitle = true, description }, ref) => {
         const { notesApi } = useApi();
-        const [addSnippetModalOpen, setAddSnippetModalOpen] = useState(false);
-        const [editSnippetModalOpen, setEditSnippetModalOpen] = useState(false);
+        const [addSnippetDialogOpen, setAddSnippetDialogOpen] = useState(false);
+        const [editSnippetDialogOpen, setEditSnippetDialogOpen] = useState(false);
         const [editingSnippet, setEditingSnippet] = useState<Snippet | null>(null);
-        const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+        const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
         const [deletingSnippet, setDeletingSnippet] = useState<Snippet | null>(null);
 
         // Query for snippets
@@ -124,7 +124,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                 e.stopPropagation();
                 e.preventDefault();
             }
-            setAddSnippetModalOpen(true);
+            setAddSnippetDialogOpen(true);
         };
 
         useImperativeHandle(ref, () => ({
@@ -135,14 +135,14 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
             e.stopPropagation();
             e.preventDefault();
             setEditingSnippet(snippet);
-            setEditSnippetModalOpen(true);
+            setEditSnippetDialogOpen(true);
         };
 
         const handleDeleteSnippet = async (snippet: Snippet, e: MouseEvent) => {
             e.stopPropagation();
             e.preventDefault();
             setDeletingSnippet(snippet);
-            setDeleteModalOpen(true);
+            setDeleteDialogOpen(true);
         };
 
         return (
@@ -223,9 +223,9 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                         </div>
                     )}
                 </ScrollArea>
-                <MarkdownEditorModal
-                    open={addSnippetModalOpen}
-                    onOpenChange={setAddSnippetModalOpen}
+                <MarkdownEditorDialog
+                    open={addSnippetDialogOpen}
+                    onOpenChange={setAddSnippetDialogOpen}
                     titleEditable={true}
                     initialContent=''
                     helpText={
@@ -261,10 +261,10 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     }}
                 />
                 {editingSnippet && (
-                    <MarkdownEditorModal
-                        open={editSnippetModalOpen}
+                    <MarkdownEditorDialog
+                        open={editSnippetDialogOpen}
                         onOpenChange={(open) => {
-                            setEditSnippetModalOpen(open);
+                            setEditSnippetDialogOpen(open);
                             if (!open) setEditingSnippet(null);
                         }}
                         title={editingSnippet.name}
@@ -290,10 +290,10 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     />
                 )}
                 {deletingSnippet && (
-                    <ConfirmDeletionModal
-                        open={deleteModalOpen}
+                    <ConfirmDeletionDialog
+                        open={deleteDialogOpen}
                         onOpenChange={(open) => {
-                            setDeleteModalOpen(open);
+                            setDeleteDialogOpen(open);
                             if (!open) setDeletingSnippet(null);
                         }}
                         text={`Are you sure you want to delete "${deletingSnippet.name}"? This action cannot be undone.`}

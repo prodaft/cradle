@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import ConfirmDeletionModal from '@/components/dialogs/base/ConfirmDeletionModal';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -64,9 +64,9 @@ export default function Reports() {
     });
     const search = useSearch({ from: '/_authenticated/reports' });
     const { reportsApi } = useApi();
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingReportIds, setDeletingReportIds] = useState<string[]>([]);
-    const [singleDeleteModalOpen, setSingleDeleteModalOpen] = useState(false);
+    const [singleDeleteDialogOpen, setSingleDeleteDialogOpen] = useState(false);
     const [deletingReportId, setDeletingReportId] = useState<string | null>(null);
     const queryClient = useQueryClient();
 
@@ -283,7 +283,7 @@ export default function Reports() {
     const handleDelete = async (reportIds: string | string[]) => {
         const idsArray = Array.isArray(reportIds) ? reportIds : [reportIds];
         setDeletingReportIds(idsArray);
-        setDeleteModalOpen(true);
+        setDeleteDialogOpen(true);
     };
 
     const executeDelete = async (idsArray: string[]) => {
@@ -718,17 +718,17 @@ export default function Reports() {
                 <ActionBarSeparator />
                 <ActionBarClose className='px-2 text-sm'>Clear</ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionModal
-                open={deleteModalOpen}
-                onOpenChange={setDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
                 text={`Are you sure you want to delete ${deletingReportIds.length} ${deletingReportIds.length > 1 ? 'reports' : 'report'}? This action is irreversible.`}
                 onConfirm={() => executeDelete(deletingReportIds)}
             />
             {deletingReportId && (
-                <ConfirmDeletionModal
-                    open={singleDeleteModalOpen}
+                <ConfirmDeletionDialog
+                    open={singleDeleteDialogOpen}
                     onOpenChange={(open) => {
-                        setSingleDeleteModalOpen(open);
+                        setSingleDeleteDialogOpen(open);
                         if (!open) setDeletingReportId(null);
                     }}
                     text='Are you sure you want to delete this report?'

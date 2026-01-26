@@ -11,15 +11,19 @@ import { Input } from 'src/components/ui/input';
 import { Label } from 'src/components/ui/label';
 
 /**
- * ConfirmDeletionModal component props
+ * ConfirmDeletionDialog component props
  */
-export interface ConfirmDeletionModalProps {
+export interface ConfirmDeletionDialogProps {
     /** Callback function to execute when deletion is confirmed */
     onConfirm: () => void;
     /** Text to display in the modal body */
     text?: string;
     /** If provided, user must type this text exactly to enable the delete button */
     confirmText?: string;
+    /** Custom title for the dialog (defaults to "Confirm Deletion") */
+    title?: string;
+    /** Custom text for the confirm button (defaults to "Delete") */
+    confirmButtonText?: string;
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -27,14 +31,14 @@ export interface ConfirmDeletionModalProps {
 }
 
 /**
- * ConfirmDeletionModal component - displays a confirmation dialog for deletion actions
+ * ConfirmDeletionDialog component - displays a confirmation dialog for deletion actions
  *
  * Optionally requires the user to type a specific confirmation text before allowing deletion.
  *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <ConfirmDeletionModal
+ * <ConfirmDeletionDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   onConfirm={handleDelete}
@@ -43,13 +47,15 @@ export interface ConfirmDeletionModalProps {
  * />
  * ```
  */
-export default function ConfirmDeletionModal({
+export default function ConfirmDeletionDialog({
     onConfirm,
     text = 'Are you sure you want to delete? This action is irreversible.',
     confirmText,
+    title = 'Confirm Deletion',
+    confirmButtonText = 'Delete',
     open,
     onOpenChange,
-}: ConfirmDeletionModalProps): JSX.Element {
+}: ConfirmDeletionDialogProps): JSX.Element {
     const confirmTextStripped = confirmText?.trim();
     const [userInput, setUserInput] = useState('');
 
@@ -69,7 +75,7 @@ export default function ConfirmDeletionModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{text}</DialogDescription>
                 </DialogHeader>
 
@@ -110,7 +116,7 @@ export default function ConfirmDeletionModal({
                         onClick={handleConfirm}
                         disabled={!isConfirmEnabled}
                     >
-                        Delete
+                        {confirmButtonText}
                     </Button>
                 </div>
             </DialogContent>

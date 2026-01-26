@@ -55,8 +55,8 @@ import {
 } from '@tanstack/react-table';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
-import AddUserModal from '../../../dialogs/admin/AddUserModal';
-import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
+import AddUserDialog from '../../../dialogs/admin/AddUserDialog';
+import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import AdminPageLayout from '../AdminPageLayout';
 import AdminUserSettings from './AdminUserSettings';
 
@@ -251,8 +251,8 @@ export default function UsersPage() {
     const [page, setPage] = useState((search as any)?.users_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 10);
     const { usersApi } = useApi();
-    const [addUserModalOpen, setAddUserModalOpen] = useState(false);
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
     const [deleteUserIds, setDeleteUserIds] = useState<string[]>([]);
 
@@ -325,7 +325,7 @@ export default function UsersPage() {
     };
 
     const handleAddUser = () => {
-        setAddUserModalOpen(true);
+        setAddUserDialogOpen(true);
     };
 
     const handleUserAdded = (newUser: UserRetrieve) => {
@@ -352,7 +352,7 @@ export default function UsersPage() {
     const handleDeleteSelected = useCallback(() => {
         if (selectedUserIds.length === 0) return;
         setDeleteUserIds(selectedUserIds);
-        setDeleteModalOpen(true);
+        setDeleteDialogOpen(true);
         setDeleteUserId(null); // Clear single delete user id to use bulk delete
     }, [selectedUserIds]);
 
@@ -631,15 +631,15 @@ export default function UsersPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <AddUserModal
-                open={addUserModalOpen}
-                onOpenChange={setAddUserModalOpen}
+            <AddUserDialog
+                open={addUserDialogOpen}
+                onOpenChange={setAddUserDialogOpen}
                 onAdd={handleUserAdded}
             />
-            <ConfirmDeletionModal
-                open={deleteModalOpen}
+            <ConfirmDeletionDialog
+                open={deleteDialogOpen}
                 onOpenChange={(open) => {
-                    setDeleteModalOpen(open);
+                    setDeleteDialogOpen(open);
                     if (!open) {
                         setDeleteUserId(null);
                         setDeleteUserIds([]);

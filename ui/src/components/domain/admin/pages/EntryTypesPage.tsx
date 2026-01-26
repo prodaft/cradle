@@ -52,8 +52,8 @@ import {
 } from '@tanstack/react-table';
 import { Plus } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import AddEntryTypeModal from '../../../dialogs/admin/AddEntryTypeModal';
-import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
+import AddEntryTypeDialog from '../../../dialogs/admin/AddEntryTypeDialog';
+import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import ActivityList from '../../activity/ActivityList';
 import AdminPageLayout from '../AdminPageLayout';
 import EntryTypeForm from '../forms/EntryTypeForm';
@@ -275,12 +275,12 @@ export default function EntryTypesPage() {
     const { isAdmin } = useAuthState();
     const { entriesApi } = useApi();
     const queryClient = useQueryClient();
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteEntryTypeSubtype, setDeleteEntryTypeSubtype] = useState<string | null>(
         null,
     );
-    const [addEntryTypeModalOpen, setAddEntryTypeModalOpen] = useState(false);
-    const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [addEntryTypeDialogOpen, setAddEntryTypeDialogOpen] = useState(false);
+    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteEntryTypeSubtypes, setBulkDeleteEntryTypeSubtypes] = useState<
         string[]
     >([]);
@@ -343,7 +343,7 @@ export default function EntryTypesPage() {
     const handleDeleteSelected = useCallback(() => {
         if (selectedEntryTypeIds.length === 0) return;
         setBulkDeleteEntryTypeSubtypes(selectedEntryTypeIds);
-        setBulkDeleteModalOpen(true);
+        setBulkDeleteDialogOpen(true);
     }, [selectedEntryTypeIds]);
 
     const handleEditSelected = useCallback(() => {
@@ -531,7 +531,7 @@ export default function EntryTypesPage() {
     }
 
     const handleAddEntryType = () => {
-        setAddEntryTypeModalOpen(true);
+        setAddEntryTypeDialogOpen(true);
     };
 
     const handleEntryTypeAdded = (newEntryType: EntryClass) => {
@@ -631,16 +631,16 @@ export default function EntryTypesPage() {
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <AddEntryTypeModal
-                open={addEntryTypeModalOpen}
-                onOpenChange={setAddEntryTypeModalOpen}
+            <AddEntryTypeDialog
+                open={addEntryTypeDialogOpen}
+                onOpenChange={setAddEntryTypeDialogOpen}
                 onAdd={handleEntryTypeAdded}
             />
             {deleteEntryTypeSubtype !== null && (
-                <ConfirmDeletionModal
-                    open={deleteModalOpen}
+                <ConfirmDeletionDialog
+                    open={deleteDialogOpen}
                     onOpenChange={(open) => {
-                        setDeleteModalOpen(open);
+                        setDeleteDialogOpen(open);
                         if (!open) setDeleteEntryTypeSubtype(null);
                     }}
                     onConfirm={() => {
@@ -652,10 +652,10 @@ export default function EntryTypesPage() {
                     text='Are you sure you want to delete this entry type? This action is irreversible.'
                 />
             )}
-            <ConfirmDeletionModal
-                open={bulkDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteModalOpen(open);
+                    setBulkDeleteDialogOpen(open);
                     if (!open) {
                         setBulkDeleteEntryTypeSubtypes([]);
                     }

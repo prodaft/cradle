@@ -47,9 +47,9 @@ interface RequestArtifact {
 }
 
 /**
- * EnrichmentRequestModal component props
+ * EnrichmentRequestDialog component props
  */
-export interface EnrichmentRequestModalProps {
+export interface EnrichmentRequestDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -71,7 +71,7 @@ export interface EnrichmentRequestModalProps {
 }
 
 /**
- * EnrichmentRequestModal component - creates enrichment requests for entities
+ * EnrichmentRequestDialog component - creates enrichment requests for entities
  *
  * Allows users to select enrichment techniques and specify artifacts to enrich.
  * Optionally accepts pre-populated entities and artifacts lists as props.
@@ -79,7 +79,7 @@ export interface EnrichmentRequestModalProps {
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <EnrichmentRequestModal
+ * <EnrichmentRequestDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   onSuccess={() => console.log('Request created')}
@@ -92,7 +92,7 @@ export interface EnrichmentRequestModalProps {
  * @example With promises
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <EnrichmentRequestModal
+ * <EnrichmentRequestDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   entitiesList={fetchEntityIds()}
@@ -100,7 +100,7 @@ export interface EnrichmentRequestModalProps {
  * />
  * ```
  */
-export default function EnrichmentRequestModal({
+export default function EnrichmentRequestDialog({
     open,
     onOpenChange,
     onSuccess,
@@ -108,7 +108,7 @@ export default function EnrichmentRequestModal({
     entitiesList,
     artifactsList,
     notesList,
-}: EnrichmentRequestModalProps): React.JSX.Element {
+}: EnrichmentRequestDialogProps): React.JSX.Element {
     const { intelioApi, entriesApi } = useApi();
     const [selectedEntities, setSelectedEntities] = useState<
         Array<{ value: number; label: string }>

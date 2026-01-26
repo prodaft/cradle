@@ -1,6 +1,6 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
-import { ConfirmDeletionModal } from '@/components/dialogs';
+import { ConfirmDeletionDialog } from '@/components/dialogs';
 import {
     ActionBar,
     ActionBarClose,
@@ -118,9 +118,9 @@ export default function FilesList({
         (search as any)?.files_sort_direction || 'desc',
     );
     const [pageSize, setPageSize] = useState((search as any)?.files_pagesize || 10);
-    const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = useState(false);
+    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteFileIds, setBulkDeleteFileIds] = useState<string[]>([]);
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingFileId, setDeletingFileId] = useState<string | null>(null);
 
     const downloadFileMutation = useMutation({
@@ -374,7 +374,7 @@ export default function FilesList({
     const handleDeleteSelected = useCallback(async () => {
         if (selectedFileIds.length === 0) return;
         setBulkDeleteFileIds(selectedFileIds);
-        setBulkDeleteModalOpen(true);
+        setBulkDeleteDialogOpen(true);
     }, [selectedFileIds]);
 
     const resetToFirstPage = useCallback(() => {
@@ -815,10 +815,10 @@ export default function FilesList({
                     Clear
                 </ActionBarClose>
             </ActionBar>
-            <ConfirmDeletionModal
-                open={bulkDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={bulkDeleteDialogOpen}
                 onOpenChange={(open) => {
-                    setBulkDeleteModalOpen(open);
+                    setBulkDeleteDialogOpen(open);
                     if (!open) {
                         setBulkDeleteFileIds([]);
                     }
@@ -830,10 +830,10 @@ export default function FilesList({
                 }}
             />
             {deletingFileId && (
-                <ConfirmDeletionModal
-                    open={deleteModalOpen}
+                <ConfirmDeletionDialog
+                    open={deleteDialogOpen}
                     onOpenChange={(open) => {
-                        setDeleteModalOpen(open);
+                        setDeleteDialogOpen(open);
                         if (!open) setDeletingFileId(null);
                     }}
                     text='Are you sure you want to delete this file?'

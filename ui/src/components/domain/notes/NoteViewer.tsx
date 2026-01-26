@@ -1,4 +1,4 @@
-import FileUploadModal from '@/components/dialogs/notes/FileUploadModal';
+import FileUploadDialog from '@/components/dialogs/notes/FileUploadDialog';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -46,11 +46,11 @@ import 'prismjs/plugins/autoloader/prism-autoloader.js';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import ConfirmDeletionModal from '../../dialogs/base/ConfirmDeletionModal';
-import ReportGenerationModal from '../../dialogs/reports/ReportGenerationModal';
+import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
+import ReportGenerationDialog from '../../dialogs/reports/ReportGenerationDialog';
 import FileInput from '../../forms/FileInput';
 import ActivityList from '../activity/ActivityList';
-import { EnrichmentRequestModal } from '../enrichment';
+import { EnrichmentRequestDialog } from '../enrichment';
 import GraphExplorer from '../graph/GraphExplorer';
 import NoteGraphSearch from '../graph/NoteGraphSearch';
 import ReferenceTree from '../relations/ReferenceTree';
@@ -117,16 +117,16 @@ export default function NoteViewer() {
     });
     const [enableEditing, setEnableEditing] = useState((search as any).edit === true);
     const [markdownContent, setMarkdownContent] = useState('');
-    const [enrichmentModalOpen, setEnrichmentModalOpen] = useState(false);
+    const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
     const [enrichmentEntities, setEnrichmentEntities] = useState<
         Promise<Array<{ type: string; value: string }>> | undefined
     >(undefined);
     const [enrichmentArtifacts, setEnrichmentArtifacts] = useState<
         Promise<string> | undefined
     >(undefined);
-    const [reportModalOpen, setReportModalOpen] = useState(false);
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [fileUploadModalOpen, setFileUploadModalOpen] = useState(false);
+    const [reportDialogOpen, setReportDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [fileUploadDialogOpen, setFileUploadDialogOpen] = useState(false);
     const [fileData, setFileData] = useState<FileReferenceWithNote[]>([]);
     // Separate state for FileInput component (expects FileUploadFinalizeResponse[])
     const [uploadedFileData, setUploadedFileData] = useState<
@@ -142,7 +142,7 @@ export default function NoteViewer() {
     const [saving, setSaving] = useState(false);
     const [pendingFiles, setPendingFiles] = useState<File[]>([]);
     const [showFileUpload, setShowFileUpload] = useState(false);
-    const [showReportModal, setShowReportModal] = useState(false);
+    const [showReportDialog, setShowReportDialog] = useState(false);
     const [showFind, setShowFind] = useState(false);
     const [findReplaceMode, setFindReplaceMode] = useState(false);
     const [showOutline, setShowOutline] = useState(() => {
@@ -351,7 +351,7 @@ export default function NoteViewer() {
 
         setEnrichmentEntities(entities);
         setEnrichmentArtifacts(artifacts);
-        setEnrichmentModalOpen(true);
+        setEnrichmentDialogOpen(true);
     }, [editorUtils]);
 
     useEffect(() => {
@@ -516,11 +516,11 @@ export default function NoteViewer() {
 
     const handlePublish = useCallback(() => {
         if (!note || !noteId) return;
-        setReportModalOpen(true);
+        setReportDialogOpen(true);
     }, [note, noteId]);
 
     const handleDeleteWithConfirmation = useCallback(() => {
-        setDeleteModalOpen(true);
+        setDeleteDialogOpen(true);
     }, []);
 
     const handleFilesChange = useCallback(
@@ -531,7 +531,7 @@ export default function NoteViewer() {
     );
 
     const handleUploadFiles = useCallback((filesList?: any[]) => {
-        setFileUploadModalOpen(true);
+        setFileUploadDialogOpen(true);
     }, []);
 
     const handleFind = useCallback(() => {
@@ -989,27 +989,27 @@ export default function NoteViewer() {
                     )}
                 </div>
             </div>
-            <EnrichmentRequestModal
-                open={enrichmentModalOpen}
-                onOpenChange={setEnrichmentModalOpen}
+            <EnrichmentRequestDialog
+                open={enrichmentDialogOpen}
+                onOpenChange={setEnrichmentDialogOpen}
                 entitiesList={enrichmentEntities}
                 artifactsList={enrichmentArtifacts}
             />
-            <ReportGenerationModal
-                open={reportModalOpen}
-                onOpenChange={setReportModalOpen}
+            <ReportGenerationDialog
+                open={reportDialogOpen}
+                onOpenChange={setReportDialogOpen}
                 noteId={noteId}
                 noteTitle={note?.title}
             />
-            <ConfirmDeletionModal
-                open={deleteModalOpen}
-                onOpenChange={setDeleteModalOpen}
+            <ConfirmDeletionDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
                 onConfirm={handleDelete}
                 text='Are you sure you want to delete this note? This action is irreversible.'
             />
-            <FileUploadModal
-                open={fileUploadModalOpen}
-                onOpenChange={setFileUploadModalOpen}
+            <FileUploadDialog
+                open={fileUploadDialogOpen}
+                onOpenChange={setFileUploadDialogOpen}
                 files={fileData}
                 onFilesChange={handleFilesChange}
                 noteId={noteId}

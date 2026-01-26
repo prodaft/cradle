@@ -230,9 +230,7 @@ function parseAlignment(delimiter: string): ('left' | 'center' | 'right')[] {
 /**
  * Parse a table from markdown text
  */
-function parseTable(
-    text: string,
-): {
+function parseTable(text: string): {
     headers: string[];
     rows: string[][];
     alignments: ('left' | 'center' | 'right')[];

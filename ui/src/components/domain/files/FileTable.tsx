@@ -1,4 +1,4 @@
-import { ConfirmDeletionModal } from '@/components/dialogs';
+import { ConfirmDeletionDialog } from '@/components/dialogs';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table/data-table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -42,7 +42,7 @@ export default function FileTable({
     insertTextCallback,
 }: FileTableProps) {
     const { fileTransferApi, basePath } = useApi();
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deletingFile, setDeletingFile] = useState<FileReference | null>(null);
 
     const downloadMutation = useMutation({
@@ -212,7 +212,7 @@ export default function FileTable({
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             setDeletingFile(data);
-                                            setDeleteModalOpen(true);
+                                            setDeleteDialogOpen(true);
                                         }}
                                     >
                                         <TrashIcon className='size-4' weight='bold' />
@@ -246,10 +246,10 @@ export default function FileTable({
                 />
             )}
             {deletingFile && (
-                <ConfirmDeletionModal
-                    open={deleteModalOpen}
+                <ConfirmDeletionDialog
+                    open={deleteDialogOpen}
                     onOpenChange={(open) => {
-                        setDeleteModalOpen(open);
+                        setDeleteDialogOpen(open);
                         if (!open) setDeletingFile(null);
                     }}
                     text='Are you sure you want to delete this file?'

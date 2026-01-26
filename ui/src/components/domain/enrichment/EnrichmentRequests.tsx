@@ -1,4 +1,4 @@
-import EnrichmentRequestModal from '@/components/dialogs/enrichment/EnrichmentRequestModal';
+import EnrichmentRequestDialog from '@/components/dialogs/enrichment/EnrichmentRequestDialog';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -43,7 +43,7 @@ export default function EnrichmentRequests() {
     });
     const search = useSearch({ from: '/_authenticated/enrich' });
     const { intelioApi } = useApi();
-    const [enrichmentModalOpen, setEnrichmentModalOpen] = useState(false);
+    const [enrichmentDialogOpen, setEnrichmentDialogOpen] = useState(false);
 
     // Enrichment requests list state
     const [page, setPage] = useState(1);
@@ -240,7 +240,7 @@ export default function EnrichmentRequests() {
     });
 
     const handleCreateRequest = () => {
-        setEnrichmentModalOpen(true);
+        setEnrichmentDialogOpen(true);
     };
 
     const handleDeleteSelected = async () => {
@@ -338,9 +338,9 @@ export default function EnrichmentRequests() {
                     onCreateRequest={handleCreateRequest}
                 />
             </div>
-            <EnrichmentRequestModal
-                open={enrichmentModalOpen}
-                onOpenChange={setEnrichmentModalOpen}
+            <EnrichmentRequestDialog
+                open={enrichmentDialogOpen}
+                onOpenChange={setEnrichmentDialogOpen}
                 onSuccess={() => {
                     toast.success('Enrichment request created successfully');
                 }}

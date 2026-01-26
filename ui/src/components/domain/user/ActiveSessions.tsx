@@ -1,6 +1,6 @@
 import { ActionBar, ActionBarSearch } from '@/components/base/ActionBar/ActionBar';
 import TableActionsButton from '@/components/base/TableActionsButton';
-import ActionConfirmationModal from '@/components/dialogs/base/ActionConfirmationModal';
+import ActionConfirmationDialog from '@/components/dialogs/base/ActionConfirmationDialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { DataTable, type BulkAction } from '@/components/ui/data-table/data-table';
@@ -30,9 +30,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [revokeModalOpen, setRevokeModalOpen] = useState(false);
+    const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
     const [revokeSessionId, setRevokeSessionId] = useState<string | null>(null);
-    const [bulkRevokeModalOpen, setBulkRevokeModalOpen] = useState(false);
+    const [bulkRevokeDialogOpen, setBulkRevokeDialogOpen] = useState(false);
     const { usersApi } = useApi();
     const { getAccessToken, logOut } = useAuthActions();
     const router = useRouter();
@@ -162,9 +162,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
         [userId, usersApi, sessions, queryClient, getCurrentSessionJti, logOut],
     );
 
-    const openRevokeConfirmationModal = useCallback((sessionId: string) => {
+    const openRevokeConfirmationDialog = useCallback((sessionId: string) => {
         setRevokeSessionId(sessionId);
-        setRevokeModalOpen(true);
+        setRevokeDialogOpen(true);
     }, []);
 
     // Query automatically fetches on mount and when dependencies change
@@ -406,7 +406,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                                             e.stopPropagation();
                                             const sessionId = session.id;
                                             if (sessionId) {
-                                                openRevokeConfirmationModal(sessionId);
+                                                openRevokeConfirmationDialog(sessionId);
                                             }
                                         }}
                                         variant='destructive'
@@ -422,7 +422,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                 enableSorting: false,
             },
         ],
-        [openRevokeConfirmationModal],
+        [openRevokeConfirmationDialog],
     );
 
     const bulkActions: BulkAction[] = [
@@ -432,7 +432,7 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
             icon: <TrashIcon size={18} weight='bold' />,
             onClick: () => {
                 if (selectedSessions.length > 0) {
-                    setBulkRevokeModalOpen(true);
+                    setBulkRevokeDialogOpen(true);
                 }
             },
             disabled:
@@ -490,10 +490,10 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                     const isCurrentSession =
                         session && currentJti && session.refreshTokenJti === currentJti;
                     return (
-                        <ActionConfirmationModal
-                            open={revokeModalOpen}
+                        <ActionConfirmationDialog
+                            open={revokeDialogOpen}
                             onOpenChange={(open) => {
-                                setRevokeModalOpen(open);
+                                setRevokeDialogOpen(open);
                                 if (!open) setRevokeSessionId(null);
                             }}
                             onConfirm={() => {
@@ -509,9 +509,9 @@ export default function ActiveSessions({ userId }: ActiveSessionsProps) {
                         />
                     );
                 })()}
-            <ActionConfirmationModal
-                open={bulkRevokeModalOpen}
-                onOpenChange={setBulkRevokeModalOpen}
+            <ActionConfirmationDialog
+                open={bulkRevokeDialogOpen}
+                onOpenChange={setBulkRevokeDialogOpen}
                 onConfirm={() => revokeSessions(selectedSessions)}
                 text={`Are you sure you want to revoke ${selectedSessions.length} session${selectedSessions.length > 1 ? 's' : ''}? The device${selectedSessions.length > 1 ? 's' : ''} will be signed out and will need to sign in again.`}
             />

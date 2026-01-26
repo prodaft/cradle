@@ -18,9 +18,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import React, { useEffect, useState } from 'react';
 
 /**
- * TwoFactorSetupModal component props
+ * TwoFactorSetupDialog component props
  */
-export interface TwoFactorSetupModalProps {
+export interface TwoFactorSetupDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -32,7 +32,7 @@ export interface TwoFactorSetupModalProps {
 }
 
 /**
- * TwoFactorSetupModal component - handles two-factor authentication setup and disabling
+ * TwoFactorSetupDialog component - handles two-factor authentication setup and disabling
  *
  * When enabling 2FA, displays a QR code and secret key for authenticator app setup.
  * When disabling 2FA, prompts for verification code.
@@ -40,7 +40,7 @@ export interface TwoFactorSetupModalProps {
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <TwoFactorSetupModal
+ * <TwoFactorSetupDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   onSuccess={() => console.log('2FA setup complete')}
@@ -48,12 +48,12 @@ export interface TwoFactorSetupModalProps {
  * />
  * ```
  */
-export default function TwoFactorSetupModal({
+export default function TwoFactorSetupDialog({
     open,
     onOpenChange,
     onSuccess,
     isDisabling = false,
-}: TwoFactorSetupModalProps): React.JSX.Element {
+}: TwoFactorSetupDialogProps): React.JSX.Element {
     const { usersApi } = useApi();
     const [verificationCode, setVerificationCode] = useState('');
     const [alert, setAlert] = useState<Alert>({

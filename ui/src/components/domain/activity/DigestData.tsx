@@ -1,4 +1,4 @@
-import UploadDigestModal from '@/components/dialogs/files/UploadDigestModal';
+import UploadDigestDialog from '@/components/dialogs/files/UploadDigestDialog';
 import { Button } from '@/components/ui/button';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -46,7 +46,7 @@ export default function DigestData() {
     });
     const search = useSearch({ from: '/_authenticated/digest-data' });
     const { intelioApi } = useApi();
-    const [uploadDigestModalOpen, setUploadDigestModalOpen] = useState(false);
+    const [uploadDigestDialogOpen, setUploadDigestDialogOpen] = useState(false);
     const queryClient = useQueryClient();
 
     // Digest list state
@@ -350,7 +350,7 @@ export default function DigestData() {
     };
 
     const handleCreateDigest = () => {
-        setUploadDigestModalOpen(true);
+        setUploadDigestDialogOpen(true);
     };
 
     return (
@@ -409,9 +409,9 @@ export default function DigestData() {
                     onSearchSubmit={handleSearchSubmit}
                 />
             </div>
-            <UploadDigestModal
-                open={uploadDigestModalOpen}
-                onOpenChange={setUploadDigestModalOpen}
+            <UploadDigestDialog
+                open={uploadDigestDialogOpen}
+                onOpenChange={setUploadDigestDialogOpen}
                 onUpload={() => {
                     invalidateDigests();
                 }}

@@ -11,15 +11,19 @@ import { Input } from 'src/components/ui/input';
 import { Label } from 'src/components/ui/label';
 
 /**
- * ActionConfirmationModal component props
+ * ActionConfirmationDialog component props
  */
-export interface ActionConfirmationModalProps {
+export interface ActionConfirmationDialogProps {
     /** Callback function to execute when the action is confirmed */
     onConfirm: () => void;
     /** Text to display in the modal body */
     text?: string;
     /** If provided, user must type this text exactly to enable the confirm button */
     confirmText?: string;
+    /** Custom title for the dialog (defaults to "Confirm Action") */
+    title?: string;
+    /** Custom text for the confirm button (defaults to "Confirm") */
+    confirmButtonText?: string;
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -27,14 +31,14 @@ export interface ActionConfirmationModalProps {
 }
 
 /**
- * ActionConfirmationModal component - displays a confirmation dialog for user actions
+ * ActionConfirmationDialog component - displays a confirmation dialog for user actions
  *
  * Optionally requires the user to type a specific confirmation text before allowing confirmation.
  *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <ActionConfirmationModal
+ * <ActionConfirmationDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   onConfirm={handleDelete}
@@ -43,13 +47,15 @@ export interface ActionConfirmationModalProps {
  * />
  * ```
  */
-export default function ActionConfirmationModal({
+export default function ActionConfirmationDialog({
     onConfirm,
     text = 'Are you sure you want to proceed with this action? Please confirm to continue.',
     confirmText,
+    title = 'Confirm Action',
+    confirmButtonText = 'Confirm',
     open,
     onOpenChange,
-}: ActionConfirmationModalProps): React.JSX.Element {
+}: ActionConfirmationDialogProps): React.JSX.Element {
     const [userInput, setUserInput] = useState('');
 
     // If confirmText is provided, enable confirm only when the input matches exactly.
@@ -66,7 +72,7 @@ export default function ActionConfirmationModal({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Confirm Action</DialogTitle>
+                    <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{text}</DialogDescription>
                 </DialogHeader>
 
@@ -105,7 +111,7 @@ export default function ActionConfirmationModal({
                         onClick={handleConfirm}
                         disabled={!isConfirmEnabled}
                     >
-                        Confirm
+                        {confirmButtonText}
                     </Button>
                 </div>
             </DialogContent>

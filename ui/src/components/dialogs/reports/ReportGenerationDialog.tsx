@@ -39,9 +39,9 @@ type ReportFormat = 'html' | 'json' | 'plain';
 type ReportMode = 'anonymized' | 'transparent';
 
 /**
- * ReportGenerationModal component props
+ * ReportGenerationDialog component props
  */
-export interface ReportGenerationModalProps {
+export interface ReportGenerationDialogProps {
     /** Whether the dialog is open */
     open: boolean;
     /** Callback when dialog open state changes */
@@ -55,14 +55,14 @@ export interface ReportGenerationModalProps {
 }
 
 /**
- * ReportGenerationModal component - generates reports from notes in various formats
+ * ReportGenerationDialog component - generates reports from notes in various formats
  *
  * Supports HTML, JSON, and plain text formats, with anonymized or transparent modes.
  *
  * @example
  * ```tsx
  * const [open, setOpen] = useState(false);
- * <ReportGenerationModal
+ * <ReportGenerationDialog
  *   open={open}
  *   onOpenChange={setOpen}
  *   noteId="123e4567-e89b-12d3-a456-426614174000"
@@ -70,13 +70,13 @@ export interface ReportGenerationModalProps {
  * />
  * ```
  */
-export default function ReportGenerationModal({
+export default function ReportGenerationDialog({
     open,
     onOpenChange,
     noteId,
     selectedNotes,
     noteTitle,
-}: ReportGenerationModalProps): React.JSX.Element {
+}: ReportGenerationDialogProps): React.JSX.Element {
     const { reportsApi } = useApi();
     const [title, setTitle] = useState(noteTitle || '');
     const [format, setFormat] = useState<ReportFormat>('html');

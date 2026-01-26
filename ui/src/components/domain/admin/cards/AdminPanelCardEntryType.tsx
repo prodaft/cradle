@@ -9,7 +9,7 @@ import {
 } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
 import { ReactNode, useState } from 'react';
-import ConfirmDeletionModal from '../../../dialogs/base/ConfirmDeletionModal';
+import ConfirmDeletionDialog from '../../../dialogs/base/ConfirmDeletionDialog';
 import ActivityList from '../../activity/ActivityList';
 import EntryTypeForm from '../forms/EntryTypeForm';
 
@@ -30,7 +30,7 @@ export default function AdminPanelCardEntryType({
 }: AdminPanelCardEntryTypeProps) {
     const { entriesApi } = useApi();
     const { isAdmin } = useAuthState();
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const deleteMutation = useMutation({
         mutationFn: async () => {
@@ -103,15 +103,15 @@ export default function AdminPanelCardEntryType({
                                 size='icon-sm'
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    setDeleteModalOpen(true);
+                                    setDeleteDialogOpen(true);
                                 }}
                                 title='Delete'
                             >
                                 <TrashIcon />
                             </Button>
-                            <ConfirmDeletionModal
-                                open={deleteModalOpen}
-                                onOpenChange={setDeleteModalOpen}
+                            <ConfirmDeletionDialog
+                                open={deleteDialogOpen}
+                                onOpenChange={setDeleteDialogOpen}
                                 onConfirm={handleDelete}
                                 confirmText={name}
                                 text='Are you sure you want to delete this entry type? This action is irreversible.'
