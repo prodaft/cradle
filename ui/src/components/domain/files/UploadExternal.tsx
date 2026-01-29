@@ -302,7 +302,7 @@ export default function UploadExternal() {
             </div>
 
             {/* Search Section */}
-            <div>
+            <div className='w-full'>
                 <form
                     onSubmit={handleSearchSubmit}
                     className='flex space-x-4 px-3 pb-2'

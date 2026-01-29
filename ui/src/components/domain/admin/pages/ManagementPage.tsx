@@ -168,21 +168,21 @@ export default function ManagementPage() {
                     </aside>
                     <div className='flex w-full overflow-y-hidden p-1'>
                         <div className='flex flex-1 flex-col'>
-                            <div className='flex-none'>
-                                <h3 className='text-lg font-medium'>
-                                    {currentTab?.label || 'Settings'}
-                                </h3>
-                                <p className='text-sm text-muted-foreground'>
-                                    {currentDescription}
-                                </p>
-                            </div>
-                            <Separator
-                                data-orientation='horizontal'
-                                role='none'
-                                className='bg-border my-4 flex-none'
-                            />
-                            <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pe-4 pb-12'>
-                                <div className='-mx-1 px-1.5'>
+                            <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
+                                <div className='px-6' data-slot='card-content'>
+                                    <div className='flex-none mb-4'>
+                                        <h3 className='text-lg font-medium'>
+                                            {currentTab?.label || 'Settings'}
+                                        </h3>
+                                        <p className='text-sm text-muted-foreground'>
+                                            {currentDescription}
+                                        </p>
+                                    </div>
+                                    <Separator
+                                        data-orientation='horizontal'
+                                        role='none'
+                                        className='bg-border mb-6 flex-none'
+                                    />
                                     {SettingComponent ? (
                                         <SettingComponent />
                                     ) : (

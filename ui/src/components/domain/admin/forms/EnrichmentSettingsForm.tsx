@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Field,
     FieldContent,
@@ -244,11 +243,11 @@ export default function EnrichmentSettingsForm({
                             render={({ field: controllerField, fieldState }) => (
                                 <Field
                                     orientation='horizontal'
-                                    className='py-2'
+                                    className='gap-2'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
-                                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                        <FieldLabel className='text-sm block mb-0.5'>
                                             {startCase(key)}
                                             {field.required && (
                                                 <span className='text-destructive ml-1'>
@@ -257,7 +256,7 @@ export default function EnrichmentSettingsForm({
                                             )}
                                         </FieldLabel>
                                         {field.description && (
-                                            <FieldDescription className='text-sm'>
+                                            <FieldDescription>
                                                 {field.description}
                                             </FieldDescription>
                                         )}
@@ -296,11 +295,11 @@ export default function EnrichmentSettingsForm({
                                 return (
                                     <Field
                                         orientation='horizontal'
-                                        className='py-2'
+                                        className='gap-2'
                                         data-invalid={fieldState.invalid}
                                     >
                                         <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
+                                            <FieldLabel className='text-sm block mb-0.5'>
                                                 {startCase(key)}
                                                 {field.required && (
                                                     <span className='text-destructive ml-1'>
@@ -355,13 +354,13 @@ export default function EnrichmentSettingsForm({
                             render={({ field: controllerField, fieldState }) => (
                                 <Field
                                     orientation='horizontal'
-                                    className='py-2'
+                                    className='gap-2'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
                                         <FieldLabel
                                             htmlFor={`settings.${key}`}
-                                            className='text-sm text-muted-foreground block mb-0.5'
+                                            className='text-sm block mb-0.5'
                                         >
                                             {startCase(key)}
                                             {field.required && (
@@ -371,7 +370,7 @@ export default function EnrichmentSettingsForm({
                                             )}
                                         </FieldLabel>
                                         {field.description && (
-                                            <FieldDescription className='text-sm'>
+                                            <FieldDescription>
                                                 {field.description}
                                             </FieldDescription>
                                         )}
@@ -407,13 +406,13 @@ export default function EnrichmentSettingsForm({
                             render={({ field: controllerField, fieldState }) => (
                                 <Field
                                     orientation='horizontal'
-                                    className='py-2'
+                                    className='gap-2'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
                                         <FieldLabel
                                             htmlFor={`settings.${key}`}
-                                            className='text-sm text-muted-foreground block mb-0.5'
+                                            className='text-sm block mb-0.5'
                                         >
                                             {startCase(key)}
                                             {field.required && (
@@ -423,7 +422,7 @@ export default function EnrichmentSettingsForm({
                                             )}
                                         </FieldLabel>
                                         {field.description && (
-                                            <FieldDescription className='text-sm'>
+                                            <FieldDescription>
                                                 {field.description}
                                             </FieldDescription>
                                         )}
@@ -498,117 +497,112 @@ export default function EnrichmentSettingsForm({
                             Core configuration for this enrichment
                         </p>
 
-                        <Card className='border-border bg-muted/5 space-y-0'>
-                            <CardContent className='px-4 py-1'>
-                                <Controller
-                                    name='enabled'
-                                    control={control}
-                                    render={({ field, fieldState }) => (
-                                        <Field
-                                            orientation='horizontal'
-                                            className='py-2'
-                                            data-invalid={fieldState.invalid}
-                                        >
-                                            <FieldContent className='flex-1'>
-                                                <FieldLabel
-                                                    htmlFor='enabled'
-                                                    className='text-sm text-muted-foreground block mb-0.5'
-                                                >
-                                                    Enabled
-                                                </FieldLabel>
-                                                <FieldDescription className='text-sm'>
-                                                    Enable or disable this enrichment
-                                                    source
-                                                </FieldDescription>
-                                                {fieldState.invalid && (
-                                                    <FieldError className='text-sm mt-1'>
-                                                        {fieldState.error?.message}
-                                                    </FieldError>
-                                                )}
-                                            </FieldContent>
-                                            <Switch
-                                                id='enabled'
-                                                name={field.name}
-                                                checked={field.value ?? false}
-                                                onCheckedChange={field.onChange}
-                                                className='self-center'
-                                                aria-invalid={fieldState.invalid}
-                                                aria-describedby={
-                                                    fieldState.invalid
-                                                        ? 'enabled-error'
-                                                        : undefined
+                        <div className='flex flex-col gap-4'>
+                            <Controller
+                                name='enabled'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='gap-2'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel
+                                                htmlFor='enabled'
+                                                className='text-sm block mb-0.5'
+                                            >
+                                                Enabled
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Enable or disable this enrichment source
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <Switch
+                                            id='enabled'
+                                            name={field.name}
+                                            checked={field.value ?? false}
+                                            onCheckedChange={field.onChange}
+                                            className='self-center'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'enabled-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </Field>
+                                )}
+                            />
+
+                            <Separator />
+
+                            <Controller
+                                name='for_eclasses'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='gap-2'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                Entry Classes
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Entry classes to apply this enrichment
+                                                to
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div className='w-64 self-center'>
+                                            <MultipleSelector
+                                                value={
+                                                    (field.value?.map((e) => ({
+                                                        value: e.value,
+                                                        label: e.label,
+                                                    })) || []) as Option[]
+                                                }
+                                                defaultOptions={[]}
+                                                placeholder='Select entry classes...'
+                                                triggerSearchOnFocus
+                                                onSearch={async (query) => {
+                                                    const results =
+                                                        await fetchEntryClasses(query);
+                                                    return results.map((e) => ({
+                                                        value: e.value,
+                                                        label: e.label,
+                                                    })) as unknown as Option[];
+                                                }}
+                                                onChange={(options) => {
+                                                    field.onChange(
+                                                        options.map((o) => ({
+                                                            value: o.value,
+                                                            label: o.label,
+                                                        })),
+                                                    );
+                                                }}
+                                                emptyIndicator={
+                                                    <p className='text-center text-sm'>
+                                                        No entry classes found
+                                                    </p>
                                                 }
                                             />
-                                        </Field>
-                                    )}
-                                />
-
-                                <Separator />
-
-                                <Controller
-                                    name='for_eclasses'
-                                    control={control}
-                                    render={({ field, fieldState }) => (
-                                        <Field
-                                            orientation='horizontal'
-                                            className='py-2'
-                                            data-invalid={fieldState.invalid}
-                                        >
-                                            <FieldContent className='flex-1'>
-                                                <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                    Entry Classes
-                                                </FieldLabel>
-                                                <FieldDescription className='text-sm'>
-                                                    Entry classes to apply this
-                                                    enrichment to
-                                                </FieldDescription>
-                                                {fieldState.invalid && (
-                                                    <FieldError className='text-sm mt-1'>
-                                                        {fieldState.error?.message}
-                                                    </FieldError>
-                                                )}
-                                            </FieldContent>
-                                            <div className='w-64 self-center'>
-                                                <MultipleSelector
-                                                    value={
-                                                        (field.value?.map((e) => ({
-                                                            value: e.value,
-                                                            label: e.label,
-                                                        })) || []) as Option[]
-                                                    }
-                                                    defaultOptions={[]}
-                                                    placeholder='Select entry classes...'
-                                                    triggerSearchOnFocus
-                                                    onSearch={async (query) => {
-                                                        const results =
-                                                            await fetchEntryClasses(
-                                                                query,
-                                                            );
-                                                        return results.map((e) => ({
-                                                            value: e.value,
-                                                            label: e.label,
-                                                        })) as unknown as Option[];
-                                                    }}
-                                                    onChange={(options) => {
-                                                        field.onChange(
-                                                            options.map((o) => ({
-                                                                value: o.value,
-                                                                label: o.label,
-                                                            })),
-                                                        );
-                                                    }}
-                                                    emptyIndicator={
-                                                        <p className='text-center text-sm'>
-                                                            No entry classes found
-                                                        </p>
-                                                    }
-                                                />
-                                            </div>
-                                        </Field>
-                                    )}
-                                />
-                            </CardContent>
-                        </Card>
+                                        </div>
+                                    </Field>
+                                )}
+                            />
+                        </div>
                     </section>
 
                     {/* Settings Section */}
@@ -624,11 +618,9 @@ export default function EnrichmentSettingsForm({
                                 Specific settings for the enrichment provider
                             </p>
 
-                            <Card className='border-border bg-muted/5 space-y-0'>
-                                <CardContent className='px-4 py-1'>
-                                    {renderSettingsFields()}
-                                </CardContent>
-                            </Card>
+                            <div className='flex flex-col gap-4'>
+                                {renderSettingsFields()}
+                            </div>
                         </section>
                     )}
 

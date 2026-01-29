@@ -439,7 +439,7 @@ export default function EnrichmentRequestDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Create Enrichment Request</DialogTitle>
+                    <DialogTitle>Enrichment Request</DialogTitle>
                     <DialogDescription>
                         Create a new enrichment request to process entities with
                         selected enrichment techniques.
@@ -552,7 +552,7 @@ export default function EnrichmentRequestDialog({
                         </Label>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div>
+                                <div className='w-full'>
                                     <MultipleSelector
                                         value={
                                             selectedEntities.map((e) => ({

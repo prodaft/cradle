@@ -57,7 +57,7 @@ export default function DigestData() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | undefined>(
         (search as any)?.digests_sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState((search as any)?.digests_pagesize || 10);
+    const [pageSize, setPageSize] = useState((search as any)?.digests_pagesize || 20);
 
     // Search state
     const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -357,7 +357,7 @@ export default function DigestData() {
         <div className='w-full h-full'>
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
+                <div className='space-y-1'>
                     <h2 className='text-2xl font-bold tracking-tight'>Digest Data</h2>
                     <p className='text-muted-foreground'>
                         Browse & Manage Imported Data

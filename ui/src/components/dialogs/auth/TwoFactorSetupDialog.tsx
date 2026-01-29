@@ -7,15 +7,22 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Field } from '@/components/ui/field';
+import { Field, FieldDescription, FieldLabel } from '@/components/ui/field';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import useApi from '@/hooks/api/useApi';
 import { Enable2FA } from '@/services/cradle/models';
 import { Alert } from '@/types';
-import { WarningCircleIcon } from '@phosphor-icons/react';
+import { CopyIcon, QrCodeIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 /**
  * TwoFactorSetupDialog component props
@@ -56,6 +63,7 @@ export default function TwoFactorSetupDialog({
 }: TwoFactorSetupDialogProps): React.JSX.Element {
     const { usersApi } = useApi();
     const [verificationCode, setVerificationCode] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [alert, setAlert] = useState<Alert>({
         show: false,
         message: '',
@@ -65,11 +73,11 @@ export default function TwoFactorSetupDialog({
     // Query for 2FA setup data (only when enabling)
     const {
         data: twoFactorData,
-        isPending: loading,
-        error: twoFactorError,
+        isPending,
+        isError,
     } = useQuery<Enable2FA>({
         queryKey: ['2fa', 'setup'],
-        queryFn: () => usersApi.users2faEnableCreate({}),
+        queryFn: () => usersApi.users2faEnableCreate(),
         enabled: open && !isDisabling,
         meta: {
             showErrorToast: false, // We handle errors ourselves
@@ -77,51 +85,91 @@ export default function TwoFactorSetupDialog({
         },
     });
 
+    // Reset state when dialog opens
     useEffect(() => {
-        if (twoFactorError) {
+        if (open) {
+            setVerificationCode('');
+            setAlert({ show: false, message: '', color: 'green' });
+        }
+    }, [open]);
+
+    useEffect(() => {
+        if (isError) {
             setAlert({
                 show: true,
                 message: 'Failed to initialize 2FA setup',
                 color: 'red',
             });
         }
-    }, [twoFactorError]);
+    }, [isError]);
 
     const otpAuthUrl = twoFactorData?.configUrl || '';
-    const secret = otpAuthUrl
-        ? new URL(otpAuthUrl).searchParams.get('secret') || ''
-        : '';
-
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const secret = useMemo(() => {
+        if (!otpAuthUrl) return '';
         try {
-            if (isDisabling) {
-                await usersApi.users2faDisableCreate({
-                    verify2FARequest: { token: verificationCode },
-                });
-            } else {
-                await usersApi.users2faVerifyCreate({
-                    verify2FARequest: { token: verificationCode },
-                });
-            }
-            onSuccess?.();
-            onOpenChange(false);
-        } catch (err) {
-            setAlert({
-                show: true,
-                message: 'Invalid verification code. Please try again.',
-                color: 'red',
-            });
+            return new URL(otpAuthUrl).searchParams.get('secret') || '';
+        } catch {
+            return '';
         }
-    };
+    }, [otpAuthUrl]);
 
-    if (loading) {
+    const handleCopySecret = useCallback(async () => {
+        if (secret) {
+            try {
+                await navigator.clipboard.writeText(secret);
+                toast.success('Secret key copied to clipboard');
+            } catch (err) {
+                toast.error('Failed to copy to clipboard');
+            }
+        }
+    }, [secret]);
+
+    const handleSubmit = useCallback(
+        async (e: React.FormEvent<HTMLFormElement>) => {
+            e.preventDefault();
+            setIsSubmitting(true);
+            try {
+                if (isDisabling) {
+                    await usersApi.users2faDisableCreate({
+                        verify2FARequest: { token: verificationCode },
+                    });
+                } else {
+                    await usersApi.users2faVerifyCreate({
+                        verify2FARequest: { token: verificationCode },
+                    });
+                }
+                onSuccess?.();
+                onOpenChange(false);
+            } catch (err) {
+                const errorMessage =
+                    err instanceof Error
+                        ? err.message
+                        : 'Invalid verification code. Please try again.';
+                setAlert({
+                    show: true,
+                    message:
+                        errorMessage.includes('Invalid') ||
+                        errorMessage.includes('verification')
+                            ? errorMessage
+                            : 'Failed to ' +
+                              (isDisabling ? 'disable' : 'enable') +
+                              ' 2FA. Please try again.',
+                    color: 'red',
+                });
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+        [verificationCode, isDisabling, usersApi, onSuccess, onOpenChange],
+    );
+
+    if (!isDisabling && isPending) {
         return (
             <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent>
+                <DialogContent className='sm:max-w-md'>
                     <DialogHeader>
                         <DialogTitle>Setting up Two-Factor Auth</DialogTitle>
-                        <DialogDescription className='sr-only'>
+                        <DialogDescription>
                             Initializing two-factor authentication setup
                         </DialogDescription>
                     </DialogHeader>
@@ -135,7 +183,7 @@ export default function TwoFactorSetupDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>
                         {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
@@ -150,29 +198,41 @@ export default function TwoFactorSetupDialog({
                 {!isDisabling && (
                     <>
                         {/* QR Code Section */}
-                        <div className='flex justify-center mb-6'>
+                        <div className='flex justify-center'>
                             <div className='p-4 bg-card rounded-lg border border-border'>
                                 <QRCodeSVG value={otpAuthUrl} size={180} level='H' />
                             </div>
                         </div>
 
-                        <div className='mb-6 p-4 border border-border bg-secondary/30 rounded-lg'>
-                            <div className='flex items-start gap-3'>
-                                <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0'></div>
-                                <div className='flex-1'>
-                                    <h3 className='text-sm font-semibold text-foreground mb-2'>
-                                        Manual Entry
-                                    </h3>
-                                    <p className='text-xs text-muted-foreground mb-3'>
-                                        Can't scan the QR code? Enter this secret key
-                                        manually in your authenticator app:
-                                    </p>
-                                    <code className='block bg-background p-2 text-center select-all font-mono text-sm border border-border rounded text-foreground'>
-                                        {secret}
-                                    </code>
-                                </div>
-                            </div>
-                        </div>
+                        <Field>
+                            <FieldLabel htmlFor='input-field-secret-key'>
+                                Manual Entry
+                            </FieldLabel>
+                            <InputGroup>
+                                <InputGroupAddon align='inline-start'>
+                                    <QrCodeIcon className='size-4' />
+                                </InputGroupAddon>
+                                <InputGroupInput
+                                    id='input-field-secret-key'
+                                    type='text'
+                                    value={secret}
+                                    readOnly
+                                />
+                                <InputGroupAddon align='inline-end'>
+                                    <InputGroupButton
+                                        type='button'
+                                        onClick={handleCopySecret}
+                                        aria-label='Copy secret key'
+                                    >
+                                        <CopyIcon className='size-4' />
+                                    </InputGroupButton>
+                                </InputGroupAddon>
+                            </InputGroup>
+                            <FieldDescription>
+                                Can't scan the QR code? Enter this secret key manually
+                                in your authenticator app.
+                            </FieldDescription>
+                        </Field>
                     </>
                 )}
 
@@ -215,6 +275,7 @@ export default function TwoFactorSetupDialog({
                             variant='outline'
                             size='sm'
                             onClick={() => onOpenChange(false)}
+                            disabled={isSubmitting}
                         >
                             Cancel
                         </Button>
@@ -222,9 +283,14 @@ export default function TwoFactorSetupDialog({
                             type='submit'
                             variant={isDisabling ? 'destructive' : 'default'}
                             size='sm'
-                            disabled={verificationCode.length !== 6}
+                            disabled={verificationCode.length !== 6 || isSubmitting}
+                            aria-busy={isSubmitting}
                         >
-                            {isDisabling ? 'Disable 2FA' : 'Enable'}
+                            {isSubmitting
+                                ? 'Loading...'
+                                : isDisabling
+                                  ? 'Disable'
+                                  : 'Enable'}
                         </Button>
                     </div>
                 </form>

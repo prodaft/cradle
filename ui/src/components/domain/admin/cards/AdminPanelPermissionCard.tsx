@@ -69,7 +69,7 @@ export default function AdminPanelPermissionCard({
                     <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
                         {text}
                     </FieldLabel>
-                    <FieldDescription className='text-sm'>
+                    <FieldDescription>
                         Entity access permissions
                     </FieldDescription>
                 </FieldContent>

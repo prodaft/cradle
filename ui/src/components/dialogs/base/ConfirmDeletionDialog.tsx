@@ -8,7 +8,6 @@ import {
     DialogTitle,
 } from 'src/components/ui/dialog';
 import { Input } from 'src/components/ui/input';
-import { Label } from 'src/components/ui/label';
 
 /**
  * ConfirmDeletionDialog component props
@@ -81,26 +80,19 @@ export default function ConfirmDeletionDialog({
 
                 {/* Confirmation input */}
                 {confirmTextStripped && (
-                    <div className='grid w-full items-center gap-3 mb-5'>
-                        <Label htmlFor='confirm-input'>
-                            Type{' '}
-                            <span className='text-border-primary'>
-                                "{confirmTextStripped}"
-                            </span>
-                            to confirm
-                        </Label>
+                    <div className='grid w-full items-center gap-3'>
                         <Input
                             id='confirm-input'
                             type='text'
                             value={userInput}
                             onChange={(e) => setUserInput(e.target.value)}
-                            placeholder={confirmTextStripped}
+                            placeholder={`Type "${confirmTextStripped}" to confirm`}
                         />
                     </div>
                 )}
 
                 {/* Action buttons */}
-                <div className='flex justify-end gap-2 mt-4'>
+                <div className='flex justify-end gap-2'>
                     <Button
                         type='button'
                         variant='outline'

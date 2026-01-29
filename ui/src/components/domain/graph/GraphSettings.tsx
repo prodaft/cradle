@@ -137,7 +137,7 @@ export default function GraphSettings({
                     <ScrollArea className='max-h-[50vh]'>
                         <div className='space-y-3'>
                             {/* Node Size */}
-                            <div>
+                            <div className='space-y-1.5'>
                                 <div className='flex items-center justify-between w-full mb-1.5'>
                                     <Label className='text-xs'>Node Size</Label>
                                     <span className='text-xs text-muted-foreground tabular-nums'>
@@ -159,7 +159,7 @@ export default function GraphSettings({
                             </div>
 
                             {/* Link Width */}
-                            <div>
+                            <div className='space-y-1.5'>
                                 <div className='flex items-center justify-between w-full mb-1.5'>
                                     <Label className='text-xs'>Link Width</Label>
                                     <span className='text-xs text-muted-foreground tabular-nums'>
@@ -290,7 +290,7 @@ export default function GraphSettings({
                     <ScrollArea className='max-h-[50vh]'>
                         <div className='space-y-3'>
                             {/* Random Seed */}
-                            <div>
+                            <div className='space-y-1.5'>
                                 <div className='flex items-center gap-1 mb-1.5'>
                                     <Label className='text-xs'>Random Seed</Label>
                                     <Tooltip>
@@ -327,7 +327,7 @@ export default function GraphSettings({
                             </div>
 
                             {/* Cluster Separation */}
-                            <div>
+                            <div className='space-y-1.5'>
                                 <div className='flex items-center justify-between w-full mb-1'>
                                     <div className='flex items-center gap-1'>
                                         <Label className='text-xs'>

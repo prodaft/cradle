@@ -41,7 +41,7 @@ export default function DashboardHorizontalSection({
     return (
         <div className='bg-card/20 p-4 rounded-xl w-full'>
             <div
-                className='text-xl font-semibold mb-2 cursor-pointer w-full flex flex-row justify-between items-center'
+                className='text-xl font-semibold mb-2 cursor-pointer w-full flex justify-between items-center'
                 onClick={toggleExpanded}
             >
                 {title}

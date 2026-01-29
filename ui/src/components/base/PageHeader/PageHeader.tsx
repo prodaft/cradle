@@ -38,7 +38,7 @@ export default function PageHeader({
         <div
             className={`flex flex-wrap items-end justify-between gap-2 px-4 pt-4 ${className}`}
         >
-            <div>
+            <div className='space-y-1'>
                 <h2 className='text-2xl font-bold tracking-tight'>{title}</h2>
                 {description && <p className='text-muted-foreground'>{description}</p>}
             </div>

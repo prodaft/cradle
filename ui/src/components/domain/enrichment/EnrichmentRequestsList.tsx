@@ -96,7 +96,7 @@ function EnrichmentRequestsList({
     sortField = 'created_at',
     sortDirection = 'desc',
     onSort,
-    pageSize = 10,
+    pageSize = 20,
     setPageSize = () => {},
     onColumnFilterChange = null,
     columnFilters = { status: 'all', user: '' },
@@ -155,7 +155,7 @@ function EnrichmentRequestsList({
             const newPage = pageIndex + 1; // Convert 0-based to 1-based
 
             // Handle page size change
-            if (newPageSize !== (pageSize || 10)) {
+            if (newPageSize !== (pageSize || 20)) {
                 if (setPageSize) {
                     setPageSize(newPageSize);
                 }
@@ -392,7 +392,7 @@ function EnrichmentRequestsList({
             rowSelection,
             pagination: {
                 pageIndex: page - 1,
-                pageSize: pageSize || 10,
+                pageSize: pageSize || 20,
             },
         },
         getRowId: (row, index) => String(row.id ?? index),
@@ -408,7 +408,7 @@ function EnrichmentRequestsList({
         onPaginationChange: (updater) => {
             const currentPagination = {
                 pageIndex: page - 1,
-                pageSize: pageSize || 10,
+                pageSize: pageSize || 20,
             };
             const nextPagination =
                 typeof updater === 'function' ? updater(currentPagination) : updater;

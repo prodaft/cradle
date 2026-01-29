@@ -229,7 +229,7 @@ const SnippetList = forwardRef<SnippetListRef, SnippetListProps>(
                     titleEditable={true}
                     initialContent=''
                     helpText={
-                        <div>
+                        <div className='text-sm text-muted-foreground'>
                             You can use CodeMirror snippet format:{' '}
                             <a
                                 href='https://codemirror.net/docs/ref/#autocomplete.snippet'

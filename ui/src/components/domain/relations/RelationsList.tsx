@@ -63,7 +63,7 @@ export default function RelationsList({ query }: RelationsListProps) {
     return (
         <div className='p-4'>
             {loading ? (
-                <div className='flex items-center justify-center min-h-[200px]'>
+                <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                     <Spinner className='size-10' />
                 </div>
             ) : relations.length === 0 ? (

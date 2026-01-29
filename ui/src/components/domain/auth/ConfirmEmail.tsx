@@ -71,7 +71,7 @@ export default function ConfirmEmail() {
     }, [token]);
 
     return (
-        <div className='flex flex-row items-center justify-center h-screen overflow-y-auto'>
+        <div className='flex items-center justify-center h-screen overflow-y-auto'>
             <div className='bg-card/20 p-4 rounded-xl w-full h-fit md:w-1/2 xl:w-1/3'>
                 <div className='flex min-h-full flex-1 flex-col justify-center px-3 py-6 lg:px-4 text-muted-foreground'>
                     {alert.show && (

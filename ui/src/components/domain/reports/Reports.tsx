@@ -91,7 +91,7 @@ export default function Reports() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
         (search as any)?.reports_sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState((search as any)?.reports_pagesize || 10);
+    const [pageSize, setPageSize] = useState((search as any)?.reports_pagesize || 20);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -119,7 +119,7 @@ export default function Reports() {
         const pageFromParams = searchAny?.reports_page || 1;
         const sortFieldFromParams = searchAny?.reports_sort_field || 'created_at';
         const sortDirectionFromParams = searchAny?.reports_sort_direction || 'desc';
-        const pageSizeFromParams = searchAny?.reports_pagesize || 10;
+        const pageSizeFromParams = searchAny?.reports_pagesize || 20;
 
         if (pageFromParams !== page) setPage(pageFromParams);
         if (sortFieldFromParams !== sortField) setSortField(sortFieldFromParams);

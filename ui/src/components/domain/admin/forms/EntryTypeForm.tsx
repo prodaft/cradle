@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     ColorPicker,
     ColorPickerArea,
@@ -253,10 +252,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     if (isPending && !isPaused) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='text-foreground'>
-                    <Spinner className='size-10' />
-                </div>
+            <div className='flex items-center justify-center min-h-screen text-foreground'>
+                <Spinner className='size-10' />
             </div>
         );
     }
@@ -284,39 +281,310 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
 
     if (isLoading) {
         return (
-            <div className='flex items-center justify-center min-h-screen'>
-                <div className='text-foreground'>
-                    <Spinner className='size-10' />
-                </div>
+            <div className='flex items-center justify-center min-h-screen text-foreground'>
+                <Spinner className='size-10' />
             </div>
         );
     }
 
     return (
         <form onSubmit={handleFormSubmit(onSubmit)}>
-            {/* Basic Section */}
-            <section id='basic'>
-                <div className='space-y-4'>
-                    <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
-                        <CardContent className='px-4 py-1'>
+            <div className='flex flex-col gap-6'>
+                {/* Basic Section */}
+                <div className='flex flex-col gap-4'>
+                    <h3 className='font-semibold text-base'>Basic Information</h3>
+                    <Controller
+                        name='type'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='horizontal'
+                                className='gap-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel className='text-sm block mb-0.5'>
+                                        Class Type
+                                        <span className='text-destructive ml-1'>*</span>
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        Artifact or Entity classification
+                                    </FieldDescription>
+                                    {fieldState.invalid && (
+                                        <FieldError className='text-sm mt-1'>
+                                            {fieldState.error?.message}
+                                        </FieldError>
+                                    )}
+                                </FieldContent>
+                                <Select
+                                    value={field.value?.value || ''}
+                                    onValueChange={(value) => {
+                                        const option = typeOptions.find(
+                                            (opt) => opt.value === value,
+                                        );
+                                        field.onChange(
+                                            option
+                                                ? {
+                                                      value: option.value,
+                                                      label: option.label,
+                                                  }
+                                                : null,
+                                        );
+                                    }}
+                                >
+                                    <SelectTrigger
+                                        className='self-center'
+                                        aria-invalid={fieldState.invalid}
+                                        aria-describedby={
+                                            fieldState.invalid
+                                                ? 'type-error'
+                                                : undefined
+                                        }
+                                    >
+                                        <SelectValue placeholder='Select type' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {typeOptions.map((option) => (
+                                            <SelectItem
+                                                key={option.value}
+                                                value={option.value}
+                                            >
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+                        )}
+                    />
+
+                    <Controller
+                        name='subtype'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='horizontal'
+                                className='gap-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel
+                                        htmlFor='subtype'
+                                        className='text-sm block mb-0.5'
+                                    >
+                                        Name
+                                        <span className='text-destructive ml-1'>*</span>
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        Unique identifier for this entry class
+                                    </FieldDescription>
+                                    {fieldState.invalid && (
+                                        <FieldError className='text-sm mt-1'>
+                                            {fieldState.error?.message}
+                                        </FieldError>
+                                    )}
+                                </FieldContent>
+                                <div className='self-center'>
+                                    <Input
+                                        {...field}
+                                        id='subtype'
+                                        aria-invalid={fieldState.invalid}
+                                        aria-describedby={
+                                            fieldState.invalid
+                                                ? 'subtype-error'
+                                                : undefined
+                                        }
+                                    />
+                                </div>
+                            </Field>
+                        )}
+                    />
+
+                    <Controller
+                        name='description'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='vertical'
+                                className='gap-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent>
+                                    <FieldLabel
+                                        htmlFor='description'
+                                        className='text-sm block mb-0.5'
+                                    >
+                                        Description
+                                    </FieldLabel>
+                                    <FieldDescription className='text-sm mb-2'>
+                                        Brief explanation of this entry type
+                                    </FieldDescription>
+                                </FieldContent>
+                                <Textarea
+                                    {...field}
+                                    id='description'
+                                    placeholder='Description'
+                                    rows={3}
+                                    aria-invalid={fieldState.invalid}
+                                    aria-describedby={
+                                        fieldState.invalid
+                                            ? 'description-error'
+                                            : undefined
+                                    }
+                                />
+                                {fieldState.invalid && (
+                                    <FieldError className='text-sm mt-1'>
+                                        {fieldState.error?.message}
+                                    </FieldError>
+                                )}
+                            </Field>
+                        )}
+                    />
+
+                    <Controller
+                        name='color'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='horizontal'
+                                className='gap-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel className='text-sm block mb-0.5'>
+                                        Color
+                                        <span className='text-destructive ml-1'>*</span>
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        Display color for this entry type
+                                    </FieldDescription>
+                                    {fieldState.invalid && (
+                                        <FieldError className='text-sm mt-1'>
+                                            {fieldState.error?.message}
+                                        </FieldError>
+                                    )}
+                                </FieldContent>
+                                <div className='w-72 self-center'>
+                                    <ColorPicker
+                                        value={field.value}
+                                        onValueChange={field.onChange}
+                                    >
+                                        <InputGroup>
+                                            <ColorPickerInput
+                                                withoutAlpha
+                                                className='flex-1 border-0 shadow-none focus-visible:ring-0'
+                                            />
+                                            <InputGroupAddon align='inline-end'>
+                                                <ColorPickerTrigger asChild>
+                                                    <InputGroupButton size='icon-xs'>
+                                                        <ColorPickerSwatch className='size-4 rounded-sm' />
+                                                    </InputGroupButton>
+                                                </ColorPickerTrigger>
+                                                <InputGroupButton
+                                                    size='icon-xs'
+                                                    onClick={generateRandomColor}
+                                                >
+                                                    <svg
+                                                        xmlns='http://www.w3.org/2000/svg'
+                                                        fill='none'
+                                                        viewBox='0 0 24 24'
+                                                        stroke='currentColor'
+                                                    >
+                                                        <path
+                                                            strokeLinecap='round'
+                                                            strokeLinejoin='round'
+                                                            strokeWidth={2}
+                                                            d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
+                                                        />
+                                                    </svg>
+                                                </InputGroupButton>
+                                            </InputGroupAddon>
+                                        </InputGroup>
+                                        <ColorPickerContent>
+                                            <ColorPickerArea />
+                                            <div className='flex items-center justify-between gap-2'>
+                                                <ColorPickerEyeDropper />
+                                                <ColorPickerFormatSelect />
+                                            </div>
+                                            <ColorPickerHueSlider />
+                                        </ColorPickerContent>
+                                    </ColorPicker>
+                                </div>
+                            </Field>
+                        )}
+                    />
+                </div>
+                <Separator
+                    data-orientation='horizontal'
+                    role='none'
+                    className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
+                    data-slot='separator'
+                />
+                {/* Advanced Section */}
+                <div className='flex flex-col gap-4'>
+                    <h3 className='font-semibold text-base'>Advanced Settings</h3>
+                    {isEntity && (
+                        <>
                             <Controller
-                                name='type'
+                                name='prefix'
                                 control={control}
                                 render={({ field, fieldState }) => (
                                     <Field
                                         orientation='horizontal'
-                                        className='py-2'
+                                        className='gap-2'
                                         data-invalid={fieldState.invalid}
                                     >
                                         <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                Class Type
-                                                <span className='text-destructive ml-1'>
-                                                    *
-                                                </span>
+                                            <FieldLabel
+                                                htmlFor='prefix'
+                                                className='text-sm block mb-0.5'
+                                            >
+                                                Prefix
                                             </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Artifact or Entity classification
+                                            <FieldDescription>
+                                                Prefix used when generating entity names
+                                            </FieldDescription>
+                                            {fieldState.invalid && (
+                                                <FieldError className='text-sm mt-1'>
+                                                    {fieldState.error?.message}
+                                                </FieldError>
+                                            )}
+                                        </FieldContent>
+                                        <div className='self-center'>
+                                            <Input
+                                                {...field}
+                                                id='prefix'
+                                                aria-invalid={fieldState.invalid}
+                                                aria-describedby={
+                                                    fieldState.invalid
+                                                        ? 'prefix-error'
+                                                        : undefined
+                                                }
+                                            />
+                                        </div>
+                                    </Field>
+                                )}
+                            />
+                        </>
+                    )}
+
+                    {isArtifact && (
+                        <>
+                            <Controller
+                                name='typeFormat'
+                                control={control}
+                                render={({ field, fieldState }) => (
+                                    <Field
+                                        orientation='horizontal'
+                                        className='gap-2'
+                                        data-invalid={fieldState.invalid}
+                                    >
+                                        <FieldContent className='flex-1'>
+                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                Format
+                                            </FieldLabel>
+                                            <FieldDescription>
+                                                Validation format for artifact values
                                             </FieldDescription>
                                             {fieldState.invalid && (
                                                 <FieldError className='text-sm mt-1'>
@@ -327,7 +595,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         <Select
                                             value={field.value?.value || ''}
                                             onValueChange={(value) => {
-                                                const option = typeOptions.find(
+                                                const option = formatOptions.find(
                                                     (opt) => opt.value === value,
                                                 );
                                                 field.onChange(
@@ -345,14 +613,14 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 aria-invalid={fieldState.invalid}
                                                 aria-describedby={
                                                     fieldState.invalid
-                                                        ? 'type-error'
+                                                        ? 'typeFormat-error'
                                                         : undefined
                                                 }
                                             >
-                                                <SelectValue placeholder='Select type' />
+                                                <SelectValue placeholder='Select format' />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {typeOptions.map((option) => (
+                                                {formatOptions.map((option) => (
                                                     <SelectItem
                                                         key={option.value}
                                                         value={option.value}
@@ -366,204 +634,118 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                 )}
                             />
 
-                            <Separator />
-
-                            <Controller
-                                name='subtype'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='horizontal'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel
-                                                htmlFor='subtype'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Name
-                                                <span className='text-destructive ml-1'>
-                                                    *
-                                                </span>
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Unique identifier for this entry class
-                                            </FieldDescription>
-                                            {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
-                                                    {fieldState.error?.message}
-                                                </FieldError>
-                                            )}
-                                        </FieldContent>
-                                        <div className='self-center'>
-                                            <Input
-                                                {...field}
-                                                id='subtype'
-                                                aria-invalid={fieldState.invalid}
-                                                aria-describedby={
-                                                    fieldState.invalid
-                                                        ? 'subtype-error'
-                                                        : undefined
-                                                }
-                                            />
-                                        </div>
-                                    </Field>
-                                )}
-                            />
-
-                            <Separator />
-
-                            <Controller
-                                name='description'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='vertical'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent>
-                                            <FieldLabel
-                                                htmlFor='description'
-                                                className='text-sm text-muted-foreground block mb-0.5'
-                                            >
-                                                Description
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm mb-2'>
-                                                Brief explanation of this entry type
-                                            </FieldDescription>
-                                        </FieldContent>
-                                        <Textarea
-                                            {...field}
-                                            id='description'
-                                            placeholder='Description'
-                                            rows={3}
-                                            aria-invalid={fieldState.invalid}
-                                            aria-describedby={
-                                                fieldState.invalid
-                                                    ? 'description-error'
-                                                    : undefined
-                                            }
-                                        />
-                                        {fieldState.invalid && (
-                                            <FieldError className='text-sm mt-1'>
-                                                {fieldState.error?.message}
-                                            </FieldError>
-                                        )}
-                                    </Field>
-                                )}
-                            />
-
-                            <Separator />
-
-                            <Controller
-                                name='color'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='horizontal'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                Color
-                                                <span className='text-destructive ml-1'>
-                                                    *
-                                                </span>
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Display color for this entry type
-                                            </FieldDescription>
-                                            {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
-                                                    {fieldState.error?.message}
-                                                </FieldError>
-                                            )}
-                                        </FieldContent>
-                                        <div className='w-72 self-center'>
-                                            <ColorPicker
-                                                value={field.value}
-                                                onValueChange={field.onChange}
-                                            >
-                                                <InputGroup>
-                                                    <ColorPickerInput
-                                                        withoutAlpha
-                                                        className='flex-1 border-0 shadow-none focus-visible:ring-0'
-                                                    />
-                                                    <InputGroupAddon align='inline-end'>
-                                                        <ColorPickerTrigger asChild>
-                                                            <InputGroupButton size='icon-xs'>
-                                                                <ColorPickerSwatch className='size-4 rounded-sm' />
-                                                            </InputGroupButton>
-                                                        </ColorPickerTrigger>
-                                                        <InputGroupButton
-                                                            size='icon-xs'
-                                                            onClick={
-                                                                generateRandomColor
-                                                            }
-                                                        >
-                                                            <svg
-                                                                xmlns='http://www.w3.org/2000/svg'
-                                                                fill='none'
-                                                                viewBox='0 0 24 24'
-                                                                stroke='currentColor'
-                                                            >
-                                                                <path
-                                                                    strokeLinecap='round'
-                                                                    strokeLinejoin='round'
-                                                                    strokeWidth={2}
-                                                                    d='M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-                                                                />
-                                                            </svg>
-                                                        </InputGroupButton>
-                                                    </InputGroupAddon>
-                                                </InputGroup>
-                                                <ColorPickerContent>
-                                                    <ColorPickerArea />
-                                                    <div className='flex items-center justify-between gap-2'>
-                                                        <ColorPickerEyeDropper />
-                                                        <ColorPickerFormatSelect />
-                                                    </div>
-                                                    <ColorPickerHueSlider />
-                                                </ColorPickerContent>
-                                            </ColorPicker>
-                                        </div>
-                                    </Field>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
-                </div>
-            </section>
-
-            {/* Advanced Section */}
-            <section id='advanced' className='border-t border-white/5 pt-5 pb-8'>
-                <div className='space-y-4'>
-                    <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
-                        <CardContent className='px-4 py-1'>
-                            {isEntity && (
+                            {isOptions && (
                                 <>
                                     <Controller
-                                        name='prefix'
+                                        name='options'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='vertical'
+                                                className='gap-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent>
+                                                    <FieldLabel
+                                                        htmlFor='options'
+                                                        className='text-sm block mb-0.5'
+                                                    >
+                                                        Options
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm mb-2'>
+                                                        Allowed values (one per line)
+                                                    </FieldDescription>
+                                                </FieldContent>
+                                                <Textarea
+                                                    {...field}
+                                                    id='options'
+                                                    placeholder='Enter possible values separated by newlines.'
+                                                    rows={6}
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-describedby={
+                                                        fieldState.invalid
+                                                            ? 'options-error'
+                                                            : undefined
+                                                    }
+                                                />
+                                                {fieldState.invalid && (
+                                                    <FieldError className='text-sm mt-1'>
+                                                        {fieldState.error?.message}
+                                                    </FieldError>
+                                                )}
+                                            </Field>
+                                        )}
+                                    />
+                                </>
+                            )}
+
+                            {isRegex && (
+                                <>
+                                    <Controller
+                                        name='regex'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Field
+                                                orientation='vertical'
+                                                className='gap-2'
+                                                data-invalid={fieldState.invalid}
+                                            >
+                                                <FieldContent>
+                                                    <FieldLabel
+                                                        htmlFor='regex'
+                                                        className='text-sm block mb-0.5'
+                                                    >
+                                                        Regex
+                                                    </FieldLabel>
+                                                    <FieldDescription className='text-sm mb-2'>
+                                                        Regular expression for
+                                                        validation
+                                                    </FieldDescription>
+                                                </FieldContent>
+                                                <Textarea
+                                                    {...field}
+                                                    id='regex'
+                                                    placeholder='Enter the regex for the type.'
+                                                    rows={3}
+                                                    aria-invalid={fieldState.invalid}
+                                                    aria-describedby={
+                                                        fieldState.invalid
+                                                            ? 'regex-error'
+                                                            : undefined
+                                                    }
+                                                />
+                                                {fieldState.invalid && (
+                                                    <FieldError className='text-sm mt-1'>
+                                                        {fieldState.error?.message}
+                                                    </FieldError>
+                                                )}
+                                            </Field>
+                                        )}
+                                    />
+                                </>
+                            )}
+
+                            {!isOptions && (
+                                <>
+                                    <Controller
+                                        name='generativeRegex'
                                         control={control}
                                         render={({ field, fieldState }) => (
                                             <Field
                                                 orientation='horizontal'
-                                                className='py-2'
+                                                className='gap-2'
                                                 data-invalid={fieldState.invalid}
                                             >
                                                 <FieldContent className='flex-1'>
                                                     <FieldLabel
-                                                        htmlFor='prefix'
-                                                        className='text-sm text-muted-foreground block mb-0.5'
+                                                        htmlFor='generativeRegex'
+                                                        className='text-sm block mb-0.5'
                                                     >
-                                                        Prefix
+                                                        Generative Regex
                                                     </FieldLabel>
-                                                    <FieldDescription className='text-sm'>
-                                                        Prefix used when generating
-                                                        entity names
+                                                    <FieldDescription>
+                                                        Regex used to generate random
+                                                        sample values
                                                     </FieldDescription>
                                                     {fieldState.invalid && (
                                                         <FieldError className='text-sm mt-1'>
@@ -571,16 +753,17 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                         </FieldError>
                                                     )}
                                                 </FieldContent>
-                                                <div className='self-center'>
+                                                <div className='w-64 self-center'>
                                                     <Input
                                                         {...field}
-                                                        id='prefix'
+                                                        id='generativeRegex'
+                                                        placeholder='e.g. [A-Z]{3}-[0-9]{4}'
                                                         aria-invalid={
                                                             fieldState.invalid
                                                         }
                                                         aria-describedby={
                                                             fieldState.invalid
-                                                                ? 'prefix-error'
+                                                                ? 'generativeRegex-error'
                                                                 : undefined
                                                         }
                                                     />
@@ -590,303 +773,61 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                     />
                                 </>
                             )}
+                        </>
+                    )}
 
-                            {isArtifact && (
-                                <>
-                                    <Controller
-                                        name='typeFormat'
-                                        control={control}
-                                        render={({ field, fieldState }) => (
-                                            <Field
-                                                orientation='horizontal'
-                                                className='py-2'
-                                                data-invalid={fieldState.invalid}
-                                            >
-                                                <FieldContent className='flex-1'>
-                                                    <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                        Format
-                                                    </FieldLabel>
-                                                    <FieldDescription className='text-sm'>
-                                                        Validation format for artifact
-                                                        values
-                                                    </FieldDescription>
-                                                    {fieldState.invalid && (
-                                                        <FieldError className='text-sm mt-1'>
-                                                            {fieldState.error?.message}
-                                                        </FieldError>
-                                                    )}
-                                                </FieldContent>
-                                                <Select
-                                                    value={field.value?.value || ''}
-                                                    onValueChange={(value) => {
-                                                        const option =
-                                                            formatOptions.find(
-                                                                (opt) =>
-                                                                    opt.value === value,
-                                                            );
-                                                        field.onChange(
-                                                            option
-                                                                ? {
-                                                                      value: option.value,
-                                                                      label: option.label,
-                                                                  }
-                                                                : null,
-                                                        );
-                                                    }}
-                                                >
-                                                    <SelectTrigger
-                                                        className='self-center'
-                                                        aria-invalid={
-                                                            fieldState.invalid
-                                                        }
-                                                        aria-describedby={
-                                                            fieldState.invalid
-                                                                ? 'typeFormat-error'
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        <SelectValue placeholder='Select format' />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {formatOptions.map((option) => (
-                                                            <SelectItem
-                                                                key={option.value}
-                                                                value={option.value}
-                                                            >
-                                                                {option.label}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </Field>
-                                        )}
+                    <Controller
+                        name='children'
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <Field
+                                orientation='horizontal'
+                                className='gap-2'
+                                data-invalid={fieldState.invalid}
+                            >
+                                <FieldContent className='flex-1'>
+                                    <FieldLabel className='text-sm block mb-0.5'>
+                                        Children
+                                    </FieldLabel>
+                                    <FieldDescription>
+                                        Entry types that can be children of this type
+                                    </FieldDescription>
+                                    {fieldState.invalid && (
+                                        <FieldError className='text-sm mt-1'>
+                                            {fieldState.error?.message}
+                                        </FieldError>
+                                    )}
+                                </FieldContent>
+                                <div className='w-64 self-center'>
+                                    <MultipleSelector
+                                        value={
+                                            (field.value?.map((c) => ({
+                                                value: c.value,
+                                                label: c.label,
+                                            })) || []) as Option[]
+                                        }
+                                        defaultOptions={entryTypes as Option[]}
+                                        placeholder='Select children...'
+                                        onChange={(options) => {
+                                            field.onChange(
+                                                options.map((o) => ({
+                                                    value: o.value,
+                                                    label: o.label,
+                                                })),
+                                            );
+                                        }}
+                                        emptyIndicator={
+                                            <p className='text-center text-sm'>
+                                                No entry types found
+                                            </p>
+                                        }
                                     />
-
-                                    {isOptions && (
-                                        <>
-                                            <Separator />
-                                            <Controller
-                                                name='options'
-                                                control={control}
-                                                render={({ field, fieldState }) => (
-                                                    <Field
-                                                        orientation='vertical'
-                                                        className='py-2'
-                                                        data-invalid={
-                                                            fieldState.invalid
-                                                        }
-                                                    >
-                                                        <FieldContent>
-                                                            <FieldLabel
-                                                                htmlFor='options'
-                                                                className='text-sm text-muted-foreground block mb-0.5'
-                                                            >
-                                                                Options
-                                                            </FieldLabel>
-                                                            <FieldDescription className='text-sm mb-2'>
-                                                                Allowed values (one per
-                                                                line)
-                                                            </FieldDescription>
-                                                        </FieldContent>
-                                                        <Textarea
-                                                            {...field}
-                                                            id='options'
-                                                            placeholder='Enter possible values separated by newlines.'
-                                                            rows={6}
-                                                            aria-invalid={
-                                                                fieldState.invalid
-                                                            }
-                                                            aria-describedby={
-                                                                fieldState.invalid
-                                                                    ? 'options-error'
-                                                                    : undefined
-                                                            }
-                                                        />
-                                                        {fieldState.invalid && (
-                                                            <FieldError className='text-sm mt-1'>
-                                                                {
-                                                                    fieldState.error
-                                                                        ?.message
-                                                                }
-                                                            </FieldError>
-                                                        )}
-                                                    </Field>
-                                                )}
-                                            />
-                                        </>
-                                    )}
-
-                                    {isRegex && (
-                                        <>
-                                            <Separator />
-                                            <Controller
-                                                name='regex'
-                                                control={control}
-                                                render={({ field, fieldState }) => (
-                                                    <Field
-                                                        orientation='vertical'
-                                                        className='py-2'
-                                                        data-invalid={
-                                                            fieldState.invalid
-                                                        }
-                                                    >
-                                                        <FieldContent>
-                                                            <FieldLabel
-                                                                htmlFor='regex'
-                                                                className='text-sm text-muted-foreground block mb-0.5'
-                                                            >
-                                                                Regex
-                                                            </FieldLabel>
-                                                            <FieldDescription className='text-sm mb-2'>
-                                                                Regular expression for
-                                                                validation
-                                                            </FieldDescription>
-                                                        </FieldContent>
-                                                        <Textarea
-                                                            {...field}
-                                                            id='regex'
-                                                            placeholder='Enter the regex for the type.'
-                                                            rows={3}
-                                                            aria-invalid={
-                                                                fieldState.invalid
-                                                            }
-                                                            aria-describedby={
-                                                                fieldState.invalid
-                                                                    ? 'regex-error'
-                                                                    : undefined
-                                                            }
-                                                        />
-                                                        {fieldState.invalid && (
-                                                            <FieldError className='text-sm mt-1'>
-                                                                {
-                                                                    fieldState.error
-                                                                        ?.message
-                                                                }
-                                                            </FieldError>
-                                                        )}
-                                                    </Field>
-                                                )}
-                                            />
-                                        </>
-                                    )}
-
-                                    {!isOptions && (
-                                        <>
-                                            <Separator />
-                                            <Controller
-                                                name='generativeRegex'
-                                                control={control}
-                                                render={({ field, fieldState }) => (
-                                                    <Field
-                                                        orientation='horizontal'
-                                                        className='py-2'
-                                                        data-invalid={
-                                                            fieldState.invalid
-                                                        }
-                                                    >
-                                                        <FieldContent className='flex-1'>
-                                                            <FieldLabel
-                                                                htmlFor='generativeRegex'
-                                                                className='text-sm text-muted-foreground block mb-0.5'
-                                                            >
-                                                                Generative Regex
-                                                            </FieldLabel>
-                                                            <FieldDescription className='text-sm'>
-                                                                Regex used to generate
-                                                                random sample values
-                                                            </FieldDescription>
-                                                            {fieldState.invalid && (
-                                                                <FieldError className='text-sm mt-1'>
-                                                                    {
-                                                                        fieldState.error
-                                                                            ?.message
-                                                                    }
-                                                                </FieldError>
-                                                            )}
-                                                        </FieldContent>
-                                                        <div className='w-64 self-center'>
-                                                            <Input
-                                                                {...field}
-                                                                id='generativeRegex'
-                                                                placeholder='e.g. [A-Z]{3}-[0-9]{4}'
-                                                                aria-invalid={
-                                                                    fieldState.invalid
-                                                                }
-                                                                aria-describedby={
-                                                                    fieldState.invalid
-                                                                        ? 'generativeRegex-error'
-                                                                        : undefined
-                                                                }
-                                                            />
-                                                        </div>
-                                                    </Field>
-                                                )}
-                                            />
-                                        </>
-                                    )}
-                                </>
-                            )}
-
-                            {((isEntity && isArtifact === false) || isArtifact) && (
-                                <Separator />
-                            )}
-
-                            <Controller
-                                name='children'
-                                control={control}
-                                render={({ field, fieldState }) => (
-                                    <Field
-                                        orientation='horizontal'
-                                        className='py-2'
-                                        data-invalid={fieldState.invalid}
-                                    >
-                                        <FieldContent className='flex-1'>
-                                            <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                                Children
-                                            </FieldLabel>
-                                            <FieldDescription className='text-sm'>
-                                                Entry types that can be children of this
-                                                type
-                                            </FieldDescription>
-                                            {fieldState.invalid && (
-                                                <FieldError className='text-sm mt-1'>
-                                                    {fieldState.error?.message}
-                                                </FieldError>
-                                            )}
-                                        </FieldContent>
-                                        <div className='w-64 self-center'>
-                                            <MultipleSelector
-                                                value={
-                                                    (field.value?.map((c) => ({
-                                                        value: c.value,
-                                                        label: c.label,
-                                                    })) || []) as Option[]
-                                                }
-                                                defaultOptions={entryTypes as Option[]}
-                                                placeholder='Select children...'
-                                                onChange={(options) => {
-                                                    field.onChange(
-                                                        options.map((o) => ({
-                                                            value: o.value,
-                                                            label: o.label,
-                                                        })),
-                                                    );
-                                                }}
-                                                emptyIndicator={
-                                                    <p className='text-center text-sm'>
-                                                        No entry types found
-                                                    </p>
-                                                }
-                                            />
-                                        </div>
-                                    </Field>
-                                )}
-                            />
-                        </CardContent>
-                    </Card>
+                                </div>
+                            </Field>
+                        )}
+                    />
                 </div>
-            </section>
-
+            </div>
             {/* Save Button */}
             <div className='pt-2 flex justify-end'>
                 <Button type='submit' variant='default' disabled={isSubmitting}>

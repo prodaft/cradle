@@ -146,7 +146,7 @@ export default function NotificationCard({
         : 'N/A';
 
     return (
-        <Card>
+        <Card className='py-0 gap-0'>
             <CardContent className='p-3'>
                 {/* Content */}
                 <div className='flex-1 min-w-0'>

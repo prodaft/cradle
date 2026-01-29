@@ -232,7 +232,9 @@ export default function FindReplace({
                                                 ...(useRegex ? ['regex'] : []),
                                             ]}
                                             onValueChange={(values) => {
-                                                setCaseSensitive(values.includes('case'));
+                                                setCaseSensitive(
+                                                    values.includes('case'),
+                                                );
                                                 setWholeWord(values.includes('word'));
                                                 setUseRegex(values.includes('regex'));
                                             }}

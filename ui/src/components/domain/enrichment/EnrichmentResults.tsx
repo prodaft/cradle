@@ -639,7 +639,7 @@ export default function EnrichmentResults() {
             {/* Main Content */}
             <div className='flex-1 overflow-hidden flex flex-col p-4'>
                 {isPendingDetails ? (
-                    <div className='flex items-center justify-center min-h-[200px]'>
+                    <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                         <Spinner className='size-10' />
                     </div>
                 ) : (
@@ -797,7 +797,7 @@ export default function EnrichmentResults() {
                         ) : selectedEnricher ? (
                             /* Relations View */
                             isPendingEnricher ? (
-                                <div className='flex items-center justify-center min-h-[200px]'>
+                                <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                                     <Spinner className='size-10' />
                                 </div>
                             ) : artifacts.length === 0 ? (

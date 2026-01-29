@@ -142,7 +142,7 @@ export default function Preview({
     return (
         <>
             {isLoading ? (
-                <div className='flex items-center justify-center min-h-screen'>
+                <div className='flex items-center justify-center min-h-screen text-foreground'>
                     <Spinner className='size-10' />
                 </div>
             ) : (

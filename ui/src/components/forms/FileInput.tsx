@@ -270,7 +270,7 @@ export default function FileInput({
     return (
         <div className='space-y-3' onPaste={handlePaste}>
             {/* File Input Row */}
-            <div className='flex flex-row gap-2 items-stretch'>
+            <div className='flex gap-2 items-stretch'>
                 <Input
                     type='file'
                     className='flex-1'

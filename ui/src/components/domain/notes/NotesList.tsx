@@ -166,7 +166,7 @@ export default function NotesList({
         },
     });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [pageSize, setPageSize] = useState((search as any)?.notes_pagesize || 10);
+    const [pageSize, setPageSize] = useState((search as any)?.notes_pagesize || 20);
     const [columnFilters, setColumnFilters] = useState<ColumnFilters>({
         status: 'all',
         any_field: query?.any_field || '',

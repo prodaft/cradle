@@ -8,6 +8,12 @@ import {
     FieldSeparator,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { useTheme } from '@/contexts/ui';
 import useApi from '@/hooks/api/useApi';
@@ -17,6 +23,8 @@ import { cn } from '@/lib/utils';
 import Logo from '@components/base/Logo/Logo';
 import {
     ArrowUUpLeftIcon,
+    EyeIcon,
+    EyeSlashIcon,
     MoonIcon,
     SunIcon,
     WarningCircleIcon,
@@ -54,6 +62,7 @@ interface OAuthMethod {
 export default function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [twoFactorToken, setTwoFactorToken] = useState('');
     const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -423,17 +432,55 @@ export default function Login() {
                                                     Forgot password?
                                                 </Link>
                                             </div>
-                                            <Input
-                                                id='password'
-                                                name='password'
-                                                type='password'
-                                                value={password}
-                                                onChange={(e) =>
-                                                    setPassword(e.target.value)
-                                                }
-                                                autoComplete='current-password'
-                                                required
-                                            />
+                                            <InputGroup>
+                                                <InputGroupInput
+                                                    id='password'
+                                                    name='password'
+                                                    type={
+                                                        showPassword
+                                                            ? 'text'
+                                                            : 'password'
+                                                    }
+                                                    value={password}
+                                                    onChange={(e) =>
+                                                        setPassword(e.target.value)
+                                                    }
+                                                    autoComplete='current-password'
+                                                    required
+                                                />
+                                                <InputGroupAddon align='inline-end'>
+                                                    <InputGroupButton
+                                                        type='button'
+                                                        onClick={() =>
+                                                            setShowPassword(
+                                                                !showPassword,
+                                                            )
+                                                        }
+                                                        aria-label={
+                                                            showPassword
+                                                                ? 'Hide password'
+                                                                : 'Show password'
+                                                        }
+                                                        title={
+                                                            showPassword
+                                                                ? 'Hide password'
+                                                                : 'Show password'
+                                                        }
+                                                    >
+                                                        {showPassword ? (
+                                                            <EyeSlashIcon
+                                                                className='size-4'
+                                                                weight='bold'
+                                                            />
+                                                        ) : (
+                                                            <EyeIcon
+                                                                className='size-4'
+                                                                weight='bold'
+                                                            />
+                                                        )}
+                                                    </InputGroupButton>
+                                                </InputGroupAddon>
+                                            </InputGroup>
                                         </Field>
                                         {alert.show && (
                                             <Alert

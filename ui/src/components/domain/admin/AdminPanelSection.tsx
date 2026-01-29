@@ -84,7 +84,7 @@ export default function AdminPanelSection({
         : [];
     return (
         <div className='w-full h-full flex flex-col rounded-md px-3'>
-            <div className='w-full flex flex-row items-center justify-between pt-3 pr-3 pb-3 gap-3'>
+            <div className='w-full flex items-center justify-between pt-3 pr-3 pb-3 gap-3'>
                 <InputGroup className='flex-grow'>
                     <InputGroupInput
                         type='text'
@@ -125,10 +125,10 @@ export default function AdminPanelSection({
                     </Tooltip>
                 )}
             </div>
-            <ScrollArea className='w-full flex-grow space-y-4 gap-1 h-[80vh]'>
+            <ScrollArea className='w-full flex-grow space-y-4 h-[80vh]'>
                 {isLoading ? (
                     // Loading spinner
-                    <div className='flex items-center justify-center min-h-[200px]'>
+                    <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                         <Spinner className='size-10' />
                     </div>
                 ) : sortedFilteredChildren && sortedFilteredChildren.length > 0 ? (

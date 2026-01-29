@@ -1,12 +1,10 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import {
     Field,
     FieldContent,
     FieldDescription,
     FieldLabel,
 } from '@/components/ui/field';
-import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
 import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
@@ -61,74 +59,51 @@ export default function EntriesManagement() {
     };
 
     return (
-        <div className='w-full h-full'>
-            <div className='w-full'>
-                {/* Actions Section */}
-                <section id='actions'>
-                    <h2 className='text-lg font-semibold text-foreground tracking-tight'>
-                        Actions
-                    </h2>
-                    <p className='text-sm text-muted-foreground mt-0.5 mb-5'>
-                        Maintenance operations for entries and artifacts
-                    </p>
+        <div className='flex flex-col gap-6'>
+            {/* Actions Section */}
+            <div className='flex flex-col gap-4'>
+                <h3 className='font-semibold text-base'>Actions</h3>
+                <Field orientation='horizontal' className='gap-2'>
+                    <FieldContent className='flex-1'>
+                        <FieldLabel className='text-sm block mb-0.5'>
+                            Propagate Access Vectors
+                        </FieldLabel>
+                        <FieldDescription>
+                            Update access permissions across all entries
+                        </FieldDescription>
+                    </FieldContent>
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className='self-center'
+                        onClick={handlePropagateAccessVectors}
+                    >
+                        <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
+                        Propagate
+                    </Button>
+                </Field>
 
-                    <div className='space-y-4'>
-                        <Card className='rounded-lg border-border bg-muted/5 space-y-0'>
-                            <CardContent className='px-4 py-1'>
-                                <Field orientation='horizontal' className='py-2'>
-                                    <FieldContent className='flex-1'>
-                                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                            Propagate Access Vectors
-                                        </FieldLabel>
-                                        <FieldDescription className='text-sm'>
-                                            Update access permissions across all entries
-                                        </FieldDescription>
-                                    </FieldContent>
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        size='sm'
-                                        className='self-center'
-                                        onClick={handlePropagateAccessVectors}
-                                    >
-                                        <HardDrivesIcon
-                                            className='w-3.5 h-3.5'
-                                            weight='bold'
-                                        />
-                                        Propagate
-                                    </Button>
-                                </Field>
-
-                                <Separator />
-
-                                <Field orientation='horizontal' className='py-2'>
-                                    <FieldContent className='flex-1'>
-                                        <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
-                                            Delete Hanging Artifacts
-                                        </FieldLabel>
-                                        <FieldDescription className='text-sm'>
-                                            Remove artifacts that are no longer
-                                            referenced
-                                        </FieldDescription>
-                                    </FieldContent>
-                                    <Button
-                                        type='button'
-                                        variant='destructive'
-                                        size='sm'
-                                        className='self-center'
-                                        onClick={handleDeleteHangingArtifacts}
-                                    >
-                                        <TrashIcon
-                                            className='w-3.5 h-3.5'
-                                            weight='bold'
-                                        />
-                                        Delete
-                                    </Button>
-                                </Field>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </section>
+                <Field orientation='horizontal' className='gap-2'>
+                    <FieldContent className='flex-1'>
+                        <FieldLabel className='text-sm block mb-0.5'>
+                            Delete Hanging Artifacts
+                        </FieldLabel>
+                        <FieldDescription>
+                            Remove artifacts that are no longer referenced
+                        </FieldDescription>
+                    </FieldContent>
+                    <Button
+                        type='button'
+                        variant='destructive'
+                        size='sm'
+                        className='self-center'
+                        onClick={handleDeleteHangingArtifacts}
+                    >
+                        <TrashIcon className='w-3.5 h-3.5' weight='bold' />
+                        Delete
+                    </Button>
+                </Field>
             </div>
         </div>
     );

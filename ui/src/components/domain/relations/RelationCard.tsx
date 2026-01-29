@@ -110,7 +110,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                 <div className='text-foreground text-sm space-y-1 -mt-1 mb-2'>
                     <div className='grid grid-cols-[100px_1fr] items-start gap-2'>
                         <strong className='text-foreground'>Entity 1</strong>
-                        <div>
+                        <div className='min-w-0'>
                             <span
                                 className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e1?.color ? 'text-primary' : ''}`}
                                 style={
@@ -129,7 +129,7 @@ export default function RelationCard({ relation, onDelete }: RelationCardProps) 
                     </div>
                     <div className='grid grid-cols-[100px_1fr] items-start gap-2'>
                         <strong className='text-foreground'>Entity 2</strong>
-                        <div>
+                        <div className='min-w-0'>
                             <span
                                 className={`underline cursor-pointer px-1 py-0.5 rounded hover:bg-secondary hover:text-secondary-foreground transition-colors ${!relation.e2?.color ? 'text-primary' : ''}`}
                                 style={

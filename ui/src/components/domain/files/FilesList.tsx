@@ -117,7 +117,7 @@ export default function FilesList({
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
         (search as any)?.files_sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState((search as any)?.files_pagesize || 10);
+    const [pageSize, setPageSize] = useState((search as any)?.files_pagesize || 20);
     const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
     const [bulkDeleteFileIds, setBulkDeleteFileIds] = useState<string[]>([]);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

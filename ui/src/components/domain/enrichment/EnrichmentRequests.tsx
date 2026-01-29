@@ -53,7 +53,7 @@ export default function EnrichmentRequests() {
     const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>(
         (search as any)?.sort_direction || 'desc',
     );
-    const [pageSize, setPageSize] = useState((search as any)?.pagesize || 10);
+    const [pageSize, setPageSize] = useState((search as any)?.pagesize || 20);
     const [selectedRequests, setSelectedRequests] = useState<string[]>([]);
 
     // Search state
@@ -279,7 +279,7 @@ export default function EnrichmentRequests() {
         <div className='w-full h-full'>
             {/* Header Section */}
             <div className='flex flex-wrap items-end justify-between gap-2 px-4 pt-4'>
-                <div>
+                <div className='space-y-1'>
                     <h2 className='text-2xl font-bold tracking-tight'>
                         Enrichment Requests
                     </h2>

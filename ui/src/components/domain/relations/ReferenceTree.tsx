@@ -176,7 +176,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                     </Button>
                                                 </CollapsibleTrigger>
                                                 <CollapsibleContent>
-                                                    <div className='text-muted-foreground text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
+                                                    <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>
                                                         {children}
                                                     </div>
                                                 </CollapsibleContent>
@@ -219,7 +219,7 @@ export default function ReferenceTree({ note, className }: ReferenceTreeProps) {
                                                         </Button>
                                                     </CollapsibleTrigger>
                                                     <CollapsibleContent>
-                                                        <div className='text-muted-foreground text-xs w-full break-all flex flex-row flex-wrap justify-start items-center mt-4'>
+                                                        <div className='text-muted-foreground text-xs w-full break-all flex flex-wrap justify-start items-center mt-4'>
                                                             {/* Render the actual references */}
                                                             {references[fullPath]?.map(
                                                                 (entry) => (

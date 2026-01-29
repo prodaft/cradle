@@ -7,6 +7,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from '@/components/ui/input-group';
 import useApi from '@/hooks/api/useApi';
 import { Alert } from '@/types';
 import {
@@ -16,7 +22,8 @@ import {
     WarningCircleIcon,
 } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 
 /**
  * ApiKeyGenerateDialog component props
@@ -51,7 +58,6 @@ export default function ApiKeyGenerateDialog({
     const { usersApi } = useApi();
     const [apiKey, setApiKey] = useState<string | null>(null);
     const [showApiKey, setShowApiKey] = useState(false);
-    const [copied, setCopied] = useState(false);
     const [alert, setAlert] = useState<Alert>({
         show: false,
         message: '',
@@ -84,35 +90,23 @@ export default function ApiKeyGenerateDialog({
         generateMutation.mutate();
     };
 
-    const handleCopy = async () => {
+    const handleCopy = useCallback(async () => {
         if (apiKey) {
             await navigator.clipboard.writeText(apiKey);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
+            toast.success('API key copied to clipboard!');
         }
-    };
-
-    const maskApiKey = (key: string) => {
-        if (key.length <= 8) return '****';
-        return `${key.slice(0, 4)}${'*'.repeat(key.length - 8)}${key.slice(-4)}`;
-    };
+    }, [apiKey]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Generate API Key</DialogTitle>
-                    {!apiKey ? (
-                        <DialogDescription>
-                            Generating a new API key will invalidate your current key.
-                            Any applications using the old key will stop working.
-                        </DialogDescription>
-                    ) : (
-                        <DialogDescription className='sr-only'>
-                            API key has been generated. Copy it now as you won't be able
-                            to see it again.
-                        </DialogDescription>
-                    )}
+                    <DialogDescription>
+                        {!apiKey
+                            ? 'Generating a new API key will invalidate your current key. Any applications using the old key will stop working.'
+                            : "API key has been generated. Copy it now as you won't be able to see it again."}
+                    </DialogDescription>
                 </DialogHeader>
 
                 {!apiKey ? (
@@ -155,69 +149,43 @@ export default function ApiKeyGenerateDialog({
                     </>
                 ) : (
                     <>
-                        {/* Success Section */}
-                        <div className='mb-6 p-4 border border-border bg-secondary/30 rounded-lg'>
-                            <div className='flex items-start gap-3'>
-                                <div className='w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0'></div>
-                                <div className='flex-1'>
-                                    <h3 className='text-sm font-semibold text-foreground mb-1'>
-                                        API Key Generated
-                                    </h3>
-                                    <p className='text-xs text-muted-foreground mb-3'>
-                                        Copy this key now. For security reasons, you
-                                        won't be able to see it again.
-                                    </p>
-
-                                    {/* API Key Display */}
-                                    <div className='flex items-center gap-2 bg-background p-3 border border-border rounded-lg'>
-                                        <code className='flex-1 font-mono text-sm text-foreground select-all break-all'>
-                                            {showApiKey ? apiKey : maskApiKey(apiKey)}
-                                        </code>
-                                        <Button
-                                            type='button'
-                                            variant='ghost'
-                                            size='icon-sm'
-                                            onClick={() => setShowApiKey(!showApiKey)}
-                                            title={
-                                                showApiKey
-                                                    ? 'Hide API key'
-                                                    : 'Show API key'
-                                            }
-                                        >
-                                            {showApiKey ? (
-                                                <EyeIcon
-                                                    className='w-4 h-4'
-                                                    weight='bold'
-                                                />
-                                            ) : (
-                                                <EyeSlashIcon
-                                                    className='w-4 h-4'
-                                                    weight='bold'
-                                                />
-                                            )}
-                                        </Button>
-                                        <Button
-                                            type='button'
-                                            variant='ghost'
-                                            size='icon-sm'
-                                            onClick={handleCopy}
-                                            title={copied ? 'Copied!' : 'Copy API key'}
-                                        >
-                                            <CopyIcon
-                                                className='w-4 h-4'
-                                                weight='bold'
-                                            />
-                                        </Button>
-                                    </div>
-                                    {copied && (
-                                        <p className='text-xs text-primary mt-2 font-medium'>
-                                            API key copied to clipboard!
-                                        </p>
+                        {/* API Key Display */}
+                        <InputGroup>
+                            <InputGroupInput
+                                type={showApiKey ? 'text' : 'password'}
+                                value={apiKey}
+                                readOnly
+                                className='font-mono'
+                            />
+                            <InputGroupAddon align='inline-end' className='flex gap-1'>
+                                <InputGroupButton
+                                    type='button'
+                                    onClick={() => setShowApiKey(!showApiKey)}
+                                    aria-label={
+                                        showApiKey ? 'Hide API key' : 'Show API key'
+                                    }
+                                    title={showApiKey ? 'Hide API key' : 'Show API key'}
+                                >
+                                    {showApiKey ? (
+                                        <EyeSlashIcon
+                                            className='size-4'
+                                            weight='bold'
+                                        />
+                                    ) : (
+                                        <EyeIcon className='size-4' weight='bold' />
                                     )}
-                                </div>
-                            </div>
-                        </div>
-                        <div className='flex justify-end gap-2 mt-4'>
+                                </InputGroupButton>
+                                <InputGroupButton
+                                    type='button'
+                                    onClick={handleCopy}
+                                    aria-label='Copy API key'
+                                    title='Copy API key'
+                                >
+                                    <CopyIcon className='size-4' weight='bold' />
+                                </InputGroupButton>
+                            </InputGroupAddon>
+                        </InputGroup>
+                        <div className='flex justify-end gap-2'>
                             <Button
                                 type='button'
                                 variant='outline'

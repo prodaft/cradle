@@ -268,7 +268,7 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
                             <div className='px-4 py-3 bg-muted/30 border-t space-y-3'>
                                 {/* Main event details */}
                                 {hasDetails && (
-                                    <div>
+                                    <div className='space-y-1.5'>
                                         <div className='text-xs font-medium text-muted-foreground mb-1.5'>
                                             Changes
                                         </div>
@@ -282,7 +282,7 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
 
                                 {/* Source log section */}
                                 {hasSrcLog && srcLogFormatted && (
-                                    <div>
+                                    <div className='space-y-1.5'>
                                         <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
                                             <GitForkIcon className='size-3.5' />
                                             <span>Triggered by</span>
@@ -569,7 +569,7 @@ export default function ActivityList({
             {isPaused && <OfflineIndicator />}
 
             {loading ? (
-                <div className='flex items-center justify-center min-h-[200px]'>
+                <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                     <Spinner className='size-10' />
                 </div>
             ) : events.length > 0 ? (

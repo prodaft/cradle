@@ -1,5 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
+import { EyeIcon, EyeSlashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { Button } from 'src/components/ui/button';
 import {
@@ -9,8 +11,19 @@ import {
     DialogHeader,
     DialogTitle,
 } from 'src/components/ui/dialog';
-import { Field, FieldContent, FieldError, FieldLabel } from 'src/components/ui/field';
-import { Input } from 'src/components/ui/input';
+import {
+    Field,
+    FieldContent,
+    FieldDescription,
+    FieldError,
+    FieldLabel,
+} from 'src/components/ui/field';
+import {
+    InputGroup,
+    InputGroupAddon,
+    InputGroupButton,
+    InputGroupInput,
+} from 'src/components/ui/input-group';
 import useApi from 'src/hooks/api/useApi';
 import { z } from 'zod';
 
@@ -54,6 +67,9 @@ export default function ChangePasswordDialog({
     onOpenChange,
 }: ChangePasswordDialogProps) {
     const { authApi } = useApi();
+    const [showOldPassword, setShowOldPassword] = useState(false);
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     const changePasswordMutation = useMutation({
         mutationFn: async (data: { oldPassword: string; newPassword: string }) => {
@@ -91,12 +107,11 @@ export default function ChangePasswordDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>Change Password</DialogTitle>
                     <DialogDescription>
-                        Choose a strong password that you haven't used elsewhere. For
-                        security, you'll need to enter your current password first.
+                        Choose a strong password that you haven't used elsewhere.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -108,16 +123,50 @@ export default function ChangePasswordDialog({
                             <Field data-invalid={fieldState.invalid}>
                                 <FieldContent>
                                     <FieldLabel htmlFor={field.name}>
-                                        Current Password
+                                        Current Password{' '}
+                                        <span className='text-destructive'>*</span>
                                     </FieldLabel>
-                                    <Input
-                                        {...field}
-                                        id={field.name}
-                                        type='password'
-                                        placeholder='Enter current password'
-                                        aria-invalid={fieldState.invalid}
-                                        disabled={form.formState.isSubmitting}
-                                    />
+                                    <InputGroup>
+                                        <InputGroupInput
+                                            {...field}
+                                            id={field.name}
+                                            type={showOldPassword ? 'text' : 'password'}
+                                            placeholder='Enter current password'
+                                            aria-invalid={fieldState.invalid}
+                                            disabled={form.formState.isSubmitting}
+                                            required
+                                        />
+                                        <InputGroupAddon align='inline-end'>
+                                            <InputGroupButton
+                                                type='button'
+                                                onClick={() =>
+                                                    setShowOldPassword(!showOldPassword)
+                                                }
+                                                aria-label={
+                                                    showOldPassword
+                                                        ? 'Hide password'
+                                                        : 'Show password'
+                                                }
+                                                title={
+                                                    showOldPassword
+                                                        ? 'Hide password'
+                                                        : 'Show password'
+                                                }
+                                            >
+                                                {showOldPassword ? (
+                                                    <EyeSlashIcon
+                                                        className='size-4'
+                                                        weight='bold'
+                                                    />
+                                                ) : (
+                                                    <EyeIcon
+                                                        className='size-4'
+                                                        weight='bold'
+                                                    />
+                                                )}
+                                            </InputGroupButton>
+                                        </InputGroupAddon>
+                                    </InputGroup>
                                     {fieldState.invalid && (
                                         <FieldError errors={[fieldState.error]} />
                                     )}
@@ -134,16 +183,62 @@ export default function ChangePasswordDialog({
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldContent>
                                         <FieldLabel htmlFor={field.name}>
-                                            New Password
+                                            New Password{' '}
+                                            <span className='text-destructive'>*</span>
                                         </FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={field.name}
-                                            type='password'
-                                            placeholder='Enter new password'
-                                            aria-invalid={fieldState.invalid}
-                                            disabled={form.formState.isSubmitting}
-                                        />
+                                        <InputGroup>
+                                            <InputGroupInput
+                                                {...field}
+                                                id={field.name}
+                                                type={
+                                                    showNewPassword
+                                                        ? 'text'
+                                                        : 'password'
+                                                }
+                                                placeholder='Enter new password'
+                                                aria-invalid={fieldState.invalid}
+                                                disabled={form.formState.isSubmitting}
+                                                required
+                                            />
+                                            <InputGroupAddon align='inline-end'>
+                                                <InputGroupButton
+                                                    type='button'
+                                                    onClick={() =>
+                                                        setShowNewPassword(
+                                                            !showNewPassword,
+                                                        )
+                                                    }
+                                                    aria-label={
+                                                        showNewPassword
+                                                            ? 'Hide password'
+                                                            : 'Show password'
+                                                    }
+                                                    title={
+                                                        showNewPassword
+                                                            ? 'Hide password'
+                                                            : 'Show password'
+                                                    }
+                                                >
+                                                    {showNewPassword ? (
+                                                        <EyeSlashIcon
+                                                            className='size-4'
+                                                            weight='bold'
+                                                        />
+                                                    ) : (
+                                                        <EyeIcon
+                                                            className='size-4'
+                                                            weight='bold'
+                                                        />
+                                                    )}
+                                                </InputGroupButton>
+                                            </InputGroupAddon>
+                                        </InputGroup>
+                                        <FieldDescription>
+                                            Must be at least 12 characters and contain
+                                            at least one uppercase letter, one lowercase
+                                            letter, one digit, and one special
+                                            character.
+                                        </FieldDescription>
                                         {fieldState.invalid && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}
@@ -159,16 +254,56 @@ export default function ChangePasswordDialog({
                                 <Field data-invalid={fieldState.invalid}>
                                     <FieldContent>
                                         <FieldLabel htmlFor={field.name}>
-                                            Confirm New Password
+                                            Confirm New Password{' '}
+                                            <span className='text-destructive'>*</span>
                                         </FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={field.name}
-                                            type='password'
-                                            placeholder='Re-enter new password'
-                                            aria-invalid={fieldState.invalid}
-                                            disabled={form.formState.isSubmitting}
-                                        />
+                                        <InputGroup>
+                                            <InputGroupInput
+                                                {...field}
+                                                id={field.name}
+                                                type={
+                                                    showConfirmPassword
+                                                        ? 'text'
+                                                        : 'password'
+                                                }
+                                                placeholder='Re-enter new password'
+                                                aria-invalid={fieldState.invalid}
+                                                disabled={form.formState.isSubmitting}
+                                                required
+                                            />
+                                            <InputGroupAddon align='inline-end'>
+                                                <InputGroupButton
+                                                    type='button'
+                                                    onClick={() =>
+                                                        setShowConfirmPassword(
+                                                            !showConfirmPassword,
+                                                        )
+                                                    }
+                                                    aria-label={
+                                                        showConfirmPassword
+                                                            ? 'Hide password'
+                                                            : 'Show password'
+                                                    }
+                                                    title={
+                                                        showConfirmPassword
+                                                            ? 'Hide password'
+                                                            : 'Show password'
+                                                    }
+                                                >
+                                                    {showConfirmPassword ? (
+                                                        <EyeSlashIcon
+                                                            className='size-4'
+                                                            weight='bold'
+                                                        />
+                                                    ) : (
+                                                        <EyeIcon
+                                                            className='size-4'
+                                                            weight='bold'
+                                                        />
+                                                    )}
+                                                </InputGroupButton>
+                                            </InputGroupAddon>
+                                        </InputGroup>
                                         {fieldState.invalid && (
                                             <FieldError errors={[fieldState.error]} />
                                         )}
@@ -178,7 +313,7 @@ export default function ChangePasswordDialog({
                         />
                     </div>
 
-                    <div className='flex justify-end gap-2 mt-4'>
+                    <div className='flex justify-end gap-2'>
                         <Button
                             type='button'
                             variant='outline'

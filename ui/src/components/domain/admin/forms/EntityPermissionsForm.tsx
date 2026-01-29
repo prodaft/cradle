@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -17,9 +18,9 @@ import {
 } from '@/components/ui/table';
 import useApi from '@/hooks/api/useApi';
 import { AccessUser } from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type AccessLevel = 'none' | 'read' | 'read-write';
 
@@ -37,8 +38,12 @@ export default function EntityPermissionsForm({
     entityId,
 }: EntityPermissionsFormProps) {
     const { accessApi } = useApi();
+    const queryClient = useQueryClient();
     const [searchQuery, setSearchQuery] = useState('');
-    const [accessStates, setAccessStates] = useState<Record<string, AccessLevel>>({});
+    const [originalAccess, setOriginalAccess] = useState<Record<string, AccessLevel>>(
+        {},
+    );
+    const [currentAccess, setCurrentAccess] = useState<Record<string, AccessLevel>>({});
 
     // Query for access data
     const { data: accessData, isPending } = useQuery({
@@ -52,45 +57,84 @@ export default function EntityPermissionsForm({
     });
 
     // Initialize access states when data loads
-    useMemo(() => {
+    useEffect(() => {
         if (accessData) {
-            const states: Record<string, AccessLevel> = {};
+            const original: Record<string, AccessLevel> = {};
+            const current: Record<string, AccessLevel> = {};
             accessData.forEach((access: AccessUser) => {
                 if (access.user.id) {
-                    states[access.user.id] = access.accessType as AccessLevel;
+                    const accessType = access.accessType as AccessLevel;
+                    original[access.user.id] = accessType;
+                    current[access.user.id] = accessType;
                 }
             });
-            setAccessStates(states);
+            setOriginalAccess(original);
+            setCurrentAccess(current);
         }
     }, [accessData]);
 
-    const updateAccessMutation = useMutation({
-        mutationFn: async ({
-            userId,
-            accessType,
-        }: {
-            userId: string;
-            accessType: AccessLevel;
-        }) => {
-            await accessApi.accessUserUpdate({
-                userId,
-                entityId,
-                accessRequest: { accessType },
+    const handleAccessChange = (userId: string, newAccess: string) => {
+        const accessValue = newAccess as AccessLevel;
+        setCurrentAccess((prev) => ({
+            ...prev,
+            [userId]: accessValue,
+        }));
+    };
+
+    const hasChanges = () => {
+        if (!accessData) return false;
+        return accessData.some((access: AccessUser) => {
+            const userId = access.user.id;
+            if (!userId) return false;
+            const original = originalAccess[userId];
+            const current = currentAccess[userId];
+            return original !== current;
+        });
+    };
+
+    const saveChangesMutation = useMutation({
+        mutationFn: async () => {
+            if (!accessData) return;
+
+            const updates: Array<{ userId: string; accessType: AccessLevel }> = [];
+
+            accessData.forEach((access: AccessUser) => {
+                const userId = access.user.id;
+                if (!userId) return;
+                const original = originalAccess[userId];
+                const current = currentAccess[userId];
+                if (original !== current) {
+                    updates.push({
+                        userId,
+                        accessType: current,
+                    });
+                }
             });
+
+            // Save all changes
+            await Promise.all(
+                updates.map((update) =>
+                    accessApi.accessUserUpdate({
+                        userId: update.userId,
+                        entityId,
+                        accessRequest: { accessType: update.accessType },
+                    }),
+                ),
+            );
         },
         meta: {
-            successMessage: 'Access updated successfully',
+            successMessage: 'Permissions updated successfully',
         },
-        onSuccess: (_, { userId, accessType }) => {
-            setAccessStates((prev) => ({ ...prev, [userId]: accessType }));
+        onSuccess: () => {
+            // Update original access to match current
+            setOriginalAccess({ ...currentAccess });
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries();
         },
     });
 
-    const handleAccessChange = (userId: string, newAccess: string) => {
-        const accessValue = newAccess as AccessLevel;
-        if (accessStates[userId] !== accessValue) {
-            updateAccessMutation.mutate({ userId, accessType: accessValue });
-        }
+    const handleSave = () => {
+        saveChangesMutation.mutate();
     };
 
     const filteredAccesses = useMemo(() => {
@@ -149,8 +193,9 @@ export default function EntityPermissionsForm({
                             filteredAccesses.map((access: AccessUser) => {
                                 const user = access.user;
                                 const userId = user.id!;
-                                const currentAccess =
-                                    accessStates[userId] || access.accessType;
+                                const accessValue =
+                                    currentAccess[userId] ||
+                                    (access.accessType as AccessLevel);
 
                                 return (
                                     <TableRow key={userId}>
@@ -165,10 +210,11 @@ export default function EntityPermissionsForm({
                                         </TableCell>
                                         <TableCell>
                                             <Select
-                                                value={currentAccess}
+                                                value={accessValue}
                                                 onValueChange={(value) =>
                                                     handleAccessChange(userId, value)
                                                 }
+                                                disabled={saveChangesMutation.isPending}
                                             >
                                                 <SelectTrigger className='w-[140px]'>
                                                     <SelectValue />
@@ -191,6 +237,17 @@ export default function EntityPermissionsForm({
                         )}
                     </TableBody>
                 </Table>
+            </div>
+
+            {/* Save Changes Button */}
+            <div className='flex justify-end'>
+                <Button
+                    type='button'
+                    onClick={handleSave}
+                    disabled={saveChangesMutation.isPending || !hasChanges()}
+                >
+                    {saveChangesMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
             </div>
         </form>
     );

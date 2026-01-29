@@ -1,3 +1,4 @@
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -19,7 +20,7 @@ import useApi from '@/hooks/api/useApi';
 import { naturalSort } from '@/utils/dashboard';
 import { MagnifyingGlassIcon } from '@phosphor-icons/react';
 import { AccessRequestAccessTypeEnum } from '@services/cradle/models';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
 interface AdminPanelUserPermissionsProps {
@@ -41,34 +42,20 @@ const ACCESS_OPTIONS = [
 
 function PermissionRow({
     entity,
-    userId,
+    currentAccess,
+    onAccessChange,
+    isSaving,
 }: {
     entity: PermissionEntity;
-    userId: string;
+    currentAccess: 'none' | 'read' | 'read-write';
+    onAccessChange: (
+        entityId: number,
+        accessType: 'none' | 'read' | 'read-write',
+    ) => void;
+    isSaving: boolean;
 }) {
-    const [currentAccess, setCurrentAccess] = useState(entity.accessType);
-    const { accessApi } = useApi();
-
-    const updateAccessMutation = useMutation({
-        mutationFn: async (accessType: AccessRequestAccessTypeEnum) => {
-            await accessApi.accessUserUpdate({
-                userId: userId,
-                entityId: entity.id,
-                accessRequest: { accessType },
-            });
-        },
-        meta: {
-            successMessage: 'Access updated successfully',
-        },
-        onSuccess: (_, accessType) => {
-            setCurrentAccess(accessType as PermissionEntity['accessType']);
-        },
-    });
-
     const handleChange = (newAccess: string) => {
-        if (currentAccess !== newAccess) {
-            updateAccessMutation.mutate(newAccess as AccessRequestAccessTypeEnum);
-        }
+        onAccessChange(entity.id, newAccess as 'none' | 'read' | 'read-write');
     };
 
     return (
@@ -82,7 +69,7 @@ function PermissionRow({
                 <Select
                     value={currentAccess}
                     onValueChange={handleChange}
-                    disabled={updateAccessMutation.isPending}
+                    disabled={isSaving}
                 >
                     <SelectTrigger className='w-[140px]'>
                         <SelectValue />
@@ -104,9 +91,16 @@ export default function AdminPanelUserPermissions({
     id,
 }: AdminPanelUserPermissionsProps) {
     const [entities, setEntities] = useState<PermissionEntity[]>([]);
+    const [originalAccess, setOriginalAccess] = useState<
+        Record<number, 'none' | 'read' | 'read-write'>
+    >({});
+    const [currentAccess, setCurrentAccess] = useState<
+        Record<number, 'none' | 'read' | 'read-write'>
+    >({});
     const [searchVal, setSearchVal] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const { accessApi } = useApi();
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         const fetchPermissions = async () => {
@@ -115,15 +109,24 @@ export default function AdminPanelUserPermissions({
                 const permissions = await accessApi.accessUserList({
                     userId: String(id),
                 });
-                setEntities(
-                    permissions.map((c) => ({
-                        id: c.id,
-                        name: c.name,
-                        description: (c as { description?: string }).description,
-                        accessType: (c.accessType ??
-                            'none') as PermissionEntity['accessType'],
-                    })),
-                );
+                const fetchedEntities = permissions.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    description: (c as { description?: string }).description,
+                    accessType: (c.accessType ??
+                        'none') as PermissionEntity['accessType'],
+                }));
+                setEntities(fetchedEntities);
+
+                // Initialize original and current access
+                const original: Record<number, 'none' | 'read' | 'read-write'> = {};
+                const current: Record<number, 'none' | 'read' | 'read-write'> = {};
+                fetchedEntities.forEach((entity) => {
+                    original[entity.id] = entity.accessType;
+                    current[entity.id] = entity.accessType;
+                });
+                setOriginalAccess(original);
+                setCurrentAccess(current);
             } catch (error) {
                 setEntities([]);
             } finally {
@@ -134,7 +137,69 @@ export default function AdminPanelUserPermissions({
         if (id) {
             fetchPermissions();
         }
-    }, [id]);
+    }, [id, accessApi]);
+
+    const handleAccessChange = (
+        entityId: number,
+        accessType: 'none' | 'read' | 'read-write',
+    ) => {
+        setCurrentAccess((prev) => ({
+            ...prev,
+            [entityId]: accessType,
+        }));
+    };
+
+    const hasChanges = () => {
+        return entities.some((entity) => {
+            const original = originalAccess[entity.id];
+            const current = currentAccess[entity.id];
+            return original !== current;
+        });
+    };
+
+    const saveChangesMutation = useMutation({
+        mutationFn: async () => {
+            const updates: Array<{
+                entityId: number;
+                accessType: AccessRequestAccessTypeEnum;
+            }> = [];
+
+            entities.forEach((entity) => {
+                const original = originalAccess[entity.id];
+                const current = currentAccess[entity.id];
+                if (original !== current) {
+                    updates.push({
+                        entityId: entity.id,
+                        accessType: current as AccessRequestAccessTypeEnum,
+                    });
+                }
+            });
+
+            // Save all changes
+            await Promise.all(
+                updates.map((update) =>
+                    accessApi.accessUserUpdate({
+                        userId: String(id),
+                        entityId: update.entityId,
+                        accessRequest: { accessType: update.accessType },
+                    }),
+                ),
+            );
+        },
+        meta: {
+            successMessage: 'Permissions updated successfully',
+        },
+        onSuccess: () => {
+            // Update original access to match current
+            setOriginalAccess({ ...currentAccess });
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries();
+        },
+    });
+
+    const handleSave = () => {
+        saveChangesMutation.mutate();
+    };
 
     // Filter entities based on search
     const filteredEntities = entities
@@ -147,7 +212,7 @@ export default function AdminPanelUserPermissions({
 
     if (isLoading) {
         return (
-            <div className='flex items-center justify-center min-h-[200px]'>
+            <div className='flex items-center justify-center min-h-[200px] text-foreground'>
                 <Spinner className='size-10' />
             </div>
         );
@@ -187,7 +252,11 @@ export default function AdminPanelUserPermissions({
                                 <PermissionRow
                                     key={entity.id}
                                     entity={entity}
-                                    userId={id}
+                                    currentAccess={
+                                        currentAccess[entity.id] || entity.accessType
+                                    }
+                                    onAccessChange={handleAccessChange}
+                                    isSaving={saveChangesMutation.isPending}
                                 />
                             ))}
                         </TableBody>
@@ -201,6 +270,17 @@ export default function AdminPanelUserPermissions({
                         </p>
                     </div>
                 )}
+            </div>
+
+            {/* Save Changes Button */}
+            <div className='flex justify-end pt-4'>
+                <Button
+                    type='button'
+                    onClick={handleSave}
+                    disabled={saveChangesMutation.isPending || !hasChanges()}
+                >
+                    {saveChangesMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
             </div>
         </div>
     );
