@@ -4,7 +4,6 @@ import {
     FieldDescription,
     FieldLabel,
 } from '@/components/ui/field';
-import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import useApi from '@/hooks/api/useApi';
 import { useMutation } from '@tanstack/react-query';
@@ -69,9 +68,7 @@ export default function AdminPanelPermissionCard({
                     <FieldLabel className='text-sm text-muted-foreground block mb-0.5'>
                         {text}
                     </FieldLabel>
-                    <FieldDescription>
-                        Entity access permissions
-                    </FieldDescription>
+                    <FieldDescription>Entity access permissions</FieldDescription>
                 </FieldContent>
                 <RadioGroup
                     value={currentAccess}
@@ -84,12 +81,12 @@ export default function AdminPanelPermissionCard({
                         return (
                             <div key={option.value} className='flex items-center gap-2'>
                                 <RadioGroupItem value={option.value} id={optionId} />
-                                <Label
+                                <FieldLabel
                                     htmlFor={optionId}
                                     className='text-sm text-foreground cursor-pointer'
                                 >
                                     {option.label}
-                                </Label>
+                                </FieldLabel>
                             </div>
                         );
                     })}

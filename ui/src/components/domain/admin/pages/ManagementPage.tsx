@@ -1,3 +1,4 @@
+import { CardContent } from '@/components/ui/card';
 import {
     Select,
     SelectContent,
@@ -169,7 +170,7 @@ export default function ManagementPage() {
                     <div className='flex w-full overflow-y-hidden p-1'>
                         <div className='flex flex-1 flex-col'>
                             <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                                <div className='px-6' data-slot='card-content'>
+                                <CardContent>
                                     <div className='flex-none mb-4'>
                                         <h3 className='text-lg font-medium'>
                                             {currentTab?.label || 'Settings'}
@@ -181,7 +182,7 @@ export default function ManagementPage() {
                                     <Separator
                                         data-orientation='horizontal'
                                         role='none'
-                                        className='bg-border mb-6 flex-none'
+                                        className='bg-border mb-4 flex-none'
                                     />
                                     {SettingComponent ? (
                                         <SettingComponent />
@@ -194,7 +195,7 @@ export default function ManagementPage() {
                                             </div>
                                         </div>
                                     )}
-                                </div>
+                                </CardContent>
                             </div>
                         </div>
                     </div>

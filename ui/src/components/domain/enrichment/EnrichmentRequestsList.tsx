@@ -82,7 +82,7 @@ interface EnrichmentRequestsListProps {
     onSearchSubmit?: (e: FormEvent) => void;
     selectedRequests?: string[];
     setSelectedRequests?: (ids: string[]) => void;
-    onDeleteSelected?: () => void;
+    onDeleteSelected?: (ids: string[]) => void;
     onRerunSelected?: () => void;
     onCreateRequest?: () => void;
 }
@@ -105,7 +105,7 @@ function EnrichmentRequestsList({
     onSearchSubmit = () => {},
     selectedRequests = [],
     setSelectedRequests = () => {},
-    onDeleteSelected = () => {},
+    onDeleteSelected,
     onRerunSelected = () => {},
     onCreateRequest = () => {},
 }: EnrichmentRequestsListProps) {
@@ -514,7 +514,9 @@ function EnrichmentRequestsList({
                     }
                 }}
                 onConfirm={() => {
-                    onDeleteSelected();
+                    if (deleteRequestIds.length > 0) {
+                        onDeleteSelected?.(deleteRequestIds);
+                    }
                     setDeleteRequestIds([]);
                 }}
                 text={`Are you sure you want to delete ${deleteRequestIds.length} request${deleteRequestIds.length > 1 ? 's' : ''}? This action is irreversible.`}

@@ -1,13 +1,15 @@
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useTheme } from '@/contexts/ui';
 import { markdown } from '@codemirror/lang-markdown';
 import { languages } from '@codemirror/language-data';
@@ -102,14 +104,14 @@ export default function MarkdownEditorDialog({
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>New snippet</DialogTitle>
-                    <DialogDescription className='sr-only'>
+                    <DialogDescription>
                         Edit markdown content for this note
                     </DialogDescription>
                 </DialogHeader>
 
                 {/* Title Section */}
-                <div className='grid w-full items-center gap-3'>
-                    <Label htmlFor='note-title'>Title</Label>
+                <Field>
+                    <FieldLabel htmlFor='note-title'>Title</FieldLabel>
                     <Input
                         id='note-title'
                         type='text'
@@ -118,11 +120,11 @@ export default function MarkdownEditorDialog({
                         placeholder='Enter title'
                         disabled={!titleEditable}
                     />
-                </div>
+                </Field>
 
                 {/* Editor Section */}
-                <div className='grid w-full items-center gap-3'>
-                    <Label htmlFor='markdown-content'>Content</Label>
+                <Field>
+                    <FieldLabel htmlFor='markdown-content'>Content</FieldLabel>
                     <div className='border border-border rounded-lg overflow-hidden'>
                         <CodeMirror
                             value={userInput}
@@ -135,7 +137,7 @@ export default function MarkdownEditorDialog({
                             width='100%'
                         />
                     </div>
-                </div>
+                </Field>
 
                 {/* Help Text Section */}
                 {helpText && (
@@ -149,16 +151,12 @@ export default function MarkdownEditorDialog({
                     </div>
                 )}
 
-                {/* Actions */}
-                <div className='flex justify-end gap-2 pt-4'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cancel
-                    </Button>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type='button' variant='outline' size='sm'>
+                            Cancel
+                        </Button>
+                    </DialogClose>
                     <Button
                         type='button'
                         variant='default'
@@ -167,7 +165,7 @@ export default function MarkdownEditorDialog({
                     >
                         Save
                     </Button>
-                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

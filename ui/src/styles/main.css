@@ -19,10 +19,18 @@
 @import './globals.css';
 
 /* ============================================
-   PROSEMARK CSS VARIABLES - Light Mode
+   PROSEMARK – :root (per ProseMark Getting Started)
    ============================================ */
 :root {
-    --pm-header-mark-color: #ff8c00;
+    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --pm-header-mark-color: oklch(82.8% 0.111 230.318);
     --pm-link-color: oklch(58.8% 0.158 241.966);
     --pm-muted-color: oklch(37.2% 0.044 257.287);
     --pm-code-background-color: oklch(92.9% 0.013 255.508);
@@ -45,13 +53,21 @@
     --pm-syntax-comment: oklch(62.79% 0.022 252.89);
     --pm-syntax-invalid: oklch(64.62% 0.203 29.2);
     --pm-cursor-color: black;
+
+    --pm-spellcheck-tooltip-background: oklch(100% 0 0);
+    --pm-spellcheck-tooltip-border: oklch(82% 0.005 264);
+    --pm-spellcheck-tooltip-text: oklch(30% 0.02 264);
+    --pm-spellcheck-tooltip-error: oklch(55% 0.22 29);
+    --pm-spellcheck-tooltip-hover: oklch(96% 0.005 264);
+    --pm-spellcheck-tooltip-actions-border: oklch(82% 0.005 264);
+    --pm-spellcheck-tooltip-font-size: 0.9rem;
 }
 
 /* ============================================
-   PROSEMARK CSS VARIABLES - Dark Mode
+   PROSEMARK – Dark theme (per ProseMark Getting Started)
    ============================================ */
-[data-theme='dark'] {
-    --pm-header-mark-color: #ff8c00;
+:root[data-theme='dark'] {
+    --pm-header-mark-color: oklch(44.3% 0.11 240.79);
     --pm-link-color: oklch(58.8% 0.158 241.966);
     --pm-muted-color: oklch(55.4% 0.046 257.417);
     --pm-code-background-color: oklch(27.9% 0.041 260.031);
@@ -74,6 +90,25 @@
     --pm-syntax-comment: oklch(74.9% 0.02 252.89);
     --pm-syntax-invalid: oklch(75.93% 0.182 28.91);
     --pm-cursor-color: white;
+
+    --pm-spellcheck-tooltip-background: oklch(25% 0.02 264);
+    --pm-spellcheck-tooltip-border: oklch(40% 0.02 264);
+    --pm-spellcheck-tooltip-text: oklch(75% 0.02 264);
+    --pm-spellcheck-tooltip-error: oklch(65% 0.22 29);
+    --pm-spellcheck-tooltip-hover: oklch(35% 0.02 264);
+    --pm-spellcheck-tooltip-actions-border: oklch(40% 0.02 264);
+}
+
+/* ============================================
+   PROSEMARK – #codemirror-container (per ProseMark Getting Started)
+   ============================================ */
+#codemirror-container {
+    min-height: 100px;
+    width: 100%;
+    --font: Inter;
+}
+#codemirror-container * {
+    margin-top: 0;
 }
 
 /* ============================================

@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -188,7 +190,7 @@ export default function FileUploadDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='overflow-hidden'>
+            <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Upload Files</DialogTitle>
                     <DialogDescription>
@@ -197,133 +199,130 @@ export default function FileUploadDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                {/* File Upload Section */}
-                <div className='w-full overflow-hidden'>
-                    <FileUpload
-                        value={pendingFiles}
-                        onValueChange={handleValueChange}
-                        multiple
-                        disabled={isUploading}
-                    >
-                        <FileUploadDropzone className='min-h-[120px]'>
-                            <div className='flex flex-col items-center gap-2 text-center'>
-                                <CloudArrowUpIcon
-                                    className='h-8 w-8 text-muted-foreground'
-                                    weight='bold'
-                                />
-                                <div className='text-sm text-muted-foreground'>
-                                    <span className='font-medium text-foreground'>
-                                        Drop files here
-                                    </span>{' '}
-                                    or click to browse
-                                </div>
-                                <FileUploadTrigger asChild>
-                                    <Button
-                                        type='button'
-                                        variant='outline'
-                                        size='sm'
-                                        disabled={isUploading}
-                                    >
-                                        Select Files
-                                    </Button>
-                                </FileUploadTrigger>
+                <FileUpload
+                    className='w-full overflow-hidden'
+                    value={pendingFiles}
+                    onValueChange={handleValueChange}
+                    multiple
+                    disabled={isUploading}
+                >
+                    <FileUploadDropzone className='min-h-[120px]'>
+                        <div className='flex flex-col items-center gap-2 text-center'>
+                            <CloudArrowUpIcon
+                                className='h-8 w-8 text-muted-foreground'
+                                weight='bold'
+                            />
+                            <div className='text-sm text-muted-foreground'>
+                                <span className='font-medium text-foreground'>
+                                    Drop files here
+                                </span>{' '}
+                                or click to browse
                             </div>
-                        </FileUploadDropzone>
+                            <FileUploadTrigger asChild>
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='sm'
+                                    disabled={isUploading}
+                                >
+                                    Select Files
+                                </Button>
+                            </FileUploadTrigger>
+                        </div>
+                    </FileUploadDropzone>
 
-                        <FileUploadList className='mt-4 max-h-48 overflow-y-auto'>
-                            {pendingFiles.map((file) => {
-                                const fileStatus = getFileStatus(file);
-                                const status = fileStatus?.status || 'pending';
-                                const progress = fileStatus?.progress || 0;
+                    <FileUploadList className='mt-4 max-h-48 overflow-y-auto'>
+                        {pendingFiles.map((file) => {
+                            const fileStatus = getFileStatus(file);
+                            const status = fileStatus?.status || 'pending';
+                            const progress = fileStatus?.progress || 0;
 
-                                return (
-                                    <FileUploadItem
-                                        key={file.name + file.lastModified}
-                                        value={file}
-                                        className={`group ${
-                                            status === 'error'
-                                                ? 'border-destructive/50 bg-destructive/5'
-                                                : status === 'success'
-                                                  ? 'border-primary/50 bg-primary/5'
-                                                  : ''
-                                        }`}
-                                    >
-                                        <FileUploadItemPreview />
-                                        <FileUploadItemMetadata />
+                            return (
+                                <FileUploadItem
+                                    key={file.name + file.lastModified}
+                                    value={file}
+                                    className={`group ${
+                                        status === 'error'
+                                            ? 'border-destructive/50 bg-destructive/5'
+                                            : status === 'success'
+                                              ? 'border-primary/50 bg-primary/5'
+                                              : ''
+                                    }`}
+                                >
+                                    <FileUploadItemPreview />
+                                    <FileUploadItemMetadata />
 
-                                        {/* Progress indicator */}
-                                        {status === 'uploading' && (
-                                            <div className='flex items-center gap-2'>
-                                                <div className='w-16 h-1.5 bg-muted rounded-full overflow-hidden'>
-                                                    <div
-                                                        className='h-full bg-primary transition-all duration-300'
-                                                        style={{
-                                                            width: `${progress}%`,
-                                                        }}
-                                                    />
-                                                </div>
-                                                <span className='text-xs text-muted-foreground'>
-                                                    {progress}%
-                                                </span>
+                                    {/* Progress indicator */}
+                                    {status === 'uploading' && (
+                                        <div className='flex items-center gap-2'>
+                                            <div className='w-16 h-1.5 bg-muted rounded-full overflow-hidden'>
+                                                <div
+                                                    className='h-full bg-primary transition-all duration-300'
+                                                    style={{
+                                                        width: `${progress}%`,
+                                                    }}
+                                                />
                                             </div>
-                                        )}
-
-                                        {/* Status indicator */}
-                                        {status === 'success' && (
-                                            <span className='text-xs text-primary font-medium'>
-                                                ✓
+                                            <span className='text-xs text-muted-foreground'>
+                                                {progress}%
                                             </span>
-                                        )}
-                                        {status === 'error' && (
-                                            <span className='text-xs text-destructive font-medium'>
-                                                Failed
-                                            </span>
-                                        )}
+                                        </div>
+                                    )}
 
-                                        {/* Delete button - only show when not uploading */}
-                                        {status === 'pending' && (
-                                            <FileUploadItemDelete asChild>
-                                                <Button
-                                                    type='button'
-                                                    variant='ghost'
-                                                    size='icon'
-                                                    className='h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity'
-                                                >
-                                                    <XIcon
-                                                        className='h-4 w-4'
-                                                        weight='bold'
-                                                    />
-                                                    <span className='sr-only'>
-                                                        Remove file
-                                                    </span>
-                                                </Button>
-                                            </FileUploadItemDelete>
-                                        )}
-                                    </FileUploadItem>
-                                );
-                            })}
-                        </FileUploadList>
+                                    {/* Status indicator */}
+                                    {status === 'success' && (
+                                        <span className='text-xs text-primary font-medium'>
+                                            ✓
+                                        </span>
+                                    )}
+                                    {status === 'error' && (
+                                        <span className='text-xs text-destructive font-medium'>
+                                            Failed
+                                        </span>
+                                    )}
 
-                        {/* Clear all button */}
-                        {pendingFiles.length > 1 && !isUploading && (
-                            <div className='mt-2 flex justify-end'>
-                                <FileUploadClear asChild>
-                                    <Button
-                                        type='button'
-                                        variant='ghost'
-                                        size='sm'
-                                        className='text-muted-foreground hover:text-foreground'
-                                    >
-                                        Clear all
-                                    </Button>
-                                </FileUploadClear>
-                            </div>
-                        )}
-                    </FileUpload>
-                </div>
+                                    {/* Delete button - only show when not uploading */}
+                                    {status === 'pending' && (
+                                        <FileUploadItemDelete asChild>
+                                            <Button
+                                                type='button'
+                                                variant='ghost'
+                                                size='icon'
+                                                className='h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity'
+                                            >
+                                                <XIcon
+                                                    className='h-4 w-4'
+                                                    weight='bold'
+                                                />
+                                                <span className='sr-only'>
+                                                    Remove file
+                                                </span>
+                                            </Button>
+                                        </FileUploadItemDelete>
+                                    )}
+                                </FileUploadItem>
+                            );
+                        })}
+                    </FileUploadList>
 
-                {/* Actions */}
-                <div className='flex justify-end gap-2 mt-4'>
+                    {/* Clear all button */}
+                    {pendingFiles.length > 1 && !isUploading && (
+                        <div className='mt-2 flex justify-end'>
+                            <FileUploadClear asChild>
+                                <Button
+                                    type='button'
+                                    variant='ghost'
+                                    size='sm'
+                                    className='text-muted-foreground hover:text-foreground'
+                                >
+                                    Clear all
+                                </Button>
+                            </FileUploadClear>
+                        </div>
+                    )}
+                </FileUpload>
+
+                <DialogFooter>
                     {pendingFiles.length > 0 && (
                         <Button
                             type='button'
@@ -351,15 +350,12 @@ export default function FileUploadDialog({
                             )}
                         </Button>
                     )}
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Done
-                    </Button>
-                </div>
+                    <DialogClose asChild>
+                        <Button type='button' variant='outline' size='sm'>
+                            Done
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

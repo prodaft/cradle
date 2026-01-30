@@ -700,282 +700,270 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
 
             <div className='rounded-lg bg-muted/5 p-4 flex-1 overflow-auto h-[70vh]'>
                 <div className='overflow-hidden rounded-md border'>
-                        <Table>
-                            <TableHeader className='sticky top-0 bg-background z-10'>
-                                <TableRow>
-                                    {allColumns.map((column) => (
-                                        <TableHead key={column}>
-                                            {startCase(column)}
-                                            {columnDefinitions[column]?.required && (
-                                                <span className='text-destructive ml-1'>
-                                                    *
-                                                </span>
-                                            )}
-                                        </TableHead>
-                                    ))}
-                                    <TableHead className='w-12'>
-                                        <span className='sr-only'>Actions</span>
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {rows.map((row, index) => (
-                                    <TableRow
-                                        key={index}
-                                        className={cn(
-                                            row.edited &&
-                                                'bg-amber-500/5 hover:bg-amber-500/10',
+                    <Table>
+                        <TableHeader className='sticky top-0 bg-background z-10'>
+                            <TableRow>
+                                {allColumns.map((column) => (
+                                    <TableHead key={column}>
+                                        {startCase(column)}
+                                        {columnDefinitions[column]?.required && (
+                                            <span className='text-destructive ml-1'>
+                                                *
+                                            </span>
                                         )}
-                                    >
-                                        {allColumns.map((column) => {
-                                            const colDef = columnDefinitions[column];
-                                            const colType = colDef?.type;
+                                    </TableHead>
+                                ))}
+                                <TableHead className='w-12'>
+                                    <span className='sr-only'>Actions</span>
+                                </TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {rows.map((row, index) => (
+                                <TableRow
+                                    key={index}
+                                    className={cn(
+                                        row.edited &&
+                                            'bg-amber-500/5 hover:bg-amber-500/10',
+                                    )}
+                                >
+                                    {allColumns.map((column) => {
+                                        const colDef = columnDefinitions[column];
+                                        const colType = colDef?.type;
 
-                                            if (colType === 'options') {
-                                                const options = colDef?.options || [];
-                                                const selectedValue =
-                                                    row[column]?.value ?? '';
-                                                const isInternalClass =
-                                                    column === 'internal_class';
-                                                return (
-                                                    <TableCell
-                                                        key={`${index}-${column}`}
-                                                    >
-                                                        {isInternalClass ? (
-                                                            <InternalClassCombobox
-                                                                value={row[column]}
-                                                                options={options}
-                                                                placeholder={
-                                                                    colDef.required
-                                                                        ? 'Required...'
-                                                                        : 'Select...'
-                                                                }
-                                                                onChange={(
+                                        if (colType === 'options') {
+                                            const options = colDef?.options || [];
+                                            const selectedValue =
+                                                row[column]?.value ?? '';
+                                            const isInternalClass =
+                                                column === 'internal_class';
+                                            return (
+                                                <TableCell key={`${index}-${column}`}>
+                                                    {isInternalClass ? (
+                                                        <InternalClassCombobox
+                                                            value={row[column]}
+                                                            options={options}
+                                                            placeholder={
+                                                                colDef.required
+                                                                    ? 'Required...'
+                                                                    : 'Select...'
+                                                            }
+                                                            onChange={(
+                                                                selectedOption,
+                                                            ) => {
+                                                                handleCellChange(
+                                                                    index,
+                                                                    column,
                                                                     selectedOption,
-                                                                ) => {
-                                                                    handleCellChange(
-                                                                        index,
-                                                                        column,
-                                                                        selectedOption,
-                                                                    );
-                                                                }}
-                                                            />
-                                                        ) : (
-                                                            <Select
-                                                                value={
-                                                                    selectedValue
-                                                                        ? selectedValue
-                                                                        : undefined
-                                                                }
-                                                                onValueChange={(
-                                                                    value,
-                                                                ) => {
-                                                                    const selectedOption =
-                                                                        options.find(
-                                                                            (option) =>
-                                                                                option.value ===
-                                                                                value,
-                                                                        );
-                                                                    handleCellChange(
-                                                                        index,
-                                                                        column,
-                                                                        selectedOption ?? {
+                                                                );
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <Select
+                                                            value={
+                                                                selectedValue
+                                                                    ? selectedValue
+                                                                    : undefined
+                                                            }
+                                                            onValueChange={(value) => {
+                                                                const selectedOption =
+                                                                    options.find(
+                                                                        (option) =>
+                                                                            option.value ===
                                                                             value,
-                                                                            label: value,
-                                                                        },
                                                                     );
-                                                                }}
-                                                            >
-                                                                <SelectTrigger className='w-full'>
-                                                                    <SelectValue
-                                                                        placeholder={
-                                                                            colDef.required
-                                                                                ? 'Required...'
-                                                                                : 'Select...'
-                                                                        }
-                                                                    />
-                                                                </SelectTrigger>
-                                                                <SelectContent>
-                                                                    {options.map(
-                                                                        (option) => (
-                                                                            <SelectItem
-                                                                                key={
-                                                                                    option.value
-                                                                                }
-                                                                                value={
-                                                                                    option.value
-                                                                                }
-                                                                            >
-                                                                                {
-                                                                                    option.label
-                                                                                }
-                                                                            </SelectItem>
-                                                                        ),
-                                                                    )}
-                                                                </SelectContent>
-                                                            </Select>
-                                                        )}
-                                                    </TableCell>
-                                                );
-                                            } else if (colType === 'number') {
-                                                return (
-                                                    <TableCell
-                                                        key={`${index}-${column}`}
-                                                    >
-                                                        <Input
-                                                            type='number'
-                                                            value={row[column] ?? ''}
-                                                            onChange={(e) =>
                                                                 handleCellChange(
                                                                     index,
                                                                     column,
-                                                                    e.target.value,
-                                                                )
-                                                            }
-                                                            className='w-full'
-                                                            min={colDef.min}
-                                                            max={colDef.max}
-                                                            placeholder={
-                                                                colDef.required
-                                                                    ? 'Required'
-                                                                    : ''
-                                                            }
-                                                        />
-                                                    </TableCell>
-                                                );
-                                            } else {
-                                                return (
-                                                    <TableCell
-                                                        key={`${index}-${column}`}
-                                                    >
-                                                        <Input
-                                                            type='text'
-                                                            value={row[column] ?? ''}
-                                                            onChange={(e) =>
-                                                                handleCellChange(
-                                                                    index,
-                                                                    column,
-                                                                    e.target.value,
-                                                                )
-                                                            }
-                                                            className='w-full'
-                                                            minLength={colDef.minLength}
-                                                            maxLength={colDef.maxLength}
-                                                            pattern={colDef.pattern}
-                                                            placeholder={
-                                                                colDef.required
-                                                                    ? 'Required'
-                                                                    : ''
-                                                            }
-                                                        />
-                                                    </TableCell>
-                                                );
-                                            }
-                                        })}
-                                        <TableCell>
-                                            {index !== rows.length - 1 ? (
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button
-                                                            variant='ghost'
-                                                            className='size-8 p-0'
+                                                                    selectedOption ?? {
+                                                                        value,
+                                                                        label: value,
+                                                                    },
+                                                                );
+                                                            }}
                                                         >
-                                                            <span className='sr-only'>
-                                                                Open menu
-                                                            </span>
-                                                            <MoreHorizontal className='size-4' />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align='end'>
-                                                        <DropdownMenuLabel>
-                                                            Actions
-                                                        </DropdownMenuLabel>
-                                                        {row.edited && (
-                                                            <>
-                                                                <DropdownMenuItem
+                                                            <SelectTrigger className='w-full'>
+                                                                <SelectValue
+                                                                    placeholder={
+                                                                        colDef.required
+                                                                            ? 'Required...'
+                                                                            : 'Select...'
+                                                                    }
+                                                                />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                {options.map(
+                                                                    (option) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                option.value
+                                                                            }
+                                                                            value={
+                                                                                option.value
+                                                                            }
+                                                                        >
+                                                                            {
+                                                                                option.label
+                                                                            }
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+                                                </TableCell>
+                                            );
+                                        } else if (colType === 'number') {
+                                            return (
+                                                <TableCell key={`${index}-${column}`}>
+                                                    <Input
+                                                        type='number'
+                                                        value={row[column] ?? ''}
+                                                        onChange={(e) =>
+                                                            handleCellChange(
+                                                                index,
+                                                                column,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className='w-full'
+                                                        min={colDef.min}
+                                                        max={colDef.max}
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required'
+                                                                : ''
+                                                        }
+                                                    />
+                                                </TableCell>
+                                            );
+                                        } else {
+                                            return (
+                                                <TableCell key={`${index}-${column}`}>
+                                                    <Input
+                                                        type='text'
+                                                        value={row[column] ?? ''}
+                                                        onChange={(e) =>
+                                                            handleCellChange(
+                                                                index,
+                                                                column,
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        className='w-full'
+                                                        minLength={colDef.minLength}
+                                                        maxLength={colDef.maxLength}
+                                                        pattern={colDef.pattern}
+                                                        placeholder={
+                                                            colDef.required
+                                                                ? 'Required'
+                                                                : ''
+                                                        }
+                                                    />
+                                                </TableCell>
+                                            );
+                                        }
+                                    })}
+                                    <TableCell>
+                                        {index !== rows.length - 1 ? (
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant='ghost'
+                                                        className='size-8 p-0'
+                                                    >
+                                                        <span className='sr-only'>
+                                                            Open menu
+                                                        </span>
+                                                        <MoreHorizontal className='size-4' />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align='end'>
+                                                    <DropdownMenuLabel>
+                                                        Actions
+                                                    </DropdownMenuLabel>
+                                                    {row.edited && (
+                                                        <>
+                                                            <DropdownMenuItem
+                                                                onClick={() =>
+                                                                    handleSaveRow(index)
+                                                                }
+                                                            >
+                                                                <Save className='size-4' />
+                                                                Save row
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                        </>
+                                                    )}
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem
+                                                                className='text-destructive focus:text-destructive'
+                                                                onSelect={(e) =>
+                                                                    e.preventDefault()
+                                                                }
+                                                            >
+                                                                <Trash2 className='size-4' />
+                                                                Delete mapping
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>
+                                                                    Delete Mapping
+                                                                </AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    Are you sure you
+                                                                    want to delete this
+                                                                    mapping? This action
+                                                                    cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>
+                                                                    Cancel
+                                                                </AlertDialogCancel>
+                                                                <AlertDialogAction
                                                                     onClick={() =>
-                                                                        handleSaveRow(
+                                                                        handleDeleteRow(
                                                                             index,
                                                                         )
                                                                     }
+                                                                    className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
                                                                 >
-                                                                    <Save className='size-4' />
-                                                                    Save row
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                            </>
-                                                        )}
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <DropdownMenuItem
-                                                                    className='text-destructive focus:text-destructive'
-                                                                    onSelect={(e) =>
-                                                                        e.preventDefault()
-                                                                    }
-                                                                >
-                                                                    <Trash2 className='size-4' />
-                                                                    Delete mapping
-                                                                </DropdownMenuItem>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>
-                                                                        Delete Mapping
-                                                                    </AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        Are you sure you
-                                                                        want to delete
-                                                                        this mapping?
-                                                                        This action
-                                                                        cannot be
-                                                                        undone.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>
-                                                                        Cancel
-                                                                    </AlertDialogCancel>
-                                                                    <AlertDialogAction
-                                                                        onClick={() =>
-                                                                            handleDeleteRow(
-                                                                                index,
-                                                                            )
-                                                                        }
-                                                                        className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                                                                    >
-                                                                        Delete
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            ) : null}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                                                    Delete
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        ) : null}
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
 
-                    {/* Action buttons at the bottom */}
-                    <div className='flex justify-end gap-2 mt-4'>
-                        {unsavedChanges > 0 && (
-                            <Button variant='outline' onClick={handleDiscardChanges}>
-                                <Undo2 className='size-4' />
-                                Discard Changes
-                            </Button>
-                        )}
-                        <Button
-                            variant='default'
-                            onClick={handleSaveAll}
-                            disabled={!rows.some((row) => row.edited)}
-                        >
-                            <Save className='size-4' />
-                            Save Changes
+                {/* Action buttons at the bottom */}
+                <div className='flex justify-end gap-2 mt-4'>
+                    {unsavedChanges > 0 && (
+                        <Button variant='outline' onClick={handleDiscardChanges}>
+                            <Undo2 className='size-4' />
+                            Discard Changes
                         </Button>
-                    </div>
+                    )}
+                    <Button
+                        variant='default'
+                        onClick={handleSaveAll}
+                        disabled={!rows.some((row) => row.edited)}
+                    >
+                        <Save className='size-4' />
+                        Save Changes
+                    </Button>
                 </div>
+            </div>
         </div>
     );
 };

@@ -1,13 +1,22 @@
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    Field,
+    FieldDescription,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import MultipleSelector, { type Option } from '@/components/ui/multi-select';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -436,21 +445,22 @@ export default function EnrichmentRequestDialog({
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Enrichment Request</DialogTitle>
-                    <DialogDescription>
-                        Create a new enrichment request to process entities with
-                        selected enrichment techniques.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit}>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Enrichment Request</DialogTitle>
+                        <DialogDescription>
+                            Create a new enrichment request to process entities with
+                            selected enrichment techniques.
+                        </DialogDescription>
+                    </DialogHeader>
                     {/* Selected Notes List */}
                     {notesList && notesList.length > 0 && (
-                        <div className='mb-5'>
-                            <Label>Selected Notes ({selectedNoteIds.size})</Label>
+                        <FieldSet>
+                            <FieldLegend>
+                                Selected Notes ({selectedNoteIds.size})
+                            </FieldLegend>
                             <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
                                 {notesList.map((note) => {
                                     const isSelected = selectedNoteIds.has(note.id);
@@ -484,147 +494,155 @@ export default function EnrichmentRequestDialog({
                                     );
                                 })}
                             </ul>
-                        </div>
+                        </FieldSet>
                     )}
 
-                    {/* Title */}
-                    <div className='grid w-full items-center gap-3 mb-5'>
-                        <Label htmlFor='title'>
-                            Title <span className='text-destructive'>*</span>
-                        </Label>
-                        <Input
-                            id='title'
-                            name='title'
-                            type='text'
-                            placeholder='Enter request title'
-                            value={formData.title}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                    <FieldGroup>
+                        {/* Title */}
+                        <Field>
+                            <FieldLabel htmlFor='title'>
+                                Title <span className='text-destructive'>*</span>
+                            </FieldLabel>
+                            <Input
+                                id='title'
+                                name='title'
+                                type='text'
+                                placeholder='Enter request title'
+                                value={formData.title}
+                                onChange={handleChange}
+                                required
+                            />
+                        </Field>
 
-                    {/* Enrichment Techniques */}
-                    <div className='grid w-full items-center gap-3 mb-5'>
-                        <Label htmlFor='enricherNames'>
-                            Enrichment Techniques{' '}
-                            <span className='text-destructive'>*</span>
-                        </Label>
-                        <MultipleSelector
-                            value={
-                                enricherTypes
-                                    .filter((e) =>
-                                        formData.enricherNames.includes(e.value),
-                                    )
-                                    .map((e) => ({
+                        {/* Enrichment Techniques */}
+                        <Field>
+                            <FieldLabel htmlFor='enricherNames'>
+                                Enrichment Techniques{' '}
+                                <span className='text-destructive'>*</span>
+                            </FieldLabel>
+                            <div id='enricherNames'>
+                                <MultipleSelector
+                                value={
+                                    enricherTypes
+                                        .filter((e) =>
+                                            formData.enricherNames.includes(e.value),
+                                        )
+                                        .map((e) => ({
+                                            value: e.value,
+                                            label: e.label,
+                                        })) as Option[]
+                                }
+                                defaultOptions={
+                                    enricherTypes.map((e) => ({
                                         value: e.value,
                                         label: e.label,
                                     })) as Option[]
-                            }
-                            defaultOptions={
-                                enricherTypes.map((e) => ({
-                                    value: e.value,
-                                    label: e.label,
-                                })) as Option[]
-                            }
-                            placeholder='Select enrichment techniques...'
-                            onChange={(options) => {
-                                const enricherNames = options.map((o) => o.value);
-                                setFormData((prev) => ({
-                                    ...prev,
-                                    enricherNames,
-                                }));
-                            }}
-                            emptyIndicator={
-                                <p className='text-center text-sm'>
-                                    No enrichment techniques found
-                                </p>
-                            }
-                        />
-                        <p className='text-xs text-muted-foreground mt-1'>
-                            Select one or more enrichment techniques to apply
-                        </p>
-                    </div>
+                                }
+                                placeholder='Select enrichment techniques...'
+                                onChange={(options) => {
+                                    const enricherNames = options.map((o) => o.value);
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        enricherNames,
+                                    }));
+                                }}
+                                emptyIndicator={
+                                    <p className='text-center text-sm'>
+                                        No enrichment techniques found
+                                    </p>
+                                }
+                            />
+                            </div>
+                            <FieldDescription>
+                                Select one or more enrichment techniques to apply
+                            </FieldDescription>
+                        </Field>
 
-                    {/* Entities */}
-                    <div className='grid w-full items-center gap-3 mb-5'>
-                        <Label htmlFor='entity'>
-                            Entities <span className='text-destructive'>*</span>
-                        </Label>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className='w-full'>
-                                    <MultipleSelector
-                                        value={
-                                            selectedEntities.map((e) => ({
-                                                value: String(e.value),
-                                                label: e.label,
-                                            })) as Option[]
-                                        }
-                                        defaultOptions={
-                                            (allEntitiesData?.map((e) => ({
-                                                value: String(e.id!),
-                                                label: e.name,
-                                            })) as Option[]) || []
-                                        }
-                                        placeholder='Select entities to enrich...'
-                                        disabled={selectedNoteIds.size > 0}
-                                        onChange={(options) => {
-                                            const newEntities = options.map((o) => ({
-                                                value: Number(o.value),
-                                                label: o.label,
-                                            }));
-                                            setSelectedEntities(newEntities);
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                entities: newEntities.map(
-                                                    (e) => e.value,
-                                                ),
-                                            }));
-                                        }}
-                                        emptyIndicator={
-                                            <p className='text-center text-sm'>
-                                                No entities found
-                                            </p>
-                                        }
-                                    />
-                                </div>
-                            </TooltipTrigger>
-                            {selectedNoteIds.size > 0 && (
-                                <TooltipContent className='[--tooltip-bg:var(--primary)] [--tooltip-fg:var(--primary-foreground)]'>
-                                    Entities will be selected from the selected notes
-                                </TooltipContent>
-                            )}
-                        </Tooltip>
-                    </div>
+                        {/* Entities */}
+                        <Field>
+                            <FieldLabel htmlFor='entity'>
+                                Entities <span className='text-destructive'>*</span>
+                            </FieldLabel>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div id='entity' className='w-full'>
+                                        <MultipleSelector
+                                            value={
+                                                selectedEntities.map((e) => ({
+                                                    value: String(e.value),
+                                                    label: e.label,
+                                                })) as Option[]
+                                            }
+                                            defaultOptions={
+                                                (allEntitiesData?.map((e) => ({
+                                                    value: String(e.id!),
+                                                    label: e.name,
+                                                })) as Option[]) || []
+                                            }
+                                            placeholder='Select entities to enrich...'
+                                            disabled={selectedNoteIds.size > 0}
+                                            onChange={(options) => {
+                                                const newEntities = options.map(
+                                                    (o) => ({
+                                                        value: Number(o.value),
+                                                        label: o.label,
+                                                    }),
+                                                );
+                                                setSelectedEntities(newEntities);
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    entities: newEntities.map(
+                                                        (e) => e.value,
+                                                    ),
+                                                }));
+                                            }}
+                                            emptyIndicator={
+                                                <p className='text-center text-sm'>
+                                                    No entities found
+                                                </p>
+                                            }
+                                        />
+                                    </div>
+                                </TooltipTrigger>
+                                {selectedNoteIds.size > 0 && (
+                                    <TooltipContent className='[--tooltip-bg:var(--primary)] [--tooltip-fg:var(--primary-foreground)]'>
+                                        Entities will be selected from the selected
+                                        notes
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </Field>
 
-                    {/* Request Artifacts */}
-                    <div className='grid w-full items-center gap-3 mb-5'>
-                        <Label htmlFor='request'>
-                            Request Artifacts{' '}
-                            <span className='text-destructive'>*</span>
-                        </Label>
-                        <textarea
-                            id='request'
-                            name='request'
-                            className='flex min-h-[128px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
-                            placeholder='Enter artifacts in format:&#10;type:artifact&#10;type:artifact'
-                            value={formData.request}
-                            onChange={handleChange}
-                            required={selectedNoteIds.size === 0}
-                        />
-                    </div>
-
-                    {/* Actions */}
-                    <div className='flex justify-end gap-2 mt-4'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            onClick={() => onOpenChange(false)}
-                            disabled={createMutation.isPending || initialDataLoading}
-                        >
-                            Cancel
-                        </Button>
+                        {/* Request Artifacts */}
+                        <Field>
+                            <FieldLabel htmlFor='request'>
+                                Request Artifacts{' '}
+                                <span className='text-destructive'>*</span>
+                            </FieldLabel>
+                            <textarea
+                                id='request'
+                                name='request'
+                                className='flex min-h-[128px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+                                placeholder='Enter artifacts in format:&#10;type:artifact&#10;type:artifact'
+                                value={formData.request}
+                                onChange={handleChange}
+                                required={selectedNoteIds.size === 0}
+                            />
+                        </Field>
+                    </FieldGroup>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                disabled={
+                                    createMutation.isPending || initialDataLoading
+                                }
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
                         <Button
                             type='submit'
                             variant='default'
@@ -641,9 +659,9 @@ export default function EnrichmentRequestDialog({
                                 'Create Request'
                             )}
                         </Button>
-                    </div>
-                </form>
-            </DialogContent>
-        </Dialog>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </form>
     );
 }

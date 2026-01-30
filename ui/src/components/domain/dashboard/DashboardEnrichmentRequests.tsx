@@ -149,14 +149,12 @@ export default function DashboardEnrichmentRequests({
         },
     });
 
-    const handleDeleteSelected = async () => {
-        if (selectedRequests.length === 0) return;
+    const handleDeleteSelected = async (ids: string[]) => {
+        if (!ids?.length) return;
 
         try {
-            await Promise.all(
-                selectedRequests.map((id) => deleteMutation.mutateAsync(id)),
-            );
-            toast.success(`Deleted ${selectedRequests.length} enrichment request(s)`);
+            await Promise.all(ids.map((id) => deleteMutation.mutateAsync(id)));
+            toast.success(`Deleted ${ids.length} enrichment request(s)`);
             setSelectedRequests([]);
         } catch (error) {
             toast.error('Failed to delete enrichment requests');

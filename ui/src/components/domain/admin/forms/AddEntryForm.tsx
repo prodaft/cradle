@@ -1,5 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { Field, FieldDescription, FieldError, FieldLabel } from '@/components/ui/field';
+import {
+    Field,
+    FieldDescription,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import {
     InputGroup,
     InputGroupAddon,
@@ -194,7 +200,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
 
     return (
         <form onSubmit={handleFormSubmit(onSubmit)} className='w-full'>
-            <div className='space-y-4'>
+            <FieldGroup>
                 <Field data-invalid={Boolean(errors.type)}>
                     <FieldLabel htmlFor='type'>
                         Class Type
@@ -255,6 +261,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
                             placeholder='Subtype'
                             {...register('subtype')}
                             aria-invalid={Boolean(errors.subtype)}
+                            required
                         />
                     </InputGroup>
                     <FieldDescription>
@@ -300,6 +307,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
                                     className='text-sm rounded-full'
                                     {...field}
                                     aria-invalid={Boolean(errors.color)}
+                                    required
                                 />
                             )}
                         />
@@ -381,194 +389,202 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
                     </FieldDescription>
                     {errors.color && <FieldError>{errors.color.message}</FieldError>}
                 </Field>
-            </div>
+            </FieldGroup>
 
             {/* Advanced Section */}
             <div className='border-t border-white/5 pt-5 mt-5'>
                 <div className='space-y-4'>
-                    {isEntity && (
-                        <Field data-invalid={Boolean(errors.prefix)}>
-                            <FieldLabel htmlFor='prefix'>Prefix</FieldLabel>
-                            <InputGroup>
-                                <InputGroupInput
-                                    id='prefix'
-                                    placeholder='Prefix'
-                                    {...register('prefix')}
-                                    aria-invalid={Boolean(errors.prefix)}
-                                />
-                            </InputGroup>
-                            <FieldDescription>
-                                Prefix used when generating entity names
-                            </FieldDescription>
-                            {errors.prefix && (
-                                <FieldError>{errors.prefix.message}</FieldError>
-                            )}
-                        </Field>
-                    )}
-
-                    {isArtifact && (
-                        <>
-                            <Field data-invalid={Boolean(errors.typeFormat)}>
-                                <FieldLabel htmlFor='typeFormat'>Format</FieldLabel>
-                                <Controller
-                                    name='typeFormat'
-                                    control={control}
-                                    render={({ field, fieldState }) => (
-                                        <Select
-                                            value={field.value?.value || ''}
-                                            onValueChange={(value) => {
-                                                const option = formatOptions.find(
-                                                    (opt) => opt.value === value,
-                                                );
-                                                field.onChange(
-                                                    option
-                                                        ? {
-                                                              value: option.value,
-                                                              label: option.label,
-                                                          }
-                                                        : null,
-                                                );
-                                            }}
-                                        >
-                                            <SelectTrigger
-                                                aria-invalid={fieldState.invalid}
-                                            >
-                                                <SelectValue placeholder='Select format' />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {formatOptions.map((option) => (
-                                                    <SelectItem
-                                                        key={option.value}
-                                                        value={option.value}
-                                                    >
-                                                        {option.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-                                />
+                    <FieldGroup>
+                        {isEntity && (
+                            <Field data-invalid={Boolean(errors.prefix)}>
+                                <FieldLabel htmlFor='prefix'>Prefix</FieldLabel>
+                                <InputGroup>
+                                    <InputGroupInput
+                                        id='prefix'
+                                        placeholder='Prefix'
+                                        {...register('prefix')}
+                                        aria-invalid={Boolean(errors.prefix)}
+                                    />
+                                </InputGroup>
                                 <FieldDescription>
-                                    Validation format for artifact values
+                                    Prefix used when generating entity names
                                 </FieldDescription>
-                                {errors.typeFormat && (
-                                    <FieldError>
-                                        {errors.typeFormat.message?.toString()}
-                                    </FieldError>
+                                {errors.prefix && (
+                                    <FieldError>{errors.prefix.message}</FieldError>
                                 )}
                             </Field>
-
-                            {isOptions && (
-                                <Field data-invalid={Boolean(errors.options)}>
-                                    <FieldLabel htmlFor='options'>Options</FieldLabel>
-                                    <InputGroup>
-                                        <InputGroupTextarea
-                                            id='options'
-                                            placeholder='Enter possible values separated by newlines.'
-                                            rows={6}
-                                            {...register('options')}
-                                            aria-invalid={Boolean(errors.options)}
-                                        />
-                                    </InputGroup>
-                                    <FieldDescription>
-                                        Allowed values (one per line)
-                                    </FieldDescription>
-                                    {errors.options && (
-                                        <FieldError>
-                                            {errors.options.message}
-                                        </FieldError>
-                                    )}
-                                </Field>
-                            )}
-
-                            {isRegex && (
-                                <Field data-invalid={Boolean(errors.regex)}>
-                                    <FieldLabel htmlFor='regex'>Regex</FieldLabel>
-                                    <InputGroup>
-                                        <InputGroupTextarea
-                                            id='regex'
-                                            placeholder='Enter the regex for the type.'
-                                            rows={3}
-                                            {...register('regex')}
-                                            aria-invalid={Boolean(errors.regex)}
-                                        />
-                                    </InputGroup>
-                                    <FieldDescription>
-                                        Regular expression for validation
-                                    </FieldDescription>
-                                    {errors.regex && (
-                                        <FieldError>{errors.regex.message}</FieldError>
-                                    )}
-                                </Field>
-                            )}
-
-                            {!isOptions && (
-                                <Field data-invalid={Boolean(errors.generativeRegex)}>
-                                    <FieldLabel htmlFor='generativeRegex'>
-                                        Generative Regex
-                                    </FieldLabel>
-                                    <InputGroup>
-                                        <InputGroupTextarea
-                                            id='generativeRegex'
-                                            placeholder='Regex used to generate random values.'
-                                            rows={3}
-                                            {...register('generativeRegex')}
-                                            aria-invalid={Boolean(
-                                                errors.generativeRegex,
-                                            )}
-                                        />
-                                    </InputGroup>
-                                    <FieldDescription>
-                                        Regex used to generate random sample values
-                                    </FieldDescription>
-                                    {errors.generativeRegex && (
-                                        <FieldError>
-                                            {errors.generativeRegex.message}
-                                        </FieldError>
-                                    )}
-                                </Field>
-                            )}
-                        </>
-                    )}
-
-                    <Field data-invalid={Boolean(errors.children)}>
-                        <FieldLabel htmlFor='children'>Children</FieldLabel>
-                        <Controller
-                            name='children'
-                            control={control}
-                            render={({ field }) => (
-                                <MultipleSelector
-                                    value={
-                                        (field.value?.map((c) => ({
-                                            value: c.value,
-                                            label: c.label,
-                                        })) || []) as Option[]
-                                    }
-                                    defaultOptions={entryTypes as Option[]}
-                                    placeholder='Select child entry types...'
-                                    onChange={(options) => {
-                                        field.onChange(
-                                            options.map((o) => ({
-                                                value: o.value,
-                                                label: o.label,
-                                            })),
-                                        );
-                                    }}
-                                    emptyIndicator={
-                                        <p className='text-center text-sm'>
-                                            No entry types found
-                                        </p>
-                                    }
-                                />
-                            )}
-                        />
-                        <FieldDescription>
-                            Entry types that can be children of this type
-                        </FieldDescription>
-                        {errors.children && (
-                            <FieldError>{errors.children.message}</FieldError>
                         )}
-                    </Field>
+
+                        {isArtifact && (
+                            <>
+                                <Field data-invalid={Boolean(errors.typeFormat)}>
+                                    <FieldLabel htmlFor='typeFormat'>Format</FieldLabel>
+                                    <Controller
+                                        name='typeFormat'
+                                        control={control}
+                                        render={({ field, fieldState }) => (
+                                            <Select
+                                                value={field.value?.value || ''}
+                                                onValueChange={(value) => {
+                                                    const option = formatOptions.find(
+                                                        (opt) => opt.value === value,
+                                                    );
+                                                    field.onChange(
+                                                        option
+                                                            ? {
+                                                                  value: option.value,
+                                                                  label: option.label,
+                                                              }
+                                                            : null,
+                                                    );
+                                                }}
+                                            >
+                                                <SelectTrigger
+                                                    aria-invalid={fieldState.invalid}
+                                                >
+                                                    <SelectValue placeholder='Select format' />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {formatOptions.map((option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    />
+                                    <FieldDescription>
+                                        Validation format for artifact values
+                                    </FieldDescription>
+                                    {errors.typeFormat && (
+                                        <FieldError>
+                                            {errors.typeFormat.message?.toString()}
+                                        </FieldError>
+                                    )}
+                                </Field>
+
+                                {isOptions && (
+                                    <Field data-invalid={Boolean(errors.options)}>
+                                        <FieldLabel htmlFor='options'>
+                                            Options
+                                        </FieldLabel>
+                                        <InputGroup>
+                                            <InputGroupTextarea
+                                                id='options'
+                                                placeholder='Enter possible values separated by newlines.'
+                                                rows={6}
+                                                {...register('options')}
+                                                aria-invalid={Boolean(errors.options)}
+                                            />
+                                        </InputGroup>
+                                        <FieldDescription>
+                                            Allowed values (one per line)
+                                        </FieldDescription>
+                                        {errors.options && (
+                                            <FieldError>
+                                                {errors.options.message}
+                                            </FieldError>
+                                        )}
+                                    </Field>
+                                )}
+
+                                {isRegex && (
+                                    <Field data-invalid={Boolean(errors.regex)}>
+                                        <FieldLabel htmlFor='regex'>Regex</FieldLabel>
+                                        <InputGroup>
+                                            <InputGroupTextarea
+                                                id='regex'
+                                                placeholder='Enter the regex for the type.'
+                                                rows={3}
+                                                {...register('regex')}
+                                                aria-invalid={Boolean(errors.regex)}
+                                            />
+                                        </InputGroup>
+                                        <FieldDescription>
+                                            Regular expression for validation
+                                        </FieldDescription>
+                                        {errors.regex && (
+                                            <FieldError>
+                                                {errors.regex.message}
+                                            </FieldError>
+                                        )}
+                                    </Field>
+                                )}
+
+                                {!isOptions && (
+                                    <Field
+                                        data-invalid={Boolean(errors.generativeRegex)}
+                                    >
+                                        <FieldLabel htmlFor='generativeRegex'>
+                                            Generative Regex
+                                        </FieldLabel>
+                                        <InputGroup>
+                                            <InputGroupTextarea
+                                                id='generativeRegex'
+                                                placeholder='Regex used to generate random values.'
+                                                rows={3}
+                                                {...register('generativeRegex')}
+                                                aria-invalid={Boolean(
+                                                    errors.generativeRegex,
+                                                )}
+                                            />
+                                        </InputGroup>
+                                        <FieldDescription>
+                                            Regex used to generate random sample values
+                                        </FieldDescription>
+                                        {errors.generativeRegex && (
+                                            <FieldError>
+                                                {errors.generativeRegex.message}
+                                            </FieldError>
+                                        )}
+                                    </Field>
+                                )}
+                            </>
+                        )}
+
+                        <Field data-invalid={Boolean(errors.children)}>
+                            <FieldLabel htmlFor='children'>Children</FieldLabel>
+                            <Controller
+                                name='children'
+                                control={control}
+                                render={({ field }) => (
+                                    <MultipleSelector
+                                        value={
+                                            (field.value?.map((c) => ({
+                                                value: c.value,
+                                                label: c.label,
+                                            })) || []) as Option[]
+                                        }
+                                        defaultOptions={entryTypes as Option[]}
+                                        placeholder='Select child entry types...'
+                                        onChange={(options) => {
+                                            field.onChange(
+                                                options.map((o) => ({
+                                                    value: o.value,
+                                                    label: o.label,
+                                                })),
+                                            );
+                                        }}
+                                        emptyIndicator={
+                                            <p className='text-center text-sm'>
+                                                No entry types found
+                                            </p>
+                                        }
+                                    />
+                                )}
+                            />
+                            <FieldDescription>
+                                Entry types that can be children of this type
+                            </FieldDescription>
+                            {errors.children && (
+                                <FieldError>{errors.children.message}</FieldError>
+                            )}
+                        </Field>
+                    </FieldGroup>
                 </div>
             </div>
 

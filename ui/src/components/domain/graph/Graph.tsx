@@ -1,9 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Spinner } from '@/components/ui/spinner';
-import { useTheme } from '@/contexts/ui';
+import { useTheme } from '@/contexts/ui/ThemeContext';
 import { logger } from '@/utils/logger';
-import { Cosmograph } from '@cosmograph/react';
 import {
     FunnelIcon,
     GearIcon,
@@ -11,8 +10,31 @@ import {
     PauseIcon,
     PlayIcon,
 } from '@phosphor-icons/react';
-import { MinusIcon, PlusIcon } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    ControlsContainer,
+    SigmaContainer,
+    useCamera,
+    useFullScreen,
+    useLoadGraph,
+    useRegisterEvents,
+    useSetSettings,
+    useSigma,
+} from '@react-sigma/core';
+import '@react-sigma/core/lib/style.css';
+import { useWorkerLayoutForceAtlas2 } from '@react-sigma/layout-forceatlas2';
+import { MiniMap } from '@react-sigma/minimap';
+import Graph from 'graphology';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import {
+    AiFillPauseCircle,
+    AiFillPlayCircle,
+    AiOutlineFullscreen,
+    AiOutlineFullscreenExit,
+    AiOutlineZoomIn,
+    AiOutlineZoomOut,
+} from 'react-icons/ai';
+import { MdFilterCenterFocus } from 'react-icons/md';
+import type Sigma from 'sigma';
 import { Edge, Node } from './graphFilterUtils';
 
 interface GraphConfig {
@@ -52,40 +74,383 @@ interface GraphViewerProps {
     onClearGraph?: () => void;
     activePanel?: 'explorer' | 'display' | 'filters' | null;
     onTogglePanel?: (panel: 'explorer' | 'display' | 'filters') => void;
-    cosmographRef?: React.MutableRefObject<any>;
+    sigmaRef?: React.RefObject<{ sigma: Sigma } | null>;
     isLoading?: boolean;
     fetchProgress?: FetchProgress | null;
     fetchControls?: FetchControls | null;
 }
 
-/**
- * Normalizes a node degree value to a size suitable for graph visualization.
- *
- * @param x - The input value (node degree)
- * @param inputMin - Minimum expected input value (default: 1)
- * @param inputMax - Maximum expected input value (default: 60)
- * @returns Normalized size value between outputMin (4) and outputMax (15)
- *
- * The function maps node degrees to visual sizes:
- * - Nodes with degree 1 (minimum connections) → size 4
- * - Nodes with degree 60+ (maximum connections) → size 15
- * - Values are clamped to the input range before normalization
- */
 function normalize(x: number, inputMin: number, inputMax: number): number {
-    // Clamp input to valid range
     x = Math.min(x, inputMax);
     x = Math.max(x, inputMin);
-
-    // Output range for node sizes in the graph (increased for better visibility)
     const outputMin = 15;
     const outputMax = 40;
-
-    // Shift to avoid division by zero and normalize
     const shifted = x - inputMin + 1;
     const maxShifted = inputMax - inputMin + 1;
-
     const normalized = shifted / maxShifted;
     return outputMin + normalized * (outputMax - outputMin);
+}
+
+interface ForceAtlas2LayoutContextValue {
+    stop: () => void;
+    start: () => void;
+    isRunning: boolean;
+}
+
+const ForceAtlas2LayoutContext = createContext<ForceAtlas2LayoutContextValue | null>(
+    null,
+);
+
+function SetSigmaRef({
+    sigmaRef,
+}: {
+    sigmaRef: React.RefObject<{ sigma: Sigma } | null>;
+}) {
+    const sigma = useSigma();
+    useEffect(() => {
+        if (sigmaRef) {
+            sigmaRef.current = { sigma };
+            return () => {
+                sigmaRef.current = null;
+            };
+        }
+    }, [sigma, sigmaRef]);
+    return null;
+}
+
+interface GraphContentProps {
+    validNodes: Node[];
+    linksData: Array<Edge & { _sourceIndex: number; _targetIndex: number }>;
+    idToNode: Map<string, Node>;
+    config: GraphConfig;
+    selectedNodes: Set<Node>;
+    setSelectedNodes: (nodes: Set<Node>) => void;
+    onTogglePanel?: (panel: 'explorer' | 'display' | 'filters') => void;
+    activePanel: 'explorer' | 'display' | 'filters' | null;
+}
+
+function GraphContent({
+    validNodes,
+    linksData,
+    idToNode,
+    config,
+    selectedNodes,
+    setSelectedNodes,
+    onTogglePanel,
+    activePanel,
+}: GraphContentProps) {
+    const loadGraph = useLoadGraph();
+    const registerEvents = useRegisterEvents();
+    const sigma = useSigma();
+    const setSettings = useSetSettings();
+    const layoutContext = useContext(ForceAtlas2LayoutContext);
+    const [draggedNode, setDraggedNode] = useState<string | null>(null);
+    const stoppedLayoutForDragRef = useRef(false);
+    const edgeColorRef = useRef<HTMLDivElement | null>(null);
+    const labelColorRef = useRef<HTMLDivElement | null>(null);
+    const { isDarkMode } = useTheme();
+
+    useEffect(() => {
+        const edgeEl = edgeColorRef.current;
+        const labelEl = labelColorRef.current;
+        const edgeColor = edgeEl
+            ? getComputedStyle(edgeEl).color
+            : isDarkMode
+              ? 'rgba(200, 200, 200, 0.9)'
+              : 'rgba(100, 100, 100, 0.9)';
+        const labelColor = labelEl
+            ? getComputedStyle(labelEl).color
+            : isDarkMode
+              ? 'rgb(240, 240, 240)'
+              : 'rgb(20, 20, 20)';
+        setSettings({
+            enableEdgeEvents: true,
+            defaultEdgeColor: edgeColor,
+            defaultNodeColor: 'var(--color-primary)',
+            labelColor: { color: labelColor },
+            edgeLabelColor: { color: 'var(--color-muted-foreground)' },
+        });
+    }, [setSettings, isDarkMode]);
+
+    const themeSample = (
+        <>
+            <div
+                ref={edgeColorRef}
+                aria-hidden
+                className='pointer-events-none absolute opacity-0 text-muted-foreground'
+            />
+            <div
+                ref={labelColorRef}
+                aria-hidden
+                className='pointer-events-none absolute opacity-0 text-foreground'
+            />
+        </>
+    );
+
+    const graph = useMemo(() => {
+        const g = new Graph();
+        const sizeCoef = config.nodeRadiusCoefficient ?? 1;
+        validNodes.forEach((node) => {
+            g.addNode(node.id, {
+                x: Math.random() * 100 - 50,
+                y: Math.random() * 100 - 50,
+                size: normalize(node.degree ?? 1, 1, 60) * sizeCoef,
+                label: node.label || node.id,
+                color: node.color || 'var(--color-primary)',
+            });
+        });
+        if (config.showLinks !== false) {
+            linksData.forEach((edge) => {
+                if (!g.hasEdge(edge.source, edge.target)) {
+                    g.addEdge(edge.source, edge.target);
+                }
+            });
+        }
+        return g;
+    }, [validNodes, linksData, config.showLinks, config.nodeRadiusCoefficient]);
+
+    useEffect(() => {
+        loadGraph(graph);
+    }, [loadGraph, graph]);
+
+    useEffect(() => {
+        registerEvents({
+            clickNode: (event) => {
+                try {
+                    const nodeKey = event.node;
+                    const node = idToNode.get(nodeKey);
+                    if (!node) return;
+                    let newNodes = new Set<Node>([node]);
+                    if (selectedNodes.has(node)) {
+                        try {
+                            const g = sigma.getGraph();
+                            const neighbors = g.neighbors(nodeKey);
+                            const neighborNodes = neighbors
+                                .map((key) => idToNode.get(key))
+                                .filter(Boolean) as Node[];
+                            neighborNodes.unshift(node);
+                            newNodes = new Set(neighborNodes);
+                        } catch (e) {
+                            logger.warn('[Graph] Error getting neighbors:', {
+                                error: e,
+                            });
+                        }
+                    }
+                    setSelectedNodes(newNodes);
+                    if (onTogglePanel && activePanel !== 'explorer') {
+                        onTogglePanel('explorer');
+                    }
+                } catch (error) {
+                    logger.error('[Graph] Error in clickNode:', error);
+                }
+            },
+            clickStage: () => {
+                setSelectedNodes(new Set());
+            },
+            clickEdge: (event) => {
+                try {
+                    const g = sigma.getGraph();
+                    const [source, target] = g.extremities(event.edge);
+                    const sourceNode = source ? idToNode.get(source) : undefined;
+                    const targetNode = target ? idToNode.get(target) : undefined;
+                    const newNodes = new Set<Node>();
+                    if (sourceNode) newNodes.add(sourceNode);
+                    if (targetNode) newNodes.add(targetNode);
+                    setSelectedNodes(newNodes);
+                    if (onTogglePanel && activePanel !== 'explorer') {
+                        onTogglePanel('explorer');
+                    }
+                } catch (error) {
+                    logger.error('[Graph] Error in clickEdge:', error);
+                }
+            },
+            downNode: (event) => {
+                setDraggedNode(event.node);
+                sigma.getGraph().setNodeAttribute(event.node, 'highlighted', true);
+                if (layoutContext?.isRunning) {
+                    layoutContext.stop();
+                    stoppedLayoutForDragRef.current = true;
+                }
+            },
+            mousemovebody: (event) => {
+                if (!draggedNode) return;
+                const pos = sigma.viewportToGraph(event);
+                sigma.getGraph().setNodeAttribute(draggedNode, 'x', pos.x);
+                sigma.getGraph().setNodeAttribute(draggedNode, 'y', pos.y);
+                event.preventSigmaDefault();
+                event.original.preventDefault();
+                event.original.stopPropagation();
+            },
+            mouseup: () => {
+                if (draggedNode) {
+                    setDraggedNode(null);
+                    sigma.getGraph().removeNodeAttribute(draggedNode, 'highlighted');
+                    if (stoppedLayoutForDragRef.current && layoutContext) {
+                        layoutContext.start();
+                        stoppedLayoutForDragRef.current = false;
+                    }
+                }
+            },
+            mousedown: () => {
+                if (!sigma.getCustomBBox()) sigma.setCustomBBox(sigma.getBBox());
+            },
+        });
+    }, [
+        registerEvents,
+        sigma,
+        idToNode,
+        selectedNodes,
+        setSelectedNodes,
+        onTogglePanel,
+        activePanel,
+        draggedNode,
+        layoutContext,
+    ]);
+
+    return themeSample;
+}
+
+interface GraphSceneProps extends GraphContentProps {
+    faTime: number;
+}
+
+function GraphControls({
+    layout,
+}: {
+    layout: ReturnType<typeof useWorkerLayoutForceAtlas2>;
+}) {
+    const { zoomIn, zoomOut, reset } = useCamera({ duration: 200, factor: 1.5 });
+    const { toggle: toggleFullScreen, isFullScreen } = useFullScreen();
+
+    return (
+        <>
+            <ButtonGroup aria-label='Zoom' orientation='vertical'>
+                <Button
+                    type='button'
+                    variant='outline'
+                    size='icon-sm'
+                    className='text-foreground'
+                    onClick={() => zoomIn()}
+                    title='Zoom in'
+                >
+                    <AiOutlineZoomIn className='size-4 text-foreground' />
+                </Button>
+                <Button
+                    type='button'
+                    variant='outline'
+                    size='icon-sm'
+                    className='text-foreground'
+                    onClick={() => zoomOut()}
+                    title='Zoom out'
+                >
+                    <AiOutlineZoomOut className='size-4 text-foreground' />
+                </Button>
+            </ButtonGroup>
+            <ButtonGroup aria-label='View and layout' orientation='vertical'>
+                <Button
+                    type='button'
+                    variant='outline'
+                    size='icon-sm'
+                    className='text-foreground'
+                    onClick={() => reset()}
+                    title='See whole graph'
+                >
+                    <MdFilterCenterFocus className='size-4 text-foreground' />
+                </Button>
+                {document.fullscreenEnabled && (
+                    <Button
+                        type='button'
+                        variant='outline'
+                        size='icon-sm'
+                        className='text-foreground'
+                        onClick={toggleFullScreen}
+                        title={isFullScreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+                    >
+                        {isFullScreen ? (
+                            <AiOutlineFullscreenExit className='size-4 text-foreground' />
+                        ) : (
+                            <AiOutlineFullscreen className='size-4 text-foreground' />
+                        )}
+                    </Button>
+                )}
+                <Button
+                    type='button'
+                    variant='outline'
+                    size='icon-sm'
+                    className='text-foreground'
+                    onClick={() => (layout.isRunning ? layout.stop() : layout.start())}
+                    title={layout.isRunning ? 'Stop layout' : 'Start layout'}
+                >
+                    {layout.isRunning ? (
+                        <AiFillPauseCircle className='size-4 text-foreground' />
+                    ) : (
+                        <AiFillPlayCircle className='size-4 text-foreground' />
+                    )}
+                </Button>
+            </ButtonGroup>
+        </>
+    );
+}
+
+function GraphScene({
+    faTime,
+    validNodes,
+    linksData,
+    idToNode,
+    config,
+    selectedNodes,
+    setSelectedNodes,
+    onTogglePanel,
+    activePanel,
+}: GraphSceneProps) {
+    const sigma = useSigma();
+    const layout = useWorkerLayoutForceAtlas2();
+    const layoutContextValue = useMemo(
+        () => ({
+            stop: layout.stop,
+            start: layout.start,
+            isRunning: layout.isRunning,
+        }),
+        [layout.stop, layout.start, layout.isRunning],
+    );
+
+    useEffect(() => {
+        if (!sigma || faTime === undefined || faTime <= -1) return;
+        if (sigma.getGraph().order === 0) return;
+        layout.start();
+        const timeout =
+            faTime > 0 ? window.setTimeout(() => layout.stop(), faTime) : null;
+        return () => {
+            if (timeout) clearTimeout(timeout);
+        };
+    }, [sigma, faTime, layout.start, layout.stop]);
+
+    return (
+        <ForceAtlas2LayoutContext.Provider value={layoutContextValue}>
+            <GraphContent
+                validNodes={validNodes}
+                linksData={linksData}
+                idToNode={idToNode}
+                config={config}
+                selectedNodes={selectedNodes}
+                setSelectedNodes={setSelectedNodes}
+                onTogglePanel={onTogglePanel}
+                activePanel={activePanel}
+            />
+            <ControlsContainer
+                position='top-right'
+                className='!border-border !bg-background/90 !rounded-lg'
+            >
+                <MiniMap width='120px' height='120px' />
+            </ControlsContainer>
+            <ControlsContainer
+                position='bottom-right'
+                className='!border-0 !bg-transparent !p-0 flex flex-col gap-2'
+            >
+                <GraphControls layout={layout} />
+            </ControlsContainer>
+        </ForceAtlas2LayoutContext.Provider>
+    );
 }
 
 export default function GraphViewer({
@@ -97,70 +462,49 @@ export default function GraphViewer({
     onClearGraph,
     activePanel = null,
     onTogglePanel,
-    cosmographRef: externalCosmographRef,
+    sigmaRef: externalSigmaRef,
     isLoading = false,
     fetchProgress = null,
     fetchControls = null,
 }: GraphViewerProps) {
-    const { isDarkMode } = useTheme();
-    const internalCosmographRef = useRef<any>(null);
-    const cosmographRef = externalCosmographRef || internalCosmographRef;
-    const [enableSimulation, setEnableSimulation] = useState(true);
+    const internalSigmaRef = useRef<{ sigma: ReturnType<typeof useSigma> } | null>(
+        null,
+    );
+    const sigmaRef = externalSigmaRef || internalSigmaRef;
+    const [faTime, setFaTime] = useState<number>(2000);
 
-    // Filter out invalid nodes first
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const time = params.get('faTime');
+        setFaTime(Number.parseInt(time ?? '2000', 10) || 2000);
+    }, []);
+
     const validNodes = useMemo(() => {
-        const filtered = nodes.filter((node) => {
+        return nodes.filter((node) => {
             const isValid = node.id != null && node.id !== '';
-            if (!isValid) {
-                logger.warn('[Graph] Filtered out invalid node:', { node });
-            }
+            if (!isValid) logger.warn('[Graph] Filtered out invalid node:', { node });
             return isValid;
         });
-
-        if (filtered.length < nodes.length) {
-            logger.warn('[Graph] Filtered out invalid nodes', {
-                filteredCount: filtered.length,
-                totalCount: nodes.length,
-                removedCount: nodes.length - filtered.length,
-            });
-        }
-
-        return filtered;
     }, [nodes]);
 
-    // Create a map from node id to index for efficient lookups
     const nodeIdToIndex = useMemo(() => {
         const map = new Map<string, number>();
-        validNodes.forEach((node, index) => {
-            map.set(node.id, index);
-        });
+        validNodes.forEach((node, index) => map.set(node.id, index));
         return map;
     }, [validNodes]);
 
-    // Create a map from index to node for reverse lookups
     const indexToNode = useMemo(() => {
         const map = new Map<number, Node>();
-        validNodes.forEach((node, index) => {
-            map.set(index, node);
-        });
+        validNodes.forEach((node, index) => map.set(index, node));
         return map;
     }, [validNodes]);
 
-    const pointsData = useMemo(() => {
-        return validNodes.map((node, index) => {
-            const point: any = {
-                ...node,
-                _index: index,
-                _color: node.color || 'var(--color-primary)',
-                _size: normalize(node.degree || 1, 1, 60),
-                _label: node.label || node.id,
-            };
-
-            return point;
-        });
+    const idToNode = useMemo(() => {
+        const map = new Map<string, Node>();
+        validNodes.forEach((node) => map.set(node.id, node));
+        return map;
     }, [validNodes]);
 
-    // Prepare links data for Cosmograph v2
     const linksData = useMemo(() => {
         return edges
             .filter((edge) => {
@@ -175,167 +519,16 @@ export default function GraphViewer({
             }));
     }, [edges, nodeIdToIndex]);
 
-    // onClick handles both point clicks and background clicks
-    const onClick = useCallback(
-        (
-            index: number | undefined,
-            pointPosition: [number, number] | undefined,
-            event: MouseEvent,
-        ) => {
-            try {
-                if (index === undefined || index === null) {
-                    // Background click - clear selection
-                    setSelectedNodes(new Set());
-                    cosmographRef.current?.setFocusedPoint(undefined);
-                    return;
-                }
-
-                const node = indexToNode.get(index);
-                if (!node) {
-                    logger.warn('[Graph] onClick: Node not found for index', { index });
-                    return;
-                }
-
-                let clickedNodes = [node];
-                if (cosmographRef.current != null && selectedNodes.has(node)) {
-                    try {
-                        const connectedIndices =
-                            cosmographRef.current.getConnectedPointIndices(index);
-                        if (connectedIndices) {
-                            clickedNodes = connectedIndices
-                                .map((i: number) => indexToNode.get(i))
-                                .filter(Boolean) as Node[];
-                            clickedNodes.unshift(node);
-                        }
-                    } catch (e) {
-                        logger.warn('[Graph] Error getting connected points:', {
-                            error: e,
-                        });
-                    }
-                }
-
-                let newNodes = new Set([node]);
-                if (event && (event.ctrlKey || event.metaKey)) {
-                    newNodes = new Set([...selectedNodes]);
-                }
-
-                for (const n of clickedNodes) {
-                    if (!newNodes.has(n)) {
-                        newNodes.add(n);
-                    }
-                }
-
-                try {
-                    cosmographRef.current?.setFocusedPoint(index);
-                } catch (e) {
-                    logger.warn('[Graph] Error setting focused point:', { error: e });
-                }
-
-                setSelectedNodes(newNodes);
-
-                // Open explorer panel when a node is clicked
-                if (onTogglePanel && activePanel !== 'explorer') {
-                    onTogglePanel('explorer');
-                }
-            } catch (error) {
-                logger.error('[Graph] Error in onClick handler:', error);
-            }
-        },
-        [
-            indexToNode,
-            selectedNodes,
-            setSelectedNodes,
-            cosmographRef,
-            onTogglePanel,
-            activePanel,
-        ],
-    );
-
-    // onLinkClick handles link/connection clicks
-    const onLinkClick = useCallback(
-        (linkIndex: number, event: MouseEvent) => {
-            try {
-                const link = linksData[linkIndex];
-                if (!link) {
-                    logger.warn('[Graph] onLinkClick: Link not found for index', {
-                        linkIndex,
-                    });
-                    return;
-                }
-
-                // Get source and target nodes
-                const sourceNode = indexToNode.get(link._sourceIndex);
-                const targetNode = indexToNode.get(link._targetIndex);
-
-                // Select both nodes connected by the link
-                const newNodes = new Set<Node>();
-                if (sourceNode) newNodes.add(sourceNode);
-                if (targetNode) newNodes.add(targetNode);
-
-                setSelectedNodes(newNodes);
-
-                // Open explorer panel when a connection is clicked
-                if (onTogglePanel && activePanel !== 'explorer') {
-                    onTogglePanel('explorer');
-                }
-            } catch (error) {
-                logger.error('[Graph] Error in onLinkClick handler:', error);
-            }
-        },
-        [linksData, indexToNode, setSelectedNodes, onTogglePanel, activePanel],
-    );
-
-    // Fit view when data changes (Cosmograph handles data updates automatically via props)
-    useEffect(() => {
-        if (!cosmographRef.current || pointsData.length === 0) return;
-
-        // Debounce fit view to avoid excessive calls
-        const fitTimer = setTimeout(() => {
-            try {
-                if (typeof cosmographRef.current?.fitView === 'function') {
-                    cosmographRef.current.fitView(500, 0.1);
-                }
-            } catch (e) {
-                logger.warn('[Graph] Could not fit view:', { error: e });
-            }
-        }, 300);
-
-        return () => clearTimeout(fitTimer);
-    }, [pointsData.length]);
-
-    // Cleanup on unmount (Doing this results in errors when we navigate away from the page, so I've commented it out)
-    // useEffect(() => {
-    //     return () => {
-    //         try {
-    //             if (
-    //                 cosmographRef.current &&
-    //                 typeof cosmographRef.current.destroy === 'function'
-    //             ) {
-    //                 cosmographRef.current.destroy();
-    //             }
-    //         } catch (e) {
-    //             logger.warn('[Graph] Error during cleanup:', { error: e });
-    //         }
-    //     };
-    // }, []);
-
-    // Only render Cosmograph when we have valid data
-    const hasValidData = pointsData.length > 0;
-
-    const spaceSize = useMemo(() => {
-        const nodeCount = pointsData.length;
-        return Math.max(2048, Math.sqrt(nodeCount) * 150);
-    }, [pointsData.length]);
+    const hasValidData = validNodes.length > 0;
 
     return (
         <div className='w-full h-full bg-background relative overflow-hidden'>
             {hasValidData ? (
                 <>
-                    {/* Bottom status bar with stats and loading indicator */}
                     <div className='absolute bottom-2 left-2 z-10 bg-background/90 backdrop-blur-sm border border-border rounded-lg px-3 py-1.5 flex items-center gap-3 shadow-md text-xs'>
                         <span className='text-muted-foreground'>
                             <span className='font-medium text-foreground'>
-                                {pointsData.length}
+                                {validNodes.length}
                             </span>{' '}
                             nodes
                         </span>
@@ -388,280 +581,70 @@ export default function GraphViewer({
                             </>
                         )}
                     </div>
-                    {/* Graph controls - left side */}
+
                     <div className='absolute top-2 left-2 z-10 flex flex-col gap-1'>
-                        {/* Search Panel Toggle Button */}
                         {onTogglePanel && (
-                            <Button
-                                type='button'
-                                variant={
-                                    activePanel === 'explorer' ? 'outline' : 'outline'
-                                }
-                                size='icon'
-                                className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'explorer' ? 'border-primary' : ''
-                                }`}
-                                title='Toggle explorer panel'
-                                onClick={() => onTogglePanel('explorer')}
-                            >
-                                <MagnifyingGlassIcon size={16} weight='bold' />
-                            </Button>
+                            <>
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='icon'
+                                    className={`p-1.5 w-8 h-8 ${activePanel === 'explorer' ? 'border-primary' : ''}`}
+                                    title='Toggle explorer panel'
+                                    onClick={() => onTogglePanel('explorer')}
+                                >
+                                    <MagnifyingGlassIcon size={16} weight='bold' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='icon'
+                                    className={`p-1.5 w-8 h-8 ${activePanel === 'display' ? 'border-primary' : ''}`}
+                                    title='Toggle display panel'
+                                    onClick={() => onTogglePanel('display')}
+                                >
+                                    <GearIcon size={16} weight='bold' />
+                                </Button>
+                                <Button
+                                    type='button'
+                                    variant='outline'
+                                    size='icon'
+                                    className={`p-1.5 w-8 h-8 ${activePanel === 'filters' ? 'border-primary' : ''}`}
+                                    title='Toggle filters panel'
+                                    onClick={() => onTogglePanel('filters')}
+                                >
+                                    <FunnelIcon size={16} weight='bold' />
+                                </Button>
+                            </>
                         )}
-
-                        {/* Display Panel Toggle Button */}
-                        {onTogglePanel && (
-                            <Button
-                                type='button'
-                                variant={
-                                    activePanel === 'display' ? 'outline' : 'outline'
-                                }
-                                size='icon'
-                                className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'display' ? 'border-primary' : ''
-                                }`}
-                                title='Toggle display panel'
-                                onClick={() => onTogglePanel('display')}
-                            >
-                                <GearIcon size={16} weight='bold' />
-                            </Button>
-                        )}
-
-                        {/* Filters Panel Toggle Button */}
-                        {onTogglePanel && (
-                            <Button
-                                type='button'
-                                variant={
-                                    activePanel === 'filters' ? 'outline' : 'outline'
-                                }
-                                size='icon'
-                                className={`p-1.5 w-8 h-8 ${
-                                    activePanel === 'filters' ? 'border-primary' : ''
-                                }`}
-                                title='Toggle filters panel'
-                                onClick={() => onTogglePanel('filters')}
-                            >
-                                <FunnelIcon size={16} weight='bold' />
-                            </Button>
-                        )}
-
-                        {/* Simulation Toggle Button */}
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            className='p-1.5 w-8 h-8'
-                            title={
-                                enableSimulation
-                                    ? 'Pause simulation'
-                                    : 'Resume simulation'
-                            }
-                            onClick={() => {
-                                setEnableSimulation((prev) => !prev);
-                            }}
-                        >
-                            {enableSimulation ? (
-                                <PauseIcon size={16} weight='fill' />
-                            ) : (
-                                <PlayIcon size={16} weight='fill' />
-                            )}
-                        </Button>
                     </div>
 
-                    {/* Zoom controls - top right */}
-                    <div className='absolute top-2 right-2 z-10 flex flex-col gap-1'>
-                        {/* Fit View Button */}
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='icon'
-                            className='p-1.5 w-8 h-8'
-                            title='Fit view to show all nodes'
-                            onClick={() => {
-                                try {
-                                    if (cosmographRef.current) {
-                                        // Reset selection
-                                        cosmographRef.current.unselectAllPoints();
-                                        setSelectedNodes(new Set());
-                                        // Fit view
-                                        if (
-                                            typeof cosmographRef.current.zoomToFit ===
-                                            'function'
-                                        ) {
-                                            cosmographRef.current.zoomToFit();
-                                        } else if (
-                                            typeof cosmographRef.current.fitView ===
-                                            'function'
-                                        ) {
-                                            cosmographRef.current.fitView(250, 0.1);
-                                        }
-                                    }
-                                } catch (error) {
-                                    logger.error('[Graph] Error fitting view:', error);
-                                }
-                            }}
+                    <div
+                        className='h-full w-full rounded-lg'
+                        style={
+                            {
+                                ['--sigma-background-color']: 'var(--background)',
+                            } as React.CSSProperties
+                        }
+                    >
+                        <SigmaContainer
+                            style={{ height: '100%', width: '100%' }}
+                            className='rounded-lg'
                         >
-                            <svg
-                                xmlns='http://www.w3.org/2000/svg'
-                                width='16'
-                                height='16'
-                                viewBox='0 0 24 24'
-                                fill='none'
-                                stroke='currentColor'
-                                strokeWidth='2'
-                                strokeLinecap='round'
-                                strokeLinejoin='round'
-                            >
-                                <path d='m21 21-6-6m6 6v-4.8m0 4.8h-4.8'></path>
-                                <path d='M3 16.2V21m0 0h4.8M3 21l6-6'></path>
-                                <path d='M21 7.8V3m0 0h-4.8M21 3l-6 6'></path>
-                                <path d='M3 7.8V3m0 0h4.8M3 3l6 6'></path>
-                            </svg>
-                        </Button>
-
-                        <ButtonGroup
-                            orientation='vertical'
-                            aria-label='Media controls'
-                            className='h-fit'
-                        >
-                            <Button
-                                variant='outline'
-                                size='icon-sm'
-                                title='Zoom in'
-                                onClick={() => {
-                                    try {
-                                        if (cosmographRef.current) {
-                                            // Try multiple zoom methods
-                                            if (
-                                                typeof cosmographRef.current
-                                                    .setZoomLevel === 'function'
-                                            ) {
-                                                const currentZoom =
-                                                    cosmographRef.current.getZoomLevel?.() ||
-                                                    1;
-                                                cosmographRef.current.setZoomLevel(
-                                                    currentZoom + 0.2,
-                                                    250,
-                                                );
-                                            } else if (
-                                                typeof cosmographRef.current.setZoom ===
-                                                'function'
-                                            ) {
-                                                const currentZoom =
-                                                    cosmographRef.current.getZoom?.() ||
-                                                    1;
-                                                cosmographRef.current.setZoom(
-                                                    currentZoom * 1.2,
-                                                );
-                                            } else if (
-                                                typeof cosmographRef.current.zoomBy ===
-                                                'function'
-                                            ) {
-                                                cosmographRef.current.zoomBy(1.2);
-                                            }
-                                        }
-                                    } catch (error) {
-                                        logger.error(
-                                            '[Graph] Error zooming in:',
-                                            error,
-                                        );
-                                    }
-                                }}
-                            >
-                                <PlusIcon />
-                            </Button>
-                            <Button
-                                variant='outline'
-                                size='icon-sm'
-                                title='Zoom out'
-                                onClick={() => {
-                                    try {
-                                        if (cosmographRef.current) {
-                                            // Try multiple zoom methods
-                                            if (
-                                                typeof cosmographRef.current
-                                                    .setZoomLevel === 'function'
-                                            ) {
-                                                const currentZoom =
-                                                    cosmographRef.current.getZoomLevel?.() ||
-                                                    1;
-                                                cosmographRef.current.setZoomLevel(
-                                                    Math.max(0.1, currentZoom - 0.2),
-                                                    250,
-                                                );
-                                            } else if (
-                                                typeof cosmographRef.current.setZoom ===
-                                                'function'
-                                            ) {
-                                                const currentZoom =
-                                                    cosmographRef.current.getZoom?.() ||
-                                                    1;
-                                                cosmographRef.current.setZoom(
-                                                    currentZoom * 0.8,
-                                                );
-                                            } else if (
-                                                typeof cosmographRef.current.zoomBy ===
-                                                'function'
-                                            ) {
-                                                cosmographRef.current.zoomBy(0.8);
-                                            }
-                                        }
-                                    } catch (error) {
-                                        logger.error(
-                                            '[Graph] Error zooming out:',
-                                            error,
-                                        );
-                                    }
-                                }}
-                            >
-                                <MinusIcon />
-                            </Button>
-                        </ButtonGroup>
+                            {sigmaRef && <SetSigmaRef sigmaRef={sigmaRef} />}
+                            <GraphScene
+                                faTime={faTime}
+                                validNodes={validNodes}
+                                linksData={linksData}
+                                idToNode={idToNode}
+                                config={config}
+                                selectedNodes={selectedNodes}
+                                setSelectedNodes={setSelectedNodes}
+                                onTogglePanel={onTogglePanel}
+                                activePanel={activePanel}
+                            />
+                        </SigmaContainer>
                     </div>
-                    <Cosmograph
-                        ref={cosmographRef}
-                        points={pointsData}
-                        links={config.showLinks !== false ? linksData : []}
-                        pointIdBy='id'
-                        pointIndexBy='_index'
-                        pointColorBy='_color'
-                        pointLabelBy='_label'
-                        pointSizeBy='_size'
-                        linkSourceBy='source'
-                        linkTargetBy='target'
-                        linkSourceIndexBy='_sourceIndex'
-                        linkTargetIndexBy='_targetIndex'
-                        backgroundColor='var(--background)'
-                        pointGreyoutOpacity={0}
-                        pointSizeRange={[
-                            15 * (config.nodeRadiusCoefficient ?? 1),
-                            40 * (config.nodeRadiusCoefficient ?? 1),
-                        ]}
-                        showDynamicLabels={true}
-                        spaceSize={spaceSize}
-                        enableSimulation={enableSimulation}
-                        simulationGravity={config.simulationGravity}
-                        simulationRepulsion={config.simulationRepulsion}
-                        simulationLinkSpring={config.simulationLinkSpring}
-                        simulationLinkDistance={config.simulationLinkDistance}
-                        simulationFriction={config.simulationFriction}
-                        simulationCluster={config.simulationCluster}
-                        simulationDecay={config.simulationDecay}
-                        randomSeed={config.randomSeed}
-                        fitViewOnInit={true}
-                        fitViewDelay={250}
-                        linkColor='var(--color-muted-foreground)'
-                        focusedPointRingColor='var(--color-primary)'
-                        linkWidthRange={[
-                            4 * (config.linkWidthCoefficient ?? 1),
-                            4 * (config.linkWidthCoefficient ?? 1),
-                        ]}
-                        curvedLinks={config.curvedLinks ?? false}
-                        onClick={onClick}
-                        onLinkClick={onLinkClick}
-                        selectPointOnClick={false}
-                        focusPointOnClick={true}
-                        scalePointsOnZoom={false}
-                    />
                 </>
             ) : (
                 <div className='flex items-center justify-center h-full text-muted-foreground'>

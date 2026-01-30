@@ -10,7 +10,7 @@ export function createCradleTheme(isDarkMode: boolean) {
             '&': {
                 backgroundColor: 'var(--background)',
                 color: 'inherit',
-                '--pm-cursor-color': 'hsl(var(--foreground))',
+                '--pm-cursor-color': 'var(--foreground)',
             },
             '.cm-content': {
                 color: 'inherit',

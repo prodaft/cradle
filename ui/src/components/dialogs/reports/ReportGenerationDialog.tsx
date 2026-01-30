@@ -2,13 +2,21 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    Field,
+    FieldGroup,
+    FieldLabel,
+    FieldLegend,
+    FieldSet,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -174,7 +182,7 @@ export default function ReportGenerationDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>Generate Report</DialogTitle>
                     <DialogDescription>
@@ -186,8 +194,8 @@ export default function ReportGenerationDialog({
 
                 {/* Selected Notes List - Only show for bulk operations */}
                 {!isSingleNote && targets.length > 0 && (
-                    <div className='mb-5'>
-                        <Label>Selected Notes ({selectedIds.size})</Label>
+                    <FieldSet>
+                        <FieldLegend>Selected Notes ({selectedIds.size})</FieldLegend>
                         <ul className='border border-border rounded-lg max-h-48 overflow-y-auto'>
                             {targets.map((note) => {
                                 const isSelected = selectedIds.has(note.id);
@@ -219,85 +227,90 @@ export default function ReportGenerationDialog({
                                 );
                             })}
                         </ul>
-                    </div>
+                    </FieldSet>
                 )}
 
-                {/* Title Input */}
-                <div className='grid w-full items-center gap-3 mb-5'>
-                    <Label htmlFor='report-title'>Report Title</Label>
-                    <Input
-                        id='report-title'
-                        type='text'
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        placeholder='Enter report title...'
-                        disabled={generateReportMutation.isPending}
-                    />
-                </div>
+                <FieldGroup>
+                    {/* Title Input */}
+                    <Field>
+                        <FieldLabel htmlFor='report-title'>Report Title</FieldLabel>
+                        <Input
+                            id='report-title'
+                            type='text'
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder='Enter report title...'
+                            disabled={generateReportMutation.isPending}
+                        />
+                    </Field>
 
-                {/* Format Selection */}
-                <div className='grid w-full items-center gap-3 mb-5'>
-                    <Label htmlFor='format-select'>Format</Label>
-                    <Select
-                        value={format}
-                        onValueChange={(value) => setFormat(value as ReportFormat)}
-                        disabled={generateReportMutation.isPending}
-                    >
-                        <SelectTrigger id='format-select' className='w-full'>
-                            <SelectValue placeholder='Select format' />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value='html'>
-                                <FileTextIcon className='size-4' weight='bold' />
-                                <span>HTML</span>
-                            </SelectItem>
-                            <SelectItem value='json'>
-                                <CodeIcon className='size-4' weight='bold' />
-                                <span>JSON</span>
-                            </SelectItem>
-                            <SelectItem value='plain'>
-                                <DownloadSimpleIcon className='size-4' weight='bold' />
-                                <span>Plain Text</span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                    {/* Format Selection */}
+                    <Field>
+                        <FieldLabel htmlFor='format-select'>Format</FieldLabel>
+                        <Select
+                            value={format}
+                            onValueChange={(value) => setFormat(value as ReportFormat)}
+                            disabled={generateReportMutation.isPending}
+                        >
+                            <SelectTrigger id='format-select' className='w-full'>
+                                <SelectValue placeholder='Select format' />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value='html'>
+                                    <FileTextIcon className='size-4' weight='bold' />
+                                    <span>HTML</span>
+                                </SelectItem>
+                                <SelectItem value='json'>
+                                    <CodeIcon className='size-4' weight='bold' />
+                                    <span>JSON</span>
+                                </SelectItem>
+                                <SelectItem value='plain'>
+                                    <DownloadSimpleIcon
+                                        className='size-4'
+                                        weight='bold'
+                                    />
+                                    <span>Plain Text</span>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
 
-                {/* Mode Selection */}
-                <div className='grid w-full items-center gap-3 mb-6'>
-                    <Label htmlFor='mode-select'>Mode</Label>
-                    <Select
-                        value={mode}
-                        onValueChange={(value) => setMode(value as ReportMode)}
-                        disabled={generateReportMutation.isPending}
-                    >
-                        <SelectTrigger id='mode-select' className='w-full'>
-                            <SelectValue placeholder='Select mode' />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value='anonymized'>
-                                <EyeSlashIcon className='size-4' weight='bold' />
-                                <span>Anonymized</span>
-                            </SelectItem>
-                            <SelectItem value='transparent'>
-                                <EyeIcon className='size-4' weight='bold' />
-                                <span>Transparent</span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                    {/* Mode Selection */}
+                    <Field>
+                        <FieldLabel htmlFor='mode-select'>Mode</FieldLabel>
+                        <Select
+                            value={mode}
+                            onValueChange={(value) => setMode(value as ReportMode)}
+                            disabled={generateReportMutation.isPending}
+                        >
+                            <SelectTrigger id='mode-select' className='w-full'>
+                                <SelectValue placeholder='Select mode' />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value='anonymized'>
+                                    <EyeSlashIcon className='size-4' weight='bold' />
+                                    <span>Anonymized</span>
+                                </SelectItem>
+                                <SelectItem value='transparent'>
+                                    <EyeIcon className='size-4' weight='bold' />
+                                    <span>Transparent</span>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </Field>
+                </FieldGroup>
 
-                {/* Footer */}
-                <div className='flex justify-end gap-2 mt-4'>
-                    <Button
-                        onClick={() => onOpenChange(false)}
-                        disabled={generateReportMutation.isPending}
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                    >
-                        Cancel
-                    </Button>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            disabled={generateReportMutation.isPending}
+                        >
+                            Cancel
+                        </Button>
+                    </DialogClose>
                     <Button
                         onClick={handleGenerate}
                         disabled={generateReportMutation.isPending || !title.trim()}
@@ -312,7 +325,7 @@ export default function ReportGenerationDialog({
                             ? 'Generating...'
                             : 'Generate Report'}
                     </Button>
-                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

@@ -4,6 +4,7 @@ import {
     FieldContent,
     FieldDescription,
     FieldError,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -162,6 +163,9 @@ export default function FileSettingsForm() {
             successMessage: 'File settings updated successfully!',
             errorMessage: 'Failed to save file settings',
         },
+        onSuccess: (_, variables) => {
+            reset(variables);
+        },
         onError: () => {
             toast.error('Failed to save file settings');
         },
@@ -176,7 +180,7 @@ export default function FileSettingsForm() {
         reset,
         watch,
         control,
-        formState: { errors, isSubmitting },
+        formState: { errors, isDirty, isSubmitting },
     } = useForm<FileSettingsFormValues>({
         resolver: zodResolver(fileSettingsSchema) as any,
         defaultValues: {
@@ -271,316 +275,318 @@ export default function FileSettingsForm() {
                 {/* Processing Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Processing</h3>
-                    <Controller
-                        name='autoprocessFiles'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='autoprocessFiles'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Autoprocess Files
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Automatically process uploaded files
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Switch
-                                    id='autoprocessFiles'
-                                    name={field.name}
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className='self-center'
-                                />
-                            </Field>
-                        )}
-                    />
-
-                    <Controller
-                        name='md5Subtype'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel className='text-sm block mb-0.5'>
-                                        MD5 Subtype
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Entry class for MD5 hash artifacts
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Select
-                                    value={field.value?.value || ''}
-                                    onValueChange={(value) => {
-                                        const option = subtypes.find(
-                                            (opt) => opt.value === value,
-                                        );
-                                        field.onChange(
-                                            option
-                                                ? {
-                                                      value: option.value,
-                                                      label: option.label,
-                                                  }
-                                                : null,
-                                        );
-                                    }}
+                    <FieldGroup>
+                        <Controller
+                            name='autoprocessFiles'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
                                 >
-                                    <SelectTrigger
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='autoprocessFiles'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Autoprocess Files
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Automatically process uploaded files
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Switch
+                                        id='autoprocessFiles'
+                                        name={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
                                         className='self-center'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'md5Subtype-error'
-                                                : undefined
-                                        }
-                                    >
-                                        <SelectValue placeholder='Select MD5 subtype' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {subtypes.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                        )}
-                    />
-
-                    <Controller
-                        name='sha1Subtype'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel className='text-sm block mb-0.5'>
-                                        SHA1 Subtype
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Entry class for SHA1 hash artifacts
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Select
-                                    value={field.value?.value || ''}
-                                    onValueChange={(value) => {
-                                        const option = subtypes.find(
-                                            (opt) => opt.value === value,
-                                        );
-                                        field.onChange(
-                                            option
-                                                ? {
-                                                      value: option.value,
-                                                      label: option.label,
-                                                  }
-                                                : null,
-                                        );
-                                    }}
-                                >
-                                    <SelectTrigger
-                                        className='self-center'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'sha1Subtype-error'
-                                                : undefined
-                                        }
-                                    >
-                                        <SelectValue placeholder='Select SHA1 subtype' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {subtypes.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                        )}
-                    />
-
-                    <Controller
-                        name='sha256Subtype'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel className='text-sm block mb-0.5'>
-                                        SHA256 Subtype
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Entry class for SHA256 hash artifacts
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Select
-                                    value={field.value?.value || ''}
-                                    onValueChange={(value) => {
-                                        const option = subtypes.find(
-                                            (opt) => opt.value === value,
-                                        );
-                                        field.onChange(
-                                            option
-                                                ? {
-                                                      value: option.value,
-                                                      label: option.label,
-                                                  }
-                                                : null,
-                                        );
-                                    }}
-                                >
-                                    <SelectTrigger
-                                        className='self-center'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'sha256Subtype-error'
-                                                : undefined
-                                        }
-                                    >
-                                        <SelectValue placeholder='Select SHA256 subtype' />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {subtypes.map((option) => (
-                                            <SelectItem
-                                                key={option.value}
-                                                value={option.value}
-                                            >
-                                                {option.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </Field>
-                        )}
-                    />
-
-                    <Controller
-                        name='maxFileSizeForHashing'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='maxFileSizeForHashing'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Maximum File Size for Hashing
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Maximum file size for hashing
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <div className='w-auto self-center'>
-                                    <Input
-                                        {...field}
-                                        id='maxFileSizeForHashing'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'maxFileSizeForHashing-error'
-                                                : undefined
-                                        }
                                     />
-                                </div>
-                            </Field>
-                        )}
-                    />
+                                </Field>
+                            )}
+                        />
 
-                    <Controller
-                        name='uploadLimit'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='uploadLimit'
-                                        className='text-sm block mb-0.5'
+                        <Controller
+                            name='md5Subtype'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel className='text-sm block mb-0.5'>
+                                            MD5 Subtype
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Entry class for MD5 hash artifacts
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Select
+                                        value={field.value?.value || ''}
+                                        onValueChange={(value) => {
+                                            const option = subtypes.find(
+                                                (opt) => opt.value === value,
+                                            );
+                                            field.onChange(
+                                                option
+                                                    ? {
+                                                          value: option.value,
+                                                          label: option.label,
+                                                      }
+                                                    : null,
+                                            );
+                                        }}
                                     >
-                                        Upload Limit
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Maximum file size allowed for uploads (per user
-                                        limit can override this)
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <div className='w-auto self-center'>
-                                    <Input
-                                        {...field}
-                                        id='uploadLimit'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'uploadLimit-error'
-                                                : undefined
-                                        }
-                                    />
-                                </div>
-                            </Field>
-                        )}
-                    />
+                                        <SelectTrigger
+                                            className='self-center'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'md5Subtype-error'
+                                                    : undefined
+                                            }
+                                        >
+                                            <SelectValue placeholder='Select MD5 subtype' />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subtypes.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name='sha1Subtype'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel className='text-sm block mb-0.5'>
+                                            SHA1 Subtype
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Entry class for SHA1 hash artifacts
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Select
+                                        value={field.value?.value || ''}
+                                        onValueChange={(value) => {
+                                            const option = subtypes.find(
+                                                (opt) => opt.value === value,
+                                            );
+                                            field.onChange(
+                                                option
+                                                    ? {
+                                                          value: option.value,
+                                                          label: option.label,
+                                                      }
+                                                    : null,
+                                            );
+                                        }}
+                                    >
+                                        <SelectTrigger
+                                            className='self-center'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'sha1Subtype-error'
+                                                    : undefined
+                                            }
+                                        >
+                                            <SelectValue placeholder='Select SHA1 subtype' />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subtypes.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name='sha256Subtype'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel className='text-sm block mb-0.5'>
+                                            SHA256 Subtype
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Entry class for SHA256 hash artifacts
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Select
+                                        value={field.value?.value || ''}
+                                        onValueChange={(value) => {
+                                            const option = subtypes.find(
+                                                (opt) => opt.value === value,
+                                            );
+                                            field.onChange(
+                                                option
+                                                    ? {
+                                                          value: option.value,
+                                                          label: option.label,
+                                                      }
+                                                    : null,
+                                            );
+                                        }}
+                                    >
+                                        <SelectTrigger
+                                            className='self-center'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'sha256Subtype-error'
+                                                    : undefined
+                                            }
+                                        >
+                                            <SelectValue placeholder='Select SHA256 subtype' />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subtypes.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {option.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name='maxFileSizeForHashing'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='maxFileSizeForHashing'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Maximum File Size for Hashing
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Maximum file size for hashing
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <div className='w-auto self-center'>
+                                        <Input
+                                            {...field}
+                                            id='maxFileSizeForHashing'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'maxFileSizeForHashing-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name='uploadLimit'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='uploadLimit'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Upload Limit
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Maximum file size allowed for uploads (per
+                                            user limit can override this)
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <div className='w-auto self-center'>
+                                        <Input
+                                            {...field}
+                                            id='uploadLimit'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'uploadLimit-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
                 </div>
                 <Separator
                     data-orientation='horizontal'
@@ -591,31 +597,40 @@ export default function FileSettingsForm() {
                 {/* Actions Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Actions</h3>
-                    <Field orientation='horizontal' className='gap-2'>
-                        <FieldContent className='flex-1'>
-                            <FieldLabel className='text-sm block mb-0.5'>
-                                Process All Files
-                            </FieldLabel>
-                            <FieldDescription>
-                                Re-process all files with current settings
-                            </FieldDescription>
-                        </FieldContent>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='self-center'
-                            onClick={handleReProcessAllFiles}
-                        >
-                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight='bold' />
-                            Process
-                        </Button>
-                    </Field>
+                    <FieldGroup>
+                        <Field orientation='horizontal' className='gap-2'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block mb-0.5'>
+                                    Process All Files
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Re-process all files with current settings
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='self-center'
+                                onClick={handleReProcessAllFiles}
+                            >
+                                <ArrowClockwiseIcon
+                                    className='w-3.5 h-3.5'
+                                    weight='bold'
+                                />
+                                Process
+                            </Button>
+                        </Field>
+                    </FieldGroup>
                 </div>
             </div>
             {/* Save Button */}
             <div className='pt-2 flex justify-end'>
-                <Button type='submit' variant='default' disabled={isSubmitting}>
+                <Button
+                    type='submit'
+                    variant='default'
+                    disabled={isSubmitting || !isDirty}
+                >
                     {isSubmitting ? 'Saving...' : 'Save Settings'}
                 </Button>
             </div>

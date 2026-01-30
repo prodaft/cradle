@@ -4,6 +4,7 @@ import {
     FieldContent,
     FieldDescription,
     FieldError,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import {
@@ -204,7 +205,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
     return (
         <form onSubmit={handleFormSubmit(onSubmit as any)} className='w-full'>
-            <div className='space-y-4'>
+            <FieldGroup>
                 <Controller
                     name='name'
                     control={control}
@@ -221,6 +222,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                         id={field.name}
                                         placeholder='Name'
                                         aria-invalid={fieldState.invalid}
+                                        required
                                     />
                                 </InputGroup>
                                 <FieldDescription>
@@ -383,7 +385,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                         </Field>
                     )}
                 />
-            </div>
+            </FieldGroup>
 
             <div className='flex justify-end mt-5'>
                 <Button type='submit' variant='default' disabled={isSubmitting}>

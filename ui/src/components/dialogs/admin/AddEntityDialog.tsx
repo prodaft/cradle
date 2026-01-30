@@ -28,7 +28,7 @@ export default function AddEntityDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>New Entity</DialogTitle>
                     <DialogDescription>Create new entity</DialogDescription>

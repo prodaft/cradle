@@ -4,6 +4,7 @@ import {
     FieldContent,
     FieldDescription,
     FieldError,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import { Spinner } from '@/components/ui/spinner';
@@ -37,7 +38,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
         reset,
         watch,
         control,
-        formState: { errors, isSubmitting },
+        formState: { errors, isDirty, isSubmitting },
     } = useForm<UserSettingsFormData>({
         resolver: zodResolver(accountSettingsSchema) as any,
         defaultValues: {
@@ -78,6 +79,9 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
             successMessage: 'Account settings updated successfully!',
             errorMessage: 'Failed to save settings',
         },
+        onSuccess: (_, variables) => {
+            reset(variables);
+        },
     });
 
     // Populate form when settings data is loaded
@@ -116,120 +120,126 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                 {/* Registration Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Registration</h3>
-                    <Controller
-                        name='allowRegistration'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='allowRegistration'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Allow Registration
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Allow new users to register for accounts
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Switch
-                                    id='allowRegistration'
-                                    name={field.name}
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className='self-center'
-                                />
-                            </Field>
-                        )}
-                    />
+                    <FieldGroup>
+                        <Controller
+                            name='allowRegistration'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='allowRegistration'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Allow Registration
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Allow new users to register for accounts
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Switch
+                                        id='allowRegistration'
+                                        name={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className='self-center'
+                                    />
+                                </Field>
+                            )}
+                        />
 
-                    <Controller
-                        name='requireEmailActivation'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='requireEmailActivation'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Require Email Activation
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Users must verify their email before accessing
-                                        the system
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Switch
-                                    id='requireEmailActivation'
-                                    name={field.name}
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className='self-center'
-                                />
-                            </Field>
-                        )}
-                    />
+                        <Controller
+                            name='requireEmailActivation'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='requireEmailActivation'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Require Email Activation
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Users must verify their email before
+                                            accessing the system
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Switch
+                                        id='requireEmailActivation'
+                                        name={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className='self-center'
+                                    />
+                                </Field>
+                            )}
+                        />
 
-                    <Controller
-                        name='requireAdminConfirmation'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='requireAdminConfirmation'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Require Admin Confirmation
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        New accounts must be approved by an
-                                        administrator
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Switch
-                                    id='requireAdminConfirmation'
-                                    name={field.name}
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className='self-center'
-                                />
-                            </Field>
-                        )}
-                    />
+                        <Controller
+                            name='requireAdminConfirmation'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='requireAdminConfirmation'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Require Admin Confirmation
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            New accounts must be approved by an
+                                            administrator
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Switch
+                                        id='requireAdminConfirmation'
+                                        name={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className='self-center'
+                                    />
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
                 </div>
             </div>
             {/* Save Button */}
             <div className='pt-2 flex justify-end'>
-                <Button type='submit' variant='default' disabled={isSubmitting}>
+                <Button
+                    type='submit'
+                    variant='default'
+                    disabled={isSubmitting || !isDirty}
+                >
                     {isSubmitting ? 'Saving...' : 'Save Settings'}
                 </Button>
             </div>

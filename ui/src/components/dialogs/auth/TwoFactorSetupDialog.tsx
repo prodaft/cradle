@@ -2,8 +2,10 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -182,62 +184,61 @@ export default function TwoFactorSetupDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='sm:max-w-md'>
-                <DialogHeader>
-                    <DialogTitle>
-                        {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
-                    </DialogTitle>
-                    <DialogDescription>
-                        {isDisabling
-                            ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
-                            : 'Enter the 6-digit code from your authenticator app'}
-                    </DialogDescription>
-                </DialogHeader>
+        <form onSubmit={handleSubmit}>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className='sm:max-w-md'>
+                    <DialogHeader>
+                        <DialogTitle>
+                            {isDisabling ? 'Disable' : 'Set up'} Two-Factor Auth
+                        </DialogTitle>
+                        <DialogDescription>
+                            {isDisabling
+                                ? 'Enter the 6-digit code from your authenticator app to disable 2FA'
+                                : 'Enter the 6-digit code from your authenticator app'}
+                        </DialogDescription>
+                    </DialogHeader>
 
-                {!isDisabling && (
-                    <>
-                        {/* QR Code Section */}
-                        <div className='flex justify-center'>
-                            <div className='p-4 bg-card rounded-lg border border-border'>
-                                <QRCodeSVG value={otpAuthUrl} size={180} level='H' />
+                    {!isDisabling && (
+                        <>
+                            {/* QR Code Section */}
+                            <div className='flex justify-center'>
+                                <div className='p-4 bg-card rounded-lg border border-border'>
+                                    <QRCodeSVG value={otpAuthUrl} size={180} level='H' />
+                                </div>
                             </div>
-                        </div>
 
-                        <Field>
-                            <FieldLabel htmlFor='input-field-secret-key'>
-                                Manual Entry
-                            </FieldLabel>
-                            <InputGroup>
-                                <InputGroupAddon align='inline-start'>
-                                    <QrCodeIcon className='size-4' />
-                                </InputGroupAddon>
-                                <InputGroupInput
-                                    id='input-field-secret-key'
-                                    type='text'
-                                    value={secret}
-                                    readOnly
-                                />
-                                <InputGroupAddon align='inline-end'>
-                                    <InputGroupButton
-                                        type='button'
-                                        onClick={handleCopySecret}
-                                        aria-label='Copy secret key'
-                                    >
-                                        <CopyIcon className='size-4' />
-                                    </InputGroupButton>
-                                </InputGroupAddon>
-                            </InputGroup>
-                            <FieldDescription>
-                                Can't scan the QR code? Enter this secret key manually
-                                in your authenticator app.
-                            </FieldDescription>
-                        </Field>
-                    </>
-                )}
+                            <Field>
+                                <FieldLabel htmlFor='input-field-secret-key'>
+                                    Manual Entry
+                                </FieldLabel>
+                                <InputGroup>
+                                    <InputGroupAddon align='inline-start'>
+                                        <QrCodeIcon className='size-4' />
+                                    </InputGroupAddon>
+                                    <InputGroupInput
+                                        id='input-field-secret-key'
+                                        type='text'
+                                        value={secret}
+                                        readOnly
+                                    />
+                                    <InputGroupAddon align='inline-end'>
+                                        <InputGroupButton
+                                            type='button'
+                                            onClick={handleCopySecret}
+                                            aria-label='Copy secret key'
+                                        >
+                                            <CopyIcon className='size-4' />
+                                        </InputGroupButton>
+                                    </InputGroupAddon>
+                                </InputGroup>
+                                <FieldDescription>
+                                    Can't scan the QR code? Enter this secret key manually
+                                    in your authenticator app.
+                                </FieldDescription>
+                            </Field>
+                        </>
+                    )}
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className='space-y-5'>
                     <Field>
                         <InputOTP
                             maxLength={6}
@@ -269,16 +270,17 @@ export default function TwoFactorSetupDialog({
                         </AlertComponent>
                     )}
 
-                    <div className='flex justify-end gap-2 mt-4'>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            onClick={() => onOpenChange(false)}
-                            disabled={isSubmitting}
-                        >
-                            Cancel
-                        </Button>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                disabled={isSubmitting}
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
                         <Button
                             type='submit'
                             variant={isDisabling ? 'destructive' : 'default'}
@@ -292,9 +294,9 @@ export default function TwoFactorSetupDialog({
                                   ? 'Disable'
                                   : 'Enable'}
                         </Button>
-                    </div>
-                </form>
-            </DialogContent>
-        </Dialog>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </form>
     );
 }

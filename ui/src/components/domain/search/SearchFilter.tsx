@@ -1,5 +1,6 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Field, FieldLabel } from '@/components/ui/field';
+import * as React from 'react';
 
 interface SearchFilterProps {
     text: string;
@@ -39,13 +40,22 @@ export default function SearchFilter({
         setFilters(updatePrevState(filters, option, checked));
     };
 
+    const id = React.useId();
+
     return (
-        <Label key={option} className='flex items-center space-x-3 w-36'>
+        <Field
+            key={option}
+            orientation='horizontal'
+            className='w-36 items-center gap-3'
+        >
             <Checkbox
+                id={id}
                 checked={filters.includes(option)}
                 onCheckedChange={handleCheckboxChange}
             />
-            <span className='text-muted-foreground'>{text}</span>
-        </Label>
+            <FieldLabel htmlFor={id} className='cursor-pointer text-muted-foreground'>
+                {text}
+            </FieldLabel>
+        </Field>
     );
 }

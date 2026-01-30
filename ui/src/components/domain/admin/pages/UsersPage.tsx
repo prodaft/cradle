@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/action-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Select,
@@ -213,23 +214,23 @@ function UserSettingsPage({ userId }: { userId: string }) {
                 </aside>
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
-                        <div className='flex-none'>
-                            <h3 className='text-lg font-medium'>
-                                {currentTab?.label || 'Settings'}
-                            </h3>
-                            <p className='text-sm text-muted-foreground'>
-                                {currentDescription}
-                            </p>
-                        </div>
-                        <Separator
-                            data-orientation='horizontal'
-                            role='none'
-                            className='bg-border my-4 flex-none'
-                        />
-                        <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pe-4 pb-12'>
-                            <div className='-mx-1 px-1.5'>
+                        <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
+                            <CardContent>
+                                <div className='flex-none mb-4'>
+                                    <h3 className='text-lg font-medium'>
+                                        {currentTab?.label || 'Settings'}
+                                    </h3>
+                                    <p className='text-sm text-muted-foreground'>
+                                        {currentDescription}
+                                    </p>
+                                </div>
+                                <Separator
+                                    data-orientation='horizontal'
+                                    role='none'
+                                    className='bg-border mb-4 flex-none'
+                                />
                                 <AdminUserSettings userId={userId} activeTab={tab} />
-                            </div>
+                            </CardContent>
                         </div>
                     </div>
                 </div>
@@ -249,7 +250,7 @@ export default function UsersPage() {
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.users_page || 1);
-    const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 10);
+    const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 20);
     const { usersApi } = useApi();
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -389,7 +390,7 @@ export default function UsersPage() {
     // Sync URL params to page state
     useEffect(() => {
         const pageFromParams = (search as any)?.users_page || 1;
-        const pageSizeFromParams = (search as any)?.users_pagesize || 10;
+        const pageSizeFromParams = (search as any)?.users_pagesize || 20;
         if (pageFromParams !== page) setPage(pageFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
     }, [(search as any)?.users_page, (search as any)?.users_pagesize]);

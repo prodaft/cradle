@@ -4,6 +4,7 @@ import {
     FieldContent,
     FieldDescription,
     FieldError,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -120,7 +121,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className='w-full'>
-            <div className='space-y-4'>
+            <FieldGroup className='gap-4'>
                 <Field data-invalid={Boolean(errors.username)}>
                     <FieldLabel htmlFor='username'>
                         Username
@@ -132,6 +133,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                             placeholder='Username'
                             {...register('username')}
                             aria-invalid={Boolean(errors.username)}
+                            required
                         />
                     </InputGroup>
                     <FieldDescription>Unique identifier for this user</FieldDescription>
@@ -152,6 +154,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                             placeholder='Email'
                             {...register('email')}
                             aria-invalid={Boolean(errors.email)}
+                            required
                         />
                     </InputGroup>
                     <FieldDescription>
@@ -171,6 +174,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                         placeholder='Password'
                         {...register('password')}
                         aria-invalid={Boolean(errors.password)}
+                        required
                     />
                     <FieldDescription>
                         Minimum 8 characters recommended
@@ -283,7 +287,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                         </FieldError>
                     )}
                 </Field>
-            </div>
+            </FieldGroup>
 
             <div className='flex justify-end mt-5'>
                 <Button type='submit' variant='default' disabled={isSubmitting}>

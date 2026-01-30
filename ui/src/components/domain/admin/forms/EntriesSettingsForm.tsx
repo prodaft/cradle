@@ -3,6 +3,7 @@ import {
     Field,
     FieldContent,
     FieldDescription,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import useApi from '@/hooks/api/useApi';
@@ -63,47 +64,49 @@ export default function EntriesManagement() {
             {/* Actions Section */}
             <div className='flex flex-col gap-4'>
                 <h3 className='font-semibold text-base'>Actions</h3>
-                <Field orientation='horizontal' className='gap-2'>
-                    <FieldContent className='flex-1'>
-                        <FieldLabel className='text-sm block mb-0.5'>
-                            Propagate Access Vectors
-                        </FieldLabel>
-                        <FieldDescription>
-                            Update access permissions across all entries
-                        </FieldDescription>
-                    </FieldContent>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        className='self-center'
-                        onClick={handlePropagateAccessVectors}
-                    >
-                        <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                        Propagate
-                    </Button>
-                </Field>
+                <FieldGroup>
+                    <Field orientation='horizontal' className='gap-2'>
+                        <FieldContent className='flex-1'>
+                            <FieldLabel className='text-sm block mb-0.5'>
+                                Propagate Access Vectors
+                            </FieldLabel>
+                            <FieldDescription>
+                                Update access permissions across all entries
+                            </FieldDescription>
+                        </FieldContent>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='self-center'
+                            onClick={handlePropagateAccessVectors}
+                        >
+                            <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
+                            Propagate
+                        </Button>
+                    </Field>
 
-                <Field orientation='horizontal' className='gap-2'>
-                    <FieldContent className='flex-1'>
-                        <FieldLabel className='text-sm block mb-0.5'>
-                            Delete Hanging Artifacts
-                        </FieldLabel>
-                        <FieldDescription>
-                            Remove artifacts that are no longer referenced
-                        </FieldDescription>
-                    </FieldContent>
-                    <Button
-                        type='button'
-                        variant='destructive'
-                        size='sm'
-                        className='self-center'
-                        onClick={handleDeleteHangingArtifacts}
-                    >
-                        <TrashIcon className='w-3.5 h-3.5' weight='bold' />
-                        Delete
-                    </Button>
-                </Field>
+                    <Field orientation='horizontal' className='gap-2'>
+                        <FieldContent className='flex-1'>
+                            <FieldLabel className='text-sm block mb-0.5'>
+                                Delete Hanging Artifacts
+                            </FieldLabel>
+                            <FieldDescription>
+                                Remove artifacts that are no longer referenced
+                            </FieldDescription>
+                        </FieldContent>
+                        <Button
+                            type='button'
+                            variant='destructive'
+                            size='sm'
+                            className='self-center'
+                            onClick={handleDeleteHangingArtifacts}
+                        >
+                            <TrashIcon className='w-3.5 h-3.5' weight='bold' />
+                            Delete
+                        </Button>
+                    </Field>
+                </FieldGroup>
             </div>
         </div>
     );

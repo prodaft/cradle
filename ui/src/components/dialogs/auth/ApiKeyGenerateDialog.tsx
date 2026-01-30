@@ -2,8 +2,10 @@ import { Alert as AlertComponent, AlertDescription } from '@/components/ui/alert
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
@@ -99,7 +101,7 @@ export default function ApiKeyGenerateDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>Generate API Key</DialogTitle>
                     <DialogDescription>
@@ -124,7 +126,7 @@ export default function ApiKeyGenerateDialog({
                             </AlertComponent>
                         )}
 
-                        <div className='flex justify-end gap-2 mt-4'>
+                        <DialogFooter>
                             <Button
                                 type='button'
                                 variant='outline'
@@ -145,7 +147,7 @@ export default function ApiKeyGenerateDialog({
                                     ? 'Generating...'
                                     : 'Generate'}
                             </Button>
-                        </div>
+                        </DialogFooter>
                     </>
                 ) : (
                     <>
@@ -185,16 +187,13 @@ export default function ApiKeyGenerateDialog({
                                 </InputGroupButton>
                             </InputGroupAddon>
                         </InputGroup>
-                        <div className='flex justify-end gap-2'>
-                            <Button
-                                type='button'
-                                variant='outline'
-                                size='sm'
-                                onClick={() => onOpenChange(false)}
-                            >
-                                Close
-                            </Button>
-                        </div>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button type='button' variant='outline' size='sm'>
+                                    Close
+                                </Button>
+                            </DialogClose>
+                        </DialogFooter>
                     </>
                 )}
             </DialogContent>

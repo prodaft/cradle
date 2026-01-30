@@ -3,6 +3,7 @@ import {
     Field,
     FieldContent,
     FieldDescription,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import useApi from '@/hooks/api/useApi';
@@ -62,47 +63,49 @@ export default function GraphSettingsForm() {
             {/* Actions Section */}
             <div className='flex flex-col gap-4'>
                 <h3 className='font-semibold text-base'>Actions</h3>
-                <Field orientation='horizontal' className='gap-2'>
-                    <FieldContent className='flex-1'>
-                        <FieldLabel className='text-sm block mb-0.5'>
-                            Refresh Materialized Graph
-                        </FieldLabel>
-                        <FieldDescription>
-                            Rebuild the graph database materialized view
-                        </FieldDescription>
-                    </FieldContent>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        className='self-center'
-                        onClick={handleRefreshMaterializedGraph}
-                    >
-                        <ArrowClockwiseIcon className='w-3.5 h-3.5' weight='bold' />
-                        Refresh
-                    </Button>
-                </Field>
+                <FieldGroup>
+                    <Field orientation='horizontal' className='gap-2'>
+                        <FieldContent className='flex-1'>
+                            <FieldLabel className='text-sm block mb-0.5'>
+                                Refresh Materialized Graph
+                            </FieldLabel>
+                            <FieldDescription>
+                                Rebuild the graph database materialized view
+                            </FieldDescription>
+                        </FieldContent>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='self-center'
+                            onClick={handleRefreshMaterializedGraph}
+                        >
+                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight='bold' />
+                            Refresh
+                        </Button>
+                    </Field>
 
-                <Field orientation='horizontal' className='gap-2'>
-                    <FieldContent className='flex-1'>
-                        <FieldLabel className='text-sm block mb-0.5'>
-                            Recalculate Node Positions
-                        </FieldLabel>
-                        <FieldDescription>
-                            Recompute all node positions in the graph
-                        </FieldDescription>
-                    </FieldContent>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        className='self-center'
-                        onClick={handleRecalculateNodePositions}
-                    >
-                        <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
-                        Recalculate
-                    </Button>
-                </Field>
+                    <Field orientation='horizontal' className='gap-2'>
+                        <FieldContent className='flex-1'>
+                            <FieldLabel className='text-sm block mb-0.5'>
+                                Recalculate Node Positions
+                            </FieldLabel>
+                            <FieldDescription>
+                                Recompute all node positions in the graph
+                            </FieldDescription>
+                        </FieldContent>
+                        <Button
+                            type='button'
+                            variant='outline'
+                            size='sm'
+                            className='self-center'
+                            onClick={handleRecalculateNodePositions}
+                        >
+                            <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
+                            Recalculate
+                        </Button>
+                    </Field>
+                </FieldGroup>
             </div>
         </div>
     );

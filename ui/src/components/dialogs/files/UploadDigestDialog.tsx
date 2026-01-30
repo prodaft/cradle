@@ -1,12 +1,19 @@
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
+import {
+    Field,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import {
     FileUpload,
     FileUploadDropzone,
@@ -176,40 +183,37 @@ export default function UploadDigestDialog({
     const hasFile = selectedFiles.length > 0;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='overflow-hidden'>
-                <DialogHeader>
-                    <DialogTitle>Upload Digest</DialogTitle>
-                    <DialogDescription>
-                        Upload a file to create a new digest entry in the system.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className='w-full max-w-full overflow-hidden'>
-                    <form onSubmit={form.handleSubmit(onSubmit as any)}>
+        <form onSubmit={form.handleSubmit(onSubmit as any)}>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Upload Digest</DialogTitle>
+                        <DialogDescription>
+                            Upload a file to create a new digest entry in the system.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <FieldGroup>
                         {/* Digest Title Field */}
                         <Controller
                             name='title'
                             control={form.control}
                             render={({ field, fieldState }) => (
-                                <Field
-                                    data-invalid={fieldState.invalid}
-                                    className='mb-5'
-                                >
-                                    <FieldContent>
-                                        <FieldLabel htmlFor={field.name}>
-                                            Digest Title *
-                                        </FieldLabel>
-                                        <Input
-                                            {...field}
-                                            id={field.name}
-                                            placeholder='Enter digest title'
-                                            aria-invalid={fieldState.invalid}
-                                            disabled={uploadMutation.isPending}
-                                        />
-                                        {fieldState.invalid && (
-                                            <FieldError errors={[fieldState.error]} />
-                                        )}
-                                    </FieldContent>
+                                <Field data-invalid={fieldState.invalid}>
+                                    <FieldLabel htmlFor={field.name}>
+                                        Digest Title{' '}
+                                        <span className='text-destructive'>*</span>
+                                    </FieldLabel>
+                                    <Input
+                                        {...field}
+                                        id={field.name}
+                                        placeholder='Enter digest title'
+                                        aria-invalid={fieldState.invalid}
+                                        disabled={uploadMutation.isPending}
+                                        required
+                                    />
+                                    {fieldState.invalid && (
+                                        <FieldError errors={[fieldState.error]} />
+                                    )}
                                 </Field>
                             )}
                         />
@@ -222,68 +226,68 @@ export default function UploadDigestDialog({
                                 const isInvalid =
                                     fieldState.invalid && fieldState.isTouched;
                                 return (
-                                    <Field data-invalid={isInvalid} className='mb-5'>
-                                        <FieldContent>
-                                            <FieldLabel htmlFor='data-type'>
-                                                Data Type *
-                                            </FieldLabel>
-                                            <div
-                                                className={
-                                                    isInvalid
-                                                        ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
-                                                        : ''
-                                                }
-                                            >
-                                                <Select
-                                                    value={value?.value || ''}
-                                                    onValueChange={(selectedValue) => {
-                                                        const option =
-                                                            dataTypeOptions.find(
-                                                                (opt) =>
-                                                                    opt.value ===
-                                                                    selectedValue,
-                                                            );
-                                                        onChange(
-                                                            option ? option : null,
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldLabel htmlFor='data-type'>
+                                            Data Type{' '}
+                                            <span className='text-destructive'>*</span>
+                                        </FieldLabel>
+                                        <div
+                                            className={
+                                                isInvalid
+                                                    ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
+                                                    : ''
+                                            }
+                                        >
+                                            <Select
+                                                value={value?.value || ''}
+                                                onValueChange={(selectedValue) => {
+                                                    const option =
+                                                        dataTypeOptions.find(
+                                                            (opt) =>
+                                                                opt.value ===
+                                                                selectedValue,
                                                         );
-                                                    }}
+                                                    onChange(
+                                                        option ? option : null,
+                                                    );
+                                                }}
+                                            >
+                                                <SelectTrigger
+                                                    id='data-type'
+                                                    className='w-full'
+                                                    aria-invalid={isInvalid}
                                                 >
-                                                    <SelectTrigger
-                                                        className='w-full'
-                                                        aria-invalid={isInvalid}
-                                                    >
-                                                        <SelectValue placeholder='Select digest type' />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {dataTypeOptions.map(
-                                                            (option) => (
-                                                                <SelectItem
-                                                                    key={option.value}
-                                                                    value={option.value}
-                                                                >
-                                                                    {option.label}
-                                                                </SelectItem>
-                                                            ),
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            {isInvalid && (
-                                                <FieldError
-                                                    errors={[
-                                                        {
-                                                            message:
-                                                                typeof fieldState.error
-                                                                    ?.message ===
-                                                                'string'
-                                                                    ? fieldState.error
-                                                                          .message
-                                                                    : 'Please select a data type',
-                                                        },
-                                                    ]}
-                                                />
-                                            )}
-                                        </FieldContent>
+                                                    <SelectValue placeholder='Select digest type' />
+                                                </SelectTrigger>
+                                            <SelectContent>
+                                                {dataTypeOptions.map(
+                                                    (option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ),
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        </div>
+                                        {isInvalid && (
+                                            <FieldError
+                                                errors={[
+                                                    {
+                                                        message:
+                                                            typeof fieldState.error
+                                                                ?.message ===
+                                                            'string'
+                                                                ? fieldState.error
+                                                                      .message
+                                                                : 'Please select a data type',
+                                                    },
+                                                ]}
+                                            />
+                                        )}
                                     </Field>
                                 );
                             }}
@@ -300,108 +304,108 @@ export default function UploadDigestDialog({
                                 const hasSelectedFile = files.length > 0;
 
                                 return (
-                                    <Field data-invalid={isInvalid} className='mb-5'>
-                                        <FieldContent>
-                                            <FieldLabel htmlFor='file-upload'>
-                                                Upload File *
-                                            </FieldLabel>
-                                            <div
-                                                className={
-                                                    isInvalid
-                                                        ? 'ring-2 ring-destructive ring-opacity-50 rounded'
-                                                        : ''
-                                                }
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldLabel htmlFor='file-upload'>
+                                            Upload File{' '}
+                                            <span className='text-destructive'>*</span>
+                                        </FieldLabel>
+                                        <div
+                                            id='file-upload'
+                                            className={
+                                                isInvalid
+                                                    ? 'ring-2 ring-destructive ring-opacity-50 rounded'
+                                                    : ''
+                                            }
+                                        >
+                                            <FileUpload
+                                                value={files}
+                                                onValueChange={onChange}
+                                                maxFiles={1}
+                                                disabled={uploadMutation.isPending}
                                             >
-                                                <FileUpload
-                                                    value={files}
-                                                    onValueChange={onChange}
-                                                    maxFiles={1}
-                                                    disabled={uploadMutation.isPending}
-                                                >
-                                                    {/* Only show dropzone if no file selected */}
-                                                    {!hasSelectedFile && (
-                                                        <FileUploadDropzone className='min-h-[100px]'>
-                                                            <div className='flex flex-col items-center gap-2 text-center'>
-                                                                <CloudArrowUpIcon
-                                                                    className='h-6 w-6 text-muted-foreground'
-                                                                    weight='bold'
-                                                                />
-                                                                <div className='text-sm text-muted-foreground'>
-                                                                    <span className='font-medium text-foreground'>
-                                                                        Drop file here
-                                                                    </span>{' '}
-                                                                    or click to browse
-                                                                </div>
-                                                                <FileUploadTrigger
-                                                                    asChild
-                                                                >
-                                                                    <Button
-                                                                        type='button'
-                                                                        variant='outline'
-                                                                        size='sm'
-                                                                    >
-                                                                        Select File
-                                                                    </Button>
-                                                                </FileUploadTrigger>
+                                                {/* Only show dropzone if no file selected */}
+                                                {!hasSelectedFile && (
+                                                    <FileUploadDropzone className='min-h-[100px]'>
+                                                        <div className='flex flex-col items-center gap-2 text-center'>
+                                                            <CloudArrowUpIcon
+                                                                className='h-6 w-6 text-muted-foreground'
+                                                                weight='bold'
+                                                            />
+                                                            <div className='text-sm text-muted-foreground'>
+                                                                <span className='font-medium text-foreground'>
+                                                                    Drop file here
+                                                                </span>{' '}
+                                                                or click to browse
                                                             </div>
-                                                        </FileUploadDropzone>
-                                                    )}
-
-                                                    {/* Show selected file */}
-                                                    <FileUploadList>
-                                                        {files.map((file: File) => (
-                                                            <FileUploadItem
-                                                                key={
-                                                                    file.name +
-                                                                    file.lastModified
-                                                                }
-                                                                value={file}
-                                                                className='group'
+                                                            <FileUploadTrigger
+                                                                asChild
                                                             >
-                                                                <FileUploadItemPreview />
-                                                                <FileUploadItemMetadata size='sm' />
-                                                                <FileUploadItemDelete
-                                                                    asChild
+                                                                <Button
+                                                                    type='button'
+                                                                    variant='outline'
+                                                                    size='sm'
                                                                 >
-                                                                    <Button
-                                                                        type='button'
-                                                                        variant='ghost'
-                                                                        size='icon'
-                                                                        className='h-6 w-6'
-                                                                        disabled={
-                                                                            uploadMutation.isPending
-                                                                        }
-                                                                    >
-                                                                        <XIcon
-                                                                            className='h-4 w-4'
-                                                                            weight='bold'
-                                                                        />
-                                                                        <span className='sr-only'>
-                                                                            Remove file
-                                                                        </span>
-                                                                    </Button>
-                                                                </FileUploadItemDelete>
-                                                            </FileUploadItem>
-                                                        ))}
-                                                    </FileUploadList>
-                                                </FileUpload>
-                                            </div>
-                                            {isInvalid && (
-                                                <FieldError
-                                                    errors={[
-                                                        {
-                                                            message:
-                                                                typeof fieldState.error
-                                                                    ?.message ===
-                                                                'string'
-                                                                    ? fieldState.error
-                                                                          .message
-                                                                    : 'Please upload a file',
-                                                        },
-                                                    ]}
-                                                />
-                                            )}
-                                        </FieldContent>
+                                                                    Select File
+                                                                </Button>
+                                                            </FileUploadTrigger>
+                                                        </div>
+                                                    </FileUploadDropzone>
+                                                )}
+
+                                                {/* Show selected file */}
+                                                <FileUploadList>
+                                                    {files.map((file: File) => (
+                                                        <FileUploadItem
+                                                            key={
+                                                                file.name +
+                                                                file.lastModified
+                                                            }
+                                                            value={file}
+                                                            className='group'
+                                                        >
+                                                            <FileUploadItemPreview />
+                                                            <FileUploadItemMetadata size='sm' />
+                                                            <FileUploadItemDelete
+                                                                asChild
+                                                            >
+                                                                <Button
+                                                                    type='button'
+                                                                    variant='ghost'
+                                                                    size='icon'
+                                                                    className='h-6 w-6'
+                                                                    disabled={
+                                                                        uploadMutation.isPending
+                                                                    }
+                                                                >
+                                                                    <XIcon
+                                                                        className='h-4 w-4'
+                                                                        weight='bold'
+                                                                    />
+                                                                    <span className='sr-only'>
+                                                                        Remove file
+                                                                    </span>
+                                                                </Button>
+                                                            </FileUploadItemDelete>
+                                                        </FileUploadItem>
+                                                    ))}
+                                                </FileUploadList>
+                                            </FileUpload>
+                                        </div>
+                                        {isInvalid && (
+                                            <FieldError
+                                                errors={[
+                                                    {
+                                                        message:
+                                                            typeof fieldState.error
+                                                                ?.message ===
+                                                            'string'
+                                                                ? fieldState.error
+                                                                      .message
+                                                                : 'Please upload a file',
+                                                    },
+                                                ]}
+                                            />
+                                        )}
                                     </Field>
                                 );
                             }}
@@ -415,130 +419,128 @@ export default function UploadDigestDialog({
                                 const isInvalid =
                                     fieldState.invalid && fieldState.isTouched;
                                 return (
-                                    <Field data-invalid={isInvalid} className='mb-5'>
-                                        <FieldContent>
-                                            <FieldLabel htmlFor='associated-entries'>
-                                                Associated Entries
-                                            </FieldLabel>
-                                            <div
-                                                className={
-                                                    isInvalid
-                                                        ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
-                                                        : ''
+                                    <Field data-invalid={isInvalid}>
+                                        <FieldLabel htmlFor='associated-entries'>
+                                            Associated Entries
+                                        </FieldLabel>
+                                        <div
+                                            id='associated-entries'
+                                            className={
+                                                isInvalid
+                                                    ? 'ring-2 ring-red-500 ring-opacity-50 rounded'
+                                                    : ''
+                                            }
+                                        >
+                                            <MultipleSelector
+                                                value={
+                                                    (value?.map((e) => ({
+                                                        value: String(e.value),
+                                                        label: e.label,
+                                                    })) || []) as Option[]
                                                 }
-                                            >
-                                                <MultipleSelector
-                                                    value={
-                                                        (value?.map((e) => ({
-                                                            value: String(e.value),
-                                                            label: e.label,
-                                                        })) || []) as Option[]
+                                                defaultOptions={[]}
+                                                placeholder={
+                                                    dataType?.inferEntities
+                                                        ? 'Select entries (auto-inferred)'
+                                                        : 'Select entries'
+                                                }
+                                                disabled={
+                                                    dataType?.inferEntities || false
+                                                }
+                                                onSearch={async (query) => {
+                                                    const response =
+                                                        await queryApi.queryList({
+                                                            name: [query],
+                                                            type: 'entity',
+                                                        });
+                                                    if (
+                                                        response &&
+                                                        response.results
+                                                    ) {
+                                                        return response.results.map(
+                                                            (entry) => ({
+                                                                value: String(
+                                                                    entry.id!,
+                                                                ),
+                                                                label: `${entry.subtype}:${entry.name}`,
+                                                            }),
+                                                        ) as unknown as Option[];
                                                     }
-                                                    defaultOptions={[]}
-                                                    placeholder={
-                                                        dataType?.inferEntities
-                                                            ? 'Select entries (auto-inferred)'
-                                                            : 'Select entries'
-                                                    }
-                                                    disabled={
-                                                        dataType?.inferEntities || false
-                                                    }
-                                                    onSearch={async (query) => {
-                                                        const response =
-                                                            await queryApi.queryList({
-                                                                name: [query],
-                                                                type: 'entity',
-                                                            });
-                                                        if (
-                                                            response &&
-                                                            response.results
-                                                        ) {
-                                                            return response.results.map(
-                                                                (entry) => ({
-                                                                    value: String(
-                                                                        entry.id!,
-                                                                    ),
-                                                                    label: `${entry.subtype}:${entry.name}`,
-                                                                }),
-                                                            ) as unknown as Option[];
-                                                        }
-                                                        return [];
-                                                    }}
-                                                    onChange={(options) => {
-                                                        onChange(
-                                                            options.map((o) => ({
-                                                                value: Number(o.value),
-                                                                label: o.label,
-                                                            })),
-                                                        );
-                                                    }}
-                                                    emptyIndicator={
-                                                        <p className='text-center text-sm'>
-                                                            No entries found
-                                                        </p>
-                                                    }
-                                                    className='w-full'
-                                                />
-                                            </div>
-                                            {isInvalid && (
-                                                <FieldError
-                                                    errors={[
-                                                        {
-                                                            message:
-                                                                typeof fieldState.error
-                                                                    ?.message ===
-                                                                'string'
-                                                                    ? fieldState.error
-                                                                          .message
-                                                                    : 'Invalid associated entries',
-                                                        },
-                                                    ]}
-                                                />
-                                            )}
-                                        </FieldContent>
+                                                    return [];
+                                                }}
+                                                onChange={(options) => {
+                                                    onChange(
+                                                        options.map((o) => ({
+                                                            value: Number(o.value),
+                                                            label: o.label,
+                                                        })),
+                                                    );
+                                                }}
+                                                emptyIndicator={
+                                                    <p className='text-center text-sm'>
+                                                        No entries found
+                                                    </p>
+                                                }
+                                                className='w-full'
+                                            />
+                                        </div>
+                                        {isInvalid && (
+                                            <FieldError
+                                                errors={[
+                                                    {
+                                                        message:
+                                                            typeof fieldState.error
+                                                                ?.message ===
+                                                            'string'
+                                                                ? fieldState.error
+                                                                      .message
+                                                                : 'Invalid associated entries',
+                                                    },
+                                                ]}
+                                            />
+                                        )}
                                     </Field>
                                 );
                             }}
                         />
-
-                        {/* Footer */}
-                        <div className='flex justify-end gap-2 mt-4'>
+                    </FieldGroup>
+                    <DialogFooter>
+                        <DialogClose asChild>
                             <Button
-                                onClick={() => onOpenChange(false)}
-                                disabled={form.formState.isSubmitting}
                                 type='button'
                                 variant='outline'
                                 size='sm'
+                                disabled={form.formState.isSubmitting}
                             >
                                 Cancel
                             </Button>
-                            <Button
-                                type='submit'
-                                disabled={form.formState.isSubmitting}
-                                variant='default'
-                                size='sm'
-                                aria-label={
-                                    form.formState.isSubmitting
-                                        ? 'Uploading file'
-                                        : 'Upload file'
-                                }
-                            >
-                                {form.formState.isSubmitting ? (
-                                    <>
-                                        <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
-                                        <span>Uploading...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <UploadSimpleIcon size={16} weight='bold' />
-                                        Upload
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-                    </form>
-                </div>
-            </DialogContent>
-        </Dialog>
+                        </DialogClose>
+                        <Button
+                            type='submit'
+                            disabled={form.formState.isSubmitting}
+                            variant='default'
+                            size='sm'
+                            aria-label={
+                                form.formState.isSubmitting
+                                    ? 'Uploading file'
+                                    : 'Upload file'
+                            }
+                        >
+                            {form.formState.isSubmitting ? (
+                                <>
+                                    <div className='animate-spin rounded-full h-4 w-4 border-b-2 border-current' />
+                                    <span>Uploading...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <UploadSimpleIcon size={16} weight='bold' />
+                                    Upload
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </form>
     );
 }

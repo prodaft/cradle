@@ -4,6 +4,7 @@ import {
     FieldContent,
     FieldDescription,
     FieldError,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -243,8 +243,13 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
     }
 
     return (
-        <form onSubmit={handleFormSubmit(onSubmit as any)}>
-            <div className='flex flex-col gap-4'>
+        <form
+            className='flex flex-col gap-6'
+            onSubmit={handleFormSubmit(onSubmit as any)}
+        >
+            <section id='entity-settings'>
+                <div className='flex flex-col gap-4'>
+                    <FieldGroup>
                 <Controller
                     name='name'
                     control={control}
@@ -285,8 +290,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                     )}
                 />
 
-                <Separator />
-
                 <Controller
                     name='subtype'
                     control={control}
@@ -300,7 +303,10 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                 data-invalid={fieldState.invalid}
                             >
                                 <FieldContent className='flex-1'>
-                                    <FieldLabel className='text-sm block mb-0.5'>
+                                    <FieldLabel
+                                        htmlFor='entity-subtype'
+                                        className='text-sm block mb-0.5'
+                                    >
                                         Subtype
                                         <span className='text-destructive ml-1'>*</span>
                                     </FieldLabel>
@@ -318,6 +324,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                     onValueChange={field.onChange}
                                 >
                                     <SelectTrigger
+                                        id='entity-subtype'
                                         className='self-center'
                                         aria-invalid={fieldState.invalid}
                                         aria-describedby={
@@ -343,8 +350,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                         );
                     }}
                 />
-
-                <Separator />
 
                 <Controller
                     name='isPublic'
@@ -386,8 +391,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                     )}
                 />
 
-                <Separator />
-
                 <Controller
                     name='description'
                     control={control}
@@ -427,8 +430,6 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                     )}
                 />
 
-                <Separator />
-
                 <Controller
                     name='aliases'
                     control={control}
@@ -439,7 +440,10 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             data-invalid={fieldState.invalid}
                         >
                             <FieldContent className='flex-1'>
-                                <FieldLabel className='text-sm block mb-0.5'>
+                                <FieldLabel
+                                    htmlFor='entity-aliases'
+                                    className='text-sm block mb-0.5'
+                                >
                                     Aliases
                                 </FieldLabel>
                                 <FieldDescription>
@@ -451,7 +455,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                     </FieldError>
                                 )}
                             </FieldContent>
-                            <div className='w-64 self-center'>
+                            <div id='entity-aliases' className='w-64 self-center'>
                                 <MultipleSelector
                                     value={
                                         (field.value?.map((a) => ({
@@ -486,7 +490,9 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                         </Field>
                     )}
                 />
-            </div>
+                    </FieldGroup>
+                </div>
+            </section>
 
             {/* Save Button */}
             <div className='pt-2 flex justify-end'>

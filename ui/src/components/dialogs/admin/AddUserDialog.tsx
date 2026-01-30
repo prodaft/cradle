@@ -28,7 +28,7 @@ export default function AddUserDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>Add User</DialogTitle>
                     <DialogDescription>Create a new user account</DialogDescription>

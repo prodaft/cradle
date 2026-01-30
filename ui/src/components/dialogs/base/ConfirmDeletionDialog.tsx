@@ -1,13 +1,16 @@
-import { JSX, useState } from 'react';
-import { Button } from 'src/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
+    DialogClose,
     DialogContent,
     DialogDescription,
+    DialogFooter,
     DialogHeader,
     DialogTitle,
-} from 'src/components/ui/dialog';
-import { Input } from 'src/components/ui/input';
+} from '@/components/ui/dialog';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
+import { JSX, useState } from 'react';
 
 /**
  * ConfirmDeletionDialog component props
@@ -72,35 +75,35 @@ export default function ConfirmDeletionDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className='sm:max-w-md'>
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{text}</DialogDescription>
                 </DialogHeader>
 
-                {/* Confirmation input */}
                 {confirmTextStripped && (
-                    <div className='grid w-full items-center gap-3'>
-                        <Input
-                            id='confirm-input'
-                            type='text'
-                            value={userInput}
-                            onChange={(e) => setUserInput(e.target.value)}
-                            placeholder={`Type "${confirmTextStripped}" to confirm`}
-                        />
-                    </div>
+                    <FieldGroup>
+                        <Field>
+                            <FieldLabel htmlFor='confirm-input'>
+                                Type below to confirm
+                            </FieldLabel>
+                            <Input
+                                id='confirm-input'
+                                type='text'
+                                value={userInput}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                placeholder={`Type "${confirmTextStripped}" to confirm`}
+                            />
+                        </Field>
+                    </FieldGroup>
                 )}
 
-                {/* Action buttons */}
-                <div className='flex justify-end gap-2'>
-                    <Button
-                        type='button'
-                        variant='outline'
-                        size='sm'
-                        onClick={() => onOpenChange(false)}
-                    >
-                        Cancel
-                    </Button>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button type='button' variant='outline' size='sm'>
+                            Cancel
+                        </Button>
+                    </DialogClose>
                     <Button
                         type='button'
                         variant='destructive'
@@ -110,7 +113,7 @@ export default function ConfirmDeletionDialog({
                     >
                         {confirmButtonText}
                     </Button>
-                </div>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

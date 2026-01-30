@@ -5,8 +5,8 @@ import {
 } from '@/components/ui/resizable';
 import { EdgeRelation } from '@/services/cradle';
 import { logger } from '@/utils/logger';
-import { CosmographProvider } from '@cosmograph/react';
 import { ComponentType, useCallback, useMemo, useRef, useState } from 'react';
+import type Sigma from 'sigma';
 import Graph from './Graph';
 import { filterGraph, Node } from './graphFilterUtils';
 import GraphQuery from './GraphQuery';
@@ -81,7 +81,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     const [isLoading, setIsLoading] = useState(true);
     const [fetchProgress, setFetchProgress] = useState<FetchProgress | null>(null);
     const [fetchControls, setFetchControls] = useState<FetchControls | null>(null);
-    const cosmographRef = useRef<any>(null);
+    const sigmaRef = useRef<{ sigma: Sigma } | null>(null);
 
     const handleLoadingChange = useCallback((loading: boolean) => {
         setIsLoading(loading);
@@ -232,70 +232,65 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     }, [nodes, edges, disabledTypes]);
 
     return (
-        <CosmographProvider>
-            <div className='w-full h-full overflow-y-hidden relative'>
-                <ResizablePanelGroup direction='horizontal' className='h-full'>
-                    {activePanel && (
-                        <>
-                            <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                                <GraphQuery
-                                    selectedEntries={selectedNodes}
-                                    setSelectedEntries={setSelectedNodes}
-                                    config={config}
-                                    setConfig={setConfig}
-                                    SearchComponent={GraphSearchComponent}
-                                    entryGraphColors={entryGraphColors}
-                                    disabledTypes={disabledTypes}
-                                    setDisabledTypes={setDisabledTypes}
-                                    addNodes={addNodes}
-                                    addEdges={addEdges}
-                                    addBoth={addBoth}
-                                    nodes={filteredNodes}
-                                    edges={filteredEdges}
-                                    activePanel={
-                                        activePanel as
-                                            | 'explorer'
-                                            | 'display'
-                                            | 'filters'
-                                    }
-                                    onClosePanel={() => setActivePanel(null)}
-                                    cosmographRef={cosmographRef}
-                                    onLoadingChange={handleLoadingChange}
-                                    onFetchProgressChange={handleFetchProgressChange}
-                                    onFetchControlsReady={handleFetchControlsReady}
-                                />
-                            </ResizablePanel>
-                            <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
-                        </>
-                    )}
-                    <ResizablePanel defaultSize={activePanel ? 70 : 100} minSize={50}>
-                        <div className='relative h-full'>
-                            <Graph
-                                selectedNodes={selectedNodes}
-                                setSelectedNodes={setSelectedNodes}
-                                onClearGraph={() => {
-                                    setNodes([]);
-                                    setEdges([]);
-                                    setNodeIds(new Set());
-                                    setEdgeIds(new Set());
-                                    setEntryGraphColors({});
-                                }}
+        <div className='w-full h-full overflow-y-hidden relative'>
+            <ResizablePanelGroup direction='horizontal' className='h-full'>
+                {activePanel && (
+                    <>
+                        <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                            <GraphQuery
+                                selectedEntries={selectedNodes}
+                                setSelectedEntries={setSelectedNodes}
                                 config={config}
+                                setConfig={setConfig}
+                                SearchComponent={GraphSearchComponent}
+                                entryGraphColors={entryGraphColors}
+                                disabledTypes={disabledTypes}
+                                setDisabledTypes={setDisabledTypes}
+                                addNodes={addNodes}
+                                addEdges={addEdges}
+                                addBoth={addBoth}
                                 nodes={filteredNodes}
                                 edges={filteredEdges}
-                                activePanel={activePanel}
-                                onTogglePanel={(panel) =>
-                                    setActivePanel(activePanel === panel ? null : panel)
+                                activePanel={
+                                    activePanel as 'explorer' | 'display' | 'filters'
                                 }
-                                cosmographRef={cosmographRef}
-                                isLoading={isLoading}
-                                fetchProgress={fetchProgress}
-                                fetchControls={fetchControls}
+                                onClosePanel={() => setActivePanel(null)}
+                                sigmaRef={sigmaRef}
+                                onLoadingChange={handleLoadingChange}
+                                onFetchProgressChange={handleFetchProgressChange}
+                                onFetchControlsReady={handleFetchControlsReady}
                             />
-                        </div>
-                    </ResizablePanel>
-                </ResizablePanelGroup>
-            </div>
-        </CosmographProvider>
+                        </ResizablePanel>
+                        <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
+                    </>
+                )}
+                <ResizablePanel defaultSize={activePanel ? 70 : 100} minSize={50}>
+                    <div className='relative h-full'>
+                        <Graph
+                            selectedNodes={selectedNodes}
+                            setSelectedNodes={setSelectedNodes}
+                            onClearGraph={() => {
+                                setNodes([]);
+                                setEdges([]);
+                                setNodeIds(new Set());
+                                setEdgeIds(new Set());
+                                setEntryGraphColors({});
+                            }}
+                            config={config}
+                            nodes={filteredNodes}
+                            edges={filteredEdges}
+                            activePanel={activePanel}
+                            onTogglePanel={(panel) =>
+                                setActivePanel(activePanel === panel ? null : panel)
+                            }
+                            sigmaRef={sigmaRef}
+                            isLoading={isLoading}
+                            fetchProgress={fetchProgress}
+                            fetchControls={fetchControls}
+                        />
+                    </div>
+                </ResizablePanel>
+            </ResizablePanelGroup>
+        </div>
     );
 }

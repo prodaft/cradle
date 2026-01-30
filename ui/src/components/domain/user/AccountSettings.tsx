@@ -4,6 +4,7 @@ import TwoFactorSetupDialog from '@/components/dialogs/auth/TwoFactorSetupDialog
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import MarkdownEditorDialog from '@/components/dialogs/notes/MarkdownEditorDialog';
 import { Button } from '@/components/ui/button';
+import { CardContent } from '@/components/ui/card';
 import {
     Command,
     CommandEmpty,
@@ -16,9 +17,9 @@ import {
     Field,
     FieldContent,
     FieldDescription,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
-import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
@@ -799,7 +800,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
                         <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                            <div className='px-6' data-slot='card-content'>
+                            <CardContent>
                                 <div className='flex-none mb-4'>
                                     <h3 className='text-lg font-medium'>
                                         {currentTab?.label || 'Settings'}
@@ -811,7 +812,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                 <Separator
                                     data-orientation='horizontal'
                                     role='none'
-                                    className='bg-border mb-6 flex-none'
+                                    className='bg-border mb-4 flex-none'
                                 />
                                 <form
                                     className='flex flex-col gap-6'
@@ -821,113 +822,117 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'security' && (
                                         <section id='security'>
                                             <div className='flex flex-col gap-4'>
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='gap-2'
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel className='text-sm block mb-0.5'>
-                                                            Password
-                                                        </FieldLabel>
-                                                        <FieldDescription>
-                                                            Change your account password
-                                                        </FieldDescription>
-                                                    </FieldContent>
-                                                    <Button
-                                                        type='button'
-                                                        variant='outline'
-                                                        size='sm'
-                                                        className='self-center'
-                                                        onClick={
-                                                            openChangePasswordDialog
-                                                        }
-                                                        title='Change Password'
+                                                <FieldGroup>
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
                                                     >
-                                                        Change
-                                                    </Button>
-                                                </Field>
+                                                        <FieldContent className='flex-1'>
+                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                Password
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Change your account
+                                                                password
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <Button
+                                                            type='button'
+                                                            variant='outline'
+                                                            size='sm'
+                                                            className='self-center'
+                                                            onClick={
+                                                                openChangePasswordDialog
+                                                            }
+                                                            title='Change Password'
+                                                        >
+                                                            Change
+                                                        </Button>
+                                                    </Field>
 
-                                                <Separator />
-
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='gap-2'
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel className='text-sm block mb-0.5'>
-                                                            API Key
-                                                        </FieldLabel>
-                                                        <FieldDescription>
-                                                            Generate key for API access
-                                                        </FieldDescription>
-                                                    </FieldContent>
-                                                    <Button
-                                                        type='button'
-                                                        variant='outline'
-                                                        size='sm'
-                                                        className='self-center'
-                                                        onClick={openApiKeyDialog}
-                                                        title='Generate API Key'
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
                                                     >
-                                                        Generate
-                                                    </Button>
-                                                </Field>
+                                                        <FieldContent className='flex-1'>
+                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                API Key
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Generate key for API
+                                                                access
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <Button
+                                                            type='button'
+                                                            variant='outline'
+                                                            size='sm'
+                                                            className='self-center'
+                                                            onClick={openApiKeyDialog}
+                                                            title='Generate API Key'
+                                                        >
+                                                            Generate
+                                                        </Button>
+                                                    </Field>
 
-                                                <Separator />
-
-                                                <div className='flex items-center justify-between'>
-                                                    <div className='flex flex-col gap-0.5'>
-                                                        <span className='text-sm block mb-0.5'>
-                                                            Two-Factor Auth
-                                                        </span>
-                                                        <span className='text-sm text-muted-foreground'>
-                                                            Protect your account with
-                                                            one-time codes from an
-                                                            authenticator app
-                                                        </span>
-                                                    </div>
-                                                    <Button
-                                                        type='button'
-                                                        variant={
-                                                            twoFactorEnabled
-                                                                ? 'destructive'
-                                                                : 'outline'
-                                                        }
-                                                        size='sm'
-                                                        onClick={openTwoFactorDialog}
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
                                                     >
-                                                        {twoFactorEnabled
-                                                            ? 'Disable'
-                                                            : 'Enable'}
-                                                    </Button>
-                                                </div>
+                                                        <FieldContent className='flex-1'>
+                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                Two-Factor Auth
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Protect your account
+                                                                with one-time codes from
+                                                                an authenticator app
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <Button
+                                                            type='button'
+                                                            variant={
+                                                                twoFactorEnabled
+                                                                    ? 'destructive'
+                                                                    : 'outline'
+                                                            }
+                                                            size='sm'
+                                                            className='self-center'
+                                                            onClick={
+                                                                openTwoFactorDialog
+                                                            }
+                                                        >
+                                                            {twoFactorEnabled
+                                                                ? 'Disable'
+                                                                : 'Enable'}
+                                                        </Button>
+                                                    </Field>
 
-                                                <Separator />
-
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='gap-2'
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel className='text-sm block mb-0.5'>
-                                                            Delete Account
-                                                        </FieldLabel>
-                                                        <FieldDescription>
-                                                            Permanently remove account
-                                                            and data
-                                                        </FieldDescription>
-                                                    </FieldContent>
-                                                    <Button
-                                                        type='button'
-                                                        variant='destructive'
-                                                        size='sm'
-                                                        onClick={
-                                                            openDeleteAccountDialog
-                                                        }
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
                                                     >
-                                                        Delete
-                                                    </Button>
-                                                </Field>
+                                                        <FieldContent className='flex-1'>
+                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                Delete Account
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Permanently remove
+                                                                account and data
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <Button
+                                                            type='button'
+                                                            variant='destructive'
+                                                            size='sm'
+                                                            onClick={
+                                                                openDeleteAccountDialog
+                                                            }
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </Field>
+                                                </FieldGroup>
                                             </div>
                                         </section>
                                     )}
@@ -957,11 +962,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                     {Object.entries(
                                                         mergedOAuthConnections,
                                                     ).map(
-                                                        (
-                                                            [provider, connected],
-                                                            index,
-                                                            all,
-                                                        ) => {
+                                                        ([provider, connected]) => {
                                                             const method =
                                                                 oauthMethods.find(
                                                                     (item) =>
@@ -974,17 +975,20 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                 : provider;
                                                             return (
                                                                 <div key={provider}>
-                                                                    <div className='flex items-center justify-between'>
-                                                                        <div className='flex flex-col gap-0.5'>
-                                                                            <span className='text-sm block mb-0.5'>
+                                                                    <Field
+                                                                        orientation='horizontal'
+                                                                        className='gap-2'
+                                                                    >
+                                                                        <FieldContent className='flex-1'>
+                                                                            <FieldLabel className='text-sm block mb-0.5'>
                                                                                 {label}
-                                                                            </span>
-                                                                            <span className='text-sm text-muted-foreground'>
+                                                                            </FieldLabel>
+                                                                            <FieldDescription>
                                                                                 {connected
                                                                                     ? 'Connected'
                                                                                     : 'Not connected'}
-                                                                            </span>
-                                                                        </div>
+                                                                            </FieldDescription>
+                                                                        </FieldContent>
                                                                         <Button
                                                                             type='button'
                                                                             variant={
@@ -993,6 +997,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                                     : 'outline'
                                                                             }
                                                                             size='sm'
+                                                                            className='self-center'
                                                                             onClick={() => {
                                                                                 if (
                                                                                     connected
@@ -1016,12 +1021,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                                 ? 'Disconnect'
                                                                                 : 'Connect'}
                                                                         </Button>
-                                                                    </div>
-                                                                    {index <
-                                                                        all.length -
-                                                                            1 && (
-                                                                        <Separator />
-                                                                    )}
+                                                                    </Field>
                                                                 </div>
                                                             );
                                                         },
@@ -1045,155 +1045,164 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'appearance' && (
                                         <section id='appearance'>
                                             <div className='flex flex-col gap-4'>
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='gap-2'
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel className='text-sm block mb-0.5'>
-                                                            Theme
-                                                        </FieldLabel>
-                                                        <FieldDescription>
-                                                            Select a color theme for the
-                                                            interface
-                                                        </FieldDescription>
-                                                    </FieldContent>
-                                                    <Popover
-                                                        open={themePopoverOpen}
-                                                        onOpenChange={
-                                                            setThemePopoverOpen
-                                                        }
+                                                <FieldGroup>
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
                                                     >
-                                                        <PopoverTrigger asChild>
-                                                            <Button
-                                                                variant='outline'
-                                                                role='combobox'
-                                                                aria-expanded={
-                                                                    themePopoverOpen
-                                                                }
-                                                                className='w-full sm:w-64 justify-between self-center'
-                                                            >
-                                                                <span className='truncate'>
-                                                                    {selectedThemeType ===
-                                                                    'custom'
-                                                                        ? 'Custom'
-                                                                        : PRESET_THEMES.find(
-                                                                              (p) =>
-                                                                                  p.id ===
-                                                                                  selectedThemeType,
-                                                                          )?.label ||
-                                                                          'Select theme...'}
-                                                                </span>
-                                                                <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent
-                                                            className='w-[var(--radix-popover-trigger-width)] p-0'
-                                                            align='start'
-                                                        >
-                                                            <Command>
-                                                                <CommandInput placeholder='Search themes...' />
-                                                                <CommandList>
-                                                                    <CommandEmpty>
-                                                                        No themes found.
-                                                                    </CommandEmpty>
-                                                                    <CommandGroup>
-                                                                        {PRESET_THEMES.map(
-                                                                            (
-                                                                                preset,
-                                                                            ) => (
-                                                                                <CommandItem
-                                                                                    key={
-                                                                                        preset.id
-                                                                                    }
-                                                                                    value={
-                                                                                        preset.label
-                                                                                    }
-                                                                                    onSelect={() => {
-                                                                                        handleThemeTypeChange(
-                                                                                            preset.id,
-                                                                                        );
-                                                                                        setThemePopoverOpen(
-                                                                                            false,
-                                                                                        );
-                                                                                    }}
-                                                                                >
-                                                                                    <Check
-                                                                                        className={cn(
-                                                                                            'mr-2 size-4',
-                                                                                            selectedThemeType ===
-                                                                                                preset.id
-                                                                                                ? 'opacity-100'
-                                                                                                : 'opacity-0',
-                                                                                        )}
-                                                                                    />
-                                                                                    {
-                                                                                        preset.label
-                                                                                    }
-                                                                                </CommandItem>
-                                                                            ),
-                                                                        )}
-                                                                        <CommandItem
-                                                                            value='Custom'
-                                                                            onSelect={() => {
-                                                                                handleThemeTypeChange(
-                                                                                    'custom',
-                                                                                );
-                                                                                setThemePopoverOpen(
-                                                                                    false,
-                                                                                );
-                                                                            }}
-                                                                        >
-                                                                            <Check
-                                                                                className={cn(
-                                                                                    'mr-2 size-4',
-                                                                                    selectedThemeType ===
-                                                                                        'custom'
-                                                                                        ? 'opacity-100'
-                                                                                        : 'opacity-0',
-                                                                                )}
-                                                                            />
-                                                                            Custom
-                                                                        </CommandItem>
-                                                                    </CommandGroup>
-                                                                </CommandList>
-                                                            </Command>
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                </Field>
-
-                                                {selectedThemeType === 'custom' && (
-                                                    <div className='space-y-2'>
-                                                        <Label className='text-sm text-muted-foreground block'>
-                                                            Custom Theme JSON
-                                                        </Label>
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            Provide a JSON object with
-                                                            CSS variable values.
-                                                        </p>
-                                                        <Textarea
-                                                            rows={10}
-                                                            className='font-mono text-xs'
-                                                            placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
-                                                            value={customThemeJSON}
-                                                            onChange={(e) =>
-                                                                setCustomThemeJSON(
-                                                                    e.target.value,
-                                                                )
+                                                        <FieldContent className='flex-1'>
+                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                Theme
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Select a color theme for
+                                                                the interface
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <Popover
+                                                            open={themePopoverOpen}
+                                                            onOpenChange={
+                                                                setThemePopoverOpen
                                                             }
-                                                        />
-                                                        <div className='flex justify-end'>
-                                                            <Button
-                                                                type='button'
-                                                                onClick={
-                                                                    handleApplyCustomTheme
-                                                                }
+                                                        >
+                                                            <PopoverTrigger asChild>
+                                                                <Button
+                                                                    variant='outline'
+                                                                    role='combobox'
+                                                                    aria-expanded={
+                                                                        themePopoverOpen
+                                                                    }
+                                                                    className='w-full sm:w-64 justify-between self-center'
+                                                                >
+                                                                    <span className='truncate'>
+                                                                        {selectedThemeType ===
+                                                                        'custom'
+                                                                            ? 'Custom'
+                                                                            : PRESET_THEMES.find(
+                                                                                  (p) =>
+                                                                                      p.id ===
+                                                                                      selectedThemeType,
+                                                                              )
+                                                                                  ?.label ||
+                                                                              'Select theme...'}
+                                                                    </span>
+                                                                    <ChevronsUpDown className='ml-2 size-4 shrink-0 opacity-50' />
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent
+                                                                className='w-[var(--radix-popover-trigger-width)] p-0'
+                                                                align='start'
                                                             >
-                                                                Apply Custom Theme
-                                                            </Button>
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                                <Command>
+                                                                    <CommandInput placeholder='Search themes...' />
+                                                                    <CommandList>
+                                                                        <CommandEmpty>
+                                                                            No themes
+                                                                            found.
+                                                                        </CommandEmpty>
+                                                                        <CommandGroup>
+                                                                            {PRESET_THEMES.map(
+                                                                                (
+                                                                                    preset,
+                                                                                ) => (
+                                                                                    <CommandItem
+                                                                                        key={
+                                                                                            preset.id
+                                                                                        }
+                                                                                        value={
+                                                                                            preset.label
+                                                                                        }
+                                                                                        onSelect={() => {
+                                                                                            handleThemeTypeChange(
+                                                                                                preset.id,
+                                                                                            );
+                                                                                            setThemePopoverOpen(
+                                                                                                false,
+                                                                                            );
+                                                                                        }}
+                                                                                    >
+                                                                                        <Check
+                                                                                            className={cn(
+                                                                                                'mr-2 size-4',
+                                                                                                selectedThemeType ===
+                                                                                                    preset.id
+                                                                                                    ? 'opacity-100'
+                                                                                                    : 'opacity-0',
+                                                                                            )}
+                                                                                        />
+                                                                                        {
+                                                                                            preset.label
+                                                                                        }
+                                                                                    </CommandItem>
+                                                                                ),
+                                                                            )}
+                                                                            <CommandItem
+                                                                                value='Custom'
+                                                                                onSelect={() => {
+                                                                                    handleThemeTypeChange(
+                                                                                        'custom',
+                                                                                    );
+                                                                                    setThemePopoverOpen(
+                                                                                        false,
+                                                                                    );
+                                                                                }}
+                                                                            >
+                                                                                <Check
+                                                                                    className={cn(
+                                                                                        'mr-2 size-4',
+                                                                                        selectedThemeType ===
+                                                                                            'custom'
+                                                                                            ? 'opacity-100'
+                                                                                            : 'opacity-0',
+                                                                                    )}
+                                                                                />
+                                                                                Custom
+                                                                            </CommandItem>
+                                                                        </CommandGroup>
+                                                                    </CommandList>
+                                                                </Command>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    </Field>
+
+                                                    {selectedThemeType === 'custom' && (
+                                                        <Field className='space-y-2'>
+                                                            <FieldLabel
+                                                                htmlFor='custom-theme-json'
+                                                                className='text-sm block mb-0.5'
+                                                            >
+                                                                Custom Theme JSON
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Provide a JSON object
+                                                                with CSS variable
+                                                                values.
+                                                            </FieldDescription>
+                                                            <Textarea
+                                                                id='custom-theme-json'
+                                                                rows={10}
+                                                                className='font-mono text-xs'
+                                                                placeholder='{"--background":"oklch(0.145 0 0)","--foreground":"oklch(0.985 0 0)"}'
+                                                                value={customThemeJSON}
+                                                                onChange={(e) =>
+                                                                    setCustomThemeJSON(
+                                                                        e.target.value,
+                                                                    )
+                                                                }
+                                                            />
+                                                            <div className='flex justify-end'>
+                                                                <Button
+                                                                    type='button'
+                                                                    onClick={
+                                                                        handleApplyCustomTheme
+                                                                    }
+                                                                >
+                                                                    Apply Custom Theme
+                                                                </Button>
+                                                            </div>
+                                                        </Field>
+                                                    )}
+                                                </FieldGroup>
                                             </div>
                                         </section>
                                     )}
@@ -1202,94 +1211,99 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'editor' && (
                                         <section id='editor'>
                                             <div className='flex flex-col gap-4'>
-                                                <div className='flex items-center justify-between gap-4'>
-                                                    <div className='flex-1'>
-                                                        <Label
-                                                            htmlFor={vimModeId}
-                                                            className='text-sm block mb-0.5'
+                                                <Controller
+                                                    name='vimMode'
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Field
+                                                            orientation='horizontal'
+                                                            className='gap-2'
                                                         >
-                                                            Vim Mode
-                                                        </Label>
-                                                        <p className='text-sm text-muted-foreground'>
-                                                            Use Vim keybindings in
-                                                            the markdown editor
-                                                        </p>
-                                                    </div>
-                                                    <Controller
-                                                        name='vimMode'
-                                                        control={control}
-                                                        render={({ field }) => (
+                                                            <FieldContent className='flex-1'>
+                                                                <FieldLabel
+                                                                    htmlFor={vimModeId}
+                                                                    className='text-sm block mb-0.5'
+                                                                >
+                                                                    Vim Mode
+                                                                </FieldLabel>
+                                                                <FieldDescription>
+                                                                    Use Vim keybindings
+                                                                    in the markdown
+                                                                    editor
+                                                                </FieldDescription>
+                                                            </FieldContent>
                                                             <Switch
                                                                 id={vimModeId}
                                                                 name={field.name}
                                                                 data-testid='vim-toggle'
-                                                                checked={
-                                                                    field.value
-                                                                }
+                                                                checked={field.value}
                                                                 onCheckedChange={
                                                                     field.onChange
                                                                 }
                                                             />
-                                                        )}
-                                                    />
-                                                </div>
+                                                        </Field>
+                                                    )}
+                                                />
 
-                                                <Separator />
-
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='gap-2'
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel className='text-sm block mb-0.5'>
-                                                            Note Template
-                                                        </FieldLabel>
-                                                        <FieldDescription>
-                                                            Preset structure for new
-                                                            notes you create
-                                                        </FieldDescription>
-                                                    </FieldContent>
-                                                    <Button
-                                                        type='button'
-                                                        variant='outline'
-                                                        size='sm'
-                                                        className='self-center'
-                                                        onClick={openNoteTemplateDialog}
-                                                        disabled={noteTemplateLoading}
+                                                <FieldGroup>
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
                                                     >
-                                                        {noteTemplateLoading
-                                                            ? 'Loading...'
-                                                            : 'Edit'}
-                                                    </Button>
-                                                </Field>
+                                                        <FieldContent className='flex-1'>
+                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                Note Template
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Preset structure for new
+                                                                notes you create
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <Button
+                                                            type='button'
+                                                            variant='outline'
+                                                            size='sm'
+                                                            className='self-center'
+                                                            onClick={
+                                                                openNoteTemplateDialog
+                                                            }
+                                                            disabled={
+                                                                noteTemplateLoading
+                                                            }
+                                                        >
+                                                            {noteTemplateLoading
+                                                                ? 'Loading...'
+                                                                : 'Edit'}
+                                                        </Button>
+                                                    </Field>
 
-                                                <Separator />
-
-                                                <Field
-                                                    orientation='horizontal'
-                                                    className='gap-2'
-                                                >
-                                                    <FieldContent className='flex-1'>
-                                                        <FieldLabel className='text-sm block mb-0.5'>
-                                                            Note Snippets
-                                                        </FieldLabel>
-                                                        <FieldDescription>
-                                                            Reusable text blocks you can
-                                                            insert with shortcuts
-                                                        </FieldDescription>
-                                                    </FieldContent>
-                                                    <Button
-                                                        type='button'
-                                                        variant='outline'
-                                                        size='sm'
-                                                        className='self-center'
-                                                        onClick={() => {
-                                                            snippetListRef.current?.handleAddSnippet();
-                                                        }}
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
                                                     >
-                                                        New Snippet
-                                                    </Button>
-                                                </Field>
+                                                        <FieldContent className='flex-1'>
+                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                Note Snippets
+                                                            </FieldLabel>
+                                                            <FieldDescription>
+                                                                Reusable text blocks you
+                                                                can insert with
+                                                                shortcuts
+                                                            </FieldDescription>
+                                                        </FieldContent>
+                                                        <Button
+                                                            type='button'
+                                                            variant='outline'
+                                                            size='sm'
+                                                            className='self-center'
+                                                            onClick={() => {
+                                                                snippetListRef.current?.handleAddSnippet();
+                                                            }}
+                                                        >
+                                                            New Snippet
+                                                        </Button>
+                                                    </Field>
+                                                </FieldGroup>
                                                 <SnippetList
                                                     ref={snippetListRef}
                                                     userId={target}
@@ -1313,7 +1327,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                         </section>
                                     )}
                                 </form>
-                            </div>
+                            </CardContent>
                         </div>
                     </div>
                 </div>

@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/action-bar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     Select,
@@ -215,19 +216,6 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                 </aside>
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
-                        <div className='flex-none'>
-                            <h3 className='text-lg font-medium'>
-                                {currentTab?.label || 'Settings'}
-                            </h3>
-                            <p className='text-sm text-muted-foreground'>
-                                {currentDescription}
-                            </p>
-                        </div>
-                        <Separator
-                            data-orientation='horizontal'
-                            role='none'
-                            className='bg-border my-4 flex-none'
-                        />
                         {tab === 'activity' ? (
                             <div className='h-full w-full overflow-y-auto overflow-x-hidden'>
                                 <ActivityList
@@ -237,8 +225,21 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                                 />
                             </div>
                         ) : (
-                            <div className='h-full w-full overflow-y-auto overflow-x-hidden'>
-                                <div className='-mx-1 px-1.5'>
+                            <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
+                                <CardContent>
+                                    <div className='flex-none mb-4'>
+                                        <h3 className='text-lg font-medium'>
+                                            {currentTab?.label || 'Settings'}
+                                        </h3>
+                                        <p className='text-sm text-muted-foreground'>
+                                            {currentDescription}
+                                        </p>
+                                    </div>
+                                    <Separator
+                                        data-orientation='horizontal'
+                                        role='none'
+                                        className='bg-border mb-4 flex-none'
+                                    />
                                     {tab === 'permissions' ? (
                                         <EntityPermissionsForm
                                             entityId={Number(entityId)}
@@ -261,7 +262,7 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                                             }}
                                         />
                                     )}
-                                </div>
+                                </CardContent>
                             </div>
                         )}
                     </div>
@@ -279,7 +280,7 @@ export default function EntitiesPage() {
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.entities_page || 1);
-    const [pageSize, setPageSize] = useState((search as any)?.entities_pagesize || 10);
+    const [pageSize, setPageSize] = useState((search as any)?.entities_pagesize || 20);
     const { isAdmin } = useAuthState();
     const { queryApi, entriesApi } = useApi();
     const queryClient = useQueryClient();
@@ -389,7 +390,7 @@ export default function EntitiesPage() {
     // Sync URL params to page state
     useEffect(() => {
         const pageFromParams = (search as any)?.entities_page || 1;
-        const pageSizeFromParams = (search as any)?.entities_pagesize || 10;
+        const pageSizeFromParams = (search as any)?.entities_pagesize || 20;
         if (pageFromParams !== page) setPage(pageFromParams);
         if (pageSizeFromParams !== pageSize) setPageSize(pageSizeFromParams);
     }, [(search as any)?.entities_page, (search as any)?.entities_pagesize]);

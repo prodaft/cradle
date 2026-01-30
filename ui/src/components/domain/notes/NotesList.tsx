@@ -1,5 +1,9 @@
 import { DataTable } from '@/components/data-table/data-table';
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import ActionConfirmationDialog from '@/components/dialogs/base/ActionConfirmationDialog';
+import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
+import EnrichmentRequestDialog from '@/components/dialogs/enrichment/EnrichmentRequestDialog';
+import ReportGenerationDialog from '@/components/dialogs/reports/ReportGenerationDialog';
 import {
     ActionBar,
     ActionBarClose,
@@ -46,10 +50,6 @@ import {
 import { DateRangeFilter, type SortDirection } from '../../base/ListView/types';
 import PreviewTip, { PreviewTipProvider } from '../../base/Preview/PreviewTip';
 import StatusHeaderDropdown from '../../base/StatusHeaderDropdown/StatusHeaderDropdown';
-import ActionConfirmationDialog from '../../dialogs/base/ActionConfirmationDialog';
-import ConfirmDeletionDialog from '../../dialogs/base/ConfirmDeletionDialog';
-import EnrichmentRequestDialog from '../../dialogs/enrichment/EnrichmentRequestDialog';
-import ReportGenerationDialog from '../../dialogs/reports/ReportGenerationDialog';
 import OfflineIndicator from '../../feedback/OfflineIndicator';
 import { NotePreviewContent } from './NotePreviewContent';
 import { StatusIcon } from './StatusIcon';

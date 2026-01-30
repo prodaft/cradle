@@ -58,7 +58,6 @@ import {
     prosemarkMarkdownSyntaxExtensions,
 } from '@prosemark/core';
 import { htmlBlockExtension } from '@prosemark/render-html';
-import { indentationMarkers } from '@replit/codemirror-indentation-markers';
 import { CodeMirror, vim, Vim } from '@replit/codemirror-vim';
 import { FileDownload, FileReferenceWithNote } from '@services/cradle/models';
 import { useMutation, useQuery } from '@tanstack/react-query';
@@ -382,16 +381,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
                     ],
                 }),
             }),
-            ...indentationMarkers({
-                highlightActiveBlock: true,
-                hideFirstIndent: false,
-                markerType: 'codeOnly',
-                thickness: 0.5,
-                colors: {
-                    light: 'var(--muted) / 0.3',
-                    dark: 'var(--muted-foreground) / 0.2',
-                },
-            }),
             ...(!source
                 ? [
                       prosemarkBasicSetup(),
@@ -638,6 +627,7 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         <div className='h-full w-full flex flex-col overflow-hidden'>
             <div className='flex-1 min-h-0 relative'>
                 <div
+                    id='codemirror-container'
                     ref={editorRef}
                     className='absolute inset-0 rich-editor markdown-body'
                     role='textbox'

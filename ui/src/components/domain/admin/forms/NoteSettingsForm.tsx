@@ -4,6 +4,7 @@ import {
     FieldContent,
     FieldDescription,
     FieldError,
+    FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -40,7 +41,7 @@ export default function NoteSettingsForm() {
         reset,
         watch,
         control,
-        formState: { errors, isSubmitting },
+        formState: { errors, isDirty, isSubmitting },
     } = useForm<NoteSettingsFormData>({
         resolver: zodResolver(noteSettingsSchema) as any,
         defaultValues: {
@@ -77,6 +78,9 @@ export default function NoteSettingsForm() {
         meta: {
             successMessage: 'Settings updated successfully!',
             errorMessage: 'Failed to save settings',
+        },
+        onSuccess: (_, variables) => {
+            reset(variables);
         },
         onError: () => {
             toast.error('Failed to save settings');
@@ -144,173 +148,177 @@ export default function NoteSettingsForm() {
                 {/* General Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>General</h3>
-                    <Controller
-                        name='minEntries'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='minEntries'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Minimum Entries
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Minimum number of entries required in a note
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <div className='w-auto self-center'>
-                                    <Input
-                                        {...field}
-                                        id='minEntries'
-                                        type='number'
+                    <FieldGroup>
+                        <Controller
+                            name='minEntries'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='minEntries'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Minimum Entries
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Minimum number of entries required in a note
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <div className='w-auto self-center'>
+                                        <Input
+                                            {...field}
+                                            id='minEntries'
+                                            type='number'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'minEntries-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name='minEntities'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='minEntities'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Minimum Entities
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Minimum number of entities required in a
+                                            note
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <div className='w-auto self-center'>
+                                        <Input
+                                            {...field}
+                                            id='minEntities'
+                                            type='number'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'minEntities-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name='maxCliqueSize'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='maxCliqueSize'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Maximum Clique Size
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Maximum size for clique detection
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <div className='w-auto self-center'>
+                                        <Input
+                                            {...field}
+                                            id='maxCliqueSize'
+                                            type='number'
+                                            aria-invalid={fieldState.invalid}
+                                            aria-describedby={
+                                                fieldState.invalid
+                                                    ? 'maxCliqueSize-error'
+                                                    : undefined
+                                            }
+                                        />
+                                    </div>
+                                </Field>
+                            )}
+                        />
+
+                        <Controller
+                            name='allowDynamicEntryClassCreation'
+                            control={control}
+                            render={({ field, fieldState }) => (
+                                <Field
+                                    orientation='horizontal'
+                                    className='gap-2'
+                                    data-invalid={fieldState.invalid}
+                                >
+                                    <FieldContent className='flex-1'>
+                                        <FieldLabel
+                                            htmlFor='allowDynamicEntryClassCreation'
+                                            className='text-sm block mb-0.5'
+                                        >
+                                            Dynamic Entry Class Creation
+                                        </FieldLabel>
+                                        <FieldDescription>
+                                            Allow automatic creation of new entry
+                                            classes
+                                        </FieldDescription>
+                                        {fieldState.invalid && (
+                                            <FieldError className='text-sm mt-1'>
+                                                {fieldState.error?.message}
+                                            </FieldError>
+                                        )}
+                                    </FieldContent>
+                                    <Switch
+                                        id='allowDynamicEntryClassCreation'
+                                        name={field.name}
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        className='self-center'
                                         aria-invalid={fieldState.invalid}
                                         aria-describedby={
                                             fieldState.invalid
-                                                ? 'minEntries-error'
+                                                ? 'allowDynamicEntryClassCreation-error'
                                                 : undefined
                                         }
                                     />
-                                </div>
-                            </Field>
-                        )}
-                    />
-
-                    <Controller
-                        name='minEntities'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='minEntities'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Minimum Entities
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Minimum number of entities required in a note
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <div className='w-auto self-center'>
-                                    <Input
-                                        {...field}
-                                        id='minEntities'
-                                        type='number'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'minEntities-error'
-                                                : undefined
-                                        }
-                                    />
-                                </div>
-                            </Field>
-                        )}
-                    />
-
-                    <Controller
-                        name='maxCliqueSize'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='maxCliqueSize'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Maximum Clique Size
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Maximum size for clique detection
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <div className='w-auto self-center'>
-                                    <Input
-                                        {...field}
-                                        id='maxCliqueSize'
-                                        type='number'
-                                        aria-invalid={fieldState.invalid}
-                                        aria-describedby={
-                                            fieldState.invalid
-                                                ? 'maxCliqueSize-error'
-                                                : undefined
-                                        }
-                                    />
-                                </div>
-                            </Field>
-                        )}
-                    />
-
-                    <Controller
-                        name='allowDynamicEntryClassCreation'
-                        control={control}
-                        render={({ field, fieldState }) => (
-                            <Field
-                                orientation='horizontal'
-                                className='gap-2'
-                                data-invalid={fieldState.invalid}
-                            >
-                                <FieldContent className='flex-1'>
-                                    <FieldLabel
-                                        htmlFor='allowDynamicEntryClassCreation'
-                                        className='text-sm block mb-0.5'
-                                    >
-                                        Dynamic Entry Class Creation
-                                    </FieldLabel>
-                                    <FieldDescription>
-                                        Allow automatic creation of new entry classes
-                                    </FieldDescription>
-                                    {fieldState.invalid && (
-                                        <FieldError className='text-sm mt-1'>
-                                            {fieldState.error?.message}
-                                        </FieldError>
-                                    )}
-                                </FieldContent>
-                                <Switch
-                                    id='allowDynamicEntryClassCreation'
-                                    name={field.name}
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                    className='self-center'
-                                    aria-invalid={fieldState.invalid}
-                                    aria-describedby={
-                                        fieldState.invalid
-                                            ? 'allowDynamicEntryClassCreation-error'
-                                            : undefined
-                                    }
-                                />
-                            </Field>
-                        )}
-                    />
+                                </Field>
+                            )}
+                        />
+                    </FieldGroup>
                 </div>
                 <Separator
                     data-orientation='horizontal'
@@ -321,28 +329,30 @@ export default function NoteSettingsForm() {
                 {/* Snippets Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Global Snippets</h3>
-                    <Field orientation='horizontal' className='gap-2'>
-                        <FieldContent className='flex-1'>
-                            <FieldLabel className='text-sm block mb-0.5'>
-                                Global Snippets
-                            </FieldLabel>
-                            <FieldDescription>
-                                Reusable text blocks available to all users
-                            </FieldDescription>
-                        </FieldContent>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='self-center'
-                            onClick={() => {
-                                snippetListRef.current?.handleAddSnippet();
-                            }}
-                        >
-                            <PlusIcon className='w-3.5 h-3.5' weight='bold' />
-                            New Snippet
-                        </Button>
-                    </Field>
+                    <FieldGroup>
+                        <Field orientation='horizontal' className='gap-2'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block mb-0.5'>
+                                    Global Snippets
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Reusable text blocks available to all users
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='self-center'
+                                onClick={() => {
+                                    snippetListRef.current?.handleAddSnippet();
+                                }}
+                            >
+                                <PlusIcon className='w-3.5 h-3.5' weight='bold' />
+                                New Snippet
+                            </Button>
+                        </Field>
+                    </FieldGroup>
                     <SnippetList ref={snippetListRef} userId='null' showTitle={false} />
                 </div>
                 <Separator
@@ -354,31 +364,40 @@ export default function NoteSettingsForm() {
                 {/* Actions Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Actions</h3>
-                    <Field orientation='horizontal' className='gap-2'>
-                        <FieldContent className='flex-1'>
-                            <FieldLabel className='text-sm block mb-0.5'>
-                                Re-Link All Notes
-                            </FieldLabel>
-                            <FieldDescription>
-                                Regenerate all note links based on current entries
-                            </FieldDescription>
-                        </FieldContent>
-                        <Button
-                            type='button'
-                            variant='outline'
-                            size='sm'
-                            className='self-center'
-                            onClick={handleReLinkNotes}
-                        >
-                            <ArrowClockwiseIcon className='w-3.5 h-3.5' weight='bold' />
-                            Re-Link
-                        </Button>
-                    </Field>
+                    <FieldGroup>
+                        <Field orientation='horizontal' className='gap-2'>
+                            <FieldContent className='flex-1'>
+                                <FieldLabel className='text-sm block mb-0.5'>
+                                    Re-Link All Notes
+                                </FieldLabel>
+                                <FieldDescription>
+                                    Regenerate all note links based on current entries
+                                </FieldDescription>
+                            </FieldContent>
+                            <Button
+                                type='button'
+                                variant='outline'
+                                size='sm'
+                                className='self-center'
+                                onClick={handleReLinkNotes}
+                            >
+                                <ArrowClockwiseIcon
+                                    className='w-3.5 h-3.5'
+                                    weight='bold'
+                                />
+                                Re-Link
+                            </Button>
+                        </Field>
+                    </FieldGroup>
                 </div>
             </div>
             {/* Save Button */}
             <div className='pt-2 flex justify-end'>
-                <Button type='submit' variant='default' disabled={isSubmitting}>
+                <Button
+                    type='submit'
+                    variant='default'
+                    disabled={isSubmitting || !isDirty}
+                >
                     {isSubmitting ? 'Saving...' : 'Save Settings'}
                 </Button>
             </div>

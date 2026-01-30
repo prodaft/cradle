@@ -1,7 +1,8 @@
+import { Input } from '@/components/ui/input';
 import { EdgeRelation } from '@/services/cradle';
-import { CosmographSearch } from '@cosmograph/react';
 import type React from 'react';
-import { ComponentType, useMemo } from 'react';
+import { ComponentType, useMemo, useState } from 'react';
+import type Sigma from 'sigma';
 import ExplorerPanel from './ExplorerPanel';
 import GraphFilters from './GraphFilters';
 import { Edge, Node } from './graphFilterUtils';
@@ -47,7 +48,7 @@ interface GraphControlProps {
     nodes: Node[];
     edges: Edge[];
     activePanel: 'explorer' | 'display' | 'filters';
-    cosmographRef: React.MutableRefObject<any>;
+    sigmaRef: React.RefObject<{ sigma: Sigma } | null>;
     selectedEntries: Set<Entry>;
     setSelectedEntries: (entries: Set<Entry>) => void;
     onLoadingChange?: (isLoading: boolean) => void;
@@ -70,7 +71,7 @@ export default function GraphControl({
     nodes,
     edges,
     activePanel,
-    cosmographRef,
+    sigmaRef,
     selectedEntries,
     setSelectedEntries,
     onLoadingChange,
@@ -86,14 +87,36 @@ export default function GraphControl({
         });
     };
 
-    // Create a map from index to node for reverse lookups
-    const indexToNode = useMemo(() => {
-        const map = new Map<number, Node>();
-        nodes.forEach((node, index) => {
-            map.set(index, node);
-        });
-        return map;
-    }, [nodes]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const searchResults = useMemo(() => {
+        if (!searchQuery.trim()) return nodes.slice(0, 10);
+        const q = searchQuery.toLowerCase();
+        return nodes
+            .filter(
+                (n) =>
+                    (n.label ?? n.id).toLowerCase().includes(q) ||
+                    n.id.toLowerCase().includes(q),
+            )
+            .slice(0, 10);
+    }, [nodes, searchQuery]);
+
+    const handleSelectNode = (node: Node) => {
+        const sigmaInstance = sigmaRef.current?.sigma;
+        if (sigmaInstance) {
+            try {
+                sigmaInstance
+                    .getCamera()
+                    .animate(
+                        sigmaInstance.getNodeDisplayData(node.id) ?? { x: 0, y: 0 },
+                        { duration: 250 },
+                    );
+            } catch (_) {
+                // Node may not be in graph yet
+            }
+        }
+        setSelectedEntries(new Set([node]));
+        setSearchQuery('');
+    };
 
     return (
         <>
@@ -109,23 +132,28 @@ export default function GraphControl({
                 />
                 {/* Graph Search - Only render when nodes are available */}
                 {nodes.length > 0 && (
-                    <div className='px-4 mt-4'>
-                        <CosmographSearch
-                            accessor='label'
-                            onSelect={(suggestion: any) => {
-                                if (suggestion == null || cosmographRef.current == null)
-                                    return;
-                                const index = suggestion._index;
-                                if (index !== undefined) {
-                                    cosmographRef.current.setFocusedPoint(index);
-                                    cosmographRef.current.zoomToPoint(index);
-                                    const node = indexToNode.get(index);
-                                    if (node) {
-                                        setSelectedEntries(new Set([node]));
-                                    }
-                                }
-                            }}
+                    <div className='px-4 mt-4 relative'>
+                        <Input
+                            placeholder='Search nodes...'
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className='w-full'
                         />
+                        {searchQuery && searchResults.length > 0 && (
+                            <ul className='absolute z-50 mt-1 w-full rounded-md border border-border bg-popover py-1 shadow-md max-h-48 overflow-auto'>
+                                {searchResults.map((node) => (
+                                    <li key={node.id}>
+                                        <button
+                                            type='button'
+                                            className='w-full px-3 py-2 text-left text-sm hover:bg-accent'
+                                            onClick={() => handleSelectNode(node)}
+                                        >
+                                            {node.label ?? node.id}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </div>
                 )}
                 {/* Explorer Panel */}

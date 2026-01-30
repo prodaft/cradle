@@ -28,8 +28,8 @@ export default function AddEntryTypeDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className='max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col'>
-                <DialogHeader className='shrink-0'>
+            <DialogContent>
+                <DialogHeader>
                     <DialogTitle>New Entry</DialogTitle>
                     <DialogDescription>Create new entry class</DialogDescription>
                 </DialogHeader>

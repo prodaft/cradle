@@ -673,7 +673,7 @@ class DefaultNoteTemplateView(APIView):
     get=extend_schema(
         operation_id="users_sessions_list",
         summary="List user sessions",
-        description="Returns a list of active sessions for the specified user. Users can only view their own sessions.",
+        description="Returns a list of active sessions for the specified user. Users can view their own sessions; admins can view non-admin users' sessions.",
         parameters=[
             OpenApiParameter(
                 name="user_id",
@@ -708,8 +708,8 @@ class UserSessionsListView(APIView):
             except CradleUser.DoesNotExist:
                 raise UserNotFoundException(detail="There is no user with the specified ID.")
 
-        # Users can only view their own sessions
-        if initiator.pk != user.pk:
+        # Users can view their own sessions; admins can view non-admin users' sessions
+        if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
             raise DisallowedActionException(detail="You are not allowed to view sessions for this user.")
 
         # Get all non-expired sessions, ordered by last activity
@@ -728,7 +728,7 @@ class UserSessionsListView(APIView):
     delete=extend_schema(
         operation_id="users_sessions_destroy",
         summary="Revoke user session",
-        description="Revokes a specific session by ID. Users can only revoke their own sessions.",
+        description="Revokes a specific session by ID. Users can revoke their own sessions; admins can revoke non-admin users' sessions.",
         parameters=[
             OpenApiParameter(
                 name="user_id",
@@ -769,8 +769,8 @@ class UserSessionRevokeView(APIView):
             except CradleUser.DoesNotExist:
                 raise UserNotFoundException(detail="There is no user with the specified ID.")
 
-        # Users can only revoke their own sessions
-        if initiator.pk != user.pk:
+        # Users can revoke their own sessions; admins can revoke non-admin users' sessions
+        if not (initiator.pk == user.pk or (initiator.is_cradle_admin and not user.is_cradle_admin)):
             raise DisallowedActionException(detail="You are not allowed to revoke sessions for this user.")
 
         try:

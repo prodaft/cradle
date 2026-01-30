@@ -1,5 +1,11 @@
 import { Button } from '@/components/ui/button';
-import { Field, FieldContent, FieldError, FieldLabel } from '@/components/ui/field';
+import {
+    Field,
+    FieldContent,
+    FieldError,
+    FieldGroup,
+    FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions, useAuthState } from '@/hooks/auth/useAuth';
@@ -121,60 +127,66 @@ export default function ResetPassword() {
                     <div className='mt-10 sm:mx-auto sm:w-full sm:max-w-sm'>
                         <form
                             onSubmit={form.handleSubmit(onSubmit)}
-                            className='space-y-6'
+                            className='flex flex-col gap-4'
                         >
-                            <Controller
-                                name='password'
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldContent>
-                                            <FieldLabel htmlFor={field.name}>
-                                                Password
-                                            </FieldLabel>
-                                            <Input
-                                                {...field}
-                                                id={field.name}
-                                                type='password'
-                                                autoComplete='new-password'
-                                                aria-invalid={fieldState.invalid}
-                                                disabled={form.formState.isSubmitting}
-                                            />
-                                            {fieldState.invalid && (
-                                                <FieldError
-                                                    errors={[fieldState.error]}
+                            <FieldGroup>
+                                <Controller
+                                    name='password'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Password
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={field.name}
+                                                    type='password'
+                                                    autoComplete='new-password'
+                                                    aria-invalid={fieldState.invalid}
+                                                    disabled={
+                                                        form.formState.isSubmitting
+                                                    }
                                                 />
-                                            )}
-                                        </FieldContent>
-                                    </Field>
-                                )}
-                            />
-                            <Controller
-                                name='confirmPassword'
-                                control={form.control}
-                                render={({ field, fieldState }) => (
-                                    <Field data-invalid={fieldState.invalid}>
-                                        <FieldContent>
-                                            <FieldLabel htmlFor={field.name}>
-                                                Confirm Password
-                                            </FieldLabel>
-                                            <Input
-                                                {...field}
-                                                id={field.name}
-                                                type='password'
-                                                autoComplete='new-password'
-                                                aria-invalid={fieldState.invalid}
-                                                disabled={form.formState.isSubmitting}
-                                            />
-                                            {fieldState.invalid && (
-                                                <FieldError
-                                                    errors={[fieldState.error]}
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        errors={[fieldState.error]}
+                                                    />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
+                                    )}
+                                />
+                                <Controller
+                                    name='confirmPassword'
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field data-invalid={fieldState.invalid}>
+                                            <FieldContent>
+                                                <FieldLabel htmlFor={field.name}>
+                                                    Confirm Password
+                                                </FieldLabel>
+                                                <Input
+                                                    {...field}
+                                                    id={field.name}
+                                                    type='password'
+                                                    autoComplete='new-password'
+                                                    aria-invalid={fieldState.invalid}
+                                                    disabled={
+                                                        form.formState.isSubmitting
+                                                    }
                                                 />
-                                            )}
-                                        </FieldContent>
-                                    </Field>
-                                )}
-                            />
+                                                {fieldState.invalid && (
+                                                    <FieldError
+                                                        errors={[fieldState.error]}
+                                                    />
+                                                )}
+                                            </FieldContent>
+                                        </Field>
+                                    )}
+                                />
+                            </FieldGroup>
                             <Button
                                 type='submit'
                                 variant='default'

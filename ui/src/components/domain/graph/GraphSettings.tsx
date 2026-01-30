@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -135,11 +135,13 @@ export default function GraphSettings({
 
                 <TabsContent value='appearance' className='mt-3'>
                     <ScrollArea className='max-h-[50vh]'>
-                        <div className='space-y-3'>
+                        <FieldGroup>
                             {/* Node Size */}
-                            <div className='space-y-1.5'>
+                            <Field>
                                 <div className='flex items-center justify-between w-full mb-1.5'>
-                                    <Label className='text-xs'>Node Size</Label>
+                                    <FieldLabel className='text-xs'>
+                                        Node Size
+                                    </FieldLabel>
                                     <span className='text-xs text-muted-foreground tabular-nums'>
                                         {config.nodeRadiusCoefficient.toFixed(1)}x
                                     </span>
@@ -156,12 +158,14 @@ export default function GraphSettings({
                                         }))
                                     }
                                 />
-                            </div>
+                            </Field>
 
                             {/* Link Width */}
-                            <div className='space-y-1.5'>
+                            <Field>
                                 <div className='flex items-center justify-between w-full mb-1.5'>
-                                    <Label className='text-xs'>Link Width</Label>
+                                    <FieldLabel className='text-xs'>
+                                        Link Width
+                                    </FieldLabel>
                                     <span className='text-xs text-muted-foreground tabular-nums'>
                                         {config.linkWidthCoefficient.toFixed(1)}x
                                     </span>
@@ -178,10 +182,10 @@ export default function GraphSettings({
                                         }))
                                     }
                                 />
-                            </div>
+                            </Field>
 
                             <div className='border-t pt-3 space-y-2'>
-                                <div className='flex items-center gap-2'>
+                                <Field orientation='horizontal'>
                                     <Checkbox
                                         id='showLinks'
                                         checked={config.showLinks ?? true}
@@ -192,11 +196,11 @@ export default function GraphSettings({
                                             }))
                                         }
                                     />
-                                    <Label htmlFor='showLinks' className='text-xs'>
+                                    <FieldLabel htmlFor='showLinks' className='text-xs'>
                                         Show links
-                                    </Label>
-                                </div>
-                                <div className='flex items-center gap-2'>
+                                    </FieldLabel>
+                                </Field>
+                                <Field orientation='horizontal'>
                                     <Checkbox
                                         id='curvedLinks'
                                         checked={config.curvedLinks ?? false}
@@ -207,12 +211,15 @@ export default function GraphSettings({
                                             }))
                                         }
                                     />
-                                    <Label htmlFor='curvedLinks' className='text-xs'>
+                                    <FieldLabel
+                                        htmlFor='curvedLinks'
+                                        className='text-xs'
+                                    >
                                         Curved links
-                                    </Label>
-                                </div>
+                                    </FieldLabel>
+                                </Field>
                             </div>
-                        </div>
+                        </FieldGroup>
                     </ScrollArea>
                 </TabsContent>
 
@@ -228,7 +235,7 @@ export default function GraphSettings({
                                 Reset to defaults
                             </Button>
 
-                            <div className='space-y-2.5'>
+                            <FieldGroup>
                                 {simulationSettings.map(
                                     ({
                                         label,
@@ -239,12 +246,12 @@ export default function GraphSettings({
                                         step,
                                         key,
                                     }) => (
-                                        <div key={key}>
+                                        <Field key={key}>
                                             <div className='flex items-center justify-between w-full mb-1'>
                                                 <div className='flex items-center gap-1'>
-                                                    <Label className='text-xs'>
+                                                    <FieldLabel className='text-xs'>
                                                         {label}
-                                                    </Label>
+                                                    </FieldLabel>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <InfoIcon
@@ -278,21 +285,23 @@ export default function GraphSettings({
                                                     }))
                                                 }
                                             />
-                                        </div>
+                                        </Field>
                                     ),
                                 )}
-                            </div>
+                            </FieldGroup>
                         </div>
                     </ScrollArea>
                 </TabsContent>
 
                 <TabsContent value='advanced' className='mt-3'>
                     <ScrollArea className='max-h-[50vh]'>
-                        <div className='space-y-3'>
+                        <FieldGroup>
                             {/* Random Seed */}
-                            <div className='space-y-1.5'>
+                            <Field>
                                 <div className='flex items-center gap-1 mb-1.5'>
-                                    <Label className='text-xs'>Random Seed</Label>
+                                    <FieldLabel className='text-xs'>
+                                        Random Seed
+                                    </FieldLabel>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <InfoIcon
@@ -324,15 +333,15 @@ export default function GraphSettings({
                                     placeholder='42 or "my-seed"'
                                     className='w-full text-xs h-8'
                                 />
-                            </div>
+                            </Field>
 
                             {/* Cluster Separation */}
-                            <div className='space-y-1.5'>
+                            <Field>
                                 <div className='flex items-center justify-between w-full mb-1'>
                                     <div className='flex items-center gap-1'>
-                                        <Label className='text-xs'>
+                                        <FieldLabel className='text-xs'>
                                             Cluster Separation
-                                        </Label>
+                                        </FieldLabel>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
                                                 <InfoIcon
@@ -363,10 +372,10 @@ export default function GraphSettings({
                                         }))
                                     }
                                 />
-                            </div>
+                            </Field>
 
                             <div className='border-t pt-3 space-y-2'>
-                                <div className='flex items-center gap-2'>
+                                <Field orientation='horizontal'>
                                     <Checkbox
                                         id='scaleLinksOnZoom'
                                         checked={config.scaleLinksOnZoom ?? false}
@@ -377,15 +386,15 @@ export default function GraphSettings({
                                             }))
                                         }
                                     />
-                                    <Label
+                                    <FieldLabel
                                         htmlFor='scaleLinksOnZoom'
                                         className='text-xs'
                                     >
                                         Scale links on zoom
-                                    </Label>
-                                </div>
+                                    </FieldLabel>
+                                </Field>
                             </div>
-                        </div>
+                        </FieldGroup>
                     </ScrollArea>
                 </TabsContent>
             </Tabs>

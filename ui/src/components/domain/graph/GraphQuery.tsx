@@ -3,6 +3,7 @@ import { EdgeRelation } from '@/services/cradle';
 import { XIcon } from 'lucide-react';
 import type React from 'react';
 import { ComponentType } from 'react';
+import type Sigma from 'sigma';
 import GraphControl from './GraphControl';
 import { Edge, Node } from './graphFilterUtils';
 
@@ -49,7 +50,7 @@ interface GraphQueryProps {
     edges: Edge[];
     activePanel: 'explorer' | 'display' | 'filters';
     onClosePanel: () => void;
-    cosmographRef: React.MutableRefObject<any>;
+    sigmaRef: React.RefObject<{ sigma: Sigma } | null>;
     onLoadingChange?: (isLoading: boolean) => void;
     onFetchProgressChange?: (progress: FetchProgress | null) => void;
     onFetchControlsReady?: (controls: {
@@ -72,7 +73,7 @@ export default function GraphQuery({
     edges,
     activePanel,
     onClosePanel,
-    cosmographRef,
+    sigmaRef,
     selectedEntries,
     setSelectedEntries,
     onLoadingChange,
@@ -121,7 +122,7 @@ export default function GraphQuery({
                         nodes={nodes}
                         edges={edges}
                         activePanel={activePanel}
-                        cosmographRef={cosmographRef}
+                        sigmaRef={sigmaRef}
                         selectedEntries={selectedEntries}
                         setSelectedEntries={setSelectedEntries}
                         onLoadingChange={onLoadingChange}
