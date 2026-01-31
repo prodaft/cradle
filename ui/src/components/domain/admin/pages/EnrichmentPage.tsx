@@ -23,7 +23,9 @@ export default function EnrichmentPage() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/manage/enrichment' });
+    const search = useSearch({
+        from: '/_authenticated/manage/_manage-auth/enrichment',
+    });
     const [searchQuery, setSearchQuery] = useState('');
     const { intelioApi } = useApi();
 

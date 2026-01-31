@@ -1,10 +1,11 @@
 import tailwindcss from '@tailwindcss/vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react-swc';
 import dns from 'dns';
 import path from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import tsConfigPaths from 'vite-tsconfig-paths';
 
 dns.setDefaultResultOrder('verbatim');
 
@@ -14,7 +15,16 @@ export default defineConfig(({ mode }) => {
     return {
         base: '/',
         cacheDir: '.vite-cache',
-        plugins: [tailwindcss(), react(), visualizer(), nodePolyfills()],
+        plugins: [
+            tsConfigPaths(),
+            tanstackStart({
+                spa: { enabled: true },
+                client: { entry: 'entry-client.tsx' },
+            }),
+            tailwindcss(),
+            react(),
+            visualizer(),
+        ],
         build: {
             sourcemap: isDev,
             minify: 'esbuild',

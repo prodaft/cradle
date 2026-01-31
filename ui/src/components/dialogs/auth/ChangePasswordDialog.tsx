@@ -131,11 +131,7 @@ export default function ChangePasswordDialog({
                                         <InputGroupInput
                                             {...field}
                                             id={field.name}
-                                            type={
-                                                showOldPassword
-                                                    ? 'text'
-                                                    : 'password'
-                                            }
+                                            type={showOldPassword ? 'text' : 'password'}
                                             placeholder='Enter current password'
                                             aria-invalid={fieldState.invalid}
                                             disabled={form.formState.isSubmitting}
@@ -145,9 +141,7 @@ export default function ChangePasswordDialog({
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowOldPassword(
-                                                        !showOldPassword,
-                                                    )
+                                                    setShowOldPassword(!showOldPassword)
                                                 }
                                                 aria-label={
                                                     showOldPassword
@@ -194,11 +188,7 @@ export default function ChangePasswordDialog({
                                         <InputGroupInput
                                             {...field}
                                             id={field.name}
-                                            type={
-                                                showNewPassword
-                                                    ? 'text'
-                                                    : 'password'
-                                            }
+                                            type={showNewPassword ? 'text' : 'password'}
                                             placeholder='Enter new password'
                                             aria-invalid={fieldState.invalid}
                                             disabled={form.formState.isSubmitting}
@@ -208,9 +198,7 @@ export default function ChangePasswordDialog({
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowNewPassword(
-                                                        !showNewPassword,
-                                                    )
+                                                    setShowNewPassword(!showNewPassword)
                                                 }
                                                 aria-label={
                                                     showNewPassword
@@ -238,10 +226,9 @@ export default function ChangePasswordDialog({
                                         </InputGroupAddon>
                                     </InputGroup>
                                     <FieldDescription>
-                                        Must be at least 12 characters and contain
-                                        at least one uppercase letter, one lowercase
-                                        letter, one digit, and one special
-                                        character.
+                                        Must be at least 12 characters and contain at
+                                        least one uppercase letter, one lowercase
+                                        letter, one digit, and one special character.
                                     </FieldDescription>
                                     {fieldState.invalid && (
                                         <FieldError errors={[fieldState.error]} />

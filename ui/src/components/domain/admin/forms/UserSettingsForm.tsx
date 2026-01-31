@@ -126,8 +126,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -151,7 +150,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                         name={field.name}
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                     />
                                 </Field>
                             )}
@@ -162,8 +161,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -188,7 +186,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                         name={field.name}
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                     />
                                 </Field>
                             )}
@@ -199,8 +197,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -225,7 +222,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                         name={field.name}
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                     />
                                 </Field>
                             )}

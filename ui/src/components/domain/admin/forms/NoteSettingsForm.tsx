@@ -12,10 +12,11 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon, PlusIcon } from '@phosphor-icons/react';
-import { useMutation } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -32,7 +33,6 @@ type NoteSettingsFormData = z.infer<typeof noteSettingsSchema>;
 
 export default function NoteSettingsForm() {
     const { managementApi } = useApi();
-    const [isLoading, setIsLoading] = useState(true);
     const snippetListRef = useRef<SnippetListRef>(null);
 
     const {
@@ -52,13 +52,11 @@ export default function NoteSettingsForm() {
         },
     });
 
-    const fetchSettingsMutation = useMutation({
-        mutationFn: async () => {
-            return await managementApi.managementSettingsRetrieve();
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const { data: settingsData, isPending: isSettingsPending } = useQuery({
+        queryKey: queryKeys.management.settings(),
+        queryFn: () => managementApi.managementSettingsRetrieve(),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
     });
 
     const updateSettingsMutation = useMutation({
@@ -105,26 +103,15 @@ export default function NoteSettingsForm() {
     });
 
     useEffect(() => {
-        async function fetchSettings() {
-            try {
-                const settings = await fetchSettingsMutation.mutateAsync();
-                if (settings && settings.notes) {
-                    reset({
-                        minEntries: settings.notes.min_entries || 1,
-                        minEntities: settings.notes.min_entities || 1,
-                        maxCliqueSize: settings.notes.max_clique_size || 1,
-                        allowDynamicEntryClassCreation:
-                            settings.notes.allow_dynamic_entry_class_creation ?? false,
-                    });
-                }
-            } catch (error) {
-                // Error already handled
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchSettings();
-    }, [reset]);
+        if (!settingsData?.notes) return;
+        reset({
+            minEntries: settingsData.notes.min_entries || 1,
+            minEntities: settingsData.notes.min_entities || 1,
+            maxCliqueSize: settingsData.notes.max_clique_size || 1,
+            allowDynamicEntryClassCreation:
+                settingsData.notes.allow_dynamic_entry_class_creation ?? false,
+        });
+    }, [settingsData, reset]);
 
     const onSubmit = async (data: NoteSettingsFormData) => {
         updateSettingsMutation.mutate(data);
@@ -134,7 +121,7 @@ export default function NoteSettingsForm() {
         relinkNotesMutation.mutate();
     };
 
-    if (isLoading) {
+    if (isSettingsPending) {
         return (
             <div className='flex items-center justify-center min-h-screen text-foreground'>
                 <Spinner className='size-10' />
@@ -154,8 +141,7 @@ export default function NoteSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -174,7 +160,7 @@ export default function NoteSettingsForm() {
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-auto self-center'>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                         <Input
                                             {...field}
                                             id='minEntries'
@@ -196,8 +182,7 @@ export default function NoteSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -217,7 +202,7 @@ export default function NoteSettingsForm() {
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-auto self-center'>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                         <Input
                                             {...field}
                                             id='minEntities'
@@ -239,8 +224,7 @@ export default function NoteSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -259,7 +243,7 @@ export default function NoteSettingsForm() {
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-auto self-center'>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                         <Input
                                             {...field}
                                             id='maxCliqueSize'
@@ -281,8 +265,7 @@ export default function NoteSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -307,7 +290,7 @@ export default function NoteSettingsForm() {
                                         name={field.name}
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                         aria-invalid={fieldState.invalid}
                                         aria-describedby={
                                             fieldState.invalid
@@ -330,7 +313,7 @@ export default function NoteSettingsForm() {
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Global Snippets</h3>
                     <FieldGroup>
-                        <Field orientation='horizontal' className='gap-2'>
+                        <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
                                 <FieldLabel className='text-sm block mb-0.5'>
                                     Global Snippets
@@ -343,7 +326,7 @@ export default function NoteSettingsForm() {
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                className='self-center'
+                                className='self-start md:self-center'
                                 onClick={() => {
                                     snippetListRef.current?.handleAddSnippet();
                                 }}
@@ -365,7 +348,7 @@ export default function NoteSettingsForm() {
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Actions</h3>
                     <FieldGroup>
-                        <Field orientation='horizontal' className='gap-2'>
+                        <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
                                 <FieldLabel className='text-sm block mb-0.5'>
                                     Re-Link All Notes
@@ -378,7 +361,7 @@ export default function NoteSettingsForm() {
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                className='self-center'
+                                className='self-start md:self-center'
                                 onClick={handleReLinkNotes}
                             >
                                 <ArrowClockwiseIcon

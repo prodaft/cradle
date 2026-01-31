@@ -239,9 +239,7 @@ export default function EnrichmentSettingsForm({
             const label = (
                 <>
                     {startCase(key)}
-                    {field.required && (
-                        <span className='text-destructive ml-1'>*</span>
-                    )}
+                    {field.required && <span className='text-destructive ml-1'>*</span>}
                 </>
             );
 
@@ -254,7 +252,6 @@ export default function EnrichmentSettingsForm({
                             render={({ field: controllerField, fieldState }) => (
                                 <Field
                                     orientation='responsive'
-                                    className='gap-2'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent>
@@ -272,7 +269,7 @@ export default function EnrichmentSettingsForm({
                                         name={controllerField.name}
                                         checked={controllerField.value ?? false}
                                         onCheckedChange={controllerField.onChange}
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                         aria-invalid={fieldState.invalid}
                                         aria-describedby={
                                             fieldState.invalid
@@ -301,13 +298,10 @@ export default function EnrichmentSettingsForm({
                                 return (
                                     <Field
                                         orientation='responsive'
-                                        className='gap-2'
                                         data-invalid={fieldState.invalid}
                                     >
                                         <FieldContent>
-                                            <FieldLabel
-                                                htmlFor={`settings.${key}`}
-                                            >
+                                            <FieldLabel htmlFor={`settings.${key}`}>
                                                 {label}
                                             </FieldLabel>
                                             {field.description && (
@@ -316,18 +310,14 @@ export default function EnrichmentSettingsForm({
                                                 </FieldDescription>
                                             )}
                                         </FieldContent>
-                                        <div className='w-72 shrink-0 self-center'>
+                                        <div className='w-72 shrink-0 self-start md:self-center'>
                                             <Select
                                                 value={stringValue}
-                                                onValueChange={
-                                                    controllerField.onChange
-                                                }
+                                                onValueChange={controllerField.onChange}
                                             >
                                                 <SelectTrigger
                                                     id={`settings.${key}`}
-                                                    aria-invalid={
-                                                        fieldState.invalid
-                                                    }
+                                                    aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
                                                             ? `settings.${key}-error`
@@ -366,13 +356,10 @@ export default function EnrichmentSettingsForm({
                             render={({ field: controllerField, fieldState }) => (
                                 <Field
                                     orientation='responsive'
-                                    className='gap-2'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent>
-                                        <FieldLabel
-                                            htmlFor={`settings.${key}`}
-                                        >
+                                        <FieldLabel htmlFor={`settings.${key}`}>
                                             {label}
                                         </FieldLabel>
                                         {field.description && (
@@ -385,7 +372,7 @@ export default function EnrichmentSettingsForm({
                                         {...controllerField}
                                         id={`settings.${key}`}
                                         type='url'
-                                        className='w-64 shrink-0 self-center'
+                                        className='w-64 shrink-0 self-start md:self-center'
                                         value={(controllerField.value as string) ?? ''}
                                         onChange={(e) =>
                                             controllerField.onChange(e.target.value)
@@ -412,13 +399,10 @@ export default function EnrichmentSettingsForm({
                             render={({ field: controllerField, fieldState }) => (
                                 <Field
                                     orientation='responsive'
-                                    className='gap-2'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent>
-                                        <FieldLabel
-                                            htmlFor={`settings.${key}`}
-                                        >
+                                        <FieldLabel htmlFor={`settings.${key}`}>
                                             {label}
                                         </FieldLabel>
                                         {field.description && (
@@ -431,11 +415,9 @@ export default function EnrichmentSettingsForm({
                                         {...controllerField}
                                         id={`settings.${key}`}
                                         type={
-                                            field.type === 'number'
-                                                ? 'number'
-                                                : 'text'
+                                            field.type === 'number' ? 'number' : 'text'
                                         }
-                                        className='w-64 shrink-0 self-center'
+                                        className='w-64 shrink-0 self-start md:self-center'
                                         value={
                                             (controllerField.value as
                                                 | string
@@ -507,7 +489,6 @@ export default function EnrichmentSettingsForm({
                                     render={({ field, fieldState }) => (
                                         <Field
                                             orientation='responsive'
-                                            className='gap-2'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent>
@@ -515,8 +496,8 @@ export default function EnrichmentSettingsForm({
                                                     Enabled
                                                 </FieldLabel>
                                                 <FieldDescription>
-                                                    Enable or disable this
-                                                    enrichment source
+                                                    Enable or disable this enrichment
+                                                    source
                                                 </FieldDescription>
                                             </FieldContent>
                                             <Switch
@@ -524,7 +505,7 @@ export default function EnrichmentSettingsForm({
                                                 name={field.name}
                                                 checked={field.value ?? false}
                                                 onCheckedChange={field.onChange}
-                                                className='self-center'
+                                                className='self-start md:self-center'
                                                 aria-invalid={fieldState.invalid}
                                                 aria-describedby={
                                                     fieldState.invalid
@@ -547,7 +528,6 @@ export default function EnrichmentSettingsForm({
                                     render={({ field, fieldState }) => (
                                         <Field
                                             orientation='responsive'
-                                            className='gap-2'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent>
@@ -559,7 +539,7 @@ export default function EnrichmentSettingsForm({
                                                     enrichment to
                                                 </FieldDescription>
                                             </FieldContent>
-                                            <div className='w-64 shrink-0 self-center'>
+                                            <div className='w-64 shrink-0 self-start md:self-center'>
                                                 <MultipleSelector
                                                     value={
                                                         (field.value?.map((e) => ({
@@ -615,12 +595,8 @@ export default function EnrichmentSettingsForm({
                                 />
                                 {/* Enrichment Parameters */}
                                 <FieldSet id='settings'>
-                                    <FieldLegend>
-                                        Enrichment Parameters
-                                    </FieldLegend>
-                                    <FieldGroup>
-                                        {renderSettingsFields()}
-                                    </FieldGroup>
+                                    <FieldLegend>Enrichment Parameters</FieldLegend>
+                                    <FieldGroup>{renderSettingsFields()}</FieldGroup>
                                 </FieldSet>
                             </>
                         )}

@@ -116,7 +116,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     const { entriesApi } = useApi();
     const colorGenerator = useMemo(() => new GoldenRatioColorGenerator(0.5, 0.65), []);
     const [entryTypes, setEntryTypes] = useState<ChildOption[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
     const {
         register,
@@ -157,61 +156,50 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
         },
     });
 
-    const fetchEntryTypesMutation = useMutation({
-        mutationFn: async () => {
-            const entries = await entriesApi.entryClassesList({});
-            return entries.map((entry) => ({
+    const { data: entryClassesListData, isPending: isEntryTypesListPending } = useQuery(
+        {
+            queryKey: queryKeys.entryTypes.lists(),
+            queryFn: () => entriesApi.entryClassesList({}),
+            refetchOnWindowFocus: false,
+            meta: { showErrorToast: false, suppressNotification: true },
+        },
+    );
+
+    useEffect(() => {
+        if (!entryClassesListData) return;
+        setEntryTypes(
+            entryClassesListData.map((entry) => ({
                 value: entry.subtype,
                 label: entry.subtype,
-            }));
-        },
-        meta: {
-            suppressNotification: true,
-        },
-    });
+            })),
+        );
+    }, [entryClassesListData]);
 
-    // Fetch all entry types for the Children selector
-    const fetchEntryTypes = async () => {
-        try {
-            const entryTypes = await fetchEntryTypesMutation.mutateAsync();
-            setEntryTypes(entryTypes);
-        } catch (err) {
-            // Error already handled
-        }
-    };
-
-    // Fetch entry type details in edit mode
     useEffect(() => {
-        const loadData = async () => {
-            setIsLoading(true);
-            await fetchEntryTypes();
-            if (entryTypeData) {
-                reset({
-                    type:
-                        typeOptions.find((o) => o.value === entryTypeData.type) ||
-                        typeOptions[0],
-                    subtype: entryTypeData.subtype,
-                    description: entryTypeData.description || '',
-                    prefix: entryTypeData.prefix || '',
-                    color: entryTypeData.color || colorGenerator.nextHexColor(),
-                    generativeRegex: entryTypeData.generativeRegex || '',
-                    typeFormat:
-                        formatOptions.find((o) => o.value === entryTypeData.format) ||
-                        formatOptions[0],
-                    regex: entryTypeData.regex || '',
-                    options: entryTypeData.options || '',
-                    children:
-                        entryTypeData.childrenDetail?.map((x: any) => ({
-                            value: x.subtype,
-                            label: x.subtype,
-                        })) || [],
-                });
-            }
-            setIsLoading(false);
-        };
-
-        loadData();
+        if (!entryTypeData) return;
+        reset({
+            type:
+                typeOptions.find((o) => o.value === entryTypeData.type) ||
+                typeOptions[0],
+            subtype: entryTypeData.subtype,
+            description: entryTypeData.description || '',
+            prefix: entryTypeData.prefix || '',
+            color: entryTypeData.color || colorGenerator.nextHexColor(),
+            generativeRegex: entryTypeData.generativeRegex || '',
+            typeFormat:
+                formatOptions.find((o) => o.value === entryTypeData.format) ||
+                formatOptions[0],
+            regex: entryTypeData.regex || '',
+            options: entryTypeData.options || '',
+            children:
+                entryTypeData.childrenDetail?.map((x: any) => ({
+                    value: x.subtype,
+                    label: x.subtype,
+                })) || [],
+        });
     }, [id, entryTypeData, colorGenerator, reset]);
+
+    const isLoading = isEntryTypesListPending || (!!id && isPending);
 
     const updateEntryTypeMutation = useMutation({
         mutationFn: async (payload: EntryClassRequest) => {
@@ -300,8 +288,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -337,7 +324,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         }}
                                     >
                                         <SelectTrigger
-                                            className='self-center'
+                                            className='self-start md:self-center'
                                             aria-invalid={fieldState.invalid}
                                             aria-describedby={
                                                 fieldState.invalid
@@ -367,8 +354,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -390,7 +376,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='self-center'>
+                                    <div className='shrink-0 self-start md:self-center'>
                                         <Input
                                             {...field}
                                             id='subtype'
@@ -412,7 +398,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                             render={({ field, fieldState }) => (
                                 <Field
                                     orientation='vertical'
-                                    className='gap-2'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent>
@@ -452,8 +437,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -472,7 +456,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-72 self-center'>
+                                    <div className='w-72 shrink-0 self-start md:self-center'>
                                         <ColorPicker
                                             value={field.value}
                                             onValueChange={field.onChange}
@@ -540,8 +524,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <Field
-                                            orientation='horizontal'
-                                            className='gap-2'
+                                            orientation='responsive'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent className='flex-1'>
@@ -561,7 +544,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     </FieldError>
                                                 )}
                                             </FieldContent>
-                                            <div className='self-center'>
+                                            <div className='shrink-0 self-start md:self-center'>
                                                 <Input
                                                     {...field}
                                                     id='prefix'
@@ -586,8 +569,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <Field
-                                            orientation='horizontal'
-                                            className='gap-2'
+                                            orientation='responsive'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent className='flex-1'>
@@ -621,7 +603,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                 }}
                                             >
                                                 <SelectTrigger
-                                                    className='self-center'
+                                                    className='self-start md:self-center'
                                                     aria-invalid={fieldState.invalid}
                                                     aria-describedby={
                                                         fieldState.invalid
@@ -654,7 +636,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             render={({ field, fieldState }) => (
                                                 <Field
                                                     orientation='vertical'
-                                                    className='gap-2'
                                                     data-invalid={fieldState.invalid}
                                                 >
                                                     <FieldContent>
@@ -702,7 +683,6 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             render={({ field, fieldState }) => (
                                                 <Field
                                                     orientation='vertical'
-                                                    className='gap-2'
                                                     data-invalid={fieldState.invalid}
                                                 >
                                                     <FieldContent>
@@ -749,8 +729,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             control={control}
                                             render={({ field, fieldState }) => (
                                                 <Field
-                                                    orientation='horizontal'
-                                                    className='gap-2'
+                                                    orientation='responsive'
                                                     data-invalid={fieldState.invalid}
                                                 >
                                                     <FieldContent className='flex-1'>
@@ -773,7 +752,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                             </FieldError>
                                                         )}
                                                     </FieldContent>
-                                                    <div className='w-64 self-center'>
+                                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                                         <Input
                                                             {...field}
                                                             id='generativeRegex'
@@ -801,8 +780,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -819,7 +797,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-64 self-center'>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                         <MultipleSelector
                                             value={
                                                 (field.value?.map((c) => ({

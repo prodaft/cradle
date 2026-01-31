@@ -83,9 +83,11 @@ export function ThemeProvider({ children }: ThemeProviderProps): React.JSX.Eleme
         meta: { showErrorToast: false },
     });
 
-    // Local state for fallback (when no profile)
+    // Local state for fallback (when no profile). SSR-safe: no localStorage on server.
     const [localTheme, setLocalTheme] = useState<ThemeConfig | null>(() =>
-        parseStoredTheme(localStorage.getItem('theme')),
+        typeof window === 'undefined'
+            ? null
+            : parseStoredTheme(localStorage.getItem('theme')),
     );
     const appliedVarsRef = useRef<string[]>([]);
 

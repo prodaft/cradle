@@ -24,7 +24,9 @@ export default function TypeMappingsPage() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/manage/type-mappings' });
+    const search = useSearch({
+        from: '/_authenticated/manage/_manage-auth/type-mappings',
+    });
     const [searchQuery, setSearchQuery] = useState('');
     const { intelioApi } = useApi();
     const queryClient = useQueryClient();

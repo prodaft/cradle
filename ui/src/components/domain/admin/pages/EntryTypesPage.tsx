@@ -314,6 +314,7 @@ export default function EntryTypesPage() {
     const { data: entryTypesData, isPending } = useQuery({
         queryKey: queryKeys.entryTypes.lists(),
         queryFn: () => entriesApi.entryClassesList({ showCount: true }),
+        refetchOnWindowFocus: false,
         meta: {
             showErrorToast: false,
             suppressNotification: true,

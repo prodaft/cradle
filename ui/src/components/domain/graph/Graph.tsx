@@ -80,17 +80,6 @@ interface GraphViewerProps {
     fetchControls?: FetchControls | null;
 }
 
-function normalize(x: number, inputMin: number, inputMax: number): number {
-    x = Math.min(x, inputMax);
-    x = Math.max(x, inputMin);
-    const outputMin = 15;
-    const outputMax = 40;
-    const shifted = x - inputMin + 1;
-    const maxShifted = inputMax - inputMin + 1;
-    const normalized = shifted / maxShifted;
-    return outputMin + normalized * (outputMax - outputMin);
-}
-
 interface ForceAtlas2LayoutContextValue {
     stop: () => void;
     start: () => void;
@@ -187,14 +176,32 @@ function GraphContent({
         </>
     );
 
-    const graph = useMemo(() => {
-        const g = new Graph();
+    const positionsRef = useRef<Map<string, { x: number; y: number }>>(new Map());
+
+    useEffect(() => {
+        const currentGraph = sigma.getGraph();
+        if (currentGraph.order > 0) {
+            currentGraph.forEachNode((nodeId, attrs) => {
+                if (typeof attrs.x === 'number' && typeof attrs.y === 'number') {
+                    positionsRef.current.set(String(nodeId), {
+                        x: attrs.x,
+                        y: attrs.y,
+                    });
+                }
+            });
+        }
+
         const sizeCoef = config.nodeRadiusCoefficient ?? 1;
+        const g = new Graph();
         validNodes.forEach((node) => {
+            const saved = positionsRef.current.get(node.id);
+            const x = saved?.x ?? Math.random() * 100 - 50;
+            const y = saved?.y ?? Math.random() * 100 - 50;
+            positionsRef.current.set(node.id, { x, y });
             g.addNode(node.id, {
-                x: Math.random() * 100 - 50,
-                y: Math.random() * 100 - 50,
-                size: normalize(node.degree ?? 1, 1, 60) * sizeCoef,
+                x,
+                y,
+                size: 10 * sizeCoef,
                 label: node.label || node.id,
                 color: node.color || 'var(--color-primary)',
             });
@@ -206,12 +213,15 @@ function GraphContent({
                 }
             });
         }
-        return g;
-    }, [validNodes, linksData, config.showLinks, config.nodeRadiusCoefficient]);
-
-    useEffect(() => {
-        loadGraph(graph);
-    }, [loadGraph, graph]);
+        loadGraph(g);
+    }, [
+        loadGraph,
+        sigma,
+        validNodes,
+        linksData,
+        config.showLinks,
+        config.nodeRadiusCoefficient,
+    ]);
 
     useEffect(() => {
         registerEvents({

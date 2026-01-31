@@ -203,7 +203,11 @@ export default function TwoFactorSetupDialog({
                             {/* QR Code Section */}
                             <div className='flex justify-center'>
                                 <div className='p-4 bg-card rounded-lg border border-border'>
-                                    <QRCodeSVG value={otpAuthUrl} size={180} level='H' />
+                                    <QRCodeSVG
+                                        value={otpAuthUrl}
+                                        size={180}
+                                        level='H'
+                                    />
                                 </div>
                             </div>
 
@@ -232,8 +236,8 @@ export default function TwoFactorSetupDialog({
                                     </InputGroupAddon>
                                 </InputGroup>
                                 <FieldDescription>
-                                    Can't scan the QR code? Enter this secret key manually
-                                    in your authenticator app.
+                                    Can't scan the QR code? Enter this secret key
+                                    manually in your authenticator app.
                                 </FieldDescription>
                             </Field>
                         </>

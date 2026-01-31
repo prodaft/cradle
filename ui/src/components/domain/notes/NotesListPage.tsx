@@ -5,12 +5,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { DateRangeFilter } from '@components/base/ListView/types';
-import DeleteNote from '@components/domain/notes/DeleteNote';
-import NotesList from '@components/domain/notes/NotesList';
 import { useMutation } from '@tanstack/react-query';
 import { useRouter, useRouterState, useSearch } from '@tanstack/react-router';
 import { FilePlus } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import DeleteNote from './DeleteNote';
+import NotesList from './NotesList';
 
 interface SearchFilters {
     any_field?: string;
@@ -24,22 +24,14 @@ interface SearchFilters {
 }
 
 /**
- * Notes component
- * Allows the user to search through all notes they have access to
- * Provides content search and table header filters for author/editor/dates
- * Fetches notes based on the provided search filters
- *
- * @function Notes
- * @returns {Notes}
- * @constructor
+ * Notes list page: search, filters, and table of all notes the user can access.
  */
-export default function Notes() {
+export default function NotesListPage() {
     const router = useRouter();
     const location = useRouterState({
         select: (state) => state.location,
     });
     const search = useSearch({ strict: false });
-    // navigate and navigateLink removed - use router.navigate() or Link component directly
     const { notesApi } = useApi();
     const [isCreatingNote, setIsCreatingNote] = useState(false);
 
@@ -120,7 +112,6 @@ export default function Notes() {
             updated_date_to: filters.updated_date_to || undefined,
         };
 
-        // Remove undefined values
         Object.keys(newSearch).forEach((key) => {
             if (newSearch[key] === undefined) {
                 delete newSearch[key];
@@ -144,7 +135,6 @@ export default function Notes() {
         });
     };
 
-    // Auto-update search when filters change
     useEffect(() => {
         updateSearchParams(searchFilters);
     }, []);
@@ -155,7 +145,6 @@ export default function Notes() {
     ) => {
         let updatedFilters = { ...searchFilters };
 
-        // Handle date range columns differently
         if (column === 'createdAt' && typeof value === 'object') {
             updatedFilters.created_date_from = value.from || '';
             updatedFilters.created_date_to = value.to || '';
@@ -163,12 +152,10 @@ export default function Notes() {
             updatedFilters.updated_date_from = value.from || '';
             updatedFilters.updated_date_to = value.to || '';
         } else if (typeof value === 'string') {
-            // Map column names to filter field names for text filters
             const filterFieldMap: Record<string, keyof SearchFilters> = {
                 author: 'author__username',
                 editor: 'editor__username',
             };
-
             const fieldName = filterFieldMap[column];
             if (fieldName) {
                 updatedFilters[fieldName] = value;
@@ -176,8 +163,6 @@ export default function Notes() {
         }
 
         setSearchFilters(updatedFilters);
-
-        // Auto-submit the filter after a short delay
         setTimeout(() => {
             updateSearchParams(updatedFilters);
         }, 500);
@@ -215,7 +200,6 @@ export default function Notes() {
                     ? (search.updated_date_to as string)
                     : undefined) || '',
         };
-
         setSearchFilters(initialFilters);
     }, [search]);
 
@@ -257,7 +241,6 @@ export default function Notes() {
                 }
             />
 
-            {/* Results Section */}
             <div className='px-4'>
                 {submittedFilters && (
                     <NotesList

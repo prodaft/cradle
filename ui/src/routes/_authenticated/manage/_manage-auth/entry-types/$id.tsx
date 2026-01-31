@@ -2,18 +2,18 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { z } from 'zod';
 
-const TypeMappingsPage = lazy(
-    () => import('src/components/domain/admin/pages/TypeMappingsPage'),
+const EntryTypesPage = lazy(
+    () => import('src/components/domain/admin/pages/EntryTypesPage'),
 );
 
 export const Route = createFileRoute(
-    '/_authenticated/manage/(entry-manager)/type-mappings' as any,
+    '/_authenticated/manage/_manage-auth/entry-types/$id' as any,
 )({
     staticData: {
-        breadcrumb: 'Type Mappings',
+        breadcrumb: 'Entry Type Details',
     },
     validateSearch: z.object({
         tab: z.string().optional(),
     }),
-    component: TypeMappingsPage,
+    component: EntryTypesPage,
 });

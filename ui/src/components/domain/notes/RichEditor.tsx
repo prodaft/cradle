@@ -230,15 +230,23 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
         },
     });
 
-    const fetchEntryColorsMutation = useMutation({
-        mutationFn: async () => {
-            const entries = await entriesApi.entryClassesList({});
-            return entries;
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const { data: entryClassesData } = useQuery({
+        queryKey: queryKeys.entryTypes.lists(),
+        queryFn: () => entriesApi.entryClassesList({}),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
     });
+
+    useEffect(() => {
+        if (!entryClassesData) return;
+        const colorMap = new Map<string, string>();
+        for (const entry of entryClassesData) {
+            if (entry.color) {
+                colorMap.set(entry.subtype, entry.color);
+            }
+        }
+        setEntryColors(colorMap);
+    }, [entryClassesData]);
 
     // Memoize the file download function to prevent recreation on every render
     const fileDownloadFn = useMemo(
@@ -248,32 +256,6 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
             },
         [downloadFileMutation],
     );
-
-    // Fetch entry colors once on mount
-    useEffect(() => {
-        let isMounted = true;
-        const fetchEntryColors = async () => {
-            try {
-                const entries = await fetchEntryColorsMutation.mutateAsync();
-                if (!isMounted) return;
-                const colorMap = new Map<string, string>();
-                for (const entry of entries) {
-                    if (entry.color) {
-                        colorMap.set(entry.subtype, entry.color);
-                    }
-                }
-                setEntryColors(colorMap);
-            } catch (error) {
-                if (isMounted) {
-                    logger.error('Failed to fetch entry colors:', error);
-                }
-            }
-        };
-        fetchEntryColors();
-        return () => {
-            isMounted = false;
-        };
-    }, [entriesApi]);
 
     // Theme uses CSS variables, so we only need to update when isDarkMode changes for the dark flag
     const cradleTheme = useMemo(() => createCradleTheme(isDarkMode), [isDarkMode]);

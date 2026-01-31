@@ -19,11 +19,12 @@ import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowClockwiseIcon } from '@phosphor-icons/react';
 import { ManagementActionsCreateActionNameEnum } from '@services/cradle/apis';
 import { EntryClassTypeEnum } from '@services/cradle/models';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import bytes from 'bytes';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
@@ -116,28 +117,23 @@ export default function FileSettingsForm() {
         },
     });
 
-    const fetchSubtypesMutation = useMutation({
-        mutationFn: async () => {
-            const entryClasses = await entriesApi.entryClassesList({});
-            return entryClasses
-                .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
-                .map((entry) => ({
-                    value: entry.subtype,
-                    label: entry.subtype,
-                }));
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const { data: entryClassesData } = useQuery({
+        queryKey: queryKeys.entryTypes.lists(),
+        queryFn: () => entriesApi.entryClassesList({}),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
     });
 
-    const fetchSettingsMutation = useMutation({
-        mutationFn: async () => {
-            return await managementApi.managementSettingsRetrieve();
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const {
+        data: settingsData,
+        isPending: isSettingsPending,
+        isError: isSettingsError,
+        error: settingsError,
+    } = useQuery({
+        queryKey: queryKeys.management.settings(),
+        queryFn: () => managementApi.managementSettingsRetrieve(),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
     });
 
     const updateSettingsMutation = useMutation({
@@ -171,7 +167,6 @@ export default function FileSettingsForm() {
         },
     });
 
-    const [isLoading, setIsLoading] = useState(true);
     const [subtypes, setSubtypes] = useState<SubtypeOption[]>([]);
 
     const {
@@ -197,71 +192,53 @@ export default function FileSettingsForm() {
         reprocessFilesMutation.mutate();
     };
 
-    // Fetch all entry subtypes for the selectors
     useEffect(() => {
-        async function fetchSubtypes() {
-            try {
-                const artifactSubtypes = await fetchSubtypesMutation.mutateAsync();
-                setSubtypes(artifactSubtypes);
-            } catch (error) {
-                // Error already handled
-            }
-        }
-        fetchSubtypes();
-    }, []);
+        if (!entryClassesData) return;
+        const artifactSubtypes = entryClassesData
+            .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
+            .map((entry) => ({ value: entry.subtype, label: entry.subtype }));
+        setSubtypes(artifactSubtypes);
+    }, [entryClassesData]);
 
     useEffect(() => {
-        async function fetchSettings() {
-            try {
-                const settings =
-                    (await fetchSettingsMutation.mutateAsync()) as FileSettingsResponse;
-                if (settings.files) {
-                    reset({
-                        autoprocessFiles: settings.files.autoprocess_files ?? true,
-                        md5Subtype: settings.files.md5_subtype
-                            ? {
-                                  value: settings.files.md5_subtype,
-                                  label: settings.files.md5_subtype,
-                              }
-                            : null,
-                        sha1Subtype: settings.files.sha1_subtype
-                            ? {
-                                  value: settings.files.sha1_subtype,
-                                  label: settings.files.sha1_subtype,
-                              }
-                            : null,
-                        sha256Subtype: settings.files.sha256_subtype
-                            ? {
-                                  value: settings.files.sha256_subtype,
-                                  label: settings.files.sha256_subtype,
-                              }
-                            : null,
-                        maxFileSizeForHashing: settings.files.max_file_size_for_hashing
-                            ? bytes.format(settings.files.max_file_size_for_hashing, {
-                                  unitSeparator: ' ',
-                              })
-                            : '10 MB',
-                        uploadLimit: settings.files.upload_limit
-                            ? bytes.format(settings.files.upload_limit, {
-                                  unitSeparator: ' ',
-                              })
-                            : '2 GB',
-                    } as FileSettingsFormValues);
-                }
-            } catch (error) {
-                // Error already handled by mutation
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchSettings();
-    }, [reset]);
+        const settings = settingsData as FileSettingsResponse | undefined;
+        if (!settings?.files) return;
+        reset({
+            autoprocessFiles: settings.files.autoprocess_files ?? true,
+            md5Subtype: settings.files.md5_subtype
+                ? {
+                      value: settings.files.md5_subtype,
+                      label: settings.files.md5_subtype,
+                  }
+                : null,
+            sha1Subtype: settings.files.sha1_subtype
+                ? {
+                      value: settings.files.sha1_subtype,
+                      label: settings.files.sha1_subtype,
+                  }
+                : null,
+            sha256Subtype: settings.files.sha256_subtype
+                ? {
+                      value: settings.files.sha256_subtype,
+                      label: settings.files.sha256_subtype,
+                  }
+                : null,
+            maxFileSizeForHashing: settings.files.max_file_size_for_hashing
+                ? bytes.format(settings.files.max_file_size_for_hashing, {
+                      unitSeparator: ' ',
+                  })
+                : '10 MB',
+            uploadLimit: settings.files.upload_limit
+                ? bytes.format(settings.files.upload_limit, { unitSeparator: ' ' })
+                : '2 GB',
+        } as FileSettingsFormValues);
+    }, [settingsData, reset]);
 
     const onSubmit = async (data: FileSettingsFormValues) => {
         updateSettingsMutation.mutate(data);
     };
 
-    if (isLoading) {
+    if (isSettingsPending) {
         return (
             <div className='flex items-center justify-center min-h-screen text-foreground'>
                 <Spinner className='size-10' />
@@ -281,8 +258,7 @@ export default function FileSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -306,7 +282,7 @@ export default function FileSettingsForm() {
                                         name={field.name}
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                     />
                                 </Field>
                             )}
@@ -317,8 +293,7 @@ export default function FileSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -351,7 +326,7 @@ export default function FileSettingsForm() {
                                         }}
                                     >
                                         <SelectTrigger
-                                            className='self-center'
+                                            className='self-start md:self-center'
                                             aria-invalid={fieldState.invalid}
                                             aria-describedby={
                                                 fieldState.invalid
@@ -381,8 +356,7 @@ export default function FileSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -415,7 +389,7 @@ export default function FileSettingsForm() {
                                         }}
                                     >
                                         <SelectTrigger
-                                            className='self-center'
+                                            className='self-start md:self-center'
                                             aria-invalid={fieldState.invalid}
                                             aria-describedby={
                                                 fieldState.invalid
@@ -445,8 +419,7 @@ export default function FileSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -479,7 +452,7 @@ export default function FileSettingsForm() {
                                         }}
                                     >
                                         <SelectTrigger
-                                            className='self-center'
+                                            className='self-start md:self-center'
                                             aria-invalid={fieldState.invalid}
                                             aria-describedby={
                                                 fieldState.invalid
@@ -509,8 +482,7 @@ export default function FileSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -529,7 +501,7 @@ export default function FileSettingsForm() {
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-auto self-center'>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                         <Input
                                             {...field}
                                             id='maxFileSizeForHashing'
@@ -550,8 +522,7 @@ export default function FileSettingsForm() {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='horizontal'
-                                    className='gap-2'
+                                    orientation='responsive'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -571,7 +542,7 @@ export default function FileSettingsForm() {
                                             </FieldError>
                                         )}
                                     </FieldContent>
-                                    <div className='w-auto self-center'>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                         <Input
                                             {...field}
                                             id='uploadLimit'
@@ -598,7 +569,7 @@ export default function FileSettingsForm() {
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Actions</h3>
                     <FieldGroup>
-                        <Field orientation='horizontal' className='gap-2'>
+                        <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
                                 <FieldLabel className='text-sm block mb-0.5'>
                                     Process All Files
@@ -611,7 +582,7 @@ export default function FileSettingsForm() {
                                 type='button'
                                 variant='outline'
                                 size='sm'
-                                className='self-center'
+                                className='self-start md:self-center'
                                 onClick={handleReProcessAllFiles}
                             >
                                 <ArrowClockwiseIcon

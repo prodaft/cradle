@@ -65,7 +65,7 @@ export default function EntriesManagement() {
             <div className='flex flex-col gap-4'>
                 <h3 className='font-semibold text-base'>Actions</h3>
                 <FieldGroup>
-                    <Field orientation='horizontal' className='gap-2'>
+                    <Field orientation='responsive'>
                         <FieldContent className='flex-1'>
                             <FieldLabel className='text-sm block mb-0.5'>
                                 Propagate Access Vectors
@@ -78,7 +78,7 @@ export default function EntriesManagement() {
                             type='button'
                             variant='outline'
                             size='sm'
-                            className='self-center'
+                            className='self-start md:self-center'
                             onClick={handlePropagateAccessVectors}
                         >
                             <HardDrivesIcon className='w-3.5 h-3.5' weight='bold' />
@@ -86,7 +86,7 @@ export default function EntriesManagement() {
                         </Button>
                     </Field>
 
-                    <Field orientation='horizontal' className='gap-2'>
+                    <Field orientation='responsive'>
                         <FieldContent className='flex-1'>
                             <FieldLabel className='text-sm block mb-0.5'>
                                 Delete Hanging Artifacts
@@ -99,7 +99,7 @@ export default function EntriesManagement() {
                             type='button'
                             variant='destructive'
                             size='sm'
-                            className='self-center'
+                            className='self-start md:self-center'
                             onClick={handleDeleteHangingArtifacts}
                         >
                             <TrashIcon className='w-3.5 h-3.5' weight='bold' />

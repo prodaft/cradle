@@ -522,36 +522,40 @@ export default function EnrichmentRequestDialog({
                             </FieldLabel>
                             <div id='enricherNames'>
                                 <MultipleSelector
-                                value={
-                                    enricherTypes
-                                        .filter((e) =>
-                                            formData.enricherNames.includes(e.value),
-                                        )
-                                        .map((e) => ({
+                                    value={
+                                        enricherTypes
+                                            .filter((e) =>
+                                                formData.enricherNames.includes(
+                                                    e.value,
+                                                ),
+                                            )
+                                            .map((e) => ({
+                                                value: e.value,
+                                                label: e.label,
+                                            })) as Option[]
+                                    }
+                                    defaultOptions={
+                                        enricherTypes.map((e) => ({
                                             value: e.value,
                                             label: e.label,
                                         })) as Option[]
-                                }
-                                defaultOptions={
-                                    enricherTypes.map((e) => ({
-                                        value: e.value,
-                                        label: e.label,
-                                    })) as Option[]
-                                }
-                                placeholder='Select enrichment techniques...'
-                                onChange={(options) => {
-                                    const enricherNames = options.map((o) => o.value);
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        enricherNames,
-                                    }));
-                                }}
-                                emptyIndicator={
-                                    <p className='text-center text-sm'>
-                                        No enrichment techniques found
-                                    </p>
-                                }
-                            />
+                                    }
+                                    placeholder='Select enrichment techniques...'
+                                    onChange={(options) => {
+                                        const enricherNames = options.map(
+                                            (o) => o.value,
+                                        );
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            enricherNames,
+                                        }));
+                                    }}
+                                    emptyIndicator={
+                                        <p className='text-center text-sm'>
+                                            No enrichment techniques found
+                                        </p>
+                                    }
+                                />
                             </div>
                             <FieldDescription>
                                 Select one or more enrichment techniques to apply

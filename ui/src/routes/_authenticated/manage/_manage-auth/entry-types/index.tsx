@@ -7,13 +7,11 @@ const EntryTypesPage = lazy(
 );
 
 export const Route = createFileRoute(
-    '/_authenticated/manage/(entry-manager)/entry-types/$id' as any,
+    '/_authenticated/manage/_manage-auth/entry-types/',
 )({
-    staticData: {
-        breadcrumb: 'Entry Type Details',
-    },
     validateSearch: z.object({
-        tab: z.string().optional(),
+        entry_types_page: z.coerce.number().optional(),
+        entry_types_pagesize: z.coerce.number().optional(),
     }),
     component: EntryTypesPage,
 });

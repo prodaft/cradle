@@ -33,7 +33,9 @@ export default function AddUserDialog({
                     <DialogTitle>Add User</DialogTitle>
                     <DialogDescription>Create a new user account</DialogDescription>
                 </DialogHeader>
-                <AddUserForm onAdd={handleAdd} />
+                <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
+                    <AddUserForm onAdd={handleAdd} />
+                </div>
             </DialogContent>
         </Dialog>
     );

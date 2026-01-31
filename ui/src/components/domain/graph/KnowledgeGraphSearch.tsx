@@ -75,9 +75,9 @@ export default function KnowledgeGraphSearch({
         const rawData = await response.raw.json();
 
         const graphData = rawData.results;
-        const totalPages = rawData.total_pages || 1;
+        const totalPages = rawData.total_pages ?? 1;
 
-        if (!graphData || !graphData.entries) {
+        if (!graphData) {
             return {
                 nodes: [],
                 edges: [],
@@ -87,7 +87,19 @@ export default function KnowledgeGraphSearch({
             };
         }
 
-        const { entries, relations, colors } = graphData;
+        const entries = graphData.entries;
+        const relations = graphData.relations;
+        const colors = graphData.colors;
+
+        if (entries == null) {
+            return {
+                nodes: [],
+                edges: [],
+                colors: {},
+                totalPages,
+                hasMore: page < totalPages,
+            };
+        }
 
         let nodes: Node[] = [];
 
@@ -123,14 +135,14 @@ export default function KnowledgeGraphSearch({
         }
 
         const edges =
-            relations && Array.isArray(relations) && relations.length > 0
+            relations != null && Array.isArray(relations) && relations.length > 0
                 ? relations
                 : [];
 
         return {
             nodes,
             edges,
-            colors: colors || {},
+            colors: colors ?? {},
             totalPages,
             hasMore: page < totalPages,
         };

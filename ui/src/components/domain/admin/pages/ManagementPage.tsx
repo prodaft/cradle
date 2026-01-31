@@ -38,7 +38,7 @@ export default function ManagementPage() {
     const location = useRouterState({
         select: (state) => state.location,
     });
-    const search = useSearch({ from: '/_authenticated/manage/settings' });
+    const search = useSearch({ from: '/_authenticated/manage/_manage-auth/settings' });
 
     const tab = (search as any)?.tab;
 

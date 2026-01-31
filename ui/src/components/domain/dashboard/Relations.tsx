@@ -750,90 +750,97 @@ export default function Relations({ obj }: RelationsProps) {
                 entryClassColors={entryClassColors}
             />
 
-            <div className='grid grid-cols-1 gap-2 border rounded-md'>
-                {isPending ? (
-                    <div className='flex min-h-[200px] items-center justify-center'>
-                        <Spinner className='size-10' />
-                    </div>
-                ) : (
-                    <div className='flex flex-col'>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className='w-[50px]'>
-                                        <Checkbox
-                                            checked={
-                                                results &&
-                                                results.length > 0 &&
-                                                selectedIds.size === results.length
-                                                    ? true
-                                                    : selectedIds.size > 0
-                                                      ? 'indeterminate'
-                                                      : false
-                                            }
-                                            onCheckedChange={(checked) =>
-                                                toggleAllSelection(!!checked)
-                                            }
-                                            aria-label='Select all'
-                                        />
-                                    </TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead className='w-[50px]'></TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {results && results.length > 0 ? (
-                                    results.map((result, index) => (
-                                        <RelationRow
-                                            key={result.id || index}
-                                            srcId={obj.id!}
-                                            result={result}
-                                            isSelected={
-                                                result.id !== undefined &&
-                                                selectedIds.has(result.id)
-                                            }
-                                            onToggleSelection={(checked) =>
-                                                result.id !== undefined &&
-                                                toggleRowSelection(result.id, checked)
-                                            }
-                                            isOpen={
-                                                result.id !== undefined &&
-                                                expandedRows.has(result.id)
-                                            }
-                                            onToggleOpen={(open) =>
-                                                result.id !== undefined &&
-                                                toggleRowExpansion(result.id, open)
-                                            }
-                                            router={router}
-                                        />
-                                    ))
-                                ) : (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={4}
-                                            className='h-24 text-center'
-                                        >
-                                            No relations found.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                        <div className='py-2 border-t'>
-                            <Pagination
-                                currentPage={page}
-                                totalPages={calculatedTotalPages}
-                                onPageChange={(newPage) => setPage(newPage)}
-                                pageSize={pageSize}
-                                onPageSizeChange={(newSize) => {
-                                    setPageSize(newSize);
-                                    setPage(1);
-                                }}
-                                selectedCount={selectedIds.size}
-                                totalRows={results ? results.length : 0}
-                            />
+            <div className='grid grid-cols-1 gap-2'>
+                <div className='border rounded-md'>
+                    {isPending ? (
+                        <div className='flex min-h-[200px] items-center justify-center'>
+                            <Spinner className='size-10' />
                         </div>
+                    ) : (
+                        <div className='flex flex-col'>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className='w-[50px]'>
+                                            <Checkbox
+                                                checked={
+                                                    results &&
+                                                    results.length > 0 &&
+                                                    selectedIds.size === results.length
+                                                        ? true
+                                                        : selectedIds.size > 0
+                                                          ? 'indeterminate'
+                                                          : false
+                                                }
+                                                onCheckedChange={(checked) =>
+                                                    toggleAllSelection(!!checked)
+                                                }
+                                                aria-label='Select all'
+                                            />
+                                        </TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Name</TableHead>
+                                        <TableHead className='w-[50px]'></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {results && results.length > 0 ? (
+                                        results.map((result, index) => (
+                                            <RelationRow
+                                                key={result.id || index}
+                                                srcId={obj.id!}
+                                                result={result}
+                                                isSelected={
+                                                    result.id !== undefined &&
+                                                    selectedIds.has(result.id)
+                                                }
+                                                onToggleSelection={(checked) =>
+                                                    result.id !== undefined &&
+                                                    toggleRowSelection(
+                                                        result.id,
+                                                        checked,
+                                                    )
+                                                }
+                                                isOpen={
+                                                    result.id !== undefined &&
+                                                    expandedRows.has(result.id)
+                                                }
+                                                onToggleOpen={(open) =>
+                                                    result.id !== undefined &&
+                                                    toggleRowExpansion(result.id, open)
+                                                }
+                                                router={router}
+                                            />
+                                        ))
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={4}
+                                                className='h-24 text-center'
+                                            >
+                                                No relations found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    )}
+                </div>
+                {!isPending && (
+                    <div className='py-2'>
+                        <Pagination
+                            currentPage={page}
+                            totalPages={calculatedTotalPages}
+                            onPageChange={(newPage) => setPage(newPage)}
+                            pageSize={pageSize}
+                            onPageSizeChange={(newSize) => {
+                                setPageSize(newSize);
+                                setPage(1);
+                            }}
+                            selectedCount={selectedIds.size}
+                            totalRows={results ? results.length : 0}
+                        />
                     </div>
                 )}
             </div>

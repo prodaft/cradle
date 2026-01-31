@@ -22,10 +22,11 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Entity } from '@services/cradle/models';
-import { useMutation } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useRef, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -118,42 +119,34 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         }
     };
 
-    const fetchSubtypesMutation = useMutation({
-        mutationFn: async () => {
-            const entryClasses = await entriesApi.entryClassesList({
-                showCount: true,
-            });
-            return entryClasses;
-        },
+    const { data: entryClassesData } = useQuery({
+        queryKey: queryKeys.entryTypes.lists(),
+        queryFn: () => entriesApi.entryClassesList({ showCount: true }),
+        refetchOnWindowFocus: false,
         meta: {
+            showErrorToast: false,
             suppressNotification: true,
         },
     });
 
-    // Fetch subtype options on mount
-    useEffect(() => {
-        (async () => {
-            try {
-                const entryClasses = await fetchSubtypesMutation.mutateAsync();
-                const entityClasses = entryClasses.filter(
-                    (entity) => entity.type === 'entity',
-                );
-                const options = entityClasses.map((c) => ({
-                    value: c.subtype,
-                    label: c.subtype,
-                }));
-                setSubtypeOptions(options);
+    const hasSetDefaultSubtype = useRef(false);
 
-                // Set default subtype for new entities
-                if (options.length > 0) {
-                    reset((prev) => ({ ...prev, subtype: options[0] }));
-                    handleSubtypeChange(options[0]);
-                }
-            } catch (err) {
-                // Error already handled
-            }
-        })();
-    }, [entriesApi, reset, fetchSubtypesMutation]);
+    useEffect(() => {
+        if (!entryClassesData || hasSetDefaultSubtype.current) return;
+        const entityClasses = entryClassesData.filter(
+            (entity) => entity.type === 'entity',
+        );
+        const options = entityClasses.map((c) => ({
+            value: c.subtype,
+            label: c.subtype,
+        }));
+        setSubtypeOptions(options);
+        if (options.length > 0) {
+            hasSetDefaultSubtype.current = true;
+            reset((prev) => ({ ...prev, subtype: options[0] }));
+            handleSubtypeChange(options[0]);
+        }
+    }, [entryClassesData, reset]);
 
     // Auto-fill name when subtype changes
     const handleSubtypeChange = async (subtype: SubtypeOption | null) => {
@@ -284,7 +277,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                     )}
                 />
 
-                <Field orientation='horizontal' data-invalid={Boolean(errors.isPublic)}>
+                <Field orientation='responsive' data-invalid={Boolean(errors.isPublic)}>
                     <FieldContent>
                         <FieldLabel htmlFor='isPublic'>Publicly Available</FieldLabel>
                         <FieldDescription>
@@ -303,7 +296,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                 name={field.name}
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className='self-center'
+                                className='self-start md:self-center'
                             />
                         )}
                     />

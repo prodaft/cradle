@@ -138,7 +138,7 @@ export default function Dashboard() {
             >
                 <div className='w-full min-h-full flex flex-col p-6 space-y-4 overflow-hidden'>
                     {contentObject.name && (
-                        <div className='flex justify-between items-center w-full border-b border-border px-4 pb-4'>
+                        <div className='flex justify-between items-center w-full border-b border-border pr-4 pb-4'>
                             <div className='flex flex-col'>
                                 <h1 className='text-3xl font-medium break-all text-foreground tracking-tight'>
                                     {contentObject.type && (

@@ -137,7 +137,7 @@ export default function AdminPanelUserPermissions({
         if (id) {
             fetchPermissions();
         }
-    }, [id, accessApi]);
+    }, [id]);
 
     const handleAccessChange = (
         entityId: number,

@@ -27,6 +27,16 @@ const getBaseUrl = (): string => {
     return import.meta.env.VITE_API_BASE_URL;
 };
 
+/** SSR-safe: returns null when localStorage is not available (e.g. during server render). */
+function getStorageItem(key: string): string | null {
+    if (typeof window === 'undefined') return null;
+    try {
+        return localStorage.getItem(key);
+    } catch {
+        return null;
+    }
+}
+
 interface TokenData {
     access: string;
     refresh: string;
@@ -104,9 +114,9 @@ interface AuthProviderProps {
  * Automatically refreshes tokens before expiration.
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-    const [role, setRole] = useState(localStorage.getItem('role') || '');
+    const [role, setRole] = useState(() => getStorageItem('role') || '');
     const [userId, setUserId] = useState<string | null>(
-        localStorage.getItem('user_id') || null,
+        () => getStorageItem('user_id') || null,
     );
     const [isLoading, setIsLoading] = useState(false);
     const basePath = getBaseUrl();
@@ -119,13 +129,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }, [basePath]);
 
     // Store tokens and expiration in refs (not state) to avoid re-renders
-    const accessTokenRef = useRef(localStorage.getItem('access_token') || '');
-    const refreshTokenRef = useRef(localStorage.getItem('refresh_token') || '');
+    const accessTokenRef = useRef(getStorageItem('access_token') || '');
+    const refreshTokenRef = useRef(getStorageItem('refresh_token') || '');
     const accessExpiresAtRef = useRef<string | null>(
-        localStorage.getItem('access_expires_at') || null,
+        getStorageItem('access_expires_at') || null,
     );
     const refreshExpiresAtRef = useRef<string | null>(
-        localStorage.getItem('refresh_expires_at') || null,
+        getStorageItem('refresh_expires_at') || null,
     );
 
     // Timer for automatic token refresh

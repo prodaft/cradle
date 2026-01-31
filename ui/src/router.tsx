@@ -1,17 +1,16 @@
-import { createBrowserHistory, createRouter } from '@tanstack/react-router';
+import { createRouter } from '@tanstack/react-router';
 import { routeTree } from './routeTree.gen';
 
-// Create browser history for client-side routing
-const browserHistory = createBrowserHistory();
+export function getRouter() {
+    return createRouter({
+        routeTree,
+        defaultPreload: 'intent',
+        scrollRestoration: true,
+    });
+}
 
-// Create a new router instance
-export const router = createRouter({
-    routeTree,
-    history: browserHistory,
-    defaultPreload: 'intent',
-});
+export const router = getRouter();
 
-// Register the router instance for type safety
 declare module '@tanstack/react-router' {
     interface Register {
         router: typeof router;

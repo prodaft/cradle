@@ -121,7 +121,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className='w-full'>
-            <FieldGroup className='gap-4'>
+            <FieldGroup>
                 <Field data-invalid={Boolean(errors.username)}>
                     <FieldLabel htmlFor='username'>
                         Username
@@ -212,7 +212,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                 </Field>
 
                 <Field
-                    orientation='horizontal'
+                    orientation='responsive'
                     data-invalid={Boolean(errors.emailConfirmed)}
                 >
                     <FieldContent>
@@ -240,7 +240,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                     />
                 </Field>
 
-                <Field orientation='horizontal' data-invalid={Boolean(errors.isActive)}>
+                <Field orientation='responsive' data-invalid={Boolean(errors.isActive)}>
                     <FieldContent>
                         <FieldLabel htmlFor='isActive'>Active</FieldLabel>
                         <FieldDescription>
@@ -259,7 +259,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
                                 name={field.name}
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className='self-center'
+                                className='self-start md:self-center'
                             />
                         )}
                     />

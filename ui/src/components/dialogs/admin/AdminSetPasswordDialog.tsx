@@ -119,8 +119,8 @@ export default function AdminSetPasswordDialog({
                     <DialogHeader>
                         <DialogTitle>Confirm</DialogTitle>
                         <DialogDescription>
-                            Set a new password for this user. The user will need to use this
-                            password to log in.
+                            Set a new password for this user. The user will need to use
+                            this password to log in.
                         </DialogDescription>
                     </DialogHeader>
                     <FieldGroup>
@@ -136,11 +136,7 @@ export default function AdminSetPasswordDialog({
                                         <InputGroupInput
                                             {...field}
                                             id={field.name}
-                                            type={
-                                                showNewPassword
-                                                    ? 'text'
-                                                    : 'password'
-                                            }
+                                            type={showNewPassword ? 'text' : 'password'}
                                             placeholder='Enter new password'
                                             aria-invalid={fieldState.invalid}
                                             disabled={setPasswordMutation.isPending}
@@ -149,9 +145,7 @@ export default function AdminSetPasswordDialog({
                                             <InputGroupButton
                                                 type='button'
                                                 onClick={() =>
-                                                    setShowNewPassword(
-                                                        !showNewPassword,
-                                                    )
+                                                    setShowNewPassword(!showNewPassword)
                                                 }
                                                 aria-label={
                                                     showNewPassword
@@ -179,10 +173,9 @@ export default function AdminSetPasswordDialog({
                                         </InputGroupAddon>
                                     </InputGroup>
                                     <FieldDescription>
-                                        Must be at least 12 characters and contain
-                                        at least one uppercase letter, one lowercase
-                                        letter, one digit, and one special
-                                        character.
+                                        Must be at least 12 characters and contain at
+                                        least one uppercase letter, one lowercase
+                                        letter, one digit, and one special character.
                                     </FieldDescription>
                                     {fieldState.invalid && (
                                         <FieldError errors={[fieldState.error]} />

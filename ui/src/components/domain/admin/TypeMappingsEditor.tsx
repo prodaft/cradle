@@ -387,7 +387,7 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
             }
         };
         fetchData();
-    }, [id, intelioApi, entriesApi]);
+    }, [id]);
 
     // Auto-add a new empty row when the last row has been edited.
     useEffect(() => {

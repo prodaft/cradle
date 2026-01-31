@@ -33,7 +33,7 @@ export default function AddEntryTypeDialog({
                     <DialogTitle>New Entry</DialogTitle>
                     <DialogDescription>Create new entry class</DialogDescription>
                 </DialogHeader>
-                <div className='overflow-y-auto flex-1 -mx-6 px-6'>
+                <div className='no-scrollbar -mx-4 max-h-[50vh] overflow-y-auto px-4'>
                     <AddEntryForm onAdd={handleAdd} />
                 </div>
             </DialogContent>

@@ -77,7 +77,7 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
     const [selectedNodes, setSelectedNodes] = useState<Set<Node>>(new Set());
     const [activePanel, setActivePanel] = useState<
         'explorer' | 'display' | 'filters' | null
-    >('explorer');
+    >(null);
     const [isLoading, setIsLoading] = useState(true);
     const [fetchProgress, setFetchProgress] = useState<FetchProgress | null>(null);
     const [fetchControls, setFetchControls] = useState<FetchControls | null>(null);
@@ -231,35 +231,41 @@ export default function GraphExplorer({ GraphSearchComponent }: GraphExplorerPro
         };
     }, [nodes, edges, disabledTypes]);
 
+    const graphQueryProps = {
+        selectedEntries: selectedNodes,
+        setSelectedEntries: setSelectedNodes,
+        config,
+        setConfig,
+        SearchComponent: GraphSearchComponent,
+        entryGraphColors,
+        disabledTypes,
+        setDisabledTypes,
+        addNodes,
+        addEdges,
+        addBoth,
+        nodes: filteredNodes,
+        edges: filteredEdges,
+        activePanel: (activePanel ?? 'explorer') as 'explorer' | 'display' | 'filters',
+        onClosePanel: () => setActivePanel(null),
+        sigmaRef,
+        onLoadingChange: handleLoadingChange,
+        onFetchProgressChange: handleFetchProgressChange,
+        onFetchControlsReady: handleFetchControlsReady,
+    };
+
     return (
         <div className='w-full h-full overflow-y-hidden relative'>
+            {/* Mount search when panel is closed so graph data still loads */}
+            {!activePanel && (
+                <div className='sr-only' aria-hidden>
+                    <GraphQuery {...graphQueryProps} />
+                </div>
+            )}
             <ResizablePanelGroup direction='horizontal' className='h-full'>
                 {activePanel && (
                     <>
                         <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                            <GraphQuery
-                                selectedEntries={selectedNodes}
-                                setSelectedEntries={setSelectedNodes}
-                                config={config}
-                                setConfig={setConfig}
-                                SearchComponent={GraphSearchComponent}
-                                entryGraphColors={entryGraphColors}
-                                disabledTypes={disabledTypes}
-                                setDisabledTypes={setDisabledTypes}
-                                addNodes={addNodes}
-                                addEdges={addEdges}
-                                addBoth={addBoth}
-                                nodes={filteredNodes}
-                                edges={filteredEdges}
-                                activePanel={
-                                    activePanel as 'explorer' | 'display' | 'filters'
-                                }
-                                onClosePanel={() => setActivePanel(null)}
-                                sigmaRef={sigmaRef}
-                                onLoadingChange={handleLoadingChange}
-                                onFetchProgressChange={handleFetchProgressChange}
-                                onFetchControlsReady={handleFetchControlsReady}
-                            />
+                            <GraphQuery {...graphQueryProps} />
                         </ResizablePanel>
                         <ResizableHandle className='w-[2px] bg-card border-x border-border hover:bg-primary hover:bg-opacity-50 transition-colors' />
                     </>

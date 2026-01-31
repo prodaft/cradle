@@ -18,18 +18,22 @@
  * @returns true if user has a valid refresh token
  */
 export function isLoggedIn(): boolean {
-    const refreshToken = localStorage.getItem('refresh_token');
-    const refreshExpiresAt = localStorage.getItem('refresh_expires_at');
+    if (typeof window === 'undefined') return false;
+    try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        const refreshExpiresAt = localStorage.getItem('refresh_expires_at');
 
-    if (!refreshToken || !refreshExpiresAt) {
+        if (!refreshToken || !refreshExpiresAt) {
+            return false;
+        }
+
+        const refreshExpiry = new Date(refreshExpiresAt);
+        const now = new Date();
+
+        return refreshExpiry > now;
+    } catch {
         return false;
     }
-
-    const refreshExpiry = new Date(refreshExpiresAt);
-    const now = new Date();
-
-    // Check if refresh token is still valid
-    return refreshExpiry > now;
 }
 
 /**
@@ -38,11 +42,17 @@ export function isLoggedIn(): boolean {
  *
  * Used in router beforeLoad hooks where React context is not available.
  * For components, use useAuthState().role instead.
+ * SSR-safe: returns '' when localStorage is not available (e.g. during server render).
  *
  * @returns user role string or empty string if not logged in
  */
 export function getRole(): string {
-    return localStorage.getItem('role') || '';
+    if (typeof window === 'undefined') return '';
+    try {
+        return localStorage.getItem('role') || '';
+    } catch {
+        return '';
+    }
 }
 
 /**

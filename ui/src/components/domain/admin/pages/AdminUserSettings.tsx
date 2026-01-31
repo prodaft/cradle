@@ -354,8 +354,7 @@ export default function AdminUserSettings({
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <Field
-                                            orientation='horizontal'
-                                            className='gap-2'
+                                            orientation='responsive'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent className='flex-1'>
@@ -375,7 +374,7 @@ export default function AdminUserSettings({
                                                     </FieldError>
                                                 )}
                                             </FieldContent>
-                                            <div className='w-auto self-center'>
+                                            <div className='w-64 shrink-0 self-start md:self-center'>
                                                 <Input
                                                     {...field}
                                                     id='username'
@@ -397,8 +396,7 @@ export default function AdminUserSettings({
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <Field
-                                            orientation='horizontal'
-                                            className='gap-2'
+                                            orientation='responsive'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent className='flex-1'>
@@ -417,7 +415,7 @@ export default function AdminUserSettings({
                                                     </FieldError>
                                                 )}
                                             </FieldContent>
-                                            <div className='w-auto self-center'>
+                                            <div className='w-64 shrink-0 self-start md:self-center'>
                                                 <Input
                                                     {...field}
                                                     id='email'
@@ -435,7 +433,7 @@ export default function AdminUserSettings({
                                     )}
                                 />
 
-                                <Field orientation='horizontal' className='gap-2'>
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel
                                             htmlFor='userId'
@@ -447,7 +445,7 @@ export default function AdminUserSettings({
                                             Unique identifier for API integrations
                                         </FieldDescription>
                                     </FieldContent>
-                                    <div className='w-auto self-center'>
+                                    <div className='w-64 shrink-0 self-start md:self-center'>
                                         <Input
                                             id='userId'
                                             type='text'
@@ -464,8 +462,7 @@ export default function AdminUserSettings({
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <Field
-                                            orientation='horizontal'
-                                            className='gap-2'
+                                            orientation='responsive'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent className='flex-1'>
@@ -481,7 +478,7 @@ export default function AdminUserSettings({
                                                     </FieldError>
                                                 )}
                                             </FieldContent>
-                                            <div className='w-auto self-center'>
+                                            <div className='w-64 shrink-0 self-start md:self-center'>
                                                 <Select
                                                     value={field.value}
                                                     onValueChange={field.onChange}
@@ -528,7 +525,7 @@ export default function AdminUserSettings({
                                 name='emailConfirmed'
                                 control={control}
                                 render={({ field }) => (
-                                    <Field orientation='horizontal' className='gap-2'>
+                                    <Field orientation='responsive'>
                                         <FieldContent className='flex-1'>
                                             <FieldLabel
                                                 htmlFor='emailConfirmed'
@@ -556,10 +553,7 @@ export default function AdminUserSettings({
                                     name='isActive'
                                     control={control}
                                     render={({ field }) => (
-                                        <Field
-                                            orientation='horizontal'
-                                            className='gap-2'
-                                        >
+                                        <Field orientation='responsive'>
                                             <FieldContent className='flex-1'>
                                                 <FieldLabel
                                                     htmlFor='isActive'
@@ -577,7 +571,7 @@ export default function AdminUserSettings({
                                                 data-testid='isActive-toggle'
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
-                                                className='self-center'
+                                                className='self-start md:self-center'
                                             />
                                         </Field>
                                     )}
@@ -588,8 +582,7 @@ export default function AdminUserSettings({
                                     control={control}
                                     render={({ field, fieldState }) => (
                                         <Field
-                                            orientation='horizontal'
-                                            className='gap-2'
+                                            orientation='responsive'
                                             data-invalid={fieldState.invalid}
                                         >
                                             <FieldContent className='flex-1'>
@@ -610,7 +603,7 @@ export default function AdminUserSettings({
                                                     </FieldError>
                                                 )}
                                             </FieldContent>
-                                            <div className='w-auto self-center'>
+                                            <div className='w-64 shrink-0 self-start md:self-center'>
                                                 <Input
                                                     {...field}
                                                     id='fileUploadLimitOverride'
@@ -627,7 +620,7 @@ export default function AdminUserSettings({
                                     )}
                                 />
 
-                                <Field orientation='horizontal' className='gap-2'>
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm block'>
                                             Password
@@ -640,6 +633,7 @@ export default function AdminUserSettings({
                                         type='button'
                                         variant='outline'
                                         size='sm'
+                                        className='self-start md:self-center'
                                         onClick={openAdminSetPasswordDialog}
                                     >
                                         Set Password
@@ -682,7 +676,7 @@ export default function AdminUserSettings({
                     <section id='admin-actions'>
                         <div className='flex flex-col gap-4'>
                             <FieldGroup>
-                                <Field orientation='horizontal' className='gap-2'>
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm block'>
                                             Simulate Session
@@ -695,14 +689,14 @@ export default function AdminUserSettings({
                                         type='button'
                                         variant='outline'
                                         size='sm'
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                         onClick={simulateSession}
                                     >
                                         Simulate
                                     </Button>
                                 </Field>
 
-                                <Field orientation='horizontal' className='gap-2'>
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm block'>
                                             Email Confirmation
@@ -715,14 +709,14 @@ export default function AdminUserSettings({
                                         type='button'
                                         variant='outline'
                                         size='sm'
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                         onClick={sendEmailConfirmation}
                                     >
                                         Send Email
                                     </Button>
                                 </Field>
 
-                                <Field orientation='horizontal' className='gap-2'>
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm block'>
                                             Password Reset
@@ -735,14 +729,14 @@ export default function AdminUserSettings({
                                         type='button'
                                         variant='outline'
                                         size='sm'
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                         onClick={sendPasswordResetEmail}
                                     >
                                         Send Reset
                                     </Button>
                                 </Field>
 
-                                <Field orientation='horizontal' className='gap-2'>
+                                <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm block'>
                                             Delete
@@ -756,7 +750,7 @@ export default function AdminUserSettings({
                                         type='button'
                                         variant='destructive'
                                         size='sm'
-                                        className='self-center'
+                                        className='self-start md:self-center'
                                         onClick={openDeleteUserDialog}
                                     >
                                         Delete

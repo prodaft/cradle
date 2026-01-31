@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { z } from 'zod';
 
-const Documents = lazy(() => import('src/components/domain/files/Documents'));
+const NotesLayout = lazy(() => import('src/components/domain/notes/NotesLayout'));
 
 export const Route = createFileRoute('/_authenticated/notes')({
     staticData: {
@@ -21,5 +21,5 @@ export const Route = createFileRoute('/_authenticated/notes')({
         updated_date_from: z.string().optional(),
         updated_date_to: z.string().optional(),
     }),
-    component: Documents,
+    component: NotesLayout,
 });

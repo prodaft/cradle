@@ -185,7 +185,7 @@ export default function GraphSettings({
                             </Field>
 
                             <div className='border-t pt-3 space-y-2'>
-                                <Field orientation='horizontal'>
+                                <Field orientation='responsive'>
                                     <Checkbox
                                         id='showLinks'
                                         checked={config.showLinks ?? true}
@@ -200,7 +200,7 @@ export default function GraphSettings({
                                         Show links
                                     </FieldLabel>
                                 </Field>
-                                <Field orientation='horizontal'>
+                                <Field orientation='responsive'>
                                     <Checkbox
                                         id='curvedLinks'
                                         checked={config.curvedLinks ?? false}
@@ -375,7 +375,7 @@ export default function GraphSettings({
                             </Field>
 
                             <div className='border-t pt-3 space-y-2'>
-                                <Field orientation='horizontal'>
+                                <Field orientation='responsive'>
                                     <Checkbox
                                         id='scaleLinksOnZoom'
                                         checked={config.scaleLinksOnZoom ?? false}

@@ -8,12 +8,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import {
-    Field,
-    FieldError,
-    FieldGroup,
-    FieldLabel,
-} from '@/components/ui/field';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import {
     FileUpload,
     FileUploadDropzone,
@@ -241,15 +236,11 @@ export default function UploadDigestDialog({
                                             <Select
                                                 value={value?.value || ''}
                                                 onValueChange={(selectedValue) => {
-                                                    const option =
-                                                        dataTypeOptions.find(
-                                                            (opt) =>
-                                                                opt.value ===
-                                                                selectedValue,
-                                                        );
-                                                    onChange(
-                                                        option ? option : null,
+                                                    const option = dataTypeOptions.find(
+                                                        (opt) =>
+                                                            opt.value === selectedValue,
                                                     );
+                                                    onChange(option ? option : null);
                                                 }}
                                             >
                                                 <SelectTrigger
@@ -259,19 +250,17 @@ export default function UploadDigestDialog({
                                                 >
                                                     <SelectValue placeholder='Select digest type' />
                                                 </SelectTrigger>
-                                            <SelectContent>
-                                                {dataTypeOptions.map(
-                                                    (option) => (
+                                                <SelectContent>
+                                                    {dataTypeOptions.map((option) => (
                                                         <SelectItem
                                                             key={option.value}
                                                             value={option.value}
                                                         >
                                                             {option.label}
                                                         </SelectItem>
-                                                    ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         {isInvalid && (
                                             <FieldError
@@ -279,8 +268,7 @@ export default function UploadDigestDialog({
                                                     {
                                                         message:
                                                             typeof fieldState.error
-                                                                ?.message ===
-                                                            'string'
+                                                                ?.message === 'string'
                                                                 ? fieldState.error
                                                                       .message
                                                                 : 'Please select a data type',
@@ -337,9 +325,7 @@ export default function UploadDigestDialog({
                                                                 </span>{' '}
                                                                 or click to browse
                                                             </div>
-                                                            <FileUploadTrigger
-                                                                asChild
-                                                            >
+                                                            <FileUploadTrigger asChild>
                                                                 <Button
                                                                     type='button'
                                                                     variant='outline'
@@ -397,8 +383,7 @@ export default function UploadDigestDialog({
                                                     {
                                                         message:
                                                             typeof fieldState.error
-                                                                ?.message ===
-                                                            'string'
+                                                                ?.message === 'string'
                                                                 ? fieldState.error
                                                                       .message
                                                                 : 'Please upload a file',
@@ -453,10 +438,7 @@ export default function UploadDigestDialog({
                                                             name: [query],
                                                             type: 'entity',
                                                         });
-                                                    if (
-                                                        response &&
-                                                        response.results
-                                                    ) {
+                                                    if (response && response.results) {
                                                         return response.results.map(
                                                             (entry) => ({
                                                                 value: String(
@@ -490,8 +472,7 @@ export default function UploadDigestDialog({
                                                     {
                                                         message:
                                                             typeof fieldState.error
-                                                                ?.message ===
-                                                            'string'
+                                                                ?.message === 'string'
                                                                 ? fieldState.error
                                                                       .message
                                                                 : 'Invalid associated entries',

@@ -22,6 +22,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import useApi from '@/hooks/api/useApi';
+import { queryKeys } from '@/hooks/query';
 import { GoldenRatioColorGenerator } from '@/utils/colors/colorUtils';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -29,7 +30,7 @@ import {
     EntryClassRequest,
     EntryClassRequestTypeEnum,
 } from '@services/cradle/models';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { HexColorPicker } from 'react-colorful';
 import { Controller, useForm } from 'react-hook-form';
@@ -125,32 +126,22 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
         },
     });
 
-    const fetchEntryTypesMutation = useMutation({
-        mutationFn: async () => {
-            const entries = await entriesApi.entryClassesList({});
-            return entries.map((entry) => ({
-                value: entry.subtype,
-                label: entry.subtype,
-            }));
-        },
-        meta: {
-            suppressNotification: true,
-        },
+    const { data: entryClassesListData } = useQuery({
+        queryKey: queryKeys.entryTypes.lists(),
+        queryFn: () => entriesApi.entryClassesList({}),
+        refetchOnWindowFocus: false,
+        meta: { showErrorToast: false, suppressNotification: true },
     });
 
-    // Fetch all entry types for the Children selector
-    const fetchEntryTypes = async () => {
-        try {
-            const entryTypes = await fetchEntryTypesMutation.mutateAsync();
-            setEntryTypes(entryTypes);
-        } catch (err) {
-            // Error already handled
-        }
-    };
-
     useEffect(() => {
-        fetchEntryTypes();
-    }, []);
+        if (!entryClassesListData) return;
+        setEntryTypes(
+            entryClassesListData.map((entry) => ({
+                value: entry.subtype,
+                label: entry.subtype,
+            })),
+        );
+    }, [entryClassesListData]);
 
     const watchType = watch('type');
     const watchTypeFormat = watch('typeFormat');
