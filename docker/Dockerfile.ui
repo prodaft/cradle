@@ -28,12 +28,13 @@ ENV VITE_API_BASE_URL="http://localhost:8000/api"
 RUN bun run build
 
 RUN rm -rf /www/cradle
-RUN cp -r dist /cradle
+RUN cp -r dist/client /cradle
 RUN chown -R www:www /www
 
 WORKDIR /
 RUN rm -rf /ui
 
+COPY ./docker/nginx_demo.conf /etc/nginx/nginx.conf
 COPY ./docker/entrypoint_ui.sh entrypoint_ui.sh
 RUN chmod +x ./entrypoint_ui.sh
 

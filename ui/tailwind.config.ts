@@ -9,7 +9,7 @@ import type { Config } from 'tailwindcss';
  */
 const config: Config = {
     // Content scanning is automatic in v4
-    content: ['./src/**/*.{html,js,jsx,ts,tsx}', './src/index.html'],
+    content: ['./src/**/*.{html,js,jsx,ts,tsx}'],
     // Dark mode using data-theme attribute
     darkMode: ['selector', '[data-theme="dark"]'],
 };

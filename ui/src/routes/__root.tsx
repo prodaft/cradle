@@ -34,13 +34,13 @@ export const Route = createRootRoute({
             {
                 rel: 'icon',
                 type: 'image/svg+xml',
-                href: '/src/assets/favicon/favicon-light.svg',
+                href: '/favicon-light.svg',
                 media: '(prefers-color-scheme: dark)',
             },
             {
                 rel: 'icon',
                 type: 'image/svg+xml',
-                href: '/src/assets/favicon/favicon-dark.svg',
+                href: '/favicon-dark.svg',
                 media: '(prefers-color-scheme: light)',
             },
         ],
