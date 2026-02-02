@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import { z } from 'zod';
 
 const EnrichmentPage = lazy(
-    () => import('src/components/domain/admin/pages/EnrichmentPage'),
+    () => import('@/components/domain/admin/pages/EnrichmentPage'),
 );
 
 export const Route = createFileRoute(

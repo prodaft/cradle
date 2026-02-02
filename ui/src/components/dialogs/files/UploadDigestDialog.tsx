@@ -187,7 +187,7 @@ export default function UploadDigestDialog({
                             Upload a file to create a new digest entry in the system.
                         </DialogDescription>
                     </DialogHeader>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         {/* Digest Title Field */}
                         <Controller
                             name='title'

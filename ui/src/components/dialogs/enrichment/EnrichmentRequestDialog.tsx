@@ -497,7 +497,7 @@ export default function EnrichmentRequestDialog({
                         </FieldSet>
                     )}
 
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         {/* Title */}
                         <Field>
                             <FieldLabel htmlFor='title'>

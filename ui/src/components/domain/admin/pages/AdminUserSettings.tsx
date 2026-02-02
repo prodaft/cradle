@@ -18,6 +18,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
 import { useAuthActions } from '@/hooks/auth/useAuth';
@@ -348,7 +349,7 @@ export default function AdminUserSettings({
                                 </div>
                             )}
 
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 <Controller
                                     name='username'
                                     control={control}
@@ -390,6 +391,8 @@ export default function AdminUserSettings({
                                         </Field>
                                     )}
                                 />
+
+                                <Separator />
 
                                 <Controller
                                     name='email'
@@ -433,6 +436,8 @@ export default function AdminUserSettings({
                                     )}
                                 />
 
+                                <Separator />
+
                                 <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel
@@ -456,6 +461,8 @@ export default function AdminUserSettings({
                                         />
                                     </div>
                                 </Field>
+
+                                <Separator />
 
                                 <Controller
                                     name='role'
@@ -548,7 +555,7 @@ export default function AdminUserSettings({
                                 )}
                             />
 
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 <Controller
                                     name='isActive'
                                     control={control}
@@ -576,6 +583,8 @@ export default function AdminUserSettings({
                                         </Field>
                                     )}
                                 />
+
+                                <Separator />
 
                                 <Controller
                                     name='fileUploadLimitOverride'
@@ -619,6 +628,8 @@ export default function AdminUserSettings({
                                         </Field>
                                     )}
                                 />
+
+                                <Separator />
 
                                 <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
@@ -675,7 +686,7 @@ export default function AdminUserSettings({
                 {showSection('management') && (
                     <section id='admin-actions'>
                         <div className='flex flex-col gap-4'>
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm block'>
@@ -695,6 +706,8 @@ export default function AdminUserSettings({
                                         Simulate
                                     </Button>
                                 </Field>
+
+                                <Separator />
 
                                 <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
@@ -716,6 +729,8 @@ export default function AdminUserSettings({
                                     </Button>
                                 </Field>
 
+                                <Separator />
+
                                 <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>
                                         <FieldLabel className='text-sm block'>
@@ -735,6 +750,8 @@ export default function AdminUserSettings({
                                         Send Reset
                                     </Button>
                                 </Field>
+
+                                <Separator />
 
                                 <Field orientation='responsive'>
                                     <FieldContent className='flex-1'>

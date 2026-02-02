@@ -134,7 +134,7 @@ export default function ForgotPassword() {
                             className={cn('flex flex-col gap-6')}
                             onSubmit={form.handleSubmit(onSubmit)}
                         >
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 <div className='flex flex-col items-center gap-1 text-center'>
                                     <h1 className='text-2xl font-bold'>
                                         Reset your password

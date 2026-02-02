@@ -482,7 +482,7 @@ export default function EnrichmentSettingsForm({
                         {/* General Information */}
                         <FieldSet id='general'>
                             <FieldLegend>General Information</FieldLegend>
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 <Controller
                                     name='enabled'
                                     control={control}
@@ -521,6 +521,8 @@ export default function EnrichmentSettingsForm({
                                         </Field>
                                     )}
                                 />
+
+                                <Separator />
 
                                 <Controller
                                     name='for_eclasses'
@@ -596,7 +598,9 @@ export default function EnrichmentSettingsForm({
                                 {/* Enrichment Parameters */}
                                 <FieldSet id='settings'>
                                     <FieldLegend>Enrichment Parameters</FieldLegend>
-                                    <FieldGroup>{renderSettingsFields()}</FieldGroup>
+                                    <FieldGroup className='gap-4'>
+                                        {renderSettingsFields()}
+                                    </FieldGroup>
                                 </FieldSet>
                             </>
                         )}

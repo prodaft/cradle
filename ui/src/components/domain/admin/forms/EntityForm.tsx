@@ -16,6 +16,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
@@ -250,7 +251,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
         >
             <section id='entity-settings'>
                 <div className='flex flex-col gap-4'>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Controller
                             name='name'
                             control={control}
@@ -294,12 +295,12 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             )}
                         />
 
+                        <Separator />
+
                         <Controller
                             name='subtype'
                             control={control}
                             render={({ field, fieldState }) => {
-                                console.log('subtype field', field);
-                                console.log('subtype fieldState', fieldState);
                                 return (
                                     <Field
                                         orientation='responsive'
@@ -360,6 +361,8 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             }}
                         />
 
+                        <Separator />
+
                         <Controller
                             name='isPublic'
                             control={control}
@@ -401,6 +404,8 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             )}
                         />
 
+                        <Separator />
+
                         <Controller
                             name='description'
                             control={control}
@@ -441,6 +446,8 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='aliases'

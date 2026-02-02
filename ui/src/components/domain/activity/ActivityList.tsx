@@ -1,11 +1,6 @@
 import Pagination from '@/components/base/Pagination/Pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Input } from '@/components/ui/input';
 import {
@@ -170,7 +165,6 @@ const formatDiff = (diffTxt: string): string => {
 
 function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: boolean }) {
     const [open, setOpen] = useState(false);
-    console.log(event);
 
     const hasDetails = !!event.details;
     const hasSrcLog = !!event.srcLog;
@@ -259,88 +253,85 @@ function ActivityRow({ event, showUser }: { event: ActivityEvent; showUser: bool
     const colSpan = showUser ? 5 : 4;
 
     return (
-        <Collapsible open={open} onOpenChange={setOpen} asChild>
-            <>
-                <CollapsibleTrigger asChild>{rowContent}</CollapsibleTrigger>
-                <CollapsibleContent asChild>
-                    <tr>
-                        <td colSpan={colSpan} className='p-0'>
-                            <div className='px-4 py-3 bg-muted/30 border-t space-y-3'>
-                                {/* Main event details */}
-                                {hasDetails && (
-                                    <div className='space-y-1.5'>
-                                        <div className='text-xs font-medium text-muted-foreground mb-1.5'>
-                                            Changes
-                                        </div>
-                                        <div
-                                            dangerouslySetInnerHTML={{
-                                                __html: formatDiff(event.details!),
-                                            }}
-                                        />
+        <>
+            {rowContent}
+            {open && (
+                <tr>
+                    <td colSpan={colSpan} className='p-0'>
+                        <div className='px-4 py-3 bg-muted/30 border-t space-y-3'>
+                            {/* Main event details */}
+                            {hasDetails && (
+                                <div className='space-y-1.5'>
+                                    <div className='text-xs font-medium text-muted-foreground mb-1.5'>
+                                        Changes
                                     </div>
-                                )}
+                                    <div
+                                        dangerouslySetInnerHTML={{
+                                            __html: formatDiff(event.details!),
+                                        }}
+                                    />
+                                </div>
+                            )}
 
-                                {/* Source log section */}
-                                {hasSrcLog && srcLogFormatted && (
-                                    <div className='space-y-1.5'>
-                                        <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
-                                            <GitForkIcon className='size-3.5' />
-                                            <span>Triggered by</span>
-                                        </div>
-                                        <div className='ml-1 pl-3 border-l-2 border-primary/30'>
-                                            <div className='bg-background rounded-md border border-border p-3'>
-                                                {/* Source log header */}
-                                                <div className='flex flex-wrap items-baseline gap-2 mb-2'>
-                                                    <Badge
-                                                        variant={getTypeBadgeVariant(
-                                                            event.srcLog!.type,
-                                                        )}
-                                                        className='capitalize text-xs'
-                                                    >
-                                                        {event.srcLog!.type}
-                                                    </Badge>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span
-                                                                className={`text-xs cursor-help ${srcLogFormatted.isDeleted ? 'text-muted-foreground line-through' : ''}`}
-                                                            >
-                                                                {srcLogFormatted.text}
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <span className='font-mono text-xs'>
-                                                                {srcLogFormatted.fullId}
-                                                            </span>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </div>
-
-                                                {/* Source log details/diff */}
-                                                {event.srcLog!.details && (
-                                                    <div className='mt-2'>
-                                                        <div className='text-xs font-medium text-muted-foreground mb-1'>
-                                                            Changes
-                                                        </div>
-                                                        <div
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: formatDiff(
-                                                                    event.srcLog!
-                                                                        .details,
-                                                                ),
-                                                            }}
-                                                        />
-                                                    </div>
-                                                )}
+                            {/* Source log section */}
+                            {hasSrcLog && srcLogFormatted && (
+                                <div className='space-y-1.5'>
+                                    <div className='flex items-center gap-1.5 text-xs font-medium text-muted-foreground mb-2'>
+                                        <GitForkIcon className='size-3.5' />
+                                        <span>Triggered by</span>
+                                    </div>
+                                    <div className='ml-1 pl-3 border-l-2 border-primary/30'>
+                                        <div className='bg-background rounded-md border border-border p-3'>
+                                            {/* Source log header */}
+                                            <div className='flex flex-wrap items-baseline gap-2 mb-2'>
+                                                <Badge
+                                                    variant={getTypeBadgeVariant(
+                                                        event.srcLog!.type,
+                                                    )}
+                                                    className='capitalize text-xs'
+                                                >
+                                                    {event.srcLog!.type}
+                                                </Badge>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span
+                                                            className={`text-xs cursor-help ${srcLogFormatted.isDeleted ? 'text-muted-foreground line-through' : ''}`}
+                                                        >
+                                                            {srcLogFormatted.text}
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <span className='font-mono text-xs'>
+                                                            {srcLogFormatted.fullId}
+                                                        </span>
+                                                    </TooltipContent>
+                                                </Tooltip>
                                             </div>
+
+                                            {/* Source log details/diff */}
+                                            {event.srcLog!.details && (
+                                                <div className='mt-2'>
+                                                    <div className='text-xs font-medium text-muted-foreground mb-1'>
+                                                        Changes
+                                                    </div>
+                                                    <div
+                                                        dangerouslySetInnerHTML={{
+                                                            __html: formatDiff(
+                                                                event.srcLog!.details,
+                                                            ),
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        </td>
-                    </tr>
-                </CollapsibleContent>
-            </>
-        </Collapsible>
+                                </div>
+                            )}
+                        </div>
+                    </td>
+                </tr>
+            )}
+        </>
     );
 }
 

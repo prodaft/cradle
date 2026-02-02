@@ -135,7 +135,7 @@ export default function NoteSettingsForm() {
                 {/* General Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>General</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Controller
                             name='minEntries'
                             control={control}
@@ -176,6 +176,8 @@ export default function NoteSettingsForm() {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='minEntities'
@@ -219,6 +221,8 @@ export default function NoteSettingsForm() {
                             )}
                         />
 
+                        <Separator />
+
                         <Controller
                             name='maxCliqueSize'
                             control={control}
@@ -259,6 +263,8 @@ export default function NoteSettingsForm() {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='allowDynamicEntryClassCreation'
@@ -312,7 +318,7 @@ export default function NoteSettingsForm() {
                 {/* Snippets Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Global Snippets</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
                                 <FieldLabel className='text-sm block mb-0.5'>
@@ -347,7 +353,7 @@ export default function NoteSettingsForm() {
                 {/* Actions Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Actions</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
                                 <FieldLabel className='text-sm block mb-0.5'>

@@ -198,7 +198,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
 
     return (
         <form onSubmit={handleFormSubmit(onSubmit as any)} className='w-full'>
-            <FieldGroup>
+            <FieldGroup className='gap-4'>
                 <Controller
                     name='name'
                     control={control}

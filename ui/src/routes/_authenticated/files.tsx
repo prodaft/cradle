@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
 import { z } from 'zod';
 
-const Files = lazy(() => import('src/components/domain/files/Files'));
+const Files = lazy(() => import('@/components/domain/files/Files'));
 
 export const Route = createFileRoute('/_authenticated/files')({
     staticData: {

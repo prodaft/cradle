@@ -4,7 +4,6 @@ import TwoFactorSetupDialog from '@/components/dialogs/auth/TwoFactorSetupDialog
 import ConfirmDeletionDialog from '@/components/dialogs/base/ConfirmDeletionDialog';
 import MarkdownEditorDialog from '@/components/dialogs/notes/MarkdownEditorDialog';
 import { Button } from '@/components/ui/button';
-import { CardContent } from '@/components/ui/card';
 import {
     Command,
     CommandEmpty,
@@ -20,6 +19,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
     Select,
@@ -800,7 +800,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
                         <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                            <CardContent>
+                            <div className='px-6' data-slot='card-content'>
                                 <div className='flex-none mb-4'>
                                     <h3 className='text-lg font-medium'>
                                         {currentTab?.label || 'Settings'}
@@ -822,8 +822,11 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'security' && (
                                         <section id='security'>
                                             <div className='flex flex-col gap-4'>
-                                                <FieldGroup>
-                                                    <Field orientation='responsive'>
+                                                <FieldGroup className='gap-4'>
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
+                                                    >
                                                         <FieldContent className='flex-1'>
                                                             <FieldLabel className='text-sm block mb-0.5'>
                                                                 Password
@@ -837,7 +840,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                             type='button'
                                                             variant='outline'
                                                             size='sm'
-                                                            className='self-start md:self-center'
+                                                            className='self-center'
                                                             onClick={
                                                                 openChangePasswordDialog
                                                             }
@@ -847,7 +850,12 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                         </Button>
                                                     </Field>
 
-                                                    <Field orientation='responsive'>
+                                                    <Separator />
+
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
+                                                    >
                                                         <FieldContent className='flex-1'>
                                                             <FieldLabel className='text-sm block mb-0.5'>
                                                                 API Key
@@ -861,7 +869,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                             type='button'
                                                             variant='outline'
                                                             size='sm'
-                                                            className='self-start md:self-center'
+                                                            className='self-center'
                                                             onClick={openApiKeyDialog}
                                                             title='Generate API Key'
                                                         >
@@ -869,7 +877,12 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                         </Button>
                                                     </Field>
 
-                                                    <Field orientation='responsive'>
+                                                    <Separator />
+
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
+                                                    >
                                                         <FieldContent className='flex-1'>
                                                             <FieldLabel className='text-sm block mb-0.5'>
                                                                 Two-Factor Auth
@@ -888,7 +901,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                     : 'outline'
                                                             }
                                                             size='sm'
-                                                            className='self-start md:self-center'
+                                                            className='self-center'
                                                             onClick={
                                                                 openTwoFactorDialog
                                                             }
@@ -899,7 +912,12 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                         </Button>
                                                     </Field>
 
-                                                    <Field orientation='responsive'>
+                                                    <Separator />
+
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
+                                                    >
                                                         <FieldContent className='flex-1'>
                                                             <FieldLabel className='text-sm block mb-0.5'>
                                                                 Delete Account
@@ -949,66 +967,80 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                 <div className='flex flex-col gap-4'>
                                                     {Object.entries(
                                                         mergedOAuthConnections,
-                                                    ).map(([provider, connected]) => {
-                                                        const method =
-                                                            oauthMethods.find(
-                                                                (item) =>
-                                                                    getOAuthKey(
-                                                                        item,
-                                                                    ) === provider,
-                                                            );
-                                                        const label = method
-                                                            ? getOAuthLabel(method)
-                                                            : provider;
-                                                        return (
-                                                            <div key={provider}>
-                                                                <Field orientation='responsive'>
-                                                                    <FieldContent className='flex-1'>
-                                                                        <FieldLabel className='text-sm block mb-0.5'>
-                                                                            {label}
-                                                                        </FieldLabel>
-                                                                        <FieldDescription>
-                                                                            {connected
-                                                                                ? 'Connected'
-                                                                                : 'Not connected'}
-                                                                        </FieldDescription>
-                                                                    </FieldContent>
-                                                                    <Button
-                                                                        type='button'
-                                                                        variant={
-                                                                            connected
-                                                                                ? 'destructive'
-                                                                                : 'outline'
-                                                                        }
-                                                                        size='sm'
-                                                                        className='self-start md:self-center'
-                                                                        onClick={() => {
-                                                                            if (
-                                                                                connected
-                                                                            ) {
-                                                                                handleOAuthDisconnect(
-                                                                                    provider,
-                                                                                );
-                                                                            } else {
-                                                                                handleOAuthConnect(
-                                                                                    provider,
-                                                                                );
-                                                                            }
-                                                                        }}
-                                                                        disabled={
-                                                                            oauthBusyProvider ===
-                                                                                provider ||
-                                                                            oauthDisconnectMutation.isPending
-                                                                        }
+                                                    ).map(
+                                                        (
+                                                            [provider, connected],
+                                                            index,
+                                                            all,
+                                                        ) => {
+                                                            const method =
+                                                                oauthMethods.find(
+                                                                    (item) =>
+                                                                        getOAuthKey(
+                                                                            item,
+                                                                        ) === provider,
+                                                                );
+                                                            const label = method
+                                                                ? getOAuthLabel(method)
+                                                                : provider;
+                                                            return (
+                                                                <div key={provider}>
+                                                                    <Field
+                                                                        orientation='horizontal'
+                                                                        className='gap-2'
                                                                     >
-                                                                        {connected
-                                                                            ? 'Disconnect'
-                                                                            : 'Connect'}
-                                                                    </Button>
-                                                                </Field>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                                        <FieldContent className='flex-1'>
+                                                                            <FieldLabel className='text-sm block mb-0.5'>
+                                                                                {label}
+                                                                            </FieldLabel>
+                                                                            <FieldDescription>
+                                                                                {connected
+                                                                                    ? 'Connected'
+                                                                                    : 'Not connected'}
+                                                                            </FieldDescription>
+                                                                        </FieldContent>
+                                                                        <Button
+                                                                            type='button'
+                                                                            variant={
+                                                                                connected
+                                                                                    ? 'destructive'
+                                                                                    : 'outline'
+                                                                            }
+                                                                            size='sm'
+                                                                            className='self-center'
+                                                                            onClick={() => {
+                                                                                if (
+                                                                                    connected
+                                                                                ) {
+                                                                                    handleOAuthDisconnect(
+                                                                                        provider,
+                                                                                    );
+                                                                                } else {
+                                                                                    handleOAuthConnect(
+                                                                                        provider,
+                                                                                    );
+                                                                                }
+                                                                            }}
+                                                                            disabled={
+                                                                                oauthBusyProvider ===
+                                                                                    provider ||
+                                                                                oauthDisconnectMutation.isPending
+                                                                            }
+                                                                        >
+                                                                            {connected
+                                                                                ? 'Disconnect'
+                                                                                : 'Connect'}
+                                                                        </Button>
+                                                                    </Field>
+                                                                    {index <
+                                                                        all.length -
+                                                                            1 && (
+                                                                        <Separator />
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        },
+                                                    )}
                                                 </div>
                                             </section>
                                         )}
@@ -1028,8 +1060,11 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'appearance' && (
                                         <section id='appearance'>
                                             <div className='flex flex-col gap-4'>
-                                                <FieldGroup>
-                                                    <Field orientation='responsive'>
+                                                <FieldGroup className='gap-4'>
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
+                                                    >
                                                         <FieldContent className='flex-1'>
                                                             <FieldLabel className='text-sm block mb-0.5'>
                                                                 Theme
@@ -1052,7 +1087,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                     aria-expanded={
                                                                         themePopoverOpen
                                                                     }
-                                                                    className='w-full sm:w-64 justify-between self-start md:self-center'
+                                                                    className='w-full sm:w-64 justify-between self-center'
                                                                 >
                                                                     <span className='truncate'>
                                                                         {selectedThemeType ===
@@ -1191,24 +1226,23 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                     {activeTab === 'editor' && (
                                         <section id='editor'>
                                             <div className='flex flex-col gap-4'>
-                                                <Controller
-                                                    name='vimMode'
-                                                    control={control}
-                                                    render={({ field }) => (
-                                                        <Field orientation='responsive'>
-                                                            <FieldContent className='flex-1'>
-                                                                <FieldLabel
-                                                                    htmlFor={vimModeId}
-                                                                    className='text-sm block mb-0.5'
-                                                                >
-                                                                    Vim Mode
-                                                                </FieldLabel>
-                                                                <FieldDescription>
-                                                                    Use Vim keybindings
-                                                                    in the markdown
-                                                                    editor
-                                                                </FieldDescription>
-                                                            </FieldContent>
+                                                <div className='flex items-center justify-between gap-4'>
+                                                    <div className='flex-1'>
+                                                        <Label
+                                                            htmlFor={vimModeId}
+                                                            className='text-sm block mb-0.5'
+                                                        >
+                                                            Vim Mode
+                                                        </Label>
+                                                        <p className='text-sm text-muted-foreground'>
+                                                            Use Vim keybindings in the
+                                                            markdown editor
+                                                        </p>
+                                                    </div>
+                                                    <Controller
+                                                        name='vimMode'
+                                                        control={control}
+                                                        render={({ field }) => (
                                                             <Switch
                                                                 id={vimModeId}
                                                                 name={field.name}
@@ -1218,12 +1252,17 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                                     field.onChange
                                                                 }
                                                             />
-                                                        </Field>
-                                                    )}
-                                                />
+                                                        )}
+                                                    />
+                                                </div>
 
-                                                <FieldGroup>
-                                                    <Field orientation='responsive'>
+                                                <Separator />
+
+                                                <FieldGroup className='gap-4'>
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
+                                                    >
                                                         <FieldContent className='flex-1'>
                                                             <FieldLabel className='text-sm block mb-0.5'>
                                                                 Note Template
@@ -1237,7 +1276,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                             type='button'
                                                             variant='outline'
                                                             size='sm'
-                                                            className='self-start md:self-center'
+                                                            className='self-center'
                                                             onClick={
                                                                 openNoteTemplateDialog
                                                             }
@@ -1251,7 +1290,12 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                         </Button>
                                                     </Field>
 
-                                                    <Field orientation='responsive'>
+                                                    <Separator />
+
+                                                    <Field
+                                                        orientation='horizontal'
+                                                        className='gap-2'
+                                                    >
                                                         <FieldContent className='flex-1'>
                                                             <FieldLabel className='text-sm block mb-0.5'>
                                                                 Note Snippets
@@ -1266,7 +1310,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                                             type='button'
                                                             variant='outline'
                                                             size='sm'
-                                                            className='self-start md:self-center'
+                                                            className='self-center'
                                                             onClick={() => {
                                                                 snippetListRef.current?.handleAddSnippet();
                                                             }}
@@ -1298,7 +1342,7 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
                                         </section>
                                     )}
                                 </form>
-                            </CardContent>
+                            </div>
                         </div>
                     </div>
                 </div>

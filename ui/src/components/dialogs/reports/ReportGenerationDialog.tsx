@@ -230,7 +230,7 @@ export default function ReportGenerationDialog({
                     </FieldSet>
                 )}
 
-                <FieldGroup>
+                <FieldGroup className='gap-4'>
                     {/* Title Input */}
                     <Field>
                         <FieldLabel htmlFor='report-title'>Report Title</FieldLabel>

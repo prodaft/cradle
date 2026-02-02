@@ -7,6 +7,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
+import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import useApi from '@/hooks/api/useApi';
@@ -120,7 +121,7 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                 {/* Registration Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Registration</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Controller
                             name='allowRegistration'
                             control={control}
@@ -155,6 +156,8 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='requireEmailActivation'
@@ -191,6 +194,8 @@ export default function UserSettingsForm({ onAdd }: UserSettingsFormProps) {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='requireAdminConfirmation'

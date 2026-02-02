@@ -121,7 +121,7 @@ export default function AddUserForm({ onAdd }: AddUserFormProps) {
 
     return (
         <form onSubmit={handleSubmit(onSubmit)} className='w-full'>
-            <FieldGroup>
+            <FieldGroup className='gap-4'>
                 <Field data-invalid={Boolean(errors.username)}>
                     <FieldLabel htmlFor='username'>
                         Username

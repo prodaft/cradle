@@ -252,7 +252,7 @@ export default function FileSettingsForm() {
                 {/* Processing Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Processing</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Controller
                             name='autoprocessFiles'
                             control={control}
@@ -287,6 +287,8 @@ export default function FileSettingsForm() {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='md5Subtype'
@@ -351,6 +353,8 @@ export default function FileSettingsForm() {
                             )}
                         />
 
+                        <Separator />
+
                         <Controller
                             name='sha1Subtype'
                             control={control}
@@ -413,6 +417,8 @@ export default function FileSettingsForm() {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='sha256Subtype'
@@ -477,6 +483,8 @@ export default function FileSettingsForm() {
                             )}
                         />
 
+                        <Separator />
+
                         <Controller
                             name='maxFileSizeForHashing'
                             control={control}
@@ -516,6 +524,8 @@ export default function FileSettingsForm() {
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='uploadLimit'
@@ -568,7 +578,7 @@ export default function FileSettingsForm() {
                 {/* Actions Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Actions</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Field orientation='responsive'>
                             <FieldContent className='flex-1'>
                                 <FieldLabel className='text-sm block mb-0.5'>

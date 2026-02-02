@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import { z } from 'zod';
 
 const EnrichmentRequests = lazy(
-    () => import('src/components/domain/enrichment/EnrichmentRequests'),
+    () => import('@/components/domain/enrichment/EnrichmentRequests'),
 );
 
 export const Route = createFileRoute('/_authenticated/enrich')({

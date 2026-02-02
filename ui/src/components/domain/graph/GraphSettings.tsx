@@ -135,7 +135,7 @@ export default function GraphSettings({
 
                 <TabsContent value='appearance' className='mt-3'>
                     <ScrollArea className='max-h-[50vh]'>
-                        <FieldGroup>
+                        <FieldGroup className='gap-4'>
                             {/* Node Size */}
                             <Field>
                                 <div className='flex items-center justify-between w-full mb-1.5'>
@@ -235,7 +235,7 @@ export default function GraphSettings({
                                 Reset to defaults
                             </Button>
 
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 {simulationSettings.map(
                                     ({
                                         label,
@@ -295,7 +295,7 @@ export default function GraphSettings({
 
                 <TabsContent value='advanced' className='mt-3'>
                     <ScrollArea className='max-h-[50vh]'>
-                        <FieldGroup>
+                        <FieldGroup className='gap-4'>
                             {/* Random Seed */}
                             <Field>
                                 <div className='flex items-center gap-1 mb-1.5'>

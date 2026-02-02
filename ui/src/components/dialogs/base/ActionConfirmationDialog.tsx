@@ -79,7 +79,7 @@ export default function ActionConfirmationDialog({
                 </DialogHeader>
 
                 {confirmText && (
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Field>
                             <FieldLabel htmlFor='confirm-input'>
                                 Type below to confirm

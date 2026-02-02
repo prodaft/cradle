@@ -6,6 +6,7 @@ import {
     FieldGroup,
     FieldLabel,
 } from '@/components/ui/field';
+import { Separator } from '@/components/ui/separator';
 import useApi from '@/hooks/api/useApi';
 import { HardDrivesIcon, TrashIcon } from '@phosphor-icons/react';
 import { useMutation } from '@tanstack/react-query';
@@ -64,7 +65,7 @@ export default function EntriesManagement() {
             {/* Actions Section */}
             <div className='flex flex-col gap-4'>
                 <h3 className='font-semibold text-base'>Actions</h3>
-                <FieldGroup>
+                <FieldGroup className='gap-4'>
                     <Field orientation='responsive'>
                         <FieldContent className='flex-1'>
                             <FieldLabel className='text-sm block mb-0.5'>
@@ -85,6 +86,8 @@ export default function EntriesManagement() {
                             Propagate
                         </Button>
                     </Field>
+
+                    <Separator />
 
                     <Field orientation='responsive'>
                         <FieldContent className='flex-1'>

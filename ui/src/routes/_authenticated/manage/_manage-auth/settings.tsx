@@ -3,7 +3,7 @@ import { lazy } from 'react';
 import { z } from 'zod';
 
 const ManagementPage = lazy(
-    () => import('src/components/domain/admin/pages/ManagementPage'),
+    () => import('@/components/domain/admin/pages/ManagementPage'),
 );
 
 export const Route = createFileRoute(

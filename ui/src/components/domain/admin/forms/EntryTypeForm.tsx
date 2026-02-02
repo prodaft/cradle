@@ -282,7 +282,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                 {/* Basic Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Basic Information</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Controller
                             name='type'
                             control={control}
@@ -349,6 +349,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                             )}
                         />
 
+                        <Separator />
+
                         <Controller
                             name='subtype'
                             control={control}
@@ -391,7 +393,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                 </Field>
                             )}
                         />
-
+                        <Separator />
                         <Controller
                             name='description'
                             control={control}
@@ -431,6 +433,8 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                 </Field>
                             )}
                         />
+
+                        <Separator />
 
                         <Controller
                             name='color'
@@ -516,7 +520,7 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                 {/* Advanced Section */}
                 <div className='flex flex-col gap-4'>
                     <h3 className='font-semibold text-base'>Advanced Settings</h3>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         {isEntity && (
                             <>
                                 <Controller

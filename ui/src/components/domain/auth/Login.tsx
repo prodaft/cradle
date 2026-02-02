@@ -299,7 +299,7 @@ export default function Login() {
                             className={cn('flex flex-col gap-6')}
                             onSubmit={handleSubmit}
                         >
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 {!requiresTwoFactor && (
                                     <div className='flex flex-col items-center gap-1 text-center'>
                                         <h1 className='text-2xl font-bold'>

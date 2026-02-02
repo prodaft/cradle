@@ -82,7 +82,7 @@ export default function ConfirmDeletionDialog({
                 </DialogHeader>
 
                 {confirmTextStripped && (
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Field>
                             <FieldLabel htmlFor='confirm-input'>
                                 Type below to confirm

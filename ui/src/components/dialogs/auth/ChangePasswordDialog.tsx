@@ -117,7 +117,7 @@ export default function ChangePasswordDialog({
                             Choose a strong password that you haven't used elsewhere.
                         </DialogDescription>
                     </DialogHeader>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Controller
                             name='oldPassword'
                             control={form.control}

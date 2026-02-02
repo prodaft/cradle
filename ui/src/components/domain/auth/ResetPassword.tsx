@@ -129,7 +129,7 @@ export default function ResetPassword() {
                             onSubmit={form.handleSubmit(onSubmit)}
                             className='flex flex-col gap-4'
                         >
-                            <FieldGroup>
+                            <FieldGroup className='gap-4'>
                                 <Controller
                                     name='password'
                                     control={form.control}

@@ -123,7 +123,7 @@ export default function AdminSetPasswordDialog({
                             this password to log in.
                         </DialogDescription>
                     </DialogHeader>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         <Controller
                             name='newPassword'
                             control={form.control}

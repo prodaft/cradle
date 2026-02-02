@@ -191,7 +191,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
 
     return (
         <form onSubmit={handleFormSubmit(onSubmit)} className='w-full'>
-            <FieldGroup>
+            <FieldGroup className='gap-4'>
                 <Field data-invalid={Boolean(errors.type)}>
                     <FieldLabel htmlFor='type'>
                         Class Type
@@ -385,7 +385,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
             {/* Advanced Section */}
             <div className='border-t border-white/5 pt-5 mt-5'>
                 <div className='space-y-4'>
-                    <FieldGroup>
+                    <FieldGroup className='gap-4'>
                         {isEntity && (
                             <Field data-invalid={Boolean(errors.prefix)}>
                                 <FieldLabel htmlFor='prefix'>Prefix</FieldLabel>
