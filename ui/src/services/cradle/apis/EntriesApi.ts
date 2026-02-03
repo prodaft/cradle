@@ -26,6 +26,7 @@ import type {
   EntryRequest,
   EntryResponse,
   NextNameResponse,
+  PaginatedEntryClassSerializerCountList,
   PaginatedRelationSerializerResponse,
   RelationDetail,
 } from '../models/index';
@@ -50,6 +51,7 @@ import {
     EntryResponseToJSON,
     NextNameResponseFromJSON,
     NextNameResponseToJSON,
+    PaginatedEntryClassSerializerCountListFromJSON,
     PaginatedRelationSerializerResponseFromJSON,
     PaginatedRelationSerializerResponseToJSON,
     RelationDetailFromJSON,
@@ -109,6 +111,8 @@ export interface EntryClassesDestroyRequest {
 
 export interface EntryClassesListRequest {
     showCount?: boolean;
+    page?: number;
+    pageSize?: number;
 }
 
 export interface EntryClassesRetrieveRequest {
@@ -779,11 +783,17 @@ export class EntriesApi extends runtime.BaseAPI {
      * Retrieve a list of all entry classes.
      * List Entry Classes
      */
-    async entryClassesListRaw(requestParameters: EntryClassesListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<EntryClassSerializerCount>>> {
+    async entryClassesListRaw(requestParameters: EntryClassesListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedEntryClassSerializerCountList>> {
         const queryParameters: any = {};
 
         if (requestParameters['showCount'] != null) {
             queryParameters['show_count'] = requestParameters['showCount'];
+        }
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -806,14 +816,14 @@ export class EntriesApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(EntryClassSerializerCountFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedEntryClassSerializerCountListFromJSON(jsonValue));
     }
 
     /**
      * Retrieve a list of all entry classes.
      * List Entry Classes
      */
-    async entryClassesList(requestParameters: EntryClassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<EntryClassSerializerCount>> {
+    async entryClassesList(requestParameters: EntryClassesListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedEntryClassSerializerCountList> {
         const response = await this.entryClassesListRaw(requestParameters, initOverrides);
         return await response.value();
     }

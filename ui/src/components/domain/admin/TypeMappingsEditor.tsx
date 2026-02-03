@@ -279,7 +279,9 @@ const TypeMappingsEditor = ({ id, name, onSave }: TypeMappingsEditorProps) => {
                 const mappingKeys =
                     (await fetchMappingKeysMutation.mutateAsync()) as unknown as ColumnDefinitions;
 
-                const entryClasses = await fetchEntryClassesMutation.mutateAsync();
+                const entryClassesResponse =
+                    await fetchEntryClassesMutation.mutateAsync();
+                const entryClasses = entryClassesResponse?.results ?? [];
                 const mappings = (await fetchMappingsMutation.mutateAsync()) as any[]; // The response here is a list of objects with dynamic keys
 
                 // Transform string arrays in options to {value, label} format

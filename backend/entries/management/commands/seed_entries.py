@@ -122,9 +122,7 @@ class Command(BaseCommand):
             child_qs = EntryClass.objects.filter(subtype__in=children)
             missing = sorted(set(children) - set(child_qs.values_list("subtype", flat=True)))
             if missing:
-                self.stdout.write(
-                    f"Missing child entry classes for {subtype}: {', '.join(missing)}"
-                )
+                self.stdout.write(f"Missing child entry classes for {subtype}: {', '.join(missing)}")
             entry_class.children.set(child_qs)
 
         self.stdout.write("EntryClass seed complete.")
@@ -145,15 +143,11 @@ class Command(BaseCommand):
                 if not mapping_items:
                     continue
                 if not isinstance(mapping_items, list):
-                    raise CommandError(
-                        f"{mapping_name} mappings for {subtype} must be a list."
-                    )
+                    raise CommandError(f"{mapping_name} mappings for {subtype} must be a list.")
 
                 entry_class = EntryClass.objects.filter(subtype=subtype).first()
                 if not entry_class:
-                    self.stdout.write(
-                        f"Skipping {mapping_name} mappings for missing entry class: {subtype}"
-                    )
+                    self.stdout.write(f"Skipping {mapping_name} mappings for missing entry class: {subtype}")
                     continue
 
                 for item in mapping_items:
@@ -179,11 +173,7 @@ class Command(BaseCommand):
             self.stdout.write(f"{model.__name__} seed complete.")
 
     def _mapping_fields(self, model):
-        return [
-            field.name
-            for field in model._meta.fields
-            if field.name not in {"id", "internal_class"}
-        ]
+        return [field.name for field in model._meta.fields if field.name not in {"id", "internal_class"}]
 
     def _unique_mapping_field(self, model, mapping_fields):
         for field in model._meta.fields:
@@ -206,16 +196,12 @@ class Command(BaseCommand):
     def _normalize_mapping_item(self, model, mapping_name, mapping_fields, item, subtype):
         if isinstance(item, str):
             if len(mapping_fields) != 1:
-                raise CommandError(
-                    f"{mapping_name} mapping for {subtype} must be an object."
-                )
+                raise CommandError(f"{mapping_name} mapping for {subtype} must be an object.")
             item_fields = {mapping_fields[0]: item}
         elif isinstance(item, dict):
             item_fields = {field: item.get(field) for field in mapping_fields}
         else:
-            raise CommandError(
-                f"{mapping_name} mapping for {subtype} must be a string or object."
-            )
+            raise CommandError(f"{mapping_name} mapping for {subtype} must be a string or object.")
 
         missing_required = []
         for field_name in mapping_fields:
@@ -225,9 +211,7 @@ class Command(BaseCommand):
                 missing_required.append(field_name)
         if missing_required:
             missing = ", ".join(missing_required)
-            raise CommandError(
-                f"{mapping_name} mapping for {subtype} missing required fields: {missing}."
-            )
+            raise CommandError(f"{mapping_name} mapping for {subtype} missing required fields: {missing}.")
 
         return item_fields
 
@@ -252,12 +236,11 @@ class Command(BaseCommand):
             for tech_slug in techniques:
                 if populate_existing or overwrite:
                     enricher, _ = EnricherSettings.objects.get_or_create(
-                        enricher_type=tech_slug,
-                        defaults={"enabled": False}
+                        enricher_type=tech_slug, defaults={"enabled": False}
                     )
                 else:
                     enricher = EnricherSettings.objects.filter(enricher_type=tech_slug).first()
-                    
+
                     if not enricher:
                         continue
 

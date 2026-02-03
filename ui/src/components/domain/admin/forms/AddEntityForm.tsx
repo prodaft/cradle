@@ -132,10 +132,9 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
     const hasSetDefaultSubtype = useRef(false);
 
     useEffect(() => {
-        if (!entryClassesData || hasSetDefaultSubtype.current) return;
-        const entityClasses = entryClassesData.filter(
-            (entity) => entity.type === 'entity',
-        );
+        if (entryClassesData == null || hasSetDefaultSubtype.current) return;
+        const results = entryClassesData.results ?? [];
+        const entityClasses = results.filter((entity) => entity.type === 'entity');
         const options = entityClasses.map((c) => ({
             value: c.subtype,
             label: c.subtype,
@@ -143,26 +142,18 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
         setSubtypeOptions(options);
         if (options.length > 0) {
             hasSetDefaultSubtype.current = true;
-            reset((prev) => ({ ...prev, subtype: options[0] }));
             handleSubtypeChange(options[0]);
         }
     }, [entryClassesData, reset]);
 
-    // Auto-fill name when subtype changes
-    const handleSubtypeChange = async (subtype: SubtypeOption | null) => {
+    // Auto-fill name when subtype changes (always regenerate to subtype-1)
+    const handleSubtypeChange = (subtype: SubtypeOption | null) => {
         if (!subtype) return;
-
-        const currentName = watch('name' as any);
-        if (
-            !currentName ||
-            (typeof currentName === 'string' && currentName.trim() === '')
-        ) {
-            // Auto-generate name based on subtype
-            reset((prev: any) => ({
-                ...prev,
-                name: `${subtype.value}_1`,
-            }));
-        }
+        reset((prev: any) => ({
+            ...prev,
+            subtype,
+            name: `${subtype.value}-1`,
+        }));
     };
 
     const createEntityMutation = useMutation({
@@ -277,7 +268,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                     )}
                 />
 
-                <Field orientation='responsive' data-invalid={Boolean(errors.isPublic)}>
+                <Field orientation='horizontal' data-invalid={Boolean(errors.isPublic)}>
                     <FieldContent>
                         <FieldLabel htmlFor='isPublic'>Publicly Available</FieldLabel>
                         <FieldDescription>
@@ -296,7 +287,7 @@ export default function AddEntityForm({ onAdd }: AddEntityFormProps) {
                                 name={field.name}
                                 checked={field.value}
                                 onCheckedChange={field.onChange}
-                                className='self-start md:self-center'
+                                className='self-center'
                             />
                         )}
                     />

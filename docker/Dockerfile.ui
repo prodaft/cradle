@@ -34,7 +34,6 @@ RUN chown -R www:www /www
 WORKDIR /
 RUN rm -rf /ui
 
-COPY ./docker/nginx_demo.conf /etc/nginx/nginx.conf
 COPY ./docker/entrypoint_ui.sh entrypoint_ui.sh
 RUN chmod +x ./entrypoint_ui.sh
 

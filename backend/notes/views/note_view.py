@@ -34,10 +34,12 @@ from ..exceptions import (
     InvalidReferencesAtLeastException,
     NoAccessToEntriesException,
     NoteDoesNotExistException,
+    NoteIsEmptyException,
     NotesErrorCodes,
 )
 from ..filters import NoteFilter
 from ..models import Note
+from ..processor.task_scheduler import TaskScheduler
 from ..serializers import (
     FileReferenceListSerializer,
     FileReferenceWithNoteSerializer,
@@ -514,17 +516,12 @@ class NoteFinalize(APIView):
         except Note.DoesNotExist:
             raise NoteDoesNotExistException(detail="Note was not found.")
 
-        note_data = {
-            "content": note.content,
-            "files": [file.to_dict() for file in note.files.all()],
-        }
+        if not note.content:
+            raise NoteIsEmptyException()
 
-        with transaction.atomic():
-            serializer = NoteCreateSerializer(data=note_data, context={"request": request})
-            serializer.is_valid(raise_exception=True)
-            new_note = serializer.save()
-            note.delete()
-            return Response(NoteRetrieveSerializer(new_note).data, status=status.HTTP_200_OK)
+        note.fleeting = False
+        finalized_note = TaskScheduler(request.user).run_pipeline(note)
+        return Response(NoteRetrieveSerializer(finalized_note).data, status=status.HTTP_200_OK)
 
 
 @extend_schema_view(

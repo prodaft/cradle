@@ -101,6 +101,15 @@ class NoteEditSerializer(serializers.ModelSerializer):
 
             if content is not None:
                 TaskScheduler(user, content=content, **validated_data).run_pipeline(instance)
+        else:
+            content = validated_data.get("content")
+            if content is not None:
+                offset, metadata = infer_metadata(content)
+                instance.title = metadata.get("title", "")
+                instance.description = metadata.get("description", "")
+                instance.metadata = metadata
+                instance.content_offset = offset
+                instance.editor = user
 
         return super().update(instance, validated_data)
 
@@ -555,7 +564,7 @@ class FleetingNoteRetrieveSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ["id", "content", "timestamp", "files"]
+        fields = ["id", "title", "description", "content", "timestamp", "files"]
         read_only_fields = fields
 
     def __init__(self, *args, **kwargs):

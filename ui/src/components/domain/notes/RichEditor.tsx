@@ -232,15 +232,16 @@ const RichEditor = forwardRef<RichEditorRef, RichEditorProps>(function RichEdito
 
     const { data: entryClassesData } = useQuery({
         queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList({}),
+        queryFn: () => entriesApi.entryClassesList(),
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
 
     useEffect(() => {
-        if (!entryClassesData) return;
+        if (entryClassesData == null) return;
+        const results = entryClassesData.results ?? [];
         const colorMap = new Map<string, string>();
-        for (const entry of entryClassesData) {
+        for (const entry of results) {
             if (entry.color) {
                 colorMap.set(entry.subtype, entry.color);
             }

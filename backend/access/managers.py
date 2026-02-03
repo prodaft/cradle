@@ -129,9 +129,7 @@ class AccessManager(models.Manager):
             Entry.entities.annotate(
                 access_type=FilteredRelation("access", condition=Q(access__user=user_id))
             )  # left outer join
-            .values(
-                "id", "name", "access_type__access_type", "description"
-            )  # separate table
+            .values("id", "name", "access_type__access_type", "description")  # separate table
             .annotate(access_type=F("access_type__access_type"))  # rename obscure field
         )
 

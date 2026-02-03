@@ -159,16 +159,17 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
     const { data: entryClassesListData, isPending: isEntryTypesListPending } = useQuery(
         {
             queryKey: queryKeys.entryTypes.lists(),
-            queryFn: () => entriesApi.entryClassesList({}),
+            queryFn: () => entriesApi.entryClassesList(),
             refetchOnWindowFocus: false,
             meta: { showErrorToast: false, suppressNotification: true },
         },
     );
 
     useEffect(() => {
-        if (!entryClassesListData) return;
+        if (entryClassesListData == null) return;
+        const results = entryClassesListData.results ?? [];
         setEntryTypes(
-            entryClassesListData.map((entry) => ({
+            results.map((entry) => ({
                 value: entry.subtype,
                 label: entry.subtype,
             })),
@@ -563,6 +564,12 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         </Field>
                                     )}
                                 />
+                                <Separator
+                                    data-orientation='horizontal'
+                                    role='none'
+                                    className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
+                                    data-slot='separator'
+                                />
                             </>
                         )}
 
@@ -631,6 +638,12 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                         </Field>
                                     )}
                                 />
+                                <Separator
+                                    data-orientation='horizontal'
+                                    role='none'
+                                    className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
+                                    data-slot='separator'
+                                />
 
                                 {isOptions && (
                                     <>
@@ -675,6 +688,12 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     )}
                                                 </Field>
                                             )}
+                                        />
+                                        <Separator
+                                            data-orientation='horizontal'
+                                            role='none'
+                                            className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
+                                            data-slot='separator'
                                         />
                                     </>
                                 )}
@@ -722,6 +741,12 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     )}
                                                 </Field>
                                             )}
+                                        />
+                                        <Separator
+                                            data-orientation='horizontal'
+                                            role='none'
+                                            className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
+                                            data-slot='separator'
                                         />
                                     </>
                                 )}
@@ -773,6 +798,12 @@ export default function EntryTypeForm({ id = null, onAdd }: EntryTypeFormProps) 
                                                     </div>
                                                 </Field>
                                             )}
+                                        />
+                                        <Separator
+                                            data-orientation='horizontal'
+                                            role='none'
+                                            className='shrink-0 touch-manipulation bg-border data-[orientation=horizontal]:h-px data-[orientation=vertical]:h-full data-[orientation=horizontal]:w-full data-[orientation=vertical]:w-px'
+                                            data-slot='separator'
                                         />
                                     </>
                                 )}

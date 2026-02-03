@@ -17,15 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { queryKeys } from '@/hooks/query';
@@ -40,9 +34,8 @@ import {
     UserPlusIcon,
 } from '@phosphor-icons/react';
 import { UserRetrieve } from '@services/cradle/models';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    useLocation,
     useParams,
     useRouter,
     useRouterState,
@@ -128,90 +121,35 @@ function UserSettingsPage({ userId }: { userId: string }) {
     return (
         <main
             data-layout='fixed'
-            className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+            className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
         >
-            <div className='space-y-0.5'>
-                <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-                    {userData?.username || 'User Settings'}
-                </h1>
-                <p className='text-muted-foreground'>
-                    Manage user account and administrative settings.
-                </p>
+            <div className='flex flex-wrap items-end justify-between gap-2'>
+                <div className='space-y-1'>
+                    <h2 className='text-2xl font-bold tracking-tight'>
+                        {userData?.username || 'User Settings'}
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        Manage user account and administrative settings.
+                    </p>
+                </div>
             </div>
-            <Separator
-                data-orientation='horizontal'
-                role='none'
-                className='shrink-0 my-4 lg:my-6'
-            />
-            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
-                <aside className='top-0 lg:sticky lg:w-1/5'>
-                    {/* Mobile dropdown */}
-                    <div className='p-1 md:hidden'>
-                        <Select
-                            value={tab || USER_SETTINGS_ITEMS[0].id}
-                            onValueChange={handleTabClick}
-                        >
-                            <SelectTrigger className='h-12 sm:w-48'>
-                                <SelectValue>
-                                    <div className='flex gap-x-4 px-2 py-1 items-center'>
-                                        <span className='scale-125 flex items-center'>
-                                            {currentTab && (
-                                                <currentTab.icon className='w-[18px] h-[18px]' />
-                                            )}
-                                        </span>
-                                        <span className='text-md'>
-                                            {currentTab?.label}
-                                        </span>
-                                    </div>
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                                {USER_SETTINGS_ITEMS.map((item) => {
-                                    const Icon = item.icon;
-                                    return (
-                                        <SelectItem key={item.id} value={item.id}>
-                                            <div className='flex gap-x-2 items-center'>
-                                                <Icon className='w-[18px] h-[18px]' />
-                                                <span>{item.label}</span>
-                                            </div>
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {/* Desktop navigation */}
-                    <div className='relative hidden w-full min-w-40 bg-background px-1 py-2 md:block'>
-                        <nav className='flex space-x-2 py-1 lg:flex-col lg:space-y-1 lg:space-x-0'>
-                            {USER_SETTINGS_ITEMS.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = tab === item.id;
-                                return (
-                                    <a
-                                        key={item.id}
-                                        href='#'
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            handleTabClick(item.id);
-                                        }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
-                                            isActive
-                                                ? 'bg-muted hover:bg-accent active'
-                                                : ''
-                                        }`}
-                                        data-status={isActive ? 'active' : undefined}
-                                        aria-current={isActive ? 'page' : undefined}
-                                    >
-                                        <span className='me-2'>
-                                            <Icon className='w-[18px] h-[18px]' />
-                                        </span>
-                                        {item.label}
-                                    </a>
-                                );
-                            })}
-                        </nav>
-                    </div>
-                </aside>
+            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
+                <Tabs
+                    value={tab || USER_SETTINGS_ITEMS[0].id}
+                    onValueChange={handleTabClick}
+                >
+                    <TabsList className='flex-wrap h-auto'>
+                        {USER_SETTINGS_ITEMS.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <TabsTrigger key={item.id} value={item.id}>
+                                    <Icon className='w-4 h-4' />
+                                    {item.label}
+                                </TabsTrigger>
+                            );
+                        })}
+                    </TabsList>
+                </Tabs>
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
                         <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
@@ -243,15 +181,16 @@ export default function UsersPage() {
     const params = useParams({ strict: false });
     const id = (params as any).id;
     const router = useRouter();
-    const location = useLocation();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const search = useSearch({ strict: false });
-    const [users, setUsers] = useState<UserRetrieve[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [page, setPage] = useState((search as any)?.users_page || 1);
     const [pageSize, setPageSize] = useState((search as any)?.users_pagesize || 20);
     const { usersApi } = useApi();
+    const queryClient = useQueryClient();
     const [addUserDialogOpen, setAddUserDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
@@ -266,14 +205,16 @@ export default function UsersPage() {
         setRowSelection({});
     }, []);
 
-    const fetchUsersMutation = useMutation({
-        mutationFn: async () => {
-            return await usersApi.usersList();
-        },
+    const { data: usersData, isPending } = useQuery({
+        queryKey: queryKeys.users.list({ page, pageSize }),
+        queryFn: () => usersApi.usersList({ page, pageSize }),
         meta: {
+            showErrorToast: false,
             suppressNotification: true,
         },
     });
+
+    const users = usersData?.results ?? [];
 
     const deleteUsersMutation = useMutation({
         mutationFn: async (userIds: string[]) => {
@@ -285,28 +226,12 @@ export default function UsersPage() {
             errorMessage: 'Failed to delete users',
         },
         onSuccess: (_, userIds) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
             toast.success(
                 `Successfully deleted ${userIds.length} user${userIds.length > 1 ? 's' : ''}`,
             );
         },
     });
-
-    const displayUsers = async () => {
-        setIsLoading(true);
-        try {
-            const fetchedUsers = await fetchUsersMutation.mutateAsync();
-            setUsers(fetchedUsers || []);
-        } catch (error) {
-            setUsers([]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        displayUsers();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
 
     const handleUserClick = (user: UserRetrieve) => {
         router.navigate({ to: `/manage/users/${user.id || user.username}` as any });
@@ -330,7 +255,7 @@ export default function UsersPage() {
     };
 
     const handleUserAdded = (newUser: UserRetrieve) => {
-        displayUsers();
+        queryClient.invalidateQueries({ queryKey: queryKeys.users.lists() });
         if (newUser.id || newUser.username) {
             router.navigate({
                 to: `/manage/users/${newUser.id || newUser.username}` as any,
@@ -342,7 +267,6 @@ export default function UsersPage() {
         deleteUsersMutation.mutate(userIds, {
             onSuccess: () => {
                 clearSelection();
-                displayUsers();
             },
             onError: () => {
                 toast.error('Failed to delete users');
@@ -376,16 +300,11 @@ export default function UsersPage() {
         );
     }, [users, searchQuery]);
 
-    // Calculate total pages and paginate data
-    const totalPages = useMemo(() => {
-        return Math.max(1, Math.ceil(filteredUsers.length / pageSize));
-    }, [filteredUsers.length, pageSize]);
-
-    const paginatedUsers = useMemo(() => {
-        const start = (page - 1) * pageSize;
-        const end = start + pageSize;
-        return filteredUsers.slice(start, end);
-    }, [filteredUsers, page, pageSize]);
+    const totalPages = useMemo(
+        () => Math.max(1, usersData?.totalPages ?? 1),
+        [usersData?.totalPages],
+    );
+    const paginatedUsers = filteredUsers;
 
     // Sync URL params to page state
     useEffect(() => {
@@ -589,7 +508,7 @@ export default function UsersPage() {
                         />
                     </div>
                     <div className='flex-1 space-y-4'>
-                        {isLoading ? (
+                        {isPending ? (
                             <div className='flex min-h-[200px] items-center justify-center'>
                                 <Spinner className='size-10' />
                             </div>
@@ -613,14 +532,14 @@ export default function UsersPage() {
                 <ActionBarGroup>
                     <ActionBarItem
                         onClick={handleEditSelected}
-                        disabled={isLoading || selectedUserIds.length !== 1}
+                        disabled={isPending || selectedUserIds.length !== 1}
                     >
                         <PencilIcon size={18} weight='bold' />
                         Edit
                     </ActionBarItem>
                     <ActionBarItem
                         onClick={handleDeleteSelected}
-                        disabled={isLoading || selectedUserIds.length === 0}
+                        disabled={isPending || selectedUserIds.length === 0}
                         className='text-destructive'
                     >
                         <TrashIcon size={18} weight='bold' />

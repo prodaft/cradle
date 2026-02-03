@@ -90,8 +90,8 @@ export default function SearchDialog({
 
     const fetchEntrySubtypesMutation = useMutation({
         mutationFn: async () => {
-            const entities = await entriesApi.entryClassesList({});
-            return entities;
+            const response = await entriesApi.entryClassesList();
+            return response.results ?? [];
         },
         meta: {
             errorMessage: 'Failed to load entry subtypes',

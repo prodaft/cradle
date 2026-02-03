@@ -1,15 +1,5 @@
 import FileUploadDialog from '@/components/dialogs/notes/FileUploadDialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import {
     ResizableHandle,
     ResizablePanel,
@@ -152,7 +142,6 @@ export default function NoteViewer() {
     const [lineNumber, setLineNumber] = useState(0);
     const [noteOutline, setNoteOutline] = useState<HeaderNode[]>([]);
     const [lspLoaded, setLspLoaded] = useState(false);
-    const [showEditDialog, setShowEditDialog] = useState(false);
     const rawContentRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
     const lastLoadedNoteIdRef = useRef<string | null>(null);
@@ -266,20 +255,6 @@ export default function NoteViewer() {
             replace: true,
         });
     }, [enableEditing, router, location.pathname, search]);
-
-    const handleEnableEditingWithConfirmation = useCallback(() => {
-        // If we're already in editing mode, there's nothing to do
-        if (enableEditing) {
-            return;
-        }
-
-        setShowEditDialog(true);
-    }, [enableEditing]);
-
-    const handleConfirmEdit = useCallback(() => {
-        setShowEditDialog(false);
-        toggleEditing();
-    }, [toggleEditing]);
 
     const smartLink = useCallback(
         async (onlyTimestamps: boolean) => {
@@ -660,25 +635,6 @@ export default function NoteViewer() {
 
     return (
         <>
-            <AlertDialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Edit Note</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Do you want to edit this note? This could be harmful.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleConfirmEdit}
-                            className={cn(buttonVariants({ variant: 'destructive' }))}
-                        >
-                            Edit
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
             <div className='w-[100%] h-full flex flex-col'>
                 <div className='w-full border-b border-border px-4 py-3 flex items-center justify-between'>
                     <div className='flex items-center gap-4'>
@@ -807,9 +763,6 @@ export default function NoteViewer() {
                                                         richEditor &&
                                                         'overflow-hidden',
                                                 )}
-                                                onDoubleClick={
-                                                    handleEnableEditingWithConfirmation
-                                                }
                                             >
                                                 {showFind && (
                                                     <FindReplace
@@ -898,9 +851,6 @@ export default function NoteViewer() {
                                                 richEditor &&
                                                 'overflow-hidden',
                                         )}
-                                        onDoubleClick={
-                                            handleEnableEditingWithConfirmation
-                                        }
                                     >
                                         {showFind && (
                                             <FindReplace

@@ -128,15 +128,16 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
 
     const { data: entryClassesListData } = useQuery({
         queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList({}),
+        queryFn: () => entriesApi.entryClassesList(),
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
 
     useEffect(() => {
-        if (!entryClassesListData) return;
+        if (entryClassesListData == null) return;
+        const results = entryClassesListData.results ?? [];
         setEntryTypes(
-            entryClassesListData.map((entry) => ({
+            results.map((entry) => ({
                 value: entry.subtype,
                 label: entry.subtype,
             })),

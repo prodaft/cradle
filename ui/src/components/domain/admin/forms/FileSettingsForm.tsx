@@ -119,7 +119,7 @@ export default function FileSettingsForm() {
 
     const { data: entryClassesData } = useQuery({
         queryKey: queryKeys.entryTypes.lists(),
-        queryFn: () => entriesApi.entryClassesList({}),
+        queryFn: () => entriesApi.entryClassesList(),
         refetchOnWindowFocus: false,
         meta: { showErrorToast: false, suppressNotification: true },
     });
@@ -193,8 +193,9 @@ export default function FileSettingsForm() {
     };
 
     useEffect(() => {
-        if (!entryClassesData) return;
-        const artifactSubtypes = entryClassesData
+        if (entryClassesData == null) return;
+        const results = entryClassesData.results ?? [];
+        const artifactSubtypes = results
             .filter((entry) => entry.type === EntryClassTypeEnum.Artifact)
             .map((entry) => ({ value: entry.subtype, label: entry.subtype }));
         setSubtypes(artifactSubtypes);

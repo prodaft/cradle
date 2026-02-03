@@ -13,7 +13,8 @@ export async function parseMarkdown(
     addLinks = false,
 ): Promise<{ html: string; metadata: Record<string, any> } | undefined> {
     try {
-        const entries = await entriesApi.entryClassesList({});
+        const response = await entriesApi.entryClassesList({});
+        const entries = response?.results ?? [];
         const entryColors = new Map<string, string>();
         for (const entry of entries) {
             entryColors.set(entry.subtype, entry.color || 'var(--primary)');

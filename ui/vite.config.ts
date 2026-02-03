@@ -30,6 +30,9 @@ export default defineConfig(({ mode }) => {
             minify: 'esbuild',
         },
         server: { port: 5173 },
+        optimizeDeps: {
+            include: ['@radix-ui/react-slider'],
+        },
         resolve: {
             alias: {
                 '@': path.resolve(__dirname, './src'),

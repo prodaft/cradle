@@ -20,6 +20,7 @@ from core.openapi import (
     get_error_responses,
     get_validation_error_response,
 )
+from core.pagination import TotalPagesPagination
 from management.settings import cradle_settings
 from notifications.models import NewUserNotification
 from user.permissions import HasAdminRole
@@ -61,9 +62,23 @@ from ..serializers import (
     get=extend_schema(
         operation_id="users_list",
         summary="List users",
-        description="Returns a list of all users. Only available to admin users.",
+        description="Returns a paginated list of all users. Only available to admin users.",
+        parameters=[
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of results per page",
+            ),
+        ],
         responses={
-            200: UserRetrieveSerializer(many=True),
+            200: TotalPagesPagination().get_paginated_response_serializer(UserRetrieveSerializer),
             **get_common_error_responses(),
         },
     ),
@@ -93,8 +108,18 @@ class UserList(APIView):
         return super().get_permissions()
 
     def get(self, request):
-        users = CradleUser.objects.all()
-        serializer = UserRetrieveSerializer(users, many=True)
+        users_qs = CradleUser.objects.all()
+        page_size = request.query_params.get("page_size", "10")
+        if not page_size.isdigit() or int(page_size) <= 0:
+            page_size = 10
+        else:
+            page_size = int(page_size)
+        paginator = TotalPagesPagination(page_size=page_size)
+        paginated = paginator.paginate_queryset(users_qs, request)
+        if paginated is not None:
+            serializer = UserRetrieveSerializer(paginated, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = UserRetrieveSerializer(users_qs, many=True)
         return Response(serializer.data)
 
     def post(self, request):

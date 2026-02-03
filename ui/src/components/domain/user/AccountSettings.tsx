@@ -21,15 +21,9 @@ import {
 } from '@/components/ui/field';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useTheme } from '@/contexts/ui/ThemeContext';
 import useApi from '@/hooks/api/useApi';
@@ -716,91 +710,34 @@ export default function AccountSettings({ target = 'me' }: AccountSettingsProps)
     return (
         <main
             data-layout='fixed'
-            className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+            className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
         >
-            <div className='space-y-0.5'>
-                <h1 className='text-2xl font-bold tracking-tight md:text-3xl'>
-                    Settings
-                </h1>
-                <p className='text-muted-foreground'>
-                    Manage your account settings and set e-mail preferences.
-                </p>
+            <div className='flex flex-wrap items-end justify-between gap-2'>
+                <div className='space-y-1'>
+                    <h2 className='text-2xl font-bold tracking-tight'>Settings</h2>
+                    <p className='text-muted-foreground'>
+                        Manage your account settings and set e-mail preferences.
+                    </p>
+                </div>
             </div>
-            <Separator
-                data-orientation='horizontal'
-                role='none'
-                className='shrink-0 my-4 lg:my-6'
-            />
-            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
-                <aside className='top-0 lg:sticky lg:w-1/5'>
-                    {/* Mobile dropdown */}
-                    <div className='p-1 md:hidden'>
-                        <Select value={activeTab} onValueChange={handleTabChange}>
-                            <SelectTrigger className='h-12 sm:w-48'>
-                                <SelectValue>
-                                    <div className='flex gap-x-4 px-2 py-1 items-center'>
-                                        <span className='scale-125 flex items-center'>
-                                            {currentTab && (
-                                                <currentTab.icon className='w-[18px] h-[18px]' />
-                                            )}
-                                        </span>
-                                        <span className='text-md'>
-                                            {currentTab?.label}
-                                        </span>
-                                    </div>
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                                {settingsTabs.map((tab) => {
-                                    const Icon = tab.icon;
-                                    return (
-                                        <SelectItem key={tab.id} value={tab.id}>
-                                            <div className='flex gap-x-2 items-center'>
-                                                <Icon className='w-[18px] h-[18px]' />
-                                                <span>{tab.label}</span>
-                                            </div>
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {/* Desktop navigation */}
-                    <div className='relative hidden w-full min-w-40 bg-background px-1 py-2 md:block'>
-                        <nav className='flex space-x-2 py-1 lg:flex-col lg:space-y-1 lg:space-x-0'>
-                            {settingsTabs.map((tab) => {
-                                const Icon = tab.icon;
-                                const isActive = activeTab === tab.id;
-                                return (
-                                    <a
-                                        key={tab.id}
-                                        href='#'
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            handleTabChange(tab.id);
-                                        }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
-                                            isActive
-                                                ? 'bg-muted hover:bg-accent active'
-                                                : ''
-                                        }`}
-                                        data-status={isActive ? 'active' : undefined}
-                                        aria-current={isActive ? 'page' : undefined}
-                                    >
-                                        <span className='me-2'>
-                                            <Icon className='w-[18px] h-[18px]' />
-                                        </span>
-                                        {tab.label}
-                                    </a>
-                                );
-                            })}
-                        </nav>
-                    </div>
-                </aside>
+            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
+                <Tabs value={activeTab} onValueChange={handleTabChange}>
+                    <TabsList className='flex-wrap h-auto'>
+                        {settingsTabs.map((tab) => {
+                            const Icon = tab.icon;
+                            return (
+                                <TabsTrigger key={tab.id} value={tab.id}>
+                                    <Icon className='w-4 h-4' />
+                                    {tab.label}
+                                </TabsTrigger>
+                            );
+                        })}
+                    </TabsList>
+                </Tabs>
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
                         <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                            <div className='px-6' data-slot='card-content'>
+                            <div data-slot='card-content'>
                                 <div className='flex-none mb-4'>
                                     <h3 className='text-lg font-medium'>
                                         {currentTab?.label || 'Settings'}

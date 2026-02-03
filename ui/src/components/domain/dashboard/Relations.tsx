@@ -440,7 +440,7 @@ export default function Relations({ obj }: RelationsProps) {
     // Query for entry subtypes
     const { data: entrySubtypesData } = useQuery({
         queryKey: ['entrySubtypes'],
-        queryFn: () => entriesApi.entryClassesList({}),
+        queryFn: () => entriesApi.entryClassesList(),
         meta: {
             showErrorToast: true,
             errorMessage: 'Failed to load entry subtypes',
@@ -448,16 +448,18 @@ export default function Relations({ obj }: RelationsProps) {
     });
 
     const entrySubtypes = useMemo(() => {
-        return (entrySubtypesData || []).map((c: any) => c.subtype);
-    }, [entrySubtypesData]);
+        const results = entrySubtypesData?.results ?? [];
+        return results.map((c: any) => c.subtype);
+    }, [entrySubtypesData?.results]);
 
     const entryClassColors = useMemo(() => {
         const colors = new Map<string, string>();
-        (entrySubtypesData || []).forEach((c: any) => {
+        const results = entrySubtypesData?.results ?? [];
+        results.forEach((c: any) => {
             if (c.color) colors.set(c.subtype, c.color);
         });
         return colors;
-    }, [entrySubtypesData]);
+    }, [entrySubtypesData?.results]);
 
     const relationsQueryParams = useMemo(() => {
         if (!obj.id) return null;

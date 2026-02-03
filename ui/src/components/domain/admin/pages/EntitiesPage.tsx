@@ -17,15 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import useApi from '@/hooks/api/useApi';
 import { useAuthState } from '@/hooks/auth/useAuth';
@@ -39,7 +33,6 @@ import {
 import { Entity } from '@services/cradle/models';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-    useLocation,
     useParams,
     useRouter,
     useRouterState,
@@ -126,94 +119,39 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
     return (
         <main
             data-layout='fixed'
-            className='px-4 py-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
+            className='px-4 pt-4 pb-6 flex grow flex-col overflow-hidden @7xl/content:mx-auto @7xl/content:w-full @7xl/content:max-w-7xl'
         >
-            <div className='space-y-0.5'>
-                <h1 className='text-2xl font-bold tracking-tight md:text-3xl flex items-center gap-2'>
-                    {entityData?.name || (
-                        <>
-                            <Spinner className='size-5' /> Loading...
-                        </>
-                    )}
-                </h1>
-                <p className='text-muted-foreground'>
-                    {currentDescription || 'Manage entity'}
-                </p>
+            <div className='flex flex-wrap items-end justify-between gap-2'>
+                <div className='space-y-1'>
+                    <h2 className='text-2xl font-bold tracking-tight flex items-center gap-2'>
+                        {entityData?.name || (
+                            <>
+                                <Spinner className='size-5' /> Loading...
+                            </>
+                        )}
+                    </h2>
+                    <p className='text-muted-foreground'>
+                        {currentDescription || 'Manage entity'}
+                    </p>
+                </div>
             </div>
-            <Separator
-                data-orientation='horizontal'
-                role='none'
-                className='shrink-0 my-4 lg:my-6'
-            />
-            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 lg:flex-row lg:space-y-0 lg:space-x-12'>
-                <aside className='top-0 lg:sticky lg:w-1/5'>
-                    {/* Mobile dropdown */}
-                    <div className='p-1 md:hidden'>
-                        <Select
-                            value={tab || ENTITY_SETTINGS_ITEMS[0].id}
-                            onValueChange={handleTabClick}
-                        >
-                            <SelectTrigger className='h-12 sm:w-48'>
-                                <SelectValue>
-                                    <div className='flex gap-x-4 px-2 py-1 items-center'>
-                                        <span className='scale-125 flex items-center'>
-                                            {currentTab && (
-                                                <currentTab.icon className='w-[18px] h-[18px]' />
-                                            )}
-                                        </span>
-                                        <span className='text-md'>
-                                            {currentTab?.label}
-                                        </span>
-                                    </div>
-                                </SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                                {ENTITY_SETTINGS_ITEMS.map((item) => {
-                                    const Icon = item.icon;
-                                    return (
-                                        <SelectItem key={item.id} value={item.id}>
-                                            <div className='flex gap-x-2 items-center'>
-                                                <Icon className='w-[18px] h-[18px]' />
-                                                <span>{item.label}</span>
-                                            </div>
-                                        </SelectItem>
-                                    );
-                                })}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {/* Desktop navigation */}
-                    <div className='relative hidden w-full min-w-40 bg-background px-1 py-2 md:block'>
-                        <nav className='flex space-x-2 py-1 lg:flex-col lg:space-y-1 lg:space-x-0'>
-                            {ENTITY_SETTINGS_ITEMS.map((item) => {
-                                const Icon = item.icon;
-                                const isActive = tab === item.id;
-                                return (
-                                    <a
-                                        key={item.id}
-                                        href='#'
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            handleTabClick(item.id);
-                                        }}
-                                        className={`inline-flex items-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:text-accent-foreground dark:hover:bg-accent/50 h-9 px-4 py-2 has-[>svg]:px-3 hover:bg-accent justify-start ${
-                                            isActive
-                                                ? 'bg-muted hover:bg-accent active'
-                                                : ''
-                                        }`}
-                                        data-status={isActive ? 'active' : undefined}
-                                        aria-current={isActive ? 'page' : undefined}
-                                    >
-                                        <span className='me-2'>
-                                            <Icon className='w-[18px] h-[18px]' />
-                                        </span>
-                                        {item.label}
-                                    </a>
-                                );
-                            })}
-                        </nav>
-                    </div>
-                </aside>
+            <div className='flex flex-1 flex-col space-y-2 overflow-hidden md:space-y-2 mt-4'>
+                <Tabs
+                    value={tab || ENTITY_SETTINGS_ITEMS[0].id}
+                    onValueChange={handleTabClick}
+                >
+                    <TabsList className='flex-wrap h-auto'>
+                        {ENTITY_SETTINGS_ITEMS.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <TabsTrigger key={item.id} value={item.id}>
+                                    <Icon className='w-4 h-4' />
+                                    {item.label}
+                                </TabsTrigger>
+                            );
+                        })}
+                    </TabsList>
+                </Tabs>
                 <div className='flex w-full overflow-y-hidden p-1'>
                     <div className='flex flex-1 flex-col'>
                         {tab === 'activity' ? (
@@ -226,7 +164,7 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
                             </div>
                         ) : (
                             <div className='faded-bottom h-full w-full overflow-y-auto overflow-x-hidden scroll-smooth pb-12'>
-                                <CardContent>
+                                <CardContent className='px-0'>
                                     <div className='flex-none mb-4'>
                                         <h3 className='text-lg font-medium'>
                                             {currentTab?.label || 'Settings'}
@@ -275,7 +213,9 @@ function EntitySettingsPage({ entityId }: { entityId: string }) {
 export default function EntitiesPage() {
     const { id } = useParams({ strict: false });
     const router = useRouter();
-    const location = useLocation();
+    const location = useRouterState({
+        select: (state) => state.location,
+    });
     const search = useSearch({ strict: false });
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
@@ -299,10 +239,10 @@ export default function EntitiesPage() {
         setRowSelection({});
     }, []);
 
-    // Query for entities
+    // Query for entities with server-side pagination (page/pageSize from URL)
     const { data: entitiesData, isPending } = useQuery({
-        queryKey: queryKeys.entities.lists(),
-        queryFn: () => queryApi.queryList({ type: 'entity' }),
+        queryKey: queryKeys.entities.list({ page, pageSize }),
+        queryFn: () => queryApi.queryList({ type: 'entity', page, pageSize }),
         meta: {
             showErrorToast: false,
             suppressNotification: true,
@@ -363,10 +303,9 @@ export default function EntitiesPage() {
         });
     }, [selectedEntityIds, router]);
 
+    // Client-side filter by search (within current page only when using server pagination)
     const filteredEntities = useMemo(() => {
-        if (!searchQuery.trim()) {
-            return entities;
-        }
+        if (!searchQuery.trim()) return entities;
         const query = searchQuery.toLowerCase();
         return entities.filter(
             (entity) =>
@@ -376,16 +315,12 @@ export default function EntitiesPage() {
         );
     }, [entities, searchQuery]);
 
-    // Calculate total pages and paginate data
-    const totalPages = useMemo(() => {
-        return Math.max(1, Math.ceil(filteredEntities.length / pageSize));
-    }, [filteredEntities.length, pageSize]);
-
-    const paginatedEntities = useMemo(() => {
-        const start = (page - 1) * pageSize;
-        const end = start + pageSize;
-        return filteredEntities.slice(start, end);
-    }, [filteredEntities, page, pageSize]);
+    // Server-side pagination: use API totalPages and show current page (filtered by search)
+    const totalPages = useMemo(
+        () => Math.max(1, entitiesData?.totalPages ?? 1),
+        [entitiesData?.totalPages],
+    );
+    const paginatedEntities = filteredEntities;
 
     // Sync URL params to page state
     useEffect(() => {

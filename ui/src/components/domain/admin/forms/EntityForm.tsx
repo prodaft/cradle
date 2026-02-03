@@ -143,16 +143,14 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
 
     // Update subtype options when entry classes load
     useEffect(() => {
-        if (entryClassesData) {
-            const entityClasses = entryClassesData.filter(
-                (entity: any) => entity.type === 'entity',
-            );
-            const options = entityClasses.map((c: any) => ({
-                value: c.subtype,
-                label: c.subtype,
-            }));
-            setSubtypeOptions(options);
-        }
+        if (entryClassesData == null) return;
+        const results = entryClassesData.results ?? [];
+        const entityClasses = results.filter((entity: any) => entity.type === 'entity');
+        const options = entityClasses.map((c: any) => ({
+            value: c.subtype,
+            label: c.subtype,
+        }));
+        setSubtypeOptions(options);
     }, [entryClassesData]);
 
     // Query for entity data when editing
@@ -368,7 +366,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                             control={control}
                             render={({ field, fieldState }) => (
                                 <Field
-                                    orientation='responsive'
+                                    orientation='horizontal'
                                     data-invalid={fieldState.invalid}
                                 >
                                     <FieldContent className='flex-1'>
@@ -392,7 +390,7 @@ export default function EntityForm({ id = null, onAdd }: EntityFormProps) {
                                         name={field.name}
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
-                                        className='self-start md:self-center'
+                                        className='self-center'
                                         aria-invalid={fieldState.invalid}
                                         aria-describedby={
                                             fieldState.invalid

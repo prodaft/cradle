@@ -22,7 +22,7 @@ from .serializers import EventLogSerializer  # Create this serializer in step 3
     },
 )
 class EventLogListView(ListAPIView):
-    queryset = EventLog.objects.all().order_by('-timestamp')
+    queryset = EventLog.objects.all().order_by("-timestamp")
     serializer_class = EventLogSerializer
     filter_backends = [DjangoFilterBackend]
     filterset_class = EventLogFilter

@@ -17,6 +17,7 @@ from core.openapi import (
     get_error_responses,
     get_validation_error_response,
 )
+from core.pagination import TotalPagesPagination
 from user.models import CradleUser
 from user.permissions import HasAdminRole, HasEntryManagerRole
 
@@ -41,17 +42,29 @@ from ..serializers import (
     get=extend_schema(
         operation_id="entry_classes_list",
         summary="List Entry Classes",
-        description="Retrieve a list of all entry classes.",
+        description="Retrieve a paginated list of all entry classes.",
         parameters=[
             OpenApiParameter(
                 name="show_count",
                 type=bool,
                 location=OpenApiParameter.QUERY,
                 description="Show the count of entries in each class",
-            )
+            ),
+            OpenApiParameter(
+                name="page",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Page number",
+            ),
+            OpenApiParameter(
+                name="page_size",
+                type=int,
+                location=OpenApiParameter.QUERY,
+                description="Number of results per page",
+            ),
         ],
         responses={
-            200: EntryClassSerializerCount(many=True),
+            200: TotalPagesPagination().get_paginated_response_serializer(EntryClassSerializerCount),
             **get_error_responses(
                 EntriesErrorCodes.ADMIN_ONLY_VIEW_COUNT,
             ),
@@ -94,11 +107,36 @@ class EntryClassList(APIView):
                 raise AdminOnlyViewCountException(
                     detail="User must be an admin to see the count of entries in each class."
                 )
-            # For count queries, we need to prefetch entry counts as well
             entities = entities.annotate(entry_count=Count("entries"))
-            serializer = EntryClassSerializerCount(entities, many=True)
+            serializer_class = EntryClassSerializerCount
         else:
-            serializer = EntryClassSerializer(entities, many=True)
+            serializer_class = EntryClassSerializer
+
+        # No pagination params then return all (same response shape for compatibility)
+        has_pagination = "page" in request.query_params or "page_size" in request.query_params
+        if not has_pagination:
+            serializer = serializer_class(entities, many=True)
+            data = serializer.data
+            return Response(
+                {
+                    "page": 1,
+                    "count": len(data),
+                    "total_pages": 1,
+                    "results": data,
+                }
+            )
+
+        page_size = request.query_params.get("page_size", "10")
+        if not page_size.isdigit() or int(page_size) <= 0:
+            page_size = 10
+        else:
+            page_size = int(page_size)
+        paginator = TotalPagesPagination(page_size=page_size)
+        paginated = paginator.paginate_queryset(entities, request)
+        if paginated is not None:
+            serializer = serializer_class(paginated, many=True)
+            return paginator.get_paginated_response(serializer.data)
+        serializer = serializer_class(entities, many=True)
         return Response(serializer.data)
 
     def post(self, request: Request) -> Response:

@@ -22,6 +22,7 @@ import type {
   DefaultNoteTemplateResponse,
   Enable2FA,
   OAuthConnectRequest,
+  PaginatedUserRetrieveList,
   UserConfig,
   UserCreateSerializerAdminRequest,
   UserManageResponse,
@@ -49,6 +50,7 @@ import {
     UserCreateSerializerAdminRequestToJSON,
     UserManageResponseFromJSON,
     UserManageResponseToJSON,
+    PaginatedUserRetrieveListFromJSON,
     UserRetrieveFromJSON,
     UserRetrieveToJSON,
     UserSessionFromJSON,
@@ -86,6 +88,11 @@ export interface UsersDefaultNoteTemplateRetrieveRequest {
 
 export interface UsersDestroyRequest {
     userId: string;
+}
+
+export interface UsersListRequest {
+    page?: number;
+    pageSize?: number;
 }
 
 export interface UsersManageRetrieveRequest {
@@ -550,8 +557,15 @@ export class UserApi extends runtime.BaseAPI {
      * Returns a list of all users. Only available to admin users.
      * List users
      */
-    async usersListRaw(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<UserRetrieve>>> {
+    async usersListRaw(requestParameters: UsersListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedUserRetrieveList>> {
         const queryParameters: any = {};
+
+        if (requestParameters['page'] != null) {
+            queryParameters['page'] = requestParameters['page'];
+        }
+        if (requestParameters['pageSize'] != null) {
+            queryParameters['page_size'] = requestParameters['pageSize'];
+        }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
@@ -573,15 +587,15 @@ export class UserApi extends runtime.BaseAPI {
             query: queryParameters,
         }, initOverrides);
 
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(UserRetrieveFromJSON));
+        return new runtime.JSONApiResponse(response, (jsonValue) => PaginatedUserRetrieveListFromJSON(jsonValue));
     }
 
     /**
      * Returns a list of all users. Only available to admin users.
      * List users
      */
-    async usersList(initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<UserRetrieve>> {
-        const response = await this.usersListRaw(initOverrides);
+    async usersList(requestParameters: UsersListRequest = {}, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<PaginatedUserRetrieveList> {
+        const response = await this.usersListRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
