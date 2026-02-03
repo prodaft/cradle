@@ -5,6 +5,8 @@ from rest_framework.response import Response
 
 
 class TotalPagesPagination(PageNumberPagination):
+    page_size_query_param = "page_size"
+
     def __init__(self, *args, page_size=10, **kwargs):
         self.page_size = page_size
         super().__init__(*args, **kwargs)
